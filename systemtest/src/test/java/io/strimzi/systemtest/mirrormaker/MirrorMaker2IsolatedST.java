@@ -1472,7 +1472,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withKafkaUsername(kafkaUserTargetName)
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(internalKafkaClient.sendMessagesTls(), internalKafkaClient.receiveMessagesTls());
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         // Initialize CertSecretSource with certificate and secret names for source
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -1539,8 +1539,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        int sent = internalKafkaClient.sendMessagesTls();
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicTargetNameA)
@@ -1549,7 +1548,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(messagesCount));
         LOGGER.info("Messages successfully mirrored");
 
         LabelSelector zkSourceSelector = KafkaResource.getLabelSelector(kafkaClusterSourceName, KafkaResources.zookeeperStatefulSetName(kafkaClusterSourceName));
@@ -1583,7 +1582,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withKafkaUsername(kafkaUserSourceName)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
-        sent = internalKafkaClient.sendMessagesTls();
+
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicTargetNameA)
@@ -1593,7 +1593,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(messagesCount));
         LOGGER.info("Messages successfully mirrored");
 
         LOGGER.info("Renew Cluster CA secret for Source clusters via annotation");
@@ -1619,7 +1619,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withKafkaUsername(kafkaUserSourceName)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
-        sent = internalKafkaClient.sendMessagesTls();
+
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicTargetNameB)
@@ -1629,7 +1630,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(messagesCount));
         LOGGER.info("Messages successfully mirrored");
     }
 

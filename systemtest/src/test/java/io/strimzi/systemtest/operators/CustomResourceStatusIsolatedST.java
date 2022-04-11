@@ -287,7 +287,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         assertKafkaConnectStatus(1, connectUrl);
         // TODO: this should be `List.of(EXAMPLE_TOPIC_NAME)` or what? Because it does not have any reason to be empty
         //  because we edit spec of KafkaConnector and use that `EXAMPLE_TOPIC_NAME` to be inside that topic...
-        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
+        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of());
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -617,15 +617,21 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         TestUtils.waitFor("wait until KafkaConnector status has excepted observed generation", Constants.GLOBAL_POLL_INTERVAL,
             Constants.GLOBAL_TIMEOUT, () -> {
                 boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
+                LOGGER.info(formulaResult);
 
                 final Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
                 final String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
 
                 formulaResult = formulaResult && connectorStates.contains(currentState);
+                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && connectorStatus.get("name").equals(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && connectorStatus.get("type").equals(type);
+                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && connectorStatus.get("tasks") != null;
+                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
+                LOGGER.info(formulaResult);
 
                 return formulaResult;
             });

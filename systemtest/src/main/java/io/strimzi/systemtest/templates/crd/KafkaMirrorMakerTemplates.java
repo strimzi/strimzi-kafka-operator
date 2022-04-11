@@ -65,8 +65,8 @@ public class KafkaMirrorMakerTemplates {
                     .addToLoggers("mirrormaker.root.logger", "DEBUG")
                 .endInlineLogging()
                 .withResources(new ResourceRequirementsBuilder()
-                    .addToLimits("memory", new Quantity("1Gi"))
-                    .addToRequests("memory", new Quantity("1Gi"))
+                    .addToLimits("memory", new Quantity("784Mi"))
+                    .addToRequests("memory", new Quantity("784Mi"))
                     .build())
             .endSpec();
     }
