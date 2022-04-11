@@ -124,6 +124,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
+    private Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
@@ -364,6 +365,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             connectStatus.setConnectorPlugins(connectorPlugins);
 
             connectorsResourceCounter(namespace).set(desiredConnectors.size());
+            long pausedConnectorsCount = desiredConnectors.stream().filter(Annotations::isReconciliationPausedWithAnnotation).count();
+            pausedConnectorsResourceCounter(namespace).set((int) pausedConnectorsCount);
 
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
@@ -884,6 +887,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
                 metrics, null, connectorsResourceCounterMap,
                 "Number of custom resources the operator sees");
+    }
+
+    public AtomicInteger pausedConnectorsResourceCounter(String namespace) {
+        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources.paused",
+                metrics, null, pausedConnectorsResourceCounterMap,
+                "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations");
     }
 
     public Timer connectorsReconciliationsTimer(String namespace) {
