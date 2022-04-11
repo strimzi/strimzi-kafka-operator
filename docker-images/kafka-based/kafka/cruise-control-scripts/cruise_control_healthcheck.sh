@@ -4,7 +4,7 @@ set -e
 ARGS=()
 
 if [ "$STRIMZI_CC_API_SSL_ENABLED" = true ] ; then
-  ARGS+=(--cacert /etc/tls-sidecar/cc-certs/cruise-control.crt)
+  ARGS+=(--cacert /etc/cruise-control/cc-certs/cruise-control.crt)
   SCHEME="https"
 else
   SCHEME="http"

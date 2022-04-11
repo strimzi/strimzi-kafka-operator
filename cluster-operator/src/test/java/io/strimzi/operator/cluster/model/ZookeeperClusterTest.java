@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -274,10 +273,17 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret(null);
 
         assertThat(jmxSecret.getData(), hasKey("jmx-username"));
         assertThat(jmxSecret.getData(), hasKey("jmx-password"));
+
+        Secret newJmxSecret = zookeeperCluster.generateJmxSecret(jmxSecret);
+
+        assertThat(newJmxSecret.getData(), hasKey("jmx-username"));
+        assertThat(newJmxSecret.getData(), hasKey("jmx-password"));
+        assertThat(newJmxSecret.getData().get("jmx-username"), is(jmxSecret.getData().get("jmx-username")));
+        assertThat(newJmxSecret.getData().get("jmx-password"), is(jmxSecret.getData().get("jmx-password")));
     }
 
     @ParallelTest
@@ -310,7 +316,7 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret(null);
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
@@ -456,17 +462,16 @@ public class ZookeeperClusterTest {
         assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
     }
 
-    private Secret generateNodeSecret() {
+    private Secret generateCertificatesSecret() {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
 
-        zc.generateCertificates(ka, clusterCa, true);
-        return zc.generateNodesSecret(clusterCa);
+        return zc.generateCertificatesSecret(clusterCa, true);
     }
 
     @ParallelTest
     public void testGenerateBrokerSecret() throws CertificateParsingException {
-        Secret secret = generateNodeSecret();
+        Secret secret = generateCertificatesSecret();
         assertThat(secret.getData().keySet(), is(set(
                 "foo-zookeeper-0.crt",  "foo-zookeeper-0.key", "foo-zookeeper-0.p12", "foo-zookeeper-0.password",
                 "foo-zookeeper-1.crt", "foo-zookeeper-1.key", "foo-zookeeper-1.p12", "foo-zookeeper-1.password",
@@ -864,7 +869,7 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getPorts().size(), is(1));
         assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(ZookeeperCluster.CLIENT_TLS_PORT)));
 
-        assertThat(clientsRule.getFrom().size(), is(5));
+        assertThat(clientsRule.getFrom().size(), is(4));
 
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(zc.getCluster())));
@@ -881,10 +886,6 @@ public class ZookeeperClusterTest {
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(clientsRule.getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(new LabelSelector()).build()));
-
-        podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(zc.getCluster())));
-        assertThat(clientsRule.getFrom().get(4), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Port 9404
         NetworkPolicyIngressRule metricsRule = rules.get(2);

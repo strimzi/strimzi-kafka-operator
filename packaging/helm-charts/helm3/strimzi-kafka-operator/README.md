@@ -148,10 +148,6 @@ the documentation for more details.
 | `kafkaInit.image.repository`         | Override default Init Kafka image repository               | `nil`                               |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
 | `kafkaInit.image.tag`                | Override default Init Kafka image tag                      | `nil`                               |
-| `tlsSidecarCruiseControl.image.registry` | Override default TLS Sidecar for Cruise Control image registry | `nil`                       |
-| `tlsSidecarCruiseControl.image.repository` | Override default TLS Sidecar for Cruise Control image repository | `nil`                   |
-| `tlsSidecarCruiseControl.image.name`     | TLS Sidecar for Cruise Control image name      | `kafka`                                     |
-| `tlsSidecarCruiseControl.image.tag`      | Override default TLS Sidecar for Cruise Control image tag prefix | `nil`                     |
 | `tlsSidecarTopicOperator.image.registry` | Override default TLS Sidecar for Topic Operator image registry | `nil`                       |
 | `tlsSidecarTopicOperator.image.repository` | Override default TLS Sidecar for Topic Operator image repository | `nil`                   |
 | `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |

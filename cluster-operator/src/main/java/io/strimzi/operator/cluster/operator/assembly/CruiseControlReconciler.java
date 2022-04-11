@@ -281,8 +281,8 @@ public class CruiseControlReconciler {
                     .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
                         if (patchResult instanceof ReconcileResult.Noop)   {
-                            // Deployment needs ot be rolled because the certificate secret changed
-                            if (existingCertsChanged) {
+                            // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
+                            if (existingCertsChanged || clusterCa.certsRemoved()) {
                                 return cruiseControlRollingUpdate();
                             }
                         }

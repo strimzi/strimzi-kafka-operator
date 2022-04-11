@@ -162,8 +162,8 @@ public class KafkaExporterReconciler {
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
                         if (patchResult instanceof ReconcileResult.Noop)   {
-                            // Deployment needs ot be rolled because the certificate secret changed
-                            if (existingKafkaExporterCertsChanged) {
+                            // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
+                            if (existingKafkaExporterCertsChanged || clusterCa.certsRemoved()) {
                                 return kafkaExporterRollingUpdate();
                             }
                         }

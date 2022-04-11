@@ -288,15 +288,15 @@ public class ResourceUtils {
         SecretBuilder builder =
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.brokersSecretName(name))
+                        .withName(KafkaResources.kafkaSecretName(name))
                         .withNamespace(namespace)
                         .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", MockCertManager.clusterCaCert());
 
         for (int i = 0; i < kafkaReplicas; i++) {
-            builder.addToData(KafkaCluster.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))
-                    .addToData(KafkaCluster.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
+            builder.addToData(KafkaResources.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))
+                    .addToData(KafkaResources.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
         }
         secrets.add(builder.build());
 
@@ -309,8 +309,8 @@ public class ResourceUtils {
                         .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
         for (int i = 0; i < kafkaReplicas; i++) {
-            builder.addToData(KafkaCluster.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()))
-                    .addToData(KafkaCluster.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
+            builder.addToData(KafkaResources.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()))
+                    .addToData(KafkaResources.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
         }
         secrets.add(builder.build());
 

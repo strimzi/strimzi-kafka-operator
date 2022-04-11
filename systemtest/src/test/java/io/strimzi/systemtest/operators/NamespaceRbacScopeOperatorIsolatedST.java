@@ -4,12 +4,12 @@
  */
 package io.strimzi.systemtest.operators;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -43,7 +43,7 @@ class NamespaceRbacScopeOperatorIsolatedST extends AbstractST {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
-            .withExtraEnvVars(Collections.singletonList(new EnvVar(Environment.STRIMZI_RBAC_SCOPE_ENV, Environment.STRIMZI_RBAC_SCOPE_NAMESPACE, null)))
+            .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runInstallation();
 

@@ -8,6 +8,12 @@
 * Update Jackson Library to 2.12.6
 * Renew user certificates in User Operator only during maintenance windows
 * Ensure Topic Operator using Kafka Streams state store can start up successfully 
+* Update Cruise Control to 2.5.89
+* Remove TLS sidecar from Cruise Control pod. Cruise Control is now configured to not using ZooKeeper, so the TLS sidecar is not needed anymore.
+
+### Changes, deprecations and removals
+
+* Since the Cruise Control TLS sidecar has been removed, the related configuration options `.spec.cruiseControl.tlsSidecar` and `.spec.cruiseControl.template.tlsSidecar` in the Kafka custom resource are now deprecated.
 
 ## 0.28.0
 

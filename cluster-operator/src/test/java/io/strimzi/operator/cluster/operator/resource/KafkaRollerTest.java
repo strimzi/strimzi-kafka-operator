@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -60,7 +60,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 
 @ExtendWith(VertxExtension.class)
 public class KafkaRollerTest {
@@ -212,7 +211,7 @@ public class KafkaRollerTest {
         ArrayList<String> podNames = new ArrayList<>(replicas);
 
         for (int podId = 0; podId < replicas; podId++) {
-            podNames.add(KafkaCluster.kafkaPodName(clusterName(), podId));
+            podNames.add(KafkaResources.kafkaPodName(clusterName(), podId));
         }
 
         return podNames;
@@ -221,11 +220,11 @@ public class KafkaRollerTest {
     public List<String> addDisconnectedPodNames(int replicas) {
         ArrayList<String> podNames = new ArrayList<>(replicas);
 
-        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 10));
-        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 200));
-        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 30));
-        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 400));
-        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 500));
+        podNames.add(KafkaResources.kafkaPodName(clusterName(), 10));
+        podNames.add(KafkaResources.kafkaPodName(clusterName(), 200));
+        podNames.add(KafkaResources.kafkaPodName(clusterName(), 30));
+        podNames.add(KafkaResources.kafkaPodName(clusterName(), 400));
+        podNames.add(KafkaResources.kafkaPodName(clusterName(), 500));
         return podNames;
     }
 

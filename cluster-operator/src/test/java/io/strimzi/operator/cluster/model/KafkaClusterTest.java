@@ -131,11 +131,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
     "checkstyle:ClassDataAbstractionCoupling",
-    "checkstyle:ClassFanOutComplexity"
+    "checkstyle:ClassFanOutComplexity",
+    "checkstyle:JavaNCSS"
 })
 @ParallelSuite
 public class KafkaClusterTest {
@@ -158,10 +158,10 @@ public class KafkaClusterTest {
         kafkaLog.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
         zooLog.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
     }
-    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
-            add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
-            add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
-        }};
+    private final List<SystemProperty> javaSystemProperties = List.of(
+            new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build(),
+            new SystemPropertyBuilder().withName("something.else").withValue("42").build()
+    );
 
     private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, kafkaLog, zooLog))
             .editSpec()
@@ -294,10 +294,10 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(5));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.CONTROLPLANE_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.CONTROLPLANE_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(KafkaCluster.CONTROLPLANE_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(KafkaCluster.REPLICATION_PORT));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(9092));
@@ -306,7 +306,7 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9093));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(4).getName(), is(KafkaCluster.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(Integer.valueOf(KafkaCluster.JMX_PORT)));
+        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(KafkaCluster.JMX_PORT));
         assertThat(headless.getSpec().getPorts().get(4).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
@@ -368,10 +368,10 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(4));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.CONTROLPLANE_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(KafkaCluster.CONTROLPLANE_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(KafkaCluster.CONTROLPLANE_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(KafkaCluster.REPLICATION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(KafkaCluster.REPLICATION_PORT));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(9092));
@@ -425,7 +425,7 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
-        checkStatefulSet(sts, kafkaAssembly, true);
+        checkStatefulSet(sts, kafkaAssembly);
         checkOwnerReference(kc.createOwnerReference(), sts);
 
         // Check Volumes
@@ -519,7 +519,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editKafkaAssembly, VERSIONS);
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
-        checkStatefulSet(sts, editKafkaAssembly, true);
+        checkStatefulSet(sts, editKafkaAssembly);
     }
 
     @ParallelTest
@@ -534,7 +534,7 @@ public class KafkaClusterTest {
                         .endSpec().build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editKafkaAssembly, VERSIONS);
         StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
-        checkStatefulSet(sts, editKafkaAssembly, false);
+        checkStatefulSet(sts, editKafkaAssembly);
     }
 
     @ParallelTest
@@ -555,7 +555,7 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
     }
 
-    private void checkStatefulSet(StatefulSet sts, Kafka cm, boolean isOpenShift) {
+    private void checkStatefulSet(StatefulSet sts, Kafka cm) {
         assertThat(sts.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster)));
         // ... in the same namespace ...
         assertThat(sts.getMetadata().getNamespace(), is(namespace));
@@ -570,19 +570,19 @@ public class KafkaClusterTest {
         assertThat(containers.size(), is(1));
 
         // checks on the main Kafka container
-        assertThat(sts.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
+        assertThat(sts.getSpec().getReplicas(), is(replicas));
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image));
-        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
-        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
-        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
-        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
-        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
-        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
-        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
-        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
-        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
-        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
+        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(healthTimeout));
+        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(healthDelay));
+        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(10));
+        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(4));
+        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(33));
+        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(healthTimeout));
+        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(healthDelay));
+        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(10));
+        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(4));
+        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(33));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
         assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
@@ -600,7 +600,7 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
+            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
         if (cm.getSpec().getKafka().getRack() != null) {
 
@@ -655,8 +655,8 @@ public class KafkaClusterTest {
         List<PersistentVolumeClaim> pvcs = kc.getPersistentVolumeClaimTemplates();
 
         for (int i = 0; i < replicas; i++) {
-            assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i),
-                    is(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i)));
+            assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaResources.kafkaPodName(cluster, i),
+                    is(KafkaCluster.VOLUME_NAME + "-" + KafkaResources.kafkaPodName(cluster, i)));
         }
 
         assembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -677,8 +677,8 @@ public class KafkaClusterTest {
         for (int i = 0; i < replicas; i++) {
             int id = 0;
             for (PersistentVolumeClaim pvc : pvcs) {
-                assertThat(pvc.getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i),
-                        is(kc.VOLUME_NAME + "-" + id++ + "-" + KafkaCluster.kafkaPodName(cluster, i)));
+                assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.kafkaPodName(cluster, i),
+                        is(KafkaCluster.VOLUME_NAME + "-" + id++ + "-" + KafkaResources.kafkaPodName(cluster, i)));
             }
         }
     }
@@ -755,9 +755,9 @@ public class KafkaClusterTest {
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
-            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
+            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(cluster, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
@@ -774,10 +774,10 @@ public class KafkaClusterTest {
         // Check per pod router
         for (int i = 0; i < replicas; i++)  {
             Route rt = kc.generateExternalRoutes(i).get(0);
-            assertThat(rt.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(rt.getSpec().getTls().getTermination(), is("passthrough"));
             assertThat(rt.getSpec().getTo().getKind(), is("Service"));
-            assertThat(rt.getSpec().getTo().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(rt.getSpec().getTo().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(rt.getSpec().getPort().getTargetPort(), is(new IntOrString(9094)));
             checkOwnerReference(kc.createOwnerReference(), rt);
         }
@@ -829,7 +829,7 @@ public class KafkaClusterTest {
         // Check per pod router
         for (int i = 0; i < replicas; i++)  {
             Route rt = kc.generateExternalRoutes(i).get(0);
-            assertThat(rt.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(rt.getSpec().getHost(), is("my-host-" + i + ".cz"));
         }
     }
@@ -885,7 +885,7 @@ public class KafkaClusterTest {
         // Check per pod router
         for (int i = 0; i < replicas; i++)  {
             Route rt = kc.generateExternalRoutes(i).get(0);
-            assertThat(rt.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(rt.getMetadata().getAnnotations().get("anno"), is("anno-value-" + i));
             assertThat(rt.getMetadata().getLabels().get("label"), is("label-value-" + i));
         }
@@ -931,10 +931,10 @@ public class KafkaClusterTest {
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(srv.getMetadata().getFinalizers(), is(emptyList()));
             assertThat(srv.getSpec().getType(), is("LoadBalancer"));
-            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
+            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(cluster, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
             assertThat(srv.getSpec().getLoadBalancerIP(), is(nullValue()));
             assertThat(srv.getSpec().getExternalTrafficPolicy(), is("Cluster"));
@@ -1066,9 +1066,7 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testLoadBalancerSourceRangeFromListener() {
-        List<String> sourceRanges = new ArrayList();
-        sourceRanges.add("10.0.0.0/8");
-        sourceRanges.add("130.211.204.1/32");
+        List<String> sourceRanges = List.of("10.0.0.0/8", "130.211.204.1/32");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
@@ -1276,9 +1274,9 @@ public class KafkaClusterTest {
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(srv.getSpec().getType(), is("NodePort"));
-            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
+            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(cluster, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
@@ -1357,9 +1355,9 @@ public class KafkaClusterTest {
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(srv.getSpec().getType(), is("NodePort"));
-            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
+            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(cluster, i)));
             if (i == 0) { // pod with index 0 will have overriden port
                 assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, 32101, "TCP"))));
             } else {
@@ -1593,6 +1591,38 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    public void testRemoveOldCertificate() {
+        // simulate certificate creation at following time, with expire at 365 days later (by default)
+        String instantExpected = "2022-03-23T09:00:00Z";
+        Clock clock = Clock.fixed(Instant.parse(instantExpected), UTC);
+
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, null, null);
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(3));
+
+        // force key replacement so certificate renewal ...
+        Secret caKeySecretWithReplaceAnno = new SecretBuilder(clusterCa.caKeySecret())
+                .editMetadata()
+                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .endMetadata()
+                .build();
+        // ... simulated at the following time, with expire at 365 days later (by default)
+        instantExpected = "2022-03-23T11:00:00Z";
+        clock = Clock.fixed(Instant.parse(instantExpected), UTC);
+
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), caKeySecretWithReplaceAnno);
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(4));
+        assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(true));
+
+        clusterCa.maybeDeleteOldCerts();
+        assertThat(clusterCa.caCertSecret().getData().size(), is(3));
+        assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(false));
+    }
+
+    @ParallelTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     public void testTemplate() {
         Map<String, String> ssLabels = TestUtils.map("l1", "v1", "l2", "v2",
@@ -1600,38 +1630,37 @@ public class KafkaClusterTest {
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
         Map<String, String> expectedStsLabels = new HashMap<>(ssLabels);
         expectedStsLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> ssAnots = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> ssAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-
-        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
 
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
         Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> hSvcAnots = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> hSvcAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
 
         Map<String, String> exSvcLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> exSvcAnots = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> exSvcAnnotations = TestUtils.map("a9", "v9", "a10", "v10");
 
         Map<String, String> perPodSvcLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> perPodSvcAnots = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> perPodSvcAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
 
         Map<String, String> exRouteLabels = TestUtils.map("l13", "v13", "l14", "v14");
-        Map<String, String> exRouteAnots = TestUtils.map("a13", "v13", "a14", "v14");
+        Map<String, String> exRouteAnnotations = TestUtils.map("a13", "v13", "a14", "v14");
 
         Map<String, String> perPodRouteLabels = TestUtils.map("l15", "v15", "l16", "v16");
-        Map<String, String> perPodRouteAnots = TestUtils.map("a15", "v15", "a16", "v16");
+        Map<String, String> perPodRouteAnnotations = TestUtils.map("a15", "v15", "a16", "v16");
 
         Map<String, String> pdbLabels = TestUtils.map("l17", "v17", "l18", "v18");
-        Map<String, String> pdbAnots = TestUtils.map("a17", "v17", "a18", "v18");
+        Map<String, String> pdbAnnotations = TestUtils.map("a17", "v17", "a18", "v18");
 
         Map<String, String> crbLabels = TestUtils.map("l19", "v19", "l20", "v20");
-        Map<String, String> crbAnots = TestUtils.map("a19", "v19", "a20", "v20");
+        Map<String, String> crbAnnotations = TestUtils.map("a19", "v19", "a20", "v20");
 
         Map<String, String> saLabels = TestUtils.map("l21", "v21", "l22", "v22");
-        Map<String, String> saAnots = TestUtils.map("a21", "v21", "a22", "v22");
+        Map<String, String> saAnnotations = TestUtils.map("a21", "v21", "a22", "v22");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                         .withHostnames("my-host-1", "my-host-2")
@@ -1676,13 +1705,13 @@ public class KafkaClusterTest {
                             .withNewStatefulset()
                                 .withNewMetadata()
                                     .withLabels(ssLabels)
-                                    .withAnnotations(ssAnots)
+                                    .withAnnotations(ssAnnotations)
                                 .endMetadata()
                             .endStatefulset()
                             .withNewPod()
                                 .withNewMetadata()
                                     .withLabels(podLabels)
-                                    .withAnnotations(podAnots)
+                                    .withAnnotations(podAnnotations)
                                 .endMetadata()
                                 .withPriorityClassName("top-priority")
                                 .withSchedulerName("my-scheduler")
@@ -1694,7 +1723,7 @@ public class KafkaClusterTest {
                             .withNewBootstrapService()
                                 .withNewMetadata()
                                     .withLabels(svcLabels)
-                                    .withAnnotations(svcAnots)
+                                    .withAnnotations(svcAnnotations)
                                 .endMetadata()
                                 .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
                                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
@@ -1702,7 +1731,7 @@ public class KafkaClusterTest {
                             .withNewBrokersService()
                                 .withNewMetadata()
                                     .withLabels(hSvcLabels)
-                                    .withAnnotations(hSvcAnots)
+                                    .withAnnotations(hSvcAnnotations)
                                 .endMetadata()
                                 .withIpFamilyPolicy(IpFamilyPolicy.SINGLE_STACK)
                                 .withIpFamilies(IpFamily.IPV6)
@@ -1710,43 +1739,43 @@ public class KafkaClusterTest {
                             .withNewExternalBootstrapService()
                                 .withNewMetadata()
                                     .withLabels(exSvcLabels)
-                                    .withAnnotations(exSvcAnots)
+                                    .withAnnotations(exSvcAnnotations)
                                 .endMetadata()
                             .endExternalBootstrapService()
                             .withNewPerPodService()
                                 .withNewMetadata()
                                     .withLabels(perPodSvcLabels)
-                                    .withAnnotations(perPodSvcAnots)
+                                    .withAnnotations(perPodSvcAnnotations)
                                 .endMetadata()
                             .endPerPodService()
                             .withNewExternalBootstrapRoute()
                                 .withNewMetadata()
                                 .withLabels(exRouteLabels)
-                                .withAnnotations(exRouteAnots)
+                                .withAnnotations(exRouteAnnotations)
                                 .endMetadata()
                             .endExternalBootstrapRoute()
                             .withNewPerPodRoute()
                                 .withNewMetadata()
                                 .withLabels(perPodRouteLabels)
-                                .withAnnotations(perPodRouteAnots)
+                                .withAnnotations(perPodRouteAnnotations)
                                 .endMetadata()
                             .endPerPodRoute()
                             .withNewPodDisruptionBudget()
                                 .withNewMetadata()
                                     .withLabels(pdbLabels)
-                                    .withAnnotations(pdbAnots)
+                                    .withAnnotations(pdbAnnotations)
                                 .endMetadata()
                             .endPodDisruptionBudget()
                             .withNewClusterRoleBinding()
                                 .withNewMetadata()
                                     .withLabels(crbLabels)
-                                    .withAnnotations(crbAnots)
+                                    .withAnnotations(crbAnnotations)
                                 .endMetadata()
                             .endClusterRoleBinding()
                             .withNewServiceAccount()
                                 .withNewMetadata()
                                     .withLabels(saLabels)
-                                    .withAnnotations(saAnots)
+                                    .withAnnotations(saAnnotations)
                                 .endMetadata()
                             .endServiceAccount()
                         .endTemplate()
@@ -1758,73 +1787,73 @@ public class KafkaClusterTest {
         // Check StatefulSet
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getMetadata().getLabels().entrySet().containsAll(expectedStsLabels.entrySet()), is(true));
-        assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()), is(true));
+        assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnnotations.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
         // Check Pods
         assertThat(sts.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
-        assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnnotations.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(sts.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(sts.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(sts.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
 
         // Check Service
         Service svc = kc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnnotations.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
 
         // Check Headless Service
         svc = kc.generateHeadlessService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnnotations.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("SingleStack"));
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6"));
 
         // Check External Bootstrap service
         svc = kc.generateExternalBootstrapServices().get(0);
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(exSvcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(exSvcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(exSvcAnnotations.entrySet()), is(true));
 
         // Check per pod service
         svc = kc.generateExternalServices(0).get(0);
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(perPodSvcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(perPodSvcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(perPodSvcAnnotations.entrySet()), is(true));
 
         // Check Bootstrap Route
         Route rt = kc.generateExternalBootstrapRoutes().get(0);
         assertThat(rt.getMetadata().getLabels().entrySet().containsAll(exRouteLabels.entrySet()), is(true));
-        assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(exRouteAnots.entrySet()), is(true));
+        assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(exRouteAnnotations.entrySet()), is(true));
 
         // Check PerPodRoute
         rt = kc.generateExternalRoutes(0).get(0);
         assertThat(rt.getMetadata().getLabels().entrySet().containsAll(perPodRouteLabels.entrySet()), is(true));
-        assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnots.entrySet()), is(true));
+        assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnnotations.entrySet()), is(true));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check PodDisruptionBudget V1Beta1
         io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
         assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check ClusterRoleBinding
         ClusterRoleBinding crb = kc.generateClusterRoleBinding("namespace");
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
-        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnnotations.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = kc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
-        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
     }
 
     @ParallelTest
@@ -2069,7 +2098,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
     }
 
     @ParallelTest
@@ -2080,7 +2109,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
     }
 
     @ParallelTest
@@ -2181,9 +2210,9 @@ public class KafkaClusterTest {
 
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
     }
 
     @ParallelTest
@@ -2483,7 +2512,7 @@ public class KafkaClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -2513,7 +2542,7 @@ public class KafkaClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -2559,7 +2588,7 @@ public class KafkaClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -2610,7 +2639,7 @@ public class KafkaClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -2625,7 +2654,7 @@ public class KafkaClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -2705,7 +2734,7 @@ public class KafkaClusterTest {
             PersistentVolumeClaim pvc = pvcs.get(i);
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -2714,7 +2743,7 @@ public class KafkaClusterTest {
             PersistentVolumeClaim pvc = pvcs.get(i);
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("1000Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1"));
-            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -2727,7 +2756,7 @@ public class KafkaClusterTest {
                     image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
-                    .withStorage(new JbodStorageBuilder().withVolumes(Collections.EMPTY_LIST)
+                    .withStorage(new JbodStorageBuilder().withVolumes(List.of())
                             .build())
                     .endKafka()
                     .endSpec()
@@ -2747,7 +2776,7 @@ public class KafkaClusterTest {
                     image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
-                    .withStorage(new JbodStorageBuilder().withVolumes(Collections.EMPTY_LIST)
+                    .withStorage(new JbodStorageBuilder().withVolumes(List.of())
                             .build())
                     .endKafka()
                     .endSpec()
@@ -2926,9 +2955,9 @@ public class KafkaClusterTest {
         // Check per pod services
         for (int i = 0; i < replicas; i++)  {
             Service srv = kc.generateExternalServices(i).get(0);
-            assertThat(srv.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
-            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaCluster.kafkaPodName(cluster, i)));
+            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(cluster, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
@@ -2969,7 +2998,7 @@ public class KafkaClusterTest {
         // Check per pod ingress
         for (int i = 0; i < replicas; i++)  {
             Ingress ing = kc.generateExternalIngresses(i).get(0);
-            assertThat(ing.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(ing.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(ing.getSpec().getIngressClassName(), is(nullValue()));
             assertThat(ing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
             assertThat(ing.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2980,12 +3009,12 @@ public class KafkaClusterTest {
             assertThat(ing.getSpec().getRules().get(0).getHost(), is(String.format("my-broker-kafka-%d.com", i)));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-            assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
             checkOwnerReference(kc.createOwnerReference(), ing);
 
             io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingV1Beta1 = kc.generateExternalIngressesV1Beta1(i).get(0);
-            assertThat(ingV1Beta1.getMetadata().getName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(ingV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(ingV1Beta1.getSpec().getIngressClassName(), is(nullValue()));
             assertThat(ingV1Beta1.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
             assertThat(ingV1Beta1.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2996,7 +3025,7 @@ public class KafkaClusterTest {
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHost(), is(String.format("my-broker-kafka-%d.com", i)));
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaCluster.externalServiceName(cluster, i)));
+            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort(), is(new IntOrString(9094)));
             checkOwnerReference(kc.createOwnerReference(), ingV1Beta1);
         }
@@ -3088,12 +3117,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        try {
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-            fail("Expected exception was not thrown");
-        } catch (InvalidResourceException e)    {
-            // pass
-        }
+        assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS));
     }
 
     @ParallelTest
@@ -3892,9 +3916,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
-            KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka());
-        });
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka()));
         assertThat(ex.getMessage().equals("Kafka configuration option '" + propertyName + "' should be set to " + replicas + " or less because 'spec.kafka.replicas' is " + replicas), is(true));
     }
 
@@ -3930,9 +3952,7 @@ public class KafkaClusterTest {
                     .endCruiseControl()
                 .endSpec()
                 .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        });
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS));
         assertThat(ex.getMessage(), is("Kafka " + namespace + "/" + cluster + " has invalid configuration. " +
                 "Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes."));
     }
@@ -4033,9 +4053,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        });
+        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 6.6.6. Supported versions are:"));
     }
@@ -4050,9 +4068,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        });
+        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
     }
@@ -4068,9 +4084,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        });
+        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
     }

@@ -27,7 +27,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -605,16 +604,8 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaClientsName = "shared" + "-" + Constants.KAFKA_CLIENTS;
-        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName)
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
-
         // sync point wait for all resources
         KafkaUtils.waitForKafkaReady(namespace, LOG_SETTING_CLUSTER_NAME);
         KafkaUtils.waitForKafkaReady(namespace, GC_LOGGING_SET_NAME);
-        DeploymentUtils.waitForDeploymentReady(namespace, kafkaClientsName);
     }
 }

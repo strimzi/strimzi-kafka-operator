@@ -29,7 +29,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -52,16 +51,14 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Base64;
 
 public class ZookeeperCluster extends AbstractModel {
-    protected static final String APPLICATION_NAME = "zookeeper";
+    public static final String APPLICATION_NAME = "zookeeper";
 
     public static final int CLIENT_PLAINTEXT_PORT = 12181; // This port is internal only, not exposed => no need for name
     public static final int CLIENT_TLS_PORT = 2181;
@@ -109,12 +106,6 @@ public class ZookeeperCluster extends AbstractModel {
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
-
-    /**
-     * Private key and certificate for each ZooKeeper Pod name
-     * used as server certificates for ZooKeeper nodes
-     */
-    private Map<String, CertAndKey> nodeCerts;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -169,9 +160,6 @@ public class ZookeeperCluster extends AbstractModel {
             LOGGER.warnCr(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
         zk.setReplicas(replicas);
-
-        // Get the ZK version information from either the CRD or from the default setting
-
 
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
@@ -290,6 +278,10 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, DEFAULT_POD_LABELS);
 
+        // Should run at the end when everything is set
+        ZooKeeperSpecChecker specChecker = new ZooKeeperSpecChecker(zk);
+        zk.warningConditions.addAll(specChecker.run());
+
         return zk;
     }
 
@@ -366,20 +358,12 @@ public class ZookeeperCluster extends AbstractModel {
         clusterOperatorPeer.setPodSelector(labelSelector4);
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
-        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector5 = new LabelSelector();
-        Map<String, String> expressions5 = new HashMap<>(1);
-        expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster));
-        labelSelector5.setMatchLabels(expressions5);
-        cruiseControlPeer.setPodSelector(labelSelector5);
-
         // This is a hack because we have no guarantee that the CO namespace has some particular labels
         List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
         clientsPortPeers.add(kafkaClusterPeer);
         clientsPortPeers.add(zookeeperClusterPeer);
         clientsPortPeers.add(entityOperatorPeer);
         clientsPortPeers.add(clusterOperatorPeer);
-        clientsPortPeers.add(cruiseControlPeer);
         clientsIngressRule.setFrom(clientsPortPeers);
 
         rules.add(clientsIngressRule);
@@ -473,42 +457,34 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
-     * Generates the ZooKeeper nodes certificates
+     * Generate the Secret containing the Zookeeper nodes certificates signed by the cluster CA certificate used for TLS
+     * based internal communication with Kafka. It contains both the public and private keys.
      *
-     * @param kafka The Kafka custom resource
-     * @param clusterCa The CA for cluster certificates
+     * @param clusterCa                         The CA for cluster certificates
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *
+     * @return The generated Secret with the ZooKeeper node certificates
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        LOGGER.debugCr(reconciliation, "Generating certificates");
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+        Map<String, String> secretData = new HashMap<>(replicas * 4);
+        Map<String, CertAndKey> certs;
+
         try {
-            nodeCerts = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
+            certs = clusterCa.generateZkCerts(namespace, cluster, replicas, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+            throw new RuntimeException("Failed to prepare ZooKeeper certificates", e);
         }
-        LOGGER.debugCr(reconciliation, "End generating certificates");
-    }
 
-    /**
-     * Generate the Secret containing the Zookeeper nodes certificates signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka.
-     * It also contains the related Zookeeper nodes private keys.
-     *
-     * @param clusterCa The CA for cluster certificates
-     * @return The generated Secret.
-     */
-    public Secret generateNodesSecret(ClusterCa clusterCa) {
-
-        Map<String, String> data = new HashMap<>(replicas * 4);
         for (int i = 0; i < replicas; i++) {
-            CertAndKey cert = nodeCerts.get(KafkaResources.zookeeperPodName(cluster, i));
-            data.put(KafkaResources.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
-            data.put(KafkaResources.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
-            data.put(KafkaResources.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
-            data.put(KafkaResources.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
+            CertAndKey cert = certs.get(KafkaResources.zookeeperPodName(cluster, i));
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
 
-        return createSecret(KafkaResources.zookeeperSecretName(cluster), data,
+        return createSecret(KafkaResources.zookeeperSecretName(cluster), secretData,
                 Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())));
     }
 
@@ -742,23 +718,29 @@ public class ZookeeperCluster extends AbstractModel {
         return zkConfigMap;
     }
 
-    public boolean isJmxAuthenticated() {
-        return isJmxAuthenticated;
-    }
-
     /**
      * Generate the Secret containing the username and password to secure the jmx port on the zookeeper nodes
      *
+     * @param currentSecret The existing Secret with the current JMX credentials. Null if no secret exists yet.
+     *
      * @return The generated Secret
      */
-    public Secret generateJmxSecret() {
-        Map<String, String> data = new HashMap<>(2);
-        String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
-        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-        for (String key : keys) {
-            data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
-        }
+    public Secret generateJmxSecret(Secret currentSecret) {
+        if (isJmxAuthenticated) {
+            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+            Map<String, String> data = new HashMap<>(2);
 
-        return createJmxSecret(KafkaResources.zookeeperJmxSecretName(cluster), data);
+            if (currentSecret != null && currentSecret.getData() != null)  {
+                data.put(SECRET_JMX_USERNAME_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_USERNAME_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
+                data.put(SECRET_JMX_PASSWORD_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_PASSWORD_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
+            } else {
+                data.put(SECRET_JMX_USERNAME_KEY, Util.encodeToBase64(passwordGenerator.generate()));
+                data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
+            }
+
+            return createJmxSecret(KafkaResources.zookeeperJmxSecretName(cluster), data);
+        } else {
+            return null;
+        }
     }
 }

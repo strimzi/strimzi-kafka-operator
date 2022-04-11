@@ -42,8 +42,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -332,8 +330,8 @@ public class KafkaAssemblyOperatorMockTest {
                 assertResourceRequirements(context, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
     }
@@ -359,8 +357,8 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcileThenDeleteSecretsThenReconcile(context,
                 KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
-                KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME),
-                KafkaCluster.brokersSecretName(CLUSTER_NAME),
+                KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
+                KafkaResources.kafkaSecretName(CLUSTER_NAME),
                 KafkaResources.zookeeperSecretName(CLUSTER_NAME),
                 ClusterOperator.secretName(CLUSTER_NAME));
     }
@@ -701,14 +699,14 @@ public class KafkaAssemblyOperatorMockTest {
 
         int scaleDownTo = kafkaReplicas - 1;
         // final ordinal will be deleted
-        String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, scaleDownTo);
+        String deletedPod = KafkaResources.kafkaPodName(CLUSTER_NAME, scaleDownTo);
 
         AtomicInteger brokersInternalCertsCount = new AtomicInteger();
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
+                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
 
@@ -734,7 +732,7 @@ public class KafkaAssemblyOperatorMockTest {
                         is(nullValue()));
 
                 // removing one pod, the related private and public keys, keystore and password (4 entries) should not be in the Secrets
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                                 .getData(),
                         aMapWithSize(brokersInternalCertsCount.get() - 4));
 
@@ -753,11 +751,11 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         int scaleUpTo = kafkaReplicas + 1;
-        String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
+        String newPod = KafkaResources.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
+                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
 
@@ -783,7 +781,7 @@ public class KafkaAssemblyOperatorMockTest {
                         is(notNullValue()));
 
                 // adding one pod, the related private and public keys, keystore and password should be added to the Secrets
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData(),
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData(),
                         aMapWithSize(brokersInternalCertsCount.get() + 4));
 
                 // TODO assert no rolling update
@@ -799,66 +797,5 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(v -> async.flag());
-    }
-
-    /** Test the ZK version change functions */
-    private void reconcileZkVersionChange(VertxTestContext context, String initialKafkaVersion, String changedKafkaVersion, String changedImage) {
-        // We set the versions in the initial cluster to allow downgrades / upgrades
-        KafkaVersion lowerVersion = KafkaVersion.compareDottedVersions(initialKafkaVersion, changedKafkaVersion) > 0 ? VERSIONS.version(changedKafkaVersion) : VERSIONS.version(initialKafkaVersion);
-
-        Map<String, Object> config = new HashMap<>(2);
-        config.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, lowerVersion.messageVersion());
-        config.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, lowerVersion.protocolVersion());
-
-        cluster.getSpec().getKafka().setConfig(config);
-        cluster.getSpec().getKafka().setVersion(initialKafkaVersion);
-
-        // We prepare updated Kafka with new version
-        Kafka updatedKafka = new KafkaBuilder(cluster)
-                .editSpec()
-                    .editKafka()
-                        .withVersion(changedKafkaVersion)
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaAssemblyOperator.ReconciliationState initialState = operator.new ReconciliationState(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                updatedKafka);
-
-        Checkpoint async = context.checkpoint();
-        initialReconcile(context)
-            .onComplete(context.succeeding())
-            .compose(v -> initialState.getKafkaClusterDescription())
-            .compose(v -> initialState.prepareVersionChange())
-            .compose(v -> initialState.getZookeeperDescription())
-            .compose(state -> state.zkVersionChange())
-            .onComplete(context.succeeding(state -> context.verify(() -> {
-                assertThat(state.zkCluster.getImage(), is(changedImage));
-                async.flag();
-            })));
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testReconcileZookeeperUpgradeFromPreviousToLatest(Params params, VertxTestContext context) {
-        init(params);
-
-        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
-
-        reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testReconcileZookeeperDowngradeFromLatestToPrevious(Params params, VertxTestContext context) {
-        init(params);
-
-        String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
-
-        reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
     }
 }

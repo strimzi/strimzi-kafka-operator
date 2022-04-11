@@ -205,7 +205,7 @@ public class JmxTrans extends AbstractModel {
         String headlessService = KafkaResources.brokersServiceName(cluster);
 
         for (int brokerNumber = 0; brokerNumber < numberOfBrokers; brokerNumber++) {
-            String brokerServiceName = KafkaCluster.externalServiceName(cluster, brokerNumber) + "." + headlessService;
+            String brokerServiceName = KafkaResources.kafkaStatefulSetName(cluster) + "-" + brokerNumber + "." + headlessService;
             servers.add(jmxTransServer(queries, brokerServiceName));
         }
 
@@ -339,8 +339,8 @@ public class JmxTrans extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
 
         if (isJmxAuthenticated) {
-            varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME, KafkaCluster.jmxSecretName(cluster), KafkaCluster.SECRET_JMX_USERNAME_KEY));
-            varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD, KafkaCluster.jmxSecretName(cluster), KafkaCluster.SECRET_JMX_PASSWORD_KEY));
+            varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME, KafkaResources.kafkaJmxSecretName(cluster), KafkaCluster.SECRET_JMX_USERNAME_KEY));
+            varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD, KafkaResources.kafkaJmxSecretName(cluster), KafkaCluster.SECRET_JMX_PASSWORD_KEY));
         }
 
         varList.add(buildEnvVar(ENV_VAR_JMXTRANS_LOGGING_LEVEL, loggingLevel));

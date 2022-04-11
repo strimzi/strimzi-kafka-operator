@@ -343,7 +343,7 @@ public class KafkaAssemblyOperatorTest {
         kafka.getSpec().getZookeeper().setJmxOptions(jmxOptions);
         Secret kafkaJmxSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withName(KafkaCluster.jmxSecretName("foo"))
+                .withName(KafkaResources.kafkaJmxSecretName("foo"))
                 .withNamespace("test")
                 .endMetadata()
                 .withData(singletonMap("foo", "bar"))
@@ -383,7 +383,7 @@ public class KafkaAssemblyOperatorTest {
 
         createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
                 .withNewMetadata()
-                .withName(KafkaCluster.jmxSecretName("foo"))
+                .withName(KafkaResources.kafkaJmxSecretName("foo"))
                 .withNamespace("test")
                 .endMetadata()
                 .withData(Collections.singletonMap("foo", "bar"))
@@ -547,7 +547,7 @@ public class KafkaAssemblyOperatorTest {
         Map<String, PersistentVolumeClaim> kafkaPvcs = createPvcs(kafkaNamespace, kafkaCluster.getStorage(), kafkaCluster.getReplicas(),
             (replica, storageId) -> {
                 String name = VolumeUtils.createVolumePrefix(storageId, false);
-                return name + "-" + KafkaCluster.kafkaPodName(kafkaName, replica);
+                return name + "-" + KafkaResources.kafkaPodName(kafkaName, replica);
             });
 
         when(mockPvcOps.get(eq(kafkaNamespace), ArgumentMatchers.startsWith("data-")))
@@ -583,9 +583,9 @@ public class KafkaAssemblyOperatorTest {
         Set<String> expectedSecrets = set(
                 KafkaResources.clientsCaKeySecretName(kafkaName),
                 KafkaResources.clientsCaCertificateSecretName(kafkaName),
-                KafkaCluster.clusterCaCertSecretName(kafkaName),
-                KafkaCluster.clusterCaKeySecretName(kafkaName),
-                KafkaCluster.brokersSecretName(kafkaName),
+                KafkaResources.clusterCaCertificateSecretName(kafkaName),
+                KafkaResources.clusterCaKeySecretName(kafkaName),
+                KafkaResources.kafkaSecretName(kafkaName),
                 KafkaResources.zookeeperSecretName(kafkaName),
                 ClusterOperator.secretName(kafkaName));
 
@@ -736,7 +736,7 @@ public class KafkaAssemblyOperatorTest {
                     Set<String> expectedRoutes = set(KafkaResources.bootstrapServiceName(kafkaName));
 
                     for (int i = 0; i < kafkaCluster.getReplicas(); i++)    {
-                        expectedRoutes.add(KafkaCluster.externalServiceName(kafkaName, i));
+                        expectedRoutes.add(KafkaResources.kafkaStatefulSetName(kafkaName) + "-" + i);
                     }
 
                     assertThat(captured(routeNameCaptor), is(expectedRoutes));
@@ -922,12 +922,12 @@ public class KafkaAssemblyOperatorTest {
                 createPvcs(clusterNamespace, originalKafkaCluster.getStorage(), originalKafkaCluster.getReplicas(),
                     (replica, storageId) -> {
                         String name = VolumeUtils.createVolumePrefix(storageId, false);
-                        return name + "-" + KafkaCluster.kafkaPodName(clusterName, replica);
+                        return name + "-" + KafkaResources.kafkaPodName(clusterName, replica);
                     });
         kafkaPvcs.putAll(createPvcs(clusterNamespace, updatedKafkaCluster.getStorage(), updatedKafkaCluster.getReplicas(),
             (replica, storageId) -> {
                 String name = VolumeUtils.createVolumePrefix(storageId, false);
-                return name + "-" + KafkaCluster.kafkaPodName(clusterName, replica);
+                return name + "-" + KafkaResources.kafkaPodName(clusterName, replica);
             }));
 
         when(mockPvcOps.get(eq(clusterNamespace), ArgumentMatchers.startsWith("data-")))
@@ -1095,16 +1095,16 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.list(anyString(), any())).thenReturn(
                 emptyList()
         );
-        when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaJmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperJmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret())
+                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret(null))
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.brokersSecretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.entityTopicOperatorSecretName(clusterName))).thenReturn(
@@ -1124,7 +1124,7 @@ public class KafkaAssemblyOperatorTest {
         );
 
         // Mock NetworkPolicy get
-        when(mockPolicyOps.get(clusterNamespace, KafkaCluster.networkPolicyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(null, null));
+        when(mockPolicyOps.get(clusterNamespace, KafkaResources.kafkaNetworkPolicyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(null, null));
         when(mockPolicyOps.get(clusterNamespace, KafkaResources.zookeeperNetworkPolicyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy(null, null));
 
         // Mock PodDisruptionBudget get
