@@ -904,15 +904,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param cluster Cluster instance
      * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
-    protected Future<ReconcileResult<ClusterRoleBinding>> clusterRoleBindingForRackAwareness(Reconciliation reconciliation,
-                                                                                             String name,
-                                                                                             AbstractKafkaConnectSpec spec,
-                                                                                             KafkaConnectCluster cluster) {
-        ClusterRoleBinding clusterRoleBinding =
-                spec.getRack() != null ? cluster.generateKafkaClientClusterRoleBinding(name) : null;
-        return withIgnoreRbacError(reconciliation,
-                clusterRoleBindingOperations.reconcile(reconciliation, name, clusterRoleBinding),
-                clusterRoleBinding
-        );
+    protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation,
+                                                                                        String name,
+                                                                                        AbstractKafkaConnectSpec spec,
+                                                                                        KafkaConnectCluster cluster) {
+        ClusterRoleBinding crb = spec.getRack() != null ? cluster.generateClusterRoleBinding(spec.getRack(), name) : null;
+        return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, name, crb), crb);
     }
 }

@@ -36,7 +36,6 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -46,6 +45,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
@@ -962,7 +962,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
         // Check ClusterRoleBinding
-        ClusterRoleBinding crb = kmm2.generateKafkaClientClusterRoleBinding("test");
+        ClusterRoleBinding crb = kmm2.generateClusterRoleBinding(new Rack("topology-key"), "crb-name");
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
 
@@ -1899,22 +1899,20 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
+        String topologyKey = "topology-key";
 
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editOrNewMetadata()
                     .withNamespace(testNamespace)
                 .endMetadata()
                 .editOrNewSpec()
-                    .withNewRack()
-                        .withTopologyKey("topology-key")
-                    .endRack()
+                    .withNewRack(topologyKey)
                 .endSpec()
                 .build();
 
         KafkaMirrorMaker2Cluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-
-        String crbName = KafkaConnectResources.initContainerClusterRoleBindingName(resource.getMetadata().getName(), testNamespace);
-        ClusterRoleBinding crb = cluster.generateKafkaClientClusterRoleBinding(crbName);
+        String crbName = KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(resource.getMetadata().getName(), testNamespace);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding(resource.getSpec().getRack(), crbName);
 
         assertThat(crb.getMetadata().getName(), is(crbName));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
@@ -1933,7 +1931,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 .build();
 
         KafkaConnectCluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        ClusterRoleBinding crb = cluster.generateKafkaClientClusterRoleBinding(null);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding(null, "crb-name");
 
         assertThat(crb, is(nullValue()));
     }

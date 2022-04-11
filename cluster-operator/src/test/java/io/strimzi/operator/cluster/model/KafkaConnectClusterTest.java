@@ -738,7 +738,7 @@ public class KafkaConnectClusterTest {
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
         // Check ClusterRoleBinding
-        ClusterRoleBinding crb = kc.generateKafkaClientClusterRoleBinding("test");
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding(new Rack("topology-key"), "crb-name");
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
 
@@ -1634,20 +1634,20 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
+        String topologyKey = "topology-key";
 
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                     .editOrNewMetadata()
                         .withNamespace(testNamespace)
                     .endMetadata()
                     .editOrNewSpec()
-                        .withNewRack("my-topology-label")
+                        .withNewRack(topologyKey)
                     .endSpec()
                 .build();
 
         KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-
         String crbName = KafkaConnectResources.initContainerClusterRoleBindingName(resource.getMetadata().getName(), testNamespace);
-        ClusterRoleBinding crb = cluster.generateKafkaClientClusterRoleBinding(crbName);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding(resource.getSpec().getRack(), crbName);
 
         assertThat(crb.getMetadata().getName(), is(crbName));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
@@ -1666,7 +1666,7 @@ public class KafkaConnectClusterTest {
                 .build();
 
         KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        ClusterRoleBinding crb = cluster.generateKafkaClientClusterRoleBinding(null);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding(null, "crb-name");
 
         assertThat(crb, is(nullValue()));
     }

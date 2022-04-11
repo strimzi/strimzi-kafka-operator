@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -187,7 +186,7 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
         assertThat(entityUserOperator.watchedNamespace(), is(namespace));
-        assertThat(entityUserOperator.getImage(), is(DEFAULT_STRIMZI_OPERATOR_IMAGE));
+        assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityUserOperator.reconciliationIntervalMs, is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityUserOperator.readinessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));

@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
-import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
@@ -34,7 +33,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
 import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE;
 
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
@@ -129,7 +127,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             }
         }
 
-        KafkaConnectSpecBuilder kafkaConnectSpecBuilder = new KafkaConnectSpecBuilder()
+        return new KafkaConnectSpecBuilder()
                 .withBootstrapServers(connectCluster.getBootstrapServers())
                 .withTls(connectTls)
                 .withAuthentication(connectCluster.getAuthentication())
@@ -144,18 +142,13 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withJvmOptions(spec.getJvmOptions())
                 .withJmxOptions(spec.getJmxOptions())
                 .withMetricsConfig(spec.getMetricsConfig())
+                .withClientRackInitImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest"))
+                .withRack(spec.getRack())
                 .withTracing(spec.getTracing())
                 .withTemplate(spec.getTemplate())
-                .withExternalConfiguration(spec.getExternalConfiguration());
+                .withExternalConfiguration(spec.getExternalConfiguration())
+                .build();
 
-        Rack rack = spec.getRack();
-        if (rack != null) {
-            kafkaConnectSpecBuilder
-                    .withRack(rack)
-                    .withImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, DEFAULT_STRIMZI_OPERATOR_IMAGE));
-        }
-
-        return kafkaConnectSpecBuilder.build();
     }
 
     @Override

@@ -108,7 +108,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
         connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
-                .compose(i -> clusterRoleBindingForRackAwareness(reconciliation, clusterRoleBindingName, kafkaConnect.getSpec(), connect))
+                .compose(i -> connectInitClusterRoleBinding(reconciliation, clusterRoleBindingName, kafkaConnect.getSpec(), connect))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getName(), build))
                 .compose(buildInfo -> {

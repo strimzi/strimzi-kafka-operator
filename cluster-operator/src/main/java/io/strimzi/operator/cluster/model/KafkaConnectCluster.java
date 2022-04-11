@@ -69,7 +69,6 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Base64;
 
-import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectCluster extends AbstractModel {
@@ -240,7 +239,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         String initImage = spec.getClientRackInitImage();
         if (initImage == null) {
-            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, DEFAULT_STRIMZI_OPERATOR_IMAGE);
+            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
         kafkaConnect.setInitImage(initImage);
 
@@ -835,14 +834,16 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Creates a ClusterRoleBinding which is used to bind the SA to the strimzi-kafka-client ClusterRole.
+     * Creates the ClusterRoleBinding which is used to bind the Kafka Connect SA to the ClusterRole
+     * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
-     * @param name Name of the cluster role binding.
+     * @param rack Rack configuration.
+     * @param name ClusterRoleBinding name.
      *
      * @return The cluster role binding.
      */
-    public ClusterRoleBinding generateKafkaClientClusterRoleBinding(String name) {
-        if (name == null || name.trim().isEmpty()) {
+    public ClusterRoleBinding generateClusterRoleBinding(Rack rack, String name) {
+        if (rack == null || name == null || name.trim().isEmpty()) {
             return null;
         }
 
