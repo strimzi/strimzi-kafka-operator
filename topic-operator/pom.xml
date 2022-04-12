@@ -17,10 +17,6 @@
         </license>
     </licenses>
 
-    <properties>
-        <mockito.version>4.4.0</mockito.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
