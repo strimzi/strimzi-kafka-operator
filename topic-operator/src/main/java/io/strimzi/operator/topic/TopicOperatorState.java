@@ -22,8 +22,8 @@ package io.strimzi.operator.topic;
  */
 public class TopicOperatorState {
 
-    private boolean alive = true;
-    private boolean ready = false;
+    private volatile boolean alive = true;
+    private volatile boolean ready = false;
 
     public boolean isAlive() {
         return alive;

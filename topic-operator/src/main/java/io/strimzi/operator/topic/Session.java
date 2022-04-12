@@ -99,7 +99,11 @@ public class Session extends AbstractVerticle {
      * @param zkClientCreator    indirection to allow unit testing of start-up sequence with mock ZK client creation
      * @param topicOperatorState used to communicate liveness/readiness to health server from things that can potentially fail
      */
-    Session(KubernetesClient kubeClient, Config config, BiFunction<Zk, Config, TopicStore> topicStoreCreator, BiFunction<Vertx, Config, Future<Zk>> zkClientCreator, TopicOperatorState topicOperatorState) {
+    Session(KubernetesClient kubeClient,
+            Config config,
+            BiFunction<Zk, Config, TopicStore> topicStoreCreator,
+            BiFunction<Vertx, Config, Future<Zk>> zkClientCreator,
+            TopicOperatorState topicOperatorState) {
         this.topicStoreCreator = topicStoreCreator == null ? this::createTopicStore : topicStoreCreator;
         this.zkClientCreator = zkClientCreator == null ? this::createZk : zkClientCreator;
         this.kubeClient = kubeClient;
@@ -217,7 +221,7 @@ public class Session extends AbstractVerticle {
                 .onSuccess(httpServer -> healthServer = httpServer)
                 .compose(ignored -> zkClientCreator.apply(vertx, config))
                 .onSuccess(zookeeper -> zk = zookeeper)
-                .compose(zk -> executor.executeBlocking(createTopicStoreAsync(zk, config)))
+                .compose(zk -> createTopicStoreAsync(zk, config))
                 .onSuccess(topicStore -> LOGGER.debug("Using TopicStore {}", topicStore))
                 .compose(topicStore -> createTopicOperatorAndZkWatchers(labels, namespace, topicStore))
                 .compose(this::createK8sWatcher)
@@ -241,8 +245,8 @@ public class Session extends AbstractVerticle {
         return startWatcher().compose(ignored -> Future.succeededFuture(initReconcilePromise));
     }
 
-    private Handler<Promise<TopicStore>> createTopicStoreAsync(Zk zk, Config config) {
-        return storePromise -> {
+    private Future<TopicStore> createTopicStoreAsync(Zk zk, Config config) {
+        return executor.executeBlocking(storePromise -> {
             Instant startedAt = Instant.now();
             try {
                 TopicStore topicStore = topicStoreCreator.apply(zk, config);
@@ -252,7 +256,7 @@ public class Session extends AbstractVerticle {
                 LOGGER.error("Failed to create topic store.", e);
                 storePromise.fail(e);
             }
-        };
+        });
     }
 
     private Future<Zk> createZk(Vertx vertx, Config config) {
