@@ -187,8 +187,6 @@ spec:
     # ...
   cruiseControl: <34>
     # ...
-    tlsSidecar: <35>
-    # ...
 ----
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes]. If your cluster already has topics defined, you can
 xref:scaling-clusters-{context}[scale clusters].
@@ -227,7 +225,6 @@ Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
 <32> Specified xref:property-user-operator-logging-reference[User Operator loggers and log levels].
 <33> Kafka Exporter configuration. link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data.
 <34> Optional configuration for Cruise Control, which is used to xref:cruise-control-concepts-str[rebalance the Kafka cluster].
-<35> Cruise Control xref:type-TlsSidecar-reference[TLS sidecar configuration]. Cruise Control uses the TLS sidecar for secure communication with ZooKeeper.
 
 . Create or update the resource:
 +
