@@ -455,6 +455,8 @@ public class KafkaRebalanceAssemblyOperator
             case Ready:
                 // Rebalance Complete
                 return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+            case ReconciliationPaused:
+                return onReconciliationPaused(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
             case NotReady:
                 // Error case
                 return onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
@@ -731,6 +733,27 @@ public class KafkaRebalanceAssemblyOperator
             // Stay in the current NotReady state, returning null as next state
             return Future.succeededFuture(new MapAndStatus<>(null, null));
         }
+    }
+
+    /**
+     * This method handles the transition from {@code ReconciliationPaused} state.
+     * When the reconciliatiom is unpaused {@link KafkaRebalance} , it calls the Cruise Control API for requesting a rebalance proposal.
+     * If the proposal is immediately ready, the next state is {@code ProposalReady}.
+     * If the proposal is not ready yet and Cruise Control is still processing it, the next state is {@code PendingProposal}.
+     *
+     * @param reconciliation Reconciliation information
+     * @param host Cruise Control service to which sending the rebalance proposal request
+     * @param apiClient Cruise Control REST API client instance
+     * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the ConfigMap and state
+     */
+
+    private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onReconciliationPaused(Reconciliation reconciliation,
+                                                                             String host, CruiseControlApi apiClient,
+                                                                             KafkaRebalance kafkaRebalance,
+                                                                             RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
+
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
     }
 
     /**
@@ -1108,7 +1131,7 @@ public class KafkaRebalanceAssemblyOperator
                                             KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
                                             KafkaRebalanceState currentState;
                                             // cluster rebalance is new or it is in one of the others states
-                                            if (kafkaRebalanceStatus == null || kafkaRebalanceStatus.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
+                                            if (kafkaRebalanceStatus == null) {
                                                 currentState = KafkaRebalanceState.New;
                                             } else {
                                                 String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
