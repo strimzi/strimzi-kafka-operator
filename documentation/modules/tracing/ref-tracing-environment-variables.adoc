@@ -111,7 +111,9 @@ m¦OTEL_EXPORTER_JAEGER_ENDPOINT
 ¦The Jaeger gRPC endpoint to connect to.
 
 m¦OTEL_TRACES_EXPORTER
-¦Yes
-¦The exporter used for tracing. Set to `jaeger`.
+¦No
+¦The exporter used for tracing.
+Set to `jaeger` by default. If using Jaeger tracing, you won't need to specify this environment variable.
+If you are xref:proc-enabling-non-jaeger-tracing-{context}[using another tracing implementation], you need to specify the exporter used.
 
 |===

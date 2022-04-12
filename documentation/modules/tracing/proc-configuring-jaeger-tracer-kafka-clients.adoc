@@ -5,15 +5,18 @@
 [id='proc-configuring-jaeger-tracer-kafka-clients-{context}']
 = Initializing a Jaeger tracer for Kafka clients
 
+[role="_abstract"]
 Configure and initialize a Jaeger tracer using a set of xref:ref-tracing-environment-variables-{context}[tracing environment variables].
+
+You can initialize a tracer for OpenTracing oir OpenTelemetry.
 
 .Procedure
 
-In each client application:
+In each client application add the dependencies for the tracer.
 
-. Add the Maven dependency for Jaeger to the `pom.xml` file for the client application:
+. Add the Maven dependencies to the `pom.xml` file for the client application.
 +
-.Dependency for Jaeger tracing
+.Dependencies for Jaeger tracing with OpenTracing
 [source,xml,subs="attributes+"]
 ----
 <dependency>
@@ -22,11 +25,38 @@ In each client application:
     <version>{JaegerClientVersion}</version>
 </dependency>
 ----
-
-. Define the configuration of the Jaeger tracer using the xref:ref-tracing-environment-variables-{context}[tracing environment variables].
-
-. Create the Jaeger tracer from the environment variables that you defined in step two:
 +
+.Dependencies for Jaeger tracing with OpenTelemetry
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+    <version>{OpenTelemetryVersion}</version>
+</dependency>
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-jaeger</artifactId>
+    <version>{OpenTelemetryVersionStable}</version>
+</dependency>
+<dependency>
+    <groupId>io.grpc</groupId>
+    <artifactId>grpc-netty-shaded</artifactId>
+    <version>{OpenTelemetryGrpcVersion}</version>
+</dependency>
+----
+
+. Define the configuration of the tracer using the xref:ref-tracing-environment-variables-{context}[tracing environment variables].
+
+. Create the tracer from the environment variables that you defined in step two.
++
+.Creating a tracer for OpenTelemetry
+[source,java,subs=attributes+]
+----
+OpenTelemetry ot = GlobalOpenTelemetry.get()
+----
++
+.Creating a tracer for OpenTracing
 [source,java,subs=attributes+]
 ----
 Tracer tracer = Configuration.fromEnv().getTracer();
@@ -34,7 +64,7 @@ Tracer tracer = Configuration.fromEnv().getTracer();
 +
 NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core[core tracing functionality for custom instrumentation^].
 
-. Register the Jaeger tracer as a global tracer:
+. Register the tracer as a global tracer:
 +
 [source,java,subs=attributes+]
 ----

@@ -36,37 +36,37 @@ You do this by adding the `TracingProducerInterceptor` and `TracingConsumerInter
 <dependency>
   <groupId>io.opentelemetry</groupId>
   <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-  <version>{OpenTelemetryVersion}</version>
+  <version>{OpenTelemetryVersionLower}</version>
 </dependency>
 <dependency>
   <groupId>io.opentelemetry</groupId>
   <artifactId>opentelemetry-semconv</artifactId>
-  <version>{OpenTelemetryVersion}</version>
+  <version>{OpenTelemetryVersionLower}</version>
 </dependency>
 <dependency>
   <groupId>io.opentelemetry</groupId>
   <artifactId>opentelemetry-sdk-trace</artifactId>
-  <version>{OpenTelemetryVersionStable}</version>
+  <version>{OpenTelemetryVersionStableLower}</version>
 </dependency>
 <dependency>
   <groupId>io.opentelemetry.instrumentation</groupId>
   <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClient}</artifactId>
-  <version>{OpenTelemetryVersion}</version>
+  <version>{OpenTelemetryVersionLower}</version>
 </dependency>
 <dependency>
   <groupId>io.opentelemetry.instrumentation</groupId>
   <artifactId>opentelemetry-kafka-clients-common</artifactId>
-  <version>{OpenTelemetryVersion}</version>
+  <version>{OpenTelemetryVersionLower}</version>
 </dependency>
 <dependency>
   <groupId>io.opentelemetry</groupId>
   <artifactId>opentelemetry-exporter-jaeger</artifactId>
-  <version>{OpenTelemetryVersionStable}</version>
+  <version>{OpenTelemetryVersionStableLower}</version>
 </dependency>
 <dependency>
   <groupId>io.grpc</groupId>
   <artifactId>grpc-netty-shaded</artifactId>
-  <version>{OpenTelemetryGrpcVersion}</version>
+  <version>{OpenTelemetryGrpcVersionLower}</version>
 </dependency>
 ----
 --
@@ -117,7 +117,8 @@ Producer<String, String> op = new KafkaProducer<>(
             new StringSerializer(),
             new StringSerializer()
         );
-        Producer<String, String> producer = tracing.wrap(op);
+       Producer<String, String> producer = tracing.wrap(op)
+       KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
 
 // Send:
 producer.send(...);
@@ -143,9 +144,6 @@ ConsumerRecords<Integer, String> records = consumer.poll(1000);
 .Example Interceptor instrumentation
 [source,java,subs=attributes+]
 ----
-// Register the tracer with GlobalTracer:
-GlobalTracer.register(tracer);
-
 // Add the TracingProducerInterceptor to the sender properties:
 senderProps.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG,
           TracingProducerInterceptor.class.getName());
@@ -168,10 +166,6 @@ consumer.subscribe(Collections.singletonList("messages"));
 
 // Get messages:
 ConsumerRecords<Integer, String> records = consumer.poll(1000);
-
-// Retrieve the SpanContext from a polled message (consumer side):
-ConsumerRecord<Integer, String> record = ...
-SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
 ----
 
 == Custom span names for OpenTracing Decorator instrumentation

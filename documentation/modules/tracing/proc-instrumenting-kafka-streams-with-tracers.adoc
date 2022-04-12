@@ -8,29 +8,106 @@
 [role="_abstract"]
 This procedure describes how to instrument Kafka Streams API applications for distributed tracing.
 
-The procedure shows the steps required when using OpenTracing.
+The OpenTracing and OpenTelemetry instrumentation projects provide classes that support instrumentation of Kafka Streams.
 
 You enable Kafka OpenTracing instrumentation in Kafka Streams applications by adding the JARs as a dependency to your project.
 You create a Kafka Streams instance that uses `KafkaClientSupplier`.
 `KafkaClientSupplier` tells the Streams API to use wrapped Kafka consumer and producer clients.
 A `TracingKafkaClientSupplier` class is provided by the Kafka Open Tracing instrumentation project.
 
-To instrument Kafka Streams with OpenTelemetry, you'll need to write your a custom `TracingKafkaClientSupplier`.
+.Prerequisites
+
+To instrument Kafka Streams with OpenTelemetry, you'll need to write a custom `TracingKafkaClientSupplier`.
+
+.Example customization of `TracingKafkaClientSupplier`
+[source,java,subs="attributes+"]
+----
+private static class TracingKafkaClientSupplier implements KafkaClientSupplier {
+    @Override
+    public Admin getAdmin(Map<String, Object> config) {
+        return Admin.create(config);
+    }
+
+    @Override
+    public Producer<byte[], byte[]> getProducer(Map<String, Object> config) {
+        KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
+        return tracing.wrap(new KafkaProducer<>(config));
+    }
+
+    @Override
+    public Consumer<byte[], byte[]> getConsumer(Map<String, Object> config) {
+        KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
+        return tracing.wrap(new KafkaConsumer<>(config));
+    }
+
+    @Override
+    public Consumer<byte[], byte[]> getRestoreConsumer(Map<String, Object> config) {
+        return getConsumer(config);
+    }
+
+    @Override
+    public Consumer<byte[], byte[]> getGlobalConsumer(Map<String, Object> config) {
+        return getConsumer(config);
+    }
+}
+----
 
 .Procedure
 
-In each Kafka Streams API application:
+Perform the following steps in each Kafka Streams API application.
 
-. Add the `opentracing-kafka-streams` dependency to the pom.xml file for your Kafka Streams API application:
+. . Add the Maven dependencies for distributed tracing to the `pom.xml` file of your Kafka Streams API application.
 +
+--
+.Dependencies for OpenTracing
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-    <groupId>io.opentracing.contrib</groupId>
-    <artifactId>opentracing-kafka-streams</artifactId>
-    <version>{OpenTracingKafkaClient}</version>
+  <groupId>io.opentracing.contrib</groupId>
+  <artifactId>opentracing-kafka-client</artifactId>
+  <version>{OpenTracingKafkaClient}</version>
 </dependency>
 ----
+.Dependencies for OpenTelemetry
+[source,xml,subs="attributes+"]
+----
+<dependency>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+  <version>{OpenTelemetryVersionLower}</version>
+</dependency>
+<dependency>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-semconv</artifactId>
+  <version>{OpenTelemetryVersionLower}</version>
+</dependency>
+<dependency>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk-trace</artifactId>
+  <version>{OpenTelemetryVersionStableLower}</version>
+</dependency>
+<dependency>
+  <groupId>io.opentelemetry.instrumentation</groupId>
+  <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClient}</artifactId>
+  <version>{OpenTelemetryVersionLower}</version>
+</dependency>
+<dependency>
+  <groupId>io.opentelemetry.instrumentation</groupId>
+  <artifactId>opentelemetry-kafka-clients-common</artifactId>
+  <version>{OpenTelemetryVersionLower}</version>
+</dependency>
+<dependency>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-jaeger</artifactId>
+  <version>{OpenTelemetryVersionStableLower}</version>
+</dependency>
+<dependency>
+  <groupId>io.grpc</groupId>
+  <artifactId>grpc-netty-shaded</artifactId>
+  <version>{OpenTelemetryGrpcVersionLower}</version>
+</dependency>
+----
+--
 
 . Create an instance of the `TracingKafkaClientSupplier` supplier interface:
 +

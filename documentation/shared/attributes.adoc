@@ -148,9 +148,12 @@
 :JaegerClientVersion: 1.3.2
 :OpenTracingKafkaClient: 0.1.15
 :OpenTelemetryKafkaClient: 2.6
-:OpenTelemetryVersion: 1.7.0-alpha
-:OpenTelemetryVersionStable: 1.7.0
-:OpenTelemetryGrpcVersion: 1.41.0
+:OpenTelemetryVersion: 1.9.0-alpha
+:OpenTelemetryVersionStable: 1.9.0
+:OpenTelemetryGrpcVersion: 1.44.0
+:OpenTelemetryVersionLower: 1.7.0-alpha
+:OpenTelemetryVersionStableLower: 1.7.0
+:OpenTelemetryGrpcVersionLower: 1.41.0
 
 // Section enablers
 :InstallationAppendix:

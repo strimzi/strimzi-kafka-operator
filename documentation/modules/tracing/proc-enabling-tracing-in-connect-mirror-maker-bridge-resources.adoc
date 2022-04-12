@@ -24,7 +24,7 @@ Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConn
 +
 * Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
 * For OpenTracing, set the `spec.tracing.type` property to `jaeger`.
-* For OpenTelemetry, set the `spec.tracing.type` property `jaeger-otel`.
+* For OpenTelemetry, set the `spec.tracing.type` property `opentelemetry`.
 +
 --
 .Example Jaeger tracer configuration for Kafka Connect using OpenTracing
@@ -37,7 +37,7 @@ metadata:
 spec:
   #...
   template:
-    connectContainer: <1>
+    connectContainer:
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -46,7 +46,7 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
   tracing:
-    type: jaeger <2>
+    type: jaeger
   #...
 ----
 
@@ -88,11 +88,11 @@ spec:
         - name: OTEL_SERVICE_NAME
           value: my-jaeger-service
         - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: http://jaeger-exporter-host-name:14250
+          value: http://jaeger-exporter-host-name.operators:14250
         - name: OTEL_TRACES_EXPORTER
           value: jaeger
   tracing:
-    type: jaeger-otel <3>
+    type: opentelemetry
 #...
 ----
 
@@ -111,11 +111,11 @@ spec:
         - name: OTEL_SERVICE_NAME
           value: my-jaeger-service
         - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: http://jaeger-exporter-host-name:14250
+          value: http://jaeger-exporter-host-name.operators:14250
         - name: OTEL_TRACES_EXPORTER
           value: jaeger
   tracing:
-    type: jaeger-otel
+    type: opentelemetry
 #...
 ----
 --
