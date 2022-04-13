@@ -84,7 +84,7 @@ public class JmxTransReconcilerTest {
                 .endSpec()
                 .build();
 
-        JmxTransReconciler rcnclr = new JmxTransReconciler(Reconciliation.DUMMY_RECONCILIATION, 300_000, kafka, mockDepOps, mockCmOps, mockSaOps);
+        JmxTransReconciler rcnclr = new JmxTransReconciler(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.dummyClusterOperatorConfig(), supplier, kafka);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(null, null)
@@ -121,7 +121,7 @@ public class JmxTransReconcilerTest {
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(JmxTransResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
 
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30);
-        JmxTransReconciler rcnclr = new JmxTransReconciler(Reconciliation.DUMMY_RECONCILIATION, 300_000, kafka, mockDepOps, mockCmOps, mockSaOps);
+        JmxTransReconciler rcnclr = new JmxTransReconciler(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.dummyClusterOperatorConfig(), supplier, kafka);
 
         Checkpoint async = context.checkpoint();
         rcnclr.reconcile(null, null)

@@ -11,12 +11,14 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -61,55 +63,39 @@ public class CruiseControlReconciler {
      * Constructs the Cruise Control reconciler
      *
      * @param reconciliation            Reconciliation marker
+     * @param config                    Cluster Operator Configuration
+     * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param storage                   The actual storage configuration used by the cluster. This might differ from the
      *                                  storage configuration configured by the user in the Kafka CR due to un-allowed changes.
      * @param clusterCa                 The Cluster CA instance
-     * @param operationTimeoutMs        Timeout for Kubernetes operations
-     * @param operatorNamespace         Namespace where the Cluster Operator is running (used to generate network policies)
-     * @param operatorNamespaceLabels   Labels of the namespace where the Cluster Operator is running (used to generate network policies)
-     * @param isNetworkPolicyGeneration Flag indicating whether network policies should be generated or not
-     * @param deploymentOperator        The Deployment operator for working with Kubernetes Deployments
-     * @param secretOperator            The Secret operator for working with Kubernetes Secrets
-     * @param serviceAccountOperator    The Service Account operator for working with Kubernetes Service Accounts
-     * @param serviceOperator           The Service operator for working with Kubernetes Service Accounts
-     * @param networkPolicyOperator     The Network Policy operator for working with Kubernetes Service Accounts
-     * @param configMapOperator         The Config Map operator for working with Kubernetes Config Maps
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public CruiseControlReconciler(
             Reconciliation reconciliation,
+            ClusterOperatorConfig config,
+            ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
             Storage storage,
-            ClusterCa clusterCa,
-            long operationTimeoutMs,
-            String operatorNamespace,
-            Labels operatorNamespaceLabels,
-            boolean isNetworkPolicyGeneration,
-            DeploymentOperator deploymentOperator,
-            SecretOperator secretOperator,
-            ServiceAccountOperator serviceAccountOperator,
-            ServiceOperator serviceOperator,
-            NetworkPolicyOperator networkPolicyOperator,
-            ConfigMapOperator configMapOperator
+            ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
         this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, storage);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
-        this.operationTimeoutMs = operationTimeoutMs;
-        this.operatorNamespace = operatorNamespace;
-        this.operatorNamespaceLabels = operatorNamespaceLabels;
-        this.isNetworkPolicyGeneration = isNetworkPolicyGeneration;
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.operatorNamespace = config.getOperatorNamespace();
+        this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
 
-        this.deploymentOperator = deploymentOperator;
-        this.secretOperator = secretOperator;
-        this.serviceAccountOperator = serviceAccountOperator;
-        this.serviceOperator = serviceOperator;
-        this.networkPolicyOperator = networkPolicyOperator;
-        this.configMapOperator = configMapOperator;
+        this.deploymentOperator = supplier.deploymentOperations;
+        this.secretOperator = supplier.secretOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperations;
+        this.serviceOperator = supplier.serviceOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.configMapOperator = supplier.configMapOperations;
     }
 
     /**

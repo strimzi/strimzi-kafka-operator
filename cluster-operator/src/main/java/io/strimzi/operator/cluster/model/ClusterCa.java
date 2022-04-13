@@ -14,7 +14,6 @@ import java.util.regex.Pattern;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
@@ -182,11 +181,8 @@ public class ClusterCa extends Ca {
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    public Map<String, CertAndKey> generateBrokerCerts(Kafka kafka, Set<String> externalBootstrapAddresses,
+    public Map<String, CertAndKey> generateBrokerCerts(String namespace, String cluster, int replicas, Set<String> externalBootstrapAddresses,
                                                        Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        String cluster = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
-
         DnsNameGenerator kafkaDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.bootstrapServiceName(cluster));
         DnsNameGenerator kafkaHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.brokersServiceName(cluster));
 
@@ -231,7 +227,7 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            kafka.getSpec().getKafka().getReplicas(),
+            replicas,
             subjectFn,
             brokersSecret,
             podNum -> KafkaResources.kafkaPodName(cluster, podNum),

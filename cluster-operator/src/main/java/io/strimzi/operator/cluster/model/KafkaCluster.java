@@ -70,6 +70,7 @@ import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
@@ -82,9 +83,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -213,12 +212,6 @@ public class KafkaCluster extends AbstractModel {
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
-
-    /**
-     * Private key and certificate for each Kafka Pod name
-     * used as server certificates for Kafka brokers
-     */
-    private Map<String, CertAndKey> brokerCerts;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -468,18 +461,20 @@ public class KafkaCluster extends AbstractModel {
 
         result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
 
+        // Should run at the end when everything is set
+        KafkaSpecChecker specChecker = new KafkaSpecChecker(kafkaSpec, versions, result);
+        result.warningConditions.addAll(specChecker.run());
+
         return result;
     }
 
     public static List<String> generatePodList(String cluster, int replicas) {
-
         ArrayList<String> podNames = new ArrayList<>(replicas);
 
         for (int podId = 0; podId < replicas; podId++) {
-
             podNames.add(KafkaResources.kafkaPodName(cluster, podId));
-
         }
+
         return podNames;
     }
 
@@ -502,7 +497,7 @@ public class KafkaCluster extends AbstractModel {
         if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()) == null) {
             kafkaCluster.ccMinInSyncReplicas = "1";
         } else {
-            // If the user has set the CC minISR but it is higher than the set number of replicas for the metrics topics then we need to abort and make
+            // If the user has set the CC minISR, but it is higher than the set number of replicas for the metrics topics then we need to abort and make
             // sure that the user sets minISR <= replicationFactor
             if (Integer.parseInt(kafkaCluster.ccMinInSyncReplicas) > Integer.parseInt(kafkaCluster.ccReplicationFactor)) {
                 throw new IllegalArgumentException(
@@ -577,28 +572,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Manage certificates generation based on those already present in the Secrets
-     *
-     * @param kafka                    The Kafka custom resource
-     * @param clusterCa                The CA for cluster certificates
-     * @param externalBootstrapDnsName The set of DNS names for bootstrap service (should be appended to every broker certificate)
-     * @param externalDnsNames         The list of DNS names for broker pods (should be appended only to specific certificates for given broker)
-     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, Set<String> externalBootstrapDnsName,
-                                     Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
-        LOGGER.debugCr(reconciliation, "Generating certificates");
-
-        try {
-            brokerCerts = clusterCa.generateBrokerCerts(kafka, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
-        } catch (IOException e) {
-            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
-        }
-
-        LOGGER.debugCr(reconciliation, "End generating certificates");
-    }
-
-    /**
      * Generates ports for bootstrap service.
      * The bootstrap service contains only the client interfaces.
      * Not the replication interface which doesn't need bootstrap service.
@@ -620,7 +593,7 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Generates ports for headless service.
-     * The headless service contains both the client interfaces as well as replication interface.
+     * The headless service contains both the client interfaces and replication interface.
      *
      * @return List with generated ports
      */
@@ -1237,17 +1210,28 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Generate the Secret containing the Kafka brokers certificates signed by the cluster CA certificate used for TLS based
-     * internal communication with Zookeeper.
-     * It also contains the related Kafka brokers private keys.
+     * Generates the private keys for the Kafka brokers (if needed) and the secret with them which contains both the
+     * public and private keys.
      *
-     * @param clusterCa The CA for cluster certificates
-     * @param clientsCa The CA for clients certificates
-     * @return The generated Secret
+     * @param clusterCa                             The CA for cluster certificates
+     * @param clientsCa                             The CA for clients certificates
+     * @param externalBootstrapDnsName              Map with bootstrap DNS names which should be added to the certificate
+     * @param externalDnsNames                      Map with broker DNS names  which should be added to the certificate
+     * @param isMaintenanceTimeWindowsSatisfied     Indicates whether we are in a maintenance window or not
+     *
+     * @return  The generated Secret with broker certificates
      */
-    public Secret generateBrokersSecret(ClusterCa clusterCa, ClientsCa clientsCa) {
-
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, ClientsCa clientsCa, Set<String> externalBootstrapDnsName, Map<Integer, Set<String>> externalDnsNames, boolean isMaintenanceTimeWindowsSatisfied) {
+        Map<String, CertAndKey> brokerCerts;
         Map<String, String> data = new HashMap<>(replicas * 4);
+
+        try {
+            brokerCerts = clusterCa.generateBrokerCerts(namespace, cluster, replicas, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
+        } catch (IOException e) {
+            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+            throw new RuntimeException("Failed to prepare Kafka certificates", e);
+        }
+
         for (int i = 0; i < replicas; i++) {
             CertAndKey cert = brokerCerts.get(KafkaResources.kafkaPodName(cluster, i));
             data.put(KafkaResources.kafkaPodName(cluster, i) + ".key", cert.keyAsBase64String());
@@ -1256,26 +1240,40 @@ public class KafkaCluster extends AbstractModel {
             data.put(KafkaResources.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
 
-        Map<String, String> annotations = Map.of(
-                clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration()),
-                clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.certGeneration()));
-        return createSecret(KafkaResources.kafkaSecretName(cluster), data, annotations);
+        return createSecret(
+                KafkaResources.kafkaSecretName(cluster),
+                data,
+                Map.of(
+                        clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration()),
+                        clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.certGeneration())
+                )
+        );
     }
 
     /**
-     * Generate the Secret containing the username and password to secure the jmx port on the kafka brokers
+     * Generate the Secret containing the username and password to secure the jmx port on the Kafka brokers.
+     *
+     * @param currentSecret The existing Secret with the current JMX credentials. Null if no secret exists yet.
      *
      * @return The generated Secret
      */
-    public Secret generateJmxSecret() {
-        Map<String, String> data = new HashMap<>(2);
-        String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
-        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-        for (String key : keys) {
-            data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
-        }
+    public Secret generateJmxSecret(Secret currentSecret) {
+        if (isJmxAuthenticated) {
+            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+            Map<String, String> data = new HashMap<>(2);
 
-        return createJmxSecret(KafkaResources.kafkaJmxSecretName(cluster), data);
+            if (currentSecret != null && currentSecret.getData() != null)  {
+                data.put(SECRET_JMX_USERNAME_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_USERNAME_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
+                data.put(SECRET_JMX_PASSWORD_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_PASSWORD_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
+            } else {
+                data.put(SECRET_JMX_USERNAME_KEY, Util.encodeToBase64(passwordGenerator.generate()));
+                data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
+            }
+
+            return createJmxSecret(KafkaResources.kafkaJmxSecretName(cluster), data);
+        } else {
+            return null;
+        }
     }
 
     private List<ContainerPort> getContainerPortList() {
@@ -1708,8 +1706,7 @@ public class KafkaCluster extends AbstractModel {
         replicationRule.setFrom(List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, cruiseControlPeer));
         rules.add(replicationRule);
 
-        // User-configured listeners are by default open for all.
-        // But users can pass peers in the Kafka CR
+        // User-configured listeners are by default open for all. Users can pass peers in the Kafka CR.
         for (GenericKafkaListener listener : listeners) {
             NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
@@ -1877,10 +1874,6 @@ public class KafkaCluster extends AbstractModel {
     @Override
     public KafkaConfiguration getConfiguration() {
         return (KafkaConfiguration) configuration;
-    }
-
-    public boolean isJmxAuthenticated() {
-        return isJmxAuthenticated;
     }
 
     public void setJmxAuthenticated(boolean jmxAuthenticated) {

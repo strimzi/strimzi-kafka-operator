@@ -10,11 +10,15 @@ package io.strimzi.operator.cluster.model;
 public class KafkaVersionChange {
     private final KafkaVersion from;
     private final KafkaVersion to;
+    private final String logMessageFormatVersion;
+    private final String interBrokerProtocolVersion;
     private final int compare;
 
-    public KafkaVersionChange(KafkaVersion from, KafkaVersion to) {
+    public KafkaVersionChange(KafkaVersion from, KafkaVersion to, String interBrokerProtocolVersion, String logMessageFormatVersion) {
         this.from = from;
         this.to = to;
+        this.logMessageFormatVersion = logMessageFormatVersion;
+        this.interBrokerProtocolVersion = interBrokerProtocolVersion;
         this.compare = from.compareTo(to);
     }
 
@@ -32,6 +36,20 @@ public class KafkaVersionChange {
      */
     public KafkaVersion to() {
         return to;
+    }
+
+    /**
+     * @return  Returns the Log Message Format Version which should be used
+     */
+    public String logMessageFormatVersion() {
+        return logMessageFormatVersion;
+    }
+
+    /**
+     * @return  Returns the Inter Broker Protocol Version which should be used
+     */
+    public String interBrokerProtocolVersion() {
+        return interBrokerProtocolVersion;
     }
 
     /**

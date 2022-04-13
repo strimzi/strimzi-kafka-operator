@@ -6,8 +6,11 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -24,6 +27,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -31,8 +36,11 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.ClientsCa;
+import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
@@ -41,6 +49,11 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.IngressOperator;
+import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -78,37 +91,6 @@ public class KafkaAssemblyOperatorCustomCertTest {
     private KubernetesClient client;
     private final List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
 
-    /**
-     * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
-     */
-    class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-        }
-
-        @Override
-        ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
-            return new ReconciliationState(reconciliation, kafkaAssembly) {
-                @Override
-                Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart) {
-                    functionArgumentCaptor.add(podNeedsRestart);
-                    return Future.succeededFuture();
-                }
-            };
-        }
-
-        @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.reconcileCas(this::dateSupplier)
-                    .compose(state -> state.getKafkaClusterDescription())
-                    .compose(state -> state.customListenerCertificates())
-                    .compose(state -> state.kafkaStatefulSet())
-                    .compose(state -> state.kafkaRollingUpdate())
-                    .map((Void) null);
-        }
-    }
-
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
@@ -136,6 +118,8 @@ public class KafkaAssemblyOperatorCustomCertTest {
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
                 mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
                 mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20), FeatureGates.NONE, 10000);
+
+
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 passwordGenerator,
@@ -338,5 +322,106 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
                 async.flag();
             })));
+    }
+
+    /**
+     * Override KafkaReconciler to only run reconciliation steps that concern the Ingress resources feature
+     */
+    class MockKafkaReconciler extends KafkaReconciler   {
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        }
+
+        @Override
+        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+            return listeners()
+                    .compose(i -> statefulSet())
+                    .compose(i -> podSet())
+                    .compose(i -> rollingUpdate());
+        }
+
+        @Override
+        protected KafkaListenersReconciler listenerReconciler()   {
+            return new MockKafkaListenersReconciler(reconciliation, kafka, pfa, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
+        }
+
+        @Override
+        protected Future<Void> maybeRollKafka(
+                int replicas,
+                Function<Pod, List<String>> podNeedsRestart,
+                Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
+                Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
+                boolean allowReconfiguration
+        ) {
+            functionArgumentCaptor.add(podNeedsRestart);
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Override KafkaListenersReconciler to only run reconciliation steps that concern the Ingress resources feature
+     */
+    static class MockKafkaListenersReconciler extends KafkaListenersReconciler {
+        public MockKafkaListenersReconciler(
+                Reconciliation reconciliation,
+                KafkaCluster kafka,
+                PlatformFeaturesAvailability pfa,
+                SecretOperator secretOperator,
+                ServiceOperator serviceOperator,
+                RouteOperator routeOperator,
+                IngressOperator ingressOperator,
+                IngressV1Beta1Operator ingressV1Beta1Operator) {
+            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
+        }
+
+        @Override
+        public Future<ReconciliationResult> reconcile()  {
+            return customListenerCertificates()
+                    .compose(i -> Future.succeededFuture(result));
+        }
+    }
+
+    /**
+     * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
+     */
+    class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        }
+
+        @Override
+        ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
+            return new ReconciliationState(reconciliation, kafkaAssembly) {
+                @Override
+                KafkaReconciler kafkaReconciler(Storage oldStorage, int currentReplicas)   {
+                    return new MockKafkaReconciler(
+                            reconciliation,
+                            vertx,
+                            config,
+                            supplier,
+                            pfa,
+                            kafkaAssembly,
+                            new KafkaVersionChange(
+                                    VERSIONS.defaultVersion(),
+                                    VERSIONS.defaultVersion(),
+                                    VERSIONS.defaultVersion().protocolVersion(),
+                                    VERSIONS.defaultVersion().messageVersion()
+                            ),
+                            oldStorage,
+                            currentReplicas,
+                            clusterCa,
+                            clientsCa
+                    );
+                }
+            };
+        }
+
+        @Override
+        Future<Void> reconcile(ReconciliationState reconcileState)  {
+            return reconcileState.reconcileCas(this::dateSupplier)
+                    .compose(state -> state.reconcileKafka(this::dateSupplier))
+                    .map((Void) null);
+        }
     }
 }
