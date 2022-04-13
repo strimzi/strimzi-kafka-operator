@@ -27,7 +27,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 public class KafkaAdminClients extends BaseClients {
     private int partitions;
     private int replicationFactor;
-    private String topicOperation;
+    private AdminClientOperations topicOperation;
     private String adminName;
     private int topicCount;
     private int topicOffset;
@@ -73,15 +73,15 @@ public class KafkaAdminClients extends BaseClients {
         this.replicationFactor = replicationFactor <= 0 ? 1 : replicationFactor;
     }
 
-    public String getTopicOperation() {
+    public AdminClientOperations getTopicOperation() {
         return topicOperation;
     }
 
-    public void setTopicOperation(String topicOperation) {
-        if (topicOperation == null || topicOperation.isEmpty()) {
+    public void setTopicOperation(AdminClientOperations topicOperation) {
+        if (topicOperation == null) {
             throw new InvalidParameterException("TopicOperation must be set.");
         } else if ((this.getTopicName() == null || this.getTopicName().isEmpty())
-            && !(topicOperation.equals("help") || topicOperation.equals("list"))) {
+            && !(topicOperation.equals(AdminClientOperations.HELP) || topicOperation.equals(AdminClientOperations.LIST_TOPICS))) {
             throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
         }
         this.topicOperation = topicOperation;
@@ -122,13 +122,13 @@ public class KafkaAdminClients extends BaseClients {
             .withNewMetadata()
                 .withNamespace(this.getNamespaceName())
                 .withLabels(adminLabels)
-                .withName(adminName)
+                .withName(this.getAdminName())
             .endMetadata()
             .withNewSpec()
                 .withBackoffLimit(0)
                 .withNewTemplate()
                     .withNewMetadata()
-                        .withName(adminName)
+                        .withName(this.getAdminName())
                         .withNamespace(this.getNamespaceName())
                         .withLabels(adminLabels)
                     .endMetadata()
@@ -136,7 +136,7 @@ public class KafkaAdminClients extends BaseClients {
                         .withRestartPolicy("Never")
                             .withContainers()
                                 .addNewContainer()
-                                .withName(adminName)
+                                .withName(this.getAdminName())
                                 .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                                 .withImage(Environment.TEST_ADMIN_IMAGE)
                                 .addNewEnv()
@@ -149,23 +149,23 @@ public class KafkaAdminClients extends BaseClients {
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPIC_OPERATION")
-                                    .withValue(topicOperation)
+                                    .withValue(this.getTopicOperation().toString())
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("REPLICATION_FACTOR")
-                                    .withValue(String.valueOf(replicationFactor))
+                                    .withValue(String.valueOf(this.getReplicationFactor()))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("PARTITIONS")
-                                    .withValue(String.valueOf(partitions))
+                                    .withValue(String.valueOf(this.getPartitions()))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPICS_COUNT")
-                                    .withValue(String.valueOf(topicCount))
+                                    .withValue(String.valueOf(this.getTopicCount()))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPIC_OFFSET")
-                                    .withValue(String.valueOf(topicOffset))
+                                    .withValue(String.valueOf(this.getTopicOffset()))
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("LOG_LEVEL")

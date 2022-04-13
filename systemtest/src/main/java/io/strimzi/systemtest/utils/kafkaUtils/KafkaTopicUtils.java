@@ -213,9 +213,16 @@ public class KafkaTopicUtils {
             .collect(Collectors.toList());
     }
 
-    public static void deleteAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+    public static void deleteAllKafkaTopicsByPrefixWithWait(String namespace, String prefix) {
         KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, prefix).forEach(topic ->
             cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
         );
+        waitForTopicsByPrefixDeletion(namespace, prefix);
+    }
+
+    public static void waitForTopicsByPrefixDeletion(String namespace, String prefix) {
+        LOGGER.info("Waiting for all topics with prefix {} will be deleted", prefix);
+        TestUtils.waitFor(String.format("all topics with prefix %s deletion", prefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+            () -> getAllKafkaTopicsWithPrefix(namespace, prefix).size() == 0);
     }
 }
