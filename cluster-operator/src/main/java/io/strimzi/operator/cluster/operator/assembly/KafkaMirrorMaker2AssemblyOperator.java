@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -145,11 +146,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
 
         boolean mirrorMaker2HasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
-        String clusterRoleBindingName = KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(kafkaMirrorMaker2.getMetadata().getName(), namespace);
+        String initCrbName = KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(kafkaMirrorMaker2.getMetadata().getName(), namespace);
+        ClusterRoleBinding initCrb = mirrorMaker2Cluster.generateClusterRoleBinding();
 
         LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
         connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster)
-                .compose(i -> connectInitClusterRoleBinding(reconciliation, clusterRoleBindingName, kafkaMirrorMaker2.getSpec(), mirrorMaker2Cluster))
+                .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))

@@ -161,6 +161,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return KafkaMirrorMaker2Resources.serviceAccountName(cluster);
     }
 
+    public String getInitContainerClusterRoleBindingName() {
+        return KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(cluster, namespace);
+    }
+
     @Override
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = super.getVolumes(isOpenShift);

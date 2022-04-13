@@ -738,7 +738,7 @@ public class KafkaConnectClusterTest {
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
         // Check ClusterRoleBinding
-        ClusterRoleBinding crb = kc.generateClusterRoleBinding(new Rack("topology-key"), "crb-name");
+        ClusterRoleBinding crb = kc.generateClusterRoleBinding();
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
 
@@ -1646,10 +1646,9 @@ public class KafkaConnectClusterTest {
                 .build();
 
         KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        String crbName = KafkaConnectResources.initContainerClusterRoleBindingName(resource.getMetadata().getName(), testNamespace);
-        ClusterRoleBinding crb = cluster.generateClusterRoleBinding(resource.getSpec().getRack(), crbName);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
-        assertThat(crb.getMetadata().getName(), is(crbName));
+        assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(clusterName, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
         assertThat(crb.getSubjects().get(0).getName(), is(cluster.getServiceAccountName()));
@@ -1666,7 +1665,7 @@ public class KafkaConnectClusterTest {
                 .build();
 
         KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        ClusterRoleBinding crb = cluster.generateClusterRoleBinding(null, "crb-name");
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
     }

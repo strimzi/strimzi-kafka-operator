@@ -689,6 +689,10 @@ public class KafkaConnectCluster extends AbstractModel {
         return KafkaConnectResources.serviceAccountName(cluster);
     }
 
+    public String getInitContainerClusterRoleBindingName() {
+        return KafkaConnectResources.initContainerClusterRoleBindingName(cluster, namespace);
+    }
+
     /**
      * @return Return if the jmx has been enabled
      */
@@ -837,13 +841,10 @@ public class KafkaConnectCluster extends AbstractModel {
      * Creates the ClusterRoleBinding which is used to bind the Kafka Connect SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
      *
-     * @param rack Rack configuration.
-     * @param name ClusterRoleBinding name.
-     *
      * @return The cluster role binding.
      */
-    public ClusterRoleBinding generateClusterRoleBinding(Rack rack, String name) {
-        if (rack == null || name == null || name.trim().isEmpty()) {
+    public ClusterRoleBinding generateClusterRoleBinding() {
+        if (rack == null) {
             return null;
         }
 
@@ -859,7 +860,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        return getClusterRoleBinding(name, subject, roleRef);
+        return getClusterRoleBinding(getInitContainerClusterRoleBindingName(), subject, roleRef);
     }
 
     @Override

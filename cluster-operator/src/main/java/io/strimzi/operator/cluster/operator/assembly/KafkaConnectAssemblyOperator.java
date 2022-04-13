@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -101,14 +102,15 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         Map<String, String> annotations = new HashMap<>(2);
 
-        String clusterRoleBindingName = KafkaConnectResources.initContainerClusterRoleBindingName(kafkaConnect.getMetadata().getName(), namespace);
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
+        String initCrbName = KafkaConnectResources.initContainerClusterRoleBindingName(kafkaConnect.getMetadata().getName(), namespace);
+        ClusterRoleBinding initCrb = connect.generateClusterRoleBinding();
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
         connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
-                .compose(i -> connectInitClusterRoleBinding(reconciliation, clusterRoleBindingName, kafkaConnect.getSpec(), connect))
+                .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getName(), build))
                 .compose(buildInfo -> {
