@@ -401,7 +401,7 @@ public class KafkaRebalanceAssemblyOperator
                                                         ANNO_STRIMZI_IO_REBALANCE,
                                                         rawRebalanceAnnotation(updatedKafkaRebalance));
                                                 if (hasRebalanceAnnotation(updatedKafkaRebalance)) {
-                                                    if (currentState != KafkaRebalanceState.New && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
+                                                    if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
                                                         return Future.succeededFuture();
                                                     } else {
                                                         LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
