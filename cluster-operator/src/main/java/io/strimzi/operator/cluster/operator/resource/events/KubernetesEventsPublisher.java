@@ -24,6 +24,10 @@ import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * Publishes KafkaRoller restart events as Kubernetes events, using either the events.k8s.io/v1beta1 or v1 API,
+ * depending on which is available.
+ */
 public abstract class KubernetesEventsPublisher {
 
     private static final Logger LOG = LogManager.getLogger(KubernetesEventsPublisher.class);
@@ -36,15 +40,16 @@ public abstract class KubernetesEventsPublisher {
     // Matches first character or characters following an underscore
     private static final Pattern PASCAL_CASE_HELPER = Pattern.compile("^.|_.");
 
+    // K8s events are required to have a message of 1KiB or smaller
     private static final int MAX_MESSAGE_LENGTH = 1000;
     private static final String DIARESIS = "...";
 
-    public KubernetesEventsPublisher(Clock clock) {
-        this.clock = clock;
-    }
-
     public KubernetesEventsPublisher() {
         this(Clock.systemDefaultZone());
+    }
+
+    KubernetesEventsPublisher(Clock clock) {
+        this.clock = clock;
     }
 
     /**
@@ -92,7 +97,7 @@ public abstract class KubernetesEventsPublisher {
      */
     protected abstract void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note);
 
-    // GoLovesPascalCaseSoKubernetesDoesToo
+    // Go loves PascalCase so Kubernetes does too
     String pascalCasedReason(RestartReason reason) {
         Matcher matcher = PASCAL_CASE_HELPER.matcher(reason.name().toLowerCase(Locale.ROOT));
         return matcher.replaceAll(result -> result.group().replace("_", "").toUpperCase(Locale.ROOT));
@@ -100,7 +105,7 @@ public abstract class KubernetesEventsPublisher {
 
     ObjectReference createPodReference(Pod pod) {
         // I'm uncertain whether RV should be included, as would likely prevent event aggregation, as
-        // it would make the ObjectReference for Regarding different each time. Copy/paste from event api design docs..
+        // it would make the ObjectReference for Regarding different each time. Copy/paste from event api design docs...
         // > The assumption we make for deduplication logic after API changes is that Events with the
         // > same <Regarding, Action, Reason, ReportingController, ReportingInstance, Related> tuples are considered isomorphic.
         // > This allows us to define notion of "event series", which is series of isomorphic events happening not farther away from each other than some defined threshold.

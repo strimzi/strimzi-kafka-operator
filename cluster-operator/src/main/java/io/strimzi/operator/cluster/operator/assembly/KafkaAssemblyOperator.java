@@ -309,7 +309,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileCas(this::dateSupplier))
                 .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
                 .compose(state -> state.getKafkaClusterDescription())
-                .compose(state ->   state.prepareVersionChange())
+                .compose(state -> state.prepareVersionChange())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
                 // Remove older Cluster CA certificates if renewal happened with a new CA private key
