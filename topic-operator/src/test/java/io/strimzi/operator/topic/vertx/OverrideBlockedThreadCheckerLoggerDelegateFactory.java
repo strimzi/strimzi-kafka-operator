@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
  * Picked up by class name when Vertx starts up. Intercepts and wraps the BlockedThreadChecker's logger, so I can
  * verify whether it's picking up blocked threads or not. Believe it or not, this is the best way I've found of doing so.
  * ...eech.
+ * To have this class used, you need to set the system property vertx.logger-delegate-factory-class-name to the name
+ * of this class.
  */
 @SuppressWarnings("unused")
 public class OverrideBlockedThreadCheckerLoggerDelegateFactory extends SLF4JLogDelegateFactory {

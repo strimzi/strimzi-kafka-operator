@@ -239,10 +239,12 @@ public class Session extends AbstractVerticle {
     }
 
     private Future<Promise<Void>> createK8sWatcher(TopicOperator topicOperator) {
-        Promise<Void> initReconcilePromise = Promise.promise();
-        watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
-        LOGGER.debug("Starting watcher");
-        return startWatcher().compose(ignored -> Future.succeededFuture(initReconcilePromise));
+        return executor.executeBlocking(blockingPromise -> {
+            Promise<Void> initReconcilePromise = Promise.promise();
+            watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
+            LOGGER.debug("Starting watcher");
+            startWatcher().onSuccess(v -> blockingPromise.complete(initReconcilePromise));
+        });
     }
 
     private Future<TopicStore> createTopicStoreAsync(Zk zk, Config config) {
