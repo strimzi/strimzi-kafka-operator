@@ -665,13 +665,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return      Number of replicas
          */
         private int currentReplicas(StatefulSet sts)  {
-            int replicas = 0;
-
             if (sts != null && sts.getSpec() != null)   {
-                replicas = sts.getSpec().getReplicas();
+                return sts.getSpec().getReplicas();
+            } else {
+                return 0;
             }
-
-            return replicas;
         }
 
         /**
@@ -682,13 +680,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return          Number of replicas
          */
         private int currentReplicas(StrimziPodSet podSet)  {
-            int replicas = 0;
-
             if (podSet != null && podSet.getSpec() != null && podSet.getSpec().getPods() != null)   {
-                replicas = podSet.getSpec().getPods().size();
+                return podSet.getSpec().getPods().size();
+            } else {
+                return 0;
             }
-
-            return replicas;
         }
 
         /**
