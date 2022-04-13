@@ -102,6 +102,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
     private static final String KEYSTORE_SUFFIX = ".keystore.p12";
+    private static final String CONNECT_CONFIG_FILE = "/tmp/strimzi-connect.properties";
     private static final String CONNECTORS_CONFIG_FILE = "/tmp/strimzi-mirrormaker2-connector.properties";
 
     /**
@@ -363,6 +364,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             config.put("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
             config.put("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
+
+        // setting client.rack here because the consumer is created by the connector
+        String clientRackKey = "consumer.client.rack";
+        config.put(clientRackKey, "${file:" + CONNECT_CONFIG_FILE + ":" + clientRackKey + "}");
 
         config.putAll(mirror.getAdditionalProperties());
     }
