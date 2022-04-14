@@ -12,7 +12,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperations;
+import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperation;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -48,6 +48,7 @@ public class ThrottlingQuotaST extends AbstractST {
         "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(ThrottlingQuotaST.class.getSimpleName()).stream().findFirst().get();
+    private TestStorage sharedTestStorage;
 
     private KafkaAdminClientsBuilder adminClientsBuilder;
 
@@ -59,6 +60,8 @@ public class ThrottlingQuotaST extends AbstractST {
         final String alterAdminName = "alter-" + testStorage.getAdminName();
         final String deleteAdminName = "delete-" + testStorage.getAdminName();
         final String listAdminName = "list-" + testStorage.getAdminName();
+        final String kafkaPodName = KafkaResources.kafkaPodName(sharedTestStorage.getClusterName(), 0);
+        final String plainBootstrapName = KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName());
 
         int numOfTopics = 25;
         int numOfPartitions = 100;
@@ -70,7 +73,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withTopicCount(numOfTopics)
             .withPartitions(numOfPartitions)
-            .withTopicOperation(AdminClientOperations.CREATE_TOPICS)
+            .withAdminOperation(AdminClientOperation.CREATE_TOPICS)
             .build();
 
         LOGGER.info("Creating {} topics with {} partitions, we should hit the quota", numOfTopics, numOfPartitions);
@@ -79,6 +82,9 @@ public class ThrottlingQuotaST extends AbstractST {
         ClientUtils.waitForClientContainsMessage(createAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
         KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
+        // we need to wait for all KafkaTopics to be deleted from Kafka before proceeding - using Kafka pod cli (with AdminClient props)
+        KafkaTopicUtils.waitForTopicsByPrefixDeletionUsingPodCli(testStorage.getNamespaceName(),
+            testStorage.getTopicName(), plainBootstrapName, kafkaPodName, createTopicJob.getAdditionalConfig());
 
         numOfPartitions = 5;
 
@@ -94,7 +100,7 @@ public class ThrottlingQuotaST extends AbstractST {
         KafkaAdminClients listTopicJob = new KafkaAdminClientsBuilder(createTopicJob)
             .withAdminName(listAdminName)
             .withTopicName("")
-            .withTopicOperation(AdminClientOperations.LIST_TOPICS)
+            .withAdminOperation(AdminClientOperation.LIST_TOPICS)
             .build();
 
         LOGGER.info("Listing topics after creation");
@@ -106,7 +112,7 @@ public class ThrottlingQuotaST extends AbstractST {
         KafkaAdminClients alterTopicsJob = new KafkaAdminClientsBuilder(createTopicJob)
             .withAdminName(alterAdminName)
             .withPartitions(partitionAlter)
-            .withTopicOperation(AdminClientOperations.UPDATE_TOPICS)
+            .withAdminOperation(AdminClientOperation.UPDATE_TOPICS)
             .build();
 
         LOGGER.info("Altering {} topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionAlter);
@@ -139,7 +145,7 @@ public class ThrottlingQuotaST extends AbstractST {
         KafkaAdminClients deleteTopicsJob = adminClientsBuilder
             .withTopicName(testStorage.getTopicName())
             .withAdminName(deleteAdminName)
-            .withTopicOperation(AdminClientOperations.DELETE_TOPICS)
+            .withAdminOperation(AdminClientOperation.DELETE_TOPICS)
             .withTopicCount(numOfTopicsIter)
             .build();
 
@@ -160,6 +166,9 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Because we hit quota, removing the remaining topics through console");
         KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
+        // we need to wait for all KafkaTopics to be deleted from Kafka before proceeding - using Kafka pod cli (with AdminClient props)
+        KafkaTopicUtils.waitForTopicsByPrefixDeletionUsingPodCli(testStorage.getNamespaceName(),
+            testStorage.getTopicName(), plainBootstrapName, kafkaPodName, createTopicJob.getAdditionalConfig());
 
         // List topics after deletion
         resourceManager.createResource(extensionContext, listTopicJob.defaultAdmin());
@@ -174,13 +183,13 @@ public class ThrottlingQuotaST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        sharedTestStorage = new TestStorage(extensionContext, namespace);
 
         // Deploy kafka with ScramSHA512
-        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", testStorage.getNamespaceName());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", sharedTestStorage.getNamespaceName());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
             .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(sharedTestStorage.getNamespaceName())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -205,7 +214,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.defaultUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUserName())
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUserName())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)
@@ -215,8 +224,8 @@ public class ThrottlingQuotaST extends AbstractST {
             .build());
 
         adminClientsBuilder = new KafkaAdminClientsBuilder()
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(testStorage.getNamespaceName(), testStorage.getUserName(), 240000));
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
+            .withNamespaceName(sharedTestStorage.getNamespaceName())
+            .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUserName(), 240000));
     }
 }

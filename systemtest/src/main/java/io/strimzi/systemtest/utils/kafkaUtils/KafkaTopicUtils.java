@@ -217,12 +217,11 @@ public class KafkaTopicUtils {
         KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, prefix).forEach(topic ->
             cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
         );
-        waitForTopicsByPrefixDeletion(namespace, prefix);
     }
 
-    public static void waitForTopicsByPrefixDeletion(String namespace, String prefix) {
-        LOGGER.info("Waiting for all topics with prefix {} will be deleted", prefix);
+    public static void waitForTopicsByPrefixDeletionUsingPodCli(String namespace, String prefix, String bootstrapName, String kafkaPodName, String properties) {
+        LOGGER.info("Waiting for all topics with prefix {} will be deleted from Kafka", prefix);
         TestUtils.waitFor(String.format("all topics with prefix %s deletion", prefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> getAllKafkaTopicsWithPrefix(namespace, prefix).size() == 0);
+            () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, bootstrapName, kafkaPodName, properties).contains(prefix));
     }
 }
