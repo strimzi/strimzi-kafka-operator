@@ -60,20 +60,21 @@ public class TopicStoreUpgradeTest {
         String zkConnectionString = MANDATORY_CONFIG.get(Config.ZOOKEEPER_CONNECT.key);
 
         CompletableFuture<Void> flag = new CompletableFuture<>();
-        Zk.create(vertx, zkConnectionString, 60_000, 10_000, ar -> {
-            try {
-                if (ar.failed()) {
-                    flag.completeExceptionally(ar.cause());
-                } else {
-                    Zk zk = ar.result();
-                    doTestUpgrade(zk);
-                }
-            } catch (Throwable t) {
-                flag.completeExceptionally(t);
-            } finally {
-                flag.complete(null);
-            }
-        });
+        Zk.create(vertx, zkConnectionString, 60_000, 10_000)
+                  .onComplete(ar -> {
+                      try {
+                          if (ar.failed()) {
+                              flag.completeExceptionally(ar.cause());
+                          } else {
+                              Zk zk = ar.result();
+                              doTestUpgrade(zk);
+                          }
+                      } catch (Throwable t) {
+                          flag.completeExceptionally(t);
+                      } finally {
+                          flag.complete(null);
+                      }
+                  });
         flag.join();
 
         Zk zk = Zk.createSync(vertx, zkConnectionString, 60_000, 10_000);
@@ -117,7 +118,7 @@ public class TopicStoreUpgradeTest {
     }
 
     @BeforeAll
-    public static void before() throws Exception {
+    public static void before() {
         vertx = Vertx.vertx();
 
         Map<String, String> config = new HashMap<>();

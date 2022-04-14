@@ -7,6 +7,7 @@
 * Use `/healthz` endpoint for Kafka Exporter health checks
 * Update Jackson Library to 2.12.6
 * Renew user certificates in User Operator only during maintenance windows
+* Ensure Topic Operator using Kafka Streams state store can start up successfully 
 * Update Cruise Control to 2.5.89
 * Remove TLS sidecar from Cruise Control pod. Cruise Control is now configured to not using ZooKeeper, so the TLS sidecar is not needed anymore.
 * Allow Cruise Control topic names to be configured

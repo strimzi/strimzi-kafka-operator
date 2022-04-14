@@ -38,16 +38,12 @@ public class ConfigTest {
 
     @Test
     public void testUnknownKeyThrows() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Config(Collections.singletonMap("foo", "bar"));
-        });
+        assertThrows(IllegalArgumentException.class, () -> new Config(Collections.singletonMap("foo", "bar")));
     }
 
     @Test
     public void testEmptyMapThrows() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Config c = new Config(Collections.emptyMap());
-        });
+        assertThrows(IllegalArgumentException.class, () -> new Config(Collections.emptyMap()));
     }
 
     @Test
@@ -84,7 +80,7 @@ public class ConfigTest {
         map.put(Config.TC_TOPIC_METADATA_MAX_ATTEMPTS, "3");
 
         Config c = new Config(map);
-        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS).intValue(), is(3));
+        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS), is(3));
     }
 
     @Test
@@ -141,7 +137,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
 
         String username = "admin";
         String password = "password";
@@ -149,7 +145,7 @@ public class ConfigTest {
         map.put(Config.SASL_PASSWORD.key, password);
         Config configWithCredentials = new Config(map);
         Session sessionWithCredentials = new Session(kubeClient, configWithCredentials);
-        assertThrows(IllegalArgumentException.class, () -> sessionWithCredentials.adminClientProperties());
+        assertThrows(IllegalArgumentException.class, sessionWithCredentials::adminClientProperties);
     }
 
     @Test
@@ -163,7 +159,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
     }
 
     @Test
@@ -177,7 +173,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
     }
 
     @Test

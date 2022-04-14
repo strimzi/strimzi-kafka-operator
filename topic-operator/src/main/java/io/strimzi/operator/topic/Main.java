@@ -47,6 +47,7 @@ public class Main {
                         .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
+
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {

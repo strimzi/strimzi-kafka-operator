@@ -20,16 +20,14 @@ import java.util.List;
  */
 public interface Zk {
 
-    static void create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout,
-                              Handler<AsyncResult<Zk>> handler) {
-        vertx.executeBlocking(f -> {
+    static Future<Zk> create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
+        return vertx.executeBlocking(f -> {
             try {
                 f.complete(createSync(vertx, zkConnectionString, sessionTimeout, connectionTimeout));
             } catch (Throwable t) {
                 f.fail(t);
             }
-        },
-                handler);
+        });
     }
 
     static Zk createSync(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
@@ -50,11 +48,11 @@ public interface Zk {
      * Asynchronously create the znode at the given path and with the given data and ACL, using the
      * given createMode, then invoke the given handler with the result.
      *
-     * @param path The path.
-     * @param data The data.
-     * @param acls The ACLs.
+     * @param path       The path.
+     * @param data       The data.
+     * @param acls       The ACLs.
      * @param createMode The create mode.
-     * @param handler The result handler.
+     * @param handler    The result handler.
      * @return This instance.
      */
     Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler);
@@ -63,7 +61,7 @@ public interface Zk {
      * Asynchronously delete the znode at the given path, iff the given version is -1 or matches the version of the znode,
      * then invoke the given handler with the result.
      *
-     * @param path The path.
+     * @param path    The path.
      * @param version The version.
      * @param handler The result handler.
      * @return This instance.
@@ -75,8 +73,8 @@ public interface Zk {
      * given data iff the given version is -1, or matches the version of the znode,
      * then invoke the given handler with the result.
      *
-     * @param path The path.
-     * @param data The data.
+     * @param path    The path.
+     * @param data    The data.
      * @param version The version.
      * @param handler The result handler.
      * @return This instance.
@@ -87,7 +85,7 @@ public interface Zk {
      * Asynchronously fetch the children of the znode at the given {@code path}, calling the given
      * handler with the result.
      *
-     * @param path The path.
+     * @param path    The path.
      * @param handler The result handler.
      * @return This instance.
      */
@@ -100,7 +98,7 @@ public interface Zk {
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the children of the given {@code path} change.
      *
-     * @param path The path.
+     * @param path    The path.
      * @param watcher The watcher.
      * @return This instance.
      */
@@ -118,7 +116,7 @@ public interface Zk {
      * Asynchronously fetch the data of the given znode at the given path, calling the given handler
      * with the result.
      *
-     * @param path The path.
+     * @param path    The path.
      * @param handler The result handler.
      * @return This instance.
      */
@@ -131,7 +129,7 @@ public interface Zk {
      * for the given {@code path} current at that time with zookeeper so
      * that that {@code watcher} is called when the data of the given {@code path} changes.
      *
-     * @param path The path.
+     * @param path    The path.
      * @param watcher The result handler.
      * @return This instance
      */
