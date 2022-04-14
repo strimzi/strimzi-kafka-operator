@@ -6,20 +6,18 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.vertx.core.CompositeFuture;
@@ -46,7 +44,7 @@ public class ManualPodCleaner {
     private final PodOperator podOperator;
     private final PvcOperator pvcOperator;
     private final StatefulSetOperator stsOperator;
-    private final CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator;
+    private final StrimziPodSetOperator strimziPodSetOperator;
 
     /**
      * Constructs the Manual Pod Cleaner.
@@ -97,7 +95,7 @@ public class ManualPodCleaner {
             boolean useStrimziPodSets,
 
             StatefulSetOperator stsOperator,
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator,
+            StrimziPodSetOperator strimziPodSetOperator,
             PodOperator podOperator,
             PvcOperator pvcOperator
     ) {
