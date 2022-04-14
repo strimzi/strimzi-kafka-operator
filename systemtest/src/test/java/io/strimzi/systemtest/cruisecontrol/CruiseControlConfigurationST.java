@@ -220,11 +220,11 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
         List<String> checkCCProperties = Arrays.asList(
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOWS.getValue(),
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOWS.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS.getValue(),
-                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS.getValue(),
+                CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getValue(),
                 "goals", "default.goals");
 
         for (String propertyName : checkCCProperties) {
@@ -261,10 +261,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
         Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
-                put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getValue(), 2);
-                put(CruiseControlConfigurationParameters.CONCURRENT_PARTITION_MOVEMENTS.getValue(), 5);
-                put(CruiseControlConfigurationParameters.CONCURRENT_LEADER_MOVEMENTS.getValue(), 1000);
-                put(CruiseControlConfigurationParameters.REPLICATION_THROTTLE.getValue(), -1);
+                put(CruiseControlConfigurationParameters.CRUISE_CONTROL_CONCURRENT_INTRA_PARTITION_MOVEMENTS.getValue(), 2);
+                put(CruiseControlConfigurationParameters.CRUISE_CONTROL_CONCURRENT_PARTITION_MOVEMENTS.getValue(), 5);
+                put(CruiseControlConfigurationParameters.CRUISE_CONTROL_CONCURRENT_LEADER_MOVEMENTS.getValue(), 1000);
+                put(CruiseControlConfigurationParameters.CRUISE_CONTROL_REPLICATION_THROTTLE.getValue(), -1);
             }};
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
