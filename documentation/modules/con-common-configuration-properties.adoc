@@ -455,55 +455,54 @@ This is different from the units used for xref:con-common-configuration-resource
 
 Specify heap configuration for your components using the `-Xms` option to set an initial heap size and the `-Xmx` option to set a maximum heap size.
 
-If you don't specify heap configuration, the Cluster Operator imposes default heap sizes automatically.
+If you don't specify heap configuration, but configure memory request or limit, the Cluster Operator imposes default heap sizes automatically.
 
-The Cluster Operator sets a minimum heap value based on a percentage allocation of available memory in the node.
-It also sets a maximum heap size for the Strimzi components where appropriate.
+The Cluster Operator sets maximum and minimum heap values based on a percentage allocation of available memory in the node.
 
-The following table shows the default heap value.
+The following table shows the default heap values.
 
 .Default heap settings for components
 [cols="4,2,2",options="header"]
 |===
 
 |Component
-|Available memory (%)
+|Percent of available memory allocated to the heap
 |Maximum limit
 
 |Kafka
-|50
+|50%
 |5 GB
 
 |ZooKeeper
-|75
+|75%
 |2 GB
 
 |Kafka Connect
-|75
+|75%
 |None
 
 |MirrorMaker 2.0
-|75
+|75%
 |None
 
 |MirrorMaker
-|75
+|75%
 |None
 
 |Cruise Control
-|75
+|75%
 |None
 
 |Kafka Bridge
-|50
+|50%
 |31 Gi
 
 |===
 
 Heap configuration values should make the best use of a container's xref:con-common-configuration-resources-reference[memory request] without exceeding it.
 
-* If a memory request limit is specified, a JVM's minimum and maximum memory is set to a value corresponding to the limit.
-* If a memory request limit is not specified, a JVM's minimum memory is set to `128M`.
+* If a memory request or limit is specified, a JVM's minimum and maximum memory is set to a value corresponding to the limit.
+* If a memory request or limit is not specified, a JVM's minimum memory is set to `128M`.
 The JVM's maximum memory is not defined to allow the memory to increase as needed. This is ideal for single node environments in test and development.
 
 Total JVM memory usage can be a lot more than the maximum heap size.
