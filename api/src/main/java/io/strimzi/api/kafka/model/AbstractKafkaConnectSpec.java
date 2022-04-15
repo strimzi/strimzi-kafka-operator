@@ -192,7 +192,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.clientRackInitImage = brokerRackInitImage;
     }
 
-    @Description("Configuration of the node label which will be used as the client.rack consumer configuration.")
+    @Description("Configuration of the node label which will be used as the `client.rack` consumer configuration.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Rack getRack() {
         return rack;
