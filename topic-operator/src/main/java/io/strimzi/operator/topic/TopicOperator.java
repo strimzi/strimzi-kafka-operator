@@ -841,7 +841,7 @@ class TopicOperator {
     private Future<Void> awaitExistential(LogContext logContext, TopicName topicName, boolean checkExists) {
         String logState = "confirmed " + (checkExists ? "" : "non-") + "existence";
         AtomicReference<Future<Boolean>> ref = new AtomicReference<>(kafka.topicExists(logContext.toReconciliation(), topicName));
-        Future<Void> voidFuture = Util.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
+        return Util.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
             () -> {
                 Future<Boolean> existsFuture = ref.get();
                 if (existsFuture.isComplete()) {
@@ -856,7 +856,6 @@ class TopicOperator {
                 }
                 return false;
             });
-        return voidFuture;
     }
 
     /**

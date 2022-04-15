@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
 import static java.lang.String.format;
 
 /**
- * Serialization of a {@link }Topic} to and from various other representations.
+ * Serialization of a {@link Topic} to and from various other representations.
  */
 class TopicSerialization {
 
@@ -139,8 +139,7 @@ class TopicSerialization {
     public static KafkaTopic toTopicResource(Topic topic, Labels labels) {
         ResourceName resourceName = topic.getOrAsKubeName();
         ObjectMeta om = topic.getMetadata();
-        Map<String, String> lbls = new HashMap<>();
-        lbls.putAll(labels.labels());
+        Map<String, String> lbls = new HashMap<>(labels.labels());
         if (om != null) {
             om.setName(resourceName.toString());
             if (topic.getMetadata().getLabels() != null)
@@ -304,7 +303,7 @@ class TopicSerialization {
      * @return topic from map
      */
     public static Topic fromJsonNode(JsonNode root) {
-        TypeReference<Map<String, Object>> ref = new TypeReference<Map<String, Object>>() {
+        TypeReference<Map<String, Object>> ref = new TypeReference<>() {
         };
         Map<String, Object> map = objectMapper().convertValue(root, ref);
         return fromMap(map);
