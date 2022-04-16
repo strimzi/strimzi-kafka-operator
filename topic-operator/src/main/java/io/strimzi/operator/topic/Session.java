@@ -331,8 +331,8 @@ public class Session extends AbstractVerticle {
     }
 
     private void setSaslConfigs(Properties kafkaClientProps) {
-        String saslMechanism = null;
-        String jaasConfig = null;
+        String saslMechanism;
+        String jaasConfig;
         String username = config.get(Config.SASL_USERNAME);
         String password = config.get(Config.SASL_PASSWORD);
         String configSaslMechanism = config.get(Config.SASL_MECHANISM);
@@ -349,19 +349,15 @@ public class Session extends AbstractVerticle {
 
             if (SASL_TYPE_SCRAM_SHA_256.equals(configSaslMechanism)) {
                 saslMechanism = "SCRAM-SHA-256";
-            } else if (SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
+            } else {
                 saslMechanism = "SCRAM-SHA-512";
             }
         } else {
-            throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(config.SASL_MECHANISM));
+            throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(Config.SASL_MECHANISM));
         }
 
-        if (saslMechanism != null) {
-            kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
-        }
-        if (jaasConfig != null) {
-            kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
-        }
+        kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
+        kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
     }
 
     Properties adminClientProperties() {

@@ -11,7 +11,7 @@ package io.strimzi.operator.topic;
  * the default liveness probe initial delay, and the topic operator would be unceremoniously killed.
  *
  * Now the health check verticle is started first, to allow the pod to start-up without being killed. However, the health
- * check's instantation at the end of the future chains implicitly signalled success that everything had started up, as it would
+ * check's instantiation at the end of the future chains implicitly signalled success that everything had started up, as it would
  * never be started up otherwise.
  *
  * So this class captures the same implicit semantics of that sequencing, but explicitly so, to allow the pod to register
