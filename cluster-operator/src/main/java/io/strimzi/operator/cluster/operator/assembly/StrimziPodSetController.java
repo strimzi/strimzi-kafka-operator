@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
 
-    private Thread controllerThread;
+    private final Thread controllerThread;
 
     private volatile boolean stop = false;
 
@@ -298,7 +298,7 @@ public class StrimziPodSetController implements Runnable {
                         .withStatus(desiredStatus)
                         .build();
 
-                strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).patchStatus(updatedPodSet);
+                strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).withName(reconciliation.name()).patchStatus(updatedPodSet);
             } catch (KubernetesClientException e)   {
                 if (e.getCode() == 409) {
                     LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace());
@@ -336,13 +336,12 @@ public class StrimziPodSetController implements Runnable {
                 Pod podWithOwnerReference = new PodBuilder(currentPod).build();
 
                 if (podWithOwnerReference.getMetadata().getOwnerReferences() != null)   {
-                    //List<OwnerReference> owners = new ArrayList<>()
                     podWithOwnerReference.getMetadata().getOwnerReferences().add(owner);
                 } else {
                     podWithOwnerReference.getMetadata().setOwnerReferences(List.of(owner));
                 }
 
-                podOperator.client().inNamespace(reconciliation.namespace()).patch(podWithOwnerReference);
+                podOperator.client().inNamespace(reconciliation.namespace()).withName(pod.getMetadata().getName()).patch(podWithOwnerReference);
             }
 
             if (Readiness.isPodReady(currentPod))   {

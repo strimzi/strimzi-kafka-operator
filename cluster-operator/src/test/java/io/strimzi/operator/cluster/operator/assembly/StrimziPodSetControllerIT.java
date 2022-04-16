@@ -359,7 +359,7 @@ public class StrimziPodSetControllerIT {
 
             // Scale-up the pod-set
             Pod pod2 = pod(pod2Name, KAFKA_NAME, podSetName);
-            podSetOp().inNamespace(NAMESPACE).patch(podSet(podSetName, KAFKA_NAME, pod1, pod2));
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1, pod2));
 
             // Wait until the new pod is ready
             TestUtils.waitFor(
@@ -383,7 +383,7 @@ public class StrimziPodSetControllerIT {
                     () -> context.failNow("Pod stats do not match"));
 
             // Scale-down the pod-set
-            podSetOp().inNamespace(NAMESPACE).patch(podSet(podSetName, KAFKA_NAME, pod1));
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1));
 
             // Wait until the pod is ready
             TestUtils.waitFor(
@@ -457,7 +457,7 @@ public class StrimziPodSetControllerIT {
             Pod updatedPod = pod(podName, KAFKA_NAME, podSetName);
             updatedPod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, "new-revision");
             updatedPod.getSpec().setTerminationGracePeriodSeconds(1L);
-            podSetOp().inNamespace(NAMESPACE).patch(podSet(podSetName, KAFKA_NAME, updatedPod));
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, updatedPod));
 
             // Check status of the PodSet
             TestUtils.waitFor(
