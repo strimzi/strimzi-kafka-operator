@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -41,6 +42,8 @@ import java.util.function.Supplier;
  * reconciliation pipeline and is also used to store the state between them.
  */
 public class CruiseControlReconciler {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CruiseControlReconciler.class.getName());
+
     private final Reconciliation reconciliation;
     private final CruiseControl cruiseControl;
     private final ClusterCa clusterCa;
@@ -269,6 +272,7 @@ public class CruiseControlReconciler {
                         if (patchResult instanceof ReconcileResult.Noop)   {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingCertsChanged || clusterCa.certsRemoved()) {
+                                LOGGER.infoCr(reconciliation, "Rolling Cruise Control to update or remove certificates");
                                 return cruiseControlRollingUpdate();
                             }
                         }
