@@ -68,18 +68,22 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -166,6 +170,27 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }).map(ignored -> Boolean.FALSE);
     }
 
+    @Override
+    public void reconcileAll(String trigger, String namespace, Handler<AsyncResult<Void>> handler) {
+        super.reconcileAll(trigger, namespace, handler);
+
+        connectorOperator.listAsync(namespace, selector())
+                .onSuccess(connectors -> {
+                    Map<String, Integer> resourceCounters = new HashMap<>(1);
+                    Map<String, Integer> pausedResourceCounters = new HashMap<>(1);
+                    connectors.forEach(c -> {
+                        String connectorNamespace = c.getMetadata().getNamespace();
+                        resourceCounters.compute(connectorNamespace, (ns, counter) -> Objects.requireNonNullElse(counter, 0) + 1);
+                        if (isPaused(c.getStatus())) {
+                            pausedResourceCounters.compute(connectorNamespace, (ns, counter) -> Objects.requireNonNullElse(counter, 0) + 1);
+                        }
+                    });
+
+                    resourceCounters.forEach((ns, count) -> connectorsResourceCounter(ns).set(count));
+                    pausedResourceCounters.forEach((ns, count) -> pausedConnectorsResourceCounter(ns).set(count));
+                });
+    }
+
     /**
      * Create a watch on {@code KafkaConnector} in the given {@code namespace}.
      * The watcher will:
@@ -194,6 +219,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     String connectName = kafkaConnector.getMetadata().getLabels() == null ? null : kafkaConnector.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
                     String connectNamespace = connectorNamespace;
 
+                    if (action == Action.ADDED) {
+                        connectOperator.connectorsResourceCounter(connectorNamespace).incrementAndGet();
+                    } else if (action == Action.DELETED) {
+                        connectOperator.connectorsResourceCounter(connectorNamespace).decrementAndGet();
+                    }
+
                     switch (action) {
                         case ADDED:
                         case DELETED:
@@ -207,6 +238,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 Reconciliation r = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
                                                 updateStatus(r, noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                if (isPaused(kafkaConnector.getStatus())) {
+                                                    connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
+                                                }
                                                 LOGGER.infoCr(r, "{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 return Future.succeededFuture();
                                             } else {
@@ -221,6 +255,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
                                                     LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                     updateStatus(reconciliation, zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
+                                                    if (isPaused(kafkaConnector.getStatus())) {
+                                                        connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
+                                                    }
                                                     return Future.succeededFuture();
                                                 } else {
                                                     LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, connectorNamespace, action);
@@ -231,6 +268,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                                     isUseResources(connect),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                                     .compose(reconcileResult -> {
+                                                                        if (isPaused(kafkaConnector.getStatus()) && (action == Action.DELETED || !Annotations.isReconciliationPausedWithAnnotation(kafkaConnector))) {
+                                                                            connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
+                                                                        } else if (!isPaused(kafkaConnector.getStatus()) && Annotations.isReconciliationPausedWithAnnotation(kafkaConnector)) {
+                                                                            connectOperator.pausedConnectorsResourceCounter(connectorNamespace).incrementAndGet();
+                                                                        }
                                                                         LOGGER.infoCr(reconciliation, "reconciled");
                                                                         return Future.succeededFuture(reconcileResult);
                                                                     }));
@@ -244,6 +286,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 + Labels.STRIMZI_CLUSTER_LABEL
                                                 + "': No connect cluster in which to create this connector."),
                                         kafkaConnector, connectOperator.connectorOperator);
+                                if (isPaused(kafkaConnector.getStatus())) {
+                                    connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
+                                }
                             }
 
                             break;
@@ -364,10 +409,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
             connectStatus.setConnectorPlugins(connectorPlugins);
 
-            connectorsResourceCounter(namespace).set(desiredConnectors.size());
-            long pausedConnectorsCount = desiredConnectors.stream().filter(Annotations::isReconciliationPausedWithAnnotation).count();
-            pausedConnectorsResourceCounter(namespace).set((int) pausedConnectorsCount);
-
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
             LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
@@ -465,7 +506,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             if (connector.getSpec() == null) {
                 return Future.failedFuture(new InvalidResourceException("spec property is required"));
             }
-            
+
             if (!useResources) {
                 return Future.failedFuture(new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
@@ -475,7 +516,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Try to get the current connector config. If the connector does not exist, or its config differs from the 
+     * Try to get the current connector config. If the connector does not exist, or its config differs from the
      * {@code connectorSpec}'s, then call
      * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)}
      * otherwise, just return the connectors current state.
@@ -866,6 +907,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             });
         }
         return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), null);
+    }
+
+    private static boolean isPaused(KafkaConnectorStatus status) {
+        return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
     }
 
     public Counter connectorsReconciliationsCounter(String namespace) {

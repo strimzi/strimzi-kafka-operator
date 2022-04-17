@@ -28,6 +28,14 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     }
 
     /**
+     * Constructor of the Micrometer metrics provider
+     * @param metrics   Meter registry
+     */
+    public MicrometerMetricsProvider(MeterRegistry metrics) {
+        this.metrics = metrics;
+    }
+
+    /**
      * Returns the Micrometer MeterRegistry with all metrics
      *
      * @return  MeterRegistry
