@@ -1649,7 +1649,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |clientRackInitImage    1.2+<.<a|The image of the init container used for initializing the `client.rack`.
 |string
-|rack                   1.2+<.<a|Configuration of the node label which will be used as the client.rack consumer configuration.
+|rack                   1.2+<.<a|Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |xref:type-Rack-{context}[`Rack`]
 |tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
@@ -3036,7 +3036,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |clientRackInitImage    1.2+<.<a|The image of the init container used for initializing the `client.rack`.
 |string
-|rack                   1.2+<.<a|Configuration of the node label which will be used as the client.rack consumer configuration.
+|rack                   1.2+<.<a|Configuration of the node label which will be used as the `client.rack` consumer configuration.
 |xref:type-Rack-{context}[`Rack`]
 |tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
