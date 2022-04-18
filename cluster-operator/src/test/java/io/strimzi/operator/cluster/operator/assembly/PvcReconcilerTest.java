@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -205,6 +206,67 @@ public class PvcReconcilerTest {
                     assertThat(pvcCaptor.getAllValues().size(), is(3));
                     assertThat(pvcCaptor.getAllValues(), is(pvcs));
 
+                    async.flag();
+                });
+    }
+
+    // Tests volume reconciliation when the PVC has some weird value
+    //         => we cannot handle it successfully, but we should fail the reconciliation
+    @Test
+    public void testVolumesBoundExpandableStorageClassWithInvalidUnit(VertxTestContext context)  {
+        List<PersistentVolumeClaim> pvcs = List.of(
+                createPvc("data-pod-0"),
+                createPvc("data-pod-1"),
+                createPvc("data-pod-2")
+        );
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the PVC Operator
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-")))
+                .thenAnswer(invocation -> {
+                    String pvcName = invocation.getArgument(1);
+                    PersistentVolumeClaim currentPvc = pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null);
+
+                    if (currentPvc != null) {
+                        PersistentVolumeClaim pvcWithStatus = new PersistentVolumeClaimBuilder(currentPvc)
+                                .editSpec()
+                                    .withNewResources()
+                                        .withRequests(Map.of("storage", new Quantity("50000000000200m", null)))
+                                    .endResources()
+                                .endSpec()
+                                .withNewStatus()
+                                    .withPhase("Bound")
+                                    .withCapacity(Map.of("storage", new Quantity("50Gi", null)))
+                                .endStatus()
+                                .build();
+
+                        return Future.succeededFuture(pvcWithStatus);
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                });
+        ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock the StorageClass Operator
+        StorageClassOperator mockSco = supplier.storageClassOperations;
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+
+        // Reconcile the PVCs
+        PvcReconciler reconciler = new PvcReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                mockPvcOps,
+                mockSco
+        );
+
+        Checkpoint async = context.checkpoint();
+        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+                .onComplete(res -> {
+                    assertThat(res.succeeded(), is(false));
+                    assertThat(res.cause(), is(instanceOf(IllegalArgumentException.class)));
+                    assertThat(res.cause().getMessage(), is("Invalid memory suffix: m"));
                     async.flag();
                 });
     }
