@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.KubernetesVersion;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -133,7 +132,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
 
         // Override to inject mocked cruise control address so real cruise control not required
         kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
@@ -983,7 +981,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOps = supplier.kafkaRebalanceOperator;
         when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         ClusterOperatorConfig config = new ClusterOperatorConfig(
                 singleton(CLUSTER_NAMESPACE),
                 60_000,
