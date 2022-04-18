@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -71,7 +72,7 @@ public class StrimziPodSetControllerIT {
     private static StrimziPodSetController controller;
 
     private static CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
-    private static CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> podSetOperator;
+    private static StrimziPodSetOperator podSetOperator;
     private static PodOperator podOperator;
 
     @BeforeAll
@@ -99,8 +100,8 @@ public class StrimziPodSetControllerIT {
 
         client = new DefaultKubernetesClient();
         vertx = Vertx.vertx();
-        kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
-        podSetOperator = new CrdOperator(vertx, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
+        kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        podSetOperator = new StrimziPodSetOperator(vertx, client, 60_000L);
         podOperator = new PodOperator(vertx, client);
 
         kafkaOp().inNamespace(NAMESPACE).create(kafka(KAFKA_NAME, MATCHING_LABELS));

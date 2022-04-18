@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.CruiseControlResources;
@@ -45,6 +44,7 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -98,7 +98,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final DeploymentOperator deploymentOperations;
     private final PodOperator podOperations;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
-    private final CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator;
+    private final StrimziPodSetOperator strimziPodSetOperator;
     private final AdminClientProvider adminClientProvider;
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
 

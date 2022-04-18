@@ -131,14 +131,14 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Creating resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName));
                 })
-                .onComplete(context.succeeding())
+                .onComplete(context.succeedingThenComplete())
                 .compose(rrCreated -> {
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
                     LOGGER.info("Updating resource status");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.succeeding())
+                .onComplete(context.succeedingThenComplete())
 
                 .compose(rrModified -> op.getAsync(namespace, resourceName))
                 .onComplete(context.succeeding(modifiedCustomResource -> context.verify(() -> {
@@ -178,7 +178,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Creating resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName));
                 })
-                .onComplete(context.succeeding())
+                .onComplete(context.succeedingThenComplete())
 
                 .compose(rr -> {
                     LOGGER.info("Saving resource with status change prior to deletion");
@@ -186,9 +186,12 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding())
-
-                .compose(rrDeleted -> {
+                .onComplete(context.succeedingThenComplete())
+                .compose(i -> {
+                    LOGGER.info("Wait for confirmed deletion");
+                    return op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) == null);
+                })
+                .compose(i -> {
                     LOGGER.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
                 })
@@ -223,7 +226,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Creating resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName));
                 })
-                .onComplete(context.succeeding())
+                .onComplete(context.succeedingThenComplete())
                 .compose(rrCreated -> {
                     T updated = getResourceWithModifications(rrCreated.resource());
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());

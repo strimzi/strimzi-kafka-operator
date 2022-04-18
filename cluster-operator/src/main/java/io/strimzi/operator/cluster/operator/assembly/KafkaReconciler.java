@@ -15,8 +15,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -48,6 +46,7 @@ import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -58,7 +57,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -123,7 +121,7 @@ public class KafkaReconciler {
     private final List<LocalObjectReference> imagePullSecrets;
 
     private final StatefulSetOperator stsOperator;
-    private final CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator;
+    private final StrimziPodSetOperator strimziPodSetOperator;
     /* test */ final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
     /* test */ final ServiceOperator serviceOperator;

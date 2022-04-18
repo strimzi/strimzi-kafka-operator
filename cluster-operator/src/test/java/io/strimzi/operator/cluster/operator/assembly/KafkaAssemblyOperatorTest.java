@@ -16,12 +16,10 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngressBuilder;
 import io.fabric8.openshift.api.model.RouteStatus;
 import io.fabric8.openshift.api.model.RouteStatusBuilder;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
@@ -71,13 +69,13 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -436,7 +434,7 @@ public class KafkaAssemblyOperatorTest {
         RouteOperator mockRouteOps = supplier.routeOperations;
         IngressOperator mockIngressOps = supplier.ingressOperations;
         NodeOperator mockNodeOps = supplier.nodeOperator;
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
 
         // Create a CM
         String kafkaName = kafka.getMetadata().getName();

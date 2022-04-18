@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -21,10 +19,10 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.vertx.core.Future;
@@ -172,7 +170,7 @@ public class ManualPodCleanerTest {
 
     private void manualPodCleanup(VertxTestContext context, boolean useStrimziPodSets, List<Pod> pods, List<PersistentVolumeClaim> pvcs, List<String> podsToBeDeleted, List<String> pvcsToBeDeleted) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         StatefulSetOperator mockStsOps = supplier.stsOperations;
 
         ArgumentCaptor<StatefulSet> stsReconciliationCaptor = ArgumentCaptor.forClass(StatefulSet.class);
