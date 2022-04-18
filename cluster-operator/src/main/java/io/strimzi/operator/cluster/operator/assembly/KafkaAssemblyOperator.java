@@ -603,7 +603,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return deploymentOperations.getAsync(namespace, deploymentName)
                     .compose(dep -> {
                         if (dep != null) {
-                            LOGGER.debugCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reasons);
+                            LOGGER.infoCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reasons);
                             return deploymentOperations.rollingUpdate(reconciliation, namespace, deploymentName, operationTimeoutMs);
                         } else {
                             return Future.succeededFuture();
