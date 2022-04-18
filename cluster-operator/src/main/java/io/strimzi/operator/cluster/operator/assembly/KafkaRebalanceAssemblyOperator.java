@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.CruiseControlConfiguration;
@@ -154,22 +153,19 @@ public class KafkaRebalanceAssemblyOperator
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final SecretOperator secretOperations;
-    private final PlatformFeaturesAvailability pfa;
     private final Optional<LabelSelector> kafkaSelector;
     private boolean usingJbodStorage;
 
     private final ConfigMapOperator configMapOperator;
     /**
      * @param vertx The Vertx instance
-     * @param pfa Platform features availability properties
      * @param supplier Supplies the operators for different resources
      * @param config Cluster Operator configuration
      */
-    public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+    public KafkaRebalanceAssemblyOperator(Vertx vertx,
                                           ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null);
         this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, config.getCustomResourceSelector().toMap()));
-        this.pfa = pfa;
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
         this.configMapOperator = supplier.configMapOperations;

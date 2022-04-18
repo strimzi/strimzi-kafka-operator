@@ -136,7 +136,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
 
         // Override to inject mocked cruise control address so real cruise control not required
-        kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+        kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;
@@ -1004,7 +1004,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 false,
                 1024);
 
-        kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), pfa, supplier, config);
+        kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config);
 
         Checkpoint checkpoint = context.checkpoint();
         kcrao.reconcileRebalance(

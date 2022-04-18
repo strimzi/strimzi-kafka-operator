@@ -138,7 +138,7 @@ public class KafkaRebalanceStateMachineTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
-        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
             public String cruiseControlHost(String clusterName, String clusterNamespace) {
                 return HOST;
