@@ -7,6 +7,7 @@ package io.strimzi.systemtest.utils;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -148,5 +149,14 @@ public class RollingUpdateUtils {
                 }
             }
         );
+    }
+
+    public static Map<String, String> waitForComponentScaleUpOrDown(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> pods) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            waitForComponentAndPodsReady(namespaceName, selector, expectedPods);
+            return PodUtils.podSnapshot(namespaceName, selector);
+        } else {
+            return waitTillComponentHasRolledAndPodsReady(namespaceName, selector, expectedPods, pods);
+        }
     }
 }
