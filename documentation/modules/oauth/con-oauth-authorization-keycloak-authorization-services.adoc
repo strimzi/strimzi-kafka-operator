@@ -189,7 +189,7 @@ If topic has not yet been created, and autocreation is enabled, the permissions 
 [source,shell]
 ----
 bin/kafka-console-producer.sh  --topic my-topic \
-  --broker-list my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties
 ----
 
 .Consuming from the topic
