@@ -43,6 +43,7 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
@@ -1994,4 +1995,60 @@ public class ConnectorMockTest {
         waitFor("metrics", 50, 5000, () -> resourcesPaused.value() == 0);
     }
 
+    @Test
+    void testConnectorOperatorReconcileAllPausedMetric(VertxTestContext context) {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect);
+        waitForConnectReady(connectName);
+
+        // strimzi_resources_paused metric wouldn't be incremented for already paused connector in the watch
+        KafkaConnector connector = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .withNewStatus()
+                    .addNewCondition()
+                        .withType("ReconciliationPaused")
+                        .withStatus("True")
+                    .endCondition()
+                .endStatus()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector);
+        waitForConnectorPaused(connectorName);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+        assertThat(resources.value(), is(1.0));
+
+        kafkaConnectOperator.pausedConnectorsResourceCounter(NAMESPACE); // to create metric, otherwise MeterNotFoundException will be thrown
+        Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+        assertThat(resourcesPaused.value(), is(0.0));
+
+        Promise<Void> reconciled = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            assertThat(resourcesPaused.value(), is(1.0));
+            async.flag();
+        })));
+    }
 }

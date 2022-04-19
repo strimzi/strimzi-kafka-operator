@@ -68,22 +68,18 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -106,8 +102,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
-    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
+    protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
     protected final ConfigMapOperator configMapOperations;
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
@@ -128,7 +124,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
+    protected Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
@@ -168,27 +164,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             }
             return CompositeFuture.join(connectorFutures);
         }).map(ignored -> Boolean.FALSE);
-    }
-
-    @Override
-    public void reconcileAll(String trigger, String namespace, Handler<AsyncResult<Void>> handler) {
-        super.reconcileAll(trigger, namespace, handler);
-
-        connectorOperator.listAsync(namespace, selector())
-                .onSuccess(connectors -> {
-                    Map<String, Integer> resourceCounters = new HashMap<>(1);
-                    Map<String, Integer> pausedResourceCounters = new HashMap<>(1);
-                    connectors.forEach(c -> {
-                        String connectorNamespace = c.getMetadata().getNamespace();
-                        resourceCounters.compute(connectorNamespace, (ns, counter) -> Objects.requireNonNullElse(counter, 0) + 1);
-                        if (isPaused(c.getStatus())) {
-                            pausedResourceCounters.compute(connectorNamespace, (ns, counter) -> Objects.requireNonNullElse(counter, 0) + 1);
-                        }
-                    });
-
-                    resourceCounters.forEach((ns, count) -> connectorsResourceCounter(ns).set(count));
-                    pausedResourceCounters.forEach((ns, count) -> pausedConnectorsResourceCounter(ns).set(count));
-                });
     }
 
     /**
@@ -909,7 +884,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), null);
     }
 
-    private static boolean isPaused(KafkaConnectorStatus status) {
+    protected static boolean isPaused(KafkaConnectorStatus status) {
         return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
     }
 

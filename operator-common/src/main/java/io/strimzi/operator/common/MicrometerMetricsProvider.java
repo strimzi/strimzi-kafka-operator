@@ -28,7 +28,7 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     }
 
     /**
-     * Constructor of the Micrometer metrics provider
+     * Constructor of the Micrometer metrics provider. Mainly for test purposes
      * @param metrics   Meter registry
      */
     public MicrometerMetricsProvider(MeterRegistry metrics) {

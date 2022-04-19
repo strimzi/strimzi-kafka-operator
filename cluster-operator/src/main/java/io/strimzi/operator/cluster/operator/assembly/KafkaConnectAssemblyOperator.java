@@ -30,7 +30,9 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
@@ -166,6 +168,24 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected KafkaConnectStatus createStatus() {
         return new KafkaConnectStatus();
+    }
+
+    @Override
+    public void reconcileAll(String trigger, String namespace, Handler<AsyncResult<Void>> handler) {
+        super.reconcileAll(trigger, namespace, ignore -> connectorOperator.listAsync(namespace, selector())
+                .onComplete(ar -> {
+                    if (ar.succeeded()) {
+                        pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
+                        ar.result().forEach(connector -> {
+                            if (isPaused(connector.getStatus())) {
+                                pausedConnectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
+                            }
+                        });
+                        handler.handle(Future.succeededFuture());
+                    } else {
+                        handler.handle(ar.map((Void) null));
+                    }
+                }));
     }
 
     /**
