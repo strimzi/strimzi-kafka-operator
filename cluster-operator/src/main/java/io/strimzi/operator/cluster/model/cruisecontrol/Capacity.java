@@ -12,13 +12,12 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
-
-import static io.strimzi.operator.cluster.model.StorageUtils.parseMemory;
 
 public class Capacity {
     // CC allows specifying a generic "default" broker entry in the capacity configuration to apply to all brokers without a specific broker entry.
@@ -169,7 +168,7 @@ public class Capacity {
         if (size == null) {
             return DEFAULT_BROKER_DISK_CAPACITY_IN_MIB;
         }
-        return parseMemory(size, "Mi");
+        return StorageUtils.convertTo(size, "Mi");
     }
 
     /*
@@ -181,6 +180,6 @@ public class Capacity {
      */
     public static Double getThroughputInKiB(String throughput) {
         String size = throughput.substring(0, throughput.indexOf("B"));
-        return parseMemory(size, "Ki");
+        return StorageUtils.convertTo(size, "Ki");
     }
 }

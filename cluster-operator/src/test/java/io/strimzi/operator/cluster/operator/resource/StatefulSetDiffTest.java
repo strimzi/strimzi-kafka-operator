@@ -186,8 +186,32 @@ public class StatefulSetDiffTest {
                             .build())
                 .endSpec()
                 .build();
+        StatefulSet ss3 = new StatefulSetBuilder() // Used for millibytes test
+                .withNewMetadata()
+                .withNamespace("test")
+                .withName("foo")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewTemplate()
+                        .withNewSpec()
+                            .addToVolumes(0, new VolumeBuilder()
+                                    .withConfigMap(new ConfigMapVolumeSourceBuilder().withDefaultMode(2).build())
+                                    .build())
+                        .endSpec()
+                    .endTemplate()
+                    .withVolumeClaimTemplates(new PersistentVolumeClaimBuilder()
+                            .withNewSpec()
+                            .withNewResources()
+                            .withRequests(singletonMap("storage", new Quantity("3518437208883200m")))
+                            .endResources()
+                            .endSpec()
+                            .build())
+                .endSpec()
+                .build();
         assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeClaimTemplates(), is(false));
         assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss2).changesVolumeSize(), is(true));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss3).changesVolumeClaimTemplates(), is(false));
+        assertThat(new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss1, ss3).changesVolumeSize(), is(true));
     }
 
     @Test

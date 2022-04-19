@@ -104,10 +104,15 @@ public class StorageDiffTest {
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("1000Gi").build();
         Storage persistent3 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("10Gi").build();
+        Storage persistent4 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("3.2Ti").build(); // Used to test millibytes
+        Storage persistent5 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("3518437208883200m").build(); // Used to test millibytes
 
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).shrinkSize(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).shrinkSize(), is(false));
         assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent3, 3, 3).shrinkSize(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent4, persistent5, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent4, persistent, 3, 3).shrinkSize(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent5, persistent, 3, 3).shrinkSize(), is(true));
     }
 
     @ParallelTest
