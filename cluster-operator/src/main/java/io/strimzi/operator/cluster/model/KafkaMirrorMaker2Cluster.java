@@ -33,6 +33,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
+import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE;
+
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String APPLICATION_NAME = "kafka-mirror-maker-2";
 
@@ -114,7 +116,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
-        
+
         ClientTls connectTls = null;
         ClientTls mirrorMaker2ConnectClusterTls = connectCluster.getTls();
         if (mirrorMaker2ConnectClusterTls != null) {
@@ -140,6 +142,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withJvmOptions(spec.getJvmOptions())
                 .withJmxOptions(spec.getJmxOptions())
                 .withMetricsConfig(spec.getMetricsConfig())
+                .withClientRackInitImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest"))
+                .withRack(spec.getRack())
                 .withTracing(spec.getTracing())
                 .withTemplate(spec.getTemplate())
                 .withExternalConfiguration(spec.getExternalConfiguration())
@@ -155,6 +159,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     @Override
     public String getServiceAccountName() {
         return KafkaMirrorMaker2Resources.serviceAccountName(cluster);
+    }
+
+    public String getInitContainerClusterRoleBindingName() {
+        return KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(cluster, namespace);
     }
 
     @Override

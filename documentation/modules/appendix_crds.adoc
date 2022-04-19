@@ -642,7 +642,7 @@ It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 [id='type-Rack-{context}']
 ### `Rack` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 xref:type-Rack-schema-{context}[Full list of `Rack` schema properties]
 
@@ -1647,6 +1647,10 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |logging                1.2+<.<a|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|clientRackInitImage    1.2+<.<a|The image of the init container used for initializing the `client.rack`.
+|string
+|rack                   1.2+<.<a|Configuration of the node label which will be used as the `client.rack` consumer configuration.
+|xref:type-Rack-{context}[`Rack`]
 |tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
@@ -1655,12 +1659,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |build                  1.2+<.<a|Configures how the Connect container image should be built. Optional.
 |xref:type-Build-{context}[`Build`]
-|clientRackInitImage    1.2+<.<a|The image of the init container used for initializing the `client.rack`.
-|string
 |metricsConfig          1.2+<.<a|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
-|rack                   1.2+<.<a|Configuration of the node label which will be used as the client.rack consumer configuration.
-|xref:type-Rack-{context}[`Rack`]
 |====
 
 [id='type-ClientTls-{context}']
@@ -3034,6 +3034,10 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |logging                1.2+<.<a|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
+|clientRackInitImage    1.2+<.<a|The image of the init container used for initializing the `client.rack`.
+|string
+|rack                   1.2+<.<a|Configuration of the node label which will be used as the `client.rack` consumer configuration.
+|xref:type-Rack-{context}[`Rack`]
 |tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`]
 |template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.

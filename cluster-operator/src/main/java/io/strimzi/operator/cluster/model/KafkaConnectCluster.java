@@ -689,6 +689,10 @@ public class KafkaConnectCluster extends AbstractModel {
         return KafkaConnectResources.serviceAccountName(cluster);
     }
 
+    public String getInitContainerClusterRoleBindingName() {
+        return KafkaConnectResources.initContainerClusterRoleBindingName(cluster, namespace);
+    }
+
     /**
      * @return Return if the jmx has been enabled
      */
@@ -856,7 +860,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        return getClusterRoleBinding(KafkaConnectResources.initContainerClusterRoleBindingName(cluster, namespace), subject, roleRef);
+        return getClusterRoleBinding(getInitContainerClusterRoleBindingName(), subject, roleRef);
     }
 
     @Override

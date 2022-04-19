@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -102,6 +103,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
     private static final String KEYSTORE_SUFFIX = ".keystore.p12";
+    private static final String CONNECT_CONFIG_FILE = "/tmp/strimzi-connect.properties";
     private static final String CONNECTORS_CONFIG_FILE = "/tmp/strimzi-mirrormaker2-connector.properties";
 
     /**
@@ -144,9 +146,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
 
         boolean mirrorMaker2HasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
+        String initCrbName = KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(kafkaMirrorMaker2.getMetadata().getName(), namespace);
+        ClusterRoleBinding initCrb = mirrorMaker2Cluster.generateClusterRoleBinding();
 
         LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
         connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster)
+                .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
@@ -362,6 +367,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             config.put("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
         }
 
+        // setting client.rack here because the consumer is created by the connector
+        String clientRackKey = "consumer.client.rack";
+        config.put(clientRackKey, "${file:" + CONNECT_CONFIG_FILE + ":" + clientRackKey + "}");
+
         config.putAll(mirror.getAdditionalProperties());
     }
 
@@ -565,7 +574,4 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
             .compose(ignored -> Future.succeededFuture());
     }
-
-
-
 }
