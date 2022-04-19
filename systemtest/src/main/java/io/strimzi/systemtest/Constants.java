@@ -60,6 +60,8 @@ public interface Constants {
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
     int GLOBAL_RECONCILIATION_COUNT = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_COUNT);
 
+    long THROTTLING_EXCEPTION_TIMEOUT = Duration.ofMinutes(10).toMillis();
+
     /**
      * Scraper pod labels
      */
@@ -380,6 +382,7 @@ public interface Constants {
     String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";
     String CONSUMER_KEY = "CONSUMER_NAME";
+    String ADMIN_KEY = "ADMIN_NAME";
     String USER_NAME_KEY = "USER_NAME";
     String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";

@@ -11,6 +11,7 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
@@ -108,6 +109,23 @@ public class ClientUtils {
                 JobUtils.logCurrentJobStatus(jobName, namespace);
                 throw e;
             }
+        }
+    }
+
+    public static void waitForClientContainsMessage(String jobName, String namespace, String message) {
+        waitForClientContainsMessage(jobName, namespace, message, true);
+    }
+
+    public static void waitForClientContainsMessage(String jobName, String namespace, String message, boolean deleteAfterSuccess) {
+        String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
+        LOGGER.info("Waiting for client:{} will contain message: {}", jobName, message);
+
+        TestUtils.waitFor("job contains message " + message, Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT,
+            () -> kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message),
+            () -> JobUtils.logCurrentJobStatus(jobName, namespace));
+
+        if (deleteAfterSuccess) {
+            JobUtils.deleteJobWithWait(namespace, jobName);
         }
     }
 
