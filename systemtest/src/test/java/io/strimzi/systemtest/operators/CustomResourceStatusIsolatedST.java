@@ -284,8 +284,11 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
+        String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Constants.INFRA_NAMESPACE, KafkaConnectResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)).get(0).getMetadata().getName();
+        KafkaConnectorUtils.waitForConnectorStability(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kafkaConnectPodName);
+
         assertKafkaConnectStatus(1, connectUrl);
-        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of());
+        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -307,7 +310,11 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)), Constants.INFRA_NAMESPACE);
+
         KafkaConnectorUtils.waitForConnectorReady(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Constants.INFRA_NAMESPACE, KafkaConnectResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)).get(0).getMetadata().getName();
+        KafkaConnectorUtils.waitForConnectorStability(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kafkaConnectPodName);
+
         assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
         String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(Constants.INFRA_NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getSpec().getClassName();
@@ -629,6 +636,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
                 formulaResult = formulaResult && connectorStatus.get("tasks") != null;
                 LOGGER.info(formulaResult);
                 formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
+                LOGGER.info("KafkaConnectorStatus topic: {}, and expected topic: {}", kafkaConnectorStatus.getTopics().toString(), topics);
                 LOGGER.info(formulaResult);
 
                 return formulaResult;

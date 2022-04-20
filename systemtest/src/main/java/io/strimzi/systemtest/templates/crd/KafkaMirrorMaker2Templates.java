@@ -6,8 +6,6 @@ package io.strimzi.systemtest.templates.crd;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -112,10 +110,6 @@ public class KafkaMirrorMaker2Templates {
                 .withNewInlineLogging()
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
-                .withResources(new ResourceRequirementsBuilder()
-                    .addToLimits("memory", new Quantity("784Mi"))
-                    .addToRequests("memory", new Quantity("784Mi"))
-                    .build())
             .endSpec();
     }
 

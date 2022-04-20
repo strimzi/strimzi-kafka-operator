@@ -1404,7 +1404,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // Deploy source kafka with tls listener and mutual tls auth
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("min.insync.replicas", 1)
@@ -1420,7 +1420,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build());
 
         // Deploy target kafka with tls listener and mutual tls auth
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("min.insync.replicas", 1)
@@ -1566,13 +1566,13 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Renew Clients CA secret for Source cluster via annotation");
         String sourceClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterSourceName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
-        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 3, kafkaSourcePods);
+        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
         mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
         LOGGER.info("Renew Clients CA secret for Target cluster via annotation");
         String targetClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterTargetName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
-        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 3, kafkaTargetPods);
+        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
         mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
         LOGGER.info("Send and receive messages after clients certs were removed");
@@ -1600,7 +1600,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         String sourceClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClusterCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         zkSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkSourceSelector, 1, zkSourcePods);
-        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 3, kafkaSourcePods);
+        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
         eoSourcePods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterSourceName), 1, eoSourcePods);
         mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
@@ -1608,7 +1608,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         String targetClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClusterCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         zkTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkTargetSelector, 1, zkTargetPods);
-        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 3, kafkaTargetPods);
+        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
         eoTargetPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterTargetName), 1, eoTargetPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
