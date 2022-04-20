@@ -233,7 +233,7 @@ public class PvcReconcilerTest {
                         PersistentVolumeClaim pvcWithStatus = new PersistentVolumeClaimBuilder(currentPvc)
                                 .editSpec()
                                     .withNewResources()
-                                        .withRequests(Map.of("storage", new Quantity("50000000000200m", null)))
+                                        .withRequests(Map.of("storage", new Quantity("50000000000200inv", null)))
                                     .endResources()
                                 .endSpec()
                                 .withNewStatus()
@@ -266,7 +266,7 @@ public class PvcReconcilerTest {
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(false));
                     assertThat(res.cause(), is(instanceOf(IllegalArgumentException.class)));
-                    assertThat(res.cause().getMessage(), is("Invalid memory suffix: m"));
+                    assertThat(res.cause().getMessage(), is("Invalid memory suffix: inv"));
                     async.flag();
                 });
     }
