@@ -55,6 +55,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
+import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -88,6 +89,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -1631,6 +1633,39 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
         internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
         LOGGER.info("Messages successfully mirrored");
+    }
+
+    @ParallelNamespaceTest
+    void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClusterSourceName = clusterName + "-source";
+        String kafkaClusterTargetName = clusterName + "-target";
+        String topologyKey = "kubernetes.io/hostname";
+
+        resourceManager.createResource(extensionContext,
+                KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
+        resourceManager.createResource(extensionContext,
+                KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
+
+        resourceManager.createResource(extensionContext,
+                KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                    .editSpec()
+                        .withNewRack(topologyKey)
+                    .endSpec()
+                    .build());
+
+        LOGGER.info("MirrorMaker2 cluster deployed successfully");
+        String podName = PodUtils.getPodNameByPrefix(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        String podJson = TestUtils.toJsonString(kubeClient(namespaceName).getPod(namespaceName, podName));
+        assertThat(podJson, hasJsonPath(StUtils.initGlobalVariableJsonPathBuilder(0, "RACK_TOPOLOGY_KEY"), hasItem(topologyKey)));
+        assertThat(podJson, hasJsonPath(StUtils.nodeSelectorKeyJsonPathBuilder(topologyKey), hasItem(topologyKey)));
+
+        String podLogs = kubeClient(namespaceName).logs(podName);
+        String podNodeName = PodUtils.getPodByName(namespaceName, podName).getSpec().getNodeName();
+        String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
+        String clientRackConfig = "consumer.client.rack=" + hostname;
+        assertTrue(podLogs.contains(clientRackConfig), "Pod logs contain " + clientRackConfig);
     }
 
     @BeforeAll

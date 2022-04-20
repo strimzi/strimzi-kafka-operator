@@ -193,13 +193,39 @@ public class StUtils {
     }
 
     /**
-     * Get a jsonPath which can be used to extract envariable variables from a spec
+     * Build a JSONPath which can be used to extract environment variables from spec.containers.
+     *
      * @param containerIndex index of the container
      * @param envVar The environment variable name
-     * @return The json path
+     *
+     * @return The JSONPath
      */
     public static String globalVariableJsonPathBuilder(int containerIndex, String envVar) {
         return "$.spec.containers[" + containerIndex + "].env[?(@.name=='" + envVar + "')].value";
+    }
+
+    /**
+     * Build a JSONPath which can be used to extract environment variables from spec.initContainers.
+     *
+     * @param containerIndex index of the init container
+     * @param envVar The environment variable name
+     *
+     * @return The JSONPath
+     */
+    public static String initGlobalVariableJsonPathBuilder(int containerIndex, String envVar) {
+        return "$.spec.initContainers[" + containerIndex + "].env[?(@.name=='" + envVar + "')].value";
+    }
+
+    /**
+     * Build a JSONPath which can be used to verify node selector keys.
+     *
+     * @param label Node label used as node selector key
+     *
+     * @return The JSONPath
+     */
+    public static String nodeSelectorKeyJsonPathBuilder(String label) {
+        return "$.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution" +
+                ".nodeSelectorTerms[*].matchExpressions[?(@.key=='" + label + "')].key";
     }
 
     public static Properties stringToProperties(String str) {
