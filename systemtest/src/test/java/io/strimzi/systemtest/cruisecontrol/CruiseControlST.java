@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
@@ -68,7 +70,7 @@ public class CruiseControlST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlST.class.getSimpleName()).stream().findFirst().get();
 
     @IsolatedTest
-    void testAutoCreationOfCruiseControlTopics(ExtensionContext extensionContext) {
+    void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
@@ -79,8 +81,27 @@ public class CruiseControlST extends AbstractST {
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
+                .editCruiseControl()
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("256Mi"))
+                        .addToLimits("cpu", new Quantity("1"))
+                        .addToRequests("memory", new Quantity("256Mi"))
+                        .addToRequests("cpu", new Quantity("0.8"))
+                        .build())
+                    .withNewJvmOptions()
+                        .withXmx("512M")
+                        .withXms("256M")
+                        .withXx(Map.of("UseG1GC", "true"))
+                    .endJvmOptions()
+                .endCruiseControl()
             .endSpec()
             .build());
+
+        String ccPodName = kubeClient().listPodsByPrefixInName(namespace, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        assertResources(namespace, ccPodName, "cruise-control",
+                "256Mi", "1", "256Mi", "800m");
+        assertExpectedJavaOpts(namespace, ccPodName, "cruise-control",
+                "-Xmx512M", "-Xms256M", "-XX:+UseG1GC");
 
         KafkaTopicUtils.waitForKafkaTopicReady(namespace, CRUISE_CONTROL_METRICS_TOPIC);
         KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace)
