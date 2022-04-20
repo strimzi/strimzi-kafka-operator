@@ -115,16 +115,11 @@ public class EntityOperatorReconcilerTest {
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                300_000,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockRoleOps,
-                mockRoleBindingOps,
-                mockCmOps
+                CLUSTER_CA
         );
 
         Checkpoint async = context.checkpoint();
@@ -222,16 +217,11 @@ public class EntityOperatorReconcilerTest {
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                300_000,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockRoleOps,
-                mockRoleBindingOps,
-                mockCmOps
+                CLUSTER_CA
         );
 
         Checkpoint async = context.checkpoint();
@@ -326,16 +316,11 @@ public class EntityOperatorReconcilerTest {
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                300_000,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockRoleOps,
-                mockRoleBindingOps,
-                mockCmOps
+                CLUSTER_CA
         );
 
         Checkpoint async = context.checkpoint();
@@ -420,16 +405,11 @@ public class EntityOperatorReconcilerTest {
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                300_000,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockRoleOps,
-                mockRoleBindingOps,
-                mockCmOps
+                CLUSTER_CA
         );
 
         Checkpoint async = context.checkpoint();
@@ -512,16 +492,11 @@ public class EntityOperatorReconcilerTest {
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                300_000,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockRoleOps,
-                mockRoleBindingOps,
-                mockCmOps
+                CLUSTER_CA
         );
 
         Checkpoint async = context.checkpoint();
@@ -599,16 +574,11 @@ public class EntityOperatorReconcilerTest {
 
         EntityOperatorReconciler rcnclr = new EntityOperatorReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                300_000,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockRoleOps,
-                mockRoleBindingOps,
-                mockCmOps
+                CLUSTER_CA
         );
 
         Checkpoint async = context.checkpoint();

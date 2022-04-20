@@ -384,7 +384,7 @@ Use the `team-a-client` configuration to check that you can produce messages to 
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic my-topic \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic my-topic \
   --producer.config=/tmp/team-a-client.properties
 First message
 ----
@@ -398,7 +398,7 @@ The topic named `my-topic` matches neither of those rules.
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic a_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic a_messages \
   --producer.config /tmp/team-a-client.properties
 First message
 Second message
@@ -479,7 +479,7 @@ Use the `team-b-client` configuration to produce messages to topics that start w
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic a_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic a_messages \
   --producer.config /tmp/team-b-client.properties
 Message 1
 ----
@@ -490,7 +490,7 @@ This request returns a `Not authorized to access topics: [a_messages]` error.
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic b_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic b_messages \
   --producer.config /tmp/team-b-client.properties
 Message 1
 Message 2
@@ -503,7 +503,7 @@ Messages are produced to Kafka successfully.
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic x_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic x_messages \
   --producer.config /tmp/team-b-client.properties
 Message 1
 ----
@@ -515,7 +515,7 @@ The `team-b-client` can only read from topic `x_messages`.
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic x_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic x_messages \
   --producer.config /tmp/team-a-client.properties
 Message 1
 ----
@@ -556,7 +556,7 @@ The `Dev Team A` and `Dev Team B` roles both have `Describe` permission on topic
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic x_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic x_messages \
   --producer.config /tmp/team-a-client.properties
 Message 1
 Message 2
@@ -569,7 +569,7 @@ As `alice` created the `x_messages` topic, messages are produced to Kafka succes
 +
 [source,shell]
 ----
-bin/kafka-console-producer.sh --broker-list my-cluster-kafka-bootstrap:9093 --topic x_messages \
+bin/kafka-console-producer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 --topic x_messages \
   --producer.config /tmp/team-b-client.properties
 Message 4
 Message 5

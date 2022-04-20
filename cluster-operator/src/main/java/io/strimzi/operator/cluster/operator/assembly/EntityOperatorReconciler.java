@@ -9,14 +9,17 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -37,6 +40,8 @@ import java.util.function.Supplier;
  * reconciliation pipeline and is also used to store the state between them.
  */
 public class EntityOperatorReconciler {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(EntityOperatorReconciler.class.getName());
+
     private final Reconciliation reconciliation;
     private final long operationTimeoutMs;
     private final EntityOperator entityOperator;
@@ -57,42 +62,32 @@ public class EntityOperatorReconciler {
      * Constructs the Entity Operator reconciler
      *
      * @param reconciliation            Reconciliation marker
-     * @param operationTimeoutMs        Timeout for Kubernetes operations
+     * @param config                    Cluster Operator Configuration
+     * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param clusterCa                 The Cluster CA instance
-     * @param deploymentOperator        The Deployment operator for working with Kubernetes Deployments
-     * @param secretOperator            The Secret operator for working with Kubernetes Secrets
-     * @param serviceAccountOperator    The Service Account operator for working with Kubernetes Service Accounts
-     * @param roleOperator              The Role operator for working with Kubernetes Roles
-     * @param roleBindingOperator       The Role Binding operator for working with Kubernetes Role Bindings
-     * @param configMapOperator         The Config Map operator for working with Kubernetes Config Maps
      */
     public EntityOperatorReconciler(
             Reconciliation reconciliation,
-            long operationTimeoutMs,
+            ClusterOperatorConfig config,
+            ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
-            ClusterCa clusterCa,
-            DeploymentOperator deploymentOperator,
-            SecretOperator secretOperator,
-            ServiceAccountOperator serviceAccountOperator,
-            RoleOperator roleOperator,
-            RoleBindingOperator roleBindingOperator,
-            ConfigMapOperator configMapOperator
+            ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
-        this.operationTimeoutMs = operationTimeoutMs;
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
 
-        this.deploymentOperator = deploymentOperator;
-        this.secretOperator = secretOperator;
-        this.serviceAccountOperator = serviceAccountOperator;
-        this.roleOperator = roleOperator;
-        this.roleBindingOperator = roleBindingOperator;
-        this.configMapOperator = configMapOperator;
+        this.deploymentOperator = supplier.deploymentOperations;
+        this.secretOperator = supplier.secretOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperations;
+        this.roleOperator = supplier.roleOperations;
+        this.roleBindingOperator = supplier.roleBindingOperations;
+        this.configMapOperator = supplier.configMapOperations;
     }
 
     /**
@@ -406,6 +401,7 @@ public class EntityOperatorReconciler {
                         if (patchResult instanceof ReconcileResult.Noop)   {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged || clusterCa.certsRemoved()) {
+                                LOGGER.infoCr(reconciliation, "Rolling Entity Operator to update or remove certificates");
                                 return rollDeployment();
                             }
                         }

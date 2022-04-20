@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -284,8 +285,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @param reconciliation       The reconciliation
      * @param namespace            Namespace of the Connect cluster
-     * @param connect              KafkaConnectCluster object
      * @param name                 ServiceAccount name
+     * @param connect              KafkaConnectCluster object
      * @return                     Future for tracking the asynchronous result of reconciling the ServiceAccount
      */
     protected Future<ReconcileResult<ServiceAccount>> connectServiceAccount(Reconciliation reconciliation, String namespace, String name, KafkaConnectCluster connect) {
@@ -892,4 +893,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 "The time the reconciliation takes to complete");
     }
 
+    /**
+     * Creates the ClusterRoleBinding required for the init container used for client rack-awareness.
+     * The init-container needs to be able to read the labels from the node it is running on to be able
+     * to determine the `client.rack` option.
+     *
+     * @param reconciliation The reconciliation
+     * @param crbName ClusterRoleBinding name
+     * @param crb ClusterRoleBinding
+     *
+     * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
+     */
+    protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
+        return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
+    }
 }

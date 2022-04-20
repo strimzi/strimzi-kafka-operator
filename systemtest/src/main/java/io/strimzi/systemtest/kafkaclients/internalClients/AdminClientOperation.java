@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-public enum AdminClientOperations {
+public enum AdminClientOperation {
     CREATE_TOPICS("create"),
     DELETE_TOPICS("delete"),
     LIST_TOPICS("list"),
@@ -13,7 +13,7 @@ public enum AdminClientOperations {
 
     private final String operation;
 
-    AdminClientOperations(String operation) {
+    AdminClientOperation(String operation) {
         this.operation = operation;
     }
 

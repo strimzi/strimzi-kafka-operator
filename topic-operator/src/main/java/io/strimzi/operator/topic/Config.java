@@ -20,7 +20,7 @@ public class Config {
     }
 
     /** A java string */
-    private static final Type<? extends String> STRING = new Type<String>() {
+    private static final Type<? extends String> STRING = new Type<>() {
         @Override
         public String parse(String s) {
             return s;
@@ -28,7 +28,7 @@ public class Config {
     };
 
     /** A java Long */
-    private static final Type<? extends Long> LONG = new Type<Long>() {
+    private static final Type<? extends Long> LONG = new Type<>() {
         @Override
         public Long parse(String s) {
             return Long.parseLong(s);
@@ -36,7 +36,7 @@ public class Config {
     };
 
     /** A Java Integer */
-    private static final Type<? extends Integer> POSITIVE_INTEGER = new Type<Integer>() {
+    private static final Type<? extends Integer> POSITIVE_INTEGER = new Type<>() {
         @Override
         Integer parse(String s) {
             int value = Integer.parseInt(s);
@@ -48,7 +48,7 @@ public class Config {
     };
 
     /** A Java Boolean */
-    private static final Type<? extends Boolean> BOOLEAN = new Type<Boolean>() {
+    private static final Type<? extends Boolean> BOOLEAN = new Type<>() {
         @Override
         Boolean parse(String s) {
             return Boolean.parseBoolean(s);
@@ -58,7 +58,7 @@ public class Config {
     /**
      * A time duration.
      */
-    private static final Type<? extends Long> DURATION = new Type<Long>() {
+    private static final Type<? extends Long> DURATION = new Type<>() {
 
         @Override
         public Long parse(String s) {
@@ -69,7 +69,7 @@ public class Config {
     /**
      * A kubernetes selector.
      */
-    private static final Type<? extends Labels> LABEL_PREDICATE = new Type<Labels>() {
+    private static final Type<? extends Labels> LABEL_PREDICATE = new Type<>() {
         @Override
         public Labels parse(String s) {
             return Labels.fromString(s);
@@ -260,7 +260,7 @@ public class Config {
             this.map.put(configValue.key, get(map, configValue));
         }
         // now add all those config (with default value) that weren't in the given map
-        Map<String, Value> x = new HashMap<>(CONFIG_VALUES);
+        Map<String, Value<?>> x = new HashMap<>(CONFIG_VALUES);
         x.keySet().removeAll(map.keySet());
         for (Value<?> value : x.values()) {
             this.map.put(value.key, get(map, value));
@@ -281,7 +281,7 @@ public class Config {
         }
         final String s = map.getOrDefault(value.key, value.defaultValue);
         if (s != null) {
-            return (T) value.type.parse(s);
+            return value.type.parse(s);
         } else {
             if (value.required) {
                 throw new IllegalArgumentException("Config value: " + value.key + " is mandatory");

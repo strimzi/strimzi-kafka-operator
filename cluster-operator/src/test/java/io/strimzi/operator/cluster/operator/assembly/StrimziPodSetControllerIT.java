@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -71,7 +72,7 @@ public class StrimziPodSetControllerIT {
     private static StrimziPodSetController controller;
 
     private static CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
-    private static CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> podSetOperator;
+    private static StrimziPodSetOperator podSetOperator;
     private static PodOperator podOperator;
 
     @BeforeAll
@@ -99,8 +100,8 @@ public class StrimziPodSetControllerIT {
 
         client = new DefaultKubernetesClient();
         vertx = Vertx.vertx();
-        kafkaOperator = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
-        podSetOperator = new CrdOperator(vertx, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
+        kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        podSetOperator = new StrimziPodSetOperator(vertx, client, 60_000L);
         podOperator = new PodOperator(vertx, client);
 
         kafkaOp().inNamespace(NAMESPACE).create(kafka(KAFKA_NAME, MATCHING_LABELS));
@@ -359,7 +360,7 @@ public class StrimziPodSetControllerIT {
 
             // Scale-up the pod-set
             Pod pod2 = pod(pod2Name, KAFKA_NAME, podSetName);
-            podSetOp().inNamespace(NAMESPACE).patch(podSet(podSetName, KAFKA_NAME, pod1, pod2));
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1, pod2));
 
             // Wait until the new pod is ready
             TestUtils.waitFor(
@@ -383,7 +384,7 @@ public class StrimziPodSetControllerIT {
                     () -> context.failNow("Pod stats do not match"));
 
             // Scale-down the pod-set
-            podSetOp().inNamespace(NAMESPACE).patch(podSet(podSetName, KAFKA_NAME, pod1));
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1));
 
             // Wait until the pod is ready
             TestUtils.waitFor(
@@ -457,7 +458,7 @@ public class StrimziPodSetControllerIT {
             Pod updatedPod = pod(podName, KAFKA_NAME, podSetName);
             updatedPod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, "new-revision");
             updatedPod.getSpec().setTerminationGracePeriodSeconds(1L);
-            podSetOp().inNamespace(NAMESPACE).patch(podSet(podSetName, KAFKA_NAME, updatedPod));
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, updatedPod));
 
             // Check status of the PodSet
             TestUtils.waitFor(

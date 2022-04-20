@@ -22,6 +22,9 @@ public enum CruiseControlConfigurationParameters {
     CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE("webserver.security.enable"),
     CRUISE_CONTROL_WEBSERVER_AUTH_CREDENTIALS_FILE("webserver.auth.credentials.file"),
     CRUISE_CONTROL_WEBSERVER_SSL_ENABLE("webserver.ssl.enable"),
+    CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME("partition.metric.sample.store.topic"),
+    CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME("broker.metric.sample.store.topic"),
+    CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME("metric.reporter.topic"),
 
     // Metrics reporter configurations
     METRICS_REPORTER_BOOTSTRAP_SERVERS("cruise.control.metrics.reporter.bootstrap.servers"),
@@ -52,6 +55,9 @@ public enum CruiseControlConfigurationParameters {
     // Defaults
     public static final boolean DEFAULT_WEBSERVER_SECURITY_ENABLED = true;
     public static final boolean DEFAULT_WEBSERVER_SSL_ENABLED = true;
+    public static final String DEFAULT_PARTITION_METRIC_TOPIC_NAME = "strimzi.cruisecontrol.partitionmetricsamples";
+    public static final String DEFAULT_BROKER_METRIC_TOPIC_NAME = "strimzi.cruisecontrol.modeltrainingsamples";
+    public static final String DEFAULT_METRIC_REPORTER_TOPIC_NAME = "strimzi.cruisecontrol.metrics";
 
     private final String value;
 

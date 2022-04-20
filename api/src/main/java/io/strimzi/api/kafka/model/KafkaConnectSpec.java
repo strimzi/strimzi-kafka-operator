@@ -23,11 +23,11 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "version", "replicas", "image",
-    "bootstrapServers", "tls", "authentication", "config", "resources",
-    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
-    "affinity", "tolerations", "logging", "metrics", "tracing",
-    "template", "externalConfiguration"})
+@JsonPropertyOrder({ "version", "replicas", "image", "bootstrapServers",
+    "tls", "authentication", "config", "resources", "livenessProbe",
+    "readinessProbe", "jvmOptions", "jmxOptions", "affinity", "tolerations",
+    "logging", "clientRackInitImage", "rack", "metrics", "tracing",
+    "template", "externalConfiguration" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
@@ -37,8 +37,6 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols";
 
     private Map<String, Object> config = new HashMap<>(0);
-    private String clientRackInitImage;
-    private Rack rack;
     private String bootstrapServers;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
@@ -51,26 +49,6 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     public void setConfig(Map<String, Object> config) {
         this.config = config;
-    }
-
-    @Description("The image of the init container used for initializing the `client.rack`.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public String getClientRackInitImage() {
-        return clientRackInitImage;
-    }
-
-    public void setClientRackInitImage(String brokerRackInitImage) {
-        this.clientRackInitImage = brokerRackInitImage;
-    }
-
-    @Description("Configuration of the node label which will be used as the client.rack consumer configuration.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public Rack getRack() {
-        return rack;
-    }
-
-    public void setRack(Rack rack) {
-        this.rack = rack;
     }
 
     @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.")

@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -167,6 +168,24 @@ public class KafkaTopicUtils {
         return waitForKafkaTopicStatus(kubeClient().getNamespace(), topicName, NotReady);
     }
 
+    public static void waitForTopicConfigContains(String namespaceName, String topicName, Map<String, Object> config) {
+        LOGGER.info("Wait until topic {} contains correct config", topicName);
+        TestUtils.waitFor("Wait for correct config",
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+                () -> KafkaTopicUtils.configsAreEqual(KafkaTopicResource.kafkaTopicClient()
+                        .inNamespace(namespaceName).withName(topicName).get().getSpec().getConfig(), config)
+        );
+        LOGGER.info("Topic {} contains correct config", topicName);
+    }
+
+    public static boolean configsAreEqual(Map<String, Object> actualConf, Map<String, Object> expectedConf) {
+        if ((actualConf != null && expectedConf != null) && (expectedConf.size() == actualConf.size())) {
+            return expectedConf.entrySet().stream()
+                    .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));
+        }
+        return false;
+    }
+
     public static void waitForKafkaTopicsCount(final String namespaceName, int topicCount, String clusterName) {
         LOGGER.info("Wait until we create {} KafkaTopics", topicCount);
         TestUtils.waitFor(topicCount + " KafkaTopics creation",
@@ -213,9 +232,15 @@ public class KafkaTopicUtils {
             .collect(Collectors.toList());
     }
 
-    public static void deleteAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+    public static void deleteAllKafkaTopicsByPrefixWithWait(String namespace, String prefix) {
         KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, prefix).forEach(topic ->
             cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
         );
+    }
+
+    public static void waitForTopicsByPrefixDeletionUsingPodCli(String namespace, String prefix, String bootstrapName, String kafkaPodName, String properties) {
+        LOGGER.info("Waiting for all topics with prefix {} will be deleted from Kafka", prefix);
+        TestUtils.waitFor(String.format("all topics with prefix %s deletion", prefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+            () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, bootstrapName, kafkaPodName, properties).contains(prefix));
     }
 }

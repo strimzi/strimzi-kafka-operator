@@ -961,8 +961,7 @@ public class KafkaUpgradeDowngradeMockTest {
                 })));
     }
 
-    // Test downgrade with message and protocol versions defined to newer version than we downgrade to (this fails before
-    // reaching downgrade since this is invalid Kafka CR).
+    // Test downgrade with message and protocol versions defined to newer version than we downgrade to.
     @Test
     public void testDowngradeWithWrongMessageAndProtocolVersionsFails(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
@@ -985,7 +984,7 @@ public class KafkaUpgradeDowngradeMockTest {
                 }))
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
                 .onComplete(context.failing(v -> context.verify(() -> {
-                    assertThat(v.getMessage(), stringContainsInOrder("does not match the required pattern"));
+                    assertThat(v.getMessage(), stringContainsInOrder("used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to"));
 
                     reconciliation.flag();
                 })));

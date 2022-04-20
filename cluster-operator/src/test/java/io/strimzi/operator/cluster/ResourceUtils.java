@@ -56,6 +56,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -703,7 +704,7 @@ public class ResourceUtils {
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
-                mock(CrdOperator.class),
+                mock(StrimziPodSetOperator.class),
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
@@ -779,11 +780,11 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs, "");
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), operationTimeoutMs, "");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
     }
 
     /**

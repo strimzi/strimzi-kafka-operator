@@ -25,6 +25,7 @@ final public class TestStorage {
 
     private static final String PRODUCER = "hello-world-producer";
     private static final String CONSUMER = "hello-world-consumer";
+    private static final String ADMIN = "admin-client";
     private static final String USER = "user";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     private static final Random RANDOM = new Random();
@@ -38,6 +39,7 @@ final public class TestStorage {
     private String scraperName;
     private String producerName;
     private String consumerName;
+    private String adminName;
     private String userName;
     private LabelSelector kafkaSelector;
     private LabelSelector zkSelector;
@@ -57,6 +59,7 @@ final public class TestStorage {
         this.scraperName = clusterName + "-" + Constants.SCRAPER_NAME;
         this.producerName = clusterName + "-" + PRODUCER;
         this.consumerName = clusterName  + "-" + CONSUMER;
+        this.adminName = clusterName + "-" + ADMIN;
         this.userName = clusterName + "-" + USER;
         this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         this.zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -70,6 +73,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.SCRAPER_KEY, this.scraperName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PRODUCER_KEY, this.producerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ADMIN_KEY, this.adminName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.userName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_SELECTOR, this.kafkaSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_SELECTOR, this.zkSelector);
@@ -110,6 +114,10 @@ final public class TestStorage {
 
     public String getConsumerName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CONSUMER_KEY).toString();
+    }
+
+    public String getAdminName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ADMIN_KEY).toString();
     }
 
     public String getUserName() {

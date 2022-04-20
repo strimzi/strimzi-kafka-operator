@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
@@ -25,6 +24,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -49,12 +49,12 @@ import java.util.stream.Collectors;
 public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
 
-    private Thread controllerThread;
+    private final Thread controllerThread;
 
     private volatile boolean stop = false;
 
     private final PodOperator podOperator;
-    private final CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator;
+    private final StrimziPodSetOperator strimziPodSetOperator;
     private final Optional<LabelSelector> crSelector;
     private final String watchedNamespace;
 
@@ -79,7 +79,7 @@ public class StrimziPodSetController implements Runnable {
      * @param podOperator                   Pod operator for managing pods
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
-    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
+    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, StrimziPodSetOperator strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
         this.podOperator = podOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
@@ -298,7 +298,7 @@ public class StrimziPodSetController implements Runnable {
                         .withStatus(desiredStatus)
                         .build();
 
-                strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).patchStatus(updatedPodSet);
+                strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).withName(reconciliation.name()).patchStatus(updatedPodSet);
             } catch (KubernetesClientException e)   {
                 if (e.getCode() == 409) {
                     LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace());
@@ -336,13 +336,12 @@ public class StrimziPodSetController implements Runnable {
                 Pod podWithOwnerReference = new PodBuilder(currentPod).build();
 
                 if (podWithOwnerReference.getMetadata().getOwnerReferences() != null)   {
-                    //List<OwnerReference> owners = new ArrayList<>()
                     podWithOwnerReference.getMetadata().getOwnerReferences().add(owner);
                 } else {
                     podWithOwnerReference.getMetadata().setOwnerReferences(List.of(owner));
                 }
 
-                podOperator.client().inNamespace(reconciliation.namespace()).patch(podWithOwnerReference);
+                podOperator.client().inNamespace(reconciliation.namespace()).withName(pod.getMetadata().getName()).patch(podWithOwnerReference);
             }
 
             if (Readiness.isPodReady(currentPod))   {

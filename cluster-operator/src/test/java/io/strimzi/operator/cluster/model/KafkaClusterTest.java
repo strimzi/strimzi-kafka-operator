@@ -129,6 +129,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -344,7 +345,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = kc.generateJmxSecret();
+        Secret jmxSecret = kc.generateJmxSecret(null);
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
@@ -352,6 +353,33 @@ public class KafkaClusterTest {
         for (Map.Entry<String, String> entry : customLabels.entrySet()) {
             assertThat(jmxSecret.getMetadata().getLabels(), hasEntry(entry.getKey(), entry.getValue()));
         }
+    }
+
+    @ParallelTest
+    public void testJmxSecret() {
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                  .build())
+                            .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        Secret jmxSecret = kc.generateJmxSecret(null);
+
+        assertThat(jmxSecret.getData(), hasKey("jmx-username"));
+        assertThat(jmxSecret.getData(), hasKey("jmx-password"));
+
+        Secret newJmxSecret = kc.generateJmxSecret(jmxSecret);
+
+        assertThat(newJmxSecret.getData(), hasKey("jmx-username"));
+        assertThat(newJmxSecret.getData(), hasKey("jmx-password"));
+        assertThat(newJmxSecret.getData().get("jmx-username"), is(jmxSecret.getData().get("jmx-username")));
+        assertThat(newJmxSecret.getData().get("jmx-password"), is(jmxSecret.getData().get("jmx-password")));
     }
 
     @ParallelTest
@@ -1525,8 +1553,7 @@ public class KafkaClusterTest {
         ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateExpirationPolicy.RENEW_CERTIFICATE);
         clientsCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
 
-        kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses, true);
-        return kc.generateBrokersSecret(clusterCa, clientsCa);
+        return kc.generateCertificatesSecret(clusterCa, clientsCa, externalBootstrapAddress, externalAddresses, true);
     }
 
     @ParallelTest
@@ -2823,9 +2850,10 @@ public class KafkaClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withStorage(jbod)
-                .endKafka()
+                    .editKafka()
+                        .withStorage(jbod)
+                        .withConfig(Map.of("default.replication.factor", 3, "min.insync.replicas", 2))
+                    .endKafka()
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, ephemeral, replicas);
@@ -2840,9 +2868,10 @@ public class KafkaClusterTest {
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withStorage(jbod)
-                .endKafka()
+                    .editKafka()
+                        .withStorage(jbod)
+                        .withConfig(Map.of("default.replication.factor", 3, "min.insync.replicas", 2))
+                    .endKafka()
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, persistent, replicas);
@@ -2857,9 +2886,10 @@ public class KafkaClusterTest {
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withStorage(ephemeral)
-                .endKafka()
+                    .editKafka()
+                        .withStorage(ephemeral)
+                        .withConfig(Map.of("default.replication.factor", 3, "min.insync.replicas", 2))
+                    .endKafka()
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, jbod, replicas);
@@ -2874,9 +2904,10 @@ public class KafkaClusterTest {
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
-                .editKafka()
-                .withStorage(persistent)
-                .endKafka()
+                    .editKafka()
+                        .withStorage(persistent)
+                        .withConfig(Map.of("default.replication.factor", 3, "min.insync.replicas", 2))
+                    .endKafka()
                 .endSpec()
                 .build();
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, jbod, replicas);

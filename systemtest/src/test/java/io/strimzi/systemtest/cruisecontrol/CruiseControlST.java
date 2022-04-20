@@ -53,6 +53,7 @@ import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
@@ -173,7 +174,7 @@ public class CruiseControlST extends AbstractST {
 
         KafkaStatus kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
-        assertThat(kafkaStatus.getConditions().get(0).getReason(), is("InvalidResourceException"));
+        assertThat(kafkaStatus.getConditions().stream().filter(c -> "InvalidResourceException".equals(c.getReason())).findFirst().orElse(null), is(notNullValue()));
 
         LOGGER.info("Increasing Kafka nodes to 3");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().getKafka().setReplicas(3), namespaceName);

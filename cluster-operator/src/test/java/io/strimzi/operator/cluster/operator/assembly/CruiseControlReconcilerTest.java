@@ -111,20 +111,12 @@ public class CruiseControlReconcilerTest {
 
         CruiseControlReconciler rcnclr = new CruiseControlReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
                 kafka.getSpec().getKafka().getStorage(),
-                clusterCa,
-                300_000,
-                null,
-                null,
-                true,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockServiceOps,
-                mockNetPolicyOps,
-                mockCmOps
+                clusterCa
         );
 
         Checkpoint async = context.checkpoint();
@@ -197,20 +189,12 @@ public class CruiseControlReconcilerTest {
 
         CruiseControlReconciler rcnclr = new CruiseControlReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                supplier,
                 kafka,
                 VERSIONS,
                 kafka.getSpec().getKafka().getStorage(),
-                clusterCa,
-                300_000,
-                null,
-                null,
-                true,
-                mockDepOps,
-                mockSecretOps,
-                mockSaOps,
-                mockServiceOps,
-                mockNetPolicyOps,
-                mockCmOps
+                clusterCa
         );
 
         Checkpoint async = context.checkpoint();

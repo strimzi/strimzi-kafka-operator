@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -22,6 +22,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -32,6 +33,7 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -67,13 +69,20 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorManualRollingUpdatesTest {
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
-    private final MockCertManager certManager = new MockCertManager();
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
+    private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.V1_18;
+    private static final MockCertManager CERT_MANAGER = new MockCertManager();
+    private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private final String namespace = "testns";
-    private final String clusterName = "my-cluster";
-    protected static Vertx vertx;
+    private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
+            VERSIONS.defaultVersion(),
+            VERSIONS.defaultVersion(),
+            VERSIONS.defaultVersion().protocolVersion(),
+            VERSIONS.defaultVersion().messageVersion()
+    );
+    private final static String NAMESPACE = "testns";
+    private final static String CLUSTER_NAME = "my-cluster";
+
+    private static Vertx vertx;
 
     @BeforeAll
     public static void before() {
@@ -98,8 +107,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     public void noManualRollingUpdate(VertxTestContext context, boolean useStrimziPodSets) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(clusterName)
-                    .withNamespace(namespace)
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(NAMESPACE)
                     .withGeneration(2L)
                 .endMetadata()
                 .withNewSpec()
@@ -127,7 +136,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         if (useStrimziPodSets) {
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null)));
 
@@ -138,7 +147,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
             when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
@@ -147,9 +156,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
@@ -161,30 +170,44 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         }
 
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
                 config,
                 supplier,
-                new PlatformFeaturesAvailability(false, kubernetesVersion),
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
+                VERSION_CHANGE,
                 null,
+                0,
+                null);
+
+        MockKafkaReconciler kr = new MockKafkaReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                vertx,
+                config,
+                supplier,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                kafka,
+                VERSION_CHANGE,
                 null,
+                0,
                 null,
                 null);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
                 supplier,
                 config,
-                zr);
+                zr,
+                kr);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(zr.maybeRollZooKeeperInvocations, is(0));
-                    assertThat(kao.maybeRollKafkaInvocations, is(0));
+                    assertThat(kr.maybeRollKafkaInvocations, is(0));
 
                     async.flag();
                 })));
@@ -203,8 +226,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     public void manualRollingUpdate(VertxTestContext context, boolean useStrimziPodSets) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(clusterName)
-                    .withNamespace(namespace)
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(NAMESPACE)
                     .withGeneration(2L)
                 .endMetadata()
                 .withNewSpec()
@@ -232,7 +255,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         if (useStrimziPodSets) {
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenAnswer(i -> {
                 StrimziPodSet zkPodSet = zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null);
                 zkPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
@@ -259,7 +282,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 return Future.succeededFuture(sts);
             });
 
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
@@ -267,9 +290,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         ClusterOperatorConfig config;
@@ -280,27 +303,41 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         }
 
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
                 config,
                 supplier,
-                new PlatformFeaturesAvailability(false, kubernetesVersion),
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
+                VERSION_CHANGE,
                 null,
+                0,
+                null);
+
+        MockKafkaReconciler kr = new MockKafkaReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                vertx,
+                config,
+                supplier,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                kafka,
+                VERSION_CHANGE,
                 null,
+                0,
                 null,
                 null);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
                 supplier,
                 config,
-                zr);
+                zr,
+                kr);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify Zookeeper rolling updates
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
@@ -309,10 +346,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-2")), is(Collections.singletonList("manual rolling update")));
 
                     // Verify Kafka rolling updates
-                    assertThat(kao.maybeRollKafkaInvocations, is(1));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.maybeRollKafkaInvocations, is(1));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
 
                     async.flag();
                 })));
@@ -331,8 +368,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
     public void manualPodRollingUpdate(VertxTestContext context, boolean useStrimziPodSets) {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(clusterName)
-                    .withNamespace(namespace)
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(NAMESPACE)
                     .withGeneration(2L)
                 .endMetadata()
                 .withNewSpec()
@@ -360,7 +397,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         if (useStrimziPodSets) {
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null)));
 
@@ -371,7 +408,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
             when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
@@ -393,9 +430,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             return Future.succeededFuture(pods);
         });
 
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         ClusterOperatorConfig config;
@@ -406,27 +443,41 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         }
 
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName),
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
                 config,
                 supplier,
-                new PlatformFeaturesAvailability(false, kubernetesVersion),
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 kafka,
+                VERSION_CHANGE,
                 null,
+                0,
+                null);
+
+        MockKafkaReconciler kr = new MockKafkaReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                vertx,
+                config,
+                supplier,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                kafka,
+                VERSION_CHANGE,
                 null,
+                0,
                 null,
                 null);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
                 supplier,
                 config,
-                zr);
+                zr,
+                kr);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Verify Zookeeper rolling updates
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
@@ -435,10 +486,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-2")), is(List.of("manual rolling update annotation on a pod")));
 
                     // Verify Kafka rolling updates
-                    assertThat(kao.maybeRollKafkaInvocations, is(1));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(RestartReasons.empty()));
+                    assertThat(kr.maybeRollKafkaInvocations, is(1));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(RestartReasons.empty()));
 
                     async.flag();
                 })));
@@ -458,15 +509,14 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .build();
     }
 
-    class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+    static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         ZooKeeperReconciler mockZooKeeperReconciler;
+        KafkaReconciler mockKafkaReconciler;
 
-        int maybeRollKafkaInvocations = 0;
-        Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
-
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
             this.mockZooKeeperReconciler = mockZooKeeperReconciler;
+            this.mockKafkaReconciler = mockKafkaReconciler;
         }
 
         ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
@@ -476,9 +526,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return Future.succeededFuture(reconcileState)
-                    .compose(state -> state.getKafkaClusterDescription())
                     .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
-                    .compose(state -> state.kafkaManualRollingUpdate())
+                    .compose(state -> state.reconcileKafka(this::dateSupplier))
                     .mapEmpty();
         }
 
@@ -488,15 +537,13 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             }
 
             @Override
-            Future<Void> maybeRollKafka(int replicas, Function<Pod, RestartReasons> podNeedsRestart) {
-                maybeRollKafkaInvocations++;
-                kafkaPodNeedsRestart = podNeedsRestart;
-                return Future.succeededFuture();
+            Future<ZooKeeperReconciler> zooKeeperReconciler()    {
+                return Future.succeededFuture(mockZooKeeperReconciler);
             }
 
             @Override
-            Future<ZooKeeperReconciler> zooKeeperReconciler()    {
-                return Future.succeededFuture(mockZooKeeperReconciler);
+            Future<KafkaReconciler> kafkaReconciler()    {
+                return Future.succeededFuture(mockKafkaReconciler);
             }
         }
     }
@@ -505,7 +552,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         int maybeRollZooKeeperInvocations = 0;
         Function<Pod, List<String>> zooPodNeedsRestart = null;
 
-        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, Integer currentReplicas, ClusterCa clusterCa) {
+        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa) {
             super(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, versionChange, oldStorage, currentReplicas, clusterCa);
         }
 
@@ -518,6 +565,33 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
             maybeRollZooKeeperInvocations++;
             zooPodNeedsRestart = podNeedsRestart;
+            return Future.succeededFuture();
+        }
+    }
+
+    static class MockKafkaReconciler extends KafkaReconciler   {
+        int maybeRollKafkaInvocations = 0;
+        Function<Pod, List<String>> kafkaPodNeedsRestart = null;
+
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        }
+
+        @Override
+        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+            return manualRollingUpdate();
+        }
+
+        @Override
+        protected Future<Void> maybeRollKafka(
+                int replicas,
+                Function<Pod, List<String>> podNeedsRestart,
+                Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
+                Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
+                boolean allowReconfiguration
+        ) {
+            maybeRollKafkaInvocations++;
+            kafkaPodNeedsRestart = podNeedsRestart;
             return Future.succeededFuture();
         }
     }

@@ -83,7 +83,10 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY.getValue(), CRUISE_CONTROL_HARD_GOALS),
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)),
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_AUTH_CREDENTIALS_FILE.getValue(), CruiseControl.API_AUTH_CREDENTIALS_FILE),
-            Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED))
+            Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)),
+            Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME),
+            Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME),
+            Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)
     );
 
     private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);

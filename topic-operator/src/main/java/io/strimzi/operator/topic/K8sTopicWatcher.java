@@ -90,7 +90,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private PauseAnnotationChanges pausedAnnotationChanged(KafkaTopic kafkaTopic) {
         boolean pausedByAnno = Annotations.isReconciliationPausedWithAnnotation(kafkaTopic.getMetadata());
-        boolean pausedInStatus = kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getConditions().stream().filter(condition -> "ReconciliationPaused".equals(condition.getType())).findAny().isPresent();
+        boolean pausedInStatus = kafkaTopic.getStatus() != null && kafkaTopic.getStatus().getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
         boolean wasUnpausedIsPaused = pausedByAnno && !pausedInStatus;
         boolean wasPausedIsUnpaused = !pausedByAnno && pausedInStatus;
         return new PauseAnnotationChanges(wasUnpausedIsPaused, wasPausedIsUnpaused);

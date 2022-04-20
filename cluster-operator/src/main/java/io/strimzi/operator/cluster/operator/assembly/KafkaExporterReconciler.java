@@ -8,14 +8,17 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -32,6 +35,8 @@ import java.util.function.Supplier;
  * reconciliation pipeline and is also used to store the state between them.
  */
 public class KafkaExporterReconciler {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaExporterReconciler.class.getName());
+
     private final Reconciliation reconciliation;
     private final long operationTimeoutMs;
     private final KafkaExporter kafkaExporter;
@@ -48,33 +53,29 @@ public class KafkaExporterReconciler {
      * Constructs the Kafka Exporter reconciler
      *
      * @param reconciliation            Reconciliation marker
-     * @param operationTimeoutMs        Timeout for Kubernetes operations
+     * @param config                    Cluster Operator Configuration
+     * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param clusterCa                 The Cluster CA instance
-     * @param deploymentOperator        The Deployment operator for working with Kubernetes Deployments
-     * @param secretOperator            The Secret operator for working with Kubernetes Secrets
-     * @param serviceAccountOperator    The Service Account operator for working with Kubernetes Service Accounts
      */
     public KafkaExporterReconciler(
             Reconciliation reconciliation,
-            long operationTimeoutMs,
+            ClusterOperatorConfig config,
+            ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
-            ClusterCa clusterCa,
-            DeploymentOperator deploymentOperator,
-            SecretOperator secretOperator,
-            ServiceAccountOperator serviceAccountOperator
+            ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
-        this.operationTimeoutMs = operationTimeoutMs;
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaExporter = KafkaExporter.fromCrd(reconciliation, kafkaAssembly, versions);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
 
-        this.deploymentOperator = deploymentOperator;
-        this.secretOperator = secretOperator;
-        this.serviceAccountOperator = serviceAccountOperator;
+        this.deploymentOperator = supplier.deploymentOperations;
+        this.secretOperator = supplier.secretOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperations;
     }
 
     /**
@@ -164,6 +165,7 @@ public class KafkaExporterReconciler {
                         if (patchResult instanceof ReconcileResult.Noop)   {
                             // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
                             if (existingKafkaExporterCertsChanged || clusterCa.certsRemoved()) {
+                                LOGGER.infoCr(reconciliation, "Rolling Kafka Exporter to update or remove certificates");
                                 return kafkaExporterRollingUpdate();
                             }
                         }

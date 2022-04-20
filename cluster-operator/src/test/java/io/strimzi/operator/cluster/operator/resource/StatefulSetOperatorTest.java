@@ -226,7 +226,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -274,7 +274,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -316,7 +316,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -351,7 +351,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -388,7 +388,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator, pvcOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;

@@ -54,7 +54,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -399,7 +399,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     // The resource labels don't match the selector labels => the reconciliation should exit right on
                     // beginning with success. It should not reconcile any resources other than getting the Kafka
                     // resource it self.
-                    verifyZeroInteractions(
+                    verifyNoInteractions(
                             supplier.stsOperations,
                             supplier.serviceOperations,
                             supplier.secretOperations,

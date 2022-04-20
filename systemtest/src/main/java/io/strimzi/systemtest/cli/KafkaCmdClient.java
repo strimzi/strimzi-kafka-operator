@@ -6,6 +6,7 @@ package io.strimzi.systemtest.cli;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import org.apache.logging.log4j.Level;
 
 import java.util.Arrays;
 import java.util.List;
@@ -67,5 +68,20 @@ public class KafkaCmdClient {
 
     public static String updateTopicPartitionsCountUsingPodCli(String clusterName, int kafkaPodId, String topic, int partitions) {
         return updateTopicPartitionsCountUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId, topic, partitions);
+    }
+
+    public static String listTopicsUsingPodCliWithConfigProperties(String namespaceName, String bootstrapName, String kafkaPodName, String properties) {
+        cmdKubeClient().namespace(namespaceName).execInPod(Level.TRACE,
+            kafkaPodName,
+            "/bin/bash", "-c", "echo \"" + properties + "\" | tee /tmp/config.properties"
+        );
+
+        return cmdKubeClient().namespace(namespaceName).execInPod(Level.DEBUG, kafkaPodName, "/opt/kafka/bin/kafka-topics.sh",
+                "--list",
+                "--bootstrap-server",
+                bootstrapName,
+                "--command-config",
+                "/tmp/config.properties")
+            .out();
     }
 }

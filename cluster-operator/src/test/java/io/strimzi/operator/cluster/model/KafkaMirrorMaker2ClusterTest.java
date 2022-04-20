@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -29,6 +30,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -91,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaMirrorMaker2ClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
-    private final String cluster = "foo";
+    private final String clusterName = "foo";
     private final int replicas = 2;
     private final String image = "my-image:latest";
     private final int healthDelay = 100;
@@ -126,7 +128,7 @@ public class KafkaMirrorMaker2ClusterTest {
             .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
             .build();
 
-    private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster))
+    private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, clusterName))
             .withNewSpec()
                 .withImage(image)
                 .withReplicas(replicas)
@@ -161,13 +163,13 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.clusterName,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND,
                 Labels.KUBERNETES_NAME_LABEL, KafkaMirrorMaker2Cluster.APPLICATION_NAME,
-                Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
+                Labels.KUBERNETES_INSTANCE_LABEL, this.clusterName,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.clusterName,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
@@ -176,7 +178,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaMirrorMaker2Resources.deploymentName(cluster));
+        return expectedLabels(KafkaMirrorMaker2Resources.deploymentName(clusterName));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -196,7 +198,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
     @ParallelTest
     public void testDefaultValues() {
-        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, cluster), VERSIONS);
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, clusterName), VERSIONS);
 
         assertThat(kmm2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kmm2.replicas, is(KafkaMirrorMaker2Cluster.DEFAULT_REPLICAS));
@@ -272,7 +274,7 @@ public class KafkaMirrorMaker2ClusterTest {
         Deployment dep = kmm2.generateDeployment(
                 new HashMap<String, String>(), true, null, null);
 
-        assertThat(dep.getMetadata().getName(), is(KafkaMirrorMaker2Resources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getName(), is(KafkaMirrorMaker2Resources.deploymentName(clusterName)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
         Map<String, String> expectedDeploymentLabels = expectedLabels();
         assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
@@ -281,7 +283,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
         Container cont = getContainer(dep);
-        assertThat(cont.getName(), is(KafkaMirrorMaker2Resources.deploymentName(this.cluster)));
+        assertThat(cont.getName(), is(KafkaMirrorMaker2Resources.deploymentName(this.clusterName)));
         assertThat(cont.getImage(), is(kmm2.image));
         assertThat(cont.getEnv(), is(getExpectedEnvVars()));
         assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
@@ -855,8 +857,11 @@ public class KafkaMirrorMaker2ClusterTest {
         Map<String, String> pdbLabels = TestUtils.map("l7", "v7", "l8", "v8");
         Map<String, String> pdbAnots = TestUtils.map("a7", "v7", "a8", "v8");
 
-        Map<String, String> saLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> saAnots = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> crbLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> crbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
+        Map<String, String> saLabels = TestUtils.map("l11", "v11", "l12", "v12");
+        Map<String, String> saAnots = TestUtils.map("a11", "v11", "a12", "v12");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
@@ -869,6 +874,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
+                    .withNewRack("my-topology-key")
                     .withNewTemplate()
                         .withNewDeployment()
                             .withNewMetadata()
@@ -902,6 +908,12 @@ public class KafkaMirrorMaker2ClusterTest {
                                 .withAnnotations(pdbAnots)
                             .endMetadata()
                         .endPodDisruptionBudget()
+                        .withNewClusterRoleBinding()
+                            .withNewMetadata()
+                                .withLabels(crbLabels)
+                                .withAnnotations(crbAnots)
+                            .endMetadata()
+                        .endClusterRoleBinding()
                         .withNewServiceAccount()
                             .withNewMetadata()
                                 .withLabels(saLabels)
@@ -948,7 +960,11 @@ public class KafkaMirrorMaker2ClusterTest {
         io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kmm2.generatePodDisruptionBudgetV1Beta1();
         assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
- 
+
+        // Check ClusterRoleBinding
+        ClusterRoleBinding crb = kmm2.generateClusterRoleBinding();
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnots.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = kmm2.generateServiceAccount();
@@ -1851,5 +1867,71 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(false));
         assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithRack() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editOrNewSpec()
+                    .withNewRack()
+                        .withTopologyKey("topology-key")
+                    .endRack()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        Deployment deployment = cluster.generateDeployment(new HashMap<>(), false, null, null);
+
+        if (resource.getSpec().getRack() != null) {
+            PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+
+            // check that pod spec contains the init Kafka container
+            List<Container> initContainers = podSpec.getInitContainers();
+            assertThat(initContainers, is(notNullValue()));
+            assertThat(initContainers.size() > 0, is(true));
+
+            boolean isKafkaInitContainer =
+                    initContainers.stream().anyMatch(container -> container.getName().equals(KafkaConnectCluster.INIT_NAME));
+            assertThat(isKafkaInitContainer, is(true));
+        }
+    }
+
+    @ParallelTest
+    public void testClusterRoleBindingRack() {
+        String testNamespace = "other-namespace";
+        String topologyKey = "topology-key";
+
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editOrNewMetadata()
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                    .withNewRack(topologyKey)
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
+
+        assertThat(crb.getMetadata().getName(), is(KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(clusterName, testNamespace)));
+        assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
+        assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
+        assertThat(crb.getSubjects().get(0).getName(), is(cluster.getServiceAccountName()));
+    }
+
+    @ParallelTest
+    public void testNullClusterRoleBinding() {
+        String testNamespace = "other-namespace";
+
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editOrNewMetadata()
+                    .withNamespace(testNamespace)
+                .endMetadata()
+                .build();
+
+        KafkaConnectCluster cluster = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
+
+        assertThat(crb, is(nullValue()));
     }
 }

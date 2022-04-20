@@ -343,6 +343,19 @@ spec:
                 required:
                 - type
                 description: Logging configuration for Kafka Connect.
+              clientRackInitImage:
+                type: string
+                description: The image of the init container used for initializing the `client.rack`.
+              rack:
+                type: object
+                properties:
+                  topologyKey:
+                    type: string
+                    example: topology.kubernetes.io/zone
+                    description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
+                required:
+                - topologyKey
+                description: Configuration of the node label which will be used as the `client.rack` consumer configuration.
               tracing:
                 type: object
                 properties:
@@ -1815,9 +1828,6 @@ spec:
                 - output
                 - plugins
                 description: Configures how the Connect container image should be built. Optional.
-              clientRackInitImage:
-                type: string
-                description: The image of the init container used for initializing the `client.rack`.
               metricsConfig:
                 type: object
                 properties:
@@ -1844,16 +1854,6 @@ spec:
                 - type
                 - valueFrom
                 description: Metrics configuration.
-              rack:
-                type: object
-                properties:
-                  topologyKey:
-                    type: string
-                    example: topology.kubernetes.io/zone
-                    description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
-                required:
-                - topologyKey
-                description: Configuration of the node label which will be used as the client.rack consumer configuration.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect cluster.

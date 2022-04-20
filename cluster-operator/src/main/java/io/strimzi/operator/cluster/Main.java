@@ -130,7 +130,7 @@ public class Main {
             kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
             kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
             kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-            kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
         }
 
         @SuppressWarnings({ "rawtypes" })

@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -24,6 +25,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -37,6 +39,32 @@ import java.util.Set;
  */
 public class ReconcilerUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ReconcilerUtils.class.getName());
+
+    /**
+     * In some cases, when the ClusterRoleBinding reconciliation fails with RBAC error and the desired object is null,
+     * we want to ignore the error and return success. This is used to let Strimzi work without some Cluster-wide RBAC
+     * rights when the features they are needed for are not used by the user.
+     *
+     * @param reconciliation    The reconciliation
+     * @param reconcileFuture   The original reconciliation future
+     * @param desired           The desired state of the resource.
+     *
+     * @return                  A future which completes when the resource was reconciled.
+     */
+    public static Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Reconciliation reconciliation, Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
+        return reconcileFuture.compose(
+                rr -> Future.succeededFuture(),
+                e -> {
+                    if (desired == null
+                            && e.getMessage() != null
+                            && e.getMessage().contains("Message: Forbidden!")) {
+                        LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
+                        return Future.succeededFuture();
+                    }
+                    return Future.failedFuture(e.getMessage());
+                }
+        );
+    }
 
     public static Future<Void> podsReady(Reconciliation reconciliation, PodOperator podOperator, long operationTimeoutMs, List<String> podNames) {
         @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture

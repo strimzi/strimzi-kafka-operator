@@ -86,7 +86,7 @@ spec:
 ----
 +
 Reducing the maximum pod disruption budget to zero prevents Kubernetes from automatically evicting the pods in case of voluntary disruptions,
-so pods must be evicted by the Strimzi Drain Cleaner.
+leaving the Strimzi Drain Cleaner and Strimzi Cluster Operator to roll the pod which will be scheduled by Kubernetes on a different worker node.
 +
 Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
 

@@ -24,7 +24,8 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image", "resources", 
     "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
-    "logging", "metricsConfig", "tracing", "template", "externalConfiguration"})
+    "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing",
+    "template", "externalConfiguration" })
 @EqualsAndHashCode(doNotUseGetters = true)
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;
@@ -43,6 +44,8 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     private Tracing tracing;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
+    private String clientRackInitImage;
+    private Rack rack;
 
     @Description("The number of pods in the Kafka Connect group.")
     @DefaultValue("3")
@@ -177,5 +180,25 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
 
     public void setExternalConfiguration(ExternalConfiguration externalConfiguration) {
         this.externalConfiguration = externalConfiguration;
+    }
+
+    @Description("The image of the init container used for initializing the `client.rack`.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public String getClientRackInitImage() {
+        return clientRackInitImage;
+    }
+
+    public void setClientRackInitImage(String brokerRackInitImage) {
+        this.clientRackInitImage = brokerRackInitImage;
+    }
+
+    @Description("Configuration of the node label which will be used as the `client.rack` consumer configuration.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Rack getRack() {
+        return rack;
+    }
+
+    public void setRack(Rack rack) {
+        this.rack = rack;
     }
 }
