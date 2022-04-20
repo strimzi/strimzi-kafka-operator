@@ -91,8 +91,8 @@ public class PvcReconciler {
                         resultPromise.complete();
                     } else {
                         // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
-                        Long currentSize = StorageUtils.parseMemory(currentPvc.getSpec().getResources().getRequests().get("storage"));
-                        Long desiredSize = StorageUtils.parseMemory(desiredPvc.getSpec().getResources().getRequests().get("storage"));
+                        Long currentSize = StorageUtils.convertToMillibytes(currentPvc.getSpec().getResources().getRequests().get("storage"));
+                        Long desiredSize = StorageUtils.convertToMillibytes(desiredPvc.getSpec().getResources().getRequests().get("storage"));
 
                         if (!currentSize.equals(desiredSize))   {
                             // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
