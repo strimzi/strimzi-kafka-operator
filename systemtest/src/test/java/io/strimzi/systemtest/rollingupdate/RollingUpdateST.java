@@ -346,7 +346,7 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(initialReplicas), namespaceName);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, initialReplicas, kafkaPods);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, initialReplicas, kafkaPods);
 
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
 
