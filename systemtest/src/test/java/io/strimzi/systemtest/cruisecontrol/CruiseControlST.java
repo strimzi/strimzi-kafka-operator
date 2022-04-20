@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
@@ -35,14 +37,18 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
@@ -83,14 +89,12 @@ public class CruiseControlST extends AbstractST {
                 .endKafka()
                 .editCruiseControl()
                     .withResources(new ResourceRequirementsBuilder()
-                        .addToLimits("memory", new Quantity("256Mi"))
-                        .addToLimits("cpu", new Quantity("1"))
-                        .addToRequests("memory", new Quantity("256Mi"))
-                        .addToRequests("cpu", new Quantity("0.8"))
+                        .addToLimits("memory", new Quantity("300Mi"))
+                        .addToRequests("memory", new Quantity("300Mi"))
                         .build())
                     .withNewJvmOptions()
-                        .withXmx("512M")
-                        .withXms("256M")
+                        .withXmx("200M")
+                        .withXms("128M")
                         .withXx(Map.of("UseG1GC", "true"))
                     .endJvmOptions()
                 .endCruiseControl()
@@ -98,10 +102,11 @@ public class CruiseControlST extends AbstractST {
             .build());
 
         String ccPodName = kubeClient().listPodsByPrefixInName(namespace, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-        assertResources(namespace, ccPodName, "cruise-control",
-                "256Mi", "1", "256Mi", "800m");
+        Container container = (Container) KubeClusterResource.kubeClient(namespace).getPod(namespace, ccPodName).getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
+        assertThat(container.getResources().getLimits().get("memory"), CoreMatchers.is(new Quantity("300Mi")));
+        assertThat(container.getResources().getRequests().get("memory"), CoreMatchers.is(new Quantity("300Mi")));
         assertExpectedJavaOpts(namespace, ccPodName, "cruise-control",
-                "-Xmx512M", "-Xms256M", "-XX:+UseG1GC");
+                "-Xmx200M", "-Xms128M", "-XX:+UseG1GC");
 
         KafkaTopicUtils.waitForKafkaTopicReady(namespace, CRUISE_CONTROL_METRICS_TOPIC);
         KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace)
