@@ -10,8 +10,10 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -70,9 +72,11 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
     /*
-    * Map containing default values for required configuration properties
+    * Map containing default values for required configuration properties. The map needs to be sorted so that the order
+    * of the entries in the Cruise Control configuration is deterministic and does not cause unnecessary rolling updates
+    * of Cruise Control deployment.
     */
-    private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Map.ofEntries(
+    private static final Map<String, String> CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP = Collections.unmodifiableSortedMap(new TreeMap<>(Map.ofEntries(
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000)),
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(), "1"),
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(), Integer.toString(300_000)),
@@ -87,12 +91,10 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME),
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME),
             Map.entry(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)
-    );
+    )));
 
     private static final List<String> FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIXES);
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(CruiseControlSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
-
-
 
     /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
