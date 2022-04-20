@@ -285,8 +285,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .build());
 
         assertKafkaConnectStatus(1, connectUrl);
-        // TODO: this should be `List.of(EXAMPLE_TOPIC_NAME)` or what? Because it does not have any reason to be empty
-        //  because we edit spec of KafkaConnector and use that `EXAMPLE_TOPIC_NAME` to be inside that topic...
         assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of());
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
@@ -529,7 +527,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         }
 
 
-        KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 3, 3)
+        KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(listeners)
