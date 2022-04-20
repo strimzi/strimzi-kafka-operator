@@ -5,13 +5,14 @@
 * Add support for Apache Kafka 3.0.1
 * Increase the size of the `/tmp` volumes to 5Mi to allow unpacking of compression libraries
 * Use `/healthz` endpoint for Kafka Exporter health checks
-* Update Jackson Library to 2.12.6
 * Renew user certificates in User Operator only during maintenance windows
 * Ensure Topic Operator using Kafka Streams state store can start up successfully 
 * Update Cruise Control to 2.5.89
 * Remove TLS sidecar from Cruise Control pod. Cruise Control is now configured to not using ZooKeeper, so the TLS sidecar is not needed anymore.
 * Allow Cruise Control topic names to be configured
-* Add support for `spec.rack.topologyKey` property in Mirror Maker 2 to enable "fetch from closest replica" feature.
+* Add support for `spec.rack.topologyKey` property in Mirror Maker 2 to enable "fetch from the closest replica" feature.
+* Support for the s390x platform
+  _(The s390x support is currently considered as experimental. We are not aware of any issues, but the s390x build doesn't at this point undergo the same level of testing as the AMD64 container images.)_
 
 ### Changes, deprecations and removals
 
