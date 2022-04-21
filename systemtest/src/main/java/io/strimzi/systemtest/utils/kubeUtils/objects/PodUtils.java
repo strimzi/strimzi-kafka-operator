@@ -129,8 +129,9 @@ public class PodUtils {
             .findFirst().orElseThrow().getMetadata().getName();
     }
 
-    public static Pod getPodByName(String namespaceName, String name) {
-        return kubeClient(namespaceName).listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().equals(name))
+    public static Pod getPodByName(String namespace, String name) {
+        return kubeClient(namespace).listPods(namespace).stream()
+                .filter(pod -> pod.getMetadata().getName().equals(name))
                 .findFirst().orElseThrow();
     }
 

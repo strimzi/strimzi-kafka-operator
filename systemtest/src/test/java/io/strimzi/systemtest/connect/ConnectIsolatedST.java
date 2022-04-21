@@ -93,7 +93,6 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -1317,31 +1316,6 @@ class ConnectIsolatedST extends AbstractST {
 
         final String kafkaConnectPodNameAfterRU = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodNameAfterRU);
-    }
-
-    @ParallelNamespaceTest
-    void testConnectRackAwareness(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext);
-        String topologyKey = "kubernetes.io/hostname";
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 1, 1).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), 1)
-                .editSpec()
-                    .withNewRack(topologyKey)
-                .endSpec()
-                .build());
-
-        LOGGER.info("Connect cluster deployed successfully");
-        String podName = PodUtils.getPodNameByPrefix(storage.getNamespaceName(), KafkaConnectResources.deploymentName(storage.getClusterName()));
-        String podJson = TestUtils.toJsonString(kubeClient(storage.getNamespaceName()).getPod(podName));
-        assertThat(podJson, hasJsonPath(StUtils.initGlobalVariableJsonPathBuilder(0, "RACK_TOPOLOGY_KEY"), hasItem(topologyKey)));
-        assertThat(podJson, hasJsonPath(StUtils.nodeSelectorKeyJsonPathBuilder(topologyKey), hasItem(topologyKey)));
-
-        String podLogs = kubeClient(storage.getNamespaceName()).logs(podName);
-        String podNodeName = PodUtils.getPodByName(storage.getNamespaceName(), podName).getSpec().getNodeName();
-        String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
-        String clientRackConfig = "consumer.client.rack=" + hostname;
-        assertTrue(podLogs.contains(clientRackConfig), "Pod logs contain " + clientRackConfig);
     }
 
     @BeforeAll

@@ -284,6 +284,11 @@ public interface Constants {
     String BRIDGE = "bridge";
 
     /**
+     * Tag for tests where rack awareness is used.
+     */
+    String RACK_AWARENESS = "rack";
+
+    /**
      * Tag for tests which use internal Kafka clients (used clients in cluster)
      */
     String INTERNAL_CLIENTS_USED = "internalclients";
