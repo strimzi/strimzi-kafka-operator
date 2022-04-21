@@ -487,7 +487,7 @@ public class KafkaCluster extends AbstractModel {
      * @param configuration     Kafka broker configuration
      */
     private static void configureCruiseControlMetrics(Kafka kafkaAssembly, KafkaCluster kafkaCluster, KafkaConfiguration configuration) {
-        // If  required Cruise Control metric reporter configurations are missing set them using Kafka defaults
+        // If required Cruise Control metric reporter configurations are missing set them using Kafka defaults
         if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()) == null) {
             kafkaCluster.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS);
         }
@@ -499,10 +499,12 @@ public class KafkaCluster extends AbstractModel {
         } else {
             // If the user has set the CC minISR, but it is higher than the set number of replicas for the metrics topics then we need to abort and make
             // sure that the user sets minISR <= replicationFactor
-            if (Integer.parseInt(kafkaCluster.ccMinInSyncReplicas) > Integer.parseInt(kafkaCluster.ccReplicationFactor)) {
+            int userConfiguredMinInsync = Integer.parseInt(configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()));
+            int configuredCcReplicationFactor = Integer.parseInt(kafkaCluster.ccReplicationFactor != null ? kafkaCluster.ccReplicationFactor : configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()));
+            if (userConfiguredMinInsync > configuredCcReplicationFactor) {
                 throw new IllegalArgumentException(
-                        "The Cruise Control metric topic minISR was set to a value (" + kafkaCluster.ccMinInSyncReplicas + ") " +
-                                "which is higher than the number of replicas for that topic (" + kafkaCluster.ccReplicationFactor + "). " +
+                        "The Cruise Control metric topic minISR was set to a value (" + userConfiguredMinInsync + ") " +
+                                "which is higher than the number of replicas for that topic (" + configuredCcReplicationFactor + "). " +
                                 "Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."
                 );
             }
