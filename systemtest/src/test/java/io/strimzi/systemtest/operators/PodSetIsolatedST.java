@@ -8,14 +8,12 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -36,6 +34,11 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
+/**
+ * This suite contains tests related to StrimziPodSet and its features.<br>
+ * The StrimziPodSets can be enabled by `STRIMZI_FEATURE_GATES` environment variable, and
+ * they should be replacement for StatefulSets in the future.
+ */
 @Tag(REGRESSION)
 @IsolatedSuite
 public class PodSetIsolatedST extends AbstractST {
@@ -105,9 +108,8 @@ public class PodSetIsolatedST extends AbstractST {
     @BeforeAll
     void setup() {
         clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+        clusterOperator = clusterOperator
+            .defaultInstallation()
             .withExtraEnvVars(INITIAL_ENV_VARS)
             .createInstallation()
             .runInstallation();
