@@ -338,6 +338,10 @@ public class KubeClient {
         return client.pods().inNamespace(namespaceName).delete(pod);
     }
 
+    public Boolean deletePodWithName(String namespaceName, String podName) {
+        return client.pods().inNamespace(namespaceName).withName(podName).delete();
+    }
+
     public Boolean deletePod(Pod pod) {
         return deletePod(getNamespace(), pod);
     }
