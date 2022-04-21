@@ -74,12 +74,12 @@ public class PodSetIsolatedST extends AbstractST {
         LOGGER.info("Changing Kafka resource configuration, the pods should not be rolled");
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build()), testStorage.getNamespaceName());
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods);
+            kafka -> {
+                kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
+                kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
+            }, testStorage.getNamespaceName());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-            kafka -> kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build()), testStorage.getNamespaceName());
-        RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), kafkaPods);
+        RollingUpdateUtils.waitForNoKafkaAndZKRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaPods, zkPods);
 
         LOGGER.info("Deleting one Kafka and one ZK pod, the should be recreated");
         kubeClient().deletePodWithName(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
