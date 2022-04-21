@@ -174,7 +174,7 @@ public class KafkaTemplates {
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
-        return new KafkaBuilder(kafka)
+        KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(name)
                 .withClusterName(name)
@@ -231,6 +231,38 @@ public class KafkaTemplates {
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
+
+        if (!Environment.isSharedMemory()) {
+            kb.editSpec()
+                .editKafka()
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("512Mi"))
+                        .addToRequests("memory", new Quantity("512Mi"))
+                        .build())
+                .endKafka()
+                .editZookeeper()
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("256Mi"))
+                        .addToRequests("memory", new Quantity("256Mi"))
+                        .build())
+                .endZookeeper()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
+                    .endUserOperator()
+                    .editTopicOperator()
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
+                    .endTopicOperator()
+                .endEntityOperator()
+                .endSpec();
+        }
+        return kb;
     }
 
     public static KafkaBuilder kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {

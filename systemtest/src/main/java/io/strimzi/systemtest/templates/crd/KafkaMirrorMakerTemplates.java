@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.templates.crd;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -41,7 +43,7 @@ public class KafkaMirrorMakerTemplates {
                                                                    String groupId,
                                                                    int kafkaMirrorMakerReplicas,
                                                                    boolean tlsListener) {
-        return new KafkaMirrorMakerBuilder(kafkaMirrorMaker)
+        KafkaMirrorMakerBuilder kmmb = new KafkaMirrorMakerBuilder(kafkaMirrorMaker)
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
@@ -63,6 +65,16 @@ public class KafkaMirrorMakerTemplates {
                     .addToLoggers("mirrormaker.root.logger", "DEBUG")
                 .endInlineLogging()
             .endSpec();
+
+        if (!Environment.isSharedMemory()) {
+            kmmb.editSpec().withResources(new ResourceRequirementsBuilder()
+                .addToLimits("memory", new Quantity("784Mi"))
+                .addToRequests("memory", new Quantity("784Mi"))
+                .build());
+        }
+
+        return kmmb;
+
     }
 
     public static void deleteKafkaMirrorMakerWithoutWait(String resourceName) {

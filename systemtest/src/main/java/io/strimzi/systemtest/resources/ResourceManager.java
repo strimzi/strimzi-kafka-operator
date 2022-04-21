@@ -11,8 +11,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -24,10 +22,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
@@ -214,11 +209,6 @@ public class ResourceManager {
                 this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Deployment) resource).getSpec().getTemplate());
             }
 
-            // configure resource memory
-            if (!Environment.isSharedMemory()) {
-                this.configureResourceMemory(resource);
-            }
-
             type.create(resource);
 
             synchronized (this) {
@@ -237,71 +227,6 @@ public class ResourceManager {
                 assertTrue(waitResourceCondition(resource, ResourceCondition.readiness(type)),
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
             }
-        }
-    }
-
-    /**
-     * Configures specific memory to Strimzi components (i.e., KafkaMirrorMaker/2, Kafka cluster).
-     *
-     * @param resource any kind of resource (f.e., KafkaMirroMaker/2, Kafka)
-     * @param <T> resource has to inherit from the {@link HasMetadata} interface
-     */
-    private <T extends HasMetadata> void configureResourceMemory(T resource) {
-        ResourceType<T> type = this.findResourceType(resource);
-
-        switch (type.getKind()) {
-            case Kafka.RESOURCE_KIND:
-                ((Kafka) resource)
-                    .getSpec()
-                        .getKafka()
-                            .setResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity("512Mi"))
-                                .addToRequests("memory", new Quantity("512Mi"))
-                                .build());
-                ((Kafka) resource)
-                    .getSpec()
-                        .getZookeeper()
-                            .setResources(new ResourceRequirementsBuilder()
-                                .addToLimits("memory", new Quantity("256Mi"))
-                                .addToRequests("memory", new Quantity("256Mi"))
-                                .build());
-                ((Kafka) resource)
-                    .getSpec()
-                    .getZookeeper()
-                    .setResources(new ResourceRequirementsBuilder()
-                        .addToLimits("memory", new Quantity("256Mi"))
-                        .addToRequests("memory", new Quantity("256Mi"))
-                        .build());
-                ((Kafka) resource)
-                    .getSpec()
-                        .getEntityOperator()
-                            .getUserOperator()
-                                .setResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("256Mi"))
-                                    .addToRequests("memory", new Quantity("256Mi"))
-                                    .build());
-                ((Kafka) resource)
-                    .getSpec()
-                        .getEntityOperator()
-                            .getTopicOperator()
-                                .setResources(new ResourceRequirementsBuilder()
-                                    .addToLimits("memory", new Quantity("256Mi"))
-                                    .addToRequests("memory", new Quantity("256Mi"))
-                                    .build());
-                break;
-            case KafkaMirrorMaker.RESOURCE_KIND:
-                ((KafkaMirrorMaker) resource).getSpec().setResources(new ResourceRequirementsBuilder()
-                    .addToLimits("memory", new Quantity("784Mi"))
-                    .addToRequests("memory", new Quantity("784Mi"))
-                    .build());
-                break;
-            case KafkaMirrorMaker2.RESOURCE_KIND:
-                ((KafkaMirrorMaker2) resource).getSpec().setResources(new ResourceRequirementsBuilder()
-                    .addToLimits("memory", new Quantity("784Mi"))
-                    .addToRequests("memory", new Quantity("784Mi"))
-                    .build());
-                break;
-            // other resources do not need to explicitly specify memory (only components above caused OOM in a minor Kubernetes instances)
         }
     }
 
