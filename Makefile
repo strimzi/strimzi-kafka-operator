@@ -48,6 +48,7 @@ release_prepare:
 	rm -f ./strimzi-cluster-operator-$(RELEASE_VERSION).yaml
 	rm -f ./strimzi-user-operator-$(RELEASE_VERSION).yaml
 	mkdir ./strimzi-$(RELEASE_VERSION)
+	$(CP) CHANGELOG.md ./strimzi-$(RELEASE_VERSION)
 
 release_version:
 	# TODO: This would be replaced ideally once Helm Chart templating is used for cluster and topic operator examples
