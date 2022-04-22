@@ -312,6 +312,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)), Constants.INFRA_NAMESPACE);
 
         KafkaConnectorUtils.waitForConnectorReady(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        KafkaConnectUtils.waitForConnectReady(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Constants.INFRA_NAMESPACE, KafkaConnectResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)).get(0).getMetadata().getName();
         KafkaConnectorUtils.waitForConnectorStability(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kafkaConnectPodName);
 
@@ -622,22 +623,16 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         TestUtils.waitFor("wait until KafkaConnector status has excepted observed generation", Constants.GLOBAL_POLL_INTERVAL,
             Constants.GLOBAL_TIMEOUT, () -> {
                 boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
-                LOGGER.info(formulaResult);
 
                 final Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
                 final String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
 
                 formulaResult = formulaResult && connectorStates.contains(currentState);
-                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && connectorStatus.get("name").equals(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && connectorStatus.get("type").equals(type);
-                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && connectorStatus.get("tasks") != null;
-                LOGGER.info(formulaResult);
                 formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
                 LOGGER.info("KafkaConnectorStatus topic: {}, and expected topic: {}", kafkaConnectorStatus.getTopics().toString(), topics);
-                LOGGER.info(formulaResult);
 
                 return formulaResult;
             });

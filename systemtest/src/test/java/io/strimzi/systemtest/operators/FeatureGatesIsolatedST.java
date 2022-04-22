@@ -257,7 +257,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         int zkReplicas = 1;
-        int kafkaReplicas = 1;
+        int kafkaReplicas = 3;
 
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
@@ -279,7 +279,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .runInstallation();
 
         LOGGER.info("Deploying Kafka");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, kafkaReplicas, zkReplicas).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
