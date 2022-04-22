@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -61,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -82,6 +84,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -163,11 +166,11 @@ public class ConnectorMockTest {
             ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(Long.MAX_VALUE)),
                 KafkaVersionTestUtils.getKafkaVersionLookup());
-        kafkaConnectOperator = new KafkaConnectAssemblyOperator(vertx,
+        kafkaConnectOperator = spy(new KafkaConnectAssemblyOperator(vertx,
             pfa,
             ros,
             config,
-            x -> api);
+            x -> api));
 
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
@@ -1843,10 +1846,13 @@ public class ConnectorMockTest {
         String connectorName1 = "connector1";
         String connectorName2 = "connector2";
 
+        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(connectName)
+                    .addToLabels("foo", "bar")
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .withNewSpec()
@@ -1900,4 +1906,91 @@ public class ConnectorMockTest {
             })));
         })));
     }
+
+    @Test
+    void testConnectorResourceMetricsMoveConnectToOtherOperator(VertxTestContext context) {
+        String connectName1 = "cluster1";
+        String connectName2 = "cluster2";
+        String connectorName1 = "connector1";
+        String connectorName2 = "connector2";
+
+        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+
+        KafkaConnect kafkaConnect1 = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName1)
+                    .addToLabels("foo", "bar")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        KafkaConnect kafkaConnect2 = new KafkaConnectBuilder(kafkaConnect1)
+                .editMetadata()
+                    .withName(connectName2)
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect1);
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect2);
+        waitForConnectReady(connectName1);
+        waitForConnectReady(connectName2);
+
+        KafkaConnector connector1 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName1)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName1)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        KafkaConnector connector2 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName2)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName2)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector1);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector2);
+
+        waitForConnectorPaused(connectorName1);
+        waitForConnectorPaused(connectorName2);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Promise<Void> reconciled1 = Promise.promise();
+        Promise<Void> reconciled2 = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled1.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(2.0));
+
+            Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName2).edit(ctr ->
+                    new KafkaConnectBuilder(ctr)
+                            .editMetadata()
+                                .addToLabels("foo", "baz")
+                            .endMetadata()
+                            .build());
+            waitForConnectReady(connectName1);
+
+            kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled2.complete());
+            reconciled2.future().onComplete(context.succeeding(v1 -> context.verify(() -> {
+                assertThat(resources.value(), is(1.0));
+                assertThat(resourcesPaused.value(), is(1.0));
+                async.flag();
+            })));
+        })));
+    }
+
 }
