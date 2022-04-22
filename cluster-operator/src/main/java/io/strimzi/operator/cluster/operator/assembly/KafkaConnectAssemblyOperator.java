@@ -68,6 +68,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final KafkaVersion.Lookup versions;
     protected final long connectBuildTimeoutMs;
 
+    private final Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
 
     /**
@@ -193,12 +194,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             connectorOperator.listAsync(namespace, connectorsSelector)
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
-                            if (namespace.equals("*")) {
-                                pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
-                            } else {
-                                pausedConnectorsResourceCounter(namespace).set(0);
-                            }
+                            resetConnectorsCounters(namespace);
                             ar.result().forEach(connector -> {
+                                connectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
                                 if (isPaused(connector.getStatus())) {
                                     pausedConnectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
                                 }
@@ -275,8 +273,24 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return dep;
     }
 
+    private void resetConnectorsCounters(String namespace) {
+        if (namespace.equals("*")) {
+            connectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
+            pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
+        } else {
+            connectorsResourceCounter(namespace).set(0);
+            pausedConnectorsResourceCounter(namespace).set(0);
+        }
+    }
+
     private boolean isPaused(KafkaConnectorStatus status) {
         return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
+    }
+
+    public AtomicInteger connectorsResourceCounter(String namespace) {
+        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
+                metrics, null, connectorsResourceCounterMap,
+                "Number of custom resources the operator sees");
     }
 
     public AtomicInteger pausedConnectorsResourceCounter(String namespace) {

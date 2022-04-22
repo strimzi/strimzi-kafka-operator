@@ -1612,8 +1612,6 @@ public class ConnectorMockTest {
         String connectName2 = "cluster2";
         String connectorName1 = "connector1";
         String connectorName2 = "connector2";
-        String connectorName3 = "connector3";
-        String connectorName4 = "connector4";
 
         KafkaConnect kafkaConnect1 = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -1641,27 +1639,13 @@ public class ConnectorMockTest {
                 .editMetadata()
                     .withName(connectorName1)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName1)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
                 .endMetadata()
                 .build();
 
         KafkaConnector connector2 = defaultKafkaConnectorBuilder()
                 .editMetadata()
                     .withName(connectorName2)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName1)
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
-                .endMetadata()
-                .build();
-
-        KafkaConnector connector3 = defaultKafkaConnectorBuilder()
-                .editMetadata()
-                    .withName(connectorName3)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName2)
-                .endMetadata()
-                .build();
-
-        KafkaConnector connector4 = defaultKafkaConnectorBuilder()
-                .editMetadata()
-                    .withName(connectorName4)
                     .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName2)
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
                 .endMetadata()
@@ -1669,19 +1653,12 @@ public class ConnectorMockTest {
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector1);
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector2);
-        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector3);
-        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector4);
 
-        waitForConnectorReady(connectorName1);
+        waitForConnectorPaused(connectorName1);
         waitForConnectorPaused(connectorName2);
-        waitForConnectorReady(connectorName3);
-        waitForConnectorPaused(connectorName4);
 
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
-
-        Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-        assertThat(resources.value(), is(4.0));
 
         Promise<Void> reconciled1 = Promise.promise();
         Promise<Void> reconciled2 = Promise.promise();
@@ -1689,18 +1666,18 @@ public class ConnectorMockTest {
 
         Checkpoint async = context.checkpoint();
         reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
             Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(2.0));
 
             Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).delete(connector1);
-            Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).delete(connector4);
             waitForConnectorDeleted(connectorName1);
-            waitForConnectorDeleted(connectorName4);
-
-            assertThat(resources.value(), is(2.0));
 
             kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled2.complete());
             reconciled2.future().onComplete(context.succeeding(v1 -> context.verify(() -> {
+                assertThat(resources.value(), is(1.0));
                 assertThat(resourcesPaused.value(), is(1.0));
                 async.flag();
             })));
@@ -1751,16 +1728,15 @@ public class ConnectorMockTest {
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
 
-        Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-        assertThat(resources.value(), is(2.0));
-
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
 
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(1.0));
             async.flag();
         })));
@@ -1799,17 +1775,16 @@ public class ConnectorMockTest {
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
 
-        Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-        assertThat(resources.value(), is(1.0));
-
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(1.0));
+
             kafkaConnectOperator.pausedConnectorsResourceCounter(NAMESPACE); // to create metric, otherwise MeterNotFoundException will be thrown
             Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
-
             assertThat(resourcesPaused.value(), is(0.0));
             async.flag();
         })));
@@ -1848,14 +1823,14 @@ public class ConnectorMockTest {
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
 
-        Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-        assertThat(resources.value(), is(1.0));
-
         Promise<Void> reconciled = Promise.promise();
         kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
 
         Checkpoint async = context.checkpoint();
         reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(1.0));
+
             Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(1.0));
             async.flag();
@@ -1901,21 +1876,28 @@ public class ConnectorMockTest {
         MeterRegistry meterRegistry = metricsProvider.meterRegistry();
         Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
 
-        Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
-        assertThat(resources.value(), is(2.0));
 
-        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).delete(kafkaConnect);
-        waitForConnectDeleted(connectName);
-
-        Promise<Void> reconciled = Promise.promise();
-        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
+        Promise<Void> reconciled1 = Promise.promise();
+        Promise<Void> reconciled2 = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled1.complete());
 
         Checkpoint async = context.checkpoint();
-        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
-            kafkaConnectOperator.pausedConnectorsResourceCounter(NAMESPACE); // to create metric, otherwise MeterNotFoundException will be thrown
+        reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
             Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
-            assertThat(resourcesPaused.value(), is(0.0));
-            async.flag();
+            assertThat(resourcesPaused.value(), is(2.0));
+
+            Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).delete(kafkaConnect);
+            waitForConnectDeleted(connectName);
+
+            kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled2.complete());
+            reconciled2.future().onComplete(context.succeeding(v1 -> context.verify(() -> {
+                assertThat(resources.value(), is(0.0));
+                assertThat(resourcesPaused.value(), is(0.0));
+                async.flag();
+            })));
         })));
     }
 }
