@@ -3966,6 +3966,71 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    public void testCruiseControl() {
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .endSpec()
+                .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration(true);
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + 1));
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + 1));
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + 1));
+    }
+
+    @ParallelTest
+    public void testCruiseControlCustomMetricsReporterTopic() {
+        int replicationFactor = 3;
+        int minInsync = 2;
+        int partitions = 5;
+        Map<String, Object> config = new HashMap<>();
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue(), partitions);
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue(), replicationFactor);
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsync);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withConfig(config)
+                .endKafka()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .endSpec()
+                .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration(true);
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + partitions));
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + replicationFactor));
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInsync));
+    }
+
+    @ParallelTest
+    public void testCruiseControlCustomMetricsReporterTopicMinInsync() {
+        int minInsync = 1;
+        Map<String, Object> config = new HashMap<>();
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsync);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withConfig(config)
+                .endKafka()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .endSpec()
+                .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration(true);
+        assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInsync));
+    }
+
+    @ParallelTest
     public void testCruiseControlWithSingleNodeKafka() {
         Map<String, Object> config = new HashMap<>();
         config.put("offsets.topic.replication.factor", 1);
@@ -3991,8 +4056,8 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testCruiseControlWithMinISRgtReplicas() {
         Map<String, Object> config = new HashMap<>();
-        int minInsyncReplicas = 2;
-        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue(), 1);
+        int minInsyncReplicas = 3;
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue(), 2);
         config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsyncReplicas);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -4001,6 +4066,26 @@ public class KafkaClusterTest {
                     .editKafka()
                         .withConfig(config)
                     .endKafka()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .endSpec()
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS));
+    }
+
+    @ParallelTest
+    public void testCruiseControlWithMinISRgtDefaultReplicas() {
+        Map<String, Object> config = new HashMap<>();
+        int minInsyncReplicas = 2;
+        config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsyncReplicas);
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withConfig(config)
+                .endKafka()
                 .withNewCruiseControl()
                 .endCruiseControl()
                 .endSpec()
