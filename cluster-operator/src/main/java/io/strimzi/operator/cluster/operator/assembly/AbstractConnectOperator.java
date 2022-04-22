@@ -124,7 +124,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
-    protected Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
@@ -213,9 +212,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 Reconciliation r = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
                                                 updateStatus(r, noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
-                                                if (isPaused(kafkaConnector.getStatus())) {
-                                                    connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
-                                                }
                                                 LOGGER.infoCr(r, "{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 return Future.succeededFuture();
                                             } else {
@@ -230,9 +226,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
                                                     LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                     updateStatus(reconciliation, zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
-                                                    if (isPaused(kafkaConnector.getStatus())) {
-                                                        connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
-                                                    }
                                                     return Future.succeededFuture();
                                                 } else {
                                                     LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, connectorNamespace, action);
@@ -243,11 +236,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                                     isUseResources(connect),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                                     .compose(reconcileResult -> {
-                                                                        if (isPaused(kafkaConnector.getStatus()) && (action == Action.DELETED || !Annotations.isReconciliationPausedWithAnnotation(kafkaConnector))) {
-                                                                            connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
-                                                                        } else if (!isPaused(kafkaConnector.getStatus()) && Annotations.isReconciliationPausedWithAnnotation(kafkaConnector)) {
-                                                                            connectOperator.pausedConnectorsResourceCounter(connectorNamespace).incrementAndGet();
-                                                                        }
                                                                         LOGGER.infoCr(reconciliation, "reconciled");
                                                                         return Future.succeededFuture(reconcileResult);
                                                                     }));
@@ -261,9 +249,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                 + Labels.STRIMZI_CLUSTER_LABEL
                                                 + "': No connect cluster in which to create this connector."),
                                         kafkaConnector, connectOperator.connectorOperator);
-                                if (isPaused(kafkaConnector.getStatus())) {
-                                    connectOperator.pausedConnectorsResourceCounter(connectorNamespace).decrementAndGet();
-                                }
                             }
 
                             break;
@@ -884,10 +869,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), null);
     }
 
-    protected static boolean isPaused(KafkaConnectorStatus status) {
-        return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
-    }
-
     public Counter connectorsReconciliationsCounter(String namespace) {
         return Operator.getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations", metrics, null, connectorsReconciliationsCounterMap,
                 "Number of reconciliations done by the operator for individual resources");
@@ -907,12 +888,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
                 metrics, null, connectorsResourceCounterMap,
                 "Number of custom resources the operator sees");
-    }
-
-    public AtomicInteger pausedConnectorsResourceCounter(String namespace) {
-        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources.paused",
-                metrics, null, pausedConnectorsResourceCounterMap,
-                "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations");
     }
 
     public Timer connectorsReconciliationsTimer(String namespace) {
