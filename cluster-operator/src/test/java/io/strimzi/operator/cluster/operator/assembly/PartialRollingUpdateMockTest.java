@@ -6,17 +6,14 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.StrimziPodSetList;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
@@ -31,7 +28,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -39,25 +36,25 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static io.strimzi.test.TestUtils.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
-public class PartialRollingUpdateTest {
+public class PartialRollingUpdateMockTest {
 
-    private static final Logger LOGGER = LogManager.getLogger(PartialRollingUpdateTest.class);
+    private static final Logger LOGGER = LogManager.getLogger(PartialRollingUpdateMockTest.class);
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
@@ -65,22 +62,11 @@ public class PartialRollingUpdateTest {
 
     private static Vertx vertx;
     private Kafka cluster;
-    private StatefulSet kafkaSts;
-    private StatefulSet zkSts;
-    private Pod kafkaPod0;
-    private Pod kafkaPod1;
-    private Pod kafkaPod2;
-    private Pod kafkaPod3;
-    private Pod kafkaPod4;
-    private KubernetesClient mockClient;
     private KafkaAssemblyOperator kco;
-    private Pod zkPod0;
-    private Pod zkPod1;
-    private Pod zkPod2;
-    private Secret clusterCaCert;
-    private Secret clusterCaKey;
-    private Secret clientsCaCert;
-    private Secret clientsCaKey;
+
+    // Injected by Fabric8 Mock Kubernetes Server
+    private KubernetesClient client;
+    private MockKube2 mockKube;
 
     @BeforeAll
     public static void before() {
@@ -130,96 +116,101 @@ public class PartialRollingUpdateTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
-
-        KubernetesClient bootstrapClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
-                    .withInitialInstances(Collections.singleton(cluster))
-                .end()
-                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class)
-                .end()
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaCrd()
+                .withInitialKafkas(cluster)
+                .withStrimziPodSetCrd()
+                .withDeploymentController()
+                .withPodController()
+                .withStatefulSetController()
+                .withServiceController()
                 .build();
+        mockKube.start();
 
-        ResourceOperatorSupplier supplier = supplier(bootstrapClient);
-        KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
+        ResourceOperatorSupplier supplier = supplier(client);
+        kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
-        LOGGER.info("bootstrap reconciliation");
+        LOGGER.info("Initial reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
-        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
+        kco.reconcile(new Reconciliation("initialization", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             createAsync.countDown();
         });
         if (!createAsync.await(60, TimeUnit.SECONDS)) {
             context.failNow(new Throwable("Test timeout"));
         }
-        context.completeNow();
-        LOGGER.info("bootstrap reconciliation complete");
+        LOGGER.info("Initial reconciliation complete");
 
-        this.kafkaSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
-        this.zkSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
-        this.zkPod0 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0)).get();
-        this.zkPod1 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1)).get();
-        this.zkPod2 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2)).get();
-        this.kafkaPod0 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, 0)).get();
-        this.kafkaPod1 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, 1)).get();
-        this.kafkaPod2 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, 2)).get();
-        this.kafkaPod3 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, 3)).get();
-        this.kafkaPod4 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, 4)).get();
-        this.clusterCaCert = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).get();
-        this.clusterCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clusterCaKeySecretName(CLUSTER_NAME)).get();
-        this.clientsCaCert = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get();
-        this.clientsCaKey = bootstrapClient.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get();
         context.completeNow();
+    }
+
+    @AfterEach
+    public void afterEach() {
+        mockKube.stop();
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
         return new ResourceOperatorSupplier(vertx, bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
                 FeatureGates.NONE, 60_000L);
     }
 
-    private void startKube() {
-        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
+    private void updateStatefulSetGeneration(String stsName, String annotation, String generation)  {
+        client.apps().statefulSets()
+                .inNamespace(NAMESPACE)
+                .withName(stsName)
+                .edit(sts -> new StatefulSetBuilder(sts)
+                        .editSpec()
+                            .editTemplate()
+                                .editMetadata()
+                                    .addToAnnotations(annotation, generation)
+                                .endMetadata()
+                            .endTemplate()
+                        .endSpec()
+                        .build());
+    }
 
-        this.mockClient = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
-                .withInitialInstances(Collections.singleton(cluster))
-                .end()
-                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class)
-                .end()
-                .withInitialStatefulSets(set(zkSts, kafkaSts))
-                .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
-                .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
-                .build();
+    private void updatePodGeneration(String podName, String annotation, String generation)  {
+        client.pods()
+                .inNamespace(NAMESPACE)
+                .withName(podName)
+                .edit(pod -> new PodBuilder(pod)
+                        .editMetadata()
+                            .addToAnnotations(annotation, generation)
+                        .endMetadata()
+                        .build());
+    }
 
-        ResourceOperatorSupplier supplier = supplier(mockClient);
-
-        this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
-        LOGGER.info("Started test KafkaAssemblyOperator");
+    private void updateSecretGeneration(String secretName, String annotation, String generation)  {
+        client.secrets()
+                .inNamespace(NAMESPACE)
+                .withName(secretName)
+                .edit(secret -> new SecretBuilder(secret)
+                        .editMetadata()
+                            .addToAnnotations(annotation, generation)
+                        .endMetadata()
+                        .build());
     }
 
     @Test
     public void testReconcileOfPartiallyRolledKafkaCluster(VertxTestContext context) {
-        kafkaSts.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
-        kafkaPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
-        kafkaPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
-        kafkaPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
-        kafkaPod3.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
-        kafkaPod4.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
-
-        // Now start the KafkaAssemblyOperator with those pods and that statefulset
-        startKube();
+        updateStatefulSetGeneration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 1), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 3), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 4), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
         kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 4; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
+                Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
                 String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected generation " + generation, generation, is("3")));
@@ -230,13 +221,10 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledZookeeperCluster(VertxTestContext context) {
-        zkSts.getSpec().getTemplate().getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
-        zkPod0.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
-        zkPod1.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
-        zkPod2.getMetadata().getAnnotations().put(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
-
-        // Now start the KafkaAssemblyOperator with those pods and that statefulset
-        startKube();
+        updateStatefulSetGeneration(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
+        updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "2");
+        updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "1");
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
@@ -244,7 +232,7 @@ public class PartialRollingUpdateTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 2; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
+                Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
                 String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected generation " + generation, generation, is("3")));
@@ -255,18 +243,15 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledClusterForClusterCaCertificate(VertxTestContext context) {
-        clusterCaCert.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
-        zkPod0.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "3");
-        zkPod1.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "2");
-        zkPod2.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1");
-        kafkaPod0.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "3");
-        kafkaPod1.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "3");
-        kafkaPod2.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "2");
-        kafkaPod3.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1");
-        kafkaPod4.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "1");
-
-        // Now start the KafkaAssemblyOperator with those pods and that statefulset
-        startKube();
+        updateSecretGeneration(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 1), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "2");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 3), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 4), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1");
+        updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "2");
+        updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "1");
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
@@ -274,13 +259,13 @@ public class PartialRollingUpdateTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 2; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
+                Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
                 String certGeneration = pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected cert generation " + certGeneration, certGeneration, is("3")));
             }
             for (int i = 0; i <= 4; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
+                Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
                 String certGeneration = pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected cert generation " + certGeneration, certGeneration, is("3")));
@@ -291,15 +276,12 @@ public class PartialRollingUpdateTest {
 
     @Test
     public void testReconcileOfPartiallyRolledClusterForClientsCaCertificate(VertxTestContext context) {
-        clientsCaCert.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
-        kafkaPod0.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "3");
-        kafkaPod1.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "3");
-        kafkaPod2.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "2");
-        kafkaPod3.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "1");
-        kafkaPod4.getMetadata().getAnnotations().put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "1");
-
-        // Now start the KafkaAssemblyOperator with those pods and that statefulset
-        startKube();
+        updateSecretGeneration(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 1), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "3");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "2");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 3), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "1");
+        updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 4), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "1");
 
         LOGGER.info("Recovery reconciliation");
         Checkpoint async = context.checkpoint();
@@ -307,7 +289,7 @@ public class PartialRollingUpdateTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 4; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
+                Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
                 String certGeneration = pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected cert generation " + certGeneration, certGeneration, is("3")));
