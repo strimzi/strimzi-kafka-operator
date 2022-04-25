@@ -79,10 +79,6 @@
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>openshift-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-admissionregistration</artifactId>
             <version>${fabric8.kubernetes-model.version}</version>
         </dependency>
