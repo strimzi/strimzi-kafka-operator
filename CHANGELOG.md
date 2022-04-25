@@ -13,6 +13,7 @@
 * Add support for `spec.rack.topologyKey` property in Mirror Maker 2 to enable "fetch from the closest replica" feature.
 * Support for the s390x platform
   _(The s390x support is currently considered as experimental. We are not aware of any issues, but the s390x build doesn't at this point undergo the same level of testing as the AMD64 container images.)_
+* Update Strimzi Kafka Bridge to 0.21.5
 
 ### Changes, deprecations and removals
 
