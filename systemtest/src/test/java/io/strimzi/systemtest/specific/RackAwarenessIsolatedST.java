@@ -62,7 +62,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -77,8 +76,6 @@ class RackAwarenessIsolatedST extends AbstractST {
 
     @IsolatedTest
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         TestStorage storage = new TestStorage(extensionContext);
         String namespace = storage.getNamespaceName();
         String clusterName = storage.getClusterName();
@@ -95,7 +92,7 @@ class RackAwarenessIsolatedST extends AbstractST {
         LOGGER.info("Kafka cluster deployed successfully");
         String ssName = KafkaResources.kafkaStatefulSetName(clusterName);
         String podName = PodUtils.getPodNameByPrefix(namespace, ssName);
-        Pod pod = PodUtils.getPodByName(namespace, podName);
+        Pod pod = kubeClient().getPod(namespace, podName);
 
         // check that spec matches the actual pod configuration
         Affinity specAffinity = StUtils.getStatefulSetOrStrimziPodSetAffinity(KafkaResources.kafkaStatefulSetName(clusterName));
@@ -144,8 +141,6 @@ class RackAwarenessIsolatedST extends AbstractST {
 
     @IsolatedTest
     void testConnectRackAwareness(ExtensionContext extensionContext) {
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         TestStorage storage = new TestStorage(extensionContext);
         String namespace = storage.getNamespaceName();
         String clusterName = storage.getClusterName();
@@ -161,7 +156,7 @@ class RackAwarenessIsolatedST extends AbstractST {
         LOGGER.info("Connect cluster deployed successfully");
         String deployName = KafkaConnectResources.deploymentName(clusterName);
         String podName = PodUtils.getPodNameByPrefix(namespace, deployName);
-        Pod pod = PodUtils.getPodByName(namespace, podName);
+        Pod pod = kubeClient().getPod(namespace, podName);
 
         // check that spec matches the actual pod configuration
         Affinity specAffinity = kubeClient().getDeployment(deployName).getSpec().getTemplate().getSpec().getAffinity();
@@ -181,9 +176,6 @@ class RackAwarenessIsolatedST extends AbstractST {
 
     @IsolatedTest
     void testConnectRackAwarenessCorrectDeployment(ExtensionContext extensionContext) {
-        assumeFalse(Environment.isNamespaceRbacScope());
-        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topologyKey = "kubernetes.io/hostname";
@@ -259,8 +251,6 @@ class RackAwarenessIsolatedST extends AbstractST {
 
     @IsolatedTest
     void testConnectRackAwarenessWrongDeployment(ExtensionContext extensionContext) {
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         Map<String, String> label = Collections.singletonMap("my-label", "value");
@@ -368,8 +358,6 @@ class RackAwarenessIsolatedST extends AbstractST {
 
     @IsolatedTest
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         TestStorage storage = new TestStorage(extensionContext);
         String namespace = storage.getNamespaceName();
         String clusterName = storage.getClusterName();
@@ -392,7 +380,7 @@ class RackAwarenessIsolatedST extends AbstractST {
         LOGGER.info("MirrorMaker2 cluster deployed successfully");
         String deployName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
         String podName = PodUtils.getPodNameByPrefix(namespace, deployName);
-        Pod pod = PodUtils.getPodByName(namespace, podName);
+        Pod pod = kubeClient().getPod(namespace, podName);
 
         // check that spec matches the actual pod configuration
         Affinity specAffinity = kubeClient().getDeployment(deployName).getSpec().getTemplate().getSpec().getAffinity();
@@ -412,6 +400,7 @@ class RackAwarenessIsolatedST extends AbstractST {
 
     @BeforeAll
     void setUp() {
+        assumeFalse(Environment.isNamespaceRbacScope());
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
                 .defaultInstallation()

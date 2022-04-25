@@ -391,7 +391,6 @@ public class KubeClient {
         return statefulSet(getNamespace(), statefulSetName);
     }
 
-
     /**
      * Gets stateful set selectors
      */

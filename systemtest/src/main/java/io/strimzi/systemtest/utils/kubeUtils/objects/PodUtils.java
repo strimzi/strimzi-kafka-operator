@@ -129,12 +129,6 @@ public class PodUtils {
             .findFirst().orElseThrow().getMetadata().getName();
     }
 
-    public static Pod getPodByName(String namespace, String name) {
-        return kubeClient(namespace).listPods(namespace).stream()
-                .filter(pod -> pod.getMetadata().getName().equals(name))
-                .findFirst().orElseThrow();
-    }
-
     public static List<Pod> getPodsByPrefixInNameWithDynamicWait(String namespaceName, String podNamePrefix) {
         AtomicReference<List<Pod>> result = new AtomicReference<>();
 
