@@ -102,13 +102,28 @@ class RackAwarenessST extends AbstractST {
         TestStorage storage = storageMap.get(extensionContext);
         String namespace = storage.getNamespaceName();
         String clusterName = storage.getClusterName();
+        String invalidTopologyKey = "invalid-topology-key";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+
+        LOGGER.info("Deploy KafkaConnect with invalid topology key: {}", invalidTopologyKey);
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
                 .editSpec()
-                    .withNewRack(TOPOLOGY_KEY)
+                    .withNewRack(invalidTopologyKey)
                 .endSpec()
                 .build());
+
+        LOGGER.info("Waiting for ClusterOperator to raise TimeoutException");
+        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", namespace, clusterName);
+
+        List<String> connectNotReadyPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        PodStatus kcWrongStatus = kubeClient().getPod(namespace, connectNotReadyPods.get(0)).getStatus();
+        assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
+        assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
+
+        LOGGER.info("Fix KafkaConnect resource with valid topology key: {}", TOPOLOGY_KEY);
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> kc.getSpec().setRack(new Rack(TOPOLOGY_KEY)), namespace);
+        KafkaConnectUtils.waitForConnectReady(namespace, clusterName);
 
         LOGGER.info("Connect cluster deployed successfully");
         String deployName = KafkaConnectResources.deploymentName(clusterName);
@@ -129,38 +144,6 @@ class RackAwarenessST extends AbstractST {
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(namespace).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
-    }
-
-    @ParallelNamespaceTest
-    void testConnectRackAwarenessWithInvalidTopologyKey(ExtensionContext extensionContext) {
-        TestStorage storage = storageMap.get(extensionContext);
-        String namespace = storage.getNamespaceName();
-        String clusterName = storage.getClusterName();
-        String invalidTopologyKey = "invalid-topology-key";
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
-
-        LOGGER.info("Deploy KafkaConnect with invalid topology key: {}", invalidTopologyKey);
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
-                .editSpec()
-                    .withNewRack(invalidTopologyKey)
-                .endSpec()
-                .build());
-
-        LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrect KafkaConnect resource");
-        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", namespace, clusterName);
-
-        List<String> connectNotReadyPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-        PodStatus kcWrongStatus = kubeClient().getPod(namespace, connectNotReadyPods.get(0)).getStatus();
-        assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
-        assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
-
-        LOGGER.info("Fix KafkaConnect resource with valid topology key: {}", TOPOLOGY_KEY);
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> kc.getSpec().setRack(new Rack(TOPOLOGY_KEY)), namespace);
-        KafkaConnectUtils.waitForConnectReady(namespace, clusterName);
-
-        KafkaConnect kc = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get();
-        assertThat(kc.getSpec().getRack().getTopologyKey(), is(TOPOLOGY_KEY));
     }
 
     @ParallelNamespaceTest
