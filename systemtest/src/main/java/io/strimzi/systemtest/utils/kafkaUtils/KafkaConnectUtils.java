@@ -4,9 +4,11 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.api.model.PodCondition;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -19,7 +21,6 @@ import org.apache.logging.log4j.Level;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -110,18 +111,19 @@ public class KafkaConnectUtils {
     }
 
     /**
-     * Wait for designated Kafka Connect resource condition type and reason to happen.
-     * @param conditionReason String regexp of condition reason
-     * @param conditionType String regexp of condition type
-     * @param namespace namespace name
-     * @param clusterName cluster name
+     * Wait for designated Kafka Connect pod condition to happen.
+     * @param conditionReason Regex of condition reason
+     * @param namespace Namespace name
+     * @param clusterName Cluster name
+     * @param timeoutMs Max wait time in ms
      */
-    public static void waitForKafkaConnectCondition(String conditionReason, String conditionType, String namespace, String clusterName) {
-        TestUtils.waitFor("Wait for KafkaConnect '" + conditionReason + "' condition with type '" + conditionType + "'.",
-                Constants.GLOBAL_POLL_INTERVAL, CO_OPERATION_TIMEOUT_SHORT * 2, () -> {
-                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
-                for (Condition condition : conditions) {
-                    if (condition.getReason().matches(conditionReason) && condition.getType().matches(conditionType)) {
+    public static void waitForConnectPodCondition(String conditionReason, String namespace, String clusterName, long timeoutMs) {
+        TestUtils.waitFor("Wait for Pod '" + conditionReason + "' condition.",
+                Constants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
+                List<String> connectPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+                List<PodCondition> conditions = kubeClient().getPod(namespace, connectPods.get(0)).getStatus().getConditions();
+                for (PodCondition condition : conditions) {
+                    if (condition.getReason().matches(conditionReason)) {
                         return true;
                     }
                 }

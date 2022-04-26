@@ -9,16 +9,13 @@ import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodAffinityTerm;
-import io.fabric8.kubernetes.api.model.PodStatus;
-import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
-import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -33,7 +30,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -97,6 +93,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
     }
 
+    @Tag(CONNECT)
     @ParallelNamespaceTest
     void testConnectRackAwareness(ExtensionContext extensionContext) {
         TestStorage storage = storageMap.get(extensionContext);
@@ -106,26 +103,21 @@ class RackAwarenessST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
 
-        LOGGER.info("Deploy KafkaConnect with invalid topology key: {}", invalidTopologyKey);
+        LOGGER.info("Deploy KafkaConnect with an invalid topology key: {}", invalidTopologyKey);
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
                 .editSpec()
                     .withNewRack(invalidTopologyKey)
                 .endSpec()
                 .build());
 
-        LOGGER.info("Waiting for ClusterOperator to raise TimeoutException");
-        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", namespace, clusterName);
+        LOGGER.info("Check that KafkaConnect pod is unschedulable");
+        KafkaConnectUtils.waitForConnectPodCondition("Unschedulable", namespace, clusterName, 30_000);
 
-        List<String> connectNotReadyPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-        PodStatus kcWrongStatus = kubeClient().getPod(namespace, connectNotReadyPods.get(0)).getStatus();
-        assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
-        assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
-
-        LOGGER.info("Fix KafkaConnect resource with valid topology key: {}", TOPOLOGY_KEY);
+        LOGGER.info("Fix KafkaConnect with a valid topology key: {}", TOPOLOGY_KEY);
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> kc.getSpec().setRack(new Rack(TOPOLOGY_KEY)), namespace);
         KafkaConnectUtils.waitForConnectReady(namespace, clusterName);
 
-        LOGGER.info("Connect cluster deployed successfully");
+        LOGGER.info("KafkaConnect cluster deployed successfully");
         String deployName = KafkaConnectResources.deploymentName(clusterName);
         String podName = PodUtils.getPodNameByPrefix(namespace, deployName);
         Pod pod = kubeClient().getPod(namespace, podName);
@@ -146,6 +138,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
     }
 
+    @Tag(MIRROR_MAKER2)
     @ParallelNamespaceTest
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
         TestStorage storage = storageMap.get(extensionContext);
@@ -198,8 +191,6 @@ class RackAwarenessST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
                 .defaultInstallation()
-                .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
-                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
                 .createInstallation()
                 .runInstallation();
     }
