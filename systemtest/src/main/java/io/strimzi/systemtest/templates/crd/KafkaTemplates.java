@@ -191,11 +191,6 @@ public class KafkaTemplates {
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("default.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("min.insync.replicas", Math.min(Math.max(kafkaReplicas - 1, 1), 2))
-                    .withResources(
-                        new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity("512Mi"))
-                            .addToRequests("memory", new Quantity("512Mi"))
-                            .build())
                     .withListeners(new GenericKafkaListenerBuilder()
                                 .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
