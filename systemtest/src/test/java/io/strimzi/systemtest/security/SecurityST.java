@@ -741,7 +741,7 @@ class SecurityST extends AbstractST {
         assertThat("Cluster CA certificate has not been regenerated yet", secretCa.getMetadata().getAnnotations().get("strimzi.io/ca-cert-generation"), is("0"));
         kubeClient(namespaceName).patchSecret(namespaceName, clusterSecretName, secretCa);
 
-        LOGGER.info("Annotate secret {} with secret force-renew annotation", clusterSecretName);
+        LOGGER.info("Annotate secret {} with secret force-renew annotation", clientsSecretName);
         Secret secretCli = new SecretBuilder(kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName))
             .editMetadata()
                 .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
