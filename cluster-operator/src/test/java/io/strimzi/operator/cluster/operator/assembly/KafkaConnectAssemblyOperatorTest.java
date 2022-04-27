@@ -694,11 +694,13 @@ public class KafkaConnectAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         var mockConnectOps = supplier.connectOperator;
+        var mockConnectorOps = supplier.kafkaConnectorOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
+        when(mockConnectorOps.listAsync(any(), any(Optional.class))).thenReturn(Future.succeededFuture(List.of()));
         String kcNamespace = "test";
 
         KafkaConnect foo = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "foo");
