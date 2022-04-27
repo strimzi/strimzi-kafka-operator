@@ -17,7 +17,6 @@ import io.strimzi.systemtest.AbstractST;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -35,8 +34,6 @@ import org.apache.logging.log4j.Logger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -183,15 +180,5 @@ class RackAwarenessST extends AbstractST {
     @BeforeEach
     void createTestResources(ExtensionContext extensionContext) {
         storageMap.put(extensionContext, new TestStorage(extensionContext));
-    }
-
-    @BeforeAll
-    void setUp() {
-        assumeFalse(Environment.isNamespaceRbacScope());
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
     }
 }
