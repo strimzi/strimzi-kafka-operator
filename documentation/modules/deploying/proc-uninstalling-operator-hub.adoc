@@ -1,0 +1,49 @@
+// Module included in the following assembly:
+//
+// assembly-management-tasks.adoc
+
+[id='uninstalling-operator-hub-{context}']
+= Uninstalling Strimzi from OperatorHub.io
+
+[role="_abstract"]
+This procedure describes how to uninstall Strimzi from OperatorHub.io and remove resources related to the deployment.
+
+You perform the steps using the `kubectl` command-line tool.
+
+.Prerequisites
+
+* Access to a Kubernetes cluster using an account with `cluster-admin` or `strimzi-admin` permissions.
+* You have identified the resources to be deleted.
++
+You can use the following `kubectl` CLI command to find resources and also verify that they have been removed when you have uninstalled Strimzi.
++
+.Command to find resources related to a Strimzi deployment
+[source,shell,subs="+quotes"]
+----
+kubectl get _<resource_type>_ --all-namespaces | grep _<kafka_cluster_name>_
+----
++
+Replace _<resource_type>_ with the type of the resource you are checking, such as `secret` or `configmap`.
+
+.Procedure
+
+. Delete the Strimzi subscription.
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete subscription strimzi-cluster-operator -n _<namespace>_
+----
+
+. Delete the cluster service version (CSV).
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete csv strimzi-cluster-operator._<version>_  -n _<namespace>_
+----
+
+. Remove related CRDs.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get crd -l app=strimzi -o name | xargs kubectl delete
+----

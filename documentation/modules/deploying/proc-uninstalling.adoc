@@ -1,0 +1,50 @@
+// Module included in the following assembly:
+//
+// assembly-management-tasks.adoc
+
+[id='uninstalling-{context}']
+= Uninstalling Strimzi using the CLI
+
+[role="_abstract"]
+This procedure describes how to use the `kubectl` command-line tool to uninstall Strimzi and remove resources related to the deployment.
+
+.Prerequisites
+
+* Access to a Kubernetes cluster using an account with `cluster-admin` or `strimzi-admin` permissions.
+* You have identified the resources to be deleted.
++
+You can use the following `kubectl` CLI command to find resources and also verify that they have been removed when you have uninstalled Strimzi.
++
+.Command to find resources related to a Strimzi deployment
+[source,shell,subs="+quotes"]
+----
+kubectl get _<resource_type>_ --all-namespaces | grep _<kafka_cluster_name>_
+----
++
+Replace _<resource_type>_ with the type of the resource you are checking, such as `secret` or `configmap`.
+
+.Procedure
+
+. Delete the Cluster Operator `Deployment`, related `CustomResourceDefinitions`, and `RBAC` resources.
++
+Specify the installation files used to deploy the Cluster Operator.
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete -f install/cluster-operator
+----
+
+. Delete the resources you identified in the prerequisites.
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete _<resource_type>_ _<resource_name>_ -n _<namespace>_
+----
++
+Replace _<resource_type>_ with the type of resource you are deleting and _<resource_name>_ with the name of the resource.
++
+.Example to delete a secret
+[source,shell,subs="+quotes"]
+----
+kubectl delete secret my-cluster-clients-ca -n my-project
+----
