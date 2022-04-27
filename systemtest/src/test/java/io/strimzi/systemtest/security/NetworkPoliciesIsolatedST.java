@@ -237,10 +237,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, deniedKafkaClientsName, kafkaUser).build());
 

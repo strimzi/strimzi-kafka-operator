@@ -779,10 +779,8 @@ class SecurityST extends AbstractST {
                 kafkaUserSecret, not(sameInstance(kafkaUserSecretRolled)));
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
     }
 
     @ParallelNamespaceTest
@@ -849,10 +847,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
     }
 
     @ParallelNamespaceTest
@@ -1213,10 +1208,7 @@ class SecurityST extends AbstractST {
             .withUsingPodName(defaultKafkaClientsPodName)
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
@@ -1292,10 +1284,7 @@ class SecurityST extends AbstractST {
             .withTopicName(topicName)
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
     }
 
     @ParallelNamespaceTest

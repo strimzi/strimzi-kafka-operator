@@ -336,10 +336,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             topicTestName2, kafkaClusterTargetName, messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         // Initialize CertSecretSource with certificate and secret names for source
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -536,10 +533,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             sourceTopicName, kafkaClusterSourceName, messagesCount);
         // Check brokers availability
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             targetTopicName, kafkaClusterTargetName, userTarget.getMetadata().getName());
@@ -552,10 +546,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             targetTopicName, kafkaClusterTargetName, messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         // Deploy Mirror Maker with TLS and ScramSha512
         KafkaMirrorMaker2ClusterSpec sourceClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder()
