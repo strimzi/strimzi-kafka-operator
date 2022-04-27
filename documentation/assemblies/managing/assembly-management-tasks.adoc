@@ -31,8 +31,5 @@ include::modules/proc-setting-broker-limits.adoc[leveloffset=+1]
 //tuning for clients
 include::assembly-tuning-config.adoc[leveloffset=+1]
 
-//Uninstall the product
-include::modules/proc-uninstalling.adoc[leveloffset=+1]
-
 //faqs for cluster operator
 include::modules/con-cluster-operator-faqs.adoc[leveloffset=+1]
