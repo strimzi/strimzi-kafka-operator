@@ -40,6 +40,7 @@ public class KafkaClients extends BaseClients {
     private long delayMs;
     private String userName;
     private String caCertSecretName;
+    private String headers;
 
     public String getProducerName() {
         return producerName;
@@ -115,6 +116,14 @@ public class KafkaClients extends BaseClients {
         this.caCertSecretName = caCertSecretName;
     }
 
+    public String getHeaders() {
+        return headers;
+    }
+
+    public void setHeaders(String headers) {
+        this.headers = headers;
+    }
+
     public Job producerStrimzi() {
         return defaultProducerStrimzi().build();
     }
@@ -173,7 +182,7 @@ public class KafkaClients extends BaseClients {
             podSpecBuilder.withImagePullSecrets(imagePullSecrets);
         }
 
-        return new JobBuilder()
+        JobBuilder builder = new JobBuilder()
             .withNewMetadata()
                 .withNamespace(this.getNamespaceName())
                 .withLabels(producerLabels)
@@ -234,6 +243,24 @@ public class KafkaClients extends BaseClients {
                     .endSpec()
                 .endTemplate()
             .endSpec();
+
+        if (this.getHeaders() != null) {
+            builder = builder
+                .editSpec()
+                    .editTemplate()
+                        .editSpec()
+                            .editFirstContainer()
+                                .addNewEnv()
+                                    .withName("HEADERS")
+                                    .withValue(this.getHeaders())
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .endSpec();
+        }
+
+        return builder;
     }
 
     public Job consumerScramShaPlainStrimzi() {

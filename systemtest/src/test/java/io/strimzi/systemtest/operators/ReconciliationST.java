@@ -23,7 +23,6 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -92,7 +91,6 @@ public class ReconciliationST extends AbstractST {
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, kafkaSelector, SCALE_TO);
 
         LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no pods should appear");
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)

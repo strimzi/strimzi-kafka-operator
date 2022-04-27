@@ -14,7 +14,6 @@ import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -112,7 +111,6 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaStatusCondition.getType(), is(NotReady.toString()));
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
