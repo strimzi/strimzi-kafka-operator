@@ -170,7 +170,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_SELECTOR, FIRST_CO_NAME);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1)
             .editOrNewMetadata()
                 .addToLabels(FIRST_CO_SELECTOR)
                 .withNamespace(DEFAULT_NAMESPACE)

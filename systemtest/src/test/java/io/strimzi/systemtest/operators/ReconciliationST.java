@@ -141,7 +141,7 @@ public class ReconciliationST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         LOGGER.info("Adding pause annotation into KafkaTopic resource and changing replication factor");
