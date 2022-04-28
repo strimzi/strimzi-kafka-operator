@@ -60,7 +60,7 @@ public class ResourceOperation {
             case ProposalReady:
             case Ready:
             case Rebalancing:
-                timeout = Duration.ofMinutes(10).toMillis();
+                timeout = Duration.ofMinutes(14).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(6).toMillis();
