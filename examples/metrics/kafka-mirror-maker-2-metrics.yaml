@@ -71,8 +71,8 @@ data:
       help: "Kafka $1 JMX metric info version and commit-id"
       type: GAUGE
 
-    #kafka.producer:type=producer-topic-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
-    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
+    #kafka.producer:type=producer-topic-metrics,client-id="{clientid}",topic="{topic}", partition="{partition}"
+    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}", partition="{partition}"
     - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), topic=(.+), partition=(.+)><>(.+-total|compression-rate|.+-avg|.+-replica|.+-lag|.+-lead)
       name: kafka_$2_$6
       labels:
@@ -83,7 +83,7 @@ data:
       type: GAUGE
 
     #kafka.producer:type=producer-topic-metrics,client-id="{clientid}",topic="{topic}"
-    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}"", partition="{partition}"
+    #kafka.consumer:type=consumer-fetch-manager-metrics,client-id="{clientid}",topic="{topic}"
     - pattern: kafka.(.+)<type=(.+)-metrics, client-id=(.+), topic=(.+)><>(.+-total|compression-rate|.+-avg)
       name: kafka_$2_$5
       labels:
