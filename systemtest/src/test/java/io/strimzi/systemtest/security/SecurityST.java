@@ -695,7 +695,7 @@ class SecurityST extends AbstractST {
                 ? windowStartMin + maintenanceWindowDuration - 60 : windowStartMin + maintenanceWindowDuration;
 
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
-        LOGGER.info("Maintenance window is: {}", maintenanceWindowCron);
+        LOGGER.info("Initial maintenanceTimeWindow is: {}", maintenanceWindowCron);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editSpec()
@@ -765,31 +765,22 @@ class SecurityST extends AbstractST {
                     && kafkaPods.equals(PodUtils.podSnapshot(namespaceName, kafkaSelector));
             }
         );
+        assertThat("Rolling update was performed outside of maintenanceTimeWindows", kafkaPods, is(PodUtils.podSnapshot(namespaceName, kafkaSelector)));
 
-        Secret secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
-        Secret secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
-        assertThat("Cluster CA certificate has not been renewed outside of maintenanceTimeWindows",
-                secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
-        assertThat("Clients CA certificate has not been renewed outside of maintenanceTimeWindows",
-                secretCaClients.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
-
-        LOGGER.info("Wait until maintenanceTimeWindows open");
-        LocalDateTime finalMaintenanceWindowStart = maintenanceWindowStart;
-        TestUtils.waitFor("maintenance window start",
-            Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(maintenanceWindowDuration).toMillis() - 10000,
-            () -> LocalDateTime.now().isAfter(finalMaintenanceWindowStart));
-
-        LOGGER.info("MaintenanceTimeWindow starts now");
-        assertThat("Rolling update was performed outside of maintenanceTimeWindows!", kafkaPods, is(PodUtils.podSnapshot(namespaceName, kafkaSelector)));
+        maintenanceWindowCron = "* " + LocalDateTime.now().getMinute() + "-" + windowStopMin + " * * * ? *";
+        LOGGER.info("Set maintenanceTimeWindow to start now to save time: {}", maintenanceWindowCron);
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+            .editSpec()
+                .addToMaintenanceTimeWindows(maintenanceWindowCron)
+            .endSpec()
+            .build());
 
         LOGGER.info("Wait until rolling update is triggered during maintenanceTimeWindows");
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
-        assertThat("Rolling update wasn't performed at correct time", LocalDateTime.now().isAfter(maintenanceWindowStart));
-
         Secret kafkaUserSecretRolled = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
-        secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
-        secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
+        Secret secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
+        Secret secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
 
         assertThat("Cluster CA certificate has been renewed within maintenanceTimeWindows",
                 secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
