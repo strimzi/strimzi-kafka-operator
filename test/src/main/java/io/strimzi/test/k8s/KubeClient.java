@@ -232,6 +232,14 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
+    public PersistentVolumeClaim getPVC(String namespaceName, String pvcName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
+    }
+
+    public boolean deletePVC(String namespaceName, String pvcName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
+    }
+
     public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
         return client.persistentVolumeClaims().inNamespace(namespaceName).list().getItems().stream()
             .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))

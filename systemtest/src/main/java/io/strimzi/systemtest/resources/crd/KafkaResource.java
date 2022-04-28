@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.crd;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -18,6 +19,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
@@ -28,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaResource implements ResourceType<Kafka> {
 
@@ -74,6 +77,12 @@ public class KafkaResource implements ResourceType<Kafka> {
 
         kafkaClient().inNamespace(namespaceName).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+
+        // additional deletion of pvcs with specification deleteClam set to false which were not deleted prior this method
+        for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims(namespaceName, clusterName)) {
+            kubeClient().deletePVC(namespaceName, pvc.getMetadata().getName());
+            PersistentVolumeClaimUtils.waitForPVCDeletion(namespaceName, pvc.getMetadata().getName());
+        }
     }
 
     @Override
