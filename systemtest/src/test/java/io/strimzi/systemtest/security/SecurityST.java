@@ -742,18 +742,29 @@ class SecurityST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
-        CertificateAuthority newClusterCA = new CertificateAuthority();
-        newClusterCA.setRenewalDays(150);
-        newClusterCA.setValidityDays(200);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA),testStorage.getNamespaceName());
+        CertificateAuthority newCAValidity = new CertificateAuthority();
+        newCAValidity.setRenewalDays(150);
+        newCAValidity.setValidityDays(200);
 
-        CertificateAuthority newClientsCA = new CertificateAuthority();
-        newClientsCA.setRenewalDays(150);
-        newClientsCA.setValidityDays(200);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA), testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(
+            testStorage.getClusterName(),
+            k -> {
+                k.getSpec().setClusterCa(newCAValidity);
+                k.getSpec().setClientsCa(newCAValidity);
+            },
+            testStorage.getNamespaceName()
+        );
 
-        LOGGER.info("Wait for reconciliation to happen and make sure certs were not renewed (as we're outside of maintenance time window).");
-        Thread.sleep(Constants.SAFETY_RECONCILIATION_INTERVAL);
+        TestUtils.waitFor("Wait for reconciliation to happen and make sure neither Kafka nor CA certs were renewed (as we're outside of maintenance time window).",
+            Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                Secret secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
+                Secret secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
+                return secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION).equals("0")
+                    && secretCaClients.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION).equals("0")
+                    && kafkaPods.equals(PodUtils.podSnapshot(namespaceName, kafkaSelector));
+            }
+        );
 
         Secret secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
         Secret secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
@@ -762,7 +773,7 @@ class SecurityST extends AbstractST {
         assertThat("Clients CA certificate has not been renewed outside of maintenanceTimeWindows",
                 secretCaClients.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("0"));
 
-        LOGGER.info("Wait until maintenanceTimeWindows opens");
+        LOGGER.info("Wait until maintenanceTimeWindows open");
         LocalDateTime finalMaintenanceWindowStart = maintenanceWindowStart;
         TestUtils.waitFor("maintenance window start",
             Constants.GLOBAL_POLL_INTERVAL, Duration.ofMinutes(maintenanceWindowDuration).toMillis() - 10000,
@@ -780,9 +791,12 @@ class SecurityST extends AbstractST {
         secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
         secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
 
-        assertThat("Cluster CA certificate has been renewed within maintenanceTimeWindows", secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
-        assertThat("Clients CA certificate has been renewed within maintenanceTimeWindows", secretCaClients.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
-        assertThat("KafkaUser certificate has been renewed within maintenanceTimeWindows", kafkaUserSecret, not(sameInstance(kafkaUserSecretRolled)));
+        assertThat("Cluster CA certificate has been renewed within maintenanceTimeWindows",
+                secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
+        assertThat("Clients CA certificate has been renewed within maintenanceTimeWindows",
+                secretCaClients.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
+        assertThat("KafkaUser certificate has been renewed within maintenanceTimeWindows",
+                kafkaUserSecret, not(sameInstance(kafkaUserSecretRolled)));
 
         LOGGER.info("Checking consumed messages to pod:{}", defaultKafkaClientsPodName);
         internalKafkaClient.checkProducedAndConsumedMessages(
