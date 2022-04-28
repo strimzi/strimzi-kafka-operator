@@ -677,15 +677,10 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testCertRenewalInMaintenanceTimeWindow(ExtensionContext extensionContext) throws InterruptedException {
-        // TODO use testStorage
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
-        final String namespaceName = testStorage.getNamespaceName();
-        final String clusterName = testStorage.getClusterName();
-        final String topicName = testStorage.getTopicName();
-        final String userName = testStorage.getUserName();
-        final String clusterSecretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
-        final String clientsSecretName = KafkaResources.clientsCaCertificateSecretName(clusterName);
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final String clusterSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
+        final String clientsSecretName = KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
         long maintenanceWindowDuration = 14;
@@ -697,7 +692,7 @@ class SecurityST extends AbstractST {
         String maintenanceWindowCron = "* " + windowStartMin + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Initial maintenanceTimeWindow is: {}", maintenanceWindowCron);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .addToMaintenanceTimeWindows(maintenanceWindowCron)
                 .editKafka()
@@ -720,27 +715,27 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
+        KafkaUser user = KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build();
 
         resourceManager.createResource(extensionContext, user);
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, Constants.TLS_LISTENER_DEFAULT_NAME, user).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, testStorage.getClusterName() + "-" + Constants.KAFKA_CLIENTS, Constants.TLS_LISTENER_DEFAULT_NAME, user).build());
 
-        Secret kafkaUserSecret = kubeClient(namespaceName).getSecret(namespaceName, userName);
-        String defaultKafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+        Secret kafkaUserSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUserName());
+        String defaultKafkaClientsPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+            .withTopicName(testStorage.getTopicName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withClusterName(testStorage.getClusterName())
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(user.getMetadata().getName())
+            .withKafkaUsername(testStorage.getUserName())
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
         CertificateAuthority newCAValidity = new CertificateAuthority();
         newCAValidity.setRenewalDays(150);
@@ -758,29 +753,29 @@ class SecurityST extends AbstractST {
         TestUtils.waitFor("Wait for reconciliation to happen and make sure neither Kafka nor CA certs were renewed (as we're outside of maintenance time window).",
             Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                Secret secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
-                Secret secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
+                Secret secretCaCluster = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clusterSecretName);
+                Secret secretCaClients = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clientsSecretName);
                 return secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION).equals("0")
                     && secretCaClients.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION).equals("0")
-                    && kafkaPods.equals(PodUtils.podSnapshot(namespaceName, kafkaSelector));
+                    && kafkaPods.equals(PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector));
             }
         );
-        assertThat("Rolling update was performed outside of maintenanceTimeWindows", kafkaPods, is(PodUtils.podSnapshot(namespaceName, kafkaSelector)));
+        assertThat("Rolling update was performed outside of maintenanceTimeWindows", kafkaPods, is(PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector)));
 
         maintenanceWindowCron = "* " + LocalDateTime.now().getMinute() + "-" + windowStopMin + " * * * ? *";
         LOGGER.info("Set maintenanceTimeWindow to start now to save time: {}", maintenanceWindowCron);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .addToMaintenanceTimeWindows(maintenanceWindowCron)
             .endSpec()
             .build());
 
         LOGGER.info("Wait until rolling update is triggered during maintenanceTimeWindows");
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 3, kafkaPods);
 
-        Secret kafkaUserSecretRolled = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
-        Secret secretCaCluster = kubeClient(namespaceName).getSecret(namespaceName, clusterSecretName);
-        Secret secretCaClients = kubeClient(namespaceName).getSecret(namespaceName, clientsSecretName);
+        Secret kafkaUserSecretRolled = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clusterSecretName);
+        Secret secretCaCluster = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clusterSecretName);
+        Secret secretCaClients = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), clientsSecretName);
 
         assertThat("Cluster CA certificate has been renewed within maintenanceTimeWindows",
                 secretCaCluster.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION), is("1"));
