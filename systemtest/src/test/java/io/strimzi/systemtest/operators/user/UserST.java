@@ -367,7 +367,7 @@ class UserST extends AbstractST {
             .build();
 
         LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
-        resourceManager.createResource(extensionContext, clients.producerScramShaPlainStrimzi(), clients.producerScramShaPlainStrimzi());
+        resourceManager.createResource(extensionContext, clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");

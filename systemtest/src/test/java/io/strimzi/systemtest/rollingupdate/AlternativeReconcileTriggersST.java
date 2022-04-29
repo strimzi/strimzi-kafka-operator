@@ -125,6 +125,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -377,10 +378,11 @@ class AlternativeReconcileTriggersST extends AbstractST {
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));

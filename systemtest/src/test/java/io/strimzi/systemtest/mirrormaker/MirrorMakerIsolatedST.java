@@ -219,7 +219,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
-        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(kafkaClusterSourceName), clients.consumerTlsStrimzi(kafkaClusterSourceName));
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
@@ -257,7 +257,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withUserName(kafkaTargetUserName)
             .build();
 
-        resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(kafkaClusterTargetName));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
@@ -342,7 +342,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
-        resourceManager.createResource(extensionContext, clients.producerScramShaTlsStrimzi(testStorage.getClusterName()), clients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResource(extensionContext, clients.producerScramShaTlsStrimzi(kafkaClusterSourceName), clients.consumerScramShaTlsStrimzi(kafkaClusterSourceName));
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         // Deploy Mirror Maker with TLS and ScramSha512
@@ -374,7 +374,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withUserName(kafkaTargetUserName)
             .build();
 
-        resourceManager.createResource(extensionContext, clients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResource(extensionContext, clients.consumerScramShaTlsStrimzi(kafkaClusterTargetName));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 

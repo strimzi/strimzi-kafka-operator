@@ -228,7 +228,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(INFRA_NAMESPACE)
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .build();
