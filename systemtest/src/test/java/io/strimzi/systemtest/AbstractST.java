@@ -525,11 +525,15 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
 
-    private final void afterEachMustExecute(ExtensionContext extensionContext) {
-        if (StUtils.isParallelTest(extensionContext) ||
-            StUtils.isParallelNamespaceTest(extensionContext)) {
-            parallelSuiteController.notifyParallelTestToAllowExecution(extensionContext);
-            parallelSuiteController.removeParallelTest(extensionContext);
+    private void afterEachMustExecute(ExtensionContext extensionContext) {
+        if (cluster.cluster().isClusterUp()) {
+            if (StUtils.isParallelTest(extensionContext) ||
+                StUtils.isParallelNamespaceTest(extensionContext)) {
+                parallelSuiteController.notifyParallelTestToAllowExecution(extensionContext);
+                parallelSuiteController.removeParallelTest(extensionContext);
+            }
+        } else {
+            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -540,34 +544,38 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    private final void afterAllMustExecute(ExtensionContext extensionContext)  {
-        clusterOperator = SetupClusterOperator.getInstanceHolder();
+    private void afterAllMustExecute(ExtensionContext extensionContext)  {
+        if (cluster.cluster().isClusterUp()) {
+            clusterOperator = SetupClusterOperator.getInstanceHolder();
 
-        if (StUtils.isParallelSuite(extensionContext)) {
-            parallelSuiteController.notifyParallelSuiteToAllowExecution(extensionContext);
-            parallelSuiteController.removeParallelSuite(extensionContext);
-        }
+            if (StUtils.isParallelSuite(extensionContext)) {
+                parallelSuiteController.notifyParallelSuiteToAllowExecution(extensionContext);
+                parallelSuiteController.removeParallelSuite(extensionContext);
+            }
 
-        if (StUtils.isIsolatedSuite(extensionContext)) {
-            parallelSuiteController.unLockIsolatedSuite();
-        }
-        // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
-        // we need to rollback to default configuration, which most of the suites use.
-        // ----
-        // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
-        // additional check that configuration is in default
-        if (clusterOperator != null &&
-            !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator) &&
-            !ExecutionListener.isNextSuiteIsolated(extensionContext) &&
-            !ExecutionListener.isLastSuite(extensionContext)) {
-            // install configuration differs from default one we are gonna roll-back
-            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
-            LOGGER.debug("Current Cluster Operator configuration:\n" + clusterOperator.toString());
-            LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
-            LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
-            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            clusterOperator.rollbackToDefaultConfiguration();
+            if (StUtils.isIsolatedSuite(extensionContext)) {
+                parallelSuiteController.unLockIsolatedSuite();
+            }
+            // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
+            // we need to rollback to default configuration, which most of the suites use.
+            // ----
+            // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
+            // additional check that configuration is in default
+            if (clusterOperator != null &&
+                !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator) &&
+                !ExecutionListener.isNextSuiteIsolated(extensionContext) &&
+                !ExecutionListener.isLastSuite(extensionContext)) {
+                // install configuration differs from default one we are gonna roll-back
+                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+                LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
+                LOGGER.debug("Current Cluster Operator configuration:\n" + clusterOperator.toString());
+                LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
+                LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
+                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+                clusterOperator.rollbackToDefaultConfiguration();
+            }
+        } else {
+            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -611,34 +619,42 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    private final void beforeEachMustExecute(ExtensionContext extensionContext) {
-        if (StUtils.isParallelNamespaceTest(extensionContext) ||
-            StUtils.isParallelTest(extensionContext)) {
-            parallelSuiteController.addParallelTest(extensionContext);
-            parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(extensionContext);
+    private void beforeEachMustExecute(ExtensionContext extensionContext) {
+        if (cluster.cluster().isClusterUp()) {
+            if (StUtils.isParallelNamespaceTest(extensionContext) ||
+                StUtils.isParallelTest(extensionContext)) {
+                parallelSuiteController.addParallelTest(extensionContext);
+                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(extensionContext);
+            }
+        } else {
+            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
-    private final void beforeAllMustExecute(ExtensionContext extensionContext) {
-        if (StUtils.isParallelSuite(extensionContext)) {
-            parallelSuiteController.addParallelSuite(extensionContext);
-            parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
-        }
-        try {
-            // (optional) create additional namespace/namespaces for test suites if needed
-            // in case `Terminating` issue with namespace we have to execute finally block
-            testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
-        } finally {
-            if (StUtils.isIsolatedSuite(extensionContext)) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
-                // wait for parallel suites are done
-                parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
-                // wait for isolated suites
-                parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
-            } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
+    private void beforeAllMustExecute(ExtensionContext extensionContext) {
+        if (cluster.cluster().isClusterUp()) {
+            if (StUtils.isParallelSuite(extensionContext)) {
+                parallelSuiteController.addParallelSuite(extensionContext);
+                parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
             }
-            clusterOperator = SetupClusterOperator.getInstanceHolder();
+            try {
+                // (optional) create additional namespace/namespaces for test suites if needed
+                // in case `Terminating` issue with namespace we have to execute finally block
+                testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
+            } finally {
+                if (StUtils.isIsolatedSuite(extensionContext)) {
+                    cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                    // wait for parallel suites are done
+                    parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
+                    // wait for isolated suites
+                    parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
+                } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
+                    cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                }
+                clusterOperator = SetupClusterOperator.getInstanceHolder();
+            }
+        } else {
+            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
