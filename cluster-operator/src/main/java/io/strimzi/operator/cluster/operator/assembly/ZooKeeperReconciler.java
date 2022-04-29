@@ -219,7 +219,7 @@ public class ZooKeeperReconciler {
      *
      * @return              Completes when the warnings are added to the status object
      */
-    Future<Void> modelWarnings(KafkaStatus kafkaStatus) {
+    protected Future<Void> modelWarnings(KafkaStatus kafkaStatus) {
         kafkaStatus.addConditions(zk.getWarningConditions());
         return Future.succeededFuture();
     }
@@ -229,7 +229,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the JMX secret is successfully created or updated
      */
-    Future<Void> jmxSecret() {
+    protected Future<Void> jmxSecret() {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperJmxSecretName(reconciliation.name()))
                 .compose(currentJmxSecret -> {
                     Secret desiredJmxSecret = zk.generateJmxSecret(currentJmxSecret);
@@ -255,7 +255,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the manual pod cleaning is done
      */
-    Future<Void> manualPodCleaning() {
+    protected Future<Void> manualPodCleaning() {
         return new ManualPodCleaner(
                 reconciliation,
                 KafkaResources.zookeeperStatefulSetName(reconciliation.name()),
@@ -274,7 +274,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the network policy is successfully created or updated
      */
-    Future<Void> networkPolicy() {
+    protected Future<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
             return networkPolicyOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperNetworkPolicyName(reconciliation.name()), zk.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels))
                     .map((Void) null);
@@ -291,7 +291,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future with the result of the rolling update
      */
-    Future<Void> manualRollingUpdate() {
+    protected Future<Void> manualRollingUpdate() {
         Future<HasMetadata> futureController;
         if (featureGates.useStrimziPodSetsEnabled())   {
             futureController = strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
@@ -322,7 +322,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future with the result of the rolling update
      */
-    Future<Void> manualPodRollingUpdate() {
+    private Future<Void> manualPodRollingUpdate() {
         return podOperator.listAsync(reconciliation.namespace(), zk.getSelectorLabels())
                 .compose(pods -> {
                     List<String> podsToRoll = new ArrayList<>(0);
@@ -391,7 +391,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the service account was successfully created or updated
      */
-    Future<Void> serviceAccount() {
+    protected Future<Void> serviceAccount() {
         return serviceAccountOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zk.generateServiceAccount())
                 .map((Void) null);
     }
@@ -402,7 +402,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the PVCs were successfully created or updated
      */
-    Future<Void> pvcs() {
+    protected Future<Void> pvcs() {
         List<PersistentVolumeClaim> pvcs = zk.generatePersistentVolumeClaims();
 
         return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
@@ -418,7 +418,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the service was successfully created or updated
      */
-    Future<Void> service() {
+    protected Future<Void> service() {
         return serviceOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperServiceName(reconciliation.name()), zk.generateService())
                 .map((Void) null);
     }
@@ -428,7 +428,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the service was successfully created or updated
      */
-    Future<Void> headlessService() {
+    protected Future<Void> headlessService() {
         return serviceOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperHeadlessServiceName(reconciliation.name()), zk.generateHeadlessService())
                 .map((Void) null);
     }
@@ -440,7 +440,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the Secret was successfully created or updated
      */
-    Future<Void> certificateSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> certificateSecret(Supplier<Date> dateSupplier) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     return secretOperator
@@ -464,7 +464,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the ConfigMap was successfully created or updated
      */
-    Future<Void> loggingAndMetricsConfigMap() {
+    protected Future<Void> loggingAndMetricsConfigMap() {
         return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), zk.getLogging(), zk.getMetricsConfigInCm())
                 .compose(metricsAndLogging -> {
                     ConfigMap logAndMetricsConfigMap = zk.generateConfigurationConfigMap(metricsAndLogging);
@@ -481,7 +481,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the PDB was successfully created or updated
      */
-    Future<Void> podDisruptionBudget() {
+    protected Future<Void> podDisruptionBudget() {
         if (!pfa.hasPodDisruptionBudgetV1()) {
             return Future.succeededFuture();
         } else {
@@ -503,7 +503,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Completes when the PDB was successfully created or updated
      */
-    Future<Void> podDisruptionBudgetV1Beta1() {
+    protected Future<Void> podDisruptionBudgetV1Beta1() {
         if (pfa.hasPodDisruptionBudgetV1()) {
             return Future.succeededFuture();
         } else {
@@ -526,7 +526,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when the StatefulSet is created, updated or deleted
      */
-    Future<Void> statefulSet() {
+    protected Future<Void> statefulSet() {
         if (featureGates.useStrimziPodSetsEnabled())   {
             // StatefulSets are disabled => delete the StatefulSet if it exists
             return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
@@ -557,7 +557,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
-    Future<Void> podSet() {
+    protected Future<Void> podSet() {
         return podSet(currentReplicas > 0 ? currentReplicas : zk.getReplicas());
     }
 
@@ -569,7 +569,7 @@ public class ZooKeeperReconciler {
      *
      * @return          Future which completes when the PodSet is created or updated
      */
-    Future<Void> podSet(int replicas) {
+    private Future<Void> podSet(int replicas) {
         if (featureGates.useStrimziPodSetsEnabled())   {
             Map<String, String> podAnnotations = new LinkedHashMap<>(2);
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
@@ -603,7 +603,7 @@ public class ZooKeeperReconciler {
      *
      * @return                      The generated Zookeeper connection string
      */
-    String zkConnectionString(int connectToReplicas, Function<Integer, String> zkNodeAddress)  {
+    private String zkConnectionString(int connectToReplicas, Function<Integer, String> zkNodeAddress)  {
         // Prepare Zoo connection string. We want to connect only to nodes which existed before
         // scaling and will exist after it is finished
         List<String> zooNodes = new ArrayList<>(connectToReplicas);
@@ -624,7 +624,7 @@ public class ZooKeeperReconciler {
      *
      * @return                      Zookeeper scaler instance.
      */
-    Future<ZookeeperScaler> zkScaler(int connectToReplicas)  {
+    private Future<ZookeeperScaler> zkScaler(int connectToReplicas)  {
         return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
                 .compose(compositeFuture -> {
                     Secret clusterCaCertSecret = compositeFuture.resultAt(0);
@@ -655,7 +655,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes ZooKeeper scale-down is complete
      */
-    Future<Void> scaleDown() {
+    protected Future<Void> scaleDown() {
         int desired = zk.getReplicas();
 
         if (currentReplicas > desired) {
@@ -693,7 +693,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes new pod is removed
      */
-    Future<Void> scaleDownByOne(ZookeeperScaler zkScaler, int current, int desired) {
+    private Future<Void> scaleDownByOne(ZookeeperScaler zkScaler, int current, int desired) {
         if (current > desired) {
             return ReconcilerUtils
                     .podsReady(
@@ -716,7 +716,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when StatefulSet or PodSet are scaled-down.
      */
-    Future<Void> scaleDownStatefulSetOrPodSet(int desiredScale)   {
+    private Future<Void> scaleDownStatefulSetOrPodSet(int desiredScale)   {
         if (featureGates.useStrimziPodSetsEnabled())   {
             return podSet(desiredScale)
                     // We wait for the pod to be deleted, otherwise it might disrupt the rolling update
@@ -741,7 +741,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when any of the ZooKeeper pods which need rolling is rolled
      */
-    Future<Void> rollingUpdate() {
+    protected Future<Void> rollingUpdate() {
         if (featureGates.useStrimziPodSetsEnabled())   {
             return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, podSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa));
         } else {
@@ -756,7 +756,7 @@ public class ZooKeeperReconciler {
      *
      * @return                  Future which completes when any of the ZooKeeper pods which need rolling is rolled
      */
-    Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
+    /* test */ Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
         return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
                 .compose(compositeFuture -> {
                     Secret clusterCaCertSecret = compositeFuture.resultAt(0);
@@ -775,7 +775,7 @@ public class ZooKeeperReconciler {
      *
      * @return                      Future which completes when any of the ZooKeeper pods which need rolling is rolled
      */
-    Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, Secret clusterCaCertSecret, Secret coKeySecret) {
+    private Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, Secret clusterCaCertSecret, Secret coKeySecret) {
         return new ZooKeeperRoller(podOperator, zooLeaderFinder, operationTimeoutMs)
                 .maybeRollingUpdate(reconciliation, zk.getSelectorLabels(), podNeedsRestart, clusterCaCertSecret, coKeySecret);
     }
@@ -785,7 +785,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when all ZooKeeper pods are ready
      */
-    Future<Void> podsReady() {
+    protected Future<Void> podsReady() {
         return ReconcilerUtils
                 .podsReady(
                         reconciliation,
@@ -804,7 +804,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes ZooKeeper scale-up is complete
      */
-    Future<Void> scaleUp() {
+    protected Future<Void> scaleUp() {
         int desired = zk.getReplicas();
 
         if (currentReplicas > 0 && currentReplicas < desired) {
@@ -840,7 +840,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes new pod is created and added to the quorum
      */
-    Future<Void> scaleUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
+    private Future<Void> scaleUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
         if (current < desired) {
             return zkScaleUpStatefulSetOrPodSet(current + 1)
                     .compose(ignore -> podOperator.readiness(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperPodName(reconciliation.name(), current), 1_000, operationTimeoutMs))
@@ -857,7 +857,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when StatefulSet or PodSet are scaled-up.
      */
-    Future<Void> zkScaleUpStatefulSetOrPodSet(int desiredScale)   {
+    private Future<Void> zkScaleUpStatefulSetOrPodSet(int desiredScale)   {
         if (featureGates.useStrimziPodSetsEnabled())   {
             return podSet(desiredScale);
         } else {
@@ -873,7 +873,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when the ZooKeeper quorum is configured for the current number of nodes
      */
-    Future<Void> scalingCheck() {
+    protected Future<Void> scalingCheck() {
         // No scaling, but we should check the configuration
         // This can cover any previous failures in the Zookeeper reconfiguration
         LOGGER.debugCr(reconciliation, "Verifying that Zookeeper is configured to run with {} replicas", zk.getReplicas());
@@ -903,7 +903,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when the endpoints are ready
      */
-    Future<Void> serviceEndpointsReady() {
+    protected Future<Void> serviceEndpointsReady() {
         return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
@@ -912,7 +912,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when the endpoints are ready
      */
-    Future<Void> headlessServiceEndpointsReady() {
+    protected Future<Void> headlessServiceEndpointsReady() {
         return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperHeadlessServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
@@ -926,7 +926,7 @@ public class ZooKeeperReconciler {
      *
      * @return  Future which completes when the PVCs which should be deleted are deleted
      */
-    Future<Void> deletePersistentClaims() {
+    protected Future<Void> deletePersistentClaims() {
         return pvcOperator.listAsync(reconciliation.namespace(), zk.getSelectorLabels())
                 .compose(pvcs -> {
                     List<String> maybeDeletePvcs = pvcs.stream().map(pvc -> pvc.getMetadata().getName()).collect(Collectors.toList());
