@@ -1610,6 +1610,27 @@ public class ConnectorMockTest {
     }
 
     @Test
+    public void testConnectorDeleteFailsOnConnectReconciliation() {
+        String connectName = "cluster";
+
+        when(api.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(List.of("connector")));
+        when(api.delete(any(), anyString(), anyInt(), anyString())).thenReturn(Future.failedFuture(new RuntimeException("deletion error")));
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect);
+        waitForConnectReady(connectName);
+    }
+
+    @Test
     void testConnectorResourceMetrics(VertxTestContext context) {
         String connectName1 = "cluster1";
         String connectName2 = "cluster2";
