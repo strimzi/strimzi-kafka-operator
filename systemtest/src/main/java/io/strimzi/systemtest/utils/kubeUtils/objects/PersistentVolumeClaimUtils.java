@@ -67,9 +67,9 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
 
-    public static void waitForPVCDeletion(String namespaceName, String pvcName) {
+    public static void waitForPvcDeletion(String namespaceName, String pvcName) {
         TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(3).toMillis(), () -> {
-            if (kubeClient(namespaceName).getPVC(namespaceName, pvcName) == null) {
+            if (kubeClient(namespaceName).getPvc(namespaceName, pvcName) == null) {
                 return true;
             } else {
                 LOGGER.warn("PVC {} is not deleted yet! Triggering force delete by cmd client!", pvcName);
@@ -79,7 +79,7 @@ public class PersistentVolumeClaimUtils {
         });
     }
 
-    public static void waitForJBODDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
+    public static void waitForJbodDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
         int numberOfPVCWhichShouldBeDeleted = jbodStorage.getVolumes().stream().filter(
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();

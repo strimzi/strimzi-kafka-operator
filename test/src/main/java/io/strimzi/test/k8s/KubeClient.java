@@ -232,11 +232,11 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
-    public PersistentVolumeClaim getPVC(String namespaceName, String pvcName) {
+    public PersistentVolumeClaim getPvc(String namespaceName, String pvcName) {
         return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
     }
 
-    public boolean deletePVC(String namespaceName, String pvcName) {
+    public boolean deletePvc(String namespaceName, String pvcName) {
         return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
     }
 

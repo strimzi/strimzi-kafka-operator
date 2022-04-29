@@ -80,8 +80,8 @@ public class KafkaResource implements ResourceType<Kafka> {
 
         // additional deletion of pvcs with specification deleteClam set to false which were not deleted prior this method
         for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims(namespaceName, clusterName)) {
-            kubeClient().deletePVC(namespaceName, pvc.getMetadata().getName());
-            PersistentVolumeClaimUtils.waitForPVCDeletion(namespaceName, pvc.getMetadata().getName());
+            kubeClient().deletePvc(namespaceName, pvc.getMetadata().getName());
+            PersistentVolumeClaimUtils.waitForPvcDeletion(namespaceName, pvc.getMetadata().getName());
         }
     }
 
