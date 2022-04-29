@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
@@ -533,7 +534,7 @@ public abstract class AbstractST implements TestSeparator {
                 parallelSuiteController.removeParallelTest(extensionContext);
             }
         } else {
-            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -575,7 +576,7 @@ public abstract class AbstractST implements TestSeparator {
                 clusterOperator.rollbackToDefaultConfiguration();
             }
         } else {
-            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -627,7 +628,7 @@ public abstract class AbstractST implements TestSeparator {
                 parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(extensionContext);
             }
         } else {
-            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -654,7 +655,7 @@ public abstract class AbstractST implements TestSeparator {
                 clusterOperator = SetupClusterOperator.getInstanceHolder();
             }
         } else {
-            throw new RuntimeException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 

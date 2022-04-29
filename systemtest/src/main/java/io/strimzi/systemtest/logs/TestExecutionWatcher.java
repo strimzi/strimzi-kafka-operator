@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
@@ -26,7 +27,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         LOGGER.error("{} - Exception {} has been thrown in @Test. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
-        if (!(throwable instanceof TestAbortedException)) {
+        if (!(throwable instanceof TestAbortedException || throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
             collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
@@ -37,7 +38,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         LOGGER.error("{} - Exception {} has been thrown in @BeforeAll. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
-        if (!(throwable instanceof TestAbortedException)) {
+        if (!(throwable instanceof TestAbortedException || throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             collectLogs(extensionContext, new CollectorElement(testClass));
         }
@@ -47,7 +48,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleBeforeEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         LOGGER.error("{} - Exception {} has been thrown in @BeforeEach. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
-        if (!(throwable instanceof TestAbortedException)) {
+        if (!(throwable instanceof TestAbortedException || throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
             collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
@@ -58,29 +59,33 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleAfterEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         LOGGER.error("{} - Exception {} has been thrown in @AfterEach. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
-        final String testClass = extensionContext.getRequiredTestClass().getName();
-        final String testMethod = extensionContext.getRequiredTestMethod().getName();
+        if (!(throwable instanceof KubernetesClusterUnstableException)) {
+            final String testClass = extensionContext.getRequiredTestClass().getName();
+            final String testMethod = extensionContext.getRequiredTestMethod().getName();
 
-        collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
+            collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
+        }
         throw throwable;
     }
 
     @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         LOGGER.error("{} - Exception {} has been thrown in @AfterAll. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
-        final String testClass = extensionContext.getRequiredTestClass().getName();
+        if (!(throwable instanceof KubernetesClusterUnstableException)) {
+            final String testClass = extensionContext.getRequiredTestClass().getName();
 
-        SuiteThreadController suiteThreadController = SuiteThreadController.getInstance();
-        if (StUtils.isParallelSuite(extensionContext)) {
-            suiteThreadController.notifyParallelSuiteToAllowExecution(extensionContext);
-            suiteThreadController.removeParallelSuite(extensionContext);
+            SuiteThreadController suiteThreadController = SuiteThreadController.getInstance();
+            if (StUtils.isParallelSuite(extensionContext)) {
+                suiteThreadController.notifyParallelSuiteToAllowExecution(extensionContext);
+                suiteThreadController.removeParallelSuite(extensionContext);
+            }
+
+            if (StUtils.isIsolatedSuite(extensionContext)) {
+                suiteThreadController.unLockIsolatedSuite();
+            }
+
+            collectLogs(extensionContext, new CollectorElement(testClass));
         }
-
-        if (StUtils.isIsolatedSuite(extensionContext)) {
-            suiteThreadController.unLockIsolatedSuite();
-        }
-
-        collectLogs(extensionContext, new CollectorElement(testClass));
         throw throwable;
     }
 
