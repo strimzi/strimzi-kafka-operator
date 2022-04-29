@@ -7,88 +7,79 @@ package io.strimzi.operator.topic;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 import io.apicurio.registry.utils.ConcurrentUtil;
 import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.container.StrimziKafkaCluster;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.zookeeper.CreateMode;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @ExtendWith(VertxExtension.class)
 public class TopicStoreUpgradeTest {
-    private static final Map<String, String> MANDATORY_CONFIG;
-    private static StrimziKafkaCluster cluster;
 
-    static {
-        MANDATORY_CONFIG = new HashMap<>();
-        MANDATORY_CONFIG.put(Config.NAMESPACE.key, "default");
-        MANDATORY_CONFIG.put(Config.TC_TOPICS_PATH, "/strimzi/topics");
-        MANDATORY_CONFIG.put(Config.TC_STALE_RESULT_TIMEOUT_MS, "5000"); //5sec
+    private Map<String, String> mandatoryConfig;
+    private StrimziKafkaCluster cluster;
+    private WorkerExecutor worker;
+    private Zk zk;
+    private KafkaStreamsTopicStoreService service;
+
+    @BeforeEach
+    public void before(Vertx vertx) {
+        cluster = new StrimziKafkaCluster(1, 1, Map.of("zookeeper.connect", "zookeeper:2181"));
+        cluster.start();
+
+        String zkConn = cluster.getZookeeper().getHost() + ":" + cluster.getZookeeper().getFirstMappedPort();
+
+        mandatoryConfig = new HashMap<>();
+        mandatoryConfig.put(Config.NAMESPACE.key, "default");
+        mandatoryConfig.put(Config.TC_TOPICS_PATH, "/strimzi/topics");
+        mandatoryConfig.put(Config.TC_STALE_RESULT_TIMEOUT_MS, "5000"); //5sec
+        mandatoryConfig.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.getBootstrapServers());
+        mandatoryConfig.put(Config.ZOOKEEPER_CONNECT.key, zkConn);
+
+        ZkClient zkc = new ZkClient(zkConn);
+        try {
+            zkc.create("/strimzi", null, CreateMode.PERSISTENT);
+            zkc.create("/strimzi/topics", null, CreateMode.PERSISTENT);
+        } finally {
+            zkc.close();
+        }
+
+        worker = vertx.createSharedWorkerExecutor("blocking-test-ops", 2);
+        zk = Zk.createSync(vertx, zkConn, 60_000, 10_000);
     }
 
-    private static Vertx vertx;
-
-    private static <T> T result(Future<T> future) throws Throwable {
-        future = future.onComplete(ar -> {
-            if (ar.cause() != null) {
-                System.err.println("Error in future: " + ar.cause());
-            }
-        });
-        if (future.failed()) {
-            throw future.cause();
-        } else {
-            return future.result();
-        }
+    @AfterEach
+    public void after() {
+        service.stop();
+        zk.disconnect(AsyncResult::result);
+        cluster.stop();
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:Indentation"}) //Suppressing this because what Checkstyle agrees with looks terrible
     public void testUpgrade(VertxTestContext context) throws Throwable {
-        String zkConnectionString = MANDATORY_CONFIG.get(Config.ZOOKEEPER_CONNECT.key);
+        Config config = new Config(mandatoryConfig);
 
-        CompletableFuture<Void> flag = new CompletableFuture<>();
-        Zk.create(vertx, zkConnectionString, 60_000, 10_000)
-                  .onComplete(ar -> {
-                      try {
-                          if (ar.failed()) {
-                              flag.completeExceptionally(ar.cause());
-                          } else {
-                              Zk zk = ar.result();
-                              doTestUpgrade(zk);
-                          }
-                      } catch (Throwable t) {
-                          flag.completeExceptionally(t);
-                      } finally {
-                          flag.complete(null);
-                      }
-                  });
-        flag.join();
-
-        Zk zk = Zk.createSync(vertx, zkConnectionString, 60_000, 10_000);
-        try {
-            doTestUpgrade(zk);
-        } finally {
-            Checkpoint async = context.checkpoint();
-            zk.disconnect(ar -> async.flag());
-        }
-    }
-
-    private void doTestUpgrade(Zk zk) throws Throwable {
-        Config config = new Config(MANDATORY_CONFIG);
-
+        // Create topic info in ZK store
         String topicsPath = config.get(Config.TOPICS_PATH);
         TopicStore zkTS = new ZkTopicStore(zk, topicsPath);
         String tn1 = "Topic1" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);
@@ -102,46 +93,39 @@ public class TopicStoreUpgradeTest {
         kafkaProperties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
 
-        ConcurrentUtil.result(Zk2KafkaStreams.upgrade(zk, config, kafkaProperties, true));
-
-        KafkaStreamsTopicStoreService service = new KafkaStreamsTopicStoreService();
-        try {
+        worker.executeBlocking(promise1 -> {
+            ConcurrentUtil.result(Zk2KafkaStreams.upgrade(zk, config, kafkaProperties, true));
+            promise1.complete();
+        })
+        .compose(ignored -> worker.executeBlocking((Handler<Promise<TopicStore>>) promise2 -> {
+            service = new KafkaStreamsTopicStoreService();
             TopicStore kTS = ConcurrentUtil.result(service.start(config, kafkaProperties));
-
+            promise2.complete(kTS);
+        }))
+        .onComplete(context.succeeding(kTS -> context.verify(() -> {
             Topic topic1 = result(kTS.read(new TopicName(tn1)));
-            Assertions.assertNotNull(topic1);
+            assertNotNull(topic1);
             Topic topic2 = result(kTS.read(new TopicName(tn2)));
-            Assertions.assertNotNull(topic2);
-        } finally {
-            service.stop();
-        }
+            assertNotNull(topic2);
+            context.completeNow();
+        })));
+
+        // The Kafka Streams store can start up quite slowly when there's an existing changelog topic for the store.
+        // Which there is as the Zk2KafkaStreams.upgrade call creates it, so we need to allow more time for the second
+        // creation of the store. This slow start-up will be fixed in a future PR.
+        context.awaitCompletion(60, TimeUnit.SECONDS);
     }
 
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-
-        Map<String, String> config = new HashMap<>();
-        config.put("zookeeper.connect", "zookeeper:2181");
-
-        cluster = new StrimziKafkaCluster(1, 1, config);
-        cluster.start();
-
-        MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.getBootstrapServers());
-        MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, cluster.getZookeeper().getHost() + ":" + cluster.getZookeeper().getFirstMappedPort());
-
-        ZkClient zkc = new ZkClient(cluster.getZookeeper().getHost() + ":" + cluster.getZookeeper().getFirstMappedPort());
-        try {
-            zkc.create("/strimzi", null, CreateMode.PERSISTENT);
-            zkc.create("/strimzi/topics", null, CreateMode.PERSISTENT);
-        } finally {
-            zkc.close();
+    private <T> T result(Future<T> future) throws Throwable {
+        future = future.onComplete(ar -> {
+            if (ar.cause() != null) {
+                System.err.println("Error in future: " + ar.cause());
+            }
+        });
+        if (future.failed()) {
+            throw future.cause();
+        } else {
+            return future.result();
         }
-    }
-
-    @AfterAll
-    public static void after() {
-        cluster.stop();
-        vertx.close();
     }
 }
