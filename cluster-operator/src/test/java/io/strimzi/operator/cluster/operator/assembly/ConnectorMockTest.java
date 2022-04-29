@@ -1613,6 +1613,7 @@ public class ConnectorMockTest {
     public void testConnectorDeleteFailsOnConnectReconciliation() {
         String connectName = "cluster";
 
+        // this connector should be deleted on connect reconciliation
         when(api.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(List.of("connector")));
         when(api.delete(any(), anyString(), anyInt(), anyString())).thenReturn(Future.failedFuture(new RuntimeException("deletion error")));
 
