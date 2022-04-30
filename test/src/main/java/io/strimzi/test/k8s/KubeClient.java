@@ -305,7 +305,11 @@ public class KubeClient {
      * Gets pod Uid
      */
     public String getPodUid(String name) {
-        return client.pods().inNamespace(getNamespace()).withName(name).get().getMetadata().getUid();
+        return getPodUid(getNamespace(), name);
+    }
+
+    public String getPodUid(String namespace, String name) {
+        return client.pods().inNamespace(namespace).withName(name).get().getMetadata().getUid();
     }
 
     /**
@@ -356,7 +360,6 @@ public class KubeClient {
         return statefulSet(getNamespace(), statefulSetName);
     }
 
-
     /**
      * Gets stateful set selectors
      */
@@ -397,7 +400,6 @@ public class KubeClient {
     /**
      * Gets deployment
      */
-
     public Deployment getDeployment(String namespaceName, String deploymentName) {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
     }
