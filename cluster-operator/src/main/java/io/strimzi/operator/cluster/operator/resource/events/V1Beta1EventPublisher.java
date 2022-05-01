@@ -2,26 +2,28 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.events.versions;
+package io.strimzi.operator.cluster.operator.resource.events;
 
 import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.events.v1beta1.EventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 
 import java.time.Clock;
 
-
-public class V1Beta1EventPublisher extends KubernetesEventsPublisher {
+/**
+ * Publishes K8s events in the events.k8s.io/v1beta1 format
+ */
+class V1Beta1EventPublisher extends KubernetesRestartEventPublisher {
 
     private final KubernetesClient client;
-    private final String operatorId;
+    private final String operatorName;
 
-    public V1Beta1EventPublisher(Clock clock, KubernetesClient client, String operatorId) {
+    V1Beta1EventPublisher(Clock clock, KubernetesClient client, String operatorName) {
         super(clock);
         this.client = client;
-        this.operatorId = operatorId;
+        this.operatorName = operatorName;
     }
 
 
@@ -34,7 +36,7 @@ public class V1Beta1EventPublisher extends KubernetesEventsPublisher {
                     .withGenerateName("strimzi-event")
                 .endMetadata()
                 .withReportingController(controller)
-                .withReportingInstance(operatorId)
+                .withReportingInstance(operatorName)
                 .withRegarding(podReference)
                 .withReason(reason)
                 .withType(type)

@@ -49,7 +49,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -104,7 +104,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final AdminClientProvider adminClientProvider;
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
-    private final KubernetesEventsPublisher eventsPublisher;
+    private final KubernetesRestartEventPublisher eventsPublisher;
 
     /**
      * @param vertx The Vertx instance
@@ -118,7 +118,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertManager certManager, PasswordGenerator passwordGenerator,
                                  ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
-                                 KubernetesEventsPublisher eventsPublisher) {
+                                 KubernetesRestartEventPublisher eventsPublisher) {
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.config = config;

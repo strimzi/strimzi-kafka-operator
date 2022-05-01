@@ -93,6 +93,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: STRIMZI_FEATURE_GATES
               value: ""
+            - name: STRIMZI_OPERATOR_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
           livenessProbe:
             httpGet:
               path: /healthy

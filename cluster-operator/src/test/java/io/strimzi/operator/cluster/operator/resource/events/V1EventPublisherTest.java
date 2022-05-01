@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource.events.versions;
+package io.strimzi.operator.cluster.operator.resource.events;
 
 
 import io.fabric8.kubernetes.api.model.Pod;
@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.resource.events.V1EventPublisher;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

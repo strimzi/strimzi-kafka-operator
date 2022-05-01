@@ -33,7 +33,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -746,7 +746,7 @@ public class KafkaReconcilerStatusTest {
         private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(MockKafkaReconcilerStatusTasks.class.getName());
 
         public MockKafkaReconcilerStatusTasks(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr) {
-            super(reconciliation, kafkaCr, null, 0, CLUSTER_CA, CLIENTS_CA, VERSION_CHANGE, CO_CONFIG, supplier, PFA, vertx, mock(KubernetesEventsPublisher.class));
+            super(reconciliation, kafkaCr, null, 0, CLUSTER_CA, CLIENTS_CA, VERSION_CHANGE, CO_CONFIG, supplier, PFA, vertx, mock(KubernetesRestartEventPublisher.class));
         }
 
         @Override

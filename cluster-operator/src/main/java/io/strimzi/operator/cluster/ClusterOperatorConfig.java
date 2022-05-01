@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * Cluster Operator configuration
@@ -50,6 +49,9 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
     public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
     public static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE";
+
+    //Used to identify which cluster operator created a Kubernetes event
+    public static final String STRIMZI_OPERATOR_NAME = "STRIMZI_OPERATOR_NAME";
 
     // Feature Flags
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
@@ -108,7 +110,7 @@ public class ClusterOperatorConfig {
     private final int dnsCacheTtlSec;
     private final boolean podSetReconciliationOnly;
     private final int podSetControllerWorkQueueSize;
-    private String operatorId;
+    private final String operatorName;
 
     /**
      * Constructor
@@ -131,6 +133,7 @@ public class ClusterOperatorConfig {
      * @param podSetReconciliationOnly Indicates whether this Cluster Operator instance should reconcile only the
      *                                 StrimziPodSet resources or not
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
+     * @param operatorName The Pod name of the cluster operator, used to identify source of K8s events the operator creates
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -151,8 +154,9 @@ public class ClusterOperatorConfig {
             int zkAdminSessionTimeoutMs,
             int dnsCacheTtlSec,
             boolean podSetReconciliationOnly,
-            int podSetControllerWorkQueueSize) {
-        this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
+            int podSetControllerWorkQueueSize,
+            String operatorName) {
+        this.namespaces = Set.copyOf(namespaces);
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
         this.connectBuildTimeoutMs = connectBuildTimeoutMs;
@@ -170,6 +174,7 @@ public class ClusterOperatorConfig {
         this.dnsCacheTtlSec = dnsCacheTtlSec;
         this.podSetReconciliationOnly = podSetReconciliationOnly;
         this.podSetControllerWorkQueueSize = podSetControllerWorkQueueSize;
+        this.operatorName = operatorName;
     }
 
     /**
@@ -226,6 +231,7 @@ public class ClusterOperatorConfig {
         int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_DNS_CACHE_TTL);
         boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
         int podSetControllerWorkQueueSize = parseInt(map.get(STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE), DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+        String operatorName = map.get(STRIMZI_OPERATOR_NAME);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -245,7 +251,8 @@ public class ClusterOperatorConfig {
                 zkAdminSessionTimeout,
                 dnsCacheTtlSec,
                 podSetReconciliationOnly,
-                podSetControllerWorkQueueSize);
+                podSetControllerWorkQueueSize,
+                operatorName);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -543,7 +550,7 @@ public class ClusterOperatorConfig {
                 ")";
     }
 
-    public String getOperatorId() {
-        return operatorId;
+    public String getOperatorName() {
+        return operatorName;
     }
 }

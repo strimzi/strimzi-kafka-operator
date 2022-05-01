@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -641,7 +641,7 @@ public class KafkaRollerTest {
                     "",
                     KafkaVersionTestUtils.getLatestVersion(),
                     true,
-                    Mockito.mock(KubernetesEventsPublisher.class)
+                    Mockito.mock(KubernetesRestartEventPublisher.class)
             );
 
             this.controllers = controllers;

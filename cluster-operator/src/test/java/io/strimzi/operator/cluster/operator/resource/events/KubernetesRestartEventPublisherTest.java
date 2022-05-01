@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.resource.events.versions.V1Beta1EventPublisher;
-import io.strimzi.operator.cluster.operator.resource.events.versions.V1EventPublisher;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,13 +29,13 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isA;
 import static org.mockito.Mockito.when;
 
-class KubernetesEventsPublisherTest {
+class KubernetesRestartEventPublisherTest {
 
-    private KubernetesEventsPublisher publisher;
+    private KubernetesRestartEventPublisher publisher;
 
     @BeforeEach
     void setup() {
-        publisher = new KubernetesEventsPublisher() {
+        publisher = new KubernetesRestartEventPublisher() {
             @Override
             protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
             }
@@ -48,10 +46,10 @@ class KubernetesEventsPublisherTest {
     void testVersionSpecificPublisherCreation() {
         KubernetesClient client = Mockito.mock(KubernetesClient.class);
 
-        KubernetesEventsPublisher shouldBeV1 = KubernetesEventsPublisher.createPublisher(client, "",  true);
+        KubernetesRestartEventPublisher shouldBeV1 = KubernetesRestartEventPublisher.createPublisher(client, "",  true);
         assertThat(shouldBeV1, isA(V1EventPublisher.class));
 
-        KubernetesEventsPublisher shouldBeV1Beta1 = KubernetesEventsPublisher.createPublisher(client, "", false);
+        KubernetesRestartEventPublisher shouldBeV1Beta1 = KubernetesRestartEventPublisher.createPublisher(client, "", false);
         assertThat(shouldBeV1Beta1, isA(V1Beta1EventPublisher.class));
     }
 
@@ -109,7 +107,7 @@ class KubernetesEventsPublisherTest {
 
 
         Set<String> capturedReasons = new HashSet<>();
-        KubernetesEventsPublisher capturingPublisher = new KubernetesEventsPublisher() {
+        KubernetesRestartEventPublisher capturingPublisher = new KubernetesRestartEventPublisher() {
             @Override
             protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
                 capturedReasons.add(reason);

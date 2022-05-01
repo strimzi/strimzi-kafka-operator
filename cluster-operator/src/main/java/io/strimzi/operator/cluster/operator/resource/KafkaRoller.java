@@ -41,7 +41,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -116,7 +116,7 @@ public class KafkaRoller {
     private final Secret clusterCaCertSecret;
     private final Secret coKeySecret;
     private final List<String> podNames;
-    private final KubernetesEventsPublisher eventsPublisher;
+    private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
@@ -132,7 +132,7 @@ public class KafkaRoller {
                        Secret clusterCaCertSecret, Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration,
-                       KubernetesEventsPublisher eventsPublisher) {
+                       KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.podNames = podNames;

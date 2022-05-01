@@ -18,7 +18,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -114,7 +114,7 @@ public class Main {
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator = null;
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator = null;
         KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator = null;
-        KubernetesEventsPublisher eventsPublisher = KubernetesEventsPublisher.createPublisher(client, config.getOperatorId(), pfa.hasEventsApiV1());
+        KubernetesRestartEventPublisher eventsPublisher = KubernetesRestartEventPublisher.createPublisher(client, config.getOperatorName(), pfa.hasEventsApiV1());
 
         if (!config.isPodSetReconciliationOnly()) {
             OpenSslCertManager certManager = new OpenSslCertManager();

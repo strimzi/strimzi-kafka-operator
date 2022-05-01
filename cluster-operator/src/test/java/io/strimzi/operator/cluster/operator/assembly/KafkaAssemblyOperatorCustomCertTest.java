@@ -46,7 +46,7 @@ import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -332,7 +332,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
      */
     class MockKafkaReconciler extends KafkaReconciler   {
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, mock(KubernetesEventsPublisher.class));
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, mock(KubernetesRestartEventPublisher.class));
         }
 
         @Override
@@ -390,7 +390,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesEventsPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesRestartEventPublisher.class));
         }
 
         @Override

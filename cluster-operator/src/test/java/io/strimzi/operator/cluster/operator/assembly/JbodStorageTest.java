@@ -30,7 +30,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -144,7 +144,7 @@ public class JbodStorageTest {
         this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000),
-                Mockito.mock(KubernetesEventsPublisher.class));
+                Mockito.mock(KubernetesRestartEventPublisher.class));
     }
 
     @Test

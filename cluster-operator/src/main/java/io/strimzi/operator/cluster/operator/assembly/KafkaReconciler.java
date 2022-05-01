@@ -48,7 +48,7 @@ import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
@@ -110,7 +110,7 @@ public class KafkaReconciler {
     /* test */ final Reconciliation reconciliation;
     private final Vertx vertx;
     private final long operationTimeoutMs;
-    private KubernetesEventsPublisher eventsPublisher;
+    private final KubernetesRestartEventPublisher eventsPublisher;
     /* test */ final KafkaCluster kafka;
     private final Storage oldStorage;
     private final ClusterCa clusterCa;
@@ -186,7 +186,7 @@ public class KafkaReconciler {
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
             Vertx vertx,
-            KubernetesEventsPublisher eventsPublisher
+            KubernetesRestartEventPublisher eventsPublisher
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;

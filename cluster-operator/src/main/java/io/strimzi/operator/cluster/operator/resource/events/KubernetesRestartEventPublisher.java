@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.operator.cluster.operator.resource.events.versions.V1Beta1EventPublisher;
-import io.strimzi.operator.cluster.operator.resource.events.versions.V1EventPublisher;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import org.apache.logging.log4j.LogManager;
@@ -28,9 +26,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Publishes KafkaRoller restart events as Kubernetes events, using either the events.k8s.io/v1beta1 or v1 API,
  * depending on which is available.
  */
-public abstract class KubernetesEventsPublisher {
+public abstract class KubernetesRestartEventPublisher {
 
-    private static final Logger LOG = LogManager.getLogger(KubernetesEventsPublisher.class);
+    private static final Logger LOG = LogManager.getLogger(KubernetesRestartEventPublisher.class);
 
     private final Clock clock;
 
@@ -44,11 +42,11 @@ public abstract class KubernetesEventsPublisher {
     private static final int MAX_MESSAGE_LENGTH = 1000;
     private static final String DIARESIS = "...";
 
-    public KubernetesEventsPublisher() {
+    public KubernetesRestartEventPublisher() {
         this(Clock.systemDefaultZone());
     }
 
-    protected KubernetesEventsPublisher(Clock clock) {
+    protected KubernetesRestartEventPublisher(Clock clock) {
         this.clock = clock;
     }
 
@@ -56,16 +54,16 @@ public abstract class KubernetesEventsPublisher {
      * Create an instance for the highest event API, there's three possible subtypes, due to how fabric8 delineates the differing
      * event APIs.
      * @param client Kubernetes client
-     * @param operatorId the instance id of the current cluster operator instance
+     * @param operatorName the pod name of the current cluster operator instance
      * @param hasEventsV1 if the cluster is using events.k8s.io/v1 instead of events.k8s.io/v1beta1
      * @return instance of the appropriate publisher for the given API
      */
-    public static KubernetesEventsPublisher createPublisher(KubernetesClient client, String operatorId, boolean hasEventsV1) {
+    public static KubernetesRestartEventPublisher createPublisher(KubernetesClient client, String operatorName, boolean hasEventsV1) {
         Clock clock = Clock.systemDefaultZone();
         if (hasEventsV1) {
-            return new V1EventPublisher(clock, client, operatorId);
+            return new V1EventPublisher(clock, client, operatorName);
         } else {
-            return new V1Beta1EventPublisher(clock, client, operatorId);
+            return new V1Beta1EventPublisher(clock, client, operatorName);
         }
     }
 

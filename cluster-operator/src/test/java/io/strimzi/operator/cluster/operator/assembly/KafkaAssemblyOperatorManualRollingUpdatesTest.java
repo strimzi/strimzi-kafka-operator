@@ -32,7 +32,7 @@ import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -514,7 +514,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         KafkaReconciler mockKafkaReconciler;
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesEventsPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesRestartEventPublisher.class));
             this.mockZooKeeperReconciler = mockZooKeeperReconciler;
             this.mockKafkaReconciler = mockKafkaReconciler;
         }
@@ -574,7 +574,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, mock(KubernetesEventsPublisher.class));
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, mock(KubernetesRestartEventPublisher.class));
         }
 
         @Override

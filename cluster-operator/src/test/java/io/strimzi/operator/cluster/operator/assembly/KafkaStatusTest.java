@@ -23,7 +23,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -453,7 +453,7 @@ public class KafkaStatusTest {
     // This allows to test the status handling when reconciliation succeeds
     static class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesRestartEventPublisher.class));
         }
 
         @Override
@@ -489,7 +489,7 @@ public class KafkaStatusTest {
         private final Throwable exception;
 
         public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesRestartEventPublisher.class));
             this.exception = exception;
         }
 
@@ -512,7 +512,7 @@ public class KafkaStatusTest {
     // This allows to test the initial status handling when new resource is created
     static class MockInitialStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesRestartEventPublisher.class));
         }
 
         @Override
