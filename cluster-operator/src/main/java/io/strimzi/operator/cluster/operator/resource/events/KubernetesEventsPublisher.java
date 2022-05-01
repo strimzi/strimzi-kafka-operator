@@ -48,7 +48,7 @@ public abstract class KubernetesEventsPublisher {
         this(Clock.systemDefaultZone());
     }
 
-    KubernetesEventsPublisher(Clock clock) {
+    protected KubernetesEventsPublisher(Clock clock) {
         this.clock = clock;
     }
 

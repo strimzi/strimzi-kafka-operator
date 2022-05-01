@@ -806,10 +806,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return  KafkaReconciler instance
          */
-        KafkaReconciler kafkaReconciler(Storage oldStorage, int currentReplicas)   {
+        KafkaReconciler kafkaReconciler(Storage oldStorage, int currentReplicas) {
             return new KafkaReconciler(
                     reconciliation,
-                    kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx
+                    kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, eventsPublisher
             );
         }
 

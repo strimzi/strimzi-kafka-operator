@@ -332,7 +332,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
      */
     class MockKafkaReconciler extends KafkaReconciler   {
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, mock(KubernetesEventsPublisher.class));
         }
 
         @Override
@@ -351,7 +351,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         @Override
         protected Future<Void> maybeRollKafka(
                 int replicas,
-                Function<Pod, List<String>> podNeedsRestart,
+                Function<Pod,RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
                 Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
                 boolean allowReconfiguration
@@ -390,7 +390,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesEventsPublisher.class));
         }
 
         @Override
