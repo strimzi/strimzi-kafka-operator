@@ -371,8 +371,7 @@ public class KafkaRoller {
                 await(isReady(namespace, podRef.getPodName()), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podRef.getPodName() + " to become ready", e));
                 LOGGER.debugCr(reconciliation, "Pod {} is now ready", podRef);
             }
-        }
-        catch (ForceableProblem e) {
+        } catch (ForceableProblem e) {
             if (isPodStuck(pod) || context.backOff.done() || e.forceNow) {
                 String errorMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
                 if (canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, true)) {

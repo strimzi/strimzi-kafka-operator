@@ -351,7 +351,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         @Override
         protected Future<Void> maybeRollKafka(
                 int replicas,
-                Function<Pod,RestartReasons> podNeedsRestart,
+                Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
                 Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
                 boolean allowReconfiguration
