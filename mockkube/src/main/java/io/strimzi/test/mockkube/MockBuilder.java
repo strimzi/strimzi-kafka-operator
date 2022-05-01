@@ -198,13 +198,14 @@ class MockBuilder<T extends HasMetadata,
             LabelSelector labelSelector = i.getArgument(0);
             Map<String, String> matchLabels = labelSelector.getMatchLabels();
             List<LabelSelectorRequirement> matchExpressions = labelSelector.getMatchExpressions();
-            if (matchExpressions != null && !matchExpressions.isEmpty()) {
-                throw new RuntimeException("MockKube doesn't support match expressions yet");
-            }
             return mockWithLabelPredicate(p -> {
-                Map<String, String> m = new HashMap<>(p.getMetadata().getLabels());
-                m.keySet().retainAll(matchLabels.keySet());
-                return matchLabels.equals(m);
+                Map<String, String> labels = p.getMetadata().getLabels();
+                if (matchExpressions == null) {
+                    return labelsMatches(labels, matchLabels);
+                } else if (matchLabels == null) {
+                    return expressionsMatches(labels, matchExpressions);
+                }
+                return labelsMatches(labels, matchLabels) || expressionsMatches(labels, matchExpressions);
             });
         });
         when(mixed.withLabels(any())).thenAnswer(i -> {
@@ -212,6 +213,22 @@ class MockBuilder<T extends HasMetadata,
             return mockWithLabels(labels);
         });
         return mixed;
+    }
+
+    private boolean labelsMatches(Map<String, String> labels, Map<String, String> matchLabels) {
+        Map<String, String> m = new HashMap<>(labels);
+        m.keySet().retainAll(matchLabels.keySet());
+        return matchLabels.equals(m);
+    }
+
+    private boolean expressionsMatches(Map<String, String> labels, List<LabelSelectorRequirement> matchExpressions) {
+        return matchExpressions.stream().anyMatch(requirement -> {
+            if (requirement.getOperator().equals("In")) {
+                String value = labels.get(requirement.getKey());
+                return requirement.getValues().contains(value);
+            }
+            throw new UnsupportedOperationException("MockKube supports only 'In' match expression");
+        });
     }
 
     public MixedOperation<T, L, R> build2(Supplier<MixedOperation<T, L, R>> x) {

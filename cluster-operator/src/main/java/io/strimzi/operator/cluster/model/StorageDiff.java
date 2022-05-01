@@ -116,8 +116,8 @@ public class StorageDiff extends AbstractJsonDiff {
                     PersistentClaimStorage persistentCurrent = (PersistentClaimStorage) current;
                     PersistentClaimStorage persistentDesired = (PersistentClaimStorage) desired;
 
-                    long currentSize = StorageUtils.parseMemory(persistentCurrent.getSize());
-                    long desiredSize = StorageUtils.parseMemory(persistentDesired.getSize());
+                    long currentSize = StorageUtils.convertToMillibytes(persistentCurrent.getSize());
+                    long desiredSize = StorageUtils.convertToMillibytes(persistentDesired.getSize());
 
                     if (currentSize > desiredSize) {
                         shrinkSize = true;

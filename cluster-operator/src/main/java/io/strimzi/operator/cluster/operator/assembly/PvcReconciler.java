@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
@@ -15,7 +14,6 @@ import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,48 +65,41 @@ public class PvcReconciler {
         List<Future> futures = new ArrayList<>(pvcs.size());
 
         for (PersistentVolumeClaim desiredPvc : pvcs)  {
-            Promise<Void> resultPromise = Promise.promise();
+            Future<Void> perPvcFuture = pvcOperator.getAsync(reconciliation.namespace(), desiredPvc.getMetadata().getName())
+                    .compose(currentPvc -> {
+                        if (currentPvc == null || currentPvc.getStatus() == null || !"Bound".equals(currentPvc.getStatus().getPhase())) {
+                            // This branch handles the following conditions:
+                            // * The PVC doesn't exist yet, we should create it
+                            // * The PVC is not Bound, we should reconcile it
+                            return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
+                                    .map((Void) null);
+                        } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
+                            // The PVC is Bound, but it is already resizing => Nothing to do, we should let it resize
+                            LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
+                            return Future.succeededFuture();
+                        } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
+                            // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
+                            String podName = podNameProvider.apply(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
+                            podsToRestart.add(podName);
+                            LOGGER.infoCr(reconciliation, "The PVC {} is waiting for file system resizing and the pod {} needs to be restarted.", desiredPvc.getMetadata().getName(), podName);
+                            return Future.succeededFuture();
+                        } else {
+                            // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
+                            Long currentSize = StorageUtils.convertToMillibytes(currentPvc.getSpec().getResources().getRequests().get("storage"));
+                            Long desiredSize = StorageUtils.convertToMillibytes(desiredPvc.getSpec().getResources().getRequests().get("storage"));
 
-            pvcOperator.getAsync(reconciliation.namespace(), desiredPvc.getMetadata().getName()).onComplete(res -> {
-                if (res.succeeded())    {
-                    PersistentVolumeClaim currentPvc = res.result();
-
-                    if (currentPvc == null || currentPvc.getStatus() == null || !"Bound".equals(currentPvc.getStatus().getPhase())) {
-                        // This branch handles the following conditions:
-                        // * The PVC doesn't exist yet, we should create it
-                        // * The PVC is not Bound, we should reconcile it
-                        pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
-                                .onComplete(r -> resultPromise.complete());
-                    } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
-                        // The PVC is Bound, but it is already resizing => Nothing to do, we should let it resize
-                        LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
-                        resultPromise.complete();
-                    } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
-                        // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
-                        String podName = podNameProvider.apply(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
-                        podsToRestart.add(podName);
-                        LOGGER.infoCr(reconciliation, "The PVC {} is waiting for file system resizing and the pod {} needs to be restarted.", desiredPvc.getMetadata().getName(), podName);
-                        resultPromise.complete();
-                    } else {
-                        // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
-                        Long currentSize = StorageUtils.parseMemory(currentPvc.getSpec().getResources().getRequests().get("storage"));
-                        Long desiredSize = StorageUtils.parseMemory(desiredPvc.getSpec().getResources().getRequests().get("storage"));
-
-                        if (!currentSize.equals(desiredSize))   {
-                            // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
-                            resizePvc(currentPvc, desiredPvc).onComplete(resultPromise);
-                        } else  {
-                            // size didn't change, just reconcile
-                            pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
-                                    .onComplete(r -> resultPromise.complete());
+                            if (!currentSize.equals(desiredSize))   {
+                                // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
+                                return resizePvc(currentPvc, desiredPvc);
+                            } else  {
+                                // size didn't change, just reconcile
+                                return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desiredPvc.getMetadata().getName(), desiredPvc)
+                                        .map((Void) null);
+                            }
                         }
-                    }
-                } else {
-                    resultPromise.fail(res.cause());
-                }
-            });
+                    });
 
-            futures.add(resultPromise.future());
+            futures.add(perPvcFuture);
         }
 
         return CompositeFuture.all(futures)
@@ -125,44 +116,29 @@ public class PvcReconciler {
      * @return          Future which completes when the PVC / PV resizing is completed.
      */
     private Future<Void> resizePvc(PersistentVolumeClaim current, PersistentVolumeClaim desired)  {
-        Promise<Void> resultPromise = Promise.promise();
-
         String storageClassName = current.getSpec().getStorageClassName();
 
         if (storageClassName != null && !storageClassName.isEmpty()) {
-            storageClassOperator.getAsync(storageClassName).onComplete(scRes -> {
-                if (scRes.succeeded()) {
-                    StorageClass sc = scRes.result();
-
-                    if (sc == null) {
-                        LOGGER.warnCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
-                        resultPromise.complete();
-                    } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
-                        // Resizing not supported in SC => do nothing
-                        LOGGER.warnCr(reconciliation, "Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
-                        resultPromise.complete();
-                    } else  {
-                        // Resizing supported by SC => We can reconcile the PVC to have it resized
-                        LOGGER.infoCr(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
-                        pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
-                            if (pvcRes.succeeded()) {
-                                resultPromise.complete();
-                            } else {
-                                resultPromise.fail(pvcRes.cause());
-                            }
-                        });
-                    }
-                } else {
-                    LOGGER.errorCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized.", storageClassName, desired.getMetadata().getName(), scRes.cause());
-                    resultPromise.fail(scRes.cause());
-                }
-            });
+            return storageClassOperator.getAsync(storageClassName)
+                    .compose(sc -> {
+                        if (sc == null) {
+                            LOGGER.warnCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
+                            return Future.succeededFuture();
+                        } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
+                            // Resizing not supported in SC => do nothing
+                            LOGGER.warnCr(reconciliation, "Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
+                            return Future.succeededFuture();
+                        } else  {
+                            // Resizing supported by SC => We can reconcile the PVC to have it resized
+                            LOGGER.infoCr(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
+                            return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), desired.getMetadata().getName(), desired)
+                                    .map((Void) null);
+                        }
+                    });
         } else {
             LOGGER.warnCr(reconciliation, "PVC {} does not use any Storage Class and cannot be resized. Reconciliation will proceed without reconciling this PVC.", desired.getMetadata().getName());
-            resultPromise.complete();
+            return Future.succeededFuture();
         }
-
-        return resultPromise.future();
     }
 
     /**

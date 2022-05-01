@@ -19,31 +19,44 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class StorageUtilsTest {
     @ParallelTest
     public void testSizeConversion() {
-        assertThat(StorageUtils.parseMemory("100Gi"), is(100L * 1_024L * 1_024L * 1_024L));
-        assertThat(StorageUtils.parseMemory("100G"), is(100L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageUtils.parseMemory("100000Mi"), is(100_000L * 1_024L * 1_024L));
-        assertThat(StorageUtils.parseMemory("100000M"), is(100L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageUtils.parseMemory("100Ti"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L));
-        assertThat(StorageUtils.parseMemory("100T"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageUtils.parseMemory("100Pi"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L));
-        assertThat(StorageUtils.parseMemory("100P"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageUtils.parseMemory("100.5P"), is((long) (100.5 * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L)));
-        assertThat(StorageUtils.parseMemory("2.1e6"), is((long) (2.1 * 1_000L * 1_000L)));
+        assertThat(StorageUtils.convertToMillibytes("100Gi"), is(100L * 1_024L * 1_024L * 1_024L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("100G"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("100000Mi"), is(100_000L * 1_024L * 1_024L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("100000M"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("100Ti"), is(100L * 1_024L * 1_024L * 1_024L * 1_024L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("100T"), is(100L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("1Pi"), is(1L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("1P"), is(1L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes("1.5P"), is((long) (1.5 * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L * 1_000L)));
+        assertThat(StorageUtils.convertToMillibytes("2.1e6"), is((long) (2.1 * 1_000L * 1_000L * 1_000L)));
+        assertThat(StorageUtils.convertToMillibytes("3.2Ti"), is(3_518_437_208_883_200L));
+        assertThat(StorageUtils.convertToMillibytes("3518437208883200m"), is(3_518_437_208_883_200L));
 
-        assertThat(StorageUtils.parseMemory("100Gi") == StorageUtils.parseMemory("100Gi"), is(true));
-        assertThat(StorageUtils.parseMemory("1000Gi") > StorageUtils.parseMemory("100Gi"), is(true));
-        assertThat(StorageUtils.parseMemory("1000000Mi") > StorageUtils.parseMemory("100Gi"), is(true));
-        assertThat(StorageUtils.parseMemory("100Pi") > StorageUtils.parseMemory("100Gi"), is(true));
-        assertThat(StorageUtils.parseMemory("1000G") == StorageUtils.parseMemory("1T"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("100Gi") == StorageUtils.convertToMillibytes("100Gi"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("1000Gi") > StorageUtils.convertToMillibytes("100Gi"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("1000000Mi") > StorageUtils.convertToMillibytes("100Gi"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("3.2Ti") > StorageUtils.convertToMillibytes("3Ti"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("10Pi") > StorageUtils.convertToMillibytes("100Gi"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("1000G") == StorageUtils.convertToMillibytes("1T"), is(true));
+        assertThat(StorageUtils.convertToMillibytes("3.2Ti") == StorageUtils.convertToMillibytes("3518437208883200m"), is(true));
     }
 
     @ParallelTest
     public void testQuantityConversion()    {
-        assertThat(StorageUtils.parseMemory(new Quantity("1000G")), is(1_000L * 1_000L * 1_000L * 1_000L));
-        assertThat(StorageUtils.parseMemory(new Quantity("100Gi")), is(100L * 1_024L * 1_024L * 1_024L));
+        assertThat(StorageUtils.convertToMillibytes(new Quantity("1000G")), is(1_000L * 1_000L * 1_000L * 1_000L * 1_000L));
+        assertThat(StorageUtils.convertToMillibytes(new Quantity("100Gi")), is(100L * 1_024L * 1_024L * 1_024L * 1_000L));
 
         Quantity size = new Quantity("100", "Gi");
-        assertThat(StorageUtils.parseMemory(size), is(100L * 1_024L * 1_024L * 1_024L));
+        assertThat(StorageUtils.convertToMillibytes(size), is(100L * 1_024L * 1_024L * 1_024L * 1_000L));
+    }
+
+    @ParallelTest
+    public void testUnitConversions()    {
+        assertThat(StorageUtils.convertTo("1000G", "M"), is(1_000_000.0));
+        assertThat(StorageUtils.convertTo("1000Gi", "Mi"), is(1_024_000.0));
+        assertThat(StorageUtils.convertTo("1000G", "Gi"), is(931.3225746154785));
+        assertThat(StorageUtils.convertTo("3518437208883200m", "Ti"), is(3.2));
+        assertThat(StorageUtils.convertTo("3.2Ti", "m"), is(3_518_437_208_883_200.0));
     }
 
     @ParallelTest

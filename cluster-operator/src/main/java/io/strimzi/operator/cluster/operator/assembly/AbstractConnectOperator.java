@@ -85,7 +85,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -103,8 +102,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
-    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
+    protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
     protected final ConfigMapOperator configMapOperations;
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
@@ -124,7 +123,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Map<String, Counter> connectorsReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
@@ -364,8 +362,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
             connectStatus.setConnectorPlugins(connectorPlugins);
 
-            connectorsResourceCounter(namespace).set(desiredConnectors.size());
-
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
             LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
@@ -463,7 +459,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             if (connector.getSpec() == null) {
                 return Future.failedFuture(new InvalidResourceException("spec property is required"));
             }
-            
+
             if (!useResources) {
                 return Future.failedFuture(new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
@@ -473,7 +469,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Try to get the current connector config. If the connector does not exist, or its config differs from the 
+     * Try to get the current connector config. If the connector does not exist, or its config differs from the
      * {@code connectorSpec}'s, then call
      * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)}
      * otherwise, just return the connectors current state.
@@ -879,12 +875,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     public Counter connectorsSuccessfulReconciliationsCounter(String namespace) {
         return Operator.getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.successful", metrics, null, connectorsSuccessfulReconciliationsCounterMap,
                 "Number of reconciliations done by the operator for individual resources which were successful");
-    }
-
-    public AtomicInteger connectorsResourceCounter(String namespace) {
-        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
-                metrics, null, connectorsResourceCounterMap,
-                "Number of custom resources the operator sees");
     }
 
     public Timer connectorsReconciliationsTimer(String namespace) {

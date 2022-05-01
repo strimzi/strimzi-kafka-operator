@@ -4,9 +4,15 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
+import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -28,11 +34,14 @@ import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -68,7 +77,7 @@ public class CruiseControlST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlST.class.getSimpleName()).stream().findFirst().get();
 
     @IsolatedTest
-    void testAutoCreationOfCruiseControlTopics(ExtensionContext extensionContext) {
+    void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
@@ -79,8 +88,26 @@ public class CruiseControlST extends AbstractST {
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
+                .editCruiseControl()
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("300Mi"))
+                        .addToRequests("memory", new Quantity("300Mi"))
+                        .build())
+                    .withNewJvmOptions()
+                        .withXmx("200M")
+                        .withXms("128M")
+                        .withXx(Map.of("UseG1GC", "true"))
+                    .endJvmOptions()
+                .endCruiseControl()
             .endSpec()
             .build());
+
+        String ccPodName = kubeClient().listPodsByPrefixInName(namespace, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        Container container = (Container) KubeClusterResource.kubeClient(namespace).getPod(namespace, ccPodName).getSpec().getContainers().stream().filter(c -> c.getName().equals("cruise-control")).findFirst().get();
+        assertThat(container.getResources().getLimits().get("memory"), is(new Quantity("300Mi")));
+        assertThat(container.getResources().getRequests().get("memory"), is(new Quantity("300Mi")));
+        assertExpectedJavaOpts(namespace, ccPodName, "cruise-control",
+                "-Xmx200M", "-Xms128M", "-XX:+UseG1GC");
 
         KafkaTopicUtils.waitForKafkaTopicReady(namespace, CRUISE_CONTROL_METRICS_TOPIC);
         KafkaTopicSpec metricsTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace)
@@ -137,16 +164,27 @@ public class CruiseControlST extends AbstractST {
     void testCruiseControlWithRebalanceResourceAndRefreshAnnotation(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
-            .editMetadata()
-            .withNamespace(namespace)
-            .endMetadata()
-            .build());
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
-            .editMetadata()
-            .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+                .editMetadata()
+                    .withNamespace(namespace)
+                .endMetadata()
+                .build());
+        resourceManager.createResource(extensionContext, false,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+                .editMetadata()
+                    .withNamespace(namespace)
+                .endMetadata()
+                .build());
+
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespace, clusterName, KafkaRebalanceState.NotReady);
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespace, kafkaSelector);
+
+        // Cruise Control spec is now enabled
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().setCruiseControl(new CruiseControlSpec()), namespace);
+
+        RollingUpdateUtils.waitTillComponentHasRolled(namespace, kafkaSelector, 3, kafkaPods);
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, namespace, clusterName), namespace, clusterName);
 

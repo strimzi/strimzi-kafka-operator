@@ -312,6 +312,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096")
             .withMessageCount(MESSAGE_COUNT)
@@ -373,6 +374,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122")
             .withMessageCount(MESSAGE_COUNT)
@@ -728,6 +730,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9104")
             .withMessageCount(MESSAGE_COUNT)
@@ -813,6 +816,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9106")
             .withMessageCount(MESSAGE_COUNT)
@@ -898,6 +902,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9107")
             .withMessageCount(MESSAGE_COUNT)
@@ -987,6 +992,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9109")
             .withMessageCount(MESSAGE_COUNT)
@@ -1072,6 +1078,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9111")
             .withMessageCount(MESSAGE_COUNT)
@@ -1158,6 +1165,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9112")
             .withMessageCount(MESSAGE_COUNT)
@@ -1303,6 +1311,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9113")
             .withMessageCount(MESSAGE_COUNT)
@@ -1550,6 +1559,7 @@ public class ListenersST extends AbstractST {
         int expectedMessageCountForNewGroup = MESSAGE_COUNT * 3;
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9115")
             .withMessageCount(MESSAGE_COUNT)
@@ -1787,6 +1797,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9117")
             .withMessageCount(MESSAGE_COUNT)
@@ -2070,6 +2081,7 @@ public class ListenersST extends AbstractST {
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096")
             .withMessageCount(MESSAGE_COUNT)

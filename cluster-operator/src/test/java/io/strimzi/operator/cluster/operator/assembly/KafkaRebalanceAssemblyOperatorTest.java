@@ -1056,8 +1056,43 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 2. The operator checks that the Kafka cluster specified in the KafkaRebalance resource (via label) doesn't have Cruise Control configured
      * 4. The KafkaRebalance resource moves to NotReady state
      */
+
     @Test
     public void testCruiseControlDisabled(VertxTestContext context) {
+
+        // build a Kafka cluster without the cruiseControl definition
+        Kafka kafka =
+                new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                        .editKafka()
+                        .withVersion(version)
+                        .endKafka()
+                        .endSpec()
+                        .build();
+
+        System.out.println(kafka.getMetadata().getName());
+        KafkaRebalance kr =
+                createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
+
+        Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(CLUSTER_NAMESPACE).create(kr);
+
+        // the Kafka cluster doesn't have the Cruise Control deployment
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
+        mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, kubernetesClient);
+
+        Checkpoint checkpoint = context.checkpoint();
+        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // the resource moved from New to NotReady due to the error
+                    assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME,
+                            KafkaRebalanceState.NotReady, InvalidResourceException.class,
+                            "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testCruiseControlDisabledToEnabledBehaviour(VertxTestContext context) {
 
         // build a Kafka cluster without the cruiseControl definition
         Kafka kafka =
@@ -1085,8 +1120,40 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME,
                         KafkaRebalanceState.NotReady, InvalidResourceException.class,
                         "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
-                checkpoint.flag();
-            })));
+            })))
+                .compose(v -> {
+                    try {
+                        // Setup the rebalance endpoint with the number of pending calls before a response is received.
+                        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+                    } catch (IOException | URISyntaxException e) {
+                        context.failNow(e);
+                    }
+
+                    Kafka kafkaPatch = new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+                            .editSpec()
+                                .editKafka()
+                                     .withVersion(version)
+                                .endKafka()
+                                .editOrNewCruiseControl()
+                                    .withImage(ccImage)
+                                .endCruiseControl()
+                            .endSpec()
+                            .build();
+
+                    when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));
+                    mockSecretResources();
+                    mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, kubernetesClient);
+
+                    // trigger another reconcile to process the NotReady state
+                    return kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                            kr);
+                })
+                .onComplete(context.succeeding(v -> {
+                    // the resource transitioned from 'NotReady' to 'ProposalReady'
+                    assertState(context, kubernetesClient, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    checkpoint.flag();
+                }));
     }
 
     /**

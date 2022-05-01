@@ -4,9 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -33,12 +37,14 @@ import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
@@ -56,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -77,6 +84,7 @@ import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -103,6 +111,7 @@ public class ConnectorMockTest {
     private KafkaConnectApi api;
     private HashMap<String, ConnectorState> runningConnectors;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
+    private MetricsProvider metricsProvider;
 
     String key(String host, String connectorName) {
         return host + "##" + connectorName;
@@ -123,7 +132,7 @@ public class ConnectorMockTest {
         List<Map> tasks = singletonList(task);
         statusNode.put("tasks", tasks);
 
-        return connectorState != null ? Future.succeededFuture(statusNode) : Future.failedFuture("No such connector " + connectorName);
+        return Future.succeededFuture(statusNode);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
@@ -142,13 +151,14 @@ public class ConnectorMockTest {
 
         setupMockConnectAPI();
 
+        metricsProvider = ResourceUtils.metricsProvider();
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(),
+                metricsProvider,
                 pfa, FeatureGates.NONE, 10_000);
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
@@ -156,11 +166,11 @@ public class ConnectorMockTest {
             ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(Long.MAX_VALUE)),
                 KafkaVersionTestUtils.getKafkaVersionLookup());
-        kafkaConnectOperator = new KafkaConnectAssemblyOperator(vertx,
+        kafkaConnectOperator = spy(new KafkaConnectAssemblyOperator(vertx,
             pfa,
             ros,
             config,
-            x -> api);
+            x -> api));
 
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
@@ -332,6 +342,15 @@ public class ConnectorMockTest {
                 );
     }
 
+    private static <T extends CustomResource<?, ? extends Status>> Predicate<T> paused() {
+        return c -> c.getStatus() != null
+                && c.getStatus().getConditions().stream()
+                .anyMatch(condition ->
+                        "ReconciliationPaused".equals(condition.getType())
+                                && "True".equals(condition.getStatus())
+                );
+    }
+
     public <T extends CustomResource<?, ? extends Status>> void waitForStatus(Resource<T> resource, String resourceName, Predicate<T> predicate) {
         try {
             resource.waitUntilCondition(predicate, 5, TimeUnit.SECONDS);
@@ -361,11 +380,32 @@ public class ConnectorMockTest {
                 ConnectorMockTest.<KafkaConnect>statusIsForCurrentGeneration().and(notReady(reason, message)));
     }
 
+    public void waitForConnectPaused(String connectName) {
+        Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(client)
+                .inNamespace(NAMESPACE)
+                .withName(connectName);
+        waitForStatus(resource, connectName, paused());
+    }
+
+    public void waitForConnectDeleted(String connectName) {
+        Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(client)
+                .inNamespace(NAMESPACE)
+                .withName(connectName);
+        waitForStatus(resource, connectName, Objects::isNull);
+    }
+
     public void waitForConnectorReady(String connectorName) {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
                 .inNamespace(NAMESPACE)
                 .withName(connectorName);
         waitForStatus(resource, connectorName, ready());
+    }
+
+    public void waitForConnectorPaused(String connectName) {
+        Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
+                .inNamespace(NAMESPACE)
+                .withName(connectName);
+        waitForStatus(resource, connectName, paused());
     }
 
     public void waitForConnectorState(String connectorName, String state) {
@@ -398,6 +438,13 @@ public class ConnectorMockTest {
         });
     }
 
+    public void waitForConnectorDeleted(String connectorName) {
+        Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
+                .inNamespace(NAMESPACE)
+                .withName(connectorName);
+        waitForStatus(resource, connectorName, Objects::isNull);
+    }
+
     public void waitForConnectorCondition(String connectorName, String conditionType, String conditionReason) {
         Resource<KafkaConnector> resource = Crds.kafkaConnectorOperation(client)
             .inNamespace(NAMESPACE)
@@ -426,6 +473,17 @@ public class ConnectorMockTest {
                 .withName(connectorName);
         waitForStatus(resource, connectorName,
                 ConnectorMockTest.<KafkaConnector>statusIsForCurrentGeneration().and(notReady(reason, message)));
+    }
+
+    private KafkaConnectorBuilder defaultKafkaConnectorBuilder() {
+        return new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withTasksMax(1)
+                    .withClassName("Dummy")
+                .endSpec();
     }
 
     @Test
@@ -1537,7 +1595,7 @@ public class ConnectorMockTest {
                 .build();
 
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector);
-        waitForConnectorCondition(connectorName, "ReconciliationPaused", null);
+        waitForConnectorPaused(connectorName);
 
         // unpaused
         Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).withName(connectorName).edit(cntctr ->
@@ -1550,4 +1608,389 @@ public class ConnectorMockTest {
         waitForConnectorReady(connectorName);
         waitForConnectorState(connectorName, "RUNNING");
     }
+
+    @Test
+    void testConnectorResourceMetrics(VertxTestContext context) {
+        String connectName1 = "cluster1";
+        String connectName2 = "cluster2";
+        String connectorName1 = "connector1";
+        String connectorName2 = "connector2";
+
+        KafkaConnect kafkaConnect1 = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName1)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        KafkaConnect kafkaConnect2 = new KafkaConnectBuilder(kafkaConnect1)
+                .editMetadata()
+                    .withName(connectName2)
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect1);
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect2);
+        waitForConnectReady(connectName1);
+        waitForConnectReady(connectName2);
+
+        KafkaConnector connector1 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName1)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName1)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        KafkaConnector connector2 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName2)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName2)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector1);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector2);
+
+        waitForConnectorPaused(connectorName1);
+        waitForConnectorPaused(connectorName2);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Promise<Void> reconciled1 = Promise.promise();
+        Promise<Void> reconciled2 = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled1.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(2.0));
+
+            Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).delete(connector1);
+            waitForConnectorDeleted(connectorName1);
+
+            kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled2.complete());
+            reconciled2.future().onComplete(context.succeeding(v1 -> context.verify(() -> {
+                assertThat(resources.value(), is(1.0));
+                assertThat(resourcesPaused.value(), is(1.0));
+                async.flag();
+            })));
+        })));
+    }
+
+    @Test
+    void testConnectorResourceMetricsPausedConnect(VertxTestContext context) {
+        String connectName = "cluster";
+        String connectorName1 = "connector1";
+        String connectorName2 = "connector2";
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect);
+        waitForConnectPaused(connectName);
+
+        KafkaConnector connector1 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName1)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        KafkaConnector connector2 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName2)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector1);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector2);
+
+        waitForConnectorPaused(connectorName1);
+        waitForConnectorReady(connectorName2);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Promise<Void> reconciled = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(1.0));
+            async.flag();
+        })));
+    }
+
+    @Test
+    void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(0)
+                .endSpec()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect);
+        waitForConnectReady(connectName);
+
+        KafkaConnector connector = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector);
+        waitForConnectorNotReady(connectorName, "RuntimeException", "Kafka Connect cluster 'cluster' in namespace ns has 0 replicas.");
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Promise<Void> reconciled = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(1.0));
+
+            kafkaConnectOperator.pausedConnectorsResourceCounter(NAMESPACE); // to create metric, otherwise MeterNotFoundException will be thrown
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(0.0));
+            async.flag();
+        })));
+    }
+
+    @Test
+    void testConnectorResourceMetricsStopUseResources(VertxTestContext context) {
+        String connectName = "cluster";
+        String connectorName = "connector";
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "false")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect);
+        waitForConnectReady(connectName);
+
+        KafkaConnector connector = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector);
+        waitForConnectorPaused(connectorName);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Promise<Void> reconciled = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(1.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(1.0));
+            async.flag();
+        })));
+    }
+
+    @Test
+    void testConnectorResourceMetricsConnectDeletion(VertxTestContext context) {
+        String connectName = "cluster";
+        String connectorName1 = "connector1";
+        String connectorName2 = "connector2";
+
+        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName)
+                    .addToLabels("foo", "bar")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect);
+        waitForConnectReady(connectName);
+
+        KafkaConnector connector1 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName1)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        KafkaConnector connector2 = new KafkaConnectorBuilder(connector1).editMetadata().withName(connectorName2).endMetadata().build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector1);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector2);
+
+        waitForConnectorPaused(connectorName1);
+        waitForConnectorPaused(connectorName2);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+
+        Promise<Void> reconciled1 = Promise.promise();
+        Promise<Void> reconciled2 = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled1.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(2.0));
+
+            Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).delete(kafkaConnect);
+            waitForConnectDeleted(connectName);
+
+            kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled2.complete());
+            reconciled2.future().onComplete(context.succeeding(v1 -> context.verify(() -> {
+                assertThat(resources.value(), is(0.0));
+                assertThat(resourcesPaused.value(), is(0.0));
+                async.flag();
+            })));
+        })));
+    }
+
+    @Test
+    void testConnectorResourceMetricsMoveConnectToOtherOperator(VertxTestContext context) {
+        String connectName1 = "cluster1";
+        String connectName2 = "cluster2";
+        String connectorName1 = "connector1";
+        String connectorName2 = "connector2";
+
+        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+
+        KafkaConnect kafkaConnect1 = new KafkaConnectBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(connectName1)
+                    .addToLabels("foo", "bar")
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        KafkaConnect kafkaConnect2 = new KafkaConnectBuilder(kafkaConnect1)
+                .editMetadata()
+                    .withName(connectName2)
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect1);
+        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).create(kafkaConnect2);
+        waitForConnectReady(connectName1);
+        waitForConnectReady(connectName2);
+
+        KafkaConnector connector1 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName1)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName1)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        KafkaConnector connector2 = defaultKafkaConnectorBuilder()
+                .editMetadata()
+                    .withName(connectorName2)
+                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName2)
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")
+                .endMetadata()
+                .build();
+
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector1);
+        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).create(connector2);
+
+        waitForConnectorPaused(connectorName1);
+        waitForConnectorPaused(connectorName2);
+
+        MeterRegistry meterRegistry = metricsProvider.meterRegistry();
+        Tags tags = Tags.of("kind", KafkaConnector.RESOURCE_KIND, "namespace", NAMESPACE);
+
+        Promise<Void> reconciled1 = Promise.promise();
+        Promise<Void> reconciled2 = Promise.promise();
+        kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled1.complete());
+
+        Checkpoint async = context.checkpoint();
+        reconciled1.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
+            assertThat(resources.value(), is(2.0));
+
+            Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
+            assertThat(resourcesPaused.value(), is(2.0));
+
+            Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(connectName2).edit(ctr ->
+                    new KafkaConnectBuilder(ctr)
+                            .editMetadata()
+                                .addToLabels("foo", "baz")
+                            .endMetadata()
+                            .build());
+            waitForConnectReady(connectName1);
+
+            kafkaConnectOperator.reconcileAll("test", NAMESPACE, ignored -> reconciled2.complete());
+            reconciled2.future().onComplete(context.succeeding(v1 -> context.verify(() -> {
+                assertThat(resources.value(), is(1.0));
+                assertThat(resourcesPaused.value(), is(1.0));
+                async.flag();
+            })));
+        })));
+    }
+
 }

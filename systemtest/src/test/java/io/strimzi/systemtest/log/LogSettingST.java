@@ -500,13 +500,6 @@ class LogSettingST extends AbstractST {
         return checkEnvVarValue(container);
     }
 
-    private synchronized Boolean checkGcLoggingDeploymentConfig(String namespaceName, String depConfName) {
-        LOGGER.info("Checking deployment config: {}", depConfName);
-        Container container = kubeClient(namespaceName).getDeploymentConfig(namespaceName, depConfName).getSpec().getTemplate().getSpec().getContainers().get(0);
-        LOGGER.info("Checking container with name: {}", container.getName());
-        return checkEnvVarValue(container);
-    }
-
     private synchronized void checkGcLoggingPods(String namespaceName, LabelSelector selector, boolean expectedValue) {
         LOGGER.info("Checking pods with selector: {}", selector);
         List<Pod> pods = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();

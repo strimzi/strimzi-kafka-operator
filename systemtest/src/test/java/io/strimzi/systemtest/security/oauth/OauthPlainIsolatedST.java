@@ -258,7 +258,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect(ExtensionContext extensionContext) {
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
@@ -283,7 +282,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, oauthClusterName, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
@@ -732,7 +730,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         keycloakInstance.setRealm("internal", false);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 3)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()

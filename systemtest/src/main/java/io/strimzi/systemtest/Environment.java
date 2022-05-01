@@ -136,6 +136,12 @@ public class Environment {
     public static final String STRIMZI_FEATURE_GATES_ENV = "STRIMZI_FEATURE_GATES";
 
     /**
+     * CO PodSet-only reconciliation env variable <br>
+     * Only SPS will be reconciled, when this env variable will be true
+     */
+    public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";

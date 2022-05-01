@@ -13,48 +13,51 @@ import io.strimzi.api.kafka.model.storage.Storage;
  */
 public class StorageUtils {
     /**
-     * Parse a K8S-style representation of a quantity of memory, such as {@code 512Mi},
-     * into the equivalent number of bytes in the specified units.
-     * For example, a memory value of "100Gb" and a unit value of "Mb" will return 100000,
+     * Parse a K8S-style representation of a quantity of memory, such as {@code 512Mi}, into the equivalent number in
+     * the specified units. For example, a memory value of "100Gb" and a unit value of "Mb" will return 100000. This
+     * handles values up to around 9Pi, than the long overflows. This should not cause issues in reality since it is
+     * unlikely we will have broker with disks over petabyte of size.
      *
      * @param memory The String representation of the quantity of memory.
      * @param units The units which the bytes should be returned in. The format of units
      *              follows the K8S-style representation of memory units.
      *
-     * @return The equivalent number of bytes in the specified units.
+     * @return The equivalent number in the specified units.
      */
-    public static double parseMemory(String memory, String units) {
-        return parseMemory(memory) / (double) memoryFactor(units);
+    public static double convertTo(String memory, String units) {
+        return convertToMillibytes(memory) / (double) memoryFactor(units);
     }
 
     /**
-     * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
-     * into the equivalent number of bytes represented as a long.
+     * Parse a K8S-style representation of a disk size, such as {@code 100Gi}, into the equivalent number of millibytes
+     * represented as a long. This handles values up to around 9Pi, than the long overflows. This should not cause
+     * issues in reality since it is unlikely we will have broker with disks over petabyte of size.
      *
      * @param size The String representation of the volume size.
-     * @return The equivalent number of bytes.
+     * @return The equivalent number of millibytes.
      */
-    public static long parseMemory(Quantity size) {
+    public static long convertToMillibytes(Quantity size) {
         String amount = size.getAmount();
         String format = size.getFormat();
 
         if (format != null) {
-            return parseMemory(amount + format);
+            return convertToMillibytes(amount + format);
         } else  {
-            return parseMemory(amount);
+            return convertToMillibytes(amount);
         }
     }
 
     /**
-     * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
-     * into the equivalent number of bytes represented as a long.
+     * Parse a K8S-style representation of a disk size, such as {@code 100Gi}, into the equivalent number of millibytes
+     * represented as a long. This handles values up to around 9Pi, than the long overflows. This should not cause
+     * issues in reality since it is unlikely we will have broker with disks over petabyte of size.
      *
      * @param size The String representation of the volume size.
-     * @return The equivalent number of bytes.
+     * @return The equivalent number of millibytes.
      */
-    public static long parseMemory(String size) {
+    public static long convertToMillibytes(String size) {
         boolean seenE = false;
-        long factor = 1L;
+        long factor = 1_000L; // Default unit is bytes -> so we need to set the default factor to 1000 to convert it to millibytes
         int end = size.length();
         for (int i = 0; i < size.length(); i++) {
             char ch = size.charAt(i);
@@ -68,7 +71,7 @@ public class StorageUtils {
         }
         long result;
         if (seenE) {
-            result = (long) Double.parseDouble(size);
+            result = (long) Double.parseDouble(size) * factor;
         } else {
             result = (long) (Double.parseDouble(size.substring(0, end)) * factor);
         }
@@ -76,7 +79,7 @@ public class StorageUtils {
     }
 
     /**
-     * Returns the factor which can be used to convert different units to bytes.
+     * Returns the factor which can be used to convert different units to millibytes.
      *
      * @param suffix    The Unit which should be converted
      * @return          The factor corresponding to the suffix unit
@@ -85,40 +88,43 @@ public class StorageUtils {
         long factor;
         switch (suffix) {
             case "E":
-                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L * 1_000L;
+                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L * 1_000L * 1_000L;
                 break;
             case "P":
-                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L;
+                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L * 1_000L;
                 break;
             case "T":
-                factor = 1_000L * 1_000L * 1_000L * 1_000;
+                factor = 1_000L * 1_000L * 1_000L * 1_000 * 1_000L;
                 break;
             case "G":
-                factor = 1_000L * 1_000L * 1_000L;
+                factor = 1_000L * 1_000L * 1_000L * 1_000L;
                 break;
             case "M":
-                factor = 1_000L * 1_000L;
+                factor = 1_000L * 1_000L * 1_000L;
                 break;
             case "K":
-                factor = 1_000L;
+                factor = 1_000L * 1_000L;
                 break;
             case "Ei":
-                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L;
+                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_024L * 1_024L * 1_000L;
                 break;
             case "Pi":
-                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_024L;
+                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_024L * 1_000L;
                 break;
             case "Ti":
-                factor = 1_024L * 1_024L * 1_024L * 1_024L;
+                factor = 1_024L * 1_024L * 1_024L * 1_024L * 1_000L;
                 break;
             case "Gi":
-                factor = 1_024L * 1_024L * 1_024L;
+                factor = 1_024L * 1_024L * 1_024L * 1_000L;
                 break;
             case "Mi":
-                factor = 1_024L * 1_024L;
+                factor = 1_024L * 1_024L * 1_000L;
                 break;
             case "Ki":
-                factor = 1_024L;
+                factor = 1_024L * 1_000L;
+                break;
+            case "m":
+                factor = 1L;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid memory suffix: " + suffix);

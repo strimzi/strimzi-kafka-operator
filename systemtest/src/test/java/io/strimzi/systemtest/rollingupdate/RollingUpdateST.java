@@ -24,7 +24,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.annotations.StatefulSetTest;
 import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -256,10 +255,6 @@ class RollingUpdateST extends AbstractST {
         internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
     }
 
-    // When using StrimziPodSets, Kafka pods are not all rolled when scaling up or down.
-    // This test needs to be updated to support StrimziPodSets as well
-    //             => https://github.com/strimzi/strimzi-kafka-operator/issues/6493
-    @StatefulSetTest
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
@@ -322,7 +317,7 @@ class RollingUpdateST extends AbstractST {
             kafka.getSpec().getKafka().setReplicas(scaleTo);
         }, namespaceName);
 
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, scaleTo, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaleTo, kafkaPods);
 
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
@@ -351,7 +346,7 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(initialReplicas), namespaceName);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, initialReplicas, kafkaPods);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, initialReplicas, kafkaPods);
 
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
 
@@ -624,7 +619,7 @@ class RollingUpdateST extends AbstractST {
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(namespace).listPods(namespace).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
-                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods().size());
+                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(namespace).size());
 
         LabelSelector coLabelSelector = kubeClient(INFRA_NAMESPACE).getDeployment(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
@@ -634,7 +629,7 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(namespace, zkSelector, 3, zkPods);
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(namespace).listPods().stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
+            () -> kubeClient(namespace).listPods(namespace).stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
 
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
         kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
