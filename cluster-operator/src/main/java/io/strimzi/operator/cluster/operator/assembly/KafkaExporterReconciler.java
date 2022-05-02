@@ -90,10 +90,10 @@ public class KafkaExporterReconciler {
      * @return                  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Supplier<Date> dateSupplier)    {
-        return kafkaExporterServiceAccount()
-                .compose(i -> kafkaExporterSecret(dateSupplier))
-                .compose(i -> kafkaExporterDeployment(isOpenShift, imagePullPolicy, imagePullSecrets))
-                .compose(i -> kafkaExporterReady());
+        return serviceAccount()
+                .compose(i -> certificatesSecret(dateSupplier))
+                .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .compose(i -> waitForDeploymentReadiness());
     }
 
     /**
@@ -101,7 +101,7 @@ public class KafkaExporterReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> kafkaExporterServiceAccount() {
+    private Future<Void> serviceAccount() {
         return serviceAccountOperator
                 .reconcile(
                         reconciliation,
@@ -118,7 +118,7 @@ public class KafkaExporterReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> kafkaExporterSecret(Supplier<Date> dateSupplier) {
+    private Future<Void> certificatesSecret(Supplier<Date> dateSupplier) {
         if (kafkaExporter != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()))
                     .compose(oldSecret -> {
@@ -152,7 +152,7 @@ public class KafkaExporterReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> kafkaExporterDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    private Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (kafkaExporter != null) {
             Deployment deployment = kafkaExporter.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
             int caCertGeneration = ModelUtils.caCertGeneration(this.clusterCa);
@@ -194,7 +194,7 @@ public class KafkaExporterReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> kafkaExporterReady() {
+    private Future<Void> waitForDeploymentReadiness() {
         if (kafkaExporter != null) {
             return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs)
                     .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs));

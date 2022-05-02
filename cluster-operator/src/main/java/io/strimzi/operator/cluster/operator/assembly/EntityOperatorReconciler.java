@@ -102,18 +102,18 @@ public class EntityOperatorReconciler {
      * @return                  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Supplier<Date> dateSupplier)    {
-        return reconcileServiceAccount()
-                .compose(i -> reconcileEntityOperatorRole())
-                .compose(i -> recocnileTopicOperatorRole())
-                .compose(i -> reconcileUserOperatorRole())
-                .compose(i -> reconcileTopicOperatorRoleBindings())
-                .compose(i -> reconcileUserOperatorRoleBindings())
-                .compose(i -> reconcileTopicOperagorConfigMap())
-                .compose(i -> reconcileUserOperatorConfigMap())
+        return serviceAccount()
+                .compose(i -> entityOperatorRole())
+                .compose(i -> topicOperatorRole())
+                .compose(i -> userOperatorRole())
+                .compose(i -> topicOperatorRoleBindings())
+                .compose(i -> userOperatorRoleBindings())
+                .compose(i -> topicOperagorConfigMap())
+                .compose(i -> userOperatorConfigMap())
                 .compose(i -> deleteOldEntityOperatorSecret())
-                .compose(i -> reconcileTopicOperatorSecret(dateSupplier))
-                .compose(i -> reconcileUserOperatorSecret(dateSupplier))
-                .compose(i -> reconcileDeployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .compose(i -> topicOperatorSecret(dateSupplier))
+                .compose(i -> userOperatorSecret(dateSupplier))
+                .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
 
@@ -122,7 +122,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileServiceAccount() {
+    protected Future<Void> serviceAccount() {
         return serviceAccountOperator
                 .reconcile(
                         reconciliation,
@@ -139,7 +139,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileEntityOperatorRole() {
+    protected Future<Void> entityOperatorRole() {
         return roleOperator
                 .reconcile(
                         reconciliation,
@@ -155,7 +155,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> recocnileTopicOperatorRole() {
+    protected Future<Void> topicOperatorRole() {
         if (entityOperator != null && entityOperator.topicOperator() != null) {
             String watchedNamespace = entityOperator.topicOperator().watchedNamespace();
 
@@ -181,7 +181,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileUserOperatorRole() {
+    protected Future<Void> userOperatorRole() {
         if (entityOperator != null && entityOperator.userOperator() != null) {
             String watchedNamespace = entityOperator.userOperator().watchedNamespace();
 
@@ -208,7 +208,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileTopicOperatorRoleBindings() {
+    protected Future<Void> topicOperatorRoleBindings() {
         if (entityOperator != null && entityOperator.topicOperator() != null)   {
             String watchedNamespace = entityOperator.topicOperator().watchedNamespace();
 
@@ -239,7 +239,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileUserOperatorRoleBindings() {
+    protected Future<Void> userOperatorRoleBindings() {
         if (entityOperator != null && entityOperator.userOperator() != null)   {
             String watchedNamespace = entityOperator.userOperator().watchedNamespace();
 
@@ -269,7 +269,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileTopicOperagorConfigMap() {
+    protected Future<Void> topicOperagorConfigMap() {
         if (entityOperator != null && entityOperator.topicOperator() != null) {
             return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), entityOperator.topicOperator().getLogging(), null)
                     .compose(logging ->
@@ -293,7 +293,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileUserOperatorConfigMap() {
+    protected Future<Void> userOperatorConfigMap() {
         if (entityOperator != null && entityOperator.userOperator() != null) {
             return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), entityOperator.userOperator().getLogging(), null)
                     .compose(logging ->
@@ -318,7 +318,7 @@ public class EntityOperatorReconciler {
      * @return  Future which completes when the reconciliation is done
      */
     @SuppressWarnings("deprecation")
-    Future<Void> deleteOldEntityOperatorSecret() {
+    protected Future<Void> deleteOldEntityOperatorSecret() {
         return secretOperator
                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorSecretName(reconciliation.name()), null)
                 .map((Void) null);
@@ -329,7 +329,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileTopicOperatorSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> topicOperatorSecret(Supplier<Date> dateSupplier) {
         if (entityOperator != null && entityOperator.topicOperator() != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
@@ -359,7 +359,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileUserOperatorSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> userOperatorSecret(Supplier<Date> dateSupplier) {
         if (entityOperator != null && entityOperator.userOperator() != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
@@ -389,7 +389,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> reconcileDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    protected Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (entityOperator != null) {
             Deployment deployment = entityOperator.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
             int caCertGeneration = ModelUtils.caCertGeneration(clusterCa);
@@ -421,7 +421,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> rollDeployment() {
+    protected Future<Void> rollDeployment() {
         return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), operationTimeoutMs);
     }
 
@@ -430,7 +430,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> waitForDeploymentReadiness() {
+    protected Future<Void> waitForDeploymentReadiness() {
         if (entityOperator != null) {
             return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), 1_000, operationTimeoutMs)
                     .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), 1_000, operationTimeoutMs));

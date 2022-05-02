@@ -71,10 +71,10 @@ public class JmxTransReconciler {
      * @return                  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets)    {
-        return jmxTransServiceAccount()
-                .compose(i -> jmxTransConfigMap())
-                .compose(i -> jmxTransDeployment(imagePullPolicy, imagePullSecrets))
-                .compose(i -> jmxTransDeploymentReady());
+        return serviceAccount()
+                .compose(i -> configMap())
+                .compose(i -> deployment(imagePullPolicy, imagePullSecrets))
+                .compose(i -> waitForDeploymentReadiness());
     }
 
     /**
@@ -82,7 +82,7 @@ public class JmxTransReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> jmxTransConfigMap() {
+    protected Future<Void> configMap() {
         if (jmxTrans != null)   {
             ConfigMap configMap = jmxTrans.generateConfigMap();
             configMapHashStub = Util.hashStub(configMap.getData().getOrDefault(JmxTrans.JMXTRANS_CONFIGMAP_KEY, ""));
@@ -102,7 +102,7 @@ public class JmxTransReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> jmxTransServiceAccount() {
+    protected Future<Void> serviceAccount() {
         return serviceAccountOperator
                 .reconcile(
                         reconciliation,
@@ -120,7 +120,7 @@ public class JmxTransReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> jmxTransDeployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    protected Future<Void> deployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (jmxTrans != null) {
             Deployment deployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);
 
@@ -141,7 +141,7 @@ public class JmxTransReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> jmxTransDeploymentReady() {
+    protected Future<Void> waitForDeploymentReadiness() {
         if (this.jmxTrans != null) {
             return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(),  this.jmxTrans.getName(), 1_000, operationTimeoutMs)
                     .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), this.jmxTrans.getName(), 1_000, operationTimeoutMs));

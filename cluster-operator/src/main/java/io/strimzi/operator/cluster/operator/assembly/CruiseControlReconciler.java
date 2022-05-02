@@ -113,14 +113,14 @@ public class CruiseControlReconciler {
      * @return                  Future which completes when the reconciliation completes
      */
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Supplier<Date> dateSupplier)    {
-        return cruiseControlNetworkPolicy()
-                .compose(i -> cruiseControlServiceAccount())
-                .compose(i -> cruiseControlLoggingAndMetricsConfigMap())
-                .compose(i -> cruiseControlCertificatesSecret(dateSupplier))
-                .compose(i -> cruiseControlApiSecret())
-                .compose(i -> cruiseControlService())
-                .compose(i -> cruiseControlDeployment(isOpenShift, imagePullPolicy, imagePullSecrets))
-                .compose(i -> cruiseControlReady());
+        return networkPolicy()
+                .compose(i -> serviceAccount())
+                .compose(i -> metricsAndLoggingConfigMap())
+                .compose(i -> certificatesSecret(dateSupplier))
+                .compose(i -> apiSecret())
+                .compose(i -> service())
+                .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
+                .compose(i -> waitForDeploymentReadiness());
     }
 
     /**
@@ -128,7 +128,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlNetworkPolicy() {
+    protected Future<Void> networkPolicy() {
         if (isNetworkPolicyGeneration) {
             return networkPolicyOperator
                     .reconcile(
@@ -147,7 +147,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlServiceAccount() {
+    protected Future<Void> serviceAccount() {
         return serviceAccountOperator
                 .reconcile(
                         reconciliation,
@@ -162,7 +162,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlLoggingAndMetricsConfigMap() {
+    protected Future<Void> metricsAndLoggingConfigMap() {
         if (cruiseControl != null)  {
             return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), cruiseControl.getLogging(), cruiseControl.getMetricsConfigInCm())
                     .compose(metricsAndLogging -> {
@@ -187,7 +187,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlCertificatesSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> certificatesSecret(Supplier<Date> dateSupplier) {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
                     .compose(oldSecret -> {
@@ -216,7 +216,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlApiSecret() {
+    protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
@@ -243,7 +243,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlService() {
+    protected Future<Void> service() {
         return serviceOperator
                 .reconcile(
                         reconciliation,
@@ -258,7 +258,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    protected Future<Void> deployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         if (cruiseControl != null) {
             Deployment deployment = cruiseControl.generateDeployment(isOpenShift, imagePullPolicy, imagePullSecrets);
 
@@ -291,7 +291,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlRollingUpdate() {
+    protected Future<Void> cruiseControlRollingUpdate() {
         return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), operationTimeoutMs);
     }
 
@@ -300,7 +300,7 @@ public class CruiseControlReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    Future<Void> cruiseControlReady() {
+    protected Future<Void> waitForDeploymentReadiness() {
         if (cruiseControl != null) {
             return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs)
                     .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), 1_000, operationTimeoutMs));
