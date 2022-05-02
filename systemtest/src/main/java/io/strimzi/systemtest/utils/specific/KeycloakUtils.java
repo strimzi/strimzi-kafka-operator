@@ -22,10 +22,13 @@ public class KeycloakUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakUtils.class);
 
+    public final static String PATH_TO_PGO_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_pg_operator.sh";
     public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
     public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
+    public final static String PATH_TO_PGO_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_pg_operator.sh";
 
-    public final static String LATEST_KEYCLOAK_VERSION = "15.0.2";
+
+    public final static String LATEST_KEYCLOAK_VERSION = "18.0.0";
     public final static String OLD_KEYCLOAK_VERSION = "11.0.1";
 
 
@@ -51,6 +54,26 @@ public class KeycloakUtils {
     public static void deleteKeycloak(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Teardown Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
+    }
+
+    public static void deployPostgres(final String deploymentNamespace) {
+        LOGGER.info("Deploy Postgres DB and its Operator Operator branch:{} in namespace: {}", "main", deploymentNamespace);
+
+        TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
+            ExecResult result = Exec.exec(Level.INFO, "/bin/bash", PATH_TO_PGO_PREPARE_SCRIPT, deploymentNamespace, "main");
+
+            if (!result.out().contains("Postgres Operator and Database successfully deployed")) {
+                LOGGER.info("Some errors occurred during Postgres Operator installation: {}", result.err());
+                return false;
+            }
+            return  true;
+        });
+        LOGGER.info("Postgres DB (Operator) in namespace {} is ready", deploymentNamespace);
+    }
+
+    public static void deletePostgres(final String deploymentNamespace) {
+        LOGGER.info("Teardown Postgres DB and its Operator in namespace: {}", deploymentNamespace);
+        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_PGO_TEARDOWN_SCRIPT, deploymentNamespace);
     }
 
     /**
