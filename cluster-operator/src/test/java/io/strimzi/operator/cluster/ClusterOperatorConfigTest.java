@@ -89,7 +89,8 @@ public class ClusterOperatorConfigTest {
                 20_000,
                 10,
                 false,
-                1024);
+                1024,
+                "operator_name");
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));

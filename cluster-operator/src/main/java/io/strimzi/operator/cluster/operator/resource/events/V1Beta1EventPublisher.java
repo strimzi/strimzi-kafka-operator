@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.events.v1beta1.EventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 
 import java.time.Clock;
 
