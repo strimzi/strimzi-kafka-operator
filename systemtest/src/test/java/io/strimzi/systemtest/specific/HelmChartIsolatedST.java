@@ -20,6 +20,7 @@ import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -35,6 +36,7 @@ class HelmChartIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HelmChartIsolatedST.class);
     private HelmResource helmResource = new HelmResource(INFRA_NAMESPACE);
 
+    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
