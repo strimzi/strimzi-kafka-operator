@@ -10,7 +10,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -39,10 +38,6 @@ class HelmChartIsolatedST extends AbstractST {
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext,
-            KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
 
         // Deploy Kafka and wait for readiness
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());

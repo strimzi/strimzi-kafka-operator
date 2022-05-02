@@ -18,7 +18,6 @@ import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -67,7 +66,6 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
@@ -107,7 +105,6 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)

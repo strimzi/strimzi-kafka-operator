@@ -22,7 +22,6 @@ import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -544,8 +543,6 @@ public class TracingST extends AbstractST {
         storageMap.put(extensionContext, testStorage);
 
         deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(storageMap.get(extensionContext).getNamespaceName(), false, storageMap.get(extensionContext).getKafkaClientsName()).build());
 
         testStorage.addToTestStorage(Constants.KAFKA_CLIENTS_POD_KEY, kubeClient(storageMap.get(extensionContext).getNamespaceName()).listPodsByPrefixInName(storageMap.get(extensionContext).getKafkaClientsName()).get(0).getMetadata().getName());
 
