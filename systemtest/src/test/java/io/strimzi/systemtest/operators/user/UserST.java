@@ -84,13 +84,7 @@ class UserST extends AbstractST {
 
         Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
 
-//    @Tag(SCALABILITY)
-//    @IsolatedTest
-//    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
-//    void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-//        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-//        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
-//    }
+        verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
         resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, saslUserWithLongName)

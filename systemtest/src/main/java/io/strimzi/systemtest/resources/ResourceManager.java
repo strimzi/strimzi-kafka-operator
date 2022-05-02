@@ -208,7 +208,6 @@ public class ResourceManager {
             } else if (resource.getKind().equals(Constants.DEPLOYMENT)) {
                 this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Deployment) resource).getSpec().getTemplate());
             }
-
             type.create(resource);
 
             synchronized (this) {
