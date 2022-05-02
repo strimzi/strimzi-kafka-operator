@@ -884,7 +884,7 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
     }
 
     @ParallelNamespaceTest
@@ -908,7 +908,7 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
     }
 
     @ParallelNamespaceTest
@@ -932,7 +932,7 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
     }
 
     @ParallelNamespaceTest
