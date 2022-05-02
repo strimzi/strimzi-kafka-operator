@@ -77,7 +77,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -155,7 +155,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
     @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -267,7 +267,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("checkstyle:methodlength")
     void testMirrorMakerTlsScramSha(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -380,7 +380,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
     @ParallelNamespaceTest
     void testIncludeList(ExtensionContext extensionContext) throws UnexpectedException {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -570,7 +570,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     void testScaleMirrorMakerUpAndDownToZero(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";

@@ -62,7 +62,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicAvailable(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         prepareEnvironmentForRecovery(extensionContext, testStorage);
 
@@ -125,7 +125,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
     void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         prepareEnvironmentForRecovery(extensionContext, testStorage);
 
