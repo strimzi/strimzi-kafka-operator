@@ -251,6 +251,13 @@ public class Environment {
         return STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_POD_SET);
     }
 
+    /**
+     * Provides boolean information, if testing environment support shared memory (i.e., environment, where all
+     * components share memory). In general, we use {@link RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link RESOURCE_ALLOCATION_STRATEGY_ENV}
+     * is not specified.
+     *
+     * @return true iff env {@link RESOURCE_ALLOCATION_STRATEGY_ENV} contains "SHARE_MEMORY_FOR_ALL_COMPONENTS" value, otherwise false.
+     */
     public static boolean isSharedMemory() {
         return RESOURCE_ALLOCATION_STRATEGY.contains(RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
     }

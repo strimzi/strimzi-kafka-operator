@@ -68,6 +68,9 @@ public class KafkaMirrorMakerTemplates {
 
         if (!Environment.isSharedMemory()) {
             kmmb.editSpec().withResources(new ResourceRequirementsBuilder()
+                // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
+                // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
+                // Using 1Gi is too much and on the other hand 512Mi is causing OOM problem at the start.
                 .addToLimits("memory", new Quantity("784Mi"))
                 .addToRequests("memory", new Quantity("784Mi"))
                 .build());
