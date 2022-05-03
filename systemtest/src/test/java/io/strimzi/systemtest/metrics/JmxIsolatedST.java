@@ -32,7 +32,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,7 +50,7 @@ public class JmxIsolatedST extends AbstractST {
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String zkSecretName = clusterName + "-zookeeper-jmx";
         final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = clusterName + "-kafka-jmx";
@@ -114,12 +113,12 @@ public class JmxIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
+        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? clusterOperator.getDeploymentNamespace() : Constants.WATCH_ALL_NAMESPACES;
 
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .withWatchingNamespaces(namespaceToWatch)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()

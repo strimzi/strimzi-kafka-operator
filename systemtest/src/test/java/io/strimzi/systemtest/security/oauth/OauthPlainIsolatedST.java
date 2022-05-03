@@ -57,7 +57,6 @@ import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;

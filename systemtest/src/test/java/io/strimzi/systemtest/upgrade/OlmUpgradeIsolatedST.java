@@ -160,8 +160,8 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
         // ======== Kafka upgrade ends ========
 
-        ClientUtils.waitForClientSuccess(producerName, Constants.INFRA_NAMESPACE, messageUpgradeCount);
-        ClientUtils.waitForClientSuccess(consumerName, Constants.INFRA_NAMESPACE, messageUpgradeCount);
+        ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), messageUpgradeCount);
+        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), messageUpgradeCount);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -171,15 +171,15 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     void setup() {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(Constants.INFRA_NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(Constants.INFRA_NAMESPACE))
-            .withWatchingNamespaces(Constants.INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withBindingsNamespaces(Collections.singletonList(clusterOperator.getDeploymentNamespace())
+            .withWatchingNamespaces(clusterOperator.getDeploymentNamespace())
             .createInstallation();
 
         this.kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withNamespaceName(Constants.INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicUpgradeName)
             .withMessageCount(messageUpgradeCount)

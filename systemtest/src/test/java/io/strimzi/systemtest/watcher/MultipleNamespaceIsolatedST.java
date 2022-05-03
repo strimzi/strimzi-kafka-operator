@@ -22,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Arrays;
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,8 +46,8 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(topicName)));
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, INFRA_NAMESPACE).build());
-        KafkaTopicResource.kafkaTopicClient().inNamespace(INFRA_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, clusterOperator.getDeploymentNamespace()).build());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     /**
@@ -79,9 +78,9 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, SECOND_NAMESPACE))
-            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))
+            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withWatchingNamespaces(String.join(",", clusterOperator.getDeploymentNamespace(), SECOND_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
@@ -91,12 +90,12 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
-                        .withWatchedNamespace(INFRA_NAMESPACE)
+                        .withWatchedNamespace(clusterOperator.getDeploymentNamespace())
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()
             .build());
 
-        cluster.setNamespace(INFRA_NAMESPACE);
+        cluster.setNamespace(clusterOperator.getDeploymentNamespace());
     }
 }

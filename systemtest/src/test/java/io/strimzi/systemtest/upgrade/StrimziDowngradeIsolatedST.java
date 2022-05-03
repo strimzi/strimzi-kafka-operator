@@ -20,7 +20,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -57,10 +56,10 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), INFRA_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), clusterOperator.getDeploymentNamespace());
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(testParameters, INFRA_NAMESPACE, extensionContext);
+        changeClusterOperator(testParameters, clusterOperator.getDeploymentNamespace(), extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
@@ -68,19 +67,19 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         checkAllImages(testParameters.getJsonObject("imagesAfterOperatorDowngrade"));
         // Verify upgrade
-        verifyProcedure(testParameters, producerName, consumerName, INFRA_NAMESPACE);
+        verifyProcedure(testParameters, producerName, consumerName, clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(INFRA_NAMESPACE);
+        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
     }
 
     @AfterEach
     void afterEach() {
-        deleteInstalledYamls(coDir, INFRA_NAMESPACE);
+        deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
         cluster.deleteNamespaces();
     }
 

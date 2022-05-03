@@ -22,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,7 +36,7 @@ public class QuotasST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaQuotasPluginIntegration(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -72,7 +71,7 @@ public class QuotasST extends AbstractST {
 
         resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
-        assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, INFRA_NAMESPACE, 120_000));
+        assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, clusterOperator.getDeploymentNamespace(), 120_000));
 
         String kafkaLog = kubeClient(namespaceName).logs(KafkaResources.kafkaPodName(clusterName, 0));
         String softLimitLog = "disk is beyond soft limit";
@@ -83,7 +82,7 @@ public class QuotasST extends AbstractST {
 
     @AfterEach
     void afterEach(ExtensionContext extensionContext) throws Exception {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 }
