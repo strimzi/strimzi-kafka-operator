@@ -269,7 +269,7 @@ public class KafkaBrokerConfigurationDiffTest {
         // change 3 random properties to observe whether diff has 3 entries
         ces.add(new ConfigEntry("inter.broker.listener.name", "david"));
         ces.add(new ConfigEntry("group.min.session.timeout.ms", "42"));
-        ces.add(new ConfigEntry("zookeeper.sync.time.ms", "8000"));
+        ces.add(new ConfigEntry("auto.create.topics.enable", "false"));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(3));
