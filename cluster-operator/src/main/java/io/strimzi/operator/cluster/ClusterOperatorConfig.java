@@ -84,6 +84,7 @@ public class ClusterOperatorConfig {
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final int DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = 1024;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    public static final String DEFAULT_OPERATOR_NAME = "cluster-operator-name-unset";
     public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_OPERATIONS_THREAD_POOL_SIZE = 10;
@@ -231,7 +232,9 @@ public class ClusterOperatorConfig {
         int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_DNS_CACHE_TTL);
         boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
         int podSetControllerWorkQueueSize = parseInt(map.get(STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE), DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
-        String operatorName = map.get(STRIMZI_OPERATOR_NAME);
+
+        //Use default to prevent existing installations breaking if CO pod template not modified to pass through pod name
+        String operatorName = map.getOrDefault(STRIMZI_OPERATOR_NAME, DEFAULT_OPERATOR_NAME);
 
         return new ClusterOperatorConfig(
                 namespaces,
