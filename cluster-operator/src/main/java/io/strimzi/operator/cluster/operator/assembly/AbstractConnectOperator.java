@@ -422,6 +422,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
                         connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
                         reconciliationResult.complete();
+                    } else if (result.failed() && connector == null) {
+                        // The reconciliation failed on connector deletion, so there is nowhere for status to be set => we complete the reconciliation and return
+                        LOGGER.warnCr(reconciliation, "Error reconciling connector {}", connectorName, result.cause());
+                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
+                        connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+
+                        // We suppress the error to not fail Connect reconciliation just because of a failing connector
+                        reconciliationResult.complete();
                     } else {
                         maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
                                 .onComplete(statusResult -> {
