@@ -127,11 +127,20 @@ public class KafkaRoller {
     private final boolean allowReconfiguration;
     private Admin allClient;
 
-    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, List<String> podNames,
-                       Secret clusterCaCertSecret, Secret coKeySecret,
+    public KafkaRoller(Reconciliation reconciliation,
+                       Vertx vertx,
+                       PodOperator podOperations,
+                       long pollingIntervalMs,
+                       long operationTimeoutMs,
+                       Supplier<BackOff> backOffSupplier,
+                       List<String> podNames,
+                       Secret clusterCaCertSecret,
+                       Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
-                       Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration,
+                       Function<Integer, String> kafkaConfigProvider,
+                       String kafkaLogging,
+                       KafkaVersion kafkaVersion,
+                       boolean allowReconfiguration,
                        KubernetesRestartEventPublisher eventsPublisher) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
@@ -272,8 +281,7 @@ public class KafkaRoller {
      * @return A future which completes when the pod has been rolled.
      */
     private Future<Void> schedule(PodRef podRef, long delay, TimeUnit unit, Function<Pod, RestartReasons> podNeedsRestart) {
-        RestartContext ctx = podToContext.computeIfAbsent(podRef.getPodName(),
-            k -> new RestartContext(backoffSupplier));
+        RestartContext ctx = podToContext.computeIfAbsent(podRef.getPodName(), k -> new RestartContext(backoffSupplier));
         singleExecutor.schedule(() -> {
             LOGGER.debugCr(reconciliation, "Considering restart of pod {} after delay of {} {}", podRef, delay, unit);
             try {
@@ -441,7 +449,7 @@ public class KafkaRoller {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private RestartContext restartOrDynamicallyReconfigure(PodRef podRef, Pod pod, RestartContext restartContext, Function<Pod, RestartReasons> podNeedsRestart) throws ForceableProblem, InterruptedException, FatalProblem {
 
-        RestartReasons reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
+        RestartReasons reasonsToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
 
         //TODO should pod ever be null here?
         boolean podStuck = pod != null
@@ -452,15 +460,15 @@ public class KafkaRoller {
                         && "Unschedulable".equals(ps.getReason())
                         && "False".equals(ps.getStatus()));
         if (podStuck
-                && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_GENERATION) // "Pod has old generation" is used with StatefulSets
-                && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {  // "Pod has old revision" is used with PodSets
+                && !reasonsToRestartPod.contains(RestartReason.POD_HAS_OLD_GENERATION) // "Pod has old generation" is used with StatefulSets
+                && !reasonsToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {  // "Pod has old revision" is used with PodSets
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.
             throw new FatalProblem("Pod is unschedulable");
         }
         // Unless the annotation is present, check the pod is at least ready.
-        boolean needsRestart = !reasonToRestartPod.isEmpty();
+        boolean needsRestart = reasonsToRestartPod.shouldRoll();
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;
@@ -471,9 +479,9 @@ public class KafkaRoller {
             restartContext.needsRestart = false;
             restartContext.needsReconfig = false;
 
-            //Todo handle nicer
+            //TODO - figure out a way to handle this in a nicer manner
             restartContext.forceRestart = true;
-            restartContext.restartReasons = reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
+            restartContext.restartReasons = reasonsToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
             restartContext.diff = null;
             restartContext.logDiff = null;
             return restartContext;
@@ -484,7 +492,7 @@ public class KafkaRoller {
         } catch (ForceableProblem e) {
             if (restartContext.backOff.done()) {
                 // Will restart due to same reason as above (presumable broker connectivity issues), based on old comment above previous admin check
-                restartContext.restartReasons = reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
+                restartContext.restartReasons = reasonsToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
                 needsRestart = true;
                 brokerConfig = null;
             } else {
@@ -503,7 +511,7 @@ public class KafkaRoller {
                     needsReconfig = true;
                 } else {
                     LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podRef);
-                    reasonToRestartPod.add(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART);
+                    reasonsToRestartPod.add(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART);
                     needsRestart = true;
                 }
             }
@@ -514,15 +522,15 @@ public class KafkaRoller {
                 needsReconfig = true;
             }
         } else if (needsRestart) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podRef, reasonToRestartPod.getAllReasonNotes());
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podRef, reasonsToRestartPod.getAllReasonNotes());
         }
 
         if (podStuck)   {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", podRef);
-            reasonToRestartPod.add(RestartReason.POD_STUCK);
+            reasonsToRestartPod.add(RestartReason.POD_STUCK);
         }
 
-        restartContext.restartReasons = reasonToRestartPod;
+        restartContext.restartReasons = reasonsToRestartPod;
         restartContext.needsRestart = needsRestart;
         restartContext.needsReconfig = needsReconfig;
         restartContext.forceRestart = podStuck;

@@ -58,8 +58,8 @@ public class RestartReasons implements Iterable<RestartReason> {
         return reasons.keySet();
     }
 
-    public boolean isEmpty() {
-        return reasons.isEmpty();
+    public boolean shouldRoll() {
+        return !reasons.isEmpty();
     }
 
     public boolean contains(RestartReason reason) {
