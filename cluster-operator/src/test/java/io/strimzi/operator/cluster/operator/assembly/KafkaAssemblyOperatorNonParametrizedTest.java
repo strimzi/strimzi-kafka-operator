@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -26,6 +27,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -42,6 +44,7 @@ import org.mockito.Mockito;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singleton;
@@ -120,6 +123,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        PodOperator podOps = supplier.podOperations;
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -129,6 +133,9 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
@@ -201,6 +208,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        PodOperator podOps = supplier.podOperations;
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -210,6 +218,9 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
@@ -276,6 +287,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        PodOperator podOps = supplier.podOperations;
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -285,6 +297,9 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L),

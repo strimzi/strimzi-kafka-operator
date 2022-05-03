@@ -215,10 +215,10 @@ public class CaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("old-password"));
     }
 
-    public class MockedCa extends Ca {
+    public static class MockedCa extends Ca {
         private boolean isCertRenewed;
         private boolean isCertExpiring;
-        private AtomicInteger invocationCount = new AtomicInteger(0);
+        private final AtomicInteger invocationCount = new AtomicInteger(0);
 
         public MockedCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, String caCertSecretName, Secret caCertSecret, String caKeySecretName, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
             super(reconciliation, certManager, passwordGenerator, commonName, caCertSecretName, caCertSecret, caKeySecretName, caKeySecret, validityDays, renewalDays, generateCa, policy);
@@ -246,7 +246,7 @@ public class CaRenewalTest {
 
         @Override
         protected CertAndKey generateSignedCert(Subject subject,
-                                                File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+                                                File csrFile, File keyFile, File certFile, File keyStoreFile) {
             int index = invocationCount.getAndIncrement();
 
             return new CertAndKey(
