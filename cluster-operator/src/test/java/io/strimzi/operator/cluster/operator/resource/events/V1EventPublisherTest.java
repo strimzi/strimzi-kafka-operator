@@ -10,14 +10,16 @@ import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.cluster.operator.resource.events.V1EventPublisher;
 import io.strimzi.operator.common.Reconciliation;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoSession;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -27,7 +29,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
 
 class V1EventPublisherTest {
 
@@ -45,12 +46,19 @@ class V1EventPublisherTest {
 
     private Clock clock;
 
+    private MockitoSession mockitoSession;
+
     @BeforeEach
     void setup() {
-        initMocks(this);
+        mockitoSession = Mockito.mockitoSession().initMocks(this).startMocking();
         when(pod.getMetadata().getName()).thenReturn("example-pod");
         when(pod.getMetadata().getNamespace()).thenReturn("test-ns");
         clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), ZoneId.of("UTC"));
+    }
+
+    @AfterEach
+    void teardown() {
+        mockitoSession.finishMocking();
     }
 
     @Test

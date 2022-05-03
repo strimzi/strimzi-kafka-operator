@@ -173,6 +173,7 @@ public class KafkaReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
+     * @param eventsPublisher           Publishes K8s events on Kafka pod restarts
      */
     public KafkaReconciler(
             Reconciliation reconciliation,

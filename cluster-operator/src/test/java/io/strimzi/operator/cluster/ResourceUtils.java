@@ -738,7 +738,8 @@ public class ResourceUtils {
                 10_000,
                 30,
                 false,
-                1024);
+                1024,
+                "cluster-operator-name");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
