@@ -236,7 +236,7 @@ public class KubeClient {
         return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
     }
 
-    public boolean deletePersistentVolumeClaims(String namespaceName, String pvcName) {
+    public boolean deletePersistentVolumeClaim(String namespaceName, String pvcName) {
         return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
     }
 

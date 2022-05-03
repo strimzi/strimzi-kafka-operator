@@ -68,8 +68,8 @@ public class PersistentVolumeClaimUtils {
     }
 
     public static void waitForPvcDeletion(String namespaceName, String pvcName) {
-        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(3).toMillis(), () -> {
-            if (kubeClient(namespaceName).getPersistentVolumeClaim(namespaceName, pvcName) != null) {
+        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+            if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
                 LOGGER.warn("PVC {} is not deleted yet! Triggering force delete by cmd client!", pvcName);
                 cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
                 return false;
