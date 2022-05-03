@@ -78,7 +78,7 @@ public class KafkaResource implements ResourceType<Kafka> {
         kafkaClient().inNamespace(namespaceName).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
-        // additional deletion of pvcs with specification deleteClam set to false which were not deleted prior this method
+        // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
         for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims(namespaceName, clusterName)) {
             kubeClient().deletePersistentVolumeClaim(namespaceName, pvc.getMetadata().getName());
             PersistentVolumeClaimUtils.waitForPvcDeletion(namespaceName, pvc.getMetadata().getName());
