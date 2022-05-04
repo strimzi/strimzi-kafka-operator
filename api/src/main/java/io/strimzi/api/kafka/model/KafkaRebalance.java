@@ -74,6 +74,11 @@ import static java.util.Collections.unmodifiableList;
                 name = "Ready",
                 description = "The rebalance is complete",
                 jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "NotReady",
+                description = "There is an error on the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"NotReady\")].status",
                 type = "string")
         }
     )
