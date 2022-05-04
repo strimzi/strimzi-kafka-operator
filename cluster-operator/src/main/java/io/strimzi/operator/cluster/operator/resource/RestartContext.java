@@ -30,7 +30,7 @@ class RestartContext {
         backOff = backOffSupplier.get();
         restartReasons = RestartReasons.empty();
 
-        //Looks like this is deliberate to avoid the first backoff delay of 0
+        //Looks like this is deliberate to consume the first backoff delay of 0 by side effect
         getBackOff().delayMs();
     }
 

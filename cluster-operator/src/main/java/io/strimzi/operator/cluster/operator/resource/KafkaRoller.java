@@ -191,7 +191,7 @@ public class KafkaRoller {
         }
         return true;
     }
-        /**
+    /**
      * Asynchronously perform a rolling restart of some subset of the pods,
      * completing the returned Future when rolling is complete.
      * Which pods get rolled is determined by {@code podNeedsRestart}.
@@ -241,15 +241,21 @@ public class KafkaRoller {
      */
     private Future<Void> schedule(PodRef podRef, long delay, TimeUnit unit, Function<Pod, RestartReasons> podNeedsRestart) {
         RestartContext context = podToContext.computeIfAbsent(podRef.getPodName(), k -> new RestartContext(backoffSupplier));
+        return schedule(context, podRef, delay, unit, podNeedsRestart);
+    }
+
+    // Break out the above override to pass context explicitly in recursive scheduling call
+    private Future<Void> schedule(RestartContext context, PodRef podRef, long delay, TimeUnit unit, Function<Pod, RestartReasons> podNeedsRestart) {
         singleExecutor.schedule(() -> {
             RestartContext ctx = context;
             LOGGER.debugCr(reconciliation, "Considering restart of pod {} after delay of {} {}", podRef, delay, unit);
             try {
                 Pod pod = loadPod(podRef);
+                RestartReasons reasons = podNeedsRestart.apply(pod);
 
                 //this method call will modify context by side effect
                 //noinspection ConstantConditions - I'm reassigning on purpose to indicate modification of context
-                ctx = restartOrDynamicallyReconfigure(podRef, pod, ctx, podNeedsRestart);
+                ctx = restartOrDynamicallyReconfigure(podRef, pod, ctx, reasons);
                 restartIfNecessary(podRef, pod, ctx);
 
                 ctx.getPromise().complete();
@@ -275,7 +281,7 @@ public class KafkaRoller {
                     long delay1 = ctx.getBackOff().delayMs();
                     LOGGER.infoCr(reconciliation, "Could not roll pod {} due to {}, retrying after at least {}ms",
                             podRef, e, delay1);
-                    schedule(podRef, delay1, TimeUnit.MILLISECONDS, podNeedsRestart);
+                    schedule(ctx, podRef, delay1, TimeUnit.MILLISECONDS, podNeedsRestart);
                 }
             }
         }, delay, unit);
@@ -405,12 +411,10 @@ public class KafkaRoller {
 
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
-     * Modifies the passed in context by side-effect
+     * Modifies the passed in context by side effect
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private RestartContext restartOrDynamicallyReconfigure(PodRef podRef, Pod pod, RestartContext restartContext, Function<Pod, RestartReasons> podNeedsRestart) throws ForceableProblem, InterruptedException, FatalProblem {
-
-        RestartReasons reasonsToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
+    private RestartContext restartOrDynamicallyReconfigure(PodRef podRef, Pod pod, RestartContext restartContext, RestartReasons reasonsToRestartPod) throws ForceableProblem, InterruptedException, FatalProblem {
 
         //TODO should pod ever be null here?
         boolean podStuck = pod != null
