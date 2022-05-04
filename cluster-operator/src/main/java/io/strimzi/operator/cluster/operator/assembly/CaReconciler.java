@@ -104,6 +104,7 @@ public class CaReconciler {
      * @param vertx             Vert.x instance
      * @param certManager       Certificate Manager for managing certificates
      * @param passwordGenerator Password generator for generating passwords
+     * @param eventPublisher    If a pod needs to be rolled due to cert changes, publishes events detailing what to Kubernetes
      */
     public CaReconciler(
             Reconciliation reconciliation,
