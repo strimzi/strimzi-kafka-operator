@@ -4,27 +4,17 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -54,17 +44,26 @@ import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -75,8 +74,9 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
-public class KafkaAssemblyOperatorCustomCertTest {
+public class KafkaAssemblyOperatorCustomCertMockTest {
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
     private final MockCertManager certManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
@@ -88,7 +88,11 @@ public class KafkaAssemblyOperatorCustomCertTest {
 
     private Kafka kafka;
     private KafkaAssemblyOperator operator;
+
+    // Injected by Fabric8 Mock Kubernetes Server
     private KubernetesClient client;
+    private MockKube2 mockKube;
+
     private final List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
 
     @BeforeAll
@@ -100,11 +104,16 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public void setup() {
         kafka = createKafka();
 
-        client = new MockKube()
-                .withCustomResourceDefinition(Crds.kafka(), Kafka.class, KafkaList.class).end()
-                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class).end()
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaCrd()
+                .withInitialKafkas(kafka)
+                .withStrimziPodSetCrd()
+                .withPodController()
+                .withStatefulSetController()
                 .build();
-        Crds.kafkaOperation(client).inNamespace(namespace).create(kafka);
+        mockKube.start();
+
         client.secrets().inNamespace(namespace).create(getTlsSecret());
         client.secrets().inNamespace(namespace).create(getExternalSecret());
         Secret secret = new SecretBuilder()
@@ -119,13 +128,17 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
                 mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20), FeatureGates.NONE, 10000);
 
-
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 passwordGenerator,
                 supplier,
                 config);
 
+    }
+
+    @AfterEach
+    public void afterEach() {
+        mockKube.stop();
     }
 
     @AfterAll

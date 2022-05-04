@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -178,12 +179,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return A future which completes when the watch has been set up.
      */
-    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
-                                                    String watchNamespaceOrWildcard, Labels selectorLabels) {
+    public static Future<Watch> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
+                                                     String watchNamespaceOrWildcard, Labels selectorLabels) {
         Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
 
         return Util.async(connectOperator.vertx, () -> {
-            connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
+            Watch watch = connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
                     String connectorName = kafkaConnector.getMetadata().getName();
@@ -260,7 +261,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     }
                 }
             });
-            return null;
+            return watch;
         });
     }
 

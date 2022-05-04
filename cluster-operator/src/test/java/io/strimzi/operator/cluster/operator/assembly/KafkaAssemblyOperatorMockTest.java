@@ -13,19 +13,16 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
@@ -50,7 +47,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -59,13 +56,13 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +84,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaAssemblyOperatorMockTest {
@@ -108,7 +106,10 @@ public class KafkaAssemblyOperatorMockTest {
     private Storage kafkaStorage;
 
     private ResourceRequirements resources;
+
+    // Injected by Fabric8 Mock Kubernetes Server
     private KubernetesClient client;
+    private MockKube2 mockKube;
 
     private KafkaAssemblyOperator operator;
 
@@ -267,17 +268,19 @@ public class KafkaAssemblyOperatorMockTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
-
-        client = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
-                    .withInitialInstances(Collections.singleton(cluster))
-                .end()
-                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class)
-                .end()
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaCrd()
+                .withInitialKafkas(cluster)
+                .withStrimziPodSetCrd()
+                .withDeploymentController()
+                .withPodController()
+                .withStatefulSetController()
+                .withServiceController()
                 .build();
+        mockKube.start();
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, kubernetesVersion);
         ResourceOperatorSupplier supplier = supplierWithMocks();
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
@@ -288,7 +291,7 @@ public class KafkaAssemblyOperatorMockTest {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
         return new ResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, kubernetesVersion),
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion),
                 FeatureGates.NONE, 2_000);
     }
 
@@ -334,6 +337,11 @@ public class KafkaAssemblyOperatorMockTest {
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
+    }
+
+    @AfterEach
+    public void afterEach() {
+        mockKube.stop();
     }
 
     /** Create a cluster from a Kafka */
