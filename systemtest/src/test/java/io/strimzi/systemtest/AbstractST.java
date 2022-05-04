@@ -630,13 +630,13 @@ public abstract class AbstractST implements TestSeparator {
             testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
         } finally {
             if (StUtils.isIsolatedSuite(extensionContext)) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                cluster.setNamespace(clusterOperator.getDeploymentNamespace());
                 // wait for parallel suites are done
                 parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
                 // wait for isolated suites
                 parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
             } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                cluster.setNamespace(clusterOperator.getDeploymentNamespace());
             }
             clusterOperator = SetupClusterOperator.getInstanceHolder();
         }

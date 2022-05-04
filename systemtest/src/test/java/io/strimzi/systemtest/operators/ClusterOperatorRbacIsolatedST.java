@@ -26,7 +26,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -53,12 +52,12 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
 
-        String coPodName = kubeClient().getClusterOperatorPodName(INFRA_NAMESPACE);
+        String coPodName = kubeClient().getClusterOperatorPodName(clusterOperator.getDeploymentNamespace());
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -88,7 +87,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
@@ -106,8 +105,8 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, INFRA_NAMESPACE, ".*Forbidden!.*");
-        Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*Forbidden!.*");
+        Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaStatusCondition.getType(), is(NotReady.toString()));
 
@@ -117,8 +116,8 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, INFRA_NAMESPACE, ".*Forbidden!.*");
-        Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*Forbidden!.*");
+        Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().get(0);
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaConnectStatusCondition.getType(), is(NotReady.toString()));
     }
