@@ -39,7 +39,7 @@ Specialized connectors for MirrorMaker 2.0 manage data replication between sourc
 
 [NOTE]
 ====
-In addition to the MirrorMaker 2.0 connectors, Kafka provides two built-in connectors as examples:
+In addition to the MirrorMaker 2.0 connectors, Kafka provides two connectors as examples:
 
 * `FileStreamSourceConnector` streams data from a file on the worker's filesystem to Kafka, reading the input file and sending each line to a given Kafka topic.
 * `FileStreamSinkConnector` streams data from Kafka to the worker's filesystem, reading messages from a Kafka topic and writing a line for each in an output file.
