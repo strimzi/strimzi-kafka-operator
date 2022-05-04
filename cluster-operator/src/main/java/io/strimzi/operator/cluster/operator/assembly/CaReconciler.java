@@ -477,7 +477,10 @@ public class CaReconciler {
                     // only if all Kafka related components pods are updated to the new cluster CA cert generation,
                     // there is the possibility that we should remove the older cluster CA from the Secret and stores
                     for (Pod pod : pods) {
-                        int podClusterCaCertGeneration = Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION));
+                        int podClusterCaCertGeneration =
+                                pod.getMetadata().getAnnotations() != null && pod.getMetadata().getAnnotations().containsKey(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION) ?
+                                        Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION)) :
+                                        clusterCaCertGeneration;
                         LOGGER.debugCr(reconciliation, "Pod {} cluster CA cert generation {}", pod.getMetadata().getName(), podClusterCaCertGeneration);
 
                         if (clusterCaCertGeneration != podClusterCaCertGeneration) {
