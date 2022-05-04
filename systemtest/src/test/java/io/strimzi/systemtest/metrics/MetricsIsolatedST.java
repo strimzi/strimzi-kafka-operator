@@ -88,6 +88,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -389,7 +390,8 @@ public class MetricsIsolatedST extends AbstractST {
         cmdKubeClient().list("KafkaTopic").forEach(topicName -> {
             LOGGER.info("KafkaTopic: {}", topicName);
         });
-        assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) getExpectedTopics().size()));
+        // We use greater than in that case to avoid potential collisions with other tests from this class which could run in parallel
+        assertThat(values.stream().mapToDouble(i -> i).sum(), greaterThanOrEqualTo((double) getExpectedTopics().size()));
     }
 
     @ParallelTest
