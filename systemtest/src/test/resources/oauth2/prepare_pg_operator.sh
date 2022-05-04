@@ -13,7 +13,7 @@ mkdir -p "${PGO_BASEDIR}"
 git clone https://github.com/CrunchyData/postgres-operator-examples.git --branch ${PGO_VERSION} "${PGO_BASEDIR}"
 for file in $(grep -rin "namespace: postgres-operator" "${PGO_BASEDIR}" | cut -d ":" -f 1); do sed -i "s/namespace: .*/namespace: ${PGO_INSTANCE_NAMESPACE}/" "${file}"; done
 
-kubectl create namespace "${PGO_INSTANCE_NAMESPACE}"
+kubectl create namespace "${PGO_INSTANCE_NAMESPACE}" || true
 kubectl apply --server-side -k "${PGO_BASEDIR}/kustomize/install/default"
 # Wait for deployment to show up. If we're too quick, kubectl wait command might fail on non-existing resource
 sleep 10
@@ -34,7 +34,7 @@ do
     echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") postgres-kc-backup pod does not exist! Going to check it in 5 seconds (${RETRY})"
     sleep 10
     PODS=$(kubectl get pods -n ${PGO_INSTANCE_NAMESPACE})
-    ((RETRY-=1))
+    (( RETRY-=1 ))
 done
 
 DB_BACKUP_POD=$(kubectl get pods -l postgres-operator.crunchydata.com/pgbackrest-backup="replica-create" -o jsonpath="{.items[0].metadata.name}" -n ${PGO_INSTANCE_NAMESPACE})

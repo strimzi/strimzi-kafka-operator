@@ -35,6 +35,7 @@ public class KeycloakUtils {
     private KeycloakUtils() {}
 
     public static void deployKeycloak(final String deploymentNamespace, final String watchNamespace) {
+        deployPostgres(deploymentNamespace);
         LOGGER.info("Prepare Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
 
         // This is needed because from time to time the first try fails on Azure
@@ -42,7 +43,7 @@ public class KeycloakUtils {
             ExecResult result = Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
 
             if (!result.out().contains("All realms were successfully imported")) {
-                LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
+                LOGGER.error("Errors occurred during Keycloak install: {}", result.err());
                 return false;
             }
             return  true;
@@ -52,18 +53,23 @@ public class KeycloakUtils {
     }
 
     public static void deleteKeycloak(final String deploymentNamespace, final String watchNamespace) {
+        deletePostgres(deploymentNamespace);
         LOGGER.info("Teardown Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
     }
 
     public static void deployPostgres(final String deploymentNamespace) {
+        if (getValidKeycloakVersion().equals(OLD_KEYCLOAK_VERSION)) {
+            LOGGER.warn("Skipping deployment of Postgres Database. Keycloak will use embedded DB. Too old Keycloak version specified {}.", getValidKeycloakVersion());
+            return;
+        }
         LOGGER.info("Deploy Postgres DB and its Operator Operator branch:{} in namespace: {}", "main", deploymentNamespace);
 
         TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
             ExecResult result = Exec.exec(Level.INFO, "/bin/bash", PATH_TO_PGO_PREPARE_SCRIPT, deploymentNamespace, "main");
 
             if (!result.out().contains("Postgres Operator and Database successfully deployed")) {
-                LOGGER.info("Some errors occurred during Postgres Operator installation: {}", result.err());
+                LOGGER.error("Some errors occurred during Postgres Operator installation: {}", result.err());
                 return false;
             }
             return  true;
@@ -72,8 +78,10 @@ public class KeycloakUtils {
     }
 
     public static void deletePostgres(final String deploymentNamespace) {
-        LOGGER.info("Teardown Postgres DB and its Operator in namespace: {}", deploymentNamespace);
-        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_PGO_TEARDOWN_SCRIPT, deploymentNamespace);
+        if (!getValidKeycloakVersion().equals(OLD_KEYCLOAK_VERSION)) {
+            LOGGER.info("Teardown Postgres DB and its Operator in namespace: {}", deploymentNamespace);
+            Exec.exec(Level.INFO, "/bin/bash", PATH_TO_PGO_TEARDOWN_SCRIPT, deploymentNamespace);
+        }
     }
 
     /**

@@ -687,7 +687,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
     void tearDown(ExtensionContext extensionContext) throws Exception {
         // delete keycloak before namespace
         KeycloakUtils.deleteKeycloak(Constants.INFRA_NAMESPACE, clusterOperator.getDeploymentNamespace());
-        KeycloakUtils.deletePostgres(Constants.INFRA_NAMESPACE);
         // delete namespace etc.
         super.afterAllMayOverride(extensionContext);
     }

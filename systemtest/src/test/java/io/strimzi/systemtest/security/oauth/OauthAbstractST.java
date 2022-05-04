@@ -131,7 +131,6 @@ public class OauthAbstractST extends AbstractST {
             cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), Constants.INFRA_NAMESPACE);
         }
 
-        KeycloakUtils.deployPostgres(Constants.INFRA_NAMESPACE);
         KeycloakUtils.deployKeycloak(Constants.INFRA_NAMESPACE, namespace);
 
         SecretUtils.waitForSecretReady(namespace, "credential-example-keycloak", () -> { });
