@@ -352,11 +352,12 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storageMap.get(extensionContext).getClusterName(), 1)
+        resourceManager.createResource(extensionContext,
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storageMap.get(extensionContext).getNamespaceName(), storageMap.get(extensionContext).getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
-            .withNewSpec()
+            .editOrNewSpec()
                 .withConfig(configOfKafkaConnect)
                 .withNewJaegerTracing()
                 .endJaegerTracing()

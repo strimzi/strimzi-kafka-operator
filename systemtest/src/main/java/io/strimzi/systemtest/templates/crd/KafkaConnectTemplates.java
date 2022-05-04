@@ -15,6 +15,9 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.Plugin;
+import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -25,6 +28,9 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Random;
+
+import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaConnectTemplates {
@@ -113,6 +119,51 @@ public class KafkaConnectTemplates {
             NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
         }
         return new KafkaConnectBuilder(kafkaConnect);
+    }
+
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(ExtensionContext extensionContext, String namespaceName, String clusterName, int replicas) {
+        return kafkaConnectWithFilePlugin(extensionContext, clusterName, namespaceName, clusterName, replicas, true);
+    }
+
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(ExtensionContext extensionContext, String namespaceName, String clusterName, int replicas, boolean allowNP) {
+        return kafkaConnectWithFilePlugin(extensionContext, clusterName, namespaceName, clusterName, replicas, allowNP);
+    }
+
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(ExtensionContext extensionContext, String name, String namespaceName, String clusterName, int replicas) {
+        return kafkaConnectWithFilePlugin(extensionContext, name, namespaceName, clusterName, replicas, true);
+    }
+
+    /**
+     * Method for creating the KafkaConnect builder with File plugin - using the KafkaConnect build feature.
+     * @param extensionContext context for current test
+     * @param name Name for the KafkaConnect resource
+     * @param namespaceName namespace, where the KafkaConnect resource will be deployed
+     * @param clusterName name of the Kafka cluster
+     * @param replicas number of KafkaConnect replicas
+     * @param allowNP allow NetworkPolicies between KafkaConnect and Scraper
+     * @return KafkaConnect builder with File plugin
+     */
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(ExtensionContext extensionContext, String name, String namespaceName, String clusterName, int replicas, boolean allowNP) {
+        final Plugin fileSinkPlugin = new PluginBuilder()
+            .withName("file-plugin")
+            .withArtifacts(
+                new JarArtifactBuilder()
+                    .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                    .build()
+            )
+            .build();
+
+        final String imageName = Environment.getImageOutputRegistry() + "/" + namespaceName + "/connect-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+
+        return kafkaConnect(extensionContext, name, namespaceName, clusterName, replicas, allowNP)
+            .editOrNewSpec()
+                .editOrNewBuild()
+                    .withPlugins(fileSinkPlugin)
+                    .withNewDockerOutput()
+                        .withImage(imageName)
+                    .endDockerOutput()
+                .endBuild()
+            .endSpec();
     }
 
     public static KafkaConnectBuilder kafkaConnectWithoutWait(KafkaConnect kafkaConnect) {
