@@ -286,9 +286,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaConnectPodName = kubeClient().listPodsByPrefixInName(Constants.INFRA_NAMESPACE, KafkaConnectResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)).get(0).getMetadata().getName();
-        KafkaConnectorUtils.waitForConnectorStability(Constants.INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kafkaConnectPodName);
-
         assertKafkaConnectStatus(1, connectUrl);
         assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
@@ -315,8 +312,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         KafkaConnectorUtils.waitForConnectorReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         KafkaConnectUtils.waitForConnectReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        kafkaConnectPodName = kubeClient().listPodsByPrefixInName(ts.getNamespaceName(), KafkaConnectResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)).get(0).getMetadata().getName();
-        KafkaConnectorUtils.waitForConnectorStability(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kafkaConnectPodName);
 
         assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
@@ -620,10 +615,9 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     @SuppressWarnings("unchecked")
     void assertKafkaConnectorStatus(long expectedObservedGeneration, String connectorStates, String type, List<String> topics) {
-        KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(Constants.INFRA_NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-
         TestUtils.waitFor("wait until KafkaConnector status has excepted observed generation", Constants.GLOBAL_POLL_INTERVAL,
             Constants.GLOBAL_TIMEOUT, () -> {
+                KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(Constants.INFRA_NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
                 boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
 
                 final Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();

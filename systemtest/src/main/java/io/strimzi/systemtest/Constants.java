@@ -62,6 +62,9 @@ public interface Constants {
 
     long THROTTLING_EXCEPTION_TIMEOUT = Duration.ofMinutes(10).toMillis();
 
+    // sometimes each call `curl -X GET http://localhost:8083/connectors` could take in maximum 13s, and we do 50 calls; meaning (13s * 50)/60 ~= 11m
+    long KAFKA_CONNECTOR_STABILITY_TIMEOUT = Duration.ofMinutes(12).toMillis();
+
     /**
      * Scraper pod labels
      */
