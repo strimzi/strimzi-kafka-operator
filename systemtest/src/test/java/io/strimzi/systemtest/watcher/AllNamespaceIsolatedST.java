@@ -198,7 +198,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -213,7 +213,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 1).build());
 
         cluster.setNamespace(previousNamespace);
     }

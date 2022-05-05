@@ -62,6 +62,9 @@ public interface Constants {
 
     long THROTTLING_EXCEPTION_TIMEOUT = Duration.ofMinutes(10).toMillis();
 
+    // sometimes each call `curl -X GET http://localhost:8083/connectors` could take in maximum 13s, and we do 50 calls; meaning (13s * 50)/60 ~= 11m
+    long KAFKA_CONNECTOR_STABILITY_TIMEOUT = Duration.ofMinutes(12).toMillis();
+
     /**
      * Scraper pod labels
      */
@@ -389,13 +392,4 @@ public interface Constants {
     String KAFKA_SELECTOR = "KAFKA_SELECTOR";
     String ZOOKEEPER_SELECTOR = "ZOOKEEPER_SELECTOR";
     String ENTITY_OPERATOR_NAME = "ENTITY_OPERATOR_NAME";
-
-    /**
-     * Resource constants for Cluster Operator. In case we execute more than 5 test cases in parallel we at least these configuration
-     * (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
-     */
-    String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "1000m";
-    String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "2048Mi";
-    String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "200m";
-    String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "1024Mi";
 }

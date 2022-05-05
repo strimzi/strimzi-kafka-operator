@@ -29,6 +29,7 @@ import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -54,7 +55,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -259,15 +259,9 @@ class RollingUpdateST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final TestStorage ts = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(ts.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig(singletonMap("default.replication.factor", 1))
@@ -276,32 +270,30 @@ class RollingUpdateST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-
-        KafkaUser user = KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName).build();
+        KafkaUser user = KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), ts.getUserName()).build();
         resourceManager.createResource(extensionContext, user);
 
-        testDockerImagesForKafkaCluster(clusterName, clusterOperator.getDeploymentNamespace(), namespaceName, 3, 1, false);
+        testDockerImagesForKafkaCluster(ts.getClusterName(), clusterOperator.getDeploymentNamespace(), ts.getNamespaceName(), 3, 1, false);
         // kafka cluster already deployed
 
-        LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
+        LOGGER.info("Running kafkaScaleUpScaleDown {}", ts.getClusterName());
 
-        final int initialReplicas = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(kafkaSelector).list().getItems().size();
+        final int initialReplicas = kubeClient(ts.getNamespaceName()).getClient().pods().inNamespace(ts.getNamespaceName()).withLabelSelector(ts.getKafkaSelector()).list().getItems().size();
         assertEquals(3, initialReplicas);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 3, initialReplicas, initialReplicas).build());
-        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, user).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(ts.getClusterName(), ts.getTopicName(), 3, initialReplicas, initialReplicas).build());
+        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(true, ts.getKafkaClientsName(), user).build());
 
         final String defaultKafkaClientsPodName =
-            PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+            PodUtils.getPodsByPrefixInNameWithDynamicWait(ts.getNamespaceName(), ts.getKafkaClientsName()).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+            .withTopicName(ts.getTopicName())
+            .withNamespaceName(ts.getNamespaceName())
+            .withClusterName(ts.getClusterName())
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(userName)
+            .withKafkaUsername(ts.getUserName())
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
@@ -311,13 +303,13 @@ class RollingUpdateST extends AbstractST {
         final int scaleTo = initialReplicas + 4;
         LOGGER.info("Scale up Kafka to {}", scaleTo);
         // Create snapshot of current cluster
-        String kafkaStsName = kafkaStatefulSetName(clusterName);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setReplicas(scaleTo);
-        }, namespaceName);
+        }, ts.getNamespaceName());
 
-        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaleTo, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(ts.getNamespaceName(), ts.getKafkaSelector(), scaleTo, kafkaPods);
 
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
@@ -327,14 +319,19 @@ class RollingUpdateST extends AbstractST {
 
         internalKafkaClient.consumesTlsMessagesUntilOperationIsSuccessful(MESSAGE_COUNT);
 
-        assertThat((int) kubeClient(namespaceName).listPersistentVolumeClaims().stream().filter(
-            pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(clusterName))).count(), is(scaleTo));
+        assertThat((int) kubeClient(ts.getNamespaceName()).listPersistentVolumeClaims().stream().filter(
+            pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(ts.getClusterName()))).count(), is(scaleTo));
 
         final int zookeeperScaleTo = initialReplicas + 2;
+        Map<String, String> zooKeeperPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
+
         LOGGER.info("Scale up Zookeeper to {}", zookeeperScaleTo);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), namespaceName);
-        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, zookeeperScaleTo);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), ts.getNamespaceName());
+
+        zooKeeperPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(ts.getNamespaceName(), ts.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
+
         LOGGER.info("Kafka scale up to {} finished", zookeeperScaleTo);
+
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -344,9 +341,9 @@ class RollingUpdateST extends AbstractST {
 
         // scale down
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(initialReplicas), namespaceName);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialReplicas), ts.getNamespaceName());
 
-        RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, initialReplicas, kafkaPods);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(ts.getNamespaceName(), ts.getKafkaSelector(), initialReplicas, kafkaPods);
 
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
 
@@ -356,13 +353,13 @@ class RollingUpdateST extends AbstractST {
 
         internalKafkaClient.consumesTlsMessagesUntilOperationIsSuccessful(MESSAGE_COUNT);
 
-        assertThat(kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
-            .filter(pvc -> pvc.getMetadata().getName().contains("data-" + KafkaResources.kafkaStatefulSetName(clusterName))).collect(Collectors.toList()).size(), is(initialReplicas));
+        assertThat(kubeClient(ts.getNamespaceName()).listPersistentVolumeClaims(ts.getNamespaceName(), ts.getClusterName()).stream()
+            .filter(pvc -> pvc.getMetadata().getName().contains("data-" + KafkaResources.kafkaStatefulSetName(ts.getClusterName()))).collect(Collectors.toList()).size(), is(initialReplicas));
 
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, newTopicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(ts.getClusterName(), newTopicName).build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(newTopicName)

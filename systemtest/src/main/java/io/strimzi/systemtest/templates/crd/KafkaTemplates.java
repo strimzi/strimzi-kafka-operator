@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -172,7 +174,7 @@ public class KafkaTemplates {
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
-        return new KafkaBuilder(kafka)
+        KafkaBuilder kb = new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(name)
                 .withClusterName(name)
@@ -224,6 +226,44 @@ public class KafkaTemplates {
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
+
+        if (!Environment.isSharedMemory()) {
+            kb.editSpec()
+                .editKafka()
+                    // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
+                    // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
+                    // For Kafka using 784Mi is too much and on the other hand 256Mi is causing OOM problem at the start.
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("512Mi"))
+                        .addToRequests("memory", new Quantity("512Mi"))
+                        .build())
+                .endKafka()
+                .editZookeeper()
+                    // For ZooKeeper using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("256Mi"))
+                        .addToRequests("memory", new Quantity("256Mi"))
+                        .build())
+                .endZookeeper()
+                .editEntityOperator()
+                    .editUserOperator()
+                        // For UserOperator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
+                    .endUserOperator()
+                    .editTopicOperator()
+                        // For TopicOperator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
+                    .endTopicOperator()
+                .endEntityOperator()
+                .endSpec();
+        }
+        return kb;
     }
 
     public static KafkaBuilder kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {

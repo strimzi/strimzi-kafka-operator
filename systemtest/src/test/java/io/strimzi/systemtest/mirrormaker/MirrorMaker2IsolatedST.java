@@ -336,10 +336,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             topicTestName2, kafkaClusterTargetName, messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         // Initialize CertSecretSource with certificate and secret names for source
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -536,10 +533,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             sourceTopicName, kafkaClusterSourceName, messagesCount);
         // Check brokers availability
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         LOGGER.info("Setting topic to {}, cluster to {} and changing user to {}",
             targetTopicName, kafkaClusterTargetName, userTarget.getMetadata().getName());
@@ -552,10 +546,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
             targetTopicName, kafkaClusterTargetName, messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         // Deploy Mirror Maker with TLS and ScramSha512
         KafkaMirrorMaker2ClusterSpec sourceClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder()
@@ -668,7 +659,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
 
-        int scaleTo = 4;
+        int scaleTo = 2;
         long mm2ObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration();
         String mm2GenName = kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getGenerateName();
 
@@ -680,9 +671,9 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> mm2Pods = kubeClient(namespaceName).listPodNames(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
 
-        assertThat(mm2Pods.size(), is(4));
-        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getSpec().getReplicas(), is(4));
-        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus().getReplicas(), is(4));
+        assertThat(mm2Pods.size(), is(2));
+        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getSpec().getReplicas(), is(2));
+        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus().getReplicas(), is(2));
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
@@ -1404,7 +1395,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // Deploy source kafka with tls listener and mutual tls auth
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("min.insync.replicas", 1)
@@ -1420,7 +1411,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build());
 
         // Deploy target kafka with tls listener and mutual tls auth
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("min.insync.replicas", 1)
@@ -1436,8 +1427,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build());
 
         // Deploy topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameA, 3).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameB, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameA, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameB, 1).build());
 
         // Create Kafka user
         KafkaUser userSource = KafkaUserTemplates.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).build();
@@ -1472,7 +1463,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withKafkaUsername(kafkaUserTargetName)
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(internalKafkaClient.sendMessagesTls(), internalKafkaClient.receiveMessagesTls());
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         // Initialize CertSecretSource with certificate and secret names for source
         CertSecretSource certSecretSource = new CertSecretSource();
@@ -1539,8 +1530,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        int sent = internalKafkaClient.sendMessagesTls();
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicTargetNameA)
@@ -1549,7 +1539,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(messagesCount));
         LOGGER.info("Messages successfully mirrored");
 
         LabelSelector zkSourceSelector = KafkaResource.getLabelSelector(kafkaClusterSourceName, KafkaResources.zookeeperStatefulSetName(kafkaClusterSourceName));
@@ -1559,7 +1549,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         Map<String, String> kafkaSourcePods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSourceSelector);
         Map<String, String> zkSourcePods = PodUtils.podSnapshot(testStorage.getNamespaceName(), zkSourceSelector);
-        Map<String, String> eoSourcePods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(kafkaClusterSourceName));
+        Map<String, String> eoSourcePods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterSourceName));
         Map<String, String> kafkaTargetPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaTargetSelector);
         Map<String, String> zkTargetPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), zkTargetSelector);
         Map<String, String> eoTargetPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(kafkaClusterTargetName));
@@ -1567,13 +1557,13 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Renew Clients CA secret for Source cluster via annotation");
         String sourceClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterSourceName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
-        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 3, kafkaSourcePods);
+        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
         mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
         LOGGER.info("Renew Clients CA secret for Target cluster via annotation");
         String targetClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterTargetName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
-        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 3, kafkaTargetPods);
+        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
         mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
         LOGGER.info("Send and receive messages after clients certs were removed");
@@ -1582,8 +1572,10 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withClusterName(kafkaClusterSourceName)
             .withKafkaUsername(kafkaUserSourceName)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
-        sent = internalKafkaClient.sendMessagesTls();
+
+        internalKafkaClient.produceTlsMessagesUntilOperationIsSuccessful(messagesCount);
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicTargetNameA)
@@ -1592,24 +1584,24 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
-        LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        LOGGER.info("Consumer in target cluster and topic should receive {} messages", (2 * messagesCount));
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(2 * messagesCount));
         LOGGER.info("Messages successfully mirrored");
 
         LOGGER.info("Renew Cluster CA secret for Source clusters via annotation");
         String sourceClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClusterCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
-        zkSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkSourceSelector, 3, zkSourcePods);
-        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 3, kafkaSourcePods);
-        eoSourcePods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(kafkaClusterSourceName), 1, eoSourcePods);
+        zkSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkSourceSelector, 1, zkSourcePods);
+        kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
+        eoSourcePods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterSourceName), 1, eoSourcePods);
         mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
         LOGGER.info("Renew Cluster CA secret for Target clusters via annotation");
         String targetClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClusterCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
-        zkTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkTargetSelector, 3, zkTargetPods);
-        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 3, kafkaTargetPods);
-        eoTargetPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(kafkaClusterTargetName), 1, eoTargetPods);
+        zkTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkTargetSelector, 1, zkTargetPods);
+        kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
+        eoTargetPods = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterTargetName), 1, eoTargetPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
 
         LOGGER.info("Send and receive messages after clients certs were removed");
@@ -1619,7 +1611,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withKafkaUsername(kafkaUserSourceName)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
-        sent = internalKafkaClient.sendMessagesTls();
+
+        internalKafkaClient.produceTlsMessagesUntilOperationIsSuccessful(messagesCount);
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicTargetNameB)
@@ -1629,7 +1622,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Consumer in target cluster and topic should receive {} messages", messagesCount);
-        internalKafkaClient.checkProducedAndConsumedMessages(sent, internalKafkaClient.receiveMessagesTls());
+        assertThat(internalKafkaClient.receiveMessagesTls(), is(messagesCount));
         LOGGER.info("Messages successfully mirrored");
     }
 

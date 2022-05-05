@@ -7,7 +7,6 @@ package io.strimzi.systemtest.resources.operator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
@@ -244,14 +243,6 @@ public class BundleResource implements ResourceType<Deployment> {
                         .editFirstContainer()
                             .withImage(StUtils.changeOrgAndTag(coImage))
                             .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
-                            .editResources()
-                                 // in case we execute more than 5 test cases in parallel we at least these configuration
-                                 // (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
-                                .addToLimits("memory", new Quantity(Constants.CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS))
-                                .addToLimits("cpu", new Quantity(Constants.CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS))
-                                .addToRequests("memory", new Quantity(Constants.CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS))
-                                .addToRequests("cpu", new Quantity(Constants.CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS))
-                            .endResources()
                         .endContainer()
                         .editFirstVolume()
                             .editEmptyDir()

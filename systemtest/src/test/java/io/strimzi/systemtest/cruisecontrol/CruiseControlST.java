@@ -231,7 +231,7 @@ public class CruiseControlST extends AbstractST {
         final String excludedTopic2 = "excluded-topic-2";
         final String includedTopic = "included-topic";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic1, namespaceName).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic2, namespaceName).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, includedTopic, namespaceName).build());

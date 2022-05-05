@@ -39,7 +39,7 @@ public class KafkaConnectorUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
-        TestUtils.waitFor("Waiting for stability of connector " + connectorName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Waiting for stability of connector " + connectorName, Constants.GLOBAL_POLL_INTERVAL, Constants.KAFKA_CONNECTOR_STABILITY_TIMEOUT,
             () -> {
                 String availableConnectors = getCreatedConnectors(namespaceName, connectPodName);
                 if (availableConnectors.contains(connectorName)) {

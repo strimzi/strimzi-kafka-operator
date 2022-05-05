@@ -156,20 +156,20 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = storageMap.get(extensionContext).getClusterName();
         final String kafkaClusterTargetName = storageMap.get(extensionContext).getClusterName() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName())
             .editSpec()
-                .withReplicas(3)
+                .withReplicas(1)
                 .withPartitions(12)
             .endSpec()
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + storageMap.get(extensionContext).getTopicName())
             .editSpec()
-                .withReplicas(3)
+                .withReplicas(1)
                 .withPartitions(12)
             .endSpec()
             .build());
@@ -191,7 +191,6 @@ public class TracingST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing());
-
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(storageMap.get(extensionContext).getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
                 .withNewJaegerTracing()
@@ -245,20 +244,20 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = storageMap.get(extensionContext).getClusterName();
         final String kafkaClusterTargetName = storageMap.get(extensionContext).getClusterName() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName())
             .editSpec()
-                .withReplicas(3)
+                .withReplicas(1)
                 .withPartitions(12)
             .endSpec()
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, storageMap.get(extensionContext).getTopicName() + "-target")
             .editSpec()
-                .withReplicas(3)
+                .withReplicas(1)
                 .withPartitions(12)
                 .withTopicName(storageMap.get(extensionContext).getTopicName())
             .endSpec()

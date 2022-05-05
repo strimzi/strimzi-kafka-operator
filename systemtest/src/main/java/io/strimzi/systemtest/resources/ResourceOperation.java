@@ -45,7 +45,7 @@ public class ResourceOperation {
                 timeout = Duration.ofMinutes(8).toMillis();
                 break;
             case KafkaConnector.RESOURCE_KIND:
-                timeout = Duration.ofMinutes(4).toMillis();
+                timeout = Duration.ofMinutes(7).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(3).toMillis();
@@ -60,7 +60,7 @@ public class ResourceOperation {
             case ProposalReady:
             case Ready:
             case Rebalancing:
-                timeout = Duration.ofMinutes(10).toMillis();
+                timeout = Duration.ofMinutes(14).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(6).toMillis();

@@ -142,6 +142,11 @@ public class Environment {
     public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
 
     /**
+     * CO Features gates variable
+     */
+    public static final String RESOURCE_ALLOCATION_STRATEGY_ENV = "RESOURCE_ALLOCATION_STRATEGY";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
@@ -161,6 +166,7 @@ public class Environment {
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
+    private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.1.0";
@@ -217,6 +223,7 @@ public class Environment {
     // ClusterOperator installation type variable
     public static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, value -> ClusterOperatorInstallType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
     public static final boolean LB_FINALIZERS = getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
+    public static final String RESOURCE_ALLOCATION_STRATEGY = getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
 
     private Environment() { }
 
@@ -242,6 +249,17 @@ public class Environment {
     public static boolean isStrimziPodSetEnabled() {
         // REMINDER: this will not work once StrimziPodSet will be moved to beta FG
         return STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_POD_SET);
+    }
+
+    /**
+     * Provides boolean information, if testing environment support shared memory (i.e., environment, where all
+     * components share memory). In general, we use {@link RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link RESOURCE_ALLOCATION_STRATEGY_ENV}
+     * is not specified.
+     *
+     * @return true iff env {@link RESOURCE_ALLOCATION_STRATEGY_ENV} contains "SHARE_MEMORY_FOR_ALL_COMPONENTS" value, otherwise false.
+     */
+    public static boolean isSharedMemory() {
+        return RESOURCE_ALLOCATION_STRATEGY.contains(RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
     }
 
     public static boolean useLatestReleasedBridge() {
