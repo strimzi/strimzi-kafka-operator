@@ -408,13 +408,13 @@ class HttpBridgeIsolatedST extends AbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? clusterOperator.getDeploymentNamespace() : Constants.WATCH_ALL_NAMESPACES;
+        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? Constants.INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
         // un-install old cluster operator
         clusterOperator.unInstall();
         // install new one with branch new configuration
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)
             .withExtraEnvVars(
                 Arrays.asList(

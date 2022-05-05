@@ -684,7 +684,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()

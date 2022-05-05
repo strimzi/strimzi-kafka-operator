@@ -171,9 +171,9 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     void setup() {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(clusterOperator.getDeploymentNamespace())
-            .withBindingsNamespaces(Collections.singletonList(clusterOperator.getDeploymentNamespace())
-            .withWatchingNamespaces(clusterOperator.getDeploymentNamespace())
+            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(Constants.INFRA_NAMESPACE))
+            .withWatchingNamespaces(Constants.INFRA_NAMESPACE)
             .createInstallation();
 
         this.kafkaBasicClientJob = new KafkaClientsBuilder()

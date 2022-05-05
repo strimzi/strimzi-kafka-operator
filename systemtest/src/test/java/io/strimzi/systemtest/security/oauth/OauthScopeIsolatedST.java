@@ -267,7 +267,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
     @AfterAll
     void tearDown(ExtensionContext extensionContext) throws Exception {
         // delete keycloak before namespace
-        KeycloakUtils.deleteKeycloak(Constants.clusterOperator.getDeploymentNamespace(), clusterOperator.getDeploymentNamespace());
+        KeycloakUtils.deleteKeycloak(clusterOperator.getDeploymentNamespace(), clusterOperator.getDeploymentNamespace());
         // delete namespace etc.
         super.afterAllMayOverride(extensionContext);
     }
