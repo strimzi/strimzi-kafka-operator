@@ -335,7 +335,7 @@ public class KubeClusterResource {
         return cmdClient().defaultNamespace();
     }
 
-    public KubeCmdClient cmdClient() {
+    public KubeCmdClient<?> cmdClient() {
         if (cmdClient == null) {
             cmdClient = cluster().defaultCmdClient();
         }
