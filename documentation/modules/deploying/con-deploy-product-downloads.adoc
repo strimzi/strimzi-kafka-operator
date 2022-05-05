@@ -7,12 +7,12 @@
 
 [role="_abstract"]
 ifdef::Downloading[]
-To use deployment files to install Strimzi, download the release artifacts from {ReleaseDownload}.
+To use deployment files to install Strimzi, download and extract the `strimzi-_<version>_.zip` file from the {ReleaseDownload}.
 
 Download the `strimzi-_<version>_.zip` or `strimzi-_<version>_.tar.gz` archive file.
 endif::Downloading[]
 ifndef::Downloading[]
-To use deployment files to install Strimzi, download and extract the *{ProductName} _<version>_ installation and example files* archive from the {ZipDownload}.
+To use deployment files to install Strimzi, download and extract the *{ProductName} _<version>_ installation and example files* archive from the {ReleaseDownload}.
 endif::Downloading[]
 
 Strimzi release artifacts include sample YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations,

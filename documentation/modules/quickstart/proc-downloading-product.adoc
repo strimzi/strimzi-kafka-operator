@@ -9,7 +9,7 @@ The resources and artifacts required to install Strimzi, along with examples for
 
 .Procedure
 
-. Download the `strimzi-x.y.z.zip` file from {ReleaseDownload}.
+. Download the `strimzi-_<version>_.zip` file from the {ReleaseDownload}.
 
 . Unzip the file to any destination.
 +
@@ -22,5 +22,5 @@ Extract the ZIP file with this command:
 +
 [source, shell, subs=+quotes]
 ----
-unzip strimzi-xyz.zip
+unzip strimzi-_<version>_.zip
 ----

@@ -36,7 +36,7 @@
 :InterBrokerVersionHigher: 3.1
 
 // Source and download links
-:ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
+:ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub release archive^]
 :supported-configurations: https://strimzi.io/downloads/
 
 //Monitoring links
