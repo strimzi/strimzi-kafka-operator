@@ -130,7 +130,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
             String metricsTopicName = Optional.ofNullable(cruiseControl.getConfig())
-                    .map(config -> config.get(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue()))
+                    .map(config -> config.get(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue()))
                     .map(Object::toString)
                     .orElse(CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricsTopicName);
