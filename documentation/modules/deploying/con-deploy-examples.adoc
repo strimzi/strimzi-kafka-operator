@@ -11,15 +11,11 @@ Example configuration files for custom resources contain important properties an
 
 == Example files location
 
-ifdef::Downloading[]
-The example files are provided with the downloadable release artifacts from {ReleaseDownload}.
+The example files are provided with the downloadable release artifacts from the {ReleaseDownload}.
 
+ifdef::Downloading[]
 You can also access the example files directly from the
 link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/[`examples` directory^].
-endif::Downloading[]
-
-ifndef::Downloading[]
-The example files are provided with the downloadable release artifacts from the {ZipDownload}.
 endif::Downloading[]
 
 You can download and apply the examples using the `kubectl` command-line tool.
