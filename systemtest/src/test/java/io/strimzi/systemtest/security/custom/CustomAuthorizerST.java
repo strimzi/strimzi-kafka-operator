@@ -4,9 +4,9 @@
  */
 package io.strimzi.systemtest.security.custom;
 
-
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -15,24 +15,23 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.rmi.UnexpectedException;
+
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
 @ParallelSuite
@@ -45,28 +44,26 @@ public class CustomAuthorizerST extends AbstractST {
 
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
+    void testAclRuleReadAndWrite(ExtensionContext extensionContext) throws UnexpectedException {
+        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final int numberOfMessages = 500;
         final String consumerGroupName = "consumer-group-name-1";
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, namespace).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), namespace).build());
 
         KafkaUser writeUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.WRITE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.DESCRIBE)
                     .endAcl()
@@ -79,7 +76,7 @@ public class CustomAuthorizerST extends AbstractST {
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.READ)
                     .endAcl()
@@ -91,7 +88,7 @@ public class CustomAuthorizerST extends AbstractST {
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.DESCRIBE)
                     .endAcl()
@@ -102,62 +99,57 @@ public class CustomAuthorizerST extends AbstractST {
         resourceManager.createResource(extensionContext, writeUser);
         resourceManager.createResource(extensionContext, readUser);
 
-        LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
+        LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, testStorage.getTopicName());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName, writeUser, readUser).build());
-
-        String kafkaClientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsName).get(0).getMetadata().getName();
-
-        InternalKafkaClient writeKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(topicName)
-            .withNamespaceName(namespace)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(kafkaUserWrite)
-            .withMessageCount(numberOfMessages)
-            .withUsingPodName(kafkaClientsPodName)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withMessageCount(MESSAGE_COUNT)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withTopicName(testStorage.getTopicName())
+            .withUserName(kafkaUserWrite)
+            .withConsumerGroup(consumerGroupName)
             .build();
 
-        assertThat(writeKafkaClient.sendMessagesTls(), is(numberOfMessages));
-        assertThat(writeKafkaClient.receiveMessagesTls(), is(0));
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        InternalKafkaClient readKafkaClient = new InternalKafkaClient.Builder()
-                .withTopicName(topicName)
-                .withNamespaceName(namespace)
-                .withClusterName(CLUSTER_NAME)
-                .withKafkaUsername(kafkaUserRead)
-                .withMessageCount(numberOfMessages)
-                .withUsingPodName(kafkaClientsPodName)
-                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                .withConsumerGroupName(consumerGroupName)
-                .build();
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientTimeout(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        assertThat(readKafkaClient.receiveMessagesTls(), is(numberOfMessages));
+        kafkaClients = new KafkaClientsBuilder(kafkaClients)
+            .withUserName(kafkaUserRead)
+            .build();
 
-        LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThat(readKafkaClient.sendMessagesTls(), is(-1));
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+
+        LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, testStorage.getTopicName());
+
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientTimeout(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, namespace).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), namespace).build());
 
         KafkaUser adminUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, ADMIN)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.WRITE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.DESCRIBE)
                     .endAcl()
@@ -166,28 +158,27 @@ public class CustomAuthorizerST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, adminUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName, adminUser).build());
 
-        String kafkaClientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsName).get(0).getMetadata().getName();
+        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, testStorage.getTopicName());
 
-        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, topicName);
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(topicName)
-            .withNamespaceName(namespace)
-            .withClusterName(CLUSTER_NAME)
-            .withKafkaUsername(ADMIN)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-            .withUsingPodName(kafkaClientsPodName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+            .withTopicName(testStorage.getTopicName())
+            .withUserName(ADMIN)
             .build();
 
-        assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
-                "we configured Acls with only write operation", ADMIN, TOPIC_NAME);
+            "we configured Acls with only write operation", ADMIN, TOPIC_NAME);
 
-        assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @BeforeAll

@@ -12,17 +12,14 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.security.SystemTestCertHolder;
 import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -45,7 +42,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -350,7 +346,8 @@ public class CustomCaST extends AbstractST {
                     .withGenerateCertificateAuthority(false)
                 .endClientsCa()
             .endSpec()
-            .build());
+            .build()
+        );
 
         LOGGER.info("Check Kafka(s) and Zookeeper(s) certificates.");
         final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(),
@@ -374,44 +371,20 @@ public class CustomCaST extends AbstractST {
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
 
         LOGGER.info("Send and receive messages over TLS.");
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true,
-            ts.getClusterName() + "-" + Constants.KAFKA_CLIENTS, user).build());
-        final String kafkaClientsPodName = kubeClient(ts.getNamespaceName()).listPodsByPrefixInName(ts.getNamespaceName(),
-            ts.getClusterName() + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        final InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(ts.getTopicName())
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withProducerName(ts.getProducerName())
+            .withConsumerName(ts.getConsumerName())
             .withNamespaceName(ts.getNamespaceName())
-            .withClusterName(ts.getClusterName())
-            .withKafkaUsername(ts.getUserName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(ts.getClusterName()))
+            .withTopicName(ts.getTopicName())
+            .withUserName(ts.getUserName())
             .build();
 
-        LOGGER.info("Check for certificates used within kafka pod internal clients (producer/consumer)");
-        final List<VolumeMount> volumeMounts = kubeClient(ts.getNamespaceName()).listPodsByPrefixInName(ts.getNamespaceName(),
-            ts.getClusterName() + "-" + Constants.KAFKA_CLIENTS).get(0).getSpec().getContainers().get(0).getVolumeMounts();
-        for (VolumeMount vm : volumeMounts) {
-            if (vm.getMountPath().contains("user-secret-" + internalKafkaClient.getKafkaUsername())) {
-                assertThat("UserCert Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(ts.getNamespaceName(), kafkaClientsPodName,
-                        vm, "issuer", STRIMZI_INTERMEDIATE_CA));
-                assertThat("UserCert Subject DN in clients pod is incorrect!", checkMountVolumeSecret(ts.getNamespaceName(), kafkaClientsPodName,
-                        vm, "subject", clientsCa.getSubjectDn()));
-
-            } else if (vm.getMountPath().contains("cluster-ca-" + internalKafkaClient.getKafkaUsername())) {
-                assertThat("ClusterCA Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(ts.getNamespaceName(), kafkaClientsPodName,
-                        vm, "issuer", STRIMZI_INTERMEDIATE_CA));
-                assertThat("ClusterCA Subject DN in clients pod is incorrect!", checkMountVolumeSecret(ts.getNamespaceName(), kafkaClientsPodName,
-                        vm, "subject", clusterCa.getSubjectDn()));
-            }
-        }
-
-        LOGGER.info("Checking produced and consumed messages via TLS to pod:{}", kafkaClientsPodName);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(),
-                internalKafkaClient.receiveMessagesTls()
-        );
+        LOGGER.info("Checking produced and consumed messages via TLS");
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(ts.getClusterName()), kafkaClients.consumerTlsStrimzi(ts.getClusterName()));
+        ClientUtils.waitForClientsSuccess(ts.getProducerName(), ts.getConsumerName(), ts.getNamespaceName(), MESSAGE_COUNT, false);
     }
 
     private boolean checkMountVolumeSecret(final String namespaceName, final String podName, final VolumeMount volumeMount,

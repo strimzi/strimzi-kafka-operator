@@ -24,9 +24,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -132,11 +130,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(clusterOperator.getDeploymentNamespace(), false, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).build());
-
-        String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), oauthClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, clusterName, clusterOperator.getDeploymentNamespace(), oauthClusterName, 1)
             .editSpec()
                 .withConfig(connectorConfig)
@@ -169,10 +162,10 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
             .build());
 
         String kafkaConnectPodName = kubeClient(clusterOperator.getDeploymentNamespace()).listPods(clusterOperator.getDeploymentNamespace(), clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-
+        String scraperPodName = kubeClient().listPodsByPrefixInName(clusterName + "-" + Constants.SCRAPER_NAME).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(clusterOperator.getDeploymentNamespace(), kafkaConnectPodName);
 
-        KafkaConnectorUtils.createFileSinkConnector(clusterOperator.getDeploymentNamespace(), defaultKafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, clusterOperator.getDeploymentNamespace(), 8083));
+        KafkaConnectorUtils.createFileSinkConnector(clusterOperator.getDeploymentNamespace(), scraperPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, clusterOperator.getDeploymentNamespace(), 8083));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(clusterOperator.getDeploymentNamespace(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }
@@ -206,8 +199,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(clusterOperator.getDeploymentNamespace(), true, kafkaClientsName).build());
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.tlsBootstrapAddress(oauthClusterName), 1)
             .editMetadata()
