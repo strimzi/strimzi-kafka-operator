@@ -50,7 +50,6 @@ import io.strimzi.systemtest.annotations.ParallelSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -1362,7 +1361,6 @@ class LoggingChangeST extends AbstractST {
         assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     void testLoggingHierarchy(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);

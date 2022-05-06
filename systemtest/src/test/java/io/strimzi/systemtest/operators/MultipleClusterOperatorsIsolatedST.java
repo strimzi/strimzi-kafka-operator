@@ -41,7 +41,6 @@ import org.apache.logging.log4j.Logger;
 
 import static org.hamcrest.CoreMatchers.is;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -79,7 +78,6 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
     public static final Map<String, String> FIRST_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", FIRST_CO_NAME);
     public static final Map<String, String> SECOND_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", SECOND_CO_NAME);
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @IsolatedTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)

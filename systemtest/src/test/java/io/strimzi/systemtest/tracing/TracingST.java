@@ -39,7 +39,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -319,7 +318,6 @@ public class TracingST extends AbstractST {
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_MIRROR_MAKER_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(), "To_" + storageMap.get(extensionContext).getTopicName(), JAEGER_QUERY_SERVICE);
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)

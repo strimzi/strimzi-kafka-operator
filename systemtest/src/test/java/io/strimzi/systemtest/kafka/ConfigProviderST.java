@@ -29,7 +29,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -47,7 +46,6 @@ public class ConfigProviderST extends AbstractST {
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(ConfigProviderST.class.getSimpleName()).stream().findFirst().get();
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     void testConnectWithConnectorUsingConfigAndEnvProvider(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

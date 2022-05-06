@@ -44,7 +44,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -103,7 +102,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @Description("As an oauth KafkaConnect, I am able to sink messages from kafka broker topic using encrypted communication.")
     @ParallelTest
     @Tag(CONNECT)

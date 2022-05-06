@@ -71,7 +71,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -262,7 +261,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         assertKafkaBridgeStatus(3, bridgeUrl);
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECTOR_OPERATOR)

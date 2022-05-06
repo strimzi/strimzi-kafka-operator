@@ -60,7 +60,6 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -153,7 +152,6 @@ class ConnectIsolatedST extends AbstractST {
         LOGGER.info("Docker images verified");
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(SMOKE)
@@ -230,7 +228,6 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(storage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectWithPlainAndScramShaAuthentication(ExtensionContext extensionContext) {
@@ -304,7 +301,6 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(storage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -423,7 +419,6 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(connectPods.size(), is(initialReplicas));
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication(ExtensionContext extensionContext) {
@@ -499,7 +494,6 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(storage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication(ExtensionContext extensionContext) {
@@ -667,7 +661,6 @@ class ConnectIsolatedST extends AbstractST {
         checkComponentConfiguration(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), "KAFKA_CONNECT_CONFIGURATION", connectConfig);
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(CONNECTOR_OPERATOR)
     @Tag(INTERNAL_CLIENTS_USED)
@@ -726,7 +719,6 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(storage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
@@ -792,7 +784,6 @@ class ConnectIsolatedST extends AbstractST {
         testConnectAuthorizationWithWeirdUserName(extensionContext, clusterName, weirdUserName, SecurityProtocol.SSL, topicName);
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
@@ -912,7 +903,6 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(connectStatus.getConditions().get(0).getType(), is(Ready.toString()));
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     @Tag(CONNECTOR_OPERATOR)
@@ -959,7 +949,6 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(connectorStatus.getConditions().stream().anyMatch(condition -> condition.getMessage().contains("has 0 replicas")), is(true));
     }
 
-    @Disabled // The FileStreamSourceConnector / FileStreamSinkConnector are not in the class path anymore and would need to be added
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     @Tag(CONNECTOR_OPERATOR)
