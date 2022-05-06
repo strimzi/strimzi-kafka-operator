@@ -1369,7 +1369,7 @@ class LoggingChangeST extends AbstractST {
                 KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
         resourceManager.createResource(extensionContext,
-                KafkaConnectTemplates.kafkaConnect(extensionContext, testStorage.getClusterName(), 1)
+                KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()

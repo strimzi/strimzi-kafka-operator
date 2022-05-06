@@ -117,7 +117,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
                     .withNamespace(DEFAULT_NAMESPACE)
                 .endMetadata()
                 .build(),
-            KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, DEFAULT_NAMESPACE, clusterName, 1, false)
                 .editOrNewMetadata()
                     .addToLabels(FIRST_CO_SELECTOR)
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")

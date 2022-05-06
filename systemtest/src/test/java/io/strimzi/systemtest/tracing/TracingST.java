@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -45,8 +47,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.Stack;
 
+import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -322,6 +326,8 @@ public class TracingST extends AbstractST {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
+        final String imageName = Environment.getImageOutputRegistry() + "/" + storageMap.get(extensionContext).getNamespaceName() + "/connect-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
@@ -352,7 +358,8 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storageMap.get(extensionContext).getClusterName(), 1)
+        resourceManager.createResource(extensionContext,
+            KafkaConnectTemplates.kafkaConnect(extensionContext, storageMap.get(extensionContext).getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -382,6 +389,21 @@ public class TracingST extends AbstractST {
                         .endEnv()
                     .endConnectContainer()
                 .endTemplate()
+                // we need to set this for correct usage of the File plugin - because we need new spec, the kafkaConnectWithFilePlugin
+                // method cannot be used
+                .editOrNewBuild()
+                    .withPlugins(new PluginBuilder()
+                        .withName("file-plugin")
+                        .withArtifacts(
+                            new JarArtifactBuilder()
+                                .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                                .build()
+                        )
+                        .build())
+                    .withNewDockerOutput()
+                        .withImage(imageName)
+                    .endDockerOutput()
+                .endBuild()
             .endSpec()
             .build());
 
