@@ -106,7 +106,7 @@ public class CruiseControlClientTest {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REBALANCE,
                 result -> {
-                    assertThat(result.isProposalStillCalaculating(), is(true));
+                    assertThat(result.isProposalStillCalculating(), is(true));
                 });
     }
 
@@ -169,7 +169,7 @@ public class CruiseControlClientTest {
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
-                    assertThat(result.isProposalStillCalaculating(), is(true));
+                    assertThat(result.isProposalStillCalculating(), is(true));
                 });
     }
 
@@ -227,7 +227,7 @@ public class CruiseControlClientTest {
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
-                    assertThat(result.isProposalStillCalaculating(), is(true));
+                    assertThat(result.isProposalStillCalculating(), is(true));
                 });
     }
 

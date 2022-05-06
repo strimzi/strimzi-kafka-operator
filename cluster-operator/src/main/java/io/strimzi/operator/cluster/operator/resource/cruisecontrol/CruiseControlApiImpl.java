@@ -169,7 +169,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                             CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                             if (json.containsKey(CC_REST_API_PROGRESS_KEY)) {
                                 // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
-                                ccResponse.setProposalStillCalaculating(true);
+                                ccResponse.setProposalStillCalculating(true);
                             } else {
                                 result.fail(new CruiseControlRestException(
                                         "Error for request: " + host + ":" + port + path +

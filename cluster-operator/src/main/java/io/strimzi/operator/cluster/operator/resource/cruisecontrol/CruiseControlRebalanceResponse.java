@@ -9,7 +9,7 @@ import io.vertx.core.json.JsonObject;
 public class CruiseControlRebalanceResponse extends CruiseControlResponse {
 
     private boolean isNotEnoughDataForProposal;
-    private boolean isProposalStillCalaculating;
+    private boolean isProposalStillCalculating;
     private boolean isBrokersNotExist;
 
     CruiseControlRebalanceResponse(String userTaskId, JsonObject json) {
@@ -19,7 +19,7 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
         this.isNotEnoughDataForProposal = false;
         // Proposal is not in progress unless response from Cruise Control says otherwise
         // Sourced from the "progress" field in the response with value "proposalStillCalaculating"
-        this.isProposalStillCalaculating = false;
+        this.isProposalStillCalculating = false;
         // One or more brokers provided during a rebalance with add/remove broker endpoints don't exist
         this.isBrokersNotExist = false;
     }
@@ -32,12 +32,12 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
         this.isNotEnoughDataForProposal = notEnoughDataForProposal;
     }
 
-    public boolean isProposalStillCalaculating() {
-        return isProposalStillCalaculating;
+    public boolean isProposalStillCalculating() {
+        return isProposalStillCalculating;
     }
 
-    public void setProposalStillCalaculating(boolean proposalStillCalaculating) {
-        this.isProposalStillCalaculating = proposalStillCalaculating;
+    public void setProposalStillCalculating(boolean proposalStillCalculating) {
+        this.isProposalStillCalculating = proposalStillCalculating;
     }
 
     public boolean isBrokersNotExist() {
