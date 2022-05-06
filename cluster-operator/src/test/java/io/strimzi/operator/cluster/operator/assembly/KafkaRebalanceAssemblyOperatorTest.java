@@ -1126,7 +1126,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .compose(v -> {
                     try {
                         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-                        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+                        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
                     } catch (IOException | URISyntaxException e) {
                         context.failNow(e);
                     }
