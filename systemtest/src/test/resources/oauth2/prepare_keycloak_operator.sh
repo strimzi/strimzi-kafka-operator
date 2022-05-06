@@ -9,7 +9,8 @@ SCRIPT_PATH=$(dirname "${BASH_SOURCE[0]}")
 function update_keycloak_db_secret() {
 # Expecting postgres secret to be located at KEYCLOAK_OPERATOR_NAMESPACE
 PG_SECRET=$(kubectl get secret postgres-kc-pguser-postgres-kc -n "${KEYCLOAK_OPERATOR_NAMESPACE}" -o yaml)
-DB_SECRET_YAML_FILE=${SCRIPT_PATH}/keycloak_db_pg_secret.yaml
+cp ${SCRIPT_PATH}/keycloak_db_pg_secret.yaml /tmp/keycloak_db_pg_secret.yaml
+DB_SECRET_YAML_FILE=/tmp/keycloak_db_pg_secret.yaml
 
 POSTGRES_DATABASE=$(echo "${PG_SECRET}" | egrep "^\s+dbname:" | tr -d " " | cut -d ":" -f 2)
 POSTGRES_EXTERNAL_ADDRESS=$(echo "${PG_SECRET}" | egrep "^\s+host:" | tr -d " " | cut -d ":" -f 2)
