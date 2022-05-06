@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -79,9 +80,14 @@ public class KafkaResource implements ResourceType<Kafka> {
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
         // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
-        for (PersistentVolumeClaim pvc : kubeClient().listPersistentVolumeClaims(namespaceName, clusterName)) {
-            kubeClient().deletePersistentVolumeClaim(namespaceName, pvc.getMetadata().getName());
-            PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(namespaceName, pvc.getMetadata().getName());
+        List<PersistentVolumeClaim> persistentVolumeClaimsList = kubeClient().listPersistentVolumeClaims(namespaceName, clusterName);
+
+        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
+            kubeClient().deletePersistentVolumeClaim(namespaceName, persistentVolumeClaim.getMetadata().getName());
+        }
+
+        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
+            PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
         }
     }
 
