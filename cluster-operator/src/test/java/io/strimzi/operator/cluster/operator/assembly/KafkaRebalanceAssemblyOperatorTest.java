@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -179,7 +180,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -214,7 +215,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToPendingProposalToProposalReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -260,7 +261,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToPendingProposalToStoppedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 5);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 5, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -324,7 +325,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToPendingProposalToStoppedAndRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -410,7 +411,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyToRebalancingToReadyRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         KafkaRebalance kr =
@@ -469,7 +470,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyToReconciliationPaused(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         KafkaRebalance kr =
@@ -536,7 +537,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyToRebalancingToReadyThenRefreshRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         KafkaRebalance kr =
@@ -603,7 +604,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewWithMissingHardGoals(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint to get error about hard goals
-        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer);
+        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
@@ -638,7 +639,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     @Test
     public void testUnknownPropertyInSpec(VertxTestContext context) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
         String yaml = "apiVersion: kafka.strimzi.io/v1beta2\n" +
                 "kind: KafkaRebalance\n" +
@@ -691,7 +692,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadySkipHardGoalsRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
@@ -733,7 +734,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewWithMissingHardGoalsAndRefresh(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint to get error about hard goals
-        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer);
+        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
@@ -767,7 +768,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 ccServer.reset();
                 try {
                     // Setup the rebalance endpoint with the number of pending calls before a response is received.
-                    MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+                    MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
                 } catch (IOException | URISyntaxException e) {
                     context.failNow(e);
                 }
@@ -814,7 +815,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToPendingProposalDeleteRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -880,7 +881,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyToRebalancingToStoppedRebalance(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 2);
         MockCruiseControl.setupCCStopResponse(ccServer);
 
@@ -1018,7 +1019,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testRebalanceUsesUnknownProperty(VertxTestContext context) throws IOException, URISyntaxException {
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
 
         String rebalanceString = "apiVersion: kafka.strimzi.io/v1beta2\n" +
                 "kind: KafkaRebalance\n" +
@@ -1125,7 +1126,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .compose(v -> {
                     try {
                         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-                        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+                        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
                     } catch (IOException | URISyntaxException e) {
                         context.failNow(e);
                     }
@@ -1198,7 +1199,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received
         // and with a delay on response higher than the client timeout to test timing out
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, 10);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, 10, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -1267,7 +1268,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      */
     @Test
     public void testRebalanceStatusInProposalReadyState(VertxTestContext context) throws IOException, URISyntaxException {
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
             createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
@@ -1359,7 +1360,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyToProposalReadyWithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         KafkaRebalance kr =
@@ -1413,7 +1414,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToProposalReadyToRebalancingToReadyRebalancewithWithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         KafkaRebalance kr =
@@ -1488,7 +1489,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     public void testNewToPendingProposalToStoppedStatewithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2);
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());

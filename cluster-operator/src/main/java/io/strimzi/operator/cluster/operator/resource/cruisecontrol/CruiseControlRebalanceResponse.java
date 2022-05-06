@@ -10,6 +10,7 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
 
     private boolean isNotEnoughDataForProposal;
     private boolean isProposalStillCalaculating;
+    private boolean isBrokersNotExist;
 
     CruiseControlRebalanceResponse(String userTaskId, JsonObject json) {
         super(userTaskId, json);
@@ -19,6 +20,8 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
         // Proposal is not in progress unless response from Cruise Control says otherwise
         // Sourced from the "progress" field in the response with value "proposalStillCalaculating"
         this.isProposalStillCalaculating = false;
+        // One or more brokers provided during a rebalance with add/remove broker endpoints don't exist
+        this.isBrokersNotExist = false;
     }
 
     public boolean isNotEnoughDataForProposal() {
@@ -35,5 +38,13 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
 
     public void setProposalStillCalaculating(boolean proposalStillCalaculating) {
         this.isProposalStillCalaculating = proposalStillCalaculating;
+    }
+
+    public boolean isBrokersNotExist() {
+        return this.isBrokersNotExist;
+    }
+
+    public void setBrokersNotExist(boolean brokersNotExist) {
+        this.isBrokersNotExist = brokersNotExist;
     }
 }

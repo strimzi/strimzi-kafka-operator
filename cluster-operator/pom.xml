@@ -16,10 +16,6 @@
         </license>
     </licenses>
 
-    <properties>
-        <mockserver.version>5.11.1</mockserver.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
