@@ -24,6 +24,7 @@ public interface Constants {
 
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
+    long GLOBAL_TIMEOUT_SHORT = Duration.ofMinutes(2).toMillis();
     long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
