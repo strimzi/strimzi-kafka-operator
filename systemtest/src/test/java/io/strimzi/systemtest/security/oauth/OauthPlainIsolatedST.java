@@ -286,7 +286,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
-            .withNewSpec()
+            .editSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
                 .withConfig(connectorConfig)
