@@ -216,7 +216,7 @@ class SecurityST extends AbstractST {
             boolean keAndCCShouldRoll) {
 
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
-        createKafkaCluster(extensionContext);
+        createKafkaCluster(extensionContext, testStorage.getClusterName());
 
         List<String> secrets;
 
@@ -401,7 +401,7 @@ class SecurityST extends AbstractST {
                 clientsCaKeySecretName(testStorage.getClusterName()));
         }
 
-        createKafkaCluster(extensionContext);
+        createKafkaCluster(extensionContext, testStorage.getClusterName());
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
@@ -529,9 +529,8 @@ class SecurityST extends AbstractST {
         }
     }
 
-    private void createKafkaCluster(ExtensionContext extensionContext) {
+    private void createKafkaCluster(ExtensionContext extensionContext, String clusterName) {
         LOGGER.info("Creating a cluster");
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
@@ -581,7 +580,7 @@ class SecurityST extends AbstractST {
         SecretUtils.createSecret(testStorage.getNamespaceName(), clusterCaCertificateSecretName(testStorage.getClusterName()), "ca.crt", clusterCaCert);
 
         // 2. Now create a cluster
-        createKafkaCluster(extensionContext);
+        createKafkaCluster(extensionContext, testStorage.getClusterName());
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
