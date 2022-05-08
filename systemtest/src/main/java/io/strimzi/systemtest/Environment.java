@@ -281,13 +281,18 @@ public class Environment {
     }
 
     public static String getImageOutputRegistry() {
-        if (!KubeClusterResource.getInstance().isNotKubernetes()) {
+        if (KubeClusterResource.getInstance().isOpenShift()) {
+            return "image-registry.openshift-image-registry.svc:5000";
+        } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
             Service service = kubeClient("kube-system").getService("registry");
-            return service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
-        }
 
-        return "image-registry.openshift-image-registry.svc:5000";
+            if (service == null)    {
+                throw new RuntimeException("Internal registry service for pushing newly build images not found.");
+            } else {
+                return service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
+            }
+        }
     }
 
     private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
