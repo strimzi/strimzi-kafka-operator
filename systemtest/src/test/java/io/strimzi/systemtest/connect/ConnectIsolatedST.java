@@ -252,7 +252,8 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaUser);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getClusterName(), storage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
+
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
             .editSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(storage.getClusterName()))
                 .withNewKafkaClientAuthenticationScramSha512()
@@ -269,7 +270,11 @@ class ConnectIsolatedST extends AbstractST {
                 .withVersion(Environment.ST_KAFKA_VERSION)
                 .withReplicas(1)
             .endSpec()
-            .build());
+            .build();
+        // This is required to be able to remove the TLS setting, the builder cannot remove it
+        connect.getSpec().setTls(null);
+        
+        resourceManager.createResource(extensionContext, connect);
 
         final String kafkaConnectPodName = kubeClient(storage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(storage.getClusterName())).get(0).getMetadata().getName();
         final String kafkaConnectLogs = kubeClient(storage.getNamespaceName()).logs(kafkaConnectPodName);
