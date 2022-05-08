@@ -243,6 +243,7 @@ class SecurityST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -414,6 +415,7 @@ class SecurityST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -593,6 +595,7 @@ class SecurityST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -742,6 +745,7 @@ class SecurityST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
@@ -1119,6 +1123,7 @@ class SecurityST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
+            .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
