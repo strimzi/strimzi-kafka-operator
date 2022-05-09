@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -25,6 +26,10 @@ import java.util.List;
 public class KafkaRebalanceSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
+    // rebalancing modes
+    private KafkaRebalanceMode mode;
+    private List<Integer> brokers;
+
     // Optimization goal configurations
     private List<String> goals;
     private boolean skipHardGoalCheck;
@@ -39,6 +44,30 @@ public class KafkaRebalanceSpec extends Spec {
     private int concurrentLeaderMovements;
     private long replicationThrottle;
     private List<String> replicaMovementStrategies;
+
+    @Description("Mode to run the rebalancing. " +
+            "The supported modes are `full-rebalance`, `add-broker`, `remove-broker`.\n" +
+            "If not specified, the `full-rebalance` mode is used by default. \n\n" +
+            "* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.\n" +
+            "* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n" +
+            "* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to remove.\n")
+    public KafkaRebalanceMode getMode() {
+        return mode;
+    }
+
+    public void setMode(KafkaRebalanceMode mode) {
+        this.mode = mode;
+    }
+
+    @Description("The list of newly added brokers in case of scaling up or the ones to be removed in case of scaling down to use for rebalancing. " +
+            "This list can be used only with rebalancing mode `add-broker` and `removed-broker`. It is ignored with `full-rebalance` mode.")
+    public List<Integer> getBrokers() {
+        return brokers;
+    }
+
+    public void setBrokers(List<Integer> brokers) {
+        this.brokers = brokers;
+    }
 
     @Description("A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. " +
             "The supported goals are available at https://github.com/linkedin/cruise-control#goals. " +
