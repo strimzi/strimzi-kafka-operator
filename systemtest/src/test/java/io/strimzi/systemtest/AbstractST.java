@@ -93,7 +93,7 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithClusterNames = new HashMap<>();
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
-    protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
+    protected static Map<String, String> mapWithScraperNames = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
 
     // we need to shared this number across all test suites
@@ -610,12 +610,12 @@ public abstract class AbstractST implements TestSeparator {
             mapWithClusterNames.put(testName, clusterName);
             mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
             mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
-            mapWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
+            mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
 
             LOGGER.trace("CLUSTER_NAMES_MAP: {}", mapWithClusterNames);
             LOGGER.trace("USERS_NAME_MAP: {}", mapWithTestUsers);
             LOGGER.trace("TOPIC_NAMES_MAP: {}", mapWithTestTopics);
-            LOGGER.trace("THIS IS CLIENTS MAP: {}", mapWithKafkaClientNames);
+            LOGGER.trace("THIS IS CLIENTS MAP: {}", mapWithScraperNames);
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
         }
     }

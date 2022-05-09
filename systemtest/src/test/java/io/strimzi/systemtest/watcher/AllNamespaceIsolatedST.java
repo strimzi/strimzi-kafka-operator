@@ -7,6 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
@@ -15,15 +16,16 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -122,6 +124,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
     @IsolatedTest
     void testUserInDifferentNamespace(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext, SECOND_NAMESPACE);
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
 
         KafkaUser user = KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build();
@@ -146,28 +149,18 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
             }
         }
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).build());
-
-        final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(TOPIC_NAME)
-            .withNamespaceName(THIRD_NAMESPACE)
-            .withClusterName(MAIN_NAMESPACE_CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(MAIN_NAMESPACE_CLUSTER_NAME))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(THIRD_NAMESPACE)
+            .withUserName(USER_NAME)
             .build();
 
-        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
-
-        int sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        int received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME));
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), THIRD_NAMESPACE, MESSAGE_COUNT);
 
         cluster.setNamespace(startingNamespace);
     }

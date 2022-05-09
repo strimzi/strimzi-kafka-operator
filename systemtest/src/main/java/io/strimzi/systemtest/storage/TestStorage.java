@@ -35,7 +35,6 @@ final public class TestStorage {
     private String clusterName;
     private String topicName;
     private String streamsTopicTargetName;
-    private String kafkaClientsName;
     private String scraperName;
     private String producerName;
     private String consumerName;
@@ -55,7 +54,6 @@ final public class TestStorage {
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
-        this.kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         this.scraperName = clusterName + "-" + Constants.SCRAPER_NAME;
         this.producerName = clusterName + "-" + PRODUCER;
         this.consumerName = clusterName  + "-" + CONSUMER;
@@ -69,7 +67,6 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TOPIC_KEY, this.topicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.STREAM_TOPIC_KEY, this.streamsTopicTargetName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_CLIENTS_KEY, this.kafkaClientsName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.SCRAPER_KEY, this.scraperName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PRODUCER_KEY, this.producerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
@@ -98,10 +95,6 @@ final public class TestStorage {
 
     public String getTopicName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString();
-    }
-
-    public String getKafkaClientsName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_CLIENTS_KEY).toString();
     }
 
     public String getScraperName() {

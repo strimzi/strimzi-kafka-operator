@@ -82,7 +82,6 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // 060-Deployment
         clusterOperator.unInstall();
