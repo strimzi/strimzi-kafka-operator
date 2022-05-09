@@ -40,7 +40,7 @@ public abstract class KubernetesRestartEventPublisher {
 
     // K8s events are required to have a message of 1KiB or smaller
     private static final int MAX_MESSAGE_LENGTH = 1000;
-    private static final String DIARESIS = "...";
+    private static final String ELLIPSIS = "...";
 
     public KubernetesRestartEventPublisher() {
         this(Clock.systemDefaultZone());
@@ -133,7 +133,7 @@ public abstract class KubernetesRestartEventPublisher {
         } else if (stringBytes.length <= MAX_MESSAGE_LENGTH)  {
             return note;
         } else {
-            return new String(stringBytes, 0, 997, UTF_8) + DIARESIS;
+            return new String(stringBytes, 0, 997, UTF_8) + ELLIPSIS;
         }
     }
 }
