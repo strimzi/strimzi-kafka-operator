@@ -206,7 +206,7 @@ public class KafkaRebalanceAssemblyOperator
     public Future<Void> createRebalanceWatch(String watchNamespaceOrWildcard) {
 
         return Util.async(this.vertx, () -> {
-            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<KafkaRebalance>() {
+            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<>() {
                 @Override
                 public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
                     Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
@@ -392,10 +392,18 @@ public class KafkaRebalanceAssemblyOperator
                                             kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
                                             .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
                                             .compose(updatedKafkaRebalance -> {
-                                                LOGGER.infoCr(reconciliation, "State updated to [{}] with annotation {}={} ",
-                                                        rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
-                                                        ANNO_STRIMZI_IO_REBALANCE,
-                                                        rawRebalanceAnnotation(updatedKafkaRebalance));
+                                                String message = "State updated to [{}] ";
+                                                if (rawRebalanceAnnotation(updatedKafkaRebalance) == null) {
+                                                    LOGGER.infoCr(reconciliation, message + "and annotation {} is not set ",
+                                                            rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
+                                                            ANNO_STRIMZI_IO_REBALANCE);
+                                                } else {
+                                                    LOGGER.infoCr(reconciliation, message + "with annotation {}={} ",
+                                                            rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
+                                                            ANNO_STRIMZI_IO_REBALANCE,
+                                                            rawRebalanceAnnotation(updatedKafkaRebalance)
+                                                    );
+                                                }
                                                 if (hasRebalanceAnnotation(updatedKafkaRebalance)) {
                                                     if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
                                                         return Future.succeededFuture();
