@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.connect;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -546,6 +545,6 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         outputRegistry = Environment.getImageOutputRegistry() + "/" +  clusterOperator.getDeploymentNamespace();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral( clusterOperator.getDeploymentNamespace(), 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterOperator.getDeploymentNamespace(), 3).build());
     }
 }
