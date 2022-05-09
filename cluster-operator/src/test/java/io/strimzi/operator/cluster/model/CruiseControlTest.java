@@ -71,8 +71,8 @@ import java.util.Optional;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters.CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters.CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters.ANOMALY_DETECTION_CONFIG_KEY;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters.DEFAULT_GOALS_CONFIG_KEY;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -615,8 +615,8 @@ public class CruiseControlTest {
         EnvVar e2 = new EnvVar(e2Key, e2Value, null);
 
         Map<String, Object> config = ccConfig;
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), apiAuthEnabled);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), apiSslEnabled);
+        config.put(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), apiAuthEnabled);
+        config.put(CruiseControlConfigurationParameters.WEBSERVER_SSL_ENABLE.getValue(), apiSslEnabled);
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -826,7 +826,7 @@ public class CruiseControlTest {
                 "com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal";
 
         Map<String, Object> customGoalConfig = ccConfig;
-        customGoalConfig.put(CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY.getValue(), customGoals);
+        customGoalConfig.put(DEFAULT_GOALS_CONFIG_KEY.getValue(), customGoals);
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
@@ -839,7 +839,7 @@ public class CruiseControlTest {
 
         String anomalyDetectionGoals =  cruiseControlWithCustomGoals
                 .getConfiguration().asOrderedProperties().asMap()
-                .get(CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY.getValue());
+                .get(ANOMALY_DETECTION_CONFIG_KEY.getValue());
 
         assertThat(anomalyDetectionGoals, is(customGoals));
     }
@@ -894,17 +894,17 @@ public class CruiseControlTest {
                 .findFirst();
         assertThat(configEnvVar.isPresent(), is(true));
         String config = configEnvVar.get().getValue();
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME)));
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME)));
-        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)));
+        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME)));
+        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME)));
+        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)));
     }
 
     @ParallelTest
     public void testCustomTopicNames() {
         Map<String, String> topicConfigs = new HashMap<>();
-        topicConfigs.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME.getValue(), "partition-topic");
-        topicConfigs.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME.getValue(), "broker-topic");
-        topicConfigs.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), "metric-reporter-topic");
+        topicConfigs.put(CruiseControlConfigurationParameters.PARTITION_METRIC_TOPIC_NAME.getValue(), "partition-topic");
+        topicConfigs.put(CruiseControlConfigurationParameters.BROKER_METRIC_TOPIC_NAME.getValue(), "broker-topic");
+        topicConfigs.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), "metric-reporter-topic");
         Map<String, Object> customConfig = ccConfig;
         customConfig.putAll(topicConfigs);
 

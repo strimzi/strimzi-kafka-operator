@@ -90,7 +90,7 @@ public class ReconciliationST extends AbstractST {
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, kafkaSelector, SCALE_TO);
 
         LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no pods should appear");
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -138,7 +138,7 @@ public class ReconciliationST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         LOGGER.info("Adding pause annotation into KafkaTopic resource and changing replication factor");

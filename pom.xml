@@ -132,6 +132,7 @@
         <netty.version>4.1.74.Final</netty.version>
         <micrometer.version>1.3.1</micrometer.version>
         <bouncycastle.version>1.69</bouncycastle.version>
+        <mockserver.version>5.13.2</mockserver.version>
         <!-- property to skip surefire tests during failsafe execution -->
         <!--suppress UnresolvedMavenProperty -->
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
@@ -305,6 +306,12 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
                 <version>${fabric8.openshift-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-server-mock</artifactId>
+                <version>${fabric8.kubernetes-client.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>

@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -13,8 +15,10 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -23,13 +27,18 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Operator;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
@@ -37,8 +46,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
@@ -52,6 +66,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final ConnectBuildOperator connectBuildOperator;
     private final KafkaVersion.Lookup versions;
     protected final long connectBuildTimeoutMs;
+
+    private final Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * @param vertx The Vertx instance
@@ -168,6 +185,30 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return new KafkaConnectStatus();
     }
 
+    @Override
+    public void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
+        super.reconcileThese(trigger, desiredNames, namespace, ignore -> {
+            List<String> connects = desiredNames.stream().map(NamespaceAndName::getName).collect(Collectors.toList());
+            LabelSelectorRequirement requirement = new LabelSelectorRequirement(Labels.STRIMZI_CLUSTER_LABEL, "In", connects);
+            Optional<LabelSelector> connectorsSelector = Optional.of(new LabelSelector(List.of(requirement), null));
+            connectorOperator.listAsync(namespace, connectorsSelector)
+                    .onComplete(ar -> {
+                        if (ar.succeeded()) {
+                            resetConnectorsCounters(namespace);
+                            ar.result().forEach(connector -> {
+                                connectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
+                                if (isPaused(connector.getStatus())) {
+                                    pausedConnectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
+                                }
+                            });
+                            handler.handle(Future.succeededFuture());
+                        } else {
+                            handler.handle(ar.map((Void) null));
+                        }
+                    });
+        });
+    }
+
     /**
      * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
      *
@@ -208,5 +249,31 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(image);
         }
         return dep;
+    }
+
+    private void resetConnectorsCounters(String namespace) {
+        if (namespace.equals("*")) {
+            connectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
+            pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
+        } else {
+            connectorsResourceCounter(namespace).set(0);
+            pausedConnectorsResourceCounter(namespace).set(0);
+        }
+    }
+
+    private boolean isPaused(KafkaConnectorStatus status) {
+        return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
+    }
+
+    public AtomicInteger connectorsResourceCounter(String namespace) {
+        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
+                metrics, null, connectorsResourceCounterMap,
+                "Number of custom resources the operator sees");
+    }
+
+    public AtomicInteger pausedConnectorsResourceCounter(String namespace) {
+        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources.paused",
+                metrics, null, pausedConnectorsResourceCounterMap,
+                "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations");
     }
 }

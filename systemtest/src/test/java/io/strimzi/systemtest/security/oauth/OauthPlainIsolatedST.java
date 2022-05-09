@@ -280,11 +280,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, oauthClusterName, 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, clusterName, INFRA_NAMESPACE, oauthClusterName, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
-            .withNewSpec()
+            .editOrNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
                 .withConfig(connectorConfig)
@@ -302,13 +302,16 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
                     .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
-                .withTls(null)
                 .withNewInlineLogging()
                     // needed for a verification of oauth configuration
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
             .endSpec()
-            .build());
+            .build();
+        // This is required to be able to remove the TLS setting, the builder cannot remove it
+        connect.getSpec().setTls(null);
+
+        resourceManager.createResource(extensionContext, connect);
 
         final String kafkaConnectPodName = kubeClient(clusterOperator.getDeploymentNamespace()).listPods(clusterOperator.getDeploymentNamespace(), clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 

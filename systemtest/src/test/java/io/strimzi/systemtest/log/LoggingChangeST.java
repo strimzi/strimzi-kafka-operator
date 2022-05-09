@@ -1092,8 +1092,8 @@ class LoggingChangeST extends AbstractST {
 
         ilOff.setLoggers(loggers);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 3).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
         resourceManager.createResource(extensionContext,
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false)
                 .editOrNewSpec()
@@ -1191,8 +1191,8 @@ class LoggingChangeST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 3).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
 
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
@@ -1368,7 +1368,7 @@ class LoggingChangeST extends AbstractST {
                 KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
         resourceManager.createResource(extensionContext,
-                KafkaConnectTemplates.kafkaConnect(extensionContext, testStorage.getClusterName(), 1)
+                KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                     .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()

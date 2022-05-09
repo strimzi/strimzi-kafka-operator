@@ -33,7 +33,6 @@ public class PathBuilderTest {
                         CruiseControlParameters.DRY_RUN.key + "=false&" +
                         CruiseControlParameters.VERBOSE.key + "=true&" +
                         CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key + "=false&" +
-                        CruiseControlParameters.REBALANCE_DISK.key + "=false&" +
                         CruiseControlParameters.EXCLUDED_TOPICS.key + "=test-.*&" +
                         CruiseControlParameters.GOALS.key + "=");
 
@@ -45,7 +44,8 @@ public class PathBuilderTest {
             }
         }
 
-        expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8.toString()));
+        expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8.toString()) + "&");
+        expectedQuery.append(CruiseControlParameters.REBALANCE_DISK.key + "=false");
 
         return expectedQuery.toString();
     }
@@ -53,10 +53,10 @@ public class PathBuilderTest {
     public void testQueryStringPair() {
 
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
-                .addParameter(CruiseControlParameters.JSON, "true")
-                .addParameter(CruiseControlParameters.DRY_RUN, "true")
-                .addParameter(CruiseControlParameters.VERBOSE, "false")
-                .addParameter(CruiseControlParameters.REBALANCE_DISK, "false")
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withParameter(CruiseControlParameters.DRY_RUN, "true")
+                .withParameter(CruiseControlParameters.VERBOSE, "false")
+                .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
                 .build();
 
         assertThat(path, containsString(DEFAULT_QUERY));
@@ -67,13 +67,13 @@ public class PathBuilderTest {
     public void testQueryStringList() throws UnsupportedEncodingException {
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
-                .addParameter(CruiseControlParameters.JSON, "true")
-                .addParameter(CruiseControlParameters.DRY_RUN, "false")
-                .addParameter(CruiseControlParameters.VERBOSE, "true")
-                .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
-                .addParameter(CruiseControlParameters.REBALANCE_DISK, "false")
-                .addParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
-                .addParameter(CruiseControlParameters.GOALS, GOALS)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withParameter(CruiseControlParameters.DRY_RUN, "false")
+                .withParameter(CruiseControlParameters.VERBOSE, "true")
+                .withParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
+                .withParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
+                .withParameter(CruiseControlParameters.GOALS, GOALS)
+                .withParameter(CruiseControlParameters.REBALANCE_DISK, "false")
                 .build();
 
 
@@ -92,8 +92,8 @@ public class PathBuilderTest {
                 .build();
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
-                .addParameter(CruiseControlParameters.JSON, "true")
-                .addRebalanceParameters(options).build();
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withRebalanceParameters(options).build();
 
         assertThat(path, is(getExpectedRebalanceString()));
     }

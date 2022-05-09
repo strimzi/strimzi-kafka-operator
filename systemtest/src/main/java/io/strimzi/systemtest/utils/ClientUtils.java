@@ -139,7 +139,7 @@ public class ClientUtils {
             }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
-                LOGGER.info("Clients jobs '{}' and '{}' finished with expected timeout.", producerName, consumerName);
+                LOGGER.info("Both jobs - {} and {} - hit the wait timeout - as expected", producerName, consumerName);
                 if (deleteAfterSuccess) {
                     JobUtils.deleteJobsWithWait(namespace, producerName, consumerName);
                 }

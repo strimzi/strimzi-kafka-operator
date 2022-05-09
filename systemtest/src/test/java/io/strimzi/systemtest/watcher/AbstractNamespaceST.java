@@ -6,13 +6,11 @@ package io.strimzi.systemtest.watcher;
 
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -21,7 +19,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
-import io.strimzi.test.TestUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,10 +28,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @IsolatedSuite
 public abstract class AbstractNamespaceST extends AbstractST {
@@ -51,18 +46,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String previousNamespace = cluster.setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", clusterName, namespace);
 
-        TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
-                    .getStatus().getConditions().get(0);
-            LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
-            return kafkaCondition.getType().equals(Ready.toString());
-        });
+        KafkaUtils.waitForKafkaReady(namespace, clusterName);
 
-        Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
-                .getStatus().getConditions().get(0);
-
-        assertThat(kafkaCondition.getType(), is(Ready.toString()));
         cluster.setNamespace(previousNamespace);
     }
 

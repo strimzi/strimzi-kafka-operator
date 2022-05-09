@@ -301,10 +301,13 @@ class RollingUpdateST extends AbstractST {
             pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()))).count(), is(scaleTo));
 
         final int zookeeperScaleTo = initialReplicas + 2;
+        Map<String, String> zooKeeperPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
+
         LOGGER.info("Scale up Zookeeper to {}", zookeeperScaleTo);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), testStorage.getNamespaceName());
-        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo);
+        zooKeeperPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
+
         LOGGER.info("Kafka scale up to {} finished", zookeeperScaleTo);
 
         clients = new KafkaClientsBuilder(clients)

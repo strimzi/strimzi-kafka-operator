@@ -724,9 +724,9 @@ public class KafkaRebalanceAssemblyOperator
                                                     KafkaRebalance kafkaRebalance,
                                                     KafkaRebalanceAnnotation rebalanceAnnotation,
                                                     RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
-        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
-            // The user has fixed the error on the resource and want to 'refresh'
-            // This actually requests a new rebalance proposal
+
+        if (shouldRenewRebalance(kafkaRebalance, rebalanceAnnotation)) {
+            // CC is activated from the disabled state or the user has fixed the error on the resource and want to 'refresh'
             return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
         } else {
             // Stay in the current NotReady state, returning null as next state
@@ -1083,11 +1083,13 @@ public class KafkaRebalanceAssemblyOperator
         String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String clusterNamespace = kafkaRebalance.getMetadata().getNamespace();
         if (clusterName == null) {
-            LOGGER.warnCr(reconciliation, "Resource lacks label '{}': No cluster related to a possible rebalance.", Labels.STRIMZI_CLUSTER_LABEL);
-            return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(),
-                    new InvalidResourceException("Resource lacks label '"
-                            + Labels.STRIMZI_CLUSTER_LABEL
-                            + "': No cluster related to a possible rebalance.")).mapEmpty();
+
+            String errorString = "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance.";
+            LOGGER.warnCr(reconciliation, errorString);
+            KafkaRebalanceStatus status = new KafkaRebalanceStatus();
+            status.addCondition(StatusUtils.buildWarningCondition(CruiseControlIssues.clusterLabelMissing.getReason(), errorString));
+            return updateStatus(reconciliation, kafkaRebalance, status,
+                    new InvalidResourceException(errorString)).mapEmpty();
         }
 
         // Get associated Kafka cluster state
@@ -1104,10 +1106,12 @@ public class KafkaRebalanceAssemblyOperator
                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.get().getMatchLabels());
                         return Future.succeededFuture();
                     } else if (kafka.getSpec().getCruiseControl() == null) {
-                        LOGGER.warnCr(reconciliation, "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
-                        return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(),
-                                new InvalidResourceException("Kafka resource lacks 'cruiseControl' declaration "
-                                        + ": No deployed Cruise Control for doing a rebalance.")).mapEmpty();
+                        String errorString = "Kafka resource lacks 'cruiseControl' declaration " + ": No deployed Cruise Control for doing a rebalance.";
+                        LOGGER.warnCr(reconciliation, errorString);
+                        KafkaRebalanceStatus status = new KafkaRebalanceStatus();
+                        status.addCondition(StatusUtils.buildWarningCondition(CruiseControlIssues.cruiseControlDisabled.getReason(), errorString));
+                        return updateStatus(reconciliation, kafkaRebalance, status,
+                                new InvalidResourceException(errorString)).mapEmpty();
                     }
 
                     if (kafka.getSpec().getKafka().getStorage() instanceof JbodStorage) {
@@ -1185,7 +1189,7 @@ public class KafkaRebalanceAssemblyOperator
                             // If there is not enough data for a rebalance, it's an error at the Cruise Control level
                             // Need to re-request the proposal at a later time so move to the PendingProposal State.
                             return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
-                        } else if (response.isProposalStillCalaculating()) {
+                        } else if (response.isProposalStillCalculating()) {
                             // If rebalance proposal is still being processed, we need to re-request the proposal at a later time
                             // with the corresponding session-id so we move to the PendingProposal State.
                             return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
@@ -1195,7 +1199,7 @@ public class KafkaRebalanceAssemblyOperator
                             // We do not include a session id with this status as we do not want to retrieve the state of
                             // this failed tasks (COMPLETED_WITH_ERROR)
                             return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
-                        } else if (response.isProposalStillCalaculating()) {
+                        } else if (response.isProposalStillCalculating()) {
                             // If dryrun=false and the proposal is not ready we are going to be in a rebalancing state as
                             // soon as it is ready, so set the state to rebalancing.
                             // In the onRebalancing method the optimization proposal will be added when it is ready.
@@ -1283,6 +1287,50 @@ public class KafkaRebalanceAssemblyOperator
     private boolean hasRebalanceAnnotation(KafkaRebalance kafkaRebalance) {
         return kafkaRebalance.getMetadata().getAnnotations() != null &&
                 kafkaRebalance.getMetadata().getAnnotations().containsKey(ANNO_STRIMZI_IO_REBALANCE);
+    }
+
+    private boolean shouldRenewRebalance(KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation) {
+        // check if refresh annotation applied or request are made when CC is not active
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh || kafkaRebalance.getStatus().getConditions().stream().anyMatch(condition -> "ConnectException".equals(condition.getReason()))) {
+            return true;
+        } else {
+            return CruiseControlIssues.checkForMatch(kafkaRebalance.getStatus().getConditions());
+        }
+    }
+
+    /**
+     * Contains the issues that will be picked up in the periodic reconciliation, once corrected.
+     */
+    private enum CruiseControlIssues {
+
+        /**
+         * The Kafka cluster label is missing .
+         */
+        clusterLabelMissing("Cluster Label missing"),
+
+        /**
+         * Cruise Control was not declared in the Kafka Resource
+         */
+        cruiseControlDisabled("Cruise Control disabled");
+
+        public String getReason() {
+            return reason;
+        }
+
+        private final String reason;
+
+        CruiseControlIssues(String reason) {
+            this.reason = reason;
+        }
+
+        public static boolean checkForMatch(List<Condition> conditions) {
+            for (CruiseControlIssues issue : CruiseControlIssues.values()) {
+                if (conditions.stream().anyMatch(condition -> issue.getReason().equals(condition.getReason()))) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     private KafkaRebalanceState state(KafkaRebalance kafkaRebalance) {

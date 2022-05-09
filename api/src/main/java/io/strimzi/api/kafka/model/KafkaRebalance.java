@@ -54,6 +54,31 @@ import static java.util.Collections.unmodifiableList;
                 name = "Cluster",
                 description = "The name of the Kafka cluster this resource rebalances",
                 jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "PendingProposal",
+                description = "A proposal has been requested from Cruise Control",
+                jsonPath = ".status.conditions[?(@.type==\"PendingProposal\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "ProposalReady",
+                description = "A proposal is ready and waiting for approval",
+                jsonPath = ".status.conditions[?(@.type==\"ProposalReady\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Rebalancing",
+                description = "Cruise Control is doing the rebalance",
+                jsonPath = ".status.conditions[?(@.type==\"Rebalancing\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The rebalance is complete",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "NotReady",
+                description = "There is an error on the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"NotReady\")].status",
                 type = "string")
         }
     )

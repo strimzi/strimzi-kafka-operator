@@ -38,6 +38,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -170,11 +171,19 @@ public class TopicST extends AbstractST {
             CreateTopicsResult crt = adminClient.createTopics(singletonList(new NewTopic(topicName, 1, (short) 1)));
             crt.all().get();
 
-            topics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
+            TestUtils.waitFor("Wait until Kafka cluster has " + (topicsSize + 1) + " KafkaTopic", Constants.GLOBAL_POLL_INTERVAL,
+                Constants.GLOBAL_TIMEOUT, () -> {
+                    Set<String> updatedKafkaTopics = new HashSet<>();
+                    try {
+                        updatedKafkaTopics = adminClient.listTopics().names().get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
+                        LOGGER.info("Verify that in Kafka cluster contains {} topics", topicsSize + 1);
 
-            LOGGER.info("Verify that in Kafka cluster contains {} topics", topicsSize + 1);
-            assertThat(topics.size(), is(topicsSize + 1));
-            assertThat(topics.contains(topicName), is(true));
+                    } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        e.printStackTrace();
+                    }
+                    return updatedKafkaTopics.size() == topicsSize + 1 && updatedKafkaTopics.contains(topicName);
+
+                });
 
             KafkaTopicUtils.waitForKafkaTopicCreation(namespace, topicName);
             KafkaTopicUtils.waitForKafkaTopicReady(namespace, topicName);

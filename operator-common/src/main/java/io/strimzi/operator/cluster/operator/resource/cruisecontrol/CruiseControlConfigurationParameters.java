@@ -9,22 +9,17 @@ public enum CruiseControlConfigurationParameters {
     CONCURRENT_INTRA_PARTITION_MOVEMENTS("num.concurrent.intra.broker.partition.movements"),
     CONCURRENT_LEADER_MOVEMENTS("num.concurrent.leader.movements"),
     REPLICATION_THROTTLE("default.replication.throttle"),
-    BROKER_METRICS_WINDOWS("num.broker.metrics.windows"),
-    BROKER_METRICS_WINDOW_MS("broker.metrics.window.ms"),
-    PARTITION_METRICS_WINDOWS("num.partition.metrics.windows"),
-    PARTITION_METRICS_WINDOW_MS("partition.metrics.window.ms"),
-    COMPLETED_USER_TASK_RETENTION_MS("completed.user.task.retention.time.ms"),
-    CRUISE_CONTROL_PARTITION_METRICS_WINDOW_MS_CONFIG_KEY("partition.metrics.window.ms"),
-    CRUISE_CONTROL_PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY("num.partition.metrics.windows"),
-    CRUISE_CONTROL_BROKER_METRICS_WINDOW_MS_CONFIG_KEY("broker.metrics.window.ms"),
-    CRUISE_CONTROL_BROKER_METRICS_WINDOW_NUM_CONFIG_KEY("num.broker.metrics.windows"),
-    CRUISE_CONTROL_COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY("completed.user.task.retention.time.ms"),
-    CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE("webserver.security.enable"),
-    CRUISE_CONTROL_WEBSERVER_AUTH_CREDENTIALS_FILE("webserver.auth.credentials.file"),
-    CRUISE_CONTROL_WEBSERVER_SSL_ENABLE("webserver.ssl.enable"),
-    CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME("partition.metric.sample.store.topic"),
-    CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME("broker.metric.sample.store.topic"),
-    CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME("metric.reporter.topic"),
+    PARTITION_METRICS_WINDOW_MS_CONFIG_KEY("partition.metrics.window.ms"),
+    PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY("num.partition.metrics.windows"),
+    BROKER_METRICS_WINDOW_MS_CONFIG_KEY("broker.metrics.window.ms"),
+    BROKER_METRICS_WINDOW_NUM_CONFIG_KEY("num.broker.metrics.windows"),
+    COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY("completed.user.task.retention.time.ms"),
+    WEBSERVER_SECURITY_ENABLE("webserver.security.enable"),
+    WEBSERVER_AUTH_CREDENTIALS_FILE("webserver.auth.credentials.file"),
+    WEBSERVER_SSL_ENABLE("webserver.ssl.enable"),
+    PARTITION_METRIC_TOPIC_NAME("partition.metric.sample.store.topic"),
+    BROKER_METRIC_TOPIC_NAME("broker.metric.sample.store.topic"),
+    METRIC_REPORTER_TOPIC_NAME("metric.reporter.topic"),
 
     // Metrics reporter configurations
     METRICS_REPORTER_BOOTSTRAP_SERVERS("cruise.control.metrics.reporter.bootstrap.servers"),
@@ -46,11 +41,11 @@ public enum CruiseControlConfigurationParameters {
     METRICS_TOPIC_MIN_ISR("cruise.control.metrics.topic.min.insync.replicas"),
 
     // Goals String lists
-    CRUISE_CONTROL_GOALS_CONFIG_KEY("goals"),
-    CRUISE_CONTROL_DEFAULT_GOALS_CONFIG_KEY("default.goals"),
-    CRUISE_CONTROL_HARD_GOALS_CONFIG_KEY("hard.goals"),
-    CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY("self.healing.goals"),
-    CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals");
+    GOALS_CONFIG_KEY("goals"),
+    DEFAULT_GOALS_CONFIG_KEY("default.goals"),
+    HARD_GOALS_CONFIG_KEY("hard.goals"),
+    SELF_HEALING_CONFIG_KEY("self.healing.goals"),
+    ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals");
 
     // Defaults
     public static final boolean DEFAULT_WEBSERVER_SECURITY_ENABLED = true;

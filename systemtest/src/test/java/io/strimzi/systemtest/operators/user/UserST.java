@@ -274,12 +274,17 @@ class UserST extends AbstractST {
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --user " + userName;
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
-        ExecResult result = cmdKubeClient(namespace).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
-        assertThat(result.out().contains("Quota configs for user-principal '" + userName + "' are"), is(true));
-        assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
-        assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
-        assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
-        assertThat(result.out().contains("controller_mutation_rate=" + mutRate), is(true));
+        TestUtils.waitFor("all KafkaUser " + userName + " attributes are present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                ExecResult result = cmdKubeClient(namespace).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
+                boolean res = result.out().contains("Quota configs for user-principal '" + userName + "' are");
+                res = res && result.out().contains("request_percentage=" + reqPerc);
+                res = res && result.out().contains("producer_byte_rate=" + prodRate);
+                res = res && result.out().contains("consumer_byte_rate=" + consRate);
+                res = res && result.out().contains("controller_mutation_rate=" + mutRate);
+
+                return res;
+            });
 
         // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();

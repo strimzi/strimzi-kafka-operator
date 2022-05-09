@@ -1,0 +1,28 @@
+// This assembly is included in the following assemblies:
+//
+// configuring/configuring.adoc
+
+[id='assembly-uninstalling-{context}']
+
+= Uninstalling Strimzi
+
+[role="_abstract"]
+You can uninstall Strimzi using the CLI or by unsubscribing from OperatorHub.io.
+
+Use the same approach you used to install Strimzi.
+
+When you uninstall Strimzi, you will need to identify resources created specifically for a deployment and referenced from the Strimzi resource.
+
+Such resources include:
+
+* Secrets (Custom CAs and certificates, Kafka Connect secrets, and other Kafka secrets)
+* Logging `ConfigMaps` (of type `external`)
+
+These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge` configuration.
+
+WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
+
+//Uninstall from command line
+include::modules/proc-uninstalling.adoc[leveloffset=+1]
+//Uninstall from operatorhub.io
+include::modules/proc-uninstalling-operator-hub.adoc[leveloffset=+1]

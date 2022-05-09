@@ -37,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.rmi.UnexpectedException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -189,6 +190,8 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
             .withAdditionalConfig(additionalOauthConfig)
             .build();
 
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
+
         // re-configuring Kafka listener to have client scope assigned to null
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
             List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
@@ -233,7 +236,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
 
         keycloakInstance.setRealm("scope-test", false);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(oauthClusterName, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()

@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -85,7 +86,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -103,8 +103,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
-    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
+    protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
     protected final ConfigMapOperator configMapOperations;
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
@@ -124,7 +124,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private Map<String, Counter> connectorsReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
@@ -180,12 +179,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return A future which completes when the watch has been set up.
      */
-    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
-                                                    String watchNamespaceOrWildcard, Labels selectorLabels) {
+    public static Future<Watch> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
+                                                     String watchNamespaceOrWildcard, Labels selectorLabels) {
         Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
 
         return Util.async(connectOperator.vertx, () -> {
-            connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
+            Watch watch = connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
                     String connectorName = kafkaConnector.getMetadata().getName();
@@ -262,7 +261,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     }
                 }
             });
-            return null;
+            return watch;
         });
     }
 
@@ -364,8 +363,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             LOGGER.debugCr(reconciliation, "Setting list of connector plugins in Kafka Connect status");
             connectStatus.setConnectorPlugins(connectorPlugins);
 
-            connectorsResourceCounter(namespace).set(desiredConnectors.size());
-
             Set<String> deleteConnectorNames = new HashSet<>(runningConnectorNames);
             deleteConnectorNames.removeAll(desiredConnectors.stream().map(c -> c.getMetadata().getName()).collect(Collectors.toSet()));
             LOGGER.debugCr(reconciliation, "{} cluster: delete connectors: {}", kind(), deleteConnectorNames);
@@ -426,6 +423,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
                         connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
                         reconciliationResult.complete();
+                    } else if (result.failed() && connector == null) {
+                        // The reconciliation failed on connector deletion, so there is nowhere for status to be set => we complete the reconciliation and return
+                        LOGGER.warnCr(reconciliation, "Error reconciling connector {}", connectorName, result.cause());
+                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
+                        connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+
+                        // We suppress the error to not fail Connect reconciliation just because of a failing connector
+                        reconciliationResult.complete();
                     } else {
                         maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
                                 .onComplete(statusResult -> {
@@ -463,7 +468,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             if (connector.getSpec() == null) {
                 return Future.failedFuture(new InvalidResourceException("spec property is required"));
             }
-            
+
             if (!useResources) {
                 return Future.failedFuture(new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
@@ -473,7 +478,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Try to get the current connector config. If the connector does not exist, or its config differs from the 
+     * Try to get the current connector config. If the connector does not exist, or its config differs from the
      * {@code connectorSpec}'s, then call
      * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)}
      * otherwise, just return the connectors current state.
@@ -879,12 +884,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     public Counter connectorsSuccessfulReconciliationsCounter(String namespace) {
         return Operator.getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.successful", metrics, null, connectorsSuccessfulReconciliationsCounterMap,
                 "Number of reconciliations done by the operator for individual resources which were successful");
-    }
-
-    public AtomicInteger connectorsResourceCounter(String namespace) {
-        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
-                metrics, null, connectorsResourceCounterMap,
-                "Number of custom resources the operator sees");
     }
 
     public Timer connectorsReconciliationsTimer(String namespace) {

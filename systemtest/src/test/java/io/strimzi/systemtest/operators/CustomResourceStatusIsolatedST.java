@@ -47,6 +47,7 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -66,6 +67,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -100,7 +102,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.StringContains.containsString;
 
 @Tag(REGRESSION)
 @IsolatedSuite
@@ -265,18 +266,19 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorStatus(ExtensionContext extensionContext) {
-        String connectUrl = KafkaConnectResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, clusterOperator.getDeploymentNamespace(), 8083);
+        final TestStorage ts = new TestStorage(extensionContext);
+        String connectUrl = KafkaConnectResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ts.getNamespaceName(), 8083);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(ts.getNamespaceName())
             .endMetadata()
             .build());
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(ts.getNamespaceName())
             .endMetadata()
             .editSpec()
                 .addToConfig("topic", EXAMPLE_TOPIC_NAME)
@@ -284,45 +286,48 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .build());
 
         assertKafkaConnectStatus(1, connectUrl);
-        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of());
+        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()),
-            clusterOperator.getDeploymentNamespace());
-        KafkaConnectUtils.waitForConnectNotReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+            ts.getNamespaceName());
+        KafkaConnectUtils.waitForConnectNotReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100m"))
                 .build()),
-            clusterOperator.getDeploymentNamespace());
-        KafkaConnectUtils.waitForConnectReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+            ts.getNamespaceName());
+        KafkaConnectUtils.waitForConnectReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaConnectStatus(3, connectUrl);
 
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")), clusterOperator.getDeploymentNamespace());
-        KafkaConnectorUtils.waitForConnectorNotReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, "non-existing-connect-cluster")), ts.getNamespaceName());
+        KafkaConnectorUtils.waitForConnectorNotReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(ts.getNamespaceName()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)), clusterOperator.getDeploymentNamespace());
-        KafkaConnectorUtils.waitForConnectorReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+            kc -> kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)), ts.getNamespaceName());
+
+        KafkaConnectorUtils.waitForConnectorReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        KafkaConnectUtils.waitForConnectReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+
         assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
-        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getSpec().getClassName();
+        String defaultClass = KafkaConnectorResource.kafkaConnectorClient().inNamespace(ts.getNamespaceName()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getSpec().getClassName();
 
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
-            kc -> kc.getSpec().setClassName("non-existing-class"), clusterOperator.getDeploymentNamespace());
-        KafkaConnectorUtils.waitForConnectorNotReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
+            kc -> kc.getSpec().setClassName("non-existing-class"), ts.getNamespaceName());
+        KafkaConnectorUtils.waitForConnectorNotReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(ts.getNamespaceName()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus().getConnectorStatus(), is(nullValue()));
 
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME,
             kc -> {
                 kc.getMetadata().setLabels(Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME));
                 kc.getSpec().setClassName(defaultClass);
-            }, clusterOperator.getDeploymentNamespace());
+            }, ts.getNamespaceName());
 
-        KafkaConnectorUtils.waitForConnectorReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        KafkaConnectorUtils.waitForConnectorReady(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaConnectorStatus(3, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
     }
 
@@ -526,7 +531,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         }
 
 
-        KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 3, 3)
+        KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(listeners)
@@ -608,15 +613,23 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     @SuppressWarnings("unchecked")
     void assertKafkaConnectorStatus(long expectedObservedGeneration, String connectorStates, String type, List<String> topics) {
-        KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat(kafkaConnectorStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
-        String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
-        assertThat(connectorStates, containsString(currentState));
-        assertThat(connectorStatus.get("name"), is(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME));
-        assertThat(connectorStatus.get("type"), is(type));
-        assertThat(connectorStatus.get("tasks"), notNullValue());
-        assertThat(kafkaConnectorStatus.getTopics(), is(topics));
+        TestUtils.waitFor("wait until KafkaConnector status has excepted observed generation", Constants.GLOBAL_POLL_INTERVAL,
+            Constants.GLOBAL_TIMEOUT, () -> {
+                KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
+                boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
+
+                final Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
+                final String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
+
+                formulaResult = formulaResult && connectorStates.contains(currentState);
+                formulaResult = formulaResult && connectorStatus.get("name").equals(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+                formulaResult = formulaResult && connectorStatus.get("type").equals(type);
+                formulaResult = formulaResult && connectorStatus.get("tasks") != null;
+                formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
+                LOGGER.info("KafkaConnectorStatus topic: {}, and expected topic: {}", kafkaConnectorStatus.getTopics().toString(), topics);
+
+                return formulaResult;
+            });
     }
 
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
