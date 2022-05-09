@@ -15,4 +15,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(MultiNodeClusterOnlyCondition.class)
 public @interface MultiNodeClusterOnly {
+    int workerNodeCount() default 1;
 }
