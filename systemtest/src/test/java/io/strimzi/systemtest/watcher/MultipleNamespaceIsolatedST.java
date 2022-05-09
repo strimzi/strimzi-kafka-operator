@@ -6,6 +6,7 @@ package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.systemtest.BeforeAllOnce;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -78,9 +79,9 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
-            .withWatchingNamespaces(String.join(",", clusterOperator.getDeploymentNamespace(), SECOND_NAMESPACE))
-            .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), SECOND_NAMESPACE))
+            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withWatchingNamespaces(String.join(",", Constants.INFRA_NAMESPACE, SECOND_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(Constants.INFRA_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
