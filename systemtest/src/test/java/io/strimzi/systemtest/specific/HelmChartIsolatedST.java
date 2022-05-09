@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.HELM;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 
 @Tag(HELM)
 @Tag(REGRESSION)

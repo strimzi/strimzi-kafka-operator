@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
@@ -34,6 +33,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.TLS_LISTENER_DEFAULT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -96,7 +96,7 @@ public class OauthAbstractST extends AbstractST {
 
     protected static final Function<KeycloakInstance, GenericKafkaListener> BUILD_OAUTH_TLS_LISTENER = (keycloakInstance) -> {
         return new GenericKafkaListenerBuilder()
-            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withName(TLS_LISTENER_DEFAULT_NAME)
             .withPort(9093)
             .withType(KafkaListenerType.INTERNAL)
             .withTls(true)

@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -78,7 +77,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .createInstallation()
             .runInstallation();
 
@@ -176,7 +175,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .createInstallation()
             .runInstallation();
 
@@ -245,7 +244,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .createInstallation()
             .runInstallation();
 
@@ -273,7 +272,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), secondNamespace))
             .withExtraEnvVars(Collections.singletonList(operatorLabelsEnv))
@@ -315,7 +314,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(clusterOperator.getDeploymentNamespace())
             .withExtraEnvVars(Collections.singletonList(networkPolicyGenerationEnv))
             .createInstallation()
             .runInstallation();

@@ -6,7 +6,6 @@ package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.systemtest.BeforeAllOnce;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -25,6 +24,7 @@ import java.util.List;
 
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
@@ -79,9 +79,9 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(Constants.INFRA_NAMESPACE)
-            .withWatchingNamespaces(String.join(",", Constants.INFRA_NAMESPACE, SECOND_NAMESPACE))
-            .withBindingsNamespaces(Arrays.asList(Constants.INFRA_NAMESPACE, SECOND_NAMESPACE))
+            .withNamespace(INFRA_NAMESPACE)
+            .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, SECOND_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
