@@ -7,6 +7,7 @@ package io.strimzi.systemtest.operators;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -87,7 +88,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(Constants.INFRA_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();

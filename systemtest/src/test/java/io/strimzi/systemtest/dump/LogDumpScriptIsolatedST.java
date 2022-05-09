@@ -55,7 +55,7 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(storage.getClusterName(), 1, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(storage.getNamespaceName())
             .endMetadata()
             .build());
 
@@ -74,18 +74,18 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         ClientUtils.waitForClientsSuccess(storage.getProducerName(), storage.getConsumerName(), storage.getNamespaceName(), MESSAGE_COUNT);
 
         // dry run
-        LOGGER.info("Print partition segments from cluster {}/{}", clusterOperator.getDeploymentNamespace(), storage.getClusterName());
+        LOGGER.info("Print partition segments from cluster {}/{}", storage.getNamespaceName(), storage.getClusterName());
         String[] printCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", clusterOperator.getDeploymentNamespace(), "--cluster",
+            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", storage.getNamespaceName(), "--cluster",
             storage.getClusterName(), "--topic", storage.getTopicName(), "--partition", partitionNumber, "--dry-run"
         };
         Exec.exec(Level.INFO, printCmd);
         assertThat("Output directory created in dry mode", Files.notExists(Paths.get(outPath)));
         
         // partition dump
-        LOGGER.info("Dump topic partition from cluster {}/{}", clusterOperator.getDeploymentNamespace(), storage.getClusterName());
+        LOGGER.info("Dump topic partition from cluster {}/{}", storage.getNamespaceName(), storage.getClusterName());
         String[] dumpPartCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", clusterOperator.getDeploymentNamespace(), "--cluster",
+            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", storage.getNamespaceName(), "--cluster",
             storage.getClusterName(), "--topic", storage.getTopicName(), "--partition", partitionNumber, "--out-path", outPath
         };
         Exec.exec(Level.INFO, dumpPartCmd);
@@ -95,9 +95,9 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         assertThat("Empty partition file", new File(dumpPartFilePath).length() > 0);
         
         // __consumer_offsets dump
-        LOGGER.info("Dump consumer offsets partition from cluster {}/{}", clusterOperator.getDeploymentNamespace(), storage.getClusterName());
+        LOGGER.info("Dump consumer offsets partition from cluster {}/{}", storage.getNamespaceName(), storage.getClusterName());
         String[] dumpCgCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", clusterOperator.getDeploymentNamespace(), "--cluster",
+            USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", storage.getNamespaceName(), "--cluster",
             storage.getClusterName(), "--group-id", groupId, "--out-path", outPath
         };
         Exec.exec(Level.INFO, dumpCgCmd);
