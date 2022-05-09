@@ -25,9 +25,10 @@ import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -53,7 +54,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(INFRA_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
@@ -88,7 +89,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();

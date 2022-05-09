@@ -113,12 +113,12 @@ public class JmxIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? clusterOperator.getDeploymentNamespace() : Constants.WATCH_ALL_NAMESPACES;
+        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? Constants.INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
 
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()

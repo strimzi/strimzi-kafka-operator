@@ -190,7 +190,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
             .withAdditionalConfig(additionalOauthConfig)
             .build();
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(Constants.INFRA_NAMESPACE, kafkaSelector);
 
         // re-configuring Kafka listener to have client scope assigned to null
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {

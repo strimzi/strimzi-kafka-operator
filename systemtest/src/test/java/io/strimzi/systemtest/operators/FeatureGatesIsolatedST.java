@@ -43,8 +43,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -84,7 +85,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(testEnvVars)
             .createInstallation()
@@ -170,7 +171,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(INFRA_NAMESPACE)
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
                 .withExtraEnvVars(testEnvVars)
                 .createInstallation()
@@ -271,7 +272,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(coEnvVars)
             .createInstallation()

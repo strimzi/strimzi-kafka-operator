@@ -485,7 +485,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(storage.getNamespaceName(), storage.getTopicName()).build(),
-            KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1, false)
+            KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), Constants.INFRA_NAMESPACE, storage.getNamespaceName(), 1, false)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()

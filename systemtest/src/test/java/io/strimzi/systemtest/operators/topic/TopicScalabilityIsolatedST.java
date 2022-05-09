@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
@@ -124,7 +125,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", clusterOperator.getDeploymentNamespace());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
     }
