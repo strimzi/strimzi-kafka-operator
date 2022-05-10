@@ -40,7 +40,7 @@ public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serial
 
     @JsonInclude(content = JsonInclude.Include.NON_NULL, value = JsonInclude.Include.NON_EMPTY)
     @Pattern("^\\[[0-9,]*\\]$")
-    @Description("List of the kafka brokers (broker identifiers)")
+    @Description("List of Kafka brokers (broker identifiers).")
     @JsonProperty(required = true)
     public List<Integer> getBrokers() {
         return brokers;

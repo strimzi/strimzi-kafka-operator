@@ -100,7 +100,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     @JsonInclude(content = JsonInclude.Include.NON_NULL, value = JsonInclude.Include.NON_EMPTY)
     @Description("Overrides for individual brokers. " +
-            "The `overrides` field allows to specify a different configuration for different brokers.")
+            "The `overrides` property lets you specify a different configuration for different brokers.")
     public List<BrokerCapacityOverride> getOverrides() {
         return overrides;
     }
