@@ -38,9 +38,9 @@ public class Environment {
     /**
      * Specify the system test configuration file path from an environmental variable
      */
-    private static final String CONFIG_FILE_PATH_ENVAR = "ST_CONFIG_PATH";
+    private static final String CONFIG_FILE_PATH_ENV = "ST_CONFIG_PATH";
     /**
-     * Specify secret name of private registries, with the container registry credentials to be able pull images.
+     * Specify secret name of private registries, with the container registry credentials to be able to pull images.
      */
     private static final String STRIMZI_IMAGE_PULL_SECRET_ENV = "SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET";
     /**
@@ -89,10 +89,6 @@ public class Environment {
      * Log level for cluster operator.
      */
     private static final String STRIMZI_LOG_LEVEL_ENV = "STRIMZI_LOG_LEVEL";
-    /**
-     * Log level for components.
-     */
-    private static final String STRIMZI_COMPONENTS_LOG_LEVEL_ENV = "STRIMZI_COMPONENTS_LOG_LEVEL";
     /**
      * Image pull policy env var for Components images (Kafka, Bridge, ...)
      */
@@ -161,7 +157,6 @@ public class Environment {
     public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
-    private static final String STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT = "INFO";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi-kafka-operator";
@@ -191,7 +186,6 @@ public class Environment {
     public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     public static final String CLIENTS_KAFKA_VERSION = getOrDefault(CLIENTS_KAFKA_VERSION_ENV, ST_CLIENTS_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
-    public static final String STRIMZI_COMPONENTS_LOG_LEVEL = getOrDefault(STRIMZI_COMPONENTS_LOG_LEVEL_ENV, STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
@@ -263,10 +257,10 @@ public class Environment {
 
     /**
      * Provides boolean information, if testing environment support shared memory (i.e., environment, where all
-     * components share memory). In general, we use {@link RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link RESOURCE_ALLOCATION_STRATEGY_ENV}
+     * components share memory). In general, we use {@link Environment#RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link Environment#RESOURCE_ALLOCATION_STRATEGY_ENV}
      * is not specified.
      *
-     * @return true iff env {@link RESOURCE_ALLOCATION_STRATEGY_ENV} contains "SHARE_MEMORY_FOR_ALL_COMPONENTS" value, otherwise false.
+     * @return true if env {@link Environment#RESOURCE_ALLOCATION_STRATEGY_ENV} contains "SHARE_MEMORY_FOR_ALL_COMPONENTS" value, otherwise false.
      */
     public static boolean isSharedMemory() {
         return RESOURCE_ALLOCATION_STRATEGY.contains(RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
@@ -310,7 +304,7 @@ public class Environment {
     }
 
     private static JsonNode loadConfigurationFile() {
-        config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENVAR,
+        config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENV,
                 Paths.get(System.getProperty("user.dir"), "config.json").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper();
         try {
