@@ -5,24 +5,28 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.test.container.StrimziKafkaCluster;
-import io.strimzi.test.mockkube.MockKube;
-import io.vertx.core.Future;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.junit5.Checkpoint;
@@ -50,14 +54,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
     private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
+
+    // Injected by Fabric8 Mock Kubernetes Server
+    private KubernetesClient client;
+    private MockKube2 mockKube;
     private ConnectCluster connectCluster;
 
     @BeforeAll
@@ -82,7 +88,11 @@ public class KafkaConnectorIT {
 
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
-        String connectClusterName = getClass().getSimpleName();
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaConnectorCrd()
+                .build();
+        mockKube.start();
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
@@ -93,6 +103,8 @@ public class KafkaConnectorIT {
 
     @AfterEach
     public void afterEach() {
+        mockKube.stop();
+
         if (connectCluster != null) {
             connectCluster.shutdown();
         }
@@ -102,10 +114,6 @@ public class KafkaConnectorIT {
     public void test(VertxTestContext context) {
         KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
 
-        KubernetesClient client = new MockKube()
-                .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class)
-                .end()
-                .build();
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20);
 
         String namespace = "ns";
@@ -124,37 +132,18 @@ public class KafkaConnectorIT {
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).create(connector);
 
-        // Intercept status updates at CrdOperator level
-        // This is to bridge limitations between MockKube and the CrdOperator, as there are currently no Fabric8 APIs for status update
-        CrdOperator connectCrdOperator = mock(CrdOperator.class);
-        when(connectCrdOperator.updateStatusAsync(any(), any())).thenAnswer(invocation -> {
-            try {
-                return Future.succeededFuture(Crds.kafkaConnectorOperation(client)
-                        .inNamespace(namespace)
-                        .withName(connectorName)
-                        .patch((KafkaConnector) invocation.getArgument(1)));
-            } catch (Exception e) {
-                return Future.failedFuture(e);
-            }
-        });
-        when(connectCrdOperator.getAsync(any(), any())).thenAnswer(invocationOnMock -> {
-            try {
-                return Future.succeededFuture(Crds.kafkaConnectorOperation(client)
-                        .inNamespace(namespace)
-                        .withName(connectorName)
-                        .get());
-            } catch (Exception e) {
-                return Future.failedFuture(e);
-            }
-        });
-
         MetricsProvider metrics = new MicrometerMetricsProvider();
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+                new ZookeeperLeaderFinder(vertx,
+                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                        () -> new BackOff(5_000, 2, 4)),
+                new DefaultAdminClientProvider(),
+                new DefaultZookeeperScalerProvider(),
+                metrics,
+                pfa, FeatureGates.NONE, 10_000,
+                KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1()));
 
-        KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa,
-                new ResourceOperatorSupplier(
-                        null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null, null,
-                        null, null, connectCrdOperator, null, null, null, null, null, null, metrics, null, null, null),
+        KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort(2)

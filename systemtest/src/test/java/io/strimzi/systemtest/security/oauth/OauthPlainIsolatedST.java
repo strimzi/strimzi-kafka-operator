@@ -26,7 +26,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -282,11 +281,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, oauthClusterName, 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, clusterName, INFRA_NAMESPACE, oauthClusterName, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
-            .withNewSpec()
+            .editOrNewSpec()
                 .withReplicas(1)
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
                 .withConfig(connectorConfig)
@@ -304,13 +303,16 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
                     .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
-                .withTls(null)
                 .withNewInlineLogging()
                     // needed for a verification of oauth configuration
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
             .endSpec()
-            .build());
+            .build();
+        // This is required to be able to remove the TLS setting, the builder cannot remove it
+        connect.getSpec().setTls(null);
+
+        resourceManager.createResource(extensionContext, connect);
 
         final String kafkaConnectPodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
@@ -646,8 +648,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
-
         // needed for a verification of oauth configuration
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
@@ -696,7 +696,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
     void testSaslPlainAuthenticationKafkaConnectIsAbleToConnectToKafkaOAuth(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, testStorage.getKafkaClientsName()).build());
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, testStorage.getClusterName(), oauthClusterName, 1)
             .withNewSpec()
                 .withReplicas(1)

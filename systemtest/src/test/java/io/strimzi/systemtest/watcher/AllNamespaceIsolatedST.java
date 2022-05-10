@@ -7,7 +7,6 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
@@ -54,7 +53,6 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceIsolatedST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
-    private static final String SECOND_CLUSTER_NAME = MAIN_NAMESPACE_CLUSTER_NAME + "-second";
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -99,18 +97,16 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO(ExtensionContext extensionContext) {
         String kafkaConnectName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, kafkaConnectName, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, kafkaConnectName, SECOND_NAMESPACE, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND, SECOND_CLUSTER_NAME);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName);
 
         cluster.setNamespace(previousNamespace);
     }
@@ -198,7 +194,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -213,7 +209,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 1).build());
 
         cluster.setNamespace(previousNamespace);
     }

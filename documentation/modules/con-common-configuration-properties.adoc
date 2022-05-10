@@ -1,6 +1,6 @@
 // This module is included in the following files:
 //
-// using/using.adoc
+// configuring/configuring.adoc
 
 [id='con-common-configuration-properties-{context}']
 == Common configuration properties

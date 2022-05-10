@@ -6,16 +6,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.StrimziPodSetList;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
@@ -33,7 +29,7 @@ import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEve
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -42,17 +38,18 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaUpgradeDowngradeMockTest {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeMockTest.class);
@@ -60,7 +57,7 @@ public class KafkaUpgradeDowngradeMockTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
+    private static PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
     private static Kafka basicKafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
@@ -93,7 +90,9 @@ public class KafkaUpgradeDowngradeMockTest {
                 .build();
 
     private static Vertx vertx;
+    // Injected by Fabric8 Mock Kubernetes Server
     private KubernetesClient client;
+    private MockKube2 mockKube;
     private KafkaAssemblyOperator operator;
 
     /*
@@ -111,16 +110,23 @@ public class KafkaUpgradeDowngradeMockTest {
         ResourceUtils.cleanUpTemporaryTLSFiles();
     }
 
-    private Future<Void> initialize(VertxTestContext context, Kafka initialKafka)   {
-        CustomResourceDefinition kafkaAssemblyCrd = Crds.kafka();
+    @AfterEach
+    public void afterEach() {
+        mockKube.stop();
+    }
 
-        client = new MockKube()
-                .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
-                    .withInitialInstances(Collections.singleton(initialKafka))
-                .end()
-                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class)
-                .end()
+    private Future<Void> initialize(VertxTestContext context, Kafka initialKafka)   {
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaCrd()
+                .withInitialKafkas(initialKafka)
+                .withStrimziPodSetCrd()
+                .withStatefulSetController()
+                .withPodController()
+                .withServiceController()
+                .withDeploymentController()
                 .build();
+        mockKube.start();
 
         KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
         ResourceOperatorSupplier supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),

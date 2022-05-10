@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.connect;
 
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -25,6 +24,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -544,13 +544,8 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        if (cluster.isNotKubernetes()) {
-            outputRegistry = "image-registry.openshift-image-registry.svc:5000/" + INFRA_NAMESPACE;
-        } else {
-            LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
-            Service service = kubeClient("kube-system").getService("registry");
-            outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
-        }
+        outputRegistry = Environment.getImageOutputRegistry() + "/" + INFRA_NAMESPACE;
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(INFRA_NAMESPACE, 3).build());
     }
 }

@@ -290,14 +290,15 @@ public class OlmResource implements SpecificResourceType {
     }
 
     private static void deleteOlm(String deploymentName, String namespace, String csvName) {
-        if (ResourceManager.kubeClient().getDeployment(namespace, deploymentName) != null) {
-            ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
-            ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
-            ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);
+        if (ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null) {
             DeploymentUtils.waitForDeploymentDeletion(namespace, deploymentName);
         } else {
-            LOGGER.info("Cluster Operator: {} is already deleted in namespace: {}", deploymentName, namespace);
+            LOGGER.info("Cluster Operator deployment: {} is already deleted in namespace: {}", deploymentName, namespace);
         }
+        LOGGER.info("Deleting Subscription, OperatorGroups and ClusterServiceVersion from namespace: {}", namespace);
+        ResourceManager.cmdKubeClient().exec(false, "delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
+        ResourceManager.cmdKubeClient().exec(false, "delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
+        ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);
     }
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {

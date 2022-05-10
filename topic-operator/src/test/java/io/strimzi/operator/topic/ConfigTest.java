@@ -4,29 +4,24 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.common.InvalidConfigurationException;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.common.config.SaslConfigs;
+import org.apache.kafka.common.config.SslConfigs;
 import org.junit.jupiter.api.Test;
 
-import java.util.Properties;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertNull;
-
-import io.strimzi.test.mockkube.MockKube;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.common.config.SslConfigs;
-import org.apache.kafka.common.config.SaslConfigs;
-
-import io.strimzi.operator.common.InvalidConfigurationException;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ConfigTest {
-
     private static final Map<String, String> MANDATORY = new HashMap<>();
 
     static {
@@ -86,11 +81,9 @@ public class ConfigTest {
     @Test
     public void testDefaultConfig() {
         Map<String, String> map = new HashMap<>(MANDATORY);
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(null, config);
         Properties adminClientProps = session.adminClientProperties();
 
         assertThat(adminClientProps.getProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("PLAINTEXT"));
@@ -102,11 +95,9 @@ public class ConfigTest {
     public void testTlsEnabledConfig() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.TLS_ENABLED.key, "true");
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(null, config);
         Properties adminClientProps = session.adminClientProperties();
 
         assertThat(adminClientProps.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG), is("HTTPS"));
@@ -117,11 +108,9 @@ public class ConfigTest {
     public void testSecurityProtocolConfig() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.SECURITY_PROTOCOL.key, "SSL");
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(null, config);
         Properties adminClientProps = session.adminClientProperties();
 
         assertThat(adminClientProps.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG), is("HTTPS"));
@@ -132,11 +121,9 @@ public class ConfigTest {
     public void testInvalidSaslConfig() {
         Map<String, String> map = new HashMap<>(MANDATORY);
         map.put(Config.SASL_ENABLED.key, "true");
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(null, config);
         assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
 
         String username = "admin";
@@ -144,7 +131,7 @@ public class ConfigTest {
         map.put(Config.SASL_USERNAME.key, username);
         map.put(Config.SASL_PASSWORD.key, password);
         Config configWithCredentials = new Config(map);
-        Session sessionWithCredentials = new Session(kubeClient, configWithCredentials);
+        Session sessionWithCredentials = new Session(null, configWithCredentials);
         assertThrows(IllegalArgumentException.class, sessionWithCredentials::adminClientProperties);
     }
 
@@ -154,11 +141,8 @@ public class ConfigTest {
         map.put(Config.SECURITY_PROTOCOL.key, "PLAINTEXT");
         map.put(Config.TLS_ENABLED.key, "true");
 
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
-
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(null, config);
         assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
     }
 
@@ -168,11 +152,8 @@ public class ConfigTest {
         map.put(Config.TLS_ENABLED.key, "true");
         map.put(Config.TLS_TRUSTSTORE_PASSWORD.key, "password");
 
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
-
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(null, config);
         assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
     }
 
@@ -188,12 +169,9 @@ public class ConfigTest {
         String scramJaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
         String plainJaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
 
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
-
         map.put(Config.SASL_MECHANISM.key, "scram-sha-256");
         Config configSHA256 = new Config(map);
-        Session sessionSHA256 = new Session(kubeClient, configSHA256);
+        Session sessionSHA256 = new Session(null, configSHA256);
 
         Properties adminClientPropsSHA256 = sessionSHA256.adminClientProperties();
         assertThat(adminClientPropsSHA256.getProperty(SaslConfigs.SASL_MECHANISM), is("SCRAM-SHA-256"));
@@ -201,7 +179,7 @@ public class ConfigTest {
 
         map.put(Config.SASL_MECHANISM.key, "scram-sha-512");
         Config configSHA512 = new Config(map);
-        Session sessionSHA512 = new Session(kubeClient, configSHA512);
+        Session sessionSHA512 = new Session(null, configSHA512);
 
         Properties adminClientPropsSHA512 = sessionSHA512.adminClientProperties();
         assertThat(adminClientPropsSHA512.getProperty(SaslConfigs.SASL_MECHANISM), is("SCRAM-SHA-512"));
@@ -209,7 +187,7 @@ public class ConfigTest {
 
         map.put(Config.SASL_MECHANISM.key, "plain");
         Config configPlain = new Config(map);
-        Session sessionPlain = new Session(kubeClient, configPlain);
+        Session sessionPlain = new Session(null, configPlain);
 
         Properties adminClientPropsPlain = sessionPlain.adminClientProperties();
         assertThat(adminClientPropsPlain.getProperty(SaslConfigs.SASL_MECHANISM), is("PLAIN"));

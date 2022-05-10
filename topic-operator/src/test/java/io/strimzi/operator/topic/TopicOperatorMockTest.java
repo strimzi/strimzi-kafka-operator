@@ -5,15 +5,15 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.container.StrimziKafkaCluster;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -48,11 +48,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class TopicOperatorMockTest {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMockTest.class);
+    private static final String NAMESPACE = "my-namespace";
 
-    private KubernetesClient kubeClient;
+    // Injected by Fabric8 Mock Kubernetes Server
+    private KubernetesClient client;
+    private MockKube2 mockKube;
     private Session session;
     private StrimziKafkaCluster kafkaCluster;
     private static Vertx vertx;
@@ -89,23 +93,27 @@ public class TopicOperatorMockTest {
         kafkaCluster = new StrimziKafkaCluster(1, 1, config);
         kafkaCluster.start();
 
-        MockKube mockKube = new MockKube();
-        mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
-                        KafkaTopic.class, KafkaTopicList.class, KafkaTopic::getStatus, KafkaTopic::setStatus);
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaTopicCrd()
+                .build();
+        mockKube.start();
 
-        kubeClient = mockKube.build();
+        // Configure the namespace
+        client.getConfiguration().setNamespace(NAMESPACE);
+
         adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()));
 
         Config topicConfig = new Config(Map.of(
             Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers(),
             Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort(),
             Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000",
-            Config.NAMESPACE.key, "myproject",
+            Config.NAMESPACE.key, NAMESPACE,
             Config.CLIENT_ID.key, "myproject-client-id",
             Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000"
         ));
 
-        session = new Session(kubeClient, topicConfig);
+        session = new Session(client, topicConfig);
 
         Checkpoint async = context.checkpoint();
         vertx.deployVerticle(session, ar -> {
@@ -140,6 +148,7 @@ public class TopicOperatorMockTest {
     public void tearDown(VertxTestContext context) {
         if (vertx != null && deploymentId != null) {
             vertx.undeploy(deploymentId, undeployResult -> {
+                mockKube.stop();
                 topicWatcher.stop();
                 topicsWatcher.stop();
                 topicsConfigWatcher.stop();
@@ -166,12 +175,12 @@ public class TopicOperatorMockTest {
     }
 
     private void createInKube(KafkaTopic topic) {
-        Crds.topicOperation(kubeClient).create(topic);
+        Crds.topicOperation(client).create(topic);
     }
 
     private void updateInKube(KafkaTopic topic) {
         LOGGER.info("Updating topic {} in kube", topic.getMetadata().getName());
-        Crds.topicOperation(kubeClient).withName(topic.getMetadata().getName()).patch(topic);
+        Crds.topicOperation(client).withName(topic.getMetadata().getName()).patch(topic);
     }
 
     @Test
@@ -182,7 +191,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace("myproject")
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                     .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
                 .endMetadata()
@@ -267,7 +276,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace("myproject")
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
@@ -286,7 +295,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace("myproject")
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
@@ -305,7 +314,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace("myproject")
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                 .endMetadata()
                 .withNewSpec()
@@ -323,7 +332,7 @@ public class TopicOperatorMockTest {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
                     .withName("my-topic")
-                    .withNamespace("myproject")
+                    .withNamespace(NAMESPACE)
                     .addToLabels(Labels.STRIMZI_KIND_LABEL, "topic")
                     .addToLabels(Labels.KUBERNETES_NAME_LABEL, "topic-operator")
                     .withAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"))

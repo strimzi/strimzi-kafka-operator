@@ -5,7 +5,7 @@
 [id='using-kafka-connect-with-plug-ins-{context}']
 = Extending Kafka Connect with connector plugins
 
-The Strimzi container images for Kafka Connect include two built-in file connectors for moving file-based data into and out of your Kafka cluster.
+Up until Apache Kafka 3.1.0, the Strimzi container images for Kafka Connect included two built-in file connectors for moving file-based data into and out of your Kafka cluster.
 
 .File connectors
 [cols="2*",options="header",stripes="none",separator=¦]
@@ -22,7 +22,9 @@ m¦FileStreamSinkConnector
 
 |===
 
-The procedures in this section show how to add your own connector classes to connector images by:
+From Apache Kafka 3.1.1 and 3.2.0, these connectors are no longer included.
+
+The procedures in this section describe how you can add the example connectors or your own connectors by doing one of the following:
 
 * xref:creating-new-image-using-kafka-connect-build-{context}[Creating a new container image automatically using Strimzi]
 

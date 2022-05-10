@@ -46,6 +46,10 @@ spec:
       description: The rebalance is complete
       jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
+    - name: NotReady
+      description: There is an error on the custom resource
+      jsonPath: ".status.conditions[?(@.type==\"NotReady\")].status"
+      type: string
     schema:
       openAPIV3Schema:
         type: object

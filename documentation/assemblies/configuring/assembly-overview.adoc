@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// using/using.adoc
+// configuring/configuring.adoc
 
 // Save the context of the assembly that is including this one.
 // This is necessary for including assemblies in assemblies.

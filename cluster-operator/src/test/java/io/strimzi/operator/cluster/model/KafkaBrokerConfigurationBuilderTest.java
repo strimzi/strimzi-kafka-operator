@@ -114,7 +114,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCruiseControlCustomMetricReporterTopic()  {
         String metricReporterTopicName = "metric-reporter-topic";
         Map<String, Object> config = new HashMap<>();
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), metricReporterTopicName);
+        config.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), metricReporterTopicName);
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().withConfig(config).build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)

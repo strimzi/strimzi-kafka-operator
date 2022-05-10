@@ -74,7 +74,7 @@ public class ConfigProviderST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(namespaceName).create(connectorConfig);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1, false)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

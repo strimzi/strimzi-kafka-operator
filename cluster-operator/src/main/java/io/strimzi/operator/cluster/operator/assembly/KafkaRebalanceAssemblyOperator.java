@@ -206,7 +206,7 @@ public class KafkaRebalanceAssemblyOperator
     public Future<Void> createRebalanceWatch(String watchNamespaceOrWildcard) {
 
         return Util.async(this.vertx, () -> {
-            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<KafkaRebalance>() {
+            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<>() {
                 @Override
                 public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
                     Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
@@ -392,10 +392,18 @@ public class KafkaRebalanceAssemblyOperator
                                             kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
                                             .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
                                             .compose(updatedKafkaRebalance -> {
-                                                LOGGER.infoCr(reconciliation, "State updated to [{}] with annotation {}={} ",
-                                                        rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
-                                                        ANNO_STRIMZI_IO_REBALANCE,
-                                                        rawRebalanceAnnotation(updatedKafkaRebalance));
+                                                String message = "State updated to [{}] ";
+                                                if (rawRebalanceAnnotation(updatedKafkaRebalance) == null) {
+                                                    LOGGER.infoCr(reconciliation, message + "and annotation {} is not set ",
+                                                            rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
+                                                            ANNO_STRIMZI_IO_REBALANCE);
+                                                } else {
+                                                    LOGGER.infoCr(reconciliation, message + "with annotation {}={} ",
+                                                            rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
+                                                            ANNO_STRIMZI_IO_REBALANCE,
+                                                            rawRebalanceAnnotation(updatedKafkaRebalance)
+                                                    );
+                                                }
                                                 if (hasRebalanceAnnotation(updatedKafkaRebalance)) {
                                                     if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
                                                         return Future.succeededFuture();
@@ -1189,7 +1197,7 @@ public class KafkaRebalanceAssemblyOperator
                             // If there is not enough data for a rebalance, it's an error at the Cruise Control level
                             // Need to re-request the proposal at a later time so move to the PendingProposal State.
                             return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
-                        } else if (response.isProposalStillCalaculating()) {
+                        } else if (response.isProposalStillCalculating()) {
                             // If rebalance proposal is still being processed, we need to re-request the proposal at a later time
                             // with the corresponding session-id so we move to the PendingProposal State.
                             return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
@@ -1199,7 +1207,7 @@ public class KafkaRebalanceAssemblyOperator
                             // We do not include a session id with this status as we do not want to retrieve the state of
                             // this failed tasks (COMPLETED_WITH_ERROR)
                             return buildRebalanceStatus(null, KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
-                        } else if (response.isProposalStillCalaculating()) {
+                        } else if (response.isProposalStillCalculating()) {
                             // If dryrun=false and the proposal is not ready we are going to be in a rebalancing state as
                             // soon as it is ready, so set the state to rebalancing.
                             // In the onRebalancing method the optimization proposal will be added when it is ready.

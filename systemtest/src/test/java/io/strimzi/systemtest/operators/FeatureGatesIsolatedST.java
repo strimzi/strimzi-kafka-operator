@@ -78,7 +78,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         int messageCount = 300;
         List<EnvVar> testEnvVars = new ArrayList<>();
-        int kafkaReplicas = 3;
+        int kafkaReplicas = 1;
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-ControlPlaneListener", null));
 
@@ -163,8 +163,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         int messageCount = 600;
         List<EnvVar> testEnvVars = new ArrayList<>();
-        int zooReplicas = 3;
-        int kafkaReplicas = 3;
+        int zooReplicas = 1;
+        int kafkaReplicas = 1;
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
 
@@ -256,7 +256,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        int zkReplicas = 3;
+        int zkReplicas = 1;
         int kafkaReplicas = 3;
 
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -279,7 +279,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .runInstallation();
 
         LOGGER.info("Deploying Kafka");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, kafkaReplicas, zkReplicas).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);

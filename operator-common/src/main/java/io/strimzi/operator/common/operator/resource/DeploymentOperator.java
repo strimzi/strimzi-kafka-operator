@@ -114,7 +114,10 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      */
     private boolean isObserved(String namespace, String name) {
         Deployment dep = get(namespace, name);
-        if (dep != null)   {
+        if (dep != null
+                && dep.getMetadata() != null
+                && dep.getMetadata().getGeneration() != null
+                && dep.getStatus() != null)   {
             return dep.getMetadata().getGeneration().equals(dep.getStatus().getObservedGeneration());
         } else {
             return false;

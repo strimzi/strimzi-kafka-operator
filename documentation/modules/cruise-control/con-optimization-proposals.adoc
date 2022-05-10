@@ -106,7 +106,7 @@ Status:
 The proposal will also move 24 partition leaders to different brokers.
 This requires a change to the ZooKeeper configuration, which has a low impact on performance.
 
-The balancedness scores are measurements of the overall balance of the Kafka Cluster before and after the optimization proposal is approved.
+The balancedness scores are measurements of the overall balance of the Kafka cluster before and after the optimization proposal is approved.
 A balancedness score is based on optimization goals.
 If all goals are satisfied, the score is 100.
 The score is reduced for each goal that will not be met.
@@ -115,7 +115,7 @@ Compare the balancedness scores to see whether the Kafka cluster is less balance
 [discrete]
 === Optimization proposal summary properties
 
-The following table explains the properties contained in the optimization proposal's summary section:
+The following table explains the properties contained in the optimization proposal's summary section.
 
 .Properties contained in an optimization proposal summary
 [cols="35,65",options="header",stripes="none",separator=¦]

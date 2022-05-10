@@ -367,7 +367,7 @@ public class KubeClusterResource {
         return cluster().defaultOlmNamespace();
     }
 
-    public boolean isNotKubernetes() {
+    public boolean isOpenShift() {
         return kubeClusterResource.cluster() instanceof OpenShift;
     }
 

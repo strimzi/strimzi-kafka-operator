@@ -6,6 +6,8 @@ package io.strimzi.systemtest.templates.crd;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -92,7 +94,7 @@ public class KafkaMirrorMaker2Templates {
                 .build();
         }
 
-        return new KafkaMirrorMaker2Builder(kafkaMirrorMaker2)
+        KafkaMirrorMaker2Builder kmm2b = new KafkaMirrorMaker2Builder(kafkaMirrorMaker2)
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
@@ -111,6 +113,18 @@ public class KafkaMirrorMaker2Templates {
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
             .endSpec();
+
+        if (!Environment.isSharedMemory()) {
+            kmm2b.editSpec().withResources(new ResourceRequirementsBuilder()
+                // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
+                // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
+                // Using 1Gi is too much and on the other hand 512Mi is causing OOM problem at the start.
+                .addToLimits("memory", new Quantity("784Mi"))
+                .addToRequests("memory", new Quantity("784Mi"))
+                .build());
+        }
+
+        return kmm2b;
     }
 
     public static void deleteKafkaMirrorMaker2WithoutWait(String resourceName) {

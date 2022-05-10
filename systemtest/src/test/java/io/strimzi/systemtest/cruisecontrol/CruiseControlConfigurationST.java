@@ -220,11 +220,11 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
         List<String> checkCCProperties = Arrays.asList(
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOWS.getValue(),
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOWS.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS.getValue(),
-                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS.getValue(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getValue(),
                 "goals", "default.goals");
 
         for (String propertyName : checkCCProperties) {

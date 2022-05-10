@@ -294,11 +294,14 @@ public class StrimziPodSetController implements Runnable {
         if (!new StatusDiff(podSet.getStatus(), desiredStatus).isEmpty())  {
             try {
                 LOGGER.debugCr(reconciliation, "Updating status of StrimziPodSet {} in namespace {}", reconciliation.name(), reconciliation.namespace());
-                StrimziPodSet updatedPodSet = new StrimziPodSetBuilder(strimziPodSetLister.namespace(reconciliation.namespace()).get(reconciliation.name()))
-                        .withStatus(desiredStatus)
-                        .build();
+                StrimziPodSet latestPodSet = strimziPodSetLister.namespace(reconciliation.namespace()).get(reconciliation.name());
+                if (latestPodSet != null) {
+                    StrimziPodSet updatedPodSet = new StrimziPodSetBuilder(latestPodSet)
+                            .withStatus(desiredStatus)
+                            .build();
 
-                strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).withName(reconciliation.name()).patchStatus(updatedPodSet);
+                    strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).withName(reconciliation.name()).patchStatus(updatedPodSet);
+                }
             } catch (KubernetesClientException e)   {
                 if (e.getCode() == 409) {
                     LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace());

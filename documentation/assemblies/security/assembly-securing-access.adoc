@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// using/using.adoc
+// configuring/configuring.adoc
 
 [id='assembly-securing-access-{context}']
 = Managing secure access to Kafka
@@ -29,5 +29,5 @@ include::assembly-securing-kafka-clients.adoc[leveloffset=+1]
 include::assembly-securing-kafka.adoc[leveloffset=+1]
 
 //oauth options
-include::oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
-include::oauth/assembly-oauth-authorization.adoc[leveloffset=+1]
+include::../oauth/assembly-oauth-authentication.adoc[leveloffset=+1]
+include::../oauth/assembly-oauth-authorization.adoc[leveloffset=+1]

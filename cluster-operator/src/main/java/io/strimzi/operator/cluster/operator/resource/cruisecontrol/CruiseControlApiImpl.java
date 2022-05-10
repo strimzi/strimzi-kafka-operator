@@ -9,11 +9,13 @@ import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.common.Util;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
@@ -83,8 +85,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> getCruiseControlState(String host, int port, boolean verbose, String userTaskId) {
 
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
-                .addParameter(CruiseControlParameters.JSON, "true")
-                .addParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
                 .build();
 
         HttpClientOptions options = getHttpClientOptions();
@@ -136,96 +138,143 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         });
     }
 
+    private void internalRebalance(String host, int port, String path, String userTaskId,
+                                   AsyncResult<HttpClientRequest> request, Promise<CruiseControlRebalanceResponse> result) {
+        if (request.succeeded()) {
+            if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
+                request.result().setTimeout(idleTimeout * 1000);
+            }
+
+            if (userTaskId != null) {
+                request.result().putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
+            }
+
+            if (authHttpHeader != null) {
+                request.result().putHeader(authHttpHeader.getName(), authHttpHeader.getValue());
+            }
+
+            request.result().send(response -> {
+                if (response.succeeded()) {
+                    if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
+                        response.result().bodyHandler(buffer -> {
+                            String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
+                            JsonObject json = buffer.toJsonObject();
+                            CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
+                            result.complete(ccResponse);
+                        });
+                    } else if (response.result().statusCode() == 202) {
+                        response.result().bodyHandler(buffer -> {
+                            String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
+                            JsonObject json = buffer.toJsonObject();
+                            CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
+                            if (json.containsKey(CC_REST_API_PROGRESS_KEY)) {
+                                // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
+                                ccResponse.setProposalStillCalculating(true);
+                            } else {
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path +
+                                                ". 202 Status code did not contain progress key. Server returned: " +
+                                                ccResponse.getJson().toString()));
+                            }
+                            result.complete(ccResponse);
+                        });
+                    } else if (response.result().statusCode() == 500) {
+                        response.result().bodyHandler(buffer -> {
+                            String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
+                            JsonObject json = buffer.toJsonObject();
+                            if (json.containsKey(CC_REST_API_ERROR_KEY)) {
+                                // If there was a client side error, check whether it was due to not enough data being available ...
+                                if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
+                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
+                                    ccResponse.setNotEnoughDataForProposal(true);
+                                    result.complete(ccResponse);
+                                // ... or one or more brokers doesn't exist on a add/remove brokers rebalance request
+                                } else if (json.getString(CC_REST_API_ERROR_KEY).contains("IllegalArgumentException") &&
+                                            json.getString(CC_REST_API_ERROR_KEY).contains("does not exist.")) {
+                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
+                                    ccResponse.setBrokersNotExist(true);
+                                    result.complete(ccResponse);
+                                } else {
+                                    // If there was any other kind of error propagate this to the operator
+                                    result.fail(new CruiseControlRestException(
+                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                    json.getString(CC_REST_API_ERROR_KEY)));
+                                }
+                            } else {
+                                result.fail(new CruiseControlRestException(
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                                json.toString()));
+                            }
+                        });
+                    } else {
+                        result.fail(new CruiseControlRestException(
+                                "Unexpected status code " + response.result().statusCode() + " for request to " + host + ":" + port + path));
+                    }
+                } else {
+                    result.fail(response.cause());
+                }
+            });
+        } else {
+            httpExceptionHandler(result, request.cause());
+        }
+    }
+
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions rbOptions, String userTaskId) {
+    public Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions options, String userTaskId) {
 
-        if (rbOptions == null && userTaskId == null) {
+        if (options == null && userTaskId == null) {
             return Future.failedFuture(
                     new IllegalArgumentException("Either rebalance options or user task ID should be supplied, both were null"));
         }
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
-                .addParameter(CruiseControlParameters.JSON, "true")
-                .addRebalanceParameters(rbOptions)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withRebalanceParameters(options)
                 .build();
 
-        HttpClientOptions options = getHttpClientOptions();
+        HttpClientOptions httpOptions = getHttpClientOptions();
 
-        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
-            httpClient.request(HttpMethod.POST, port, host, path, request -> {
-                if (request.succeeded()) {
-                    if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
-                        request.result().setTimeout(idleTimeout * 1000);
-                    }
+        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
+        });
+    }
 
-                    if (userTaskId != null) {
-                        request.result().putHeader(CC_REST_API_USER_ID_HEADER, userTaskId);
-                    }
+    @Override
+    public Future<CruiseControlRebalanceResponse> addBroker(String host, int port, AddBrokerOptions options, String userTaskId) {
+        if (options == null && userTaskId == null) {
+            return Future.failedFuture(
+                    new IllegalArgumentException("Either add broker options or user task ID should be supplied, both were null"));
+        }
 
-                    if (authHttpHeader != null) {
-                        request.result().putHeader(authHttpHeader.getName(), authHttpHeader.getValue());
-                    }
+        String path = new PathBuilder(CruiseControlEndpoints.ADD_BROKER)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withAddBrokerParameters(options)
+                .build();
 
-                    request.result().send(response -> {
-                        if (response.succeeded()) {
-                            if (response.result().statusCode() == 200 || response.result().statusCode() == 201) {
-                                response.result().bodyHandler(buffer -> {
-                                    String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
-                                    JsonObject json = buffer.toJsonObject();
-                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
-                                    result.complete(ccResponse);
-                                });
-                            } else if (response.result().statusCode() == 202) {
-                                response.result().bodyHandler(buffer -> {
-                                    String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
-                                    JsonObject json = buffer.toJsonObject();
-                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
-                                    if (json.containsKey(CC_REST_API_PROGRESS_KEY)) {
-                                        // If the response contains a "progress" key then the rebalance proposal has not yet completed processing
-                                        ccResponse.setProposalStillCalaculating(true);
-                                    } else {
-                                        result.fail(new CruiseControlRestException(
-                                                "Error for request: " + host + ":" + port + path +
-                                                        ". 202 Status code did not contain progress key. Server returned: " +
-                                                        ccResponse.getJson().toString()));
-                                    }
-                                    result.complete(ccResponse);
-                                });
-                            } else if (response.result().statusCode() == 500) {
-                                response.result().bodyHandler(buffer -> {
-                                    String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
-                                    JsonObject json = buffer.toJsonObject();
-                                    if (json.containsKey(CC_REST_API_ERROR_KEY)) {
-                                        // If there was a client side error, check whether it was due to not enough data being available
-                                        if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
-                                            CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
-                                            ccResponse.setNotEnoughDataForProposal(true);
-                                            result.complete(ccResponse);
-                                        } else {
-                                            // If there was any other kind of error propagate this to the operator
-                                            result.fail(new CruiseControlRestException(
-                                                    "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                            json.getString(CC_REST_API_ERROR_KEY)));
-                                        }
-                                    } else {
-                                        result.fail(new CruiseControlRestException(
-                                                "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                        json.toString()));
-                                    }
-                                });
-                            } else {
-                                result.fail(new CruiseControlRestException(
-                                        "Unexpected status code " + response.result().statusCode() + " for request to " + host + ":" + port + path));
-                            }
-                        } else {
-                            result.fail(response.cause());
-                        }
-                    });
-                } else {
-                    httpExceptionHandler(result, request.cause());
-                }
-            });
+        HttpClientOptions httpOptions = getHttpClientOptions();
+
+        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
+        });
+    }
+
+    @Override
+    public Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId) {
+        if (options == null && userTaskId == null) {
+            return Future.failedFuture(
+                    new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
+        }
+
+        String path = new PathBuilder(CruiseControlEndpoints.REMOVE_BROKER)
+                .withParameter(CruiseControlParameters.JSON, "true")
+                .withRemoveBrokerParameters(options)
+                .build();
+
+        HttpClientOptions httpOptions = getHttpClientOptions();
+
+        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
         });
     }
 
@@ -234,11 +283,11 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskId) {
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
-                        .addParameter(CruiseControlParameters.JSON, "true")
-                        .addParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
+                        .withParameter(CruiseControlParameters.JSON, "true")
+                        .withParameter(CruiseControlParameters.FETCH_COMPLETE, "true");
 
         if (userTaskId != null) {
-            pathBuilder.addParameter(CruiseControlParameters.USER_TASK_IDS, userTaskId);
+            pathBuilder.withParameter(CruiseControlParameters.USER_TASK_IDS, userTaskId);
         }
 
         String path = pathBuilder.build();
@@ -338,7 +387,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     public Future<CruiseControlResponse> stopExecution(String host, int port) {
 
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
-                        .addParameter(CruiseControlParameters.JSON, "true").build();
+                        .withParameter(CruiseControlParameters.JSON, "true").build();
 
         HttpClientOptions options = getHttpClientOptions();
 

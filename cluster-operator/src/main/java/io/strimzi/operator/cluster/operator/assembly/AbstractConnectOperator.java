@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -178,12 +179,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return A future which completes when the watch has been set up.
      */
-    public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
-                                                    String watchNamespaceOrWildcard, Labels selectorLabels) {
+    public static Future<Watch> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
+                                                     String watchNamespaceOrWildcard, Labels selectorLabels) {
         Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
 
         return Util.async(connectOperator.vertx, () -> {
-            connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
+            Watch watch = connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
                     String connectorName = kafkaConnector.getMetadata().getName();
@@ -260,7 +261,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     }
                 }
             });
-            return null;
+            return watch;
         });
     }
 
@@ -421,6 +422,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         // This normally means that the connector was deleted and there is no status to be set
                         connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
                         connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+                        reconciliationResult.complete();
+                    } else if (result.failed() && connector == null) {
+                        // The reconciliation failed on connector deletion, so there is nowhere for status to be set => we complete the reconciliation and return
+                        LOGGER.warnCr(reconciliation, "Error reconciling connector {}", connectorName, result.cause());
+                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
+                        connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+
+                        // We suppress the error to not fail Connect reconciliation just because of a failing connector
                         reconciliationResult.complete();
                     } else {
                         maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
