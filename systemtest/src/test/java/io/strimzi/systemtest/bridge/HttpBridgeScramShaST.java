@@ -20,7 +20,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -38,7 +37,6 @@ import java.util.Random;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
@@ -140,8 +138,6 @@ class HttpBridgeScramShaST extends AbstractST {
                 .endKafka()
             .endSpec().build());
 
-        String kafkaClientsName = namespace + "-shared-" + Constants.KAFKA_CLIENTS;
-
         // Create Kafka user
         KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(httpBridgeScramShaClusterName, USER_NAME)
             .editMetadata()
@@ -150,9 +146,6 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, scramShaUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName, scramShaUser).build());
-
-        kafkaClientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsName).get(0).getMetadata().getName();
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
