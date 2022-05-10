@@ -47,7 +47,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -134,17 +133,17 @@ public class JbodStorageTest {
         Crds.kafkaOperation(this.mockClient).inNamespace(NAMESPACE).withName(NAME).create(this.kafka);
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(mockClient, "op", pfa.hasEventsApiV1());
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.mockClient,
                         ResourceUtils.zookeeperLeaderFinder(this.vertx, this.mockClient),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                        ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 60_000L);
+                        ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 60_000L, restartEventPublisher);
 
         this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000),
-                Mockito.mock(KubernetesRestartEventPublisher.class));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
     }
 
     @Test

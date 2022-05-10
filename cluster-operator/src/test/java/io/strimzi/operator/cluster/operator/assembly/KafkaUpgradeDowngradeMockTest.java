@@ -45,7 +45,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.Map;
@@ -123,13 +122,14 @@ public class KafkaUpgradeDowngradeMockTest {
                 .end()
                 .build();
 
+        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
         ResourceOperatorSupplier supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 2_000);
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 2_000, restartEventPublisher);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
-                new PasswordGenerator(10, "a", "a"), supplier, config, Mockito.mock(KubernetesRestartEventPublisher.class));
+                new PasswordGenerator(10, "a", "a"), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
         return operator.reconcile(new Reconciliation("initial-reconciliation", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));

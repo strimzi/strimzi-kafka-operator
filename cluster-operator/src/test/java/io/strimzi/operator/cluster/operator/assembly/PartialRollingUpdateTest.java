@@ -44,7 +44,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -142,10 +141,10 @@ public class PartialRollingUpdateTest {
                 .end()
                 .build();
 
-        ResourceOperatorSupplier supplier = supplier(bootstrapClient);
+        ResourceOperatorSupplier supplier = supplier(bootstrapClient, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16));
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), Mockito.mock(KubernetesRestartEventPublisher.class));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
 
         LOGGER.info("bootstrap reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
@@ -176,12 +175,16 @@ public class PartialRollingUpdateTest {
         context.completeNow();
     }
 
-    ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
-        return new ResourceOperatorSupplier(vertx, bootstrapClient,
+    ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient, PlatformFeaturesAvailability pfa) {
+        return new ResourceOperatorSupplier(vertx,
+                bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
-                FeatureGates.NONE, 60_000L);
+                ResourceUtils.metricsProvider(),
+                pfa,
+                FeatureGates.NONE,
+                60_000L,
+                KubernetesRestartEventPublisher.createPublisher(bootstrapClient, "op", pfa.hasEventsApiV1()));
     }
 
     private void startKube() {
@@ -198,11 +201,13 @@ public class PartialRollingUpdateTest {
                 .withInitialSecrets(set(clusterCaCert, clusterCaKey, clientsCaCert, clientsCaKey))
                 .build();
 
-        ResourceOperatorSupplier supplier = supplier(mockClient);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
+        ResourceOperatorSupplier supplier = supplier(mockClient, pfa);
 
-        this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
+        KubernetesRestartEventPublisher op = KubernetesRestartEventPublisher.createPublisher(mockClient, "op", pfa.hasEventsApiV1());
+        this.kco = new KafkaAssemblyOperator(vertx, pfa,
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), Mockito.mock(KubernetesRestartEventPublisher.class));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 

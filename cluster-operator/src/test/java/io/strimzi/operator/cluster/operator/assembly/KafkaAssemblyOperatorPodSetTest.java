@@ -870,7 +870,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         KafkaReconciler mockKafkaReconciler;
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesRestartEventPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
             this.mockZooKeeperReconciler = mockZooKeeperReconciler;
             this.mockKafkaReconciler = mockKafkaReconciler;
         }

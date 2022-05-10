@@ -65,6 +65,8 @@ import io.fabric8.openshift.api.model.BuildConfigList;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
+import org.mockito.Answers;
+import org.mockito.MockSettings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -281,7 +283,7 @@ public class MockKube {
                 RollableScalableResource<StatefulSet>> mockSs = buildStatefulSets(podMockBuilder, mockPods, mockPersistentVolumeClaims);
 
         // Top level group
-        mockClient = mock(KubernetesClient.class);
+        mockClient = mock(KubernetesClient.class, Answers.RETURNS_DEEP_STUBS);
         configMapMockBuilder.build2(mockClient::configMaps);
         serviceMockBuilder.build2(mockClient::services);
         secretMockBuilder.build2(mockClient::secrets);

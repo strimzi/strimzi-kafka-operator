@@ -118,17 +118,28 @@ public class KafkaAssemblyOperatorCustomCertTest {
             .addToData("foo", "bar")
             .build();
         client.secrets().inNamespace(namespace).create(secret);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
-                mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
-                mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20), FeatureGates.NONE, 10000);
+        PlatformFeaturesAvailability platformFeaturesAvailability = new PlatformFeaturesAvailability(false, kubernetesVersion);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
+                vertx,
+                client,
+                mock(ZookeeperLeaderFinder.class),
+                mock(AdminClientProvider.class),
+                mock(ZookeeperScalerProvider.class),
+                mock(MetricsProvider.class),
+                platformFeaturesAvailability,
+                FeatureGates.NONE,
+                10000,
+                KubernetesRestartEventPublisher.createPublisher(client, "op", platformFeaturesAvailability.hasEventsApiV1())
+        );
 
-
-        operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+        operator = new MockKafkaAssemblyOperator(
+                vertx,
+                platformFeaturesAvailability,
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
-
+                config
+        );
     }
 
     @AfterAll
@@ -390,7 +401,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesRestartEventPublisher.class));
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
         }
 
         @Override

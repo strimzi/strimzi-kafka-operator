@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.FeatureGates;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -88,21 +89,32 @@ public class ResourceOperatorSupplier {
     public final MetricsProvider metricsProvider;
     public final AdminClientProvider adminClientProvider;
     public final ZookeeperLeaderFinder zookeeperLeaderFinder;
+    public final KubernetesRestartEventPublisher restartEventsPublisher;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs, KubernetesRestartEventPublisher restartEventPublisher) {
         this(vertx, client,
-            new ZookeeperLeaderFinder(vertx,
-            // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                () -> new BackOff(5_000, 2, 4)),
-                    new DefaultAdminClientProvider(),
-                    new DefaultZookeeperScalerProvider(),
-                    new MicrometerMetricsProvider(),
-                    pfa, gates, operationTimeoutMs);
+                new ZookeeperLeaderFinder(vertx,
+                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                        () -> new BackOff(5_000, 2, 4)),
+                new DefaultAdminClientProvider(),
+                new DefaultZookeeperScalerProvider(),
+                new MicrometerMetricsProvider(),
+                pfa,
+                gates,
+                operationTimeoutMs,
+                restartEventPublisher);
     }
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
-                                    AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx,
+                                    KubernetesClient client,
+                                    ZookeeperLeaderFinder zlf,
+                                    AdminClientProvider adminClientProvider,
+                                    ZookeeperScalerProvider zkScalerProvider,
+                                    MetricsProvider metricsProvider,
+                                    PlatformFeaturesAvailability pfa,
+                                    FeatureGates gates,
+                                    long operationTimeoutMs,
+                                    KubernetesRestartEventPublisher restartEventPublisher) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new StatefulSetOperator(vertx, client, operationTimeoutMs),
@@ -135,7 +147,8 @@ public class ResourceOperatorSupplier {
                 zkScalerProvider,
                 metricsProvider,
                 adminClientProvider,
-                zlf);
+                zlf,
+                restartEventPublisher);
     }
 
     @SuppressWarnings({"checkstyle:ParameterNumber"})
@@ -171,7 +184,8 @@ public class ResourceOperatorSupplier {
                                     ZookeeperScalerProvider zkScalerProvider,
                                     MetricsProvider metricsProvider,
                                     AdminClientProvider adminClientProvider,
-                                    ZookeeperLeaderFinder zookeeperLeaderFinder) {
+                                    ZookeeperLeaderFinder zookeeperLeaderFinder,
+                                    KubernetesRestartEventPublisher restartEventsPublisher) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.stsOperations = stsOperations;
@@ -205,5 +219,6 @@ public class ResourceOperatorSupplier {
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
         this.zookeeperLeaderFinder = zookeeperLeaderFinder;
+        this.restartEventsPublisher = restartEventsPublisher;
     }
 }

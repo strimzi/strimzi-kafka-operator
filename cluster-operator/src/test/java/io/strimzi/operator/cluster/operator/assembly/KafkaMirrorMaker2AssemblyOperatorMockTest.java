@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -111,6 +112,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
     private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
+        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(mockClient, "op", pfa.hasEventsApiV1());
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -118,7 +120,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
-                pfa, FeatureGates.NONE, 60_000L);
+                pfa, FeatureGates.NONE, 60_000L, restartEventPublisher);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         kco = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa,

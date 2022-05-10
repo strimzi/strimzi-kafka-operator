@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import io.vertx.core.CompositeFuture;
@@ -106,7 +107,14 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         Util.printEnvInfo();
 
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.featureGates(), config.getOperationTimeoutMs());
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
+                vertx,
+                client,
+                pfa,
+                config.featureGates(),
+                config.getOperationTimeoutMs(),
+                KubernetesRestartEventPublisher.createPublisher(client, config.getOperatorName(), pfa.hasEventsApiV1())
+        );
 
         KafkaAssemblyOperator kafkaClusterOperations = null;
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;
@@ -114,7 +122,6 @@ public class Main {
         KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator = null;
         KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator = null;
         KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator = null;
-        KubernetesRestartEventPublisher eventsPublisher = KubernetesRestartEventPublisher.createPublisher(client, config.getOperatorName(), pfa.hasEventsApiV1());
 
         if (!config.isPodSetReconciliationOnly()) {
             OpenSslCertManager certManager = new OpenSslCertManager();
@@ -125,7 +132,7 @@ public class Main {
                             "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                             "0123456789");
 
-            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config, eventsPublisher);
+            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
             kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
             kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
             kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
@@ -183,7 +190,7 @@ public class Main {
                 LOGGER.info("Creating cluster role {}", clusterRole.getKey());
 
                 try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
+                        new InputStreamReader(Objects.requireNonNull(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue())),
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);

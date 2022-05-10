@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -148,7 +149,7 @@ public class ConnectorMockTest {
                 .build();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_18);
-
+        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
         setupMockConnectAPI();
 
         metricsProvider = ResourceUtils.metricsProvider();
@@ -159,7 +160,7 @@ public class ConnectorMockTest {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 metricsProvider,
-                pfa, FeatureGates.NONE, 10_000);
+                pfa, FeatureGates.NONE, 10_000, restartEventPublisher);
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),

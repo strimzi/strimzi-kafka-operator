@@ -64,7 +64,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -280,19 +279,19 @@ public class KafkaAssemblyOperatorMockTest {
                 .build();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
-        ResourceOperatorSupplier supplier = supplierWithMocks();
+        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
+        ResourceOperatorSupplier supplier = supplierWithMocks(restartEventPublisher);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
-                new PasswordGenerator(10, "a", "a"), supplier, config,
-                Mockito.mock(KubernetesRestartEventPublisher.class));
+                new PasswordGenerator(10, "a", "a"), supplier, config);
     }
 
-    private ResourceOperatorSupplier supplierWithMocks() {
+    private ResourceOperatorSupplier supplierWithMocks(KubernetesRestartEventPublisher restartEventPublisher) {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
         return new ResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, kubernetesVersion),
-                FeatureGates.NONE, 2_000);
+                FeatureGates.NONE, 2_000, restartEventPublisher);
     }
 
     private void assertResourceRequirements(VertxTestContext context, String statefulSetName) {

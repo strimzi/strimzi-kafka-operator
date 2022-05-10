@@ -78,12 +78,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
-     * @param eventsPublisher publishes pod restarts reasons as Kubernetes events
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertManager certManager, PasswordGenerator passwordGenerator,
-                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
-                                 KubernetesRestartEventPublisher eventsPublisher) {
+                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.config = config;
@@ -94,7 +92,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.stsOperations = supplier.stsOperations;
         this.crdOperator = supplier.kafkaOperator;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
-        this.eventsPublisher = eventsPublisher;
+        this.eventsPublisher = supplier.restartEventsPublisher;
     }
 
     @Override

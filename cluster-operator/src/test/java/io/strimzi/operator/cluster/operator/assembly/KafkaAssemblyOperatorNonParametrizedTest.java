@@ -21,7 +21,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -138,8 +137,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
-                Mockito.mock(KubernetesRestartEventPublisher.class));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -223,8 +221,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
-                Mockito.mock(KubernetesRestartEventPublisher.class));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -302,8 +299,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
-                Mockito.mock(KubernetesRestartEventPublisher.class));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -340,8 +336,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
-                Mockito.mock(KubernetesRestartEventPublisher.class));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -406,7 +401,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 "cluster-operator-name");
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
-                supplier, config, Mockito.mock(KubernetesRestartEventPublisher.class));
+                supplier, config);
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
