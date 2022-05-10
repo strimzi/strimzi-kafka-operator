@@ -118,6 +118,38 @@ spec:
     # ...
 ----
 
+== Capacity overrides
+
+For accurate rebalances between brokers running on nodes with heterogeneous network resources, one must manually override the network capacity limit settings of individual brokers.
+You specify capacity limit overrides for lists of individual Kafka brokers in the `overrides` property in `Kafka.spec.cruiseControl.brokerCapacity`.
+Override capacity limits can be set for the following broker resources:
+
+* `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
+* `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
+
+.An example of Cruise Control capacity overrides configuration using bibyte units
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    brokerCapacity:
+      inboundNetwork: 10000KiB/s
+      outboundNetwork: 10000KiB/s
+      overrides:
+      - brokers: [0]
+        inboundNetwork: 20000KiB/s
+        outboundNetwork: 20000KiB/s
+      - brokers: [1, 2]
+        inboundNetwork: 30000KiB/s
+        outboundNetwork: 30000KiB/s
+----
+
 .Additional resources
 For more information, refer to the xref:type-BrokerCapacity-reference[].
 

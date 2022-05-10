@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
@@ -25,6 +26,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -63,38 +65,87 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlConfigurationST.class.getSimpleName()).stream().findFirst().get();
 
+    private static Double removeKibSuffix(String s) {
+        return Double.valueOf(s.substring(0, s.length() - 5));
+    }
+
     @ParallelNamespaceTest
     void testCapacityFile(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        double disk = 100_000;
+        double cpu = 100;
+        String inboundNetwork = "10000KiB/s";
+        String outboundNetwork = "10000KiB/s";
+        String inboundNetworkOverride0 = "20000KiB/s";
+        String inboundNetworkOverride1 = "40000KiB/s";
+        String outboundNetworkOverride1 = "400000KiB/s";
+
+        Integer broker0 = 0;
+        Integer broker1 = 1;
+        Integer broker2 = 2;
+
+        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
+        List<Integer> overrideList1 = List.of(broker1);
+
+        Kafka kr = KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+            .editOrNewSpec()
+                .editCruiseControl()
+                    .withNewBrokerCapacity()
+                        .withInboundNetwork(inboundNetwork)
+                        .addNewOverride()
+                            .withBrokers(overrideList0)
+                            .withInboundNetwork(inboundNetworkOverride0)
+                        .endOverride()
+                        .addNewOverride()
+                            .withBrokers(overrideList1)
+                            .withInboundNetwork(inboundNetworkOverride1)
+                            .withOutboundNetwork(outboundNetworkOverride1)
+                        .endOverride()
+                    .endBrokerCapacity()
+                .endCruiseControl()
+            .endSpec()
+            .build();
+
+        resourceManager.createResource(extensionContext, kr);
 
         String cruiseControlPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0).getMetadata().getName();
 
         JsonObject cruiseControlCapacityFileContent =
             new JsonObject(cmdKubeClient(namespaceName).execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + Constants.CRUISE_CONTROL_CAPACITY_FILE_PATH).out());
 
-        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities"), not(nullValue()));
-
-        LOGGER.info("We got only one configuration of broker-capacities");
-        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").size(), is(1));
-
         LOGGER.info("Verifying cruise control configuration.");
+        JsonArray brokerCapacities =  cruiseControlCapacityFileContent.getJsonArray("brokerCapacities");
+        assertThat(brokerCapacities, not(nullValue()));
 
-        JsonObject cruiseControlFirstConfiguration = cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").getJsonObject(0);
+        LOGGER.info("We have 4 entries in broker-capacities");
+        assertThat(brokerCapacities.size(), is(4));
 
-        assertThat(cruiseControlFirstConfiguration.getString("brokerId"), is("-1"));
-        assertThat(cruiseControlFirstConfiguration.getString("doc"), not(nullValue()));
-
-        JsonObject cruiseControlConfigurationOfBrokerCapacity = cruiseControlFirstConfiguration.getJsonObject("capacity");
+        JsonObject defaultBroker = brokerCapacities.getJsonObject(0);
+        assertThat(defaultBroker.getString("brokerId"), is("-1"));
+        assertThat(defaultBroker.getString("doc"), not(nullValue()));
 
         LOGGER.info("Verifying default cruise control capacities");
+        JsonObject defaultBrokerCapacity = defaultBroker.getJsonObject("capacity");
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("DISK")), is(disk));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("CPU")), is(cpu));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_IN")), is(removeKibSuffix(inboundNetwork)));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
 
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("DISK"), is("100000.0"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("CPU"), is("100"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_IN"), is("10000.0"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_OUT"), is("10000.0"));
+        LOGGER.info("Verifying cruise control capacity overrides");
+        JsonObject broker0Capacity = brokerCapacities.getJsonObject(1).getJsonObject("capacity");
+        JsonObject broker1Capacity = brokerCapacities.getJsonObject(2).getJsonObject("capacity");
+        JsonObject broker2Capacity = brokerCapacities.getJsonObject(3).getJsonObject("capacity");
+
+        assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
+
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride1)));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetworkOverride1)));
+
+        assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
     }
 
     @ParallelNamespaceTest

@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.cruisecontrol.Broker;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
@@ -67,6 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
@@ -243,6 +245,53 @@ public class CruiseControlTest {
             .build();
         
         capacity = new Capacity(resource.getSpec(), jbodStorage);
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
+
+        // Test capacity overrides
+        String inboundNetwork = "50000KB/s";
+        String inboundNetworkOverride0 = "25000KB/s";
+        String inboundNetworkOverride1 = "10000KiB/s";
+        String outboundNetworkOverride1 = "15000KB/s";
+
+        Integer broker0 = 0;
+        Integer broker1 = 1;
+        Integer broker2 = 2;
+
+        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
+        List<Integer> overrideList1 = List.of(broker1);
+
+        cruiseControlSpec = new CruiseControlSpecBuilder()
+            .withImage(ccImage)
+            .withNewBrokerCapacity()
+                .withInboundNetwork(inboundNetwork)
+                .addNewOverride()
+                    .withBrokers(overrideList0)
+                    .withInboundNetwork(inboundNetworkOverride0)
+                .endOverride()
+                .addNewOverride()
+                    .withBrokers(overrideList1)
+                    .withInboundNetwork(inboundNetworkOverride1)
+                    .withOutboundNetwork(outboundNetworkOverride1)
+                .endOverride()
+            .endBrokerCapacity()
+            .build();
+
+        resource = createKafka(cruiseControlSpec);
+        capacity = new Capacity(resource.getSpec(), kafkaStorage);
+
+        TreeMap<Integer, Broker> capacityEntries = capacity.getCapacityEntries();
+        assertThat(capacityEntries.get(Broker.DEFAULT_BROKER_ID).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetwork)));
+        assertThat(capacityEntries.get(Broker.DEFAULT_BROKER_ID).getOutboundNetworkKiBPerSecond(), is(Broker.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+
+        assertThat(capacityEntries.get(broker0).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker0).getOutboundNetworkKiBPerSecond(), is(Broker.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+
+        // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the latest override.
+        assertThat(capacityEntries.get(broker1).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride1)));
+        assertThat(capacityEntries.get(broker1).getOutboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(outboundNetworkOverride1)));
+
+        assertThat(capacityEntries.get(broker2).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
     }
 

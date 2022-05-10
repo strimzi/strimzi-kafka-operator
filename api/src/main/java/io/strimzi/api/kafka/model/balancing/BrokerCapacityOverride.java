@@ -5,13 +5,11 @@
 package io.strimzi.api.kafka.model.balancing;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Maximum;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -22,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of the Cruise Control broker capacity settings.
+ * Representation of the Cruise Control broker capacity settings for specific brokers.
  */
 @Buildable(
         editableEnabled = false,
@@ -30,46 +28,26 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"disk", "cpuUtilization", "inboundNetwork", "outboundNetwork", "overrides"})
+@JsonPropertyOrder({"brokers", "inboundNetwork", "outboundNetwork"})
 @EqualsAndHashCode
-public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
-
+public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String disk;
-    private Integer cpuUtilization;
+    private List<Integer> brokers;
     private String inboundNetwork;
     private String outboundNetwork;
-    private List<BrokerCapacityOverride> overrides;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Deprecated
-    @DeprecatedProperty(description = "The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
-    @Description("Broker capacity for disk in bytes. " +
-            "Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. " +
-            "For example, 100000M, 100000Mi, 104857600000, or 1e+11.")
-    public String getDisk() {
-        return disk;
+    @JsonInclude(content = JsonInclude.Include.NON_NULL, value = JsonInclude.Include.NON_EMPTY)
+    @Pattern("^\\[[0-9,]*\\]$")
+    @Description("List of the kafka brokers (broker identifiers)")
+    @JsonProperty(required = true)
+    public List<Integer> getBrokers() {
+        return brokers;
     }
 
-    public void setDisk(String disk) {
-        this.disk = disk;
-    }
-
-    @Deprecated
-    @DeprecatedProperty(description = "The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future")
-    @Minimum(0)
-    @Maximum(100)
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Broker capacity for CPU resource utilization as a percentage (0 - 100).")
-    public Integer getCpuUtilization() {
-        return cpuUtilization;
-    }
-
-    public void setCpuUtilization(Integer cpuUtilization) {
-        this.cpuUtilization = cpuUtilization;
+    public void setBrokers(List<Integer> brokers) {
+        this.brokers = brokers;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -96,17 +74,6 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     public void setOutboundNetwork(String outboundNetwork) {
         this.outboundNetwork = outboundNetwork;
-    }
-
-    @JsonInclude(content = JsonInclude.Include.NON_NULL, value = JsonInclude.Include.NON_EMPTY)
-    @Description("Overrides for individual brokers. " +
-            "The `overrides` field allows to specify a different configuration for different brokers.")
-    public List<BrokerCapacityOverride> getOverrides() {
-        return overrides;
-    }
-
-    public void setOverrides(List<BrokerCapacityOverride> overrides) {
-        this.overrides = overrides;
     }
 
     @Override

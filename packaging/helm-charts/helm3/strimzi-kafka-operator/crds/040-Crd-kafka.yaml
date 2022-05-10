@@ -4655,6 +4655,27 @@ spec:
                           type: string
                           pattern: "^[0-9]+([KMG]i?)?B/s$"
                           description: "Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s."
+                        overrides:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              brokers:
+                                type: array
+                                items:
+                                  type: integer
+                                description: List of the kafka brokers (broker identifiers).
+                              inboundNetwork:
+                                type: string
+                                pattern: "^[0-9]+([KMG]i?)?B/s$"
+                                description: "Broker capacity for inbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s."
+                              outboundNetwork:
+                                type: string
+                                pattern: "^[0-9]+([KMG]i?)?B/s$"
+                                description: "Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s."
+                            required:
+                              - brokers
+                          description: Overrides for individual brokers. The `overrides` field allows to specify a different configuration for different brokers.
                       description: The Cruise Control `brokerCapacity` configuration.
                     config:
                       x-kubernetes-preserve-unknown-fields: true
