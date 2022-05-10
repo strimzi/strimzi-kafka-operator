@@ -84,6 +84,7 @@ public class JmxIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
         String scraperPodName = kubeClient().listPodsByPrefixInName(scraperName).get(0).getMetadata().getName();
+        JmxUtils.downloadJmxTermToPod(namespaceName, scraperPodName);
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
             .editOrNewSpec()
