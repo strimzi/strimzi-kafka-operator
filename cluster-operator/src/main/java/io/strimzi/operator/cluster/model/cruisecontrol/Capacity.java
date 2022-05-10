@@ -273,7 +273,6 @@ public class Capacity {
                             if (id == Broker.DEFAULT_BROKER_ID) {
                                 LOGGER.warnOp("Ignoring broker capacity override with illegal broker id -1.");
                             } else {
-                                disk = processDisk(storage, id);
                                 if (capacityEntries.containsKey(id)) {
                                     if (overrideIds.contains(id)) {
                                         LOGGER.warnOp("Duplicate broker id %d found in overrides, using last occurrence.", id);
