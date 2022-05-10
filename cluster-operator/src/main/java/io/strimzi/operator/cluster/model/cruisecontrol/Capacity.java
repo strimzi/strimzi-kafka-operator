@@ -23,95 +23,96 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 
-/*
-Uses information in a Kafka Custom Resource to generate a capacity configuration file to be used for
-Cruise Control's Broker Capacity File Resolver.
-
-For example, takes a Kafka Custom Resource like the following:
-
-spec:
- kafka:
-    replicas: 3
-    storage:
-      type: jbod
-      volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
-      - id: 1
-        type: persistent-claim
-        size: 200Gi
-        deleteClaim: false
- cruiseControl:
-   brokerCapacity:
-    inboundNetwork: 10000KB/s
-    outboundNetwork: 10000KB/s
-    overrides:
-      - brokers: [0]
-      outboundNetwork: 40000KB/s
-      - brokers: [1, 2]
-      inboundNetwork: 60000KB/s
-      outboundNetwork: 20000KB/s
-
-and uses the information to create Cruise Control BrokerCapacityFileResolver config file like the following:
-
-{
-  "brokerCapacities":[
-    {
-      "brokerId": "-1",
-      "capacity": {
-        "DISK": {
-            "/var/lib/kafka0/kafka-log-1": "100000",
-            "/var/lib/kafka1/kafka-log-1": "200000"
-         },
-        "CPU": "100",
-        "NW_IN": "10000",
-        "NW_OUT": "10000"
-      },
-      "doc": "This is the default capacity. Capacity unit used for disk is in MB, cpu is in percentage, network throughput is in KB."
-    },
-    {
-      "brokerId": "0",
-      "capacity": {
-        "DISK": {
-            "/var/lib/kafka0/kafka-log0": "100000",
-            "/var/lib/kafka1/kafka-log0": "200000"
-         },
-        "CPU": "100",
-        "NW_IN": "10000",
-        "NW_OUT": "40000"
-      },
-      "doc": "Capacity for Broker 0"
-    },
-    {
-      "brokerId": "1",
-      "capacity": {
-        "DISK": {
-            "/var/lib/kafka0/kafka-log1": "100000",
-            "/var/lib/kafka1/kafka-log1": "200000"
-          },
-        "CPU": "100",
-        "NW_IN": "60000",
-        "NW_OUT": "20000"
-      },
-      "doc": "Capacity for Broker 1"
-    },
-      "brokerId": "2",
-      "capacity": {
-        "DISK": {
-            "/var/lib/kafka0/kafka-log1": "100000",
-            "/var/lib/kafka1/kafka-log1": "200000"
-          },
-        "CPU": "100",
-        "NW_IN": "60000",
-        "NW_OUT": "20000"
-      },
-      "doc": "Capacity for Broker 2"
-    }
-  ]
-}
-*/
+/**
+ * Uses information in a Kafka Custom Resource to generate a capacity configuration file to be used for
+ * Cruise Control's Broker Capacity File Resolver.
+ *
+ *
+ * For example, takes a Kafka Custom Resource like the following:
+ *
+ * spec:
+ *  kafka:
+ *     replicas: 3
+ *     storage:
+ *       type: jbod
+ *       volumes:
+ *       - id: 0
+ *         type: persistent-claim
+ *         size: 100Gi
+ *         deleteClaim: false
+ *       - id: 1
+ *         type: persistent-claim
+ *         size: 200Gi
+ *         deleteClaim: false
+ *  cruiseControl:
+ *    brokerCapacity:
+ *     inboundNetwork: 10000KB/s
+ *     outboundNetwork: 10000KB/s
+ *     overrides:
+ *       - brokers: [0]
+ *         outboundNetwork: 40000KB/s
+ *       - brokers: [1, 2]
+ *         inboundNetwork: 60000KB/s
+ *         outboundNetwork: 20000KB/s
+ *
+ * and uses the information to create Cruise Control BrokerCapacityFileResolver config file like the following:
+ *
+ * {
+ *   "brokerCapacities":[
+ *     {
+ *       "brokerId": "-1",
+ *       "capacity": {
+ *         "DISK": {
+ *             "/var/lib/kafka0/kafka-log-1": "100000",
+ *             "/var/lib/kafka1/kafka-log-1": "200000"
+ *          },
+ *         "CPU": "100",
+ *         "NW_IN": "10000",
+ *         "NW_OUT": "10000"
+ *       },
+ *       "doc": "This is the default capacity. Capacity unit used for disk is in MB, cpu is in percentage, network throughput is in KB."
+ *     },
+ *     {
+ *       "brokerId": "0",
+ *       "capacity": {
+ *         "DISK": {
+ *             "/var/lib/kafka0/kafka-log0": "100000",
+ *             "/var/lib/kafka1/kafka-log0": "200000"
+ *          },
+ *         "CPU": "100",
+ *         "NW_IN": "10000",
+ *         "NW_OUT": "40000"
+ *       },
+ *       "doc": "Capacity for Broker 0"
+ *     },
+ *     {
+ *       "brokerId": "1",
+ *       "capacity": {
+ *         "DISK": {
+ *             "/var/lib/kafka0/kafka-log1": "100000",
+ *             "/var/lib/kafka1/kafka-log1": "200000"
+ *           },
+ *         "CPU": "100",
+ *         "NW_IN": "60000",
+ *         "NW_OUT": "20000"
+ *       },
+ *       "doc": "Capacity for Broker 1"
+ *     },
+ *       "brokerId": "2",
+ *       "capacity": {
+ *         "DISK": {
+ *             "/var/lib/kafka0/kafka-log1": "100000",
+ *             "/var/lib/kafka1/kafka-log1": "200000"
+ *           },
+ *         "CPU": "100",
+ *         "NW_IN": "60000",
+ *         "NW_OUT": "20000"
+ *       },
+ *       "doc": "Capacity for Broker 2"
+ *     }
+ *   ]
+ * }
+ */
 public class Capacity {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Capacity.class.getName());
 
@@ -231,16 +232,6 @@ public class Capacity {
     public static String getThroughputInKiB(String throughput) {
         String size = throughput.substring(0, throughput.indexOf("B"));
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
-    }
-
-    public static void main(String[] args) {
-        System.out.println(getThroughputInKiB("10000KiB/s"));
-        System.out.println(removeKibSuffix("10000KiB/s"));
-
-    }
-
-    private static Double removeKibSuffix(String s) {
-        return Double.valueOf(s.substring(0, s.length() - 5));
     }
 
     private void processCapacityEntries(BrokerCapacity bc, Storage s) {
