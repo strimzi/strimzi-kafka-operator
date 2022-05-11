@@ -125,7 +125,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         JobUtils.waitForJobRunning(consumerName, clusterOperator.getDeploymentNamespace());
 
         LOGGER.info("Delete first found Kafka broker pod.");
-        kubeClient(clusterOperator.getDeploymentNamespace()).deletePod(clusterOperator.getDeploymentNamespace(), kafkaPod);
+        kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), kafkaPod);
         RollingUpdateUtils.waitForComponentAndPodsReady(kafkaSelector, kafkaReplicas);
 
         LOGGER.info("Force Rolling Update of Kafka via annotation.");
@@ -205,13 +205,13 @@ public class FeatureGatesIsolatedST extends AbstractST {
         // Delete one Zoo Pod
         Pod zooPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(clusterOperator.getDeploymentNamespace(), KafkaResources.zookeeperStatefulSetName(clusterName) + "-").get(0);
         LOGGER.info("Delete first found ZooKeeper pod {}", zooPod.getMetadata().getName());
-        kubeClient(clusterOperator.getDeploymentNamespace()).deletePod(clusterOperator.getDeploymentNamespace(), zooPod);
+        kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), zooPod);
         RollingUpdateUtils.waitForComponentAndPodsReady(zooSelector, zooReplicas);
 
         // Delete one Kafka Pod
         Pod kafkaPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(clusterOperator.getDeploymentNamespace(), KafkaResources.kafkaStatefulSetName(clusterName) + "-").get(0);
         LOGGER.info("Delete first found Kafka broker pod {}", kafkaPod.getMetadata().getName());
-        kubeClient(clusterOperator.getDeploymentNamespace()).deletePod(clusterOperator.getDeploymentNamespace(), kafkaPod);
+        kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), kafkaPod);
         RollingUpdateUtils.waitForComponentAndPodsReady(kafkaSelector, kafkaReplicas);
 
         // Roll Zoo

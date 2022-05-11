@@ -323,18 +323,18 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
 
         if (!isUpgrade) {
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", initLogMsgFormat);
-            assertThat(Crds.kafkaOperation(kubeClient(clusterOperator.getDeploymentNamespace()).getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
+            assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
                     .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(initLogMsgFormat));
             LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", initInterBrokerProtocol);
-            assertThat(Crds.kafkaOperation(kubeClient(clusterOperator.getDeploymentNamespace()).getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
+            assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
                     .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(initInterBrokerProtocol));
         } else {
             if (currentLogMessageFormat != null || currentInterBrokerProtocol != null) {
                 LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
-                assertThat(Crds.kafkaOperation(kubeClient(clusterOperator.getDeploymentNamespace()).getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
+                assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
                         .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
                 LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", newVersion.protocolVersion());
-                assertThat(Crds.kafkaOperation(kubeClient(clusterOperator.getDeploymentNamespace()).getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
+                assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
                         .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(newVersion.protocolVersion()));
             }
         }

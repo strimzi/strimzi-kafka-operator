@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -61,16 +62,10 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
-import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
-import static io.strimzi.systemtest.Constants.TLS_LISTENER_DEFAULT_NAME;
-import static io.strimzi.systemtest.Constants.WATCH_ALL_NAMESPACES;
-import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -211,7 +206,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(TLS_LISTENER_DEFAULT_NAME)
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
@@ -226,7 +221,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(TLS_LISTENER_DEFAULT_NAME)
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
@@ -340,7 +335,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(TLS_LISTENER_DEFAULT_NAME)
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -353,7 +348,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editSpec()
                     .editKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(TLS_LISTENER_DEFAULT_NAME)
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -512,7 +507,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         assertThat(mm2Status.getConditions().get(0).getType(), is(Ready.toString()));
         assertThat(actualObsGen, is(not(mm2ObsGen)));
 
-        TestUtils.waitFor("Until mirror maker 2 status url is null", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Until mirror maker 2 status url is null", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             KafkaMirrorMaker2Status mm2StatusUrl = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
             return mm2StatusUrl.getUrl() == null;
         });
@@ -954,7 +949,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editKafka()
                     .withListeners(
                         new GenericKafkaListenerBuilder()
-                            .withName(TLS_LISTENER_DEFAULT_NAME)
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -971,7 +966,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editKafka()
                     .withListeners(
                         new GenericKafkaListenerBuilder()
-                            .withName(TLS_LISTENER_DEFAULT_NAME)
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -1124,7 +1119,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editKafka()
                     .addToConfig("min.insync.replicas", 1)
                     .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(TLS_LISTENER_DEFAULT_NAME)
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
@@ -1140,7 +1135,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editKafka()
                     .addToConfig("min.insync.replicas", 1)
                     .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(TLS_LISTENER_DEFAULT_NAME)
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
@@ -1341,9 +1336,9 @@ class MirrorMaker2IsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(WATCH_ALL_NAMESPACES)
-            .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
+            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
     }

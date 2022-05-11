@@ -228,7 +228,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(clusterOperator.getDeploymentNamespace(), kubeClient(clusterOperator.getDeploymentNamespace()).listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(clusterOperator.getDeploymentNamespace(), kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -259,7 +259,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
     @ParallelTest
     void testDiscoveryAnnotation() {
-        Service bridgeService = kubeClient(clusterOperator.getDeploymentNamespace()).getService(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.serviceName(httpBridgeClusterName));
+        Service bridgeService = kubeClient().getService(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.serviceName(httpBridgeClusterName));
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none", false)));
@@ -285,9 +285,9 @@ class HttpBridgeIsolatedST extends AbstractST {
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0), clusterOperator.getDeploymentNamespace());
 
         KafkaBridgeUtils.waitForKafkaBridgeReady(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName);
-        PodUtils.waitForPodsReady(kubeClient(clusterOperator.getDeploymentNamespace()).getDeploymentSelectors(deploymentName), 0, true);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
 
-        bridgePods = kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+        bridgePods = kubeClient().listPodNames(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
@@ -386,7 +386,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .build());
 
         // get service with custom labels
-        final Service kafkaBridgeService = kubeClient(clusterOperator.getDeploymentNamespace()).getService(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.serviceName(bridgeName));
+        final Service kafkaBridgeService = kubeClient().getService(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.serviceName(bridgeName));
 
         // filter only app-bar service
         final Map<String, String> filteredActualKafkaBridgeCustomLabels =
@@ -445,7 +445,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .endMetadata()
             .build());
 
-        kafkaClientsPodName = kubeClient(clusterOperator.getDeploymentNamespace()).listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), kafkaClientsName).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), kafkaClientsName).get(0).getMetadata().getName();
 
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeClusterName,
