@@ -361,6 +361,9 @@ public class KafkaRebalanceAssemblyOperator
                     ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder)
                             .withConcurrentIntraPartitionMovements(kafkaRebalanceSpec.getConcurrentIntraBrokerPartitionMovements());
                 }
+                if (brokers != null && !brokers.isEmpty()) {
+                    LOGGER.warnOp("The full-rebalance mode is used. The specified list of brokers is ignored");
+                }
                 break;
         }
 

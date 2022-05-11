@@ -3173,6 +3173,16 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 [options="header"]
 |====
 |Property                                        |Description
+|mode                                     1.2+<.<a|Mode to run the rebalancing. The supported modes are `full-rebalance`, `add-broker`, `remove-broker`.
+If not specified, the `full-rebalance` mode is used by default. 
+
+* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.
+* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.
+* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to remove.
+
+|string (one of [full-rebalance, remove-broker, add-broker])
+|brokers                                  1.2+<.<a|The list of newly added brokers in case of scaling up or the ones to be removed in case of scaling down to use for rebalancing. This list can be used only with rebalancing mode `add-broker` and `removed-broker`. It is ignored with `full-rebalance` mode.
+|integer array
 |goals                                    1.2+<.<a|A list of goals, ordered by decreasing priority, to use for generating and executing the rebalance proposal. The supported goals are available at https://github.com/linkedin/cruise-control#goals. If an empty goals list is provided, the goals declared in the default.goals Cruise Control configuration parameter are used.
 |string array
 |skipHardGoalCheck                        1.2+<.<a|Whether to allow the hard goals specified in the Kafka CR to be skipped in optimization proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
@@ -3191,16 +3201,6 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |integer
 |replicaMovementStrategies                1.2+<.<a|A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. By default BaseReplicaMovementStrategy is used, which will execute the replica movements in the order that they were generated.
 |string array
-|brokers                                  1.2+<.<a|The list of newly added brokers in case of scaling up or the ones to be removed in case of scaling down to use for rebalancing. This list can be used only with rebalancing mode `add-broker` and `removed-broker`. It is ignored with `full-rebalance` mode.
-|integer array
-|mode                                     1.2+<.<a|Mode to run the rebalancing. The supported modes are `full-rebalance`, `add-broker`, `remove-broker`.
-If not specified, the `full-rebalance` mode is used by default. 
-
-* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.
-* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.
-* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to remove.
-
-|string (one of [full-rebalance, remove-broker, add-broker])
 |====
 
 [id='type-KafkaRebalanceStatus-{context}']

@@ -20,14 +20,14 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+@JsonPropertyOrder({ "mode", "brokers", "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
     // rebalancing modes
-    private KafkaRebalanceMode mode;
+    private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL_REBALANCE;
     private List<Integer> brokers;
 
     // Optimization goal configurations
@@ -51,6 +51,7 @@ public class KafkaRebalanceSpec extends Spec {
             "* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.\n" +
             "* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n" +
             "* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to remove.\n")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public KafkaRebalanceMode getMode() {
         return mode;
     }
