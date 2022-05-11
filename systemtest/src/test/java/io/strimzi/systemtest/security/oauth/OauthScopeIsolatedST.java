@@ -202,7 +202,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, clusterOperator.getDeploymentNamespace());
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 1);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
 
         // verification phase client should fail here because clientScope is set to 'null'
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
@@ -226,7 +226,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, clusterOperator.getDeploymentNamespace());
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 1);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
     }
 
     @BeforeAll
