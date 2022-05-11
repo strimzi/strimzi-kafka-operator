@@ -140,16 +140,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(this::dateSupplier))
-                .compose(ReconciliationState::versionChange)
-
+                .compose(state -> state.versionChange())
                 // Run reconciliations of the different components
                 .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
                 .compose(state -> state.reconcileKafka(this::dateSupplier))
                 .compose(state -> state.reconcileEntityOperator(this::dateSupplier))
                 .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
                 .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
-                .compose(ReconciliationState::reconcileJmxTrans)
-
+                .compose(state -> state.reconcileJmxTrans())
                 // Finish the reconciliation
                 .map((Void) null)
                 .onComplete(chainPromise);

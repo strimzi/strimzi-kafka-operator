@@ -550,6 +550,7 @@ public class ClusterOperatorConfig {
                 ",dnsCacheTtlSec=" + dnsCacheTtlSec +
                 ",podSetReconciliationOnly=" + podSetReconciliationOnly +
                 ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
+                ",operatorName=" + operatorName +
                 ")";
     }
 

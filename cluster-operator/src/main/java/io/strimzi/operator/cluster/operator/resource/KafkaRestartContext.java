@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 /**
  * Contains state, flags as to what kind of restart (if any) to do, and reasons why
  */
-class RestartContext {
+class KafkaRestartContext {
     private final Promise<Void> promise;
     private final BackOff backOff;
     private long connectionErrorStart = 0L;
@@ -25,7 +25,7 @@ class RestartContext {
     private KafkaBrokerConfigurationDiff diff;
     private KafkaBrokerLoggingConfigurationDiff logDiff;
 
-    RestartContext(Supplier<BackOff> backOffSupplier) {
+    KafkaRestartContext(Supplier<BackOff> backOffSupplier) {
         promise = Promise.promise();
         backOff = backOffSupplier.get();
         restartReasons = RestartReasons.empty();

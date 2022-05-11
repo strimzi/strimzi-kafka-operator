@@ -53,17 +53,18 @@ public abstract class KubernetesRestartEventPublisher {
     /**
      * Create an instance for the highest event API, there's three possible subtypes, due to how fabric8 delineates the differing
      * event APIs.
-     * @param client Kubernetes client
+     *
+     * @param client       Kubernetes client
      * @param operatorName the pod name of the current cluster operator instance
-     * @param hasEventsV1 if the cluster is using events.k8s.io/v1 instead of events.k8s.io/v1beta1
+     * @param hasEventsV1  if the cluster is using events.k8s.io/v1 instead of events.k8s.io/v1beta1
      * @return instance of the appropriate publisher for the given API
      */
     public static KubernetesRestartEventPublisher createPublisher(KubernetesClient client, String operatorName, boolean hasEventsV1) {
         Clock clock = Clock.systemDefaultZone();
         if (hasEventsV1) {
-            return new V1EventPublisher(clock, client, operatorName);
+            return new V1RestartEventPublisher(clock, client, operatorName);
         } else {
-            return new V1Beta1EventPublisher(clock, client, operatorName);
+            return new V1Beta1RestartEventPublisher(clock, client, operatorName);
         }
     }
 
@@ -87,11 +88,12 @@ public abstract class KubernetesRestartEventPublisher {
 
     /**
      * Implemented by subclasses using version specific APIs
-     * @param eventTime - Microtime to use for event
+     *
+     * @param eventTime    - Microtime to use for event
      * @param podReference - ObjectReference pointing to rolled pod
-     * @param reason - reason the pod is being rolled
-     * @param type - the type of K8s event "Normal", or "Warning"
-     * @param note - the note to attach to the event
+     * @param reason       - reason the pod is being rolled
+     * @param type         - the type of K8s event "Normal", or "Warning"
+     * @param note         - the note to attach to the event
      */
     protected abstract void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note);
 
@@ -102,16 +104,9 @@ public abstract class KubernetesRestartEventPublisher {
     }
 
     ObjectReference createPodReference(Pod pod) {
-        // I'm uncertain whether RV should be included, as would likely prevent event aggregation, as
-        // it would make the ObjectReference for Regarding different each time. Copy/paste from event api design docs...
-        // > The assumption we make for deduplication logic after API changes is that Events with the
-        // > same <Regarding, Action, Reason, ReportingController, ReportingInstance, Related> tuples are considered isomorphic.
-        // > This allows us to define notion of "event series", which is series of isomorphic events happening not farther away from each other than some defined threshold.
-        // > E.g. Events happening every second are considered a series, but Events happening every hour are not.
         return new ObjectReferenceBuilder().withKind("Pod")
                                            .withNamespace(pod.getMetadata().getNamespace())
                                            .withName(pod.getMetadata().getName())
-                                           //.withResourceVersion(pod.getMetadata().getResourceVersion())
                                            .build();
     }
 
@@ -130,7 +125,7 @@ public abstract class KubernetesRestartEventPublisher {
 
         if (note.length() != stringBytes.length) {
             throw new UnsupportedOperationException("Truncating messages containing multibyte characters isn't implemented");
-        } else if (stringBytes.length <= MAX_MESSAGE_LENGTH)  {
+        } else if (stringBytes.length <= MAX_MESSAGE_LENGTH) {
             return note;
         } else {
             return new String(stringBytes, 0, 997, UTF_8) + ELLIPSIS;

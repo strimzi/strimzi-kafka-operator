@@ -175,7 +175,7 @@ public class KafkaRoller {
     private final ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
         runnable -> new Thread(runnable, "kafka-roller"));
 
-    private final ConcurrentHashMap<String, RestartContext> podToContext = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, KafkaRestartContext> podToContext = new ConcurrentHashMap<>();
 
     /**
      * If allClient has not been initialized yet, does exactly that
@@ -240,14 +240,14 @@ public class KafkaRoller {
      * @return A future which completes when the pod has been rolled.
      */
     private Future<Void> schedule(PodRef podRef, long delay, TimeUnit unit, Function<Pod, RestartReasons> podNeedsRestart) {
-        RestartContext context = podToContext.computeIfAbsent(podRef.getPodName(), k -> new RestartContext(backoffSupplier));
+        KafkaRestartContext context = podToContext.computeIfAbsent(podRef.getPodName(), k -> new KafkaRestartContext(backoffSupplier));
         return schedule(context, podRef, delay, unit, podNeedsRestart);
     }
 
     // Break out the above override to pass context explicitly in recursive scheduling call
-    private Future<Void> schedule(RestartContext context, PodRef podRef, long delay, TimeUnit unit, Function<Pod, RestartReasons> podNeedsRestart) {
+    private Future<Void> schedule(KafkaRestartContext context, PodRef podRef, long delay, TimeUnit unit, Function<Pod, RestartReasons> podNeedsRestart) {
         singleExecutor.schedule(() -> {
-            RestartContext ctx = context;
+            KafkaRestartContext ctx = context;
             LOGGER.debugCr(reconciliation, "Considering restart of pod {} after delay of {} {}", podRef, delay, unit);
             try {
                 Pod pod = loadPod(podRef);
@@ -300,7 +300,7 @@ public class KafkaRoller {
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
-    private void restartIfNecessary(PodRef podRef, Pod pod, RestartContext context) throws Exception {
+    private void restartIfNecessary(PodRef podRef, Pod pod, KafkaRestartContext context) throws Exception {
 
         try {
             if (context.needsForceRestart()) {
@@ -414,7 +414,7 @@ public class KafkaRoller {
      * Modifies the passed in context by side effect
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private RestartContext restartOrDynamicallyReconfigure(PodRef podRef, Pod pod, RestartContext restartContext, RestartReasons reasonsToRestartPod) throws ForceableProblem, InterruptedException, FatalProblem {
+    private KafkaRestartContext restartOrDynamicallyReconfigure(PodRef podRef, Pod pod, KafkaRestartContext kafkaRestartContext, RestartReasons reasonsToRestartPod) throws ForceableProblem, InterruptedException, FatalProblem {
 
         //TODO should pod ever be null here?
         boolean podStuck = pod != null
@@ -441,23 +441,23 @@ public class KafkaRoller {
         // connect to the broker and that it's capable of responding.
         if (!initAdminClient()) {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", podRef);
-            restartContext.setNeedsRestart(false);
-            restartContext.setNeedsReconfig(false);
+            kafkaRestartContext.setNeedsRestart(false);
+            kafkaRestartContext.setNeedsReconfig(false);
 
             //TODO - figure out a way to handle this in a nicer manner
-            restartContext.setForceRestart(true);
-            restartContext.setRestartReasons(reasonsToRestartPod.add(RestartReason.POD_UNRESPONSIVE));
-            restartContext.setDiff(null);
-            restartContext.setLogDiff(null);
-            return restartContext;
+            kafkaRestartContext.setForceRestart(true);
+            kafkaRestartContext.setRestartReasons(reasonsToRestartPod.add(RestartReason.POD_UNRESPONSIVE));
+            kafkaRestartContext.setDiff(null);
+            kafkaRestartContext.setLogDiff(null);
+            return kafkaRestartContext;
         }
         Config brokerConfig;
         try {
             brokerConfig = brokerConfig(podRef);
         } catch (ForceableProblem e) {
-            if (restartContext.getBackOff().done()) {
+            if (kafkaRestartContext.getBackOff().done()) {
                 // Will restart due to same reason as above (presumable broker connectivity issues), based on old comment above previous admin check
-                restartContext.setRestartReasons(reasonsToRestartPod.add(RestartReason.POD_UNRESPONSIVE));
+                kafkaRestartContext.setRestartReasons(reasonsToRestartPod.add(RestartReason.POD_UNRESPONSIVE));
                 needsRestart = true;
                 brokerConfig = null;
             } else {
@@ -495,13 +495,13 @@ public class KafkaRoller {
             reasonsToRestartPod.add(RestartReason.POD_STUCK);
         }
 
-        restartContext.setRestartReasons(reasonsToRestartPod);
-        restartContext.setNeedsRestart(needsRestart);
-        restartContext.setNeedsReconfig(needsReconfig);
-        restartContext.setForceRestart(podStuck);
-        restartContext.setDiff(diff);
-        restartContext.setLogDiff(loggingDiff);
-        return restartContext;
+        kafkaRestartContext.setRestartReasons(reasonsToRestartPod);
+        kafkaRestartContext.setNeedsRestart(needsRestart);
+        kafkaRestartContext.setNeedsReconfig(needsReconfig);
+        kafkaRestartContext.setForceRestart(podStuck);
+        kafkaRestartContext.setDiff(diff);
+        kafkaRestartContext.setLogDiff(loggingDiff);
+        return kafkaRestartContext;
     }
 
     /**
@@ -718,8 +718,8 @@ public class KafkaRoller {
      * Return true if the given {@code podId} is the controller and there are other brokers we might yet have to consider.
      * This ensures that the controller is restarted/reconfigured last.
      */
-    private boolean isController(PodRef podRef, RestartContext restartContext) throws Exception {
-        int controller = controller(podRef, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
+    private boolean isController(PodRef podRef, KafkaRestartContext kafkaRestartContext) throws Exception {
+        int controller = controller(podRef, operationTimeoutMs, TimeUnit.MILLISECONDS, kafkaRestartContext);
         int stillRunning = podToContext.reduceValuesToInt(100, v -> v.getPromise().future().isComplete() ? 0 : 1,
                 0, Integer::sum);
         return controller == podRef.getPodId() && stillRunning > 1;
@@ -732,7 +732,7 @@ public class KafkaRoller {
      * or -1 if there is not currently a controller.
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
-    int controller(PodRef podRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
+    int controller(PodRef podRef, long timeout, TimeUnit unit, KafkaRestartContext kafkaRestartContext) throws Exception {
         // Don't use all allClient here, because it will have cache metadata about which is the controller.
         try (Admin ac = adminClient(singletonList(podRef.getPodId()), false)) {
             Node controllerNode = null;
@@ -740,9 +740,9 @@ public class KafkaRoller {
                 DescribeClusterResult describeClusterResult = ac.describeCluster();
                 KafkaFuture<Node> controller = describeClusterResult.controller();
                 controllerNode = controller.get(timeout, unit);
-                restartContext.clearConnectionError();
+                kafkaRestartContext.clearConnectionError();
             } catch (ExecutionException | TimeoutException e) {
-                maybeTcpProbe(podRef, e, restartContext);
+                maybeTcpProbe(podRef, e, kafkaRestartContext);
             }
             int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
             LOGGER.debugCr(reconciliation, "Controller is {}", id);
@@ -755,8 +755,8 @@ public class KafkaRoller {
      * open on the broker; if it's not then maybe throw a ForceableProblem to immediately force a restart.
      * This is an optimization for brokers which don't seem to be running.
      */
-    private void maybeTcpProbe(PodRef podRef, Exception executionException, RestartContext restartContext) throws Exception {
-        if (restartContext.connectionError() + podNames.size() * 120_000L >= System.currentTimeMillis()) {
+    private void maybeTcpProbe(PodRef podRef, Exception executionException, KafkaRestartContext kafkaRestartContext) throws Exception {
+        if (kafkaRestartContext.connectionError() + podNames.size() * 120_000L >= System.currentTimeMillis()) {
             try {
                 LOGGER.debugCr(reconciliation, "Probing TCP port due to previous problems connecting to pod {}", podRef);
                 // do a tcp connect and close (with a short connect timeout)
@@ -766,7 +766,7 @@ public class KafkaRoller {
             }
             throw executionException;
         } else {
-            restartContext.noteConnectionError();
+            kafkaRestartContext.noteConnectionError();
             throw new ForceableProblem("Error while trying to determine the cluster controller from pod " + podRef.getPodName(), executionException.getCause());
         }
     }

@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class V1EventPublisherTest {
+class V1RestartEventPublisherTest {
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     Pod pod;
@@ -63,7 +63,7 @@ class V1EventPublisherTest {
 
     @Test
     void testPopulatesExpectedFields() {
-        V1EventPublisher eventPublisher = new V1EventPublisher(clock, client, "cluster-operator-id");
+        V1RestartEventPublisher eventPublisher = new V1RestartEventPublisher(clock, client, "cluster-operator-id");
 
         RestartReasons reasons = new RestartReasons().add(RestartReason.JBOD_VOLUMES_CHANGED);
         eventPublisher.publishRestartEvents(pod, reasons);

@@ -698,7 +698,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        int controller(PodRef podRef, long timeout, TimeUnit unit, RestartContext restartContext) throws ForceableProblem {
+        int controller(PodRef podRef, long timeout, TimeUnit unit, KafkaRestartContext kafkaRestartContext) throws ForceableProblem {
             Throwable throwable = controllerException.apply(podRef.getPodId());
             if (throwable != null) {
                 throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podRef.getPodName(), throwable);

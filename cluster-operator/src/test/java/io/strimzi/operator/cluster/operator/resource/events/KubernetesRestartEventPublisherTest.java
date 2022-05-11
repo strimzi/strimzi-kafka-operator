@@ -47,10 +47,10 @@ class KubernetesRestartEventPublisherTest {
         KubernetesClient client = Mockito.mock(KubernetesClient.class);
 
         KubernetesRestartEventPublisher shouldBeV1 = KubernetesRestartEventPublisher.createPublisher(client, "",  true);
-        assertThat(shouldBeV1, isA(V1EventPublisher.class));
+        assertThat(shouldBeV1, isA(V1RestartEventPublisher.class));
 
         KubernetesRestartEventPublisher shouldBeV1Beta1 = KubernetesRestartEventPublisher.createPublisher(client, "", false);
-        assertThat(shouldBeV1Beta1, isA(V1Beta1EventPublisher.class));
+        assertThat(shouldBeV1Beta1, isA(V1Beta1RestartEventPublisher.class));
     }
 
     @Test

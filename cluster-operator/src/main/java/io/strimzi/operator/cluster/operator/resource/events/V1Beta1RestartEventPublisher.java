@@ -6,33 +6,34 @@ package io.strimzi.operator.cluster.operator.resource.events;
 
 import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.ObjectReference;
-import io.fabric8.kubernetes.api.model.events.v1.EventBuilder;
+import io.fabric8.kubernetes.api.model.events.v1beta1.EventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
 import java.time.Clock;
 
 /**
- * Publishes K8s events in the events.k8s.io/v1 format
+ * Publishes K8s events in the events.k8s.io/v1beta1 format
  */
-class V1EventPublisher extends KubernetesRestartEventPublisher {
+class V1Beta1RestartEventPublisher extends KubernetesRestartEventPublisher {
 
     private final KubernetesClient client;
     private final String operatorName;
 
-    V1EventPublisher(Clock clock, KubernetesClient client, String operatorName) {
+    V1Beta1RestartEventPublisher(Clock clock, KubernetesClient client, String operatorName) {
         super(clock);
         this.client = client;
         this.operatorName = operatorName;
     }
 
+
     @Override
     protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
         EventBuilder builder = new EventBuilder();
 
-        builder.withNewMetadata()
+        builder.withAction(action)
+                .withNewMetadata()
                     .withGenerateName("strimzi-event")
                 .endMetadata()
-                .withAction(action)
                 .withReportingController(controller)
                 .withReportingInstance(operatorName)
                 .withRegarding(podReference)
@@ -41,7 +42,6 @@ class V1EventPublisher extends KubernetesRestartEventPublisher {
                 .withEventTime(eventTime)
                 .withNote(note);
 
-        client.events().v1().events().create(builder.build());
+        client.events().v1beta1().events().create(builder.build());
     }
 }
-
