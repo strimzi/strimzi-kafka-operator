@@ -48,6 +48,13 @@ spec:
 You can configure access control for source and target clusters using TLS or SASL authentication.
 This procedure shows a configuration that uses TLS encryption and authentication for the source and target cluster.
 
+You can specify the topics and consumer groups you wish to replicate from a source cluster in the `KafkaMirrorMaker2` resource.
+You use the `topicsPattern` and `groupsPattern` properties to do this.
+You can provide a list of names or use a regular expression.
+By default, all topics and consumer groups are replicated if you do not set the `topicsPattern` and `groupsPattern` properties.
+You can also replicate all topics and consumer groups by using `".*"` as a regular expression.
+However, try to specify only the topics and consumer groups you need to avoid causing any unnecessary extra load on the cluster.
+
 .Prerequisites
 
 * Strimzi is running
@@ -125,7 +132,7 @@ spec:
         sync.group.offsets.interval.seconds: 60 <33>
         emit.checkpoints.interval.seconds: 60 <34>
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-    topicsPattern: ".*" <35>
+    topicsPattern: "topic1|topic2|topic3" <35>
     groupsPattern: "group1|group2|group3" <36>
   resources: <37>
     requests:
@@ -220,9 +227,8 @@ To configure topic offset synchronization, this property must also be set for th
 <32> Optional setting to synchronize consumer group offsets, which is useful for recovery in an active/passive configuration. Synchronization is not enabled by default.
 <33> If the synchronization of consumer group offsets is enabled, you can adjust the frequency of the synchronization.
 <34> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
-<35> Topic replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as regular expression patterns]. Here we request all topics.
-<36> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as regular expression patterns]. Here we request three consumer groups by name.
-You can use comma-separated lists.
+<35> Topic replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. Used by the source connector to replicate specified topics. Here we request three topics by name.
+<36> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. Used by the checkpoint connector to replicate specified consumer groups. Here we request three consumer groups by name.
 <37> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <38> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <39> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
