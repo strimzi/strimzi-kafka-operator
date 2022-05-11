@@ -111,6 +111,8 @@ public abstract class AbstractRebalanceOptions {
 
         protected abstract B self();
 
+        public abstract T build();
+
         public B withFullRun() {
             this.isDryRun = false;
             return self();
