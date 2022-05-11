@@ -6,6 +6,7 @@ package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
@@ -24,7 +25,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.HELM;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 
 @Tag(HELM)
 @Tag(REGRESSION)
@@ -32,7 +32,7 @@ import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 class HelmChartIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartIsolatedST.class);
-    private HelmResource helmResource = new HelmResource(clusterOperator.getDeploymentNamespace());
+    private HelmResource helmResource = new HelmResource(Constants.INFRA_NAMESPACE);
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
@@ -45,7 +45,7 @@ class HelmChartIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(clusterName, topicName).build(),
             // Deploy KafkaConnect and wait for readiness
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, INFRA_NAMESPACE, clusterName, 1).editMetadata()
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, Constants.INFRA_NAMESPACE, clusterName, 1).editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata().build(),
             // Deploy KafkaBridge (different image than Kafka) and wait for readiness
