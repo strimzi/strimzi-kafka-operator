@@ -134,7 +134,6 @@ this quick start guide.
     - `docker_registry_name/docker_hub_username/kaniko-executor`
     - `docker_registry_name/docker_hub_username/maven-builder`
     - `docker_registry_name/docker_hub_username/operator`
-    - `docker_registry_name/docker_hub_username/test-client`
 
 The tests run during the build can be skipped by setting the `MVN_ARGS` environment variable and passing that to the
 make command:

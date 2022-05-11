@@ -61,7 +61,6 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) {
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
@@ -100,7 +99,6 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) {
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING

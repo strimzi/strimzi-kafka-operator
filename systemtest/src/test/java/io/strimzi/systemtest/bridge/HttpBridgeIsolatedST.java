@@ -25,7 +25,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -51,6 +50,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -408,13 +408,13 @@ class HttpBridgeIsolatedST extends AbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? Constants.INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
+        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
         // un-install old cluster operator
         clusterOperator.unInstall();
         // install new one with branch new configuration
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)
             .withExtraEnvVars(
                 Arrays.asList(
@@ -431,7 +431,6 @@ class HttpBridgeIsolatedST extends AbstractST {
             .runInstallation();
 
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
-        String kafkaClientsName = clusterOperator.getDeploymentNamespace() + "-shared-" + Constants.KAFKA_CLIENTS;
 
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeClusterName, 1, 1)
@@ -439,13 +438,6 @@ class HttpBridgeIsolatedST extends AbstractST {
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
-
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), kafkaClientsName).get(0).getMetadata().getName();
 
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeClusterName,

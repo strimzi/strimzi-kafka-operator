@@ -48,6 +48,26 @@ public class JmxUtils {
         return cmdKubeClient().execInPod(podName, cmd).out().trim();
     }
 
+    public static void downloadJmxTermToPod(String namespace, String podName) {
+        String[] cmd = new String[] {
+            "mkdir",
+            "jmxterm",
+
+        };
+
+        cmdKubeClient().namespace(namespace).execInPod(podName, cmd);
+
+        cmd = new String[] {
+            "curl",
+            "-L",
+            "https://github.com/jiaqi/jmxterm/releases/download/v1.0.2/jmxterm-1.0.2-uber.jar",
+            "-o",
+            "jmxterm/jmxterm.jar"
+        };
+
+        cmdKubeClient().namespace(namespace).execInPod(podName, cmd);
+    }
+
     public static String collectJmxMetricsWithWait(String namespace, String serviceName, String secretName, String podName, String commands) {
         Secret jmxSecret = kubeClient(namespace).getSecret(secretName);
 

@@ -68,7 +68,6 @@ public class ReconciliationST extends AbstractST {
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaSsName);

@@ -122,7 +122,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
-    @MultiNodeClusterOnly
+    // We refer to 6 worker nodes to have always 2 nodes with same labels to properly evacuate pods from one node to another
+    @MultiNodeClusterOnly(workerNodeCount = 6)
     void testDrainCleanerWithComponentsDuringNodeDraining(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext, Constants.DRAIN_CLEANER_NAMESPACE);
 

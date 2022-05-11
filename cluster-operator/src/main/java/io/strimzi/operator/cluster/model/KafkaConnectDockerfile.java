@@ -155,10 +155,10 @@ public class KafkaConnectDockerfile {
                     String artifactHash = Util.hashStub(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
                     String artifactDir = plugin.getKey() + "/" + artifactHash;
 
-                    Cmd cmd = run("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
+                    Cmd cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
                             .andRun("mvn", "dependency:copy-dependencies",
                                     "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
-                            .andRun("curl", "-L", "--create-dirs", "--output",
+                            .andRun("curl", "-f", "-L", "--create-dirs", "--output",
                                     "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
                                     assembleResourceUrl(repo, mvn, "jar"));
                     writer.append("RUN ").println(cmd);
@@ -286,9 +286,9 @@ public class KafkaConnectDockerfile {
         Cmd cmd = run("mkdir", "-p", artifactDir);
 
         if (Boolean.TRUE.equals(artifact.getInsecure()))    {
-            return cmd.andRun("curl", "-k", "-L", "--output", artifactPath, artifact.getUrl());
+            return cmd.andRun("curl", "-f", "-k", "-L", "--output", artifactPath, artifact.getUrl());
         } else {
-            return cmd.andRun("curl", "-L", "--output", artifactPath, artifact.getUrl());
+            return cmd.andRun("curl", "-f", "-L", "--output", artifactPath, artifact.getUrl());
         }
     }
 
