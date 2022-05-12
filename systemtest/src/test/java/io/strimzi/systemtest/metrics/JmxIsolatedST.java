@@ -15,9 +15,9 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.specific.JmxUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,7 +50,7 @@ public class JmxIsolatedST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String zkSecretName = clusterName + "-zookeeper-jmx";
         final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
@@ -82,8 +82,9 @@ public class JmxIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        String clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
+        String scraperPodName = kubeClient().listPodsByPrefixInName(scraperName).get(0).getMetadata().getName();
+        JmxUtils.downloadJmxTermToPod(namespaceName, scraperPodName);
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
             .editOrNewSpec()
@@ -95,13 +96,13 @@ public class JmxIsolatedST extends AbstractST {
 
         Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
 
-        String kafkaResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.brokersServiceName(clusterName), kafkaJmxSecretName, clientsPodName, "bean kafka.server:type=app-info\nget -i *");
-        String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaConnectResources.serviceName(clusterName), connectJmxSecretName, clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
+        String kafkaResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.brokersServiceName(clusterName), kafkaJmxSecretName, scraperPodName, "bean kafka.server:type=app-info\nget -i *");
+        String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaConnectResources.serviceName(clusterName), connectJmxSecretName, scraperPodName, "bean kafka.connect:type=app-info\nget -i *");
 
-        String zkBeans = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "domain org.apache.ZooKeeperService\nbeans");
+        String zkBeans = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "domain org.apache.ZooKeeperService\nbeans");
         String zkBean = Arrays.asList(zkBeans.split("\\n")).stream().filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().get();
 
-        String zkResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "bean " + zkBean + "\nget -i *");
+        String zkResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "bean " + zkBean + "\nget -i *");
 
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));

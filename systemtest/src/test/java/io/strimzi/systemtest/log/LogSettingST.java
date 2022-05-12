@@ -262,7 +262,6 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     void testConnectLogSetting(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String connectClusterName = clusterName + "-connect";
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, namespace, LOG_SETTING_CLUSTER_NAME, 1, true)

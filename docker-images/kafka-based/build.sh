@@ -5,7 +5,7 @@ source $(dirname $(realpath $0))/../../tools/kafka-versions-tools.sh
 source $(dirname $(realpath $0))/../../tools/multi-platform-support.sh
 
 # Image directories
-kafka_images="kafka test-client"
+kafka_images="kafka"
 
 function dependency_check {
     # Check for bash >= 4

@@ -788,7 +788,6 @@ class SecurityST extends AbstractST {
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
         LOGGER.info("Getting IP of the bootstrap service");
@@ -1211,7 +1210,6 @@ class SecurityST extends AbstractST {
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
 
         final String tlsVersion12 = "TLSv1.2";
@@ -1286,7 +1284,6 @@ class SecurityST extends AbstractST {
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
 
         final String cipherSuitesSha384 = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
