@@ -15,9 +15,9 @@
   _(The s390x support is currently considered as experimental. We are not aware of any issues, but the s390x build doesn't at this point undergo the same level of testing as the AMD64 container images.)_
 * Update Strimzi Kafka Bridge to 0.21.5
 * Added rebalancing modes on the `KafkaRebalance` custom resource
-  * `full-rebalance`: runs a full rebalance moving replicas across all the brokers in the cluster. This is the default one if not specified.
-  * `add-broker`: after scaling up the cluster, it can be used to move replicas to the newly added brokers specified in the custom resource.
-  * `remove-broker`: it moves replicas out of the brokers to remove before the user scales down the cluster.
+  * `full-rebalance`: this mode runs a full rebalance moving replicas across all the brokers in the cluster. This is the default one if not specified.
+  * `add-broker`: after scaling up the cluster, this mode is used to move replicas to the newly added brokers specified in the custom resource.
+  * `remove-broker`: this mode is used to move replicas off the brokers that are going to be removed, before scaling down the cluster.
 
 ### Changes, deprecations and removals
 

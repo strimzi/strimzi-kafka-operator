@@ -63,7 +63,7 @@ spec:
                 - full-rebalance
                 - add-broker
                 - remove-broker
-                description: "Mode to run the rebalancing. The supported modes are `full-rebalance`, `add-broker`, `remove-broker`.\nIf not specified, the `full-rebalance` mode is used by default. \n\n* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.\n* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to remove.\n"
+                description: "Mode to run the rebalancing. The supported modes are `full-rebalance`, `add-broker`, `remove-broker`.\nIf not specified, the `full-rebalance` mode is used by default. \n\n* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.\n* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to be removed.\n"
               brokers:
                 type: array
                 items:
