@@ -4,7 +4,7 @@ kind: "KafkaRebalance"
 metadata:
   name: "my-rebalance"
 spec:
-  mode: "full-rebalance"
+  mode: "full"
   goals:
   - "DiskCapacityGoal"
   - "CpuCapacityGoal"

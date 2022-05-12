@@ -327,16 +327,16 @@ public class KafkaRebalanceAssemblyOperator
     /* test */ AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
 
         AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder;
-        // backward compatibility, no mode specified means "full-rebalance"
+        // backward compatibility, no mode specified means "full"
         KafkaRebalanceMode mode = Optional.ofNullable(kafkaRebalanceSpec)
                 .map(kr -> kr.getMode())
-                .orElse(KafkaRebalanceMode.FULL_REBALANCE);
+                .orElse(KafkaRebalanceMode.FULL);
         List<Integer> brokers = Optional.ofNullable(kafkaRebalanceSpec)
                 .map(kr -> kr.getBrokers())
                 .orElse(null);
 
         switch (mode) {
-            case ADD_BROKER:
+            case ADD_BROKERS:
                 rebalanceOptionsBuilder = new AddBrokerOptions.AddBrokerOptionsBuilder();
                 if (brokers != null && !brokers.isEmpty()) {
                     ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).withBrokers(brokers);
@@ -344,7 +344,7 @@ public class KafkaRebalanceAssemblyOperator
                     throw new IllegalArgumentException("The brokers list is mandatory when using the " + mode.toValue() + " rebalancing mode");
                 }
                 break;
-            case REMOVE_BROKER:
+            case REMOVE_BROKERS:
                 rebalanceOptionsBuilder = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder();
                 if (brokers != null && !brokers.isEmpty()) {
                     ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).withBrokers(brokers);
@@ -1223,17 +1223,17 @@ public class KafkaRebalanceAssemblyOperator
         if (!dryrun) {
             rebalanceOptionsBuilder.withFullRun();
         }
-        // backward compatibility, no mode specified means "full-rebalance"
+        // backward compatibility, no mode specified means "full"
         KafkaRebalanceMode mode = Optional.ofNullable(kafkaRebalance.getSpec())
                 .map(spec -> spec.getMode())
-                .orElse(KafkaRebalanceMode.FULL_REBALANCE);
+                .orElse(KafkaRebalanceMode.FULL);
 
         Future<CruiseControlRebalanceResponse> future;
         switch (mode) {
-            case ADD_BROKER:
+            case ADD_BROKERS:
                 future = apiClient.addBroker(host, CruiseControl.REST_API_PORT, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
                 break;
-            case REMOVE_BROKER:
+            case REMOVE_BROKERS:
                 future = apiClient.removeBroker(host, CruiseControl.REST_API_PORT, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
                 break;
             default:
@@ -1281,7 +1281,7 @@ public class KafkaRebalanceAssemblyOperator
             KafkaRebalanceState ready = dryrun ? KafkaRebalanceState.ProposalReady : KafkaRebalanceState.Rebalancing;
             return buildRebalanceStatus(kafkaRebalance, response.getUserTaskId(), ready, response.getJson(), validate(reconciliation, kafkaRebalance));
         } else {
-            throw new CruiseControlRestException("Rebalance returned unknown response: " + response.toString());
+            throw new CruiseControlRestException("Rebalance returned unknown response: " + response);
         }
     }
 

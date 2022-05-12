@@ -87,12 +87,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private static final KafkaRebalanceSpec EMPTY_KAFKA_REBALANCE_SPEC = new KafkaRebalanceSpecBuilder().build();
     private static final KafkaRebalanceSpec ADD_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
-                    .withMode(KafkaRebalanceMode.ADD_BROKER)
+                    .withMode(KafkaRebalanceMode.ADD_BROKERS)
                     .withBrokers(3)
                     .build();
     private static final KafkaRebalanceSpec REMOVE_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
-                    .withMode(KafkaRebalanceMode.REMOVE_BROKER)
+                    .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                     .withBrokers(3)
                     .build();
 
@@ -354,7 +354,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     // after a while, apply the "stop" annotation to the resource in the PendingProposal state
                     annotate(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
                 }
-                return;
             }
         });
 
@@ -766,7 +765,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewWithMissingHardGoalsAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withMode(KafkaRebalanceMode.ADD_BROKER)
+                .withMode(KafkaRebalanceMode.ADD_BROKERS)
                 .withBrokers(3)
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .build();
@@ -781,7 +780,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewWithMissingHardGoalsRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withMode(KafkaRebalanceMode.REMOVE_BROKER)
+                .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                 .withBrokers(3)
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .build();
@@ -885,7 +884,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadySkipHardGoalsAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withMode(KafkaRebalanceMode.ADD_BROKER)
+                .withMode(KafkaRebalanceMode.ADD_BROKERS)
                 .withBrokers(3)
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .withSkipHardGoalCheck(true)
@@ -901,7 +900,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewToProposalReadySkipHardGoalsRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withMode(KafkaRebalanceMode.REMOVE_BROKER)
+                .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                 .withBrokers(3)
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .withSkipHardGoalCheck(true)
@@ -959,7 +958,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewWithMissingHardGoalsAndRefreshAddBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withMode(KafkaRebalanceMode.ADD_BROKER)
+                .withMode(KafkaRebalanceMode.ADD_BROKERS)
                 .withBrokers(3)
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .build();
@@ -974,7 +973,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testNewWithMissingHardGoalsAndRefreshRemoveBroker(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withMode(KafkaRebalanceMode.REMOVE_BROKER)
+                .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                 .withBrokers(3)
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .build();

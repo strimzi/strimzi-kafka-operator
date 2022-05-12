@@ -3,5 +3,5 @@ kind: KafkaRebalance
 metadata:
   name: my-rebalance
 spec:
-  mode: remove-broker
+  mode: remove-brokers
   brokers: [3,4]

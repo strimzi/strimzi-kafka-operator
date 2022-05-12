@@ -8,9 +8,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum KafkaRebalanceMode {
-    FULL_REBALANCE("full-rebalance"),
-    ADD_BROKER("add-broker"),
-    REMOVE_BROKER("remove-broker");
+    FULL("full"),
+    ADD_BROKERS("add-brokers"),
+    REMOVE_BROKERS("remove-brokers");
 
     private String name;
 
@@ -21,12 +21,12 @@ public enum KafkaRebalanceMode {
     @JsonCreator
     public static KafkaRebalanceMode forValue(String value) {
         switch (value) {
-            case "full-rebalance":
-                return FULL_REBALANCE;
-            case "add-broker":
-                return ADD_BROKER;
-            case "remove-broker":
-                return REMOVE_BROKER;
+            case "full":
+                return FULL;
+            case "add-brokers":
+                return ADD_BROKERS;
+            case "remove-brokers":
+                return REMOVE_BROKERS;
             default:
                 return null;
         }

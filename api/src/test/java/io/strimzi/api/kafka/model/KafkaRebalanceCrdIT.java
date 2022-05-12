@@ -56,12 +56,12 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaRebalanceAddBroker() {
-        createDeleteCustomResource("KafkaRebalance-add-broker.yaml");
+        createDeleteCustomResource("KafkaRebalance-add-brokers.yaml");
     }
 
     @Test
     void testKafkaRebalanceRemoveBroker() {
-        createDeleteCustomResource("KafkaRebalance-remove-broker.yaml");
+        createDeleteCustomResource("KafkaRebalance-remove-brokers.yaml");
     }
 
     @Test
@@ -70,7 +70,7 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
                 KubeClusterException.class,
                 () -> createDeleteCustomResource("KafkaRebalance-wrong-mode.yaml"));
 
-        assertThat(exception.getMessage(), containsString("spec.mode: Unsupported value: \"wrong-mode\": supported values: \"full-rebalance\", \"add-broker\", \"remove-broker\""));
+        assertThat(exception.getMessage(), containsString("spec.mode: Unsupported value: \"wrong-mode\": supported values: \"full\", \"add-brokers\", \"remove-brokers\""));
     }
 
     @BeforeAll

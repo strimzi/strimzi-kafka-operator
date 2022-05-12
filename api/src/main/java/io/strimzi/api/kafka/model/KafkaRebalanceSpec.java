@@ -27,7 +27,7 @@ public class KafkaRebalanceSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
     // rebalancing modes
-    private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL_REBALANCE;
+    private KafkaRebalanceMode mode = KafkaRebalanceMode.FULL;
     private List<Integer> brokers;
 
     // Optimization goal configurations
@@ -46,11 +46,11 @@ public class KafkaRebalanceSpec extends Spec {
     private List<String> replicaMovementStrategies;
 
     @Description("Mode to run the rebalancing. " +
-            "The supported modes are `full-rebalance`, `add-broker`, `remove-broker`.\n" +
-            "If not specified, the `full-rebalance` mode is used by default. \n\n" +
-            "* `full-rebalance` mode runs the rebalancing across all the brokers in the cluster.\n" +
-            "* `add-broker` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n" +
-            "* `remove-broker` mode can be used before scaling down the cluster to move replicas out of the brokers to be removed.\n")
+            "The supported modes are `full`, `add-brokers`, `remove-brokers`.\n" +
+            "If not specified, the `full` mode is used by default. \n\n" +
+            "* `full` mode runs the rebalancing across all the brokers in the cluster.\n" +
+            "* `add-brokers` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.\n" +
+            "* `remove-brokers` mode can be used before scaling down the cluster to move replicas out of the brokers to be removed.\n")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public KafkaRebalanceMode getMode() {
         return mode;
@@ -61,7 +61,7 @@ public class KafkaRebalanceSpec extends Spec {
     }
 
     @Description("The list of newly added brokers in case of scaling up or the ones to be removed in case of scaling down to use for rebalancing. " +
-            "This list can be used only with rebalancing mode `add-broker` and `removed-broker`. It is ignored with `full-rebalance` mode.")
+            "This list can be used only with rebalancing mode `add-brokers` and `removed-brokers`. It is ignored with `full` mode.")
     public List<Integer> getBrokers() {
         return brokers;
     }
