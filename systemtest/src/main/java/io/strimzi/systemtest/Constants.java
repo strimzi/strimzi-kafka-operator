@@ -83,7 +83,6 @@ public interface Constants {
     String KAFKA_ADMIN_CLIENT_LABEL_VALUE = "kafka-clients";
     String KAFKA_BRIDGE_CLIENTS_LABEL_VALUE = "kafka-clients";
 
-    String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
@@ -382,7 +381,6 @@ public interface Constants {
     String CLUSTER_KEY = "CLUSTER_NAME";
     String TOPIC_KEY = "TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
-    String KAFKA_CLIENTS_KEY = "KAFKA_CLIENTS_NAME";
     String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";
     String CONSUMER_KEY = "CONSUMER_NAME";

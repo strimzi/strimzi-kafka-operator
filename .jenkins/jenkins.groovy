@@ -41,7 +41,6 @@ def prepareUpgradeSTs(String workspace, String dockerRegistry, String dockerTag)
     println("[INFO] Update files for upgrade procedure")
     sh(script: """
         sed -i 's#:latest#:${dockerTag}#g' ${workspace}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
-        sed -i 's#quay.io/strimzi/test-client:${dockerTag}#${dockerRegistry}/strimzi/test-client:${dockerTag}#g' ${workspace}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json
         sed -i 's#quay.io/strimzi/#${dockerRegistry}/strimzi/#g' ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
         sed -i 's#/opt/${dockerRegistry}#/opt#g' ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
     """)

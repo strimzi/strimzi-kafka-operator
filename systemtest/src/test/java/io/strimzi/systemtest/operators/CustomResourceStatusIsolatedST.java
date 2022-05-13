@@ -538,8 +538,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
                 .endKafka()
             .endSpec();
 
-        String kafkaClientsName = Constants.INFRA_NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
-
         resourceManager.createResource(extensionContext, kafkaBuilder.build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).build());
 

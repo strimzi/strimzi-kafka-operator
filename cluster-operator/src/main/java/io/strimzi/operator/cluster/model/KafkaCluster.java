@@ -81,6 +81,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.kafka.common.Uuid;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -105,6 +106,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
+    /* test */ static final String ENV_VAR_STRIMZI_CLUSTER_ID = "STRIMZI_CLUSTER_ID";
+    /* test */ static final String ENV_VAR_STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
@@ -187,6 +190,8 @@ public class KafkaCluster extends AbstractModel {
     private String ccMinInSyncReplicas = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
+    private boolean useKRaft = false;
+    private String clusterId;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -247,11 +252,11 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
+        return fromCrd(reconciliation, kafkaAssembly, versions, null, 0, false);
     }
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:JavaNCSS"})
-    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
+    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas, boolean useKRaft) {
         KafkaSpec kafkaSpec = kafkaAssembly.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
@@ -263,6 +268,12 @@ public class KafkaCluster extends AbstractModel {
         result.setOwnerReference(kafkaAssembly);
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
+
+        // Configures KRaft and KRaft cluster ID
+        if (useKRaft)   {
+            result.useKRaft = true;
+            result.clusterId = getOrGenerateKRaftClusterId(kafkaAssembly);
+        }
 
         validateIntConfigProperty("default.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
@@ -476,6 +487,23 @@ public class KafkaCluster extends AbstractModel {
         }
 
         return podNames;
+    }
+
+    /**
+     * If the cluster already exists and has a cluster ID set in its status, it will be extracted from it. If it doesn't
+     * exist in the status yet, a new cluster ID will be generated. The cluster ID is used to bootstrap KRaft clusters.
+     * The clusterID is added to the KafkaStatus in KafkaReconciler method clusterId(...).
+     *
+     * @param kafkaCr   The Kafka CR from which the cluster ID should be extracted
+     *
+     * @return  The extracted or generated cluster ID
+     */
+    private static String getOrGenerateKRaftClusterId(Kafka kafkaCr)   {
+        if (kafkaCr.getStatus() != null && kafkaCr.getStatus().getClusterId() != null) {
+            return kafkaCr.getStatus().getClusterId();
+        } else {
+            return Uuid.randomUuid().toString();
+        }
     }
 
     /**
@@ -1590,6 +1618,11 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (useKRaft)   {
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLUSTER_ID, clusterId));
+            varList.add(buildEnvVar(ENV_VAR_STRIMZI_KRAFT_ENABLED, "true"));
+        }
+
         if (isJmxEnabled) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
             if (isJmxAuthenticated) {
@@ -1982,22 +2015,42 @@ public class KafkaCluster extends AbstractModel {
      * @return                      The Kafka broker configuration as a String
      */
     public String generatePerBrokerBrokerConfiguration(int brokerId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
-        return new KafkaBrokerConfigurationBuilder(reconciliation)
-                .withBrokerId(String.valueOf(brokerId))
-                .withRackId(rack)
-                .withZookeeper(cluster)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
-                .withListeners(cluster,
-                        namespace,
-                        listeners,
-                        () -> getPodName(brokerId),
-                        listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
-                        listenerId -> advertisedPorts.get(brokerId).get(listenerId),
-                        controlPlaneListener)
-                .withAuthorization(cluster, authorization)
-                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
-                .withUserConfiguration(configuration)
-                .build().trim();
+        if (useKRaft) {
+            return new KafkaBrokerConfigurationBuilder(reconciliation)
+                    .withBrokerId(String.valueOf(brokerId))
+                    .withRackId(rack)
+                    .withKRaft(cluster, namespace, replicas)
+                    .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
+                    .withListeners(cluster,
+                            namespace,
+                            listeners,
+                            () -> getPodName(brokerId),
+                            listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
+                            listenerId -> advertisedPorts.get(brokerId).get(listenerId),
+                            controlPlaneListener, true)
+                    // Not supported right now
+                    //.withAuthorization(cluster, authorization)
+                    .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
+                    .withUserConfiguration(configuration)
+                    .build().trim();
+        } else {
+            return new KafkaBrokerConfigurationBuilder(reconciliation)
+                    .withBrokerId(String.valueOf(brokerId))
+                    .withRackId(rack)
+                    .withZookeeper(cluster)
+                    .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
+                    .withListeners(cluster,
+                            namespace,
+                            listeners,
+                            () -> getPodName(brokerId),
+                            listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
+                            listenerId -> advertisedPorts.get(brokerId).get(listenerId),
+                            controlPlaneListener, false)
+                    .withAuthorization(cluster, authorization)
+                    .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
+                    .withUserConfiguration(configuration)
+                    .build().trim();
+        }
     }
 
     /**

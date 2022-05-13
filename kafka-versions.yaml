@@ -173,4 +173,22 @@
   zookeeper: 3.6.3
   third-party-libs: 3.1.x
   supported: true
+  default: false
+- version: 3.1.1
+  format: 3.1
+  protocol: 3.1
+  url: https://archive.apache.org/dist/kafka/3.1.1/kafka_2.13-3.1.1.tgz
+  checksum: 5EC72EE76AD14997763F2654ECEF0390FD9628413C287619B734F44193252950D412DEBA684AAE5147AC844A88D9EF10EEFC0FFEB14435F2E00347EF946AA5D6
+  zookeeper: 3.6.3
+  third-party-libs: 3.1.x
+  supported: true
+  default: false
+- version: 3.2.0
+  format: 3.2
+  protocol: 3.2
+  url: https://archive.apache.org/dist/kafka/3.2.0/kafka_2.13-3.2.0.tgz
+  checksum: 736A129823B058DC10788D0893BDE47B6F39B9E4972F9EAC2D5C9E85E51E477344C6F1E1EBD126CE34D5FD430EB07E55FDD60D60CB541F1D48655C0EBC0A4778
+  zookeeper: 3.6.3
+  third-party-libs: 3.2.x
+  supported: true
   default: true

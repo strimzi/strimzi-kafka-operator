@@ -5,20 +5,13 @@
 package io.strimzi.systemtest.utils;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.rmi.UnexpectedException;
 import java.time.Duration;
 import java.util.Random;
 
@@ -27,7 +20,6 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 /**
  * ClientUtils class, which provides static methods for the all type clients
  * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient
  */
 public class ClientUtils {
 
@@ -37,22 +29,6 @@ public class ClientUtils {
 
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
-
-    public static void waitUntilClientReceivedMessagesTls(KafkaClientOperations kafkaClient, int exceptedMessages) throws Exception {
-        for (int tries = 1; ; tries++) {
-            int receivedMessages = kafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_TIMEOUT);
-
-            if (receivedMessages == exceptedMessages) {
-                LOGGER.info("Consumer successfully consumed {} messages for the {} time", exceptedMessages, tries);
-                break;
-            }
-            LOGGER.warn("Client not received excepted messages {}, instead received only {}!", exceptedMessages, receivedMessages);
-
-            if (tries == 3) {
-                throw new RuntimeException(String.format("Consumer wasn't able to consume %s messages for 3 times", exceptedMessages));
-            }
-        }
-    }
 
     public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount) {
         waitForClientsSuccess(producerName, consumerName, namespace, messageCount, true);
@@ -91,7 +67,7 @@ public class ClientUtils {
         }
     }
 
-    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {
+    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) {
         waitForClientTimeout(jobName, namespace, messageCount, true);
     }
 
@@ -169,34 +145,6 @@ public class ClientUtils {
     private static long timeoutForClientFinishJob(int messagesCount) {
         // need to add at least 2minutes for finishing the job
         return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();
-    }
-
-    public static void waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(ExtensionContext extensionContext,
-                                                                                     InternalKafkaClient internalKafkaClient) throws Exception {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        ResourceManager.getInstance().createResource(extensionContext, KafkaTopicTemplates.topic(internalKafkaClient.getClusterName(), topicName)
-            .editMetadata()
-                .withNamespace(internalKafkaClient.getNamespaceName())
-            .endMetadata()
-            .build());
-
-        InternalKafkaClient client = internalKafkaClient.toBuilder()
-            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
-            .withNamespaceName(internalKafkaClient.getNamespaceName())
-            .withTopicName(topicName)
-            .build();
-
-        LOGGER.info("Sending messages to - topic {}, cluster {} and message count of {}",
-            internalKafkaClient.getTopicName(), internalKafkaClient.getClusterName(), internalKafkaClient.getMessageCount());
-
-        int sent = client.sendMessagesTls();
-        int received = client.receiveMessagesTls();
-
-        LOGGER.info("Sent {} and received {}", sent, received);
-
-        if (sent != received) {
-            throw new Exception("Client sent " + sent + " and received " + received + " ,which does not match!");
-        }
     }
 
     /**

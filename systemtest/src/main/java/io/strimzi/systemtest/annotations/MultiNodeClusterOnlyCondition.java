@@ -11,14 +11,21 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Optional;
+
+import static org.junit.platform.commons.support.AnnotationSupport.findAnnotation;
+
 public class MultiNodeClusterOnlyCondition implements ExecutionCondition {
     private static final Logger LOGGER = LogManager.getLogger(MultiNodeClusterOnlyCondition.class);
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
+        Optional<MultiNodeClusterOnly> annotation = findAnnotation(extensionContext.getElement(), MultiNodeClusterOnly.class);
+        int expectedNodeCount = annotation.get().workerNodeCount();
+
         KubeClusterResource clusterResource = KubeClusterResource.getInstance();
 
-        if (clusterResource.client().getClusterNodes().size() > 1) {
+        if (clusterResource.client().getClusterWorkers().size() > expectedNodeCount) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.info("{} is @MultiNodeClusterOnly, but the running cluster is not multi-node cluster: Ignoring {}",
