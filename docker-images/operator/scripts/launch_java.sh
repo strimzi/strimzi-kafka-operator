@@ -14,11 +14,6 @@ function get_gc_opts {
 
 export MALLOC_ARENA_MAX=2
 
-if [[ -z "$STRIMZI_OPERATOR_NAME" ]]; then
-  STRIMZI_OPERATOR_NAME="$(hostname)"
-  export STRIMZI_OPERATOR_NAME
-fi
-
 # Make sure that we use /dev/urandom
 JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp/vertx-cache -Djava.security.egd=file:/dev/./urandom"
 
