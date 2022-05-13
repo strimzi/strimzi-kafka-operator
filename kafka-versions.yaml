@@ -174,6 +174,15 @@
   third-party-libs: 3.1.x
   supported: true
   default: false
+- version: 3.1.1
+  format: 3.1
+  protocol: 3.1
+  url: https://archive.apache.org/dist/kafka/3.1.1/kafka_2.13-3.1.1.tgz
+  checksum: 5EC72EE76AD14997763F2654ECEF0390FD9628413C287619B734F44193252950D412DEBA684AAE5147AC844A88D9EF10EEFC0FFEB14435F2E00347EF946AA5D6
+  zookeeper: 3.6.3
+  third-party-libs: 3.1.x
+  supported: true
+  default: false
 - version: 3.2.0
   format: 3.2
   protocol: 3.2
