@@ -1,0 +1,115 @@
+// Module included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='con-operator-restart-events-{context}']
+
+= Monitoring Strimzi operated Kafka pod restarts
+
+[role="_abstract"]
+When the cluster operator restarts a Kafka pod, it emits a Kubernetes event into the pod's namespace explaining why it did so.
+
+
+== Observing restart events
+
+Using `kubectl` you can list events, and filter for only those emitted by the cluster operator by setting the `source` field.
+
+[source,shell-session]
+----
+~/ > kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator
+LAST SEEN   TYPE     REASON                   OBJECT                        MESSAGE
+2m          Normal   JbodVolumesChanged       pod/strimzi-cluster-kafka-0   JBOD volumes were added or removed
+58m         Normal   PodForceRestartOnError   pod/strimzi-cluster-kafka-1   Pod needs to be forcibly restarted due to an error
+5m47s       Normal   ManualRollingUpdate      pod/strimzi-cluster-kafka-2   Pod was manually annotated to be rolled
+----
+
+To view more detailed information about an event or events, use an output format such as yaml. Note that this example is also filtering
+on `reason` to further limit the returned events.
+
+[source,shell-session]
+~/ > kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,reason=PodForceRestartOnError -o yaml
+
+[source,yaml]
+----
+apiVersion: v1
+items:
+- action: StrimziInitiatedPodRestart
+  apiVersion: v1
+  eventTime: "2022-05-13T00:22:34.168086Z"
+  firstTimestamp: null <1>
+  involvedObject:
+* kind: Pod
+* name: strimzi-cluster-kafka-1
+* namespace: kafka
+  kind: Event
+  lastTimestamp: null <1>
+  message: Pod needs to be forcibly restarted due to an error
+  metadata:
+* creationTimestamp: "2022-05-13T00:22:34Z"
+* generateName: strimzi-event
+* name: strimzi-eventwppk6
+* namespace: kafka
+* resourceVersion: "432961"
+* uid: 29fcdb9e-f2cf-4c95-a165-a5efcd48edfc
+  reason: PodForceRestartOnError
+  reportingComponent: strimzi.io/cluster-operator
+  reportingInstance: strimzi-cluster-operator-6458cfb4c6-6bpdp
+  source: {} <1>
+  type: Normal
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
+----
+<1> These fields are deprecated, and will be removed in Kubernetes 1.25. As such, they are not populated for these events.
+
+=== Using field selectors with Kubernetes events
+
+The event APIs of Kubernetes are changing, so it can be confusing using `kubectl get events --field-selector` to filter them.
+
+==== Kubernetes <= 1.24
+
+The following fields are available when filtering events with  `--field-selector`:
+
+* `involvedObject.kind`: the involved object is the pod that was restarted, and for these events, the kind will always be "Pod".
+* `involvedObject.namespace`: the namespace that the pod belongs to.
+* `involvedObject.name`: the pod's name, e.g., `strimzi-cluster-kafka-0`.
+* `involvedObject.uid`: the unique id of the pod.
+* `reason`: why the pod was restarted, e.g., `JbodVolumesChanged`.
+* `reportingComponent`: For Strimzi restart events, this will always be `strimzi.io/cluster-operator`.
+* `source`: An older version of the above field, this will also always be `strimzi.io/cluster-operator`.
+* `type`: This can be either `Warning` or `Normal`, for all current Strimzi restart events, it is currently always `Normal`.
+
+==== Kubernetes 1.25+
+
+When Kubernetes 1.25 is released and installed on your cluster, you will also be able to use these fields with  `--field-selector`:
+
+* `regarding.kind`: same as `involvedObject.kind`
+* `regarding.namespace`: same as `involvedObject.namespace`
+* `regarding.name`: same as `involvedObject.name`
+* `regarding.name`: same as `involvedObject.uid`
+* `reportingController`: same as `reportingComponent`
+
+== Current reasons why Strimzi will restart a Kafka pod //TODO
+
+* CaCertHasOldGeneration - // TODO explain what old generation means here
+* CaCertRemoved - // TODO
+* CaCertRenewed - // Another todo
+* CLIENT_CA_CERT_KEY_REPLACED("Trust new clients CA certificate signed by new key"),
+* CLUSTER_CA_CERT_KEY_REPLACED("Trust new cluster CA certificate signed by new key"),
+* CONFIG_CHANGE_REQUIRES_RESTART("Pod needs to be restarted, because reconfiguration cannot be done dynamically"),
+* CUSTOM_LISTENER_CA_CERT_CHANGE("Custom certificate one or more listeners changed"),
+* FILE_SYSTEM_RESIZE_NEEDED("File system needs to be resized"),
+* JBOD_VOLUMES_CHANGED("JBOD volumes were added or removed"),
+* MANUAL_ROLLING_UPDATE("Pod was manually annotated to be rolled"),
+* POD_FORCE_RESTART_ON_ERROR("Pod needs to be forcibly restarted due to an error"),
+* POD_HAS_OLD_GENERATION("Pod has old generation"),
+* POD_HAS_OLD_REVISION("Pod has old revision"),
+* POD_STUCK("Pod needs to be restarted, because it seems to be stuck and restart might help"),
+* POD_UNRESPONSIVE("Pod needs to be restarted, because it does not seem to responding to connection attempts"),
+* SERVER_CERT_CHANGE("Server certificates changed");
+
+== Monitoring restart events
+
+There are multiple open source projects that export Kubernetes events as metrics consumable by popular tools such as Prometheus, searching
+the web for "Kubernetes event exporter" will help you find the options you have.
