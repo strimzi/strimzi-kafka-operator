@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PathBuilder {
 
@@ -107,7 +108,7 @@ public class PathBuilder {
     public PathBuilder withAddBrokerParameters(AddBrokerOptions options) {
         if (options != null) {
             PathBuilder builder = withAbstractRebalanceParameters(options)
-                    .withParameter(CruiseControlParameters.BROKER_ID, String.join(",", options.getBrokers()));
+                    .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
             return builder;
         } else {
             return this;
@@ -117,7 +118,7 @@ public class PathBuilder {
     public PathBuilder withRemoveBrokerParameters(RemoveBrokerOptions options) {
         if (options != null) {
             PathBuilder builder = withAbstractRebalanceParameters(options)
-                    .withParameter(CruiseControlParameters.BROKER_ID, String.join(",", options.getBrokers()));
+                    .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
             return builder;
         } else {
             return this;

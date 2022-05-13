@@ -10,6 +10,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -50,6 +52,25 @@ public class KafkaRebalanceCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaRebalanceWithExcludedTopics() {
         createDeleteCustomResource("KafkaRebalance-excluded-topics.yaml");
+    }
+
+    @Test
+    void testKafkaRebalanceAddBroker() {
+        createDeleteCustomResource("KafkaRebalance-add-brokers.yaml");
+    }
+
+    @Test
+    void testKafkaRebalanceRemoveBroker() {
+        createDeleteCustomResource("KafkaRebalance-remove-brokers.yaml");
+    }
+
+    @Test
+    void testKafkaRebalanceWrongMode() {
+        Throwable exception = assertThrows(
+                KubeClusterException.class,
+                () -> createDeleteCustomResource("KafkaRebalance-wrong-mode.yaml"));
+
+        assertThat(exception.getMessage(), containsString("spec.mode: Unsupported value: \"wrong-mode\": supported values: \"full\", \"add-brokers\", \"remove-brokers\""));
     }
 
     @BeforeAll

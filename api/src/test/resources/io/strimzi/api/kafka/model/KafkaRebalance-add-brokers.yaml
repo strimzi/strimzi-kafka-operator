@@ -1,0 +1,7 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+spec:
+  mode: add-brokers
+  brokers: [3,4]

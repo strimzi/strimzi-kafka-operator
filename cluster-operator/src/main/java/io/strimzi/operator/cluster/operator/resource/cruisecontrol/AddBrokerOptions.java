@@ -9,9 +9,9 @@ import java.util.List;
 public class AddBrokerOptions extends AbstractRebalanceOptions {
 
     /** list with the ids of the new brokers added to the cluster */
-    private List<String> brokers;
+    private List<Integer> brokers;
 
-    public List<String> getBrokers() {
+    public List<Integer> getBrokers() {
         return brokers;
     }
 
@@ -22,7 +22,7 @@ public class AddBrokerOptions extends AbstractRebalanceOptions {
 
     public static class AddBrokerOptionsBuilder extends AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<AddBrokerOptionsBuilder, AddBrokerOptions> {
 
-        private List<String> brokers;
+        private List<Integer> brokers;
 
         public AddBrokerOptionsBuilder() {
             this.brokers = null;
@@ -33,11 +33,12 @@ public class AddBrokerOptions extends AbstractRebalanceOptions {
             return this;
         }
 
-        public AddBrokerOptionsBuilder withBrokers(List<String> brokers) {
+        public AddBrokerOptionsBuilder withBrokers(List<Integer> brokers) {
             this.brokers = brokers;
             return this;
         }
 
+        @Override
         public AddBrokerOptions build() {
             return new AddBrokerOptions(this);
         }

@@ -129,7 +129,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -142,7 +142,7 @@ public class CruiseControlClientTest {
     public void testCCAddBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withVerboseResponse()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -154,7 +154,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -165,7 +165,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBrokerProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -176,7 +176,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -187,7 +187,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -200,7 +200,7 @@ public class CruiseControlClientTest {
     public void testCCRemoveBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withVerboseResponse()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -212,7 +212,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -223,7 +223,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -234,7 +234,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {

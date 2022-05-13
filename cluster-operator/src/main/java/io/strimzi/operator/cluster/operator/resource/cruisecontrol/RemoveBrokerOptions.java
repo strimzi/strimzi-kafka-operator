@@ -9,9 +9,9 @@ import java.util.List;
 public class RemoveBrokerOptions extends AbstractRebalanceOptions {
 
     /** list with the ids of the brokers removed from the cluster */
-    private List<String> brokers;
+    private List<Integer> brokers;
 
-    public List<String> getBrokers() {
+    public List<Integer> getBrokers() {
         return brokers;
     }
 
@@ -22,7 +22,7 @@ public class RemoveBrokerOptions extends AbstractRebalanceOptions {
 
     public static class RemoveBrokerOptionsBuilder extends AbstractRebalanceOptionsBuilder<RemoveBrokerOptionsBuilder, RemoveBrokerOptions> {
 
-        private List<String> brokers;
+        private List<Integer> brokers;
 
         public RemoveBrokerOptionsBuilder() {
             this.brokers = null;
@@ -33,11 +33,12 @@ public class RemoveBrokerOptions extends AbstractRebalanceOptions {
             return this;
         }
 
-        public RemoveBrokerOptionsBuilder withBrokers(List<String> brokers) {
+        public RemoveBrokerOptionsBuilder withBrokers(List<Integer> brokers) {
             this.brokers = brokers;
             return this;
         }
 
+        @Override
         public RemoveBrokerOptions build() {
             return new RemoveBrokerOptions(this);
         }
