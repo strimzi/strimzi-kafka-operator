@@ -7,7 +7,11 @@
 
 When you create or update a `KafkaRebalance` resource, Cruise Control generates an xref:con-optimization-proposals-{context}[optimization proposal] for the Kafka cluster based on the configured xref:con-optimization-goals-{context}[optimization goals].
 
-Analyze the information in the optimization proposal and decide whether to approve it. 
+Analyze the information in the optimization proposal and decide whether to approve it.
+
+You can run the rebalancing by using one of the three available modes: `full`, `add-brokers` and `remove-brokers`.
+It depends if you need the rebalancing across all the brokers already running in the cluster, after a scaling up or before a scaling down.
+More information are available in the xref:con-rebalance-{context}[Rebalancing] related section.
 
 .Prerequisites
 
@@ -19,8 +23,10 @@ Analyze the information in the optimization proposal and decide whether to appro
 
 . Create a `KafkaRebalance` resource:
 
-.. To use the _default optimization goals_ defined in the `Kafka` resource, leave the `spec` property empty:
+.. To use the _default optimization goals_ defined in the `Kafka` resource, leave the `spec` property empty.
+It runs the rebalancing with `full` mode by default.
 +
+.Example of default full rebalancing
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
@@ -31,7 +37,58 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec: {}
 ----
-
++
+You can also run the same type of rebalancing by specifying the `full` mode through the `spec.mode` field.
++
+.Example of full rebalancing by specifying the corresponding `full` mode
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: full
+----
++
+If you want to run the rebalance right after scaling up the Apache Kafka cluster and need to move already existing replicas to the newly added brokers, use the `add-brokers` mode.
++
+.Example of rebalancing to run after a scale up by using the `add-brokers` mode
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: add-brokers
+  brokers: [3, 4] <1>
+----
+<1> List of newly added brokers by the scale up operation. This is mandatory.
++
+If you want safely scale down the Apache Kafka cluster, consider to run a rebalance before to do so in order to move replicas off the brokers that are going to be removed.
+Use the `remove-brokers` mode in this case.
++
+.Example of rebalancing to run before a scale down by using the `remove-brokers` mode
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  mode: remove-brokers
+  brokers: [3, 4] <1>
+----
+<1> List of brokers to be removed by the scale down operation. This is mandatory.
++
+All the steps following in this procedure are actually the same whatever is the mode you are using.
 .. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
 +
 In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
