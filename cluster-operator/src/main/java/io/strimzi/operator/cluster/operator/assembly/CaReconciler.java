@@ -359,33 +359,30 @@ public class CaReconciler {
      * due to a new CA key. It is not necessary when the CA certificate is replace while retaining the existing key.
      */
     Future<Void> rollingUpdateForNewCaKey() {
-        //Maintaing both list of reasons and RestartReasons object, as the first is used for ZK, the second for Kafka
-        //This will be unified in a subsequent PR
-        List<String> reason = new ArrayList<>(2);
         RestartReasons kafkaPodRollReasons = RestartReasons.empty();
 
         if (clusterCa.keyReplaced()) {
-            reason.add("trust new cluster CA certificate signed by new key");
             kafkaPodRollReasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
         }
 
         if (clientsCa.keyReplaced()) {
-            reason.add("trust new clients CA certificate signed by new key");
             kafkaPodRollReasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
         }
 
-        if (!reason.isEmpty()) {
+        if (clusterCa.keyReplaced() || kafkaPodRollReasons.shouldRoll()) {
             Future<Void> zkRollFuture;
-            Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
-                LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
-                return reason;
-            };
+
             Function<Pod, RestartReasons> rollKafkaPodAndLogReasons = pod -> {
                 LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), kafkaPodRollReasons.getReasons());
                 return kafkaPodRollReasons;
             };
 
             if (clusterCa.keyReplaced()) {
+                Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
+                    List<String> reason = List.of("trust new cluster CA certificate signed by new key");
+                    LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
+                    return reason;
+                };
                 // ZooKeeper is rolled only for new Cluster CA key
                 Labels zkSelectorLabels = Labels.EMPTY
                         .withStrimziKind(reconciliation.kind())
@@ -441,9 +438,10 @@ public class CaReconciler {
                     .compose(i -> {
                         if (clusterCa.keyReplaced()) {
                             // EO, KE and CC need to be rolled only for new Cluster CA key.
-                            return rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), reason.toString())
-                                    .compose(i2 -> rollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), reason.toString()))
-                                    .compose(i2 -> rollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), reason.toString()));
+                            String reason = RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote();
+                            return rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), reason)
+                                    .compose(i2 -> rollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), reason))
+                                    .compose(i2 -> rollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), reason));
                         } else {
                             return Future.succeededFuture();
                         }
