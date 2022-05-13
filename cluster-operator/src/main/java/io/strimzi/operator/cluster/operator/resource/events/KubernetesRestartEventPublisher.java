@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,6 +32,8 @@ public abstract class KubernetesRestartEventPublisher {
     private static final Logger LOG = LogManager.getLogger(KubernetesRestartEventPublisher.class);
 
     private final Clock clock;
+
+    private static final DateTimeFormatter K8S_MICROTIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
 
     protected String action = "StrimziInitiatedPodRestart";
     protected String controller = "strimzi.io/cluster-operator";
@@ -69,7 +72,7 @@ public abstract class KubernetesRestartEventPublisher {
     }
 
     public void publishRestartEvents(Pod pod, RestartReasons reasons) {
-        MicroTime k8sEventTime = new WorkaroundMicroTime(ZonedDateTime.now(clock));
+        MicroTime k8sEventTime = new MicroTime(K8S_MICROTIME.format(ZonedDateTime.now(clock)));
         ObjectReference podReference = createPodReference(pod);
 
         try {
