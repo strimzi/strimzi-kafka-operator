@@ -6,6 +6,9 @@ metadata:
     app: strimzi
 data:
   log4j2.properties: |
+    {{- if .Values.logConfiguration }}
+    {{- tpl .Values.logConfiguration . | nindent 4 }}
+    {{- else }}
     name = COConfig
     monitorInterval = 30
 
@@ -17,19 +20,16 @@ data:
     rootLogger.level = {{ default .Values.logLevel .Values.logLevelOverride }}
     rootLogger.appenderRefs = stdout
     rootLogger.appenderRef.console.ref = STDOUT
-    rootLogger.additivity = false
 
     # Kafka AdminClient logging is a bit noisy at INFO level
     logger.kafka.name = org.apache.kafka
     logger.kafka.level = WARN
-    logger.kafka.additivity = false
 
     # Zookeeper is very verbose even on INFO level -> We set it to WARN by default
     logger.zookeepertrustmanager.name = org.apache.zookeeper
     logger.zookeepertrustmanager.level = WARN
-    logger.zookeepertrustmanager.additivity = false
 
     # Keeps separate level for Netty logging -> to not be changed by the root logger
     logger.netty.name = io.netty
     logger.netty.level = INFO
-    logger.netty.additivity = false
+    {{- end }}

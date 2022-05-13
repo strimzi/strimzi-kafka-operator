@@ -5,7 +5,7 @@ metadata:
   labels:
     app: my-connect-cluster
 spec:
-  version: 3.1.0
+  version: 3.2.0
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9092
   metricsConfig:
@@ -116,7 +116,7 @@ data:
     #kafka.connect:type=source-task-metrics,connector="{connector}",task="{task}"
     #kafka.connect:type=sink-task-metrics,connector="{connector}",task="{task}"
     #kafka.connect:type=connector-task-metrics,connector="{connector}",task="{task}"
-    - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-total|.+-count|.+-ms|.+-ratio|.+-avg|.+-failures|.+-requests|.+-timestamp|.+-logged|.+-errors|.+-retries|.+-skipped)
+    - pattern: kafka.connect<type=(.+)-metrics, connector=(.+), task=(.+)><>(.+-total|.+-count|.+-ms|.+-ratio|.+-seq-no|.+-rate|.+-max|.+-avg|.+-failures|.+-requests|.+-timestamp|.+-logged|.+-errors|.+-retries|.+-skipped)
       name: kafka_connect_$1_$4
       labels:
         connector: "$2"

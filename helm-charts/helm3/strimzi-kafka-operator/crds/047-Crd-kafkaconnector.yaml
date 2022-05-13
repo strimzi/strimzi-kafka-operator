@@ -44,7 +44,7 @@ spec:
           type: integer
         - name: Ready
           description: The state of the custom resource
-          jsonPath: .status.conditions[?(@.type=="Ready")].status
+          jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
           type: string
       schema:
         openAPIV3Schema:
@@ -63,7 +63,7 @@ spec:
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
-                  description: 'The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.'
+                  description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
                 pause:
                   type: boolean
                   description: Whether the connector should be paused. Defaults to false.
@@ -78,13 +78,13 @@ spec:
                     properties:
                       type:
                         type: string
-                        description: The unique identifier of a condition, used to distinguish between other conditions in the resource.
+                        description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
                       status:
                         type: string
-                        description: The status of the condition, either True, False or Unknown.
+                        description: "The status of the condition, either True, False or Unknown."
                       lastTransitionTime:
                         type: string
-                        description: Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
+                        description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
                       reason:
                         type: string
                         description: The reason for the condition's last transition (a single word in CamelCase).
@@ -98,7 +98,7 @@ spec:
                 connectorStatus:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
-                  description: The connector status, as reported by the Kafka Connect REST API.
+                  description: "The connector status, as reported by the Kafka Connect REST API."
                 tasksMax:
                   type: integer
                   description: The maximum number of tasks for the Kafka Connector.
