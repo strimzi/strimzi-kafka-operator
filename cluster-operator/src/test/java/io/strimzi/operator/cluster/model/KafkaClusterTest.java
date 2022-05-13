@@ -95,7 +95,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.apache.kafka.common.Uuid;
 import org.hamcrest.CoreMatchers;
+import org.hamcrest.Matchers;
 
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;
@@ -2808,7 +2810,7 @@ public class KafkaClusterTest {
                     .endKafka()
                     .endSpec()
                     .build();
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, oldStorage, replicas);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, oldStorage, replicas, false);
         });
     }
 
@@ -2856,7 +2858,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, ephemeral, replicas);
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, ephemeral, replicas, false);
 
         // Storage is reverted
         assertThat(kc.getStorage(), is(ephemeral));
@@ -2874,7 +2876,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, persistent, replicas);
+        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, persistent, replicas, false);
 
         // Storage is reverted
         assertThat(kc.getStorage(), is(persistent));
@@ -2892,7 +2894,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, jbod, replicas);
+        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, jbod, replicas, false);
 
         // Storage is reverted
         assertThat(kc.getStorage(), is(jbod));
@@ -2910,7 +2912,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, jbod, replicas);
+        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, jbod, replicas, false);
 
         // Storage is reverted
         assertThat(kc.getStorage(), is(jbod));
@@ -4203,5 +4205,73 @@ public class KafkaClusterTest {
         InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
+    }
+
+    @ParallelTest
+    public void testNewKraftCluster() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092", "TLS_9093", "9093"),
+                1, Map.of("PLAIN_9092", "9092", "TLS_9093", "9093"),
+                2, Map.of("PLAIN_9092", "9092", "TLS_9093", "9093")
+        );
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, null, 0, true);
+
+        // Test that the broker configuration is with KRaft
+        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts, true);
+        assertThat(config, CoreMatchers.containsString("process.roles"));
+        assertThat(config, CoreMatchers.containsString("controller.quorum.voters"));
+
+        // Test that ClusterID KRaft flag are passed as environment variable
+        List<EnvVar> kafkaEnvVars = kc.getEnvVars();
+        EnvVar clusterIdEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_CLUSTER_ID.equals(env.getName())).findFirst().orElse(null);
+        assertThat(clusterIdEnvVar, is(Matchers.notNullValue()));
+        assertThat(clusterIdEnvVar.getValue().isEmpty(), is(false));
+        EnvVar kraftEnabledEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_KRAFT_ENABLED.equals(env.getName())).findFirst().orElse(null);
+        assertThat(kraftEnabledEnvVar, is(Matchers.notNullValue()));
+        assertThat(kraftEnabledEnvVar.getValue().isEmpty(), is(false));
+    }
+
+    @ParallelTest
+    public void testExistingKraftCluster() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092", "TLS_9093", "9093"),
+                1, Map.of("PLAIN_9092", "9092", "TLS_9093", "9093"),
+                2, Map.of("PLAIN_9092", "9092", "TLS_9093", "9093")
+        );
+
+        String clusterId = Uuid.randomUuid().toString();
+
+        Kafka existingKafka = new KafkaBuilder(kafkaAssembly)
+                .withNewStatus()
+                    .withClusterId(clusterId)
+                .endStatus()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, existingKafka, VERSIONS, null, 0, true);
+
+        // Test that the broker configuration is with KRaft
+        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts, true);
+        assertThat(config, CoreMatchers.containsString("process.roles"));
+        assertThat(config, CoreMatchers.containsString("controller.quorum.voters"));
+
+        // Test that ClusterID and KRaft flag are passed as environment variable
+        List<EnvVar> kafkaEnvVars = kc.getEnvVars();
+        EnvVar clusterIdEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_CLUSTER_ID.equals(env.getName())).findFirst().orElse(null);
+        assertThat(clusterIdEnvVar, is(Matchers.notNullValue()));
+        assertThat(clusterIdEnvVar.getValue(), is(clusterId));
+        EnvVar kraftEnabledEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_KRAFT_ENABLED.equals(env.getName())).findFirst().orElse(null);
+        assertThat(kraftEnabledEnvVar, is(Matchers.notNullValue()));
+        assertThat(kraftEnabledEnvVar.getValue().isEmpty(), is(false));
     }
 }

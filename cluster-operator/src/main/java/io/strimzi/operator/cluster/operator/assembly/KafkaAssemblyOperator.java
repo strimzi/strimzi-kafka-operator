@@ -26,6 +26,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.KRaftUtils;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
@@ -134,15 +136,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
+        // Validates features which are currently not supported in KRaft mode
+        if (featureGates.useKRaftEnabled()) {
+            try {
+                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec());
+            } catch (InvalidResourceException e)    {
+                return Future.failedFuture(e);
+            }
+        }
+
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(this::dateSupplier))
                 .compose(state -> state.versionChange())
 
                 // Run reconciliations of the different components
-                .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
+                .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileZooKeeper(this::dateSupplier))
                 .compose(state -> state.reconcileKafka(this::dateSupplier))
-                .compose(state -> state.reconcileEntityOperator(this::dateSupplier))
+                .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileEntityOperator(this::dateSupplier))
                 .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
                 .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
                 .compose(state -> state.reconcileJmxTrans())
