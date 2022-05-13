@@ -9,33 +9,6 @@
 You can adjust several performance tuning options for cluster rebalances.
 These options control how partition replica and leadership movements in a rebalance are executed, as well as the bandwidth that is allocated to a rebalance operation.
 
-== Rebalancing modes
-
-When using the `KafkaRebalance` custom resource for running a rebalancing operation, there are three available modes: `full`, `add-brokers` and `remove-brokers`.
-The mode is specified through the corresponding `spec.mode` field in the `KafkaRebalance` custom resource.
-
-The `full` mode runs a full rebalancing by moving replicas across all the brokers in the cluster.
-This is the default mode if the `spec.mode` field is not defined in the `KafkaRebalance` custom resource.
-
-The `add-brokers` mode can be used after scaling up the Apache Kafka cluster by adding one or more brokers.
-After a scaling up, the new brokers are used to host only partitions of new created topics.
-It means that the newly added brokers are actually not used even for long time if no new topics are created.
-By using the `add-brokers` mode, right after a scaling up, the rebalancing operation moves already existing replicas to the newly added brokers as well.
-The new brokers have to be specified as a list in the `spec.brokers` field in the `KafkaRebalance` custom resource.
-
-The `remove-brokers` mode can be used before scaling down the Apache Kafka cluster by removing one or more brokers.
-If you scale down an Apache Kafka cluster, one or more brokers are shut down even if they host some replicas.
-It can lead to have under-replicated partitions and maybe some of them under the min-ISR.
-To avoid this problem, the `remove-brokers` mode can be used to move replicas off the brokers that are going to be removed.
-When these brokers are not hosting replicas anymore, you can safely run the scaling down operation.
-The brokers to be removed have to be specified as a list in the `spec.brokers` field in the `KafkaRebalance` custom resource.
-
-In general, you should use a `full` rebalancing mode to rebalance your running Apache Kafka cluster spreading the load across brokers based on your goals.
-The `add-brokers` and `remove-brokers' modes should be used only if you want to scale up or down your cluster and rebalance replicas accordingly.
-
-The procedure to run a rebalancing is actually the same across the three different modes.
-The only difference is about specifying the mode through the `spec.mode` and, if needed, the brokers list through the `spec.brokers` field.
-
 == Partition reassignment commands
 
 xref:con-optimization-proposals-{context}[Optimization proposals] are comprised of separate partition reassignment commands.
