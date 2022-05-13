@@ -90,7 +90,7 @@ This feature gate is currently intended only for development and testing.
 IMPORTANT: **The KRaft mode is not ready for production in Apache Kafka or in Strimzi.**
 
 When the `UseKRaft` feature gate is enabled, the Kafka cluster is deployed without ZooKeeper.
-The `.spec.zookeeper` properties in the Kafka custom resource will be ignored, but still need to be present.
+*The `.spec.zookeeper` properties in the Kafka custom resource will be ignored, but still need to be present.*
 The `UseKRaft` feature gate provides an API that configures Kafka cluster nodes and their roles.
 The API is still in development and is expected to change before the KRaft mode is production-ready.
 
@@ -100,7 +100,7 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
 * The Entity Operator (including the User Operator and Topic operator) is not supported.
-  The `spec.entityOperator` property must be removed from the `Kafka` custom resource.
+  The `spec.entityOperator` property *must be removed* from the `Kafka` custom resource.
 * `simple` authorization is not supported.
 * SCRAM-SHA-512 authentication is not supported.
 * JBOD storage is not supported. 
