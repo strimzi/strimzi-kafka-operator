@@ -238,6 +238,39 @@ If you generate an optimization proposal using the default optimization goals, C
 To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
 Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
 
+[id='con-optimization-proposals-modes-{context}']
+== Rebalancing modes
+
+When using the `KafkaRebalance` custom resource for running a rebalancing operation, you have three available modes:
+
+* `full`
+* `add-brokers`
+* `remove-brokers`
+
+You specify a mode using the `spec.mode` property of the `KafkaRebalance` custom resource.
+
+`full`:: The `full` mode runs a full rebalance by moving replicas across all the brokers in the cluster.
+This is the default mode if the `spec.mode` property is not defined in the `KafkaRebalance` custom resource.
+
+`add-brokers`:: The `add-brokers` mode is used after scaling up a Kafka cluster by adding one or more brokers.
+Normally, after scaling up a Kafka cluster, new brokers are used to host only the partitions of newly created topics.
+If no new topics are created, the newly added brokers are not used and the existing brokers remain under the same load.
+By using the `add-brokers` mode immediately after adding brokers to the cluster, the rebalancing operation moves replicas from existing brokers to the newly added brokers.
+You specify the new brokers as a list using the `spec.brokers` property of the `KafkaRebalance` custom resource.
+
+`remove-brokers`:: The `remove-brokers` mode is used before scaling down a Kafka cluster by removing one or more brokers.
+If you scale down a Kafka cluster, brokers are shut down even if they host replicas.
+This can lead to under-replicated partitions and possibly result in some partitions being under their minimum ISR (in-sync replicas).
+To avoid this potential problem, the `remove-brokers` mode moves replicas off the brokers that are going to be removed.
+When these brokers are not hosting replicas anymore, you can safely run the scaling down operation.
+You specify the brokers you're removing as a list in the `spec.brokers` property in the `KafkaRebalance` custom resource.
+
+In general, use the `full` rebalance mode to rebalance a Kafka cluster by spreading the load across brokers.
+Use the `add-brokers` and `remove-brokers` modes only if you want to scale your cluster up or down and rebalance the replicas accordingly.
+
+The procedure to run a rebalance is actually the same across the three different modes.
+The only difference is with specifying a mode through the `spec.mode` property and, if needed, listing brokers that have been added or will be removed through the `spec.brokers` property.
+
 .Additional resources
 
 * xref:con-optimization-goals-{context}[]
