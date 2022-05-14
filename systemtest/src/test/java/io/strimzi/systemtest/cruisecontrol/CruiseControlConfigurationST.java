@@ -140,8 +140,8 @@ public class CruiseControlConfigurationST extends AbstractST {
         assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
         assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
 
-        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride1)));
-        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetworkOverride1)));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
 
         assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
         assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
