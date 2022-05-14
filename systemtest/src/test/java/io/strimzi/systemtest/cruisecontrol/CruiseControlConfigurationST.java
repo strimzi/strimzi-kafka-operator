@@ -54,6 +54,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -82,14 +83,14 @@ public class CruiseControlConfigurationST extends AbstractST {
         String inboundNetworkOverride1 = "40000KiB/s";
         String outboundNetworkOverride1 = "400000KiB/s";
 
-        Integer broker0 = 0;
-        Integer broker1 = 1;
-        Integer broker2 = 2;
+        int broker0 = 0;
+        int broker1 = 1;
+        int broker2 = 2;
 
         List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
         List<Integer> overrideList1 = List.of(broker1);
 
-        Kafka kr = KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewSpec()
                 .editCruiseControl()
                     .withNewBrokerCapacity()
@@ -106,9 +107,7 @@ public class CruiseControlConfigurationST extends AbstractST {
                     .endBrokerCapacity()
                 .endCruiseControl()
             .endSpec()
-            .build();
-
-        resourceManager.createResource(extensionContext, kr);
+            .build());
 
         String cruiseControlPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0).getMetadata().getName();
 
@@ -124,7 +123,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         JsonObject defaultBroker = brokerCapacities.getJsonObject(0);
         assertThat(defaultBroker.getString("brokerId"), is("-1"));
-        assertThat(defaultBroker.getString("doc"), not(nullValue()));
+        assertThat(defaultBroker.getString("doc"), notNullValue());
 
         LOGGER.info("Verifying default cruise control capacities");
         JsonObject defaultBrokerCapacity = defaultBroker.getJsonObject("capacity");

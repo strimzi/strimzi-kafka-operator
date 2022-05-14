@@ -42,7 +42,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -52,7 +51,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.cruisecontrol.Broker;
+import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
@@ -204,7 +203,7 @@ public class CruiseControlTest {
     @ParallelTest
     public void testBrokerCapacities() {
         // Test user defined capacities
-        BrokerCapacity userDefinedBrokerCapacity = new BrokerCapacity();
+        io.strimzi.api.kafka.model.balancing.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.balancing.BrokerCapacity();
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 
@@ -253,9 +252,9 @@ public class CruiseControlTest {
         String inboundNetworkOverride1 = "10000KiB/s";
         String outboundNetworkOverride1 = "15000KB/s";
 
-        Integer broker0 = 0;
-        Integer broker1 = 1;
-        Integer broker2 = 2;
+        int broker0 = 0;
+        int broker1 = 1;
+        int broker2 = 2;
 
         List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
         List<Integer> overrideList1 = List.of(broker1);
@@ -279,16 +278,16 @@ public class CruiseControlTest {
         resource = createKafka(cruiseControlSpec);
         capacity = new Capacity(resource.getSpec(), kafkaStorage);
 
-        TreeMap<Integer, Broker> capacityEntries = capacity.getCapacityEntries();
-        assertThat(capacityEntries.get(Broker.DEFAULT_BROKER_ID).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetwork)));
-        assertThat(capacityEntries.get(Broker.DEFAULT_BROKER_ID).getOutboundNetworkKiBPerSecond(), is(Broker.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        TreeMap<Integer, BrokerCapacity> capacityEntries = capacity.getCapacityEntries();
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetwork)));
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getOutboundNetworkKiBPerSecond(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
         assertThat(capacityEntries.get(broker0).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(capacityEntries.get(broker0).getOutboundNetworkKiBPerSecond(), is(Broker.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        assertThat(capacityEntries.get(broker0).getOutboundNetworkKiBPerSecond(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
-        // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the latest override.
-        assertThat(capacityEntries.get(broker1).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride1)));
-        assertThat(capacityEntries.get(broker1).getOutboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(outboundNetworkOverride1)));
+        // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
+        assertThat(capacityEntries.get(broker1).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker1).getOutboundNetworkKiBPerSecond(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
         assertThat(capacityEntries.get(broker2).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
 

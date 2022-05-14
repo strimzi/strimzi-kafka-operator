@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacityOverride;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -21,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -28,7 +28,7 @@ import java.util.TreeMap;
  * Cruise Control's Broker Capacity File Resolver.
  *
  *
- * For example, takes a Kafka Custom Resource like the following:
+ * For example, it takes a Kafka Custom Resource like the following:
  *
  * spec:
  *  kafka:
@@ -101,8 +101,8 @@ import java.util.TreeMap;
  *       "brokerId": "2",
  *       "capacity": {
  *         "DISK": {
- *             "/var/lib/kafka0/kafka-log1": "100000",
- *             "/var/lib/kafka1/kafka-log1": "200000"
+ *             "/var/lib/kafka0/kafka-log2": "100000",
+ *             "/var/lib/kafka1/kafka-log2": "200000"
  *           },
  *         "CPU": "100",
  *         "NW_IN": "60000",
@@ -116,50 +116,50 @@ import java.util.TreeMap;
 public class Capacity {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Capacity.class.getName());
 
-    private TreeMap<Integer, Broker> capacityEntries;
+    private final TreeMap<Integer, BrokerCapacity> capacityEntries;
 
-    private int replicas;
-    private Storage storage;
+    private final int replicas;
+    private final Storage storage;
 
     public Capacity(KafkaSpec spec, Storage storage) {
-        BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
+        io.strimzi.api.kafka.model.balancing.BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
 
-        this.capacityEntries = new TreeMap<Integer, Broker>();
+        this.capacityEntries = new TreeMap<>();
         this.replicas = spec.getKafka().getReplicas();
         this.storage = storage;
 
-        processCapacityEntries(bc, storage);
+        processCapacityEntries(bc);
     }
 
     public static String processCpu() {
-        return Broker.DEFAULT_CPU_UTILIZATION_CAPACITY;
+        return BrokerCapacity.DEFAULT_CPU_UTILIZATION_CAPACITY;
     }
 
     public static String processDisk(Storage storage, int brokerId) {
-        if (storage instanceof  JbodStorage) {
+        if (storage instanceof JbodStorage) {
             return generateJbodDiskCapacity(storage, brokerId).encodePrettily();
         } else {
             return generateDiskCapacity(storage);
         }
     }
 
-    public static String processInboundNetwork(BrokerCapacity bc, BrokerCapacityOverride override) {
+    public static String processInboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
         if (override != null && override.getInboundNetwork() != null) {
             return getThroughputInKiB(override.getInboundNetwork());
         } else if (bc != null && bc.getInboundNetwork() != null) {
             return getThroughputInKiB(bc.getInboundNetwork());
         } else {
-            return Broker.DEFAULT_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
+            return BrokerCapacity.DEFAULT_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
     }
 
-    public static String processOutboundNetwork(BrokerCapacity bc, BrokerCapacityOverride override) {
+    public static String processOutboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
         if (override != null && override.getOutboundNetwork() != null) {
             return getThroughputInKiB(override.getOutboundNetwork());
         } else if (bc != null && bc.getOutboundNetwork() != null) {
             return getThroughputInKiB(bc.getOutboundNetwork());
         } else {
-            return Broker.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
+            return BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         }
     }
 
@@ -201,7 +201,7 @@ public class Capacity {
             if (((EphemeralStorage) storage).getSizeLimit() != null) {
                 return getSizeInMiB(((EphemeralStorage) storage).getSizeLimit());
             } else {
-                return Broker.DEFAULT_DISK_CAPACITY_IN_MIB;
+                return BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB;
             }
         } else {
             throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
@@ -217,7 +217,7 @@ public class Capacity {
      */
     public static String getSizeInMiB(String size) {
         if (size == null) {
-            return Broker.DEFAULT_DISK_CAPACITY_IN_MIB;
+            return BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB;
         }
         return String.valueOf(StorageUtils.convertTo(size, "Mi"));
     }
@@ -234,15 +234,15 @@ public class Capacity {
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
     }
 
-    private void processCapacityEntries(BrokerCapacity bc, Storage s) {
+    private void processCapacityEntries(io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity) {
         String cpu = processCpu();
-        String disk = processDisk(storage, Broker.DEFAULT_BROKER_ID);
-        String inboundNetwork = processInboundNetwork(bc, null);
-        String outboundNetwork = processOutboundNetwork(bc, null);
+        String disk = processDisk(storage, BrokerCapacity.DEFAULT_BROKER_ID);
+        String inboundNetwork = processInboundNetwork(brokerCapacity, null);
+        String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
         // Default broker entry
-        Broker defaultBroker = new Broker(Broker.DEFAULT_BROKER_ID, cpu, disk, inboundNetwork, outboundNetwork);
-        capacityEntries.put(Broker.DEFAULT_BROKER_ID, defaultBroker);
+        BrokerCapacity defaultBrokerCapacity = new BrokerCapacity(BrokerCapacity.DEFAULT_BROKER_ID, cpu, disk, inboundNetwork, outboundNetwork);
+        capacityEntries.put(BrokerCapacity.DEFAULT_BROKER_ID, defaultBrokerCapacity);
 
         if (storage instanceof JbodStorage) {
             // A capacity configuration for a cluster with a JBOD configuration
@@ -251,15 +251,15 @@ public class Capacity {
             // the broker pod index in their names.
             for (int id = 0; id < replicas; id++) {
                 disk = processDisk(storage, id);
-                Broker broker = new Broker(id, cpu, disk, inboundNetwork, outboundNetwork);
+                BrokerCapacity broker = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
                 capacityEntries.put(id, broker);
             }
         }
 
-        if (bc != null) {
+        if (brokerCapacity != null) {
             // For checking for duplicate brokerIds
-            HashSet<Integer> overrideIds = new HashSet<>();
-            List<BrokerCapacityOverride> overrides = bc.getOverrides();
+            Set<Integer> overrideIds = new HashSet<>();
+            List<BrokerCapacityOverride> overrides = brokerCapacity.getOverrides();
             // Override broker entries
             if (overrides != null) {
                 if (overrides.isEmpty()) {
@@ -267,24 +267,24 @@ public class Capacity {
                 } else {
                     for (BrokerCapacityOverride override : overrides) {
                         List<Integer> ids = override.getBrokers();
-                        inboundNetwork = processInboundNetwork(bc, override);
-                        outboundNetwork = processOutboundNetwork(bc, override);
-                        for (Integer id : ids) {
-                            if (id == Broker.DEFAULT_BROKER_ID) {
+                        inboundNetwork = processInboundNetwork(brokerCapacity, override);
+                        outboundNetwork = processOutboundNetwork(brokerCapacity, override);
+                        for (int id : ids) {
+                            if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
                                 LOGGER.warnOp("Ignoring broker capacity override with illegal broker id -1.");
                             } else {
                                 if (capacityEntries.containsKey(id)) {
-                                    if (overrideIds.contains(id)) {
-                                        LOGGER.warnOp("Duplicate broker id %d found in overrides, using last occurrence.", id);
+                                    if (overrideIds.add(id)) {
+                                        BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
+                                        brokerCapacityEntry.setInboundNetworkKiBPerSecond(inboundNetwork);
+                                        brokerCapacityEntry.setOutboundNetworkKiBPerSecond(outboundNetwork);
                                     } else {
-                                        overrideIds.add(id);
+                                        LOGGER.warnOp("Duplicate broker id %d found in overrides, using first occurrence.", id);
                                     }
-                                    Broker broker = capacityEntries.get(id);
-                                    broker.setInboundNetworkKiBPerSecond(inboundNetwork);
-                                    broker.setOutboundNetworkKiBPerSecond(outboundNetwork);
                                 } else {
-                                    Broker broker = new Broker(id, cpu, disk, inboundNetwork, outboundNetwork);
-                                    capacityEntries.put(id, broker);
+                                    BrokerCapacity brokerCapacityEntry = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
+                                    capacityEntries.put(id, brokerCapacityEntry);
+                                    overrideIds.add(id);
                                 }
                             }
                         }
@@ -297,20 +297,19 @@ public class Capacity {
     /**
      * Generate broker capacity entry for capacity configuration.
      *
-     * @param broker Broker capacity object
+     * @param brokerCapacity Broker capacity object
      * @return Broker entry as a JsonObject
      */
-    private JsonObject generateBrokerCapacity(Broker broker) {
-        JsonObject brokerCapacity = new JsonObject()
-            .put("brokerId", broker.getId())
+    private JsonObject generateBrokerCapacity(BrokerCapacity brokerCapacity) {
+        return new JsonObject()
+            .put("brokerId", brokerCapacity.getId())
             .put("capacity", new JsonObject()
-                .put("DISK", broker.getDisk())
-                .put("CPU", broker.getCpu())
-                .put("NW_IN", broker.getInboundNetworkKiBPerSecond())
-                .put("NW_OUT", broker.getOutboundNetworkKiBPerSecond())
+                .put("DISK", brokerCapacity.getDisk())
+                .put("CPU", brokerCapacity.getCpu())
+                .put("NW_IN", brokerCapacity.getInboundNetworkKiBPerSecond())
+                .put("NW_OUT", brokerCapacity.getOutboundNetworkKiBPerSecond())
             )
-            .put("doc", broker.getDoc());
-        return brokerCapacity;
+            .put("doc", brokerCapacity.getDoc());
     }
 
     /**
@@ -320,8 +319,8 @@ public class Capacity {
      */
     public String generateCapacityConfig() {
         JsonArray brokerList = new JsonArray();
-        for (Broker broker : capacityEntries.values()) {
-            JsonObject brokerEntry = generateBrokerCapacity(broker);
+        for (BrokerCapacity brokerCapacity : capacityEntries.values()) {
+            JsonObject brokerEntry = generateBrokerCapacity(brokerCapacity);
             brokerList.add(brokerEntry);
         }
 
@@ -331,7 +330,7 @@ public class Capacity {
         return config.encodePrettily();
     }
 
-    public TreeMap<Integer, Broker> getCapacityEntries() {
+    public TreeMap<Integer, BrokerCapacity> getCapacityEntries() {
         return capacityEntries;
     }
 }
