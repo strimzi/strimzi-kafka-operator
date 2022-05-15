@@ -6,5 +6,5 @@ metadata:
     strimzi.io/cluster: my-cluster
 # no goals specified, using the default goals from the Cruise Control configuration
 spec:
-  mode: add-broker
+  mode: add-brokers
   brokers: [3, 4]
