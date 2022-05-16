@@ -167,16 +167,16 @@ public class Capacity {
      * Generate JBOD disk capacity configuration for a broker using the supplied storage configuration
      *
      * @param storage Storage configuration for Kafka cluster
-     * @param idx Index of the broker
-     * @return Disk capacity configuration value as a JsonObject for broker idx
+     * @param brokerId Id of the broker
+     * @return Disk capacity configuration value as a JsonObject for broker brokerId
      */
-    private static JsonObject generateJbodDiskCapacity(Storage storage, int idx) {
+    private static JsonObject generateJbodDiskCapacity(Storage storage, int brokerId) {
         JsonObject disks = new JsonObject();
         String size = "";
 
         for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
             String name = VolumeUtils.createVolumePrefix(volume.getId(), true);
-            String path = AbstractModel.KAFKA_MOUNT_PATH + "/" + name + "/" + AbstractModel.KAFKA_LOG_DIR + idx;
+            String path = AbstractModel.KAFKA_MOUNT_PATH + "/" + name + "/" + AbstractModel.KAFKA_LOG_DIR + brokerId;
 
             if (volume instanceof PersistentClaimStorage) {
                 size = ((PersistentClaimStorage) volume).getSize();
@@ -192,7 +192,7 @@ public class Capacity {
      * Generate total disk capacity using the supplied storage configuration
      *
      * @param storage Storage configuration for Kafka cluster
-     * @return Disk capacity per broker as a Double
+     * @return Disk capacity per broker as a String
      */
     public static String generateDiskCapacity(Storage storage) {
         if (storage instanceof PersistentClaimStorage) {
