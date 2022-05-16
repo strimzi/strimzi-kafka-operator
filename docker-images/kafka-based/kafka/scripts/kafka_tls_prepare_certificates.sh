@@ -4,20 +4,6 @@ set -e
 # Load predefined functions for preparing trust- and keystores
 source ./tls_utils.sh
 
-# Searches the directory with the CAs and finds the CA matching our key.
-# This is useful during certificate renewals
-#
-# Parameters:
-# $1: The directory with the CA certificates
-# $2: Public key to be imported
-function find_ca {
-    for ca in "$1"/*; do
-        if openssl verify -CAfile "$ca" "$2" &> /dev/null; then
-            echo "$ca"
-        fi
-    done
-}
-
 echo "Preparing truststore for replication listener"
 # Add each certificate to the trust store
 STORE=/tmp/kafka/cluster.truststore.p12
