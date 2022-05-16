@@ -1592,14 +1592,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 8. The KafkaRebalance resource is again moved to `ProposalReady` condition with warning conditions.
      */
     @Test
-    public void testNewToProposalReadyToProposalReadyWithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
+    public void testNewToProposalReadyWithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance and user tasks endpoints with the number of pending calls before a response is received.
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
-        KafkaRebalance kr =
-                createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC);
+        KafkaRebalance kr = createKafkaRebalanceWithStatus(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build(), KafkaRebalanceState.ProposalReady);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).create(kr);
 
@@ -1609,17 +1608,12 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
-                // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
-                .onComplete(context.succeeding(v ->
-                        assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady)))
-                .compose(v -> {
-                    // apply the "unknown" annotation to the resource in the ProposalReady state
-                    KafkaRebalance approvedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.unknown);
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                            approvedKr);
-                })
+
+        // apply the "unknown" annotation to the resource in the ProposalReady state
+        KafkaRebalance approvedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.unknown);
+        kcrao.reconcileRebalance(
+                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                approvedKr)
                 .onComplete(context.succeeding(v -> {
                     // the resource is in Proposal Ready state with the warning condition in status.
                     assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
@@ -1652,8 +1646,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
-        KafkaRebalance kr =
-                createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC);
+        KafkaRebalance kr = createKafkaRebalanceWithStatus(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build(), KafkaRebalanceState.Ready);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).create(kr);
 
@@ -1663,43 +1656,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
-        kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME), kr)
-                // the resource moved from 'New' to 'ProposalReady' directly (no pending calls in the Mock server)
-                .onComplete(context.succeeding(v ->
-                        assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady)))
-                .compose(v -> {
-                    // apply the "approve" annotation to the resource in the ProposalReady state
-                    KafkaRebalance approvedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.approve);
 
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                            approvedKr);
-                })
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from ProposalReady to Rebalancing on approval
-                    assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Rebalancing);
-                }))
-                .compose(v -> {
-                    // trigger another reconcile to process the Rebalancing state
-                    KafkaRebalance kr4 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                            kr4);
-                })
-                .onComplete(context.succeeding(v -> {
-                    // the resource moved from Rebalancing to Ready
-                    assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Ready);
-                }))
-                .compose(v -> {
-                    // apply wrong annotation in 'Ready' Sate
-                    KafkaRebalance approvedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.approve);
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                            approvedKr);
-                })
-                .onComplete(context.succeeding(v -> {
+        // apply wrong annotation in 'Ready' Sate
+        KafkaRebalance approvedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.approve);
+        kcrao.reconcileRebalance(
+                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                approvedKr).
+                onComplete(context.succeeding(v -> {
                     // the resource is in Ready state with the warning condition in status.
                     assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Ready);
                     assertAnnotationValidationCondition(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, "InvalidAnnotation");
@@ -1721,57 +1684,26 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 7. The resource stays on 'Stopped' state with warning condition
      */
     @Test
-    public void testNewToPendingProposalToStoppedStatewithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
+    public void testNewToPendingProposalToStoppedStateWithWrongAnnotation(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint with the number of pending calls before a response is received.
         MockCruiseControl.setupCCRebalanceResponse(ccServer, 2, CruiseControlEndpoints.REBALANCE);
 
-        KafkaRebalance kr =
-                createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC);
+        KafkaRebalance kr = createKafkaRebalanceWithStatus(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build(), KafkaRebalanceState.Stopped);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).create(kr);
 
         when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
         mockSecretResources();
-        mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, client, new Runnable() {
-            int count = 0;
-
-            @Override
-            public void run() {
-                if (++count == 4) {
-                    // after a while, apply the "stop" annotation to the resource in the PendingProposal state
-                    annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.stop);
-                }
-                return;
-            }
-        });
+        mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, client);
 
         Checkpoint checkpoint = context.checkpoint();
+
+        // apply the 'approve' annotation to the resource in the Stopped state.
+        KafkaRebalance wronglyAnnotatedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.approve);
         kcrao.reconcileRebalance(
                 new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                kr)
-                // the resource moved from New to PendingProposal (due to the configured Mock server pending calls)
-                .onComplete(context.succeeding(v ->
-                        assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.PendingProposal)))
-                .compose(v -> {
-                    // trigger another reconcile to process the PendingProposal state
-                    KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
-
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                            kr1);
-                })
-                // the resource moved from ProposalPending to Stopped
-                .onComplete(context.succeeding(v ->
-                        assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Stopped)))
-                .compose(v -> {
-                    // apply the 'approve' annotation to the resource in the Stopped state.
-                    KafkaRebalance wronglyAnnotatedKr = annotate(client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceAnnotation.approve);
-                    // trigger another reconcile to process the Stopped state
-                    return kcrao.reconcileRebalance(
-                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                            wronglyAnnotatedKr);
-                })
+                wronglyAnnotatedKr)
                 // the resource stays on Stopped state with warning condition
                 .onComplete(context.succeeding(v -> {
                     assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Stopped);
@@ -1779,9 +1711,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     checkpoint.flag();
                 }));
     }
-
-
-
+    
     /**
      * annotate the KafkaRebalance, patch the (mocked) server with the resource and then return the annotated resource
      */
@@ -1847,6 +1777,27 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     .withName(resourceName)
                     .withLabels(clusterName != null ? Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME) : null)
                 .endMetadata()
+                .withSpec(kafkaRebalanceSpec)
+                .build();
+    }
+
+    private KafkaRebalance createKafkaRebalanceWithStatus(String namespace, String clusterName, String resourceName,
+                                                KafkaRebalanceSpec kafkaRebalanceSpec, KafkaRebalanceState state) {
+
+        Condition currentRebalanceCondition = new Condition();
+        currentRebalanceCondition.setType(state.toString());
+        currentRebalanceCondition.setStatus("True");
+
+        KafkaRebalanceStatus currentStatus = new KafkaRebalanceStatus();
+        currentStatus.setConditions(Collections.singletonList(currentRebalanceCondition));
+
+        return new KafkaRebalanceBuilder()
+                .withNewMetadata()
+                .withNamespace(namespace)
+                .withName(resourceName)
+                .withLabels(clusterName != null ? Collections.singletonMap(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME) : null)
+                .endMetadata()
+                .withStatus(currentStatus)
                 .withSpec(kafkaRebalanceSpec)
                 .build();
     }
