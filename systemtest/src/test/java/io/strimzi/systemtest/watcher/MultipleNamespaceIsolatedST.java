@@ -7,6 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -39,6 +40,7 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @IsolatedTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 

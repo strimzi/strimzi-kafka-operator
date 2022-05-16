@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -294,6 +295,7 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testCruiseControlIntraBrokerBalancing(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         String diskSize = "6Gi";

@@ -263,6 +263,11 @@ public class KafkaTemplates {
                 .endEntityOperator()
                 .endSpec();
         }
+        // Remove TO when KRaft mode is enabled, because it is not supported
+        if (Environment.isKRaftModeEnabled()) {
+            kb.editSpec().withEntityOperator(null);
+        }
+
         return kb;
     }
 

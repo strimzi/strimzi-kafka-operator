@@ -35,6 +35,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -154,6 +155,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaUserStatus(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
@@ -168,6 +170,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaUserStatusNotReady(ExtensionContext extensionContext) {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
