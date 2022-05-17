@@ -309,8 +309,11 @@ public class KafkaRebalanceAssemblyOperator
                 StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus, KafkaRebalanceState.NotReady.toString(), e);
                 desiredStatus.setConditions(Stream.concat(desiredStatus.getConditions().stream(), previous.stream()).collect(Collectors.toList()));
             } else if (rebalanceType != null) {
-                StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus, rebalanceType);
-                desiredStatus.setConditions(Stream.concat(desiredStatus.getConditions().stream(), previous.stream()).collect(Collectors.toList()));
+                // Rebalance in NotReady state means error that has to stay as it is
+                if (!KafkaRebalanceState.NotReady.toString().equals(rebalanceType)) {
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus, rebalanceType);
+                    desiredStatus.setConditions(Stream.concat(desiredStatus.getConditions().stream(), previous.stream()).collect(Collectors.toList()));
+                }
             } else {
                 throw new IllegalArgumentException("Status related exception and the Status condition's type cannot both be null");
             }
@@ -781,10 +784,10 @@ public class KafkaRebalanceAssemblyOperator
             // CC is activated from the disabled state or the user has fixed the error on the resource and want to 'refresh'
             return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
         } else {
-            // Stay in the current NotReady state, returning null as next state
+            // Stay in the current NotReady state
             Set<Condition> conditions = validate(reconciliation, kafkaRebalance);
             validateAnnotation(conditions, KafkaRebalanceState.NotReady, rebalanceAnnotation);
-            return Future.succeededFuture(buildRebalanceStatus(null, KafkaRebalanceState.NotReady, conditions));
+            return Future.succeededFuture(new MapAndStatus<>(null, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions)));
         }
     }
 
@@ -1266,10 +1269,6 @@ public class KafkaRebalanceAssemblyOperator
                 // If rebalance proposal is still being processed, we need to re-request the proposal at a later time
                 // with the corresponding session-id so we move to the PendingProposal State.
                 return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.PendingProposal, validate(reconciliation, kafkaRebalance));
-            } else if (response.isBrokersNotExist()) {
-                // If there are some specified brokers which don't exist, it's an error at the Cruise Control level
-                // Need to move to NotReady state, having the user fixing the brokers list and refresh
-                return buildRebalanceStatus(null, KafkaRebalanceState.NotReady, validate(reconciliation, kafkaRebalance));
             }
         } else {
             if (response.isNotEnoughDataForProposal()) {
@@ -1281,10 +1280,6 @@ public class KafkaRebalanceAssemblyOperator
                 // soon as it is ready, so set the state to rebalancing.
                 // In the onRebalancing method the optimization proposal will be added when it is ready.
                 return buildRebalanceStatus(response.getUserTaskId(), KafkaRebalanceState.Rebalancing, validate(reconciliation, kafkaRebalance));
-            } else if (response.isBrokersNotExist()) {
-                // If there are some specified brokers which don't exist, it's an error at the Cruise Control level
-                // Need to move to NotReady state, having the user fixing the brokers list and refresh
-                return buildRebalanceStatus(null, KafkaRebalanceState.NotReady, validate(reconciliation, kafkaRebalance));
             }
         }
 
