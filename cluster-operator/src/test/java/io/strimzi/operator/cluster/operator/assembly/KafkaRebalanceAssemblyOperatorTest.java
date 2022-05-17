@@ -1815,7 +1815,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         context.verify(() -> {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
             assertThat(kafkaRebalance, StateMatchers.hasState());
-            kafkaRebalance.getStatus().getConditions();
             assertThat(kafkaRebalance.getStatus().getConditions().stream().filter(cond -> validationError.equals(cond.getReason())).findFirst(), notNullValue());
         });
     }
@@ -1824,7 +1823,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         context.verify(() -> {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
             assertThat(kafkaRebalance, StateMatchers.hasState());
-            System.out.println(kafkaRebalance.getStatus().getConditions().get(0).getType());
             assertThat(reason, is(kafkaRebalance.getStatus().getConditions().get(1).getReason()));
         });
     }
