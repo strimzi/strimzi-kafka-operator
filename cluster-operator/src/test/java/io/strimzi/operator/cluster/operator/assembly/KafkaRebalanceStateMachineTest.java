@@ -49,6 +49,7 @@ import java.util.List;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -138,6 +139,7 @@ public class KafkaRebalanceStateMachineTest {
      * @param kcRebalance The Kafka Rebalance instance that will be returned by the resourceSupplier.
      * @return A future for the {@link KafkaRebalanceStatus} returned by the {@link KafkaRebalanceAssemblyOperator#computeNextStatus} method
      */
+
     private Future<KafkaRebalanceStatus> checkTransition(Vertx vertx, VertxTestContext context,
                                                          KafkaRebalanceState currentState,
                                                          KafkaRebalanceState nextState,
@@ -170,6 +172,89 @@ public class KafkaRebalanceStateMachineTest {
                 .compose(result -> {
                     context.verify(() -> {
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
+                    });
+                    return Future.succeededFuture(result.getStatus());
+                });
+    }
+
+    @Test
+    public void testProposalReadyWithWrongAnnotation(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, EMPTY_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.ProposalReady);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady);
+    }
+
+    @Test
+    public void testReadyWithWrongAnnotation(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, EMPTY_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.Ready);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.Ready);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.Ready);
+    }
+
+    private void testStateWithWrongAnnotation(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance, KafkaRebalanceState kafkaRebalanceState) throws IOException, URISyntaxException {
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+
+        checkTransitionWithWrongAnnotation(vertx, context,
+                kafkaRebalanceState, KafkaRebalanceState.Ready,
+                KafkaRebalanceAnnotation.approve, kcRebalance)
+                .onComplete(result -> defaultStatusHandler(result, context));
+    }
+
+    /**
+     *  Checks the expected transition between two states of the Kafka Rebalance operator when wrong annotation is applied.
+     *
+     * @param vertx The vertx test instance.
+     * @param context The test context instance.
+     * @param currentState The current state of the resource before being passed to computeNextStatus.
+     * @param nextState The expected state of the resouce after computeNextStatus has been called.
+     * @param initialAnnotation The initial annotation attached to the Kafka Rebalance resource. For example none or refresh.
+     * @param kcRebalance The Kafka Rebalance instance that will be returned by the resourceSupplier.
+     * @return A future for the {@link KafkaRebalanceStatus} returned by the {@link KafkaRebalanceAssemblyOperator#computeNextStatus} method
+     */
+
+    private Future<KafkaRebalanceStatus> checkTransitionWithWrongAnnotation(Vertx vertx, VertxTestContext context,
+                                                         KafkaRebalanceState currentState,
+                                                         KafkaRebalanceState nextState,
+                                                         KafkaRebalanceAnnotation initialAnnotation,
+                                                         KafkaRebalance kcRebalance) {
+
+        CruiseControlApi client = new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+            @Override
+            public String cruiseControlHost(String clusterName, String clusterNamespace) {
+                return HOST;
+            }
+        };
+
+        Reconciliation recon = new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME);
+
+        AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rbOptions = kcrao.convertRebalanceSpecToRebalanceOptions(kcRebalance.getSpec());
+
+        CrdOperator<KubernetesClient,
+                KafkaRebalance,
+                KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
+
+        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
+        when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
+        when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));
+
+        return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
+                .compose(result -> {
+                    context.verify(() -> {
+                        assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
+                        assertThat("InvalidAnnotation", is(result.status.getConditions().get(0).getReason()));
                     });
                     return Future.succeededFuture(result.getStatus());
                 });
