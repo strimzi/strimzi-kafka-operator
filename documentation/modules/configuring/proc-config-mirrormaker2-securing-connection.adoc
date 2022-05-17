@@ -425,8 +425,8 @@ spec:
         config:
           checkpoints.topic.replication.factor: 1
           sync.group.offsets.enabled: "true"
-      topicsPattern: ".*"
-      groupsPattern: ".*"
+      topicsPattern: "topic1|topic2|topic3"
+      groupsPattern: "group1|group2|group3"
 ----
 <1> The TLS certificates for the source Kafka cluster. If they are in a separate namespace, copy the cluster secrets from the namespace of the Kafka cluster.
 <2> The user authentication for accessing the source Kafka cluster using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism].

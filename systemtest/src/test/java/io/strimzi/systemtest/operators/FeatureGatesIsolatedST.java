@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
@@ -47,6 +48,8 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -329,5 +332,71 @@ public class FeatureGatesIsolatedST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(kafkaSelector, kafkaReplicas, kafkaPods);
 
         ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), messageCount);
+    }
+
+    /**
+     * UseKRaft feature gate
+     */
+    @IsolatedTest("Feature Gates test for enabled UseKRaft gate")
+    @Tag(INTERNAL_CLIENTS_USED)
+    public void testKRaftMode(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String producerName = "producer-test-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+
+        int messageCount = 180;
+        List<EnvVar> testEnvVars = new ArrayList<>();
+        int kafkaReplicas = 3;
+
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets,+UseKRaft", null));
+
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withNamespace(INFRA_NAMESPACE)
+                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+                .withExtraEnvVars(testEnvVars)
+                .createInstallation()
+                .runInstallation();
+
+        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas).build();
+        kafka.getSpec().setEntityOperator(null); // The builder cannot disable the EO. It has to be done this way.
+        resourceManager.createResource(extensionContext, kafka);
+
+        LOGGER.info("Try to send some messages to Kafka over next few minutes.");
+
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
+                .withProducerName(producerName)
+                .withConsumerName(consumerName)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+                .withTopicName(topicName)
+                .withMessageCount(messageCount)
+                .withDelayMs(500)
+                .withNamespaceName(INFRA_NAMESPACE)
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
+
+        // Check that there is no ZooKeeper
+        Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        assertThat("No ZooKeeper pods should exist", zkPods.size(), is(0));
+
+        // Roll Kafka
+        LOGGER.info("Force Rolling Update of Kafka via read-only configuration change.");
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), INFRA_NAMESPACE);
+
+        LOGGER.info("Wait for next reconciliation to happen.");
+        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+
+        LOGGER.info("Waiting for clients to finish sending/receiving messages.");
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 }

@@ -13,10 +13,6 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j.configuration=file:$KAFKA_HOME/custom-config/log4j.properties"
 fi
 
-rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
-KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
-export KAFKA_OPTS
-
 . ./set_kafka_jmx_options.sh "${KAFKA_JMX_ENABLED}" "${KAFKA_JMX_USERNAME}" "${KAFKA_JMX_PASSWORD}"
 
 if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
@@ -54,6 +50,26 @@ echo ""
 
 # Configure heap based on the available resources if needed
 . ./dynamic_resources.sh
+
+# Prepare for Kraft
+if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
+  KRAFT_LOG_DIR=$(grep "log\.dirs=" /tmp/strimzi.properties | sed "s/log\.dirs=*//")
+
+  if [ ! -f "$KRAFT_LOG_DIR/meta.properties" ]; then
+    echo "Formatting Kraft storage"
+    mkdir -p "$KRAFT_LOG_DIR"
+    ./bin/kafka-storage.sh format -t "$STRIMZI_CLUSTER_ID" -c /tmp/strimzi.properties
+  else
+    echo "Kraft storage is already formatted"
+  fi
+
+  touch /var/opt/kafka/kafka-ready
+  touch /var/opt/kafka/zk-connected
+else
+  rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
+  KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
+  export KAFKA_OPTS
+fi
 
 # Configure Garbage Collection logging
 . ./set_kafka_gc_options.sh

@@ -39,6 +39,13 @@ public class ListenersUtils {
                 .anyMatch(listener -> isListenerWithOAuth(listener));
     }
 
+    /**
+     * Checks whether the listener is using OAuth authentication
+     *
+     * @param listener  Listener to check
+     *
+     * @return  True if the listener uses OAuth authentication. False otherwise.
+     */
     public static boolean isListenerWithOAuth(GenericKafkaListener listener) {
         if (listener.getAuth() == null || listener.getAuth().getType() == null)
             return false;
@@ -46,6 +53,13 @@ public class ListenersUtils {
         return KafkaListenerAuthenticationOAuth.TYPE_OAUTH.equals(listener.getAuth().getType());
     }
 
+    /**
+     * Checks whether the listener is using Custom authentication
+     *
+     * @param listener  Listener to check
+     *
+     * @return  True if the listener uses Custom authentication. False otherwise.
+     */
     public static boolean isListenerWithCustomAuth(GenericKafkaListener listener) {
         if (listener.getAuth() == null || listener.getAuth().getType() == null)
             return false;

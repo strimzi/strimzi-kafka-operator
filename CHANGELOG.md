@@ -1,8 +1,10 @@
 # CHANGELOG
 
+## 0.30.0
+
 ## 0.29.0
 
-* Add support for Apache Kafka 3.0.1 and 3.2.0
+* Add support for Apache Kafka 3.0.1, 3.1.1 and 3.2.0
 * Increase the size of the `/tmp` volumes to 5Mi to allow unpacking of compression libraries
 * Use `/healthz` endpoint for Kafka Exporter health checks
 * Renew user certificates in User Operator only during maintenance windows
@@ -14,6 +16,12 @@
 * Support for the s390x platform
   _(The s390x support is currently considered as experimental. We are not aware of any issues, but the s390x build doesn't at this point undergo the same level of testing as the AMD64 container images.)_
 * Update Strimzi Kafka Bridge to 0.21.5
+* Added rebalancing modes on the `KafkaRebalance` custom resource
+  * `full`: this mode runs a full rebalance moving replicas across all the brokers in the cluster. This is the default one if not specified.
+  * `add-brokers`: after scaling up the cluster, this mode is used to move replicas to the newly added brokers specified in the custom resource.
+  * `remove-brokers`: this mode is used to move replicas off the brokers that are going to be removed, before scaling down the cluster.
+* **Experimental** KRaft mode (ZooKeeper-less Kafka) which can be enabled using the `UseKRaft` feature gate.
+  **Important: Use it for development and testing only!**
 
 ### Changes, deprecations and removals
 
