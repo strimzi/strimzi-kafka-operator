@@ -416,67 +416,72 @@ public class KafkaRebalanceAssemblyOperator
             return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), new InvalidResourceException(error)).mapEmpty();
         }
 
-        AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
+        try {
+            AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
-        return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
-           .compose(desiredStatusAndMap -> {
-               // More events related to resource modification might be queued with a stale state. (potentially updated by the rebalance holding the lock)
-               // Due to possible long rebalancing operations that take the lock for the entire period,
-               // do a new get to retrieve the current resource state.
-               return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), reconciliation.name())
-                            .compose(currentKafkaRebalance -> {
-                                if (currentKafkaRebalance != null) {
-                                    return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
-                                            kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
-                                            .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
-                                            .compose(updatedKafkaRebalance -> {
-                                                String message = "State updated to [{}] ";
-                                                if (rawRebalanceAnnotation(updatedKafkaRebalance) == null) {
-                                                    LOGGER.infoCr(reconciliation, message + "and annotation {} is not set ",
-                                                            rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
-                                                            ANNO_STRIMZI_IO_REBALANCE);
-                                                } else {
-                                                    LOGGER.infoCr(reconciliation, message + "with annotation {}={} ",
-                                                            rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
-                                                            ANNO_STRIMZI_IO_REBALANCE,
-                                                            rawRebalanceAnnotation(updatedKafkaRebalance)
-                                                    );
-                                                }
-                                                if (hasRebalanceAnnotation(updatedKafkaRebalance)) {
-                                                    if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
-                                                        return Future.succeededFuture();
+            return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
+                    .compose(desiredStatusAndMap -> {
+                        // More events related to resource modification might be queued with a stale state. (potentially updated by the rebalance holding the lock)
+                        // Due to possible long rebalancing operations that take the lock for the entire period,
+                        // do a new get to retrieve the current resource state.
+                        return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), reconciliation.name())
+                                .compose(currentKafkaRebalance -> {
+                                    if (currentKafkaRebalance != null) {
+                                        return configMapOperator.reconcile(reconciliation, kafkaRebalance.getMetadata().getNamespace(),
+                                                kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
+                                                .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
+                                                .compose(updatedKafkaRebalance -> {
+                                                    String message = "State updated to [{}] ";
+                                                    if (rawRebalanceAnnotation(updatedKafkaRebalance) == null) {
+                                                        LOGGER.infoCr(reconciliation, message + "and annotation {} is not set ",
+                                                                rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
+                                                                ANNO_STRIMZI_IO_REBALANCE);
                                                     } else {
-                                                        LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
+                                                        LOGGER.infoCr(reconciliation, message + "with annotation {}={} ",
+                                                                rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
                                                                 ANNO_STRIMZI_IO_REBALANCE,
-                                                                rawRebalanceAnnotation(updatedKafkaRebalance));
-                                                        // Updated KafkaRebalance has rebalance annotation removed as
-                                                        // action specified by user has been completed.
-                                                        KafkaRebalance patchedKafkaRebalance = new KafkaRebalanceBuilder(updatedKafkaRebalance)
-                                                                .editMetadata()
-                                                                    .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
-                                                                .endMetadata()
-                                                                .build();
-                                                        return kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance);
+                                                                rawRebalanceAnnotation(updatedKafkaRebalance)
+                                                        );
                                                     }
-                                                } else {
-                                                    LOGGER.debugCr(reconciliation, "No annotation {}", ANNO_STRIMZI_IO_REBALANCE);
-                                                    return Future.succeededFuture();
-                                                }
-                                            })
-                                            .mapEmpty();
-                                } else {
-                                    return Future.succeededFuture();
-                                }
-                            }, exception -> {
+                                                    if (hasRebalanceAnnotation(updatedKafkaRebalance)) {
+                                                        if (currentState != KafkaRebalanceState.ReconciliationPaused && rebalanceAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(rebalanceAnnotation)) {
+                                                            return Future.succeededFuture();
+                                                        } else {
+                                                            LOGGER.infoCr(reconciliation, "Removing annotation {}={}",
+                                                                    ANNO_STRIMZI_IO_REBALANCE,
+                                                                    rawRebalanceAnnotation(updatedKafkaRebalance));
+                                                            // Updated KafkaRebalance has rebalance annotation removed as
+                                                            // action specified by user has been completed.
+                                                            KafkaRebalance patchedKafkaRebalance = new KafkaRebalanceBuilder(updatedKafkaRebalance)
+                                                                    .editMetadata()
+                                                                    .removeFromAnnotations(ANNO_STRIMZI_IO_REBALANCE)
+                                                                    .endMetadata()
+                                                                    .build();
+                                                            return kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance);
+                                                        }
+                                                    } else {
+                                                        LOGGER.debugCr(reconciliation, "No annotation {}", ANNO_STRIMZI_IO_REBALANCE);
+                                                        return Future.succeededFuture();
+                                                    }
+                                                })
+                                                .mapEmpty();
+                                    } else {
+                                        return Future.succeededFuture();
+                                    }
+                                }, exception -> {
                                     LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", exception.getMessage());
                                     return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception)
                                             .mapEmpty();
-                                }); },
-               exception -> {
-                   LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", exception.getMessage());
-                   return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception)
-                       .mapEmpty();
-               });
+                                });
+                    }, exception -> {
+                        LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", exception.getMessage());
+                        return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception)
+                                .mapEmpty();
+                    });
+        } catch (IllegalArgumentException e) {
+            LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", e.getMessage());
+            return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), e).mapEmpty();
+        }
     }
 
     /**
