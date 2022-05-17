@@ -22,4 +22,4 @@ INSTALL_CHECKSUM="21c80eb3697d0668d9e4a3da45fe83f0c9ffb692  -"
 # if this checksum has changed as part of any non-release specific changes, please apply your changes to the
 #   development version of the helm charts in ./packaging/examples
 ### IMPORTANT ###
-EXAMPLES_CHECKSUM="5a9c3865b7ef2ddd69128435fbfaf5a3ec0f5ef7  -"
+EXAMPLES_CHECKSUM="17094f04a9d0f4e706bfc7e44cd74c56621c85e8  -"
