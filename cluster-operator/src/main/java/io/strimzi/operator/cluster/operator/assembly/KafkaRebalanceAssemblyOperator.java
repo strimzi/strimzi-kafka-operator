@@ -302,18 +302,14 @@ public class KafkaRebalanceAssemblyOperator
             if (desiredStatus.getConditions() != null) {
                 previous = desiredStatus.getConditions().stream().filter(condition -> condition != cond).collect(Collectors.toList());
             }
-            String rebalanceType = rebalanceStateConditionType(desiredStatus);
 
             // If a throwable is supplied, it is set in the status with priority
             if (e != null) {
                 StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus, KafkaRebalanceState.NotReady.toString(), e);
                 desiredStatus.setConditions(Stream.concat(desiredStatus.getConditions().stream(), previous.stream()).collect(Collectors.toList()));
-            } else if (rebalanceType != null) {
-                // Rebalance in NotReady state means error that has to stay as it is
-                if (!KafkaRebalanceState.NotReady.toString().equals(rebalanceType)) {
-                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus, rebalanceType);
-                    desiredStatus.setConditions(Stream.concat(desiredStatus.getConditions().stream(), previous.stream()).collect(Collectors.toList()));
-                }
+            } else if (cond != null) {
+                StatusUtils.setStatusConditionAndObservedGeneration(kafkaRebalance, desiredStatus, cond);
+                desiredStatus.setConditions(Stream.concat(desiredStatus.getConditions().stream(), previous.stream()).collect(Collectors.toList()));
             } else {
                 throw new IllegalArgumentException("Status related exception and the Status condition's type cannot both be null");
             }
