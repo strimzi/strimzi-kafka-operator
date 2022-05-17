@@ -210,7 +210,7 @@ public class Capacity {
 
     /*
      * Parse a K8S-style representation of a disk size, such as {@code 100Gi},
-     * into the equivalent number of mebibytes represented as a Double.
+     * into the equivalent number of mebibytes represented as a String.
      *
      * @param size The String representation of the volume size.
      * @return The equivalent number of mebibytes.
@@ -224,7 +224,7 @@ public class Capacity {
 
     /*
      * Parse Strimzi representation of throughput, such as {@code 10000KB/s},
-     * into the equivalent number of kibibytes represented as a Double.
+     * into the equivalent number of kibibytes represented as a String.
      *
      * @param throughput The String representation of the throughput.
      * @return The equivalent number of kibibytes.

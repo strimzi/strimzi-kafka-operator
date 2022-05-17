@@ -65,10 +65,6 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlConfigurationST.class.getSimpleName()).stream().findFirst().get();
 
-    private static Double removeKibSuffix(String s) {
-        return Double.valueOf(s.substring(0, s.length() - 5));
-    }
-
     @ParallelNamespaceTest
     void testCapacityFile(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -128,22 +124,22 @@ public class CruiseControlConfigurationST extends AbstractST {
         JsonObject defaultBrokerCapacity = defaultBroker.getJsonObject("capacity");
         assertThat(Double.valueOf(defaultBrokerCapacity.getString("DISK")), is(disk));
         assertThat(Double.valueOf(defaultBrokerCapacity.getString("CPU")), is(cpu));
-        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_IN")), is(removeKibSuffix(inboundNetwork)));
-        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetwork)));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
 
         LOGGER.info("Verifying cruise control capacity overrides");
         JsonObject broker0Capacity = brokerCapacities.getJsonObject(1).getJsonObject("capacity");
         JsonObject broker1Capacity = brokerCapacities.getJsonObject(2).getJsonObject("capacity");
         JsonObject broker2Capacity = brokerCapacities.getJsonObject(3).getJsonObject("capacity");
 
-        assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
-        assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
+        assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
 
-        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
-        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
 
-        assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(removeKibSuffix(inboundNetworkOverride0)));
-        assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(removeKibSuffix(outboundNetwork)));
+        assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
     }
 
     @ParallelNamespaceTest
