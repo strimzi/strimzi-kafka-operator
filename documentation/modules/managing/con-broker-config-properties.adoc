@@ -10,23 +10,7 @@ Use configuration properties to optimize the performance of Kafka brokers.
 You can use standard Kafka broker configuration options, except for properties managed directly by Strimzi.
 
 == Basic broker configuration
-Certain broker configuration options are managed directly by Strimzi, driven by the `Kafka` custom resource specification:
-
-* `broker.id` is the ID of the Kafka broker
-* `log.dirs` are the directories for log data
-* `zookeeper.connect` is the configuration to connect Kafka with ZooKeeper
-* `listener` exposes the Kafka cluster to clients
-* `authorization` mechanisms allow or decline actions executed by users
-* `authentication` mechanisms prove the identity of users requiring access to Kafka
-
-Broker IDs start from 0 (zero) and correspond to the number of broker replicas.
-Log directories are mounted to `/var/lib/kafka/data/kafka-log__IDX__` based on the `spec.kafka.storage` configuration in the `Kafka` custom resource.
-_IDX_ is the Kafka broker pod index.
-
-As such, you cannot configure these options through the `config` property of the `Kafka` custom resource.
-For a list of exclusions, see the xref:type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference].
-
-However, a typical broker configuration will include settings for properties related to topics, threads and logs.
+A typical broker configuration will include settings for properties related to topics, threads and logs.
 
 .Basic broker configuration properties
 [source,env]
@@ -66,13 +50,11 @@ replica.fetch.max.bytes=1048576
 # ...
 ----
 
+For high availability environments, it is advisable to increase the replication factor to at least 3 for topics and set the minimum number of in-sync replicas required to 1 less than the replication factor.
+
 The `auto.create.topics.enable` property is enabled by default so that topics that do not already exist are created automatically when needed by producers and consumers.
 If you are using automatic topic creation, you can set the default number of partitions for topics using `num.partitions`.
 Generally, however, this property is disabled so that more control is provided over topics through explicit topic creation.
-For example, you can use the Strimzi `KafkaTopic` resource or applications to create topics.
-
-For high availability environments, it is advisable to increase the replication factor to at least 3 for topics and set the minimum number of in-sync replicas required to 1 less than the replication factor.
-For topics created using the `KafkaTopic` resource, the replication factor is set using `spec.replicas`.
 
 For xref:data_durability[data durability], you should also set `min.insync.replicas` in your _topic_ configuration and message delivery acknowledgments using `acks=all` in your _producer_ configuration.
 
@@ -82,7 +64,10 @@ Change this value according to the average message size and throughput. When con
 The `delete.topic.enable` property is enabled by default to allow topics to be deleted.
 In a production environment, you should disable this property to avoid accidental topic deletion, resulting in data loss.
 You can, however, temporarily enable it and delete topics and then disable it again.
-If `delete.topic.enable` is enabled, you can delete topics using the `KafkaTopic` resource.
+
+NOTE: When running Strimzi on Kubernetes, the Topic Operator can provide operator-style topic management. You can use the `KafkaTopic` resource to create topics.
+For topics created using the `KafkaTopic` resource, the replication factor is set using `spec.replicas`.
+If `delete.topic.enable` is enabled, you can also delete topics using the `KafkaTopic` resource.
 
 [source,env]
 ----
@@ -497,7 +482,7 @@ Partitions can be replicated across brokers for fault tolerance.
 For a given partition, one broker is elected leader and handles all produce requests (writes to the log).
 Partition followers on other brokers replicate the partition data of the partition leader for data reliability in the event of the leader failing.
 
-Followers do not normally serve clients, though xref:type-Rack-reference[`rack` configuration] allows a consumer to consume messages from the closest replica when a Kafka cluster spans multiple datacenters.
+Followers do not normally serve clients, though `rack` configuration allows a consumer to consume messages from the closest replica when a Kafka cluster spans multiple datacenters.
 Followers operate only to replicate messages from the partition leader and allow recovery should the leader fail.
 Recovery requires an in-sync follower. Followers stay in sync by sending fetch requests to the leader, which returns messages to the follower in order.
 The follower is considered to be in sync if it has caught up with the most recently committed message on the leader.
@@ -524,7 +509,7 @@ By default, Kafka is enabled for automatic partition leader rebalancing based on
 That is, Kafka checks to see if the preferred leader is the _current_ leader.
 A rebalance ensures that leaders are evenly distributed across brokers and brokers are not overloaded.
 
-You can xref:cruise-control-concepts-str[use Cruise Control for Strimzi] to figure out replica assignments to brokers that balance load evenly across the cluster.
+You can use Cruise Control for Strimzi to figure out replica assignments to brokers that balance load evenly across the cluster.
 Its calculation takes into account the differing load experienced by leaders and followers.
 A failed leader affects the balance of a Kafka cluster because the remaining brokers get the extra work of leading additional partitions.
 
@@ -586,7 +571,3 @@ group.initial.rebalance.delay.ms=3000
 The delay is the amount of time that the coordinator waits for members to join. The longer the delay,
 the more likely it is that all the members will join in time and avoid a rebalance.
 But the delay also prevents the group from consuming until the period has ended.
-
-[role="_additional-resources"]
-.Additional resources
-* xref:proc-setting-broker-limits-str[Setting limits on brokers using the Kafka Static Quota plugin]
