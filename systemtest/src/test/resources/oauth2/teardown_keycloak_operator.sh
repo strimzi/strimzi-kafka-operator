@@ -2,6 +2,9 @@
 
 KEYCLOAK_OPERATOR_NAMESPACE=$1
 KEYCLOAK_VERSION=$2
+KEYCLOAK_INSTANCE_NAMESPACE=$3
+
+SCRIPT_PATH=$(dirname "${BASH_SOURCE[0]}")
 
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Delete Keycloak & Keycloak Operator"
 kubectl delete -n ${KEYCLOAK_OPERATOR_NAMESPACE} -f https://github.com/keycloak/keycloak-operator/raw/${KEYCLOAK_VERSION}/deploy/examples/keycloak/keycloak.yaml
