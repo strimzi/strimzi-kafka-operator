@@ -171,7 +171,7 @@ public class ReconcilerUtils {
         }
 
         if (nodeCertsChange) {
-            restartReasons.add(RestartReason.SERVER_CERT_CHANGE);
+            restartReasons.add(RestartReason.SERVER_CERT_UPDATED);
         }
 
         if (restartReasons.shouldRoll()) {
