@@ -1353,7 +1353,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                         .endSpec()
                         .build();
 
-        System.out.println(kafka.getMetadata().getName());
         KafkaRebalance kr =
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC);
 
