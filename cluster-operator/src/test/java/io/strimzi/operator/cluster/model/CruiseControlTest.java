@@ -279,17 +279,17 @@ public class CruiseControlTest {
         capacity = new Capacity(resource.getSpec(), kafkaStorage);
 
         TreeMap<Integer, BrokerCapacity> capacityEntries = capacity.getCapacityEntries();
-        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetwork)));
-        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getOutboundNetworkKiBPerSecond(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetwork)));
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
-        assertThat(capacityEntries.get(broker0).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(capacityEntries.get(broker0).getOutboundNetworkKiBPerSecond(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        assertThat(capacityEntries.get(broker0).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker0).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
         // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
-        assertThat(capacityEntries.get(broker1).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
-        assertThat(capacityEntries.get(broker1).getOutboundNetworkKiBPerSecond(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+        assertThat(capacityEntries.get(broker1).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker1).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
-        assertThat(capacityEntries.get(broker2).getInboundNetworkKiBPerSecond(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker2).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
 
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
     }

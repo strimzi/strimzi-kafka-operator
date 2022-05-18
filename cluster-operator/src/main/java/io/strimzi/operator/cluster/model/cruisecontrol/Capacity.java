@@ -276,8 +276,8 @@ public class Capacity {
                                 if (capacityEntries.containsKey(id)) {
                                     if (overrideIds.add(id)) {
                                         BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
-                                        brokerCapacityEntry.setInboundNetworkKiBPerSecond(inboundNetwork);
-                                        brokerCapacityEntry.setOutboundNetworkKiBPerSecond(outboundNetwork);
+                                        brokerCapacityEntry.setInboundNetwork(inboundNetwork);
+                                        brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
                                     } else {
                                         LOGGER.warnOp("Duplicate broker id %d found in overrides, using first occurrence.", id);
                                     }
@@ -306,8 +306,8 @@ public class Capacity {
             .put("capacity", new JsonObject()
                 .put("DISK", brokerCapacity.getDisk())
                 .put("CPU", brokerCapacity.getCpu())
-                .put("NW_IN", brokerCapacity.getInboundNetworkKiBPerSecond())
-                .put("NW_OUT", brokerCapacity.getOutboundNetworkKiBPerSecond())
+                .put("NW_IN", brokerCapacity.getInboundNetwork())
+                .put("NW_OUT", brokerCapacity.getOutboundNetwork())
             )
             .put("doc", brokerCapacity.getDoc());
     }

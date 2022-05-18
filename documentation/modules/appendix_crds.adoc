@@ -1376,7 +1376,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |string
 |outboundNetwork  1.2+<.<a|Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
 |string
-|overrides        1.2+<.<a|Overrides for individual brokers. The `overrides` property lets you specify a different configuration for different brokers.
+|overrides        1.2+<.<a|Overrides for individual brokers. The `overrides` property lets you specify a different capacity configuration for different brokers.
 |xref:type-BrokerCapacityOverride-{context}[`BrokerCapacityOverride`] array
 |====
 

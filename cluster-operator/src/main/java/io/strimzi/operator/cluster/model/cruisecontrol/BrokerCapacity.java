@@ -18,16 +18,16 @@ public class BrokerCapacity {
     private int id;
     private String cpu;
     private String disk;
-    private String inboundNetworkKiBPerSecond;
-    private String outboundNetworkKiBPerSecond;
+    private String inboundNetwork;
+    private String outboundNetwork;
     private final String doc;
 
-    public BrokerCapacity(int brokerId, String cpu, String disk, String inboundNetworkKiBPerSecond, String outboundNetworkKiBPerSecond) {
+    public BrokerCapacity(int brokerId, String cpu, String disk, String inboundNetwork, String outboundNetwork) {
         this.id = brokerId;
         this.cpu = cpu;
         this.disk = disk;
-        this.inboundNetworkKiBPerSecond = inboundNetworkKiBPerSecond;
-        this.outboundNetworkKiBPerSecond = outboundNetworkKiBPerSecond;
+        this.inboundNetwork = inboundNetwork;
+        this.outboundNetwork = outboundNetwork;
         this.doc = brokerId == -1 ? DEFAULT_BROKER_DOC : "Capacity for Broker " + brokerId;
     }
 
@@ -43,12 +43,12 @@ public class BrokerCapacity {
         return disk;
     }
 
-    public String getInboundNetworkKiBPerSecond() {
-        return inboundNetworkKiBPerSecond;
+    public String getInboundNetwork() {
+        return inboundNetwork;
     }
 
-    public String getOutboundNetworkKiBPerSecond() {
-        return outboundNetworkKiBPerSecond;
+    public String getOutboundNetwork() {
+        return outboundNetwork;
     }
 
     public String getDoc() {
@@ -67,11 +67,11 @@ public class BrokerCapacity {
         this.disk = disk;
     }
 
-    public void setInboundNetworkKiBPerSecond(String inboundNetworkKiBPerSecond) {
-        this.inboundNetworkKiBPerSecond = inboundNetworkKiBPerSecond;
+    public void setInboundNetwork(String inboundNetwork) {
+        this.inboundNetwork = inboundNetwork;
     }
 
-    public void setOutboundNetworkKiBPerSecond(String outboundNetworkKiBPerSecond) {
-        this.outboundNetworkKiBPerSecond = outboundNetworkKiBPerSecond;
+    public void setOutboundNetwork(String outboundNetwork) {
+        this.outboundNetwork = outboundNetwork;
     }
 }
