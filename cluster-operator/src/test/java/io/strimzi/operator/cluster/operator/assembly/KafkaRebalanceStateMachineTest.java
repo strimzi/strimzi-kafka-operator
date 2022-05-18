@@ -180,33 +180,36 @@ public class KafkaRebalanceStateMachineTest {
     @Test
     public void testProposalReadyWithWrongAnnotation(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, EMPTY_KAFKA_REBALANCE_SPEC);
-        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.ProposalReady);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.ProposalReady,  KafkaRebalanceAnnotation.unknown);
 
         kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC);
-        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady, KafkaRebalanceAnnotation.unknown);
 
         kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC);
-        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady, KafkaRebalanceAnnotation.unknown);
     }
 
     @Test
     public void testReadyWithWrongAnnotation(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, EMPTY_KAFKA_REBALANCE_SPEC);
-        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.Ready);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.Ready, KafkaRebalanceAnnotation.approve);
 
         kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC);
-        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.Ready);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.Ready, KafkaRebalanceAnnotation.approve);
 
         kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC);
-        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.Ready);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.Ready, KafkaRebalanceAnnotation.approve);
     }
 
-    private void testStateWithWrongAnnotation(Vertx vertx, VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance, KafkaRebalanceState kafkaRebalanceState) throws IOException, URISyntaxException {
+    private void testStateWithWrongAnnotation(Vertx vertx, VertxTestContext context,
+                                              int pendingCalls, CruiseControlEndpoints endpoint,
+                                              KafkaRebalance kcRebalance, KafkaRebalanceState kafkaRebalanceState,
+                                              KafkaRebalanceAnnotation kafkaRebalanceAnnotation) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
 
         checkTransitionWithWrongAnnotation(vertx, context,
-                kafkaRebalanceState, KafkaRebalanceState.Ready,
-                KafkaRebalanceAnnotation.approve, kcRebalance)
+                kafkaRebalanceState, kafkaRebalanceState,
+                KafkaRebalanceAnnotation.unknown, kcRebalance)
                 .onComplete(result -> defaultStatusHandler(result, context));
     }
 
