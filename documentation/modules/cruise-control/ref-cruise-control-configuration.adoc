@@ -171,6 +171,34 @@ spec:
     # ...
 ----
 
+[[metrics-configuration]]
+[discrete]
+== Metrics configuration
+
+Cruise Control expose metrics to provide information about the Kafka cluster as well as its internal components.
+Metrics about rebalancing executions, disk and broker failures, optimization proposals and REST API requests could be valuable to monitor your cluster.
+You can find more information on the official Cruise Control https://github.com/linkedin/cruise-control/wiki/Sensors[Sensors] Wiki page.
+
+You can find more information see the xref:con-common-configuration-prometheus-reference[metricsConfig].
+
+.Metrics configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+# ...
+spec:
+  cruiseControl:
+    # ...
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: cruise-control-metrics
+          key: metrics-config.yml
+    # ...
+----
+
 [[api-security-configuration]]
 [discrete]
 == Cruise Control REST API security
