@@ -209,7 +209,7 @@ public class KafkaRebalanceStateMachineTest {
 
         checkTransitionWithWrongAnnotation(vertx, context,
                 kafkaRebalanceState, kafkaRebalanceState,
-                KafkaRebalanceAnnotation.unknown, kcRebalance)
+                kafkaRebalanceAnnotation, kcRebalance)
                 .onComplete(result -> defaultStatusHandler(result, context));
     }
 
