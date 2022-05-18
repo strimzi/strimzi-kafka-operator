@@ -109,10 +109,11 @@ As an exception, you might want to reduce the settings in a single-broker _test_
 Network threads handle requests to the Kafka cluster, such as produce and fetch requests from client applications.
 Produce requests are placed in a request queue. Responses are placed in a response queue.
 
-The number of network threads should reflect the replication factor and the levels of activity from client producers and consumers interacting with the Kafka cluster.
+The number of network threads per listener should reflect the replication factor and the levels of activity from client producers and consumers interacting with the Kafka cluster.
 If you are going to have a lot of requests, you can increase the number of threads, using the amount of time threads are idle to determine when to add more threads.
 
-To reduce congestion and regulate the request traffic, you can limit the number of requests allowed in the request queue before the network thread is blocked.
+To reduce congestion and regulate the request traffic, you can limit the number of requests allowed in the request queue.
+When the request queue is full, all incoming traffic is blocked.
 
 I/O threads pick up requests from the request queue to process them.
 Adding more threads can improve throughput, but the number of CPU cores and disk bandwidth imposes a practical upper limit.
@@ -124,20 +125,27 @@ At a minimum, the number of I/O threads should equal the number of storage volum
 num.network.threads=3 <1>
 queued.max.requests=500 <2>
 num.io.threads=8 <3>
-num.recovery.threads.per.data.dir=1 <4>
+num.recovery.threads.per.data.dir=4 <4>
 # ...
 ----
 <1> The number of network threads for the Kafka cluster.
 <2> The number of requests allowed in the request queue.
 <3> The number of I/O  threads for a Kafka broker.
-<4> The number of threads used for log loading at startup and flushing at shutdown.
+<4> The number of threads used for log loading at startup and flushing at shutdown. Try setting to a value of at least the number of cores.
 
 Configuration updates to the thread pools for all brokers might occur dynamically at the cluster level.
 These updates are restricted to between half the current size and twice the current size.
 
-NOTE: Kafka broker metrics can help with working out the number of threads required.
-For example, metrics for the average time network threads are idle (`kafka.network:type=SocketServer,name=NetworkProcessorAvgIdlePercent`) indicate the percentage of resources used.
+[TIP]
+====
+The following Kafka broker metrics can help with working out the number of threads required:
+
+* `kafka.network:type=SocketServer,name=NetworkProcessorAvgIdlePercent` provides metrics on the average time network threads are idle as a percentage.
+* `kafka.server:type=KafkaRequestHandlerPool,name=RequestHandlerAvgIdlePercent` provides metrics on the average time I/O threads are idle as a percentage.
+
 If there is 0% idle time, all resources are in use, which means that adding more threads might be beneficial.
+When idle time goes below 30%, performance may start to suffer.
+====
 
 If threads are slow or limited due to the number of disks, you can try increasing the size of the buffers for network requests to improve throughput:
 
@@ -255,6 +263,7 @@ log.cleaner.enable=true
 # ...
 ----
 
+The log cleaner needs to be enabled if you are using log compaction cleanup policy.
 You can set the cleanup policy at the topic or broker level.
 Broker-level configuration is the default for topics that do not have policy set.
 
@@ -448,6 +457,9 @@ The buffer size for the producers (`max.request.size`) and consumers (`message.m
 
 == Controlling the log flush of message data
 
+Generally, the recommendation is to not set explicit flush thresholds and let the operating system perform background flush using its default settings.
+Partition replication provides greater data durability than writes to any single disk, as a failed broker can recover from its in-sync replicas.
+
 Log flush properties control the periodic writes of cached message data to disk.
 The scheduler specifies the frequency of checks on the log cache in milliseconds:
 
@@ -470,9 +482,6 @@ log.flush.interval.messages=100000
 
 The wait between flushes includes the time to make the check and the specified interval before the flush is carried out.
 Increasing the frequency of flushes can affect throughput.
-
-Generally, the recommendation is to not set explicit flush thresholds and let the operating system perform background flush using its default settings.
-Partition replication provides greater data durability than writes to any single disk as a failed broker can recover from its in-sync replicas.
 
 If you are using application flush management, setting lower flush thresholds might be appropriate if you are using faster disks.
 
