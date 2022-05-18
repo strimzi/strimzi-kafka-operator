@@ -2,6 +2,8 @@
 
 ## 0.30.0
 
+* Remove Kafka 3.0.0 and 3.0.1
+
 ## 0.29.0
 
 * Add support for Apache Kafka 3.0.1, 3.1.1 and 3.2.0
