@@ -191,9 +191,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 // ... or one or more brokers doesn't exist on a add/remove brokers rebalance request
                                 } else if (json.getString(CC_REST_API_ERROR_KEY).contains("IllegalArgumentException") &&
                                             json.getString(CC_REST_API_ERROR_KEY).contains("does not exist.")) {
-                                    CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
-                                    ccResponse.setBrokersNotExist(true);
-                                    result.complete(ccResponse);
+                                    result.fail(new IllegalArgumentException("Some/all brokers specified don't exist"));
                                 } else {
                                     // If there was any other kind of error propagate this to the operator
                                     result.fail(new CruiseControlRestException(
