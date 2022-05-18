@@ -69,5 +69,4 @@ kubectl apply -f _<kafka_configuration_file>_
 [role="_additional-resources"]
 .Additional resources
 
-* xref:con-broker-config-properties-str[Kafka broker configuration tuning]
 * xref:user_quotas[Setting user quotas]

@@ -1,0 +1,25 @@
+// This module is included in the following files:
+//
+// assembly-tuning-config.adoc
+
+[id='con-managed-broker-config-properties-{context}']
+= Managed broker configurations
+
+[role="_abstract"]
+When you deploy Strimzi on Kubernetes, you can specify broker configuration through the `config` property of the `Kafka` custom resource.
+However, certain broker configuration options are managed directly by Strimzi.
+
+As such, you cannot configure the following options:
+
+* `broker.id` to specify the ID of the Kafka broker
+* `log.dirs` directories for log data
+* `zookeeper.connect` configuration to connect Kafka with ZooKeeper
+* `listeners` to expose the Kafka cluster to clients
+* `authorization` mechanisms to allow or decline actions executed by users
+* `authentication` mechanisms to prove the identity of users requiring access to Kafka
+
+Broker IDs start from 0 (zero) and correspond to the number of broker replicas.
+Log directories are mounted to `/var/lib/kafka/data/kafka-log__IDX__` based on the `spec.kafka.storage` configuration in the `Kafka` custom resource.
+_IDX_ is the Kafka broker pod index.
+
+For a list of exclusions, see the xref:type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference].
