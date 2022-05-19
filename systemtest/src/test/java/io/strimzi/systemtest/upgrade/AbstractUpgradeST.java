@@ -108,55 +108,6 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected static Map<String, JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
-        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
-        TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
-
-        Map<String, JsonObject> steps = new HashMap<>();
-
-        String midStepUrl = jsonData.getString("urlFrom");
-        String midStepVersion = jsonData.getString("fromVersion");
-        String midStepExamples = jsonData.getString("fromExamples");
-
-        JsonObject conversionTool = jsonData.getJsonObject("conversionTool");
-
-        // X -> 0.22.0 data
-        JsonObject midStep = JsonObject.mapFrom(jsonData);
-        JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
-        if (jsonData.getString("prevVersion").isEmpty()) {
-            midStep.put("urlFrom", jsonData.getString("urlFrom"));
-            midStep.put("fromVersion", jsonData.getString("fromVersion"));
-            midStep.put("fromExamples", jsonData.getString("fromExamples"));
-            afterMidStep.put("urlFrom", "HEAD");
-            afterMidStep.put("fromVersion", "HEAD");
-            afterMidStep.put("fromExamples", "HEAD");
-        } else {
-            midStep.put("urlFrom", jsonData.getString("urlPrevVersion"));
-            midStep.put("fromVersion", jsonData.getString("prevVersion"));
-            midStep.put("fromExamples", jsonData.getString("prevVersionExamples"));
-            afterMidStep.put("urlFrom", midStepUrl);
-            afterMidStep.put("fromVersion", midStepVersion);
-            afterMidStep.put("fromExamples", midStepExamples);
-        }
-
-        midStep.put("urlTo", midStepUrl);
-        midStep.put("toVersion", midStepVersion);
-        midStep.put("toExamples", midStepExamples);
-        midStep.put("urlToConversionTool", conversionTool.getString("urlToConversionTool"));
-        midStep.put("toConversionTool", conversionTool.getString("toConversionTool"));
-
-        JsonObject midStepProcedures = new JsonObject();
-        midStepProcedures.put("kafkaVersion", testKafkaVersion.version());
-        midStepProcedures.put("logMessageVersion", testKafkaVersion.messageVersion());
-        midStepProcedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
-        midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
-
-        steps.put("midStep", midStep);
-        steps.put("toHEAD", afterMidStep);
-
-        return steps;
-    }
-
     protected static Stream<Arguments> loadJsonUpgradeData() {
         JsonArray upgradeData = readUpgradeJson(UPGRADE_JSON_FILE);
         List<Arguments> parameters = new LinkedList<>();
