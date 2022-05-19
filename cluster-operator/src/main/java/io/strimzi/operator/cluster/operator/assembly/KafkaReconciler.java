@@ -193,7 +193,7 @@ public class KafkaReconciler {
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.eventsPublisher = eventsPublisher;
-        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, config.versions(), oldStorage, currentReplicas);
+        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, config.versions(), oldStorage, currentReplicas, config.featureGates().useKRaftEnabled());
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
         if (versionChange.interBrokerProtocolVersion() != null) {
@@ -204,6 +204,7 @@ public class KafkaReconciler {
         if (versionChange.logMessageFormatVersion() != null) {
             this.kafka.setLogMessageFormatVersion(versionChange.logMessageFormatVersion());
         }
+
         this.oldStorage = oldStorage;
         this.currentReplicas = currentReplicas;
         this.clusterCa = clusterCa;

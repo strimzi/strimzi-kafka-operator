@@ -26,6 +26,8 @@ include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 
 include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
 
+include::assemblies/managing/assembly-tuning-config.adoc[leveloffset=+1]
+
 [id='api_reference-{context}']
 :parent-context: {context}
 :context: reference

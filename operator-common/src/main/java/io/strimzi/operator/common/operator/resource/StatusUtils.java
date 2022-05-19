@@ -122,6 +122,13 @@ public class StatusUtils {
         setStatusConditionAndObservedGeneration(resource, status, type, "True");
     }
 
+    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Condition condition) {
+        if (resource.getMetadata().getGeneration() != null)    {
+            status.setObservedGeneration(resource.getMetadata().getGeneration());
+        }
+        status.setConditions(Collections.singletonList(condition));
+    }
+
     public static Condition getPausedCondition() {
         return new ConditionBuilder()
                 .withLastTransitionTime(StatusUtils.iso8601Now())

@@ -1,6 +1,6 @@
 // This module is included in the following files:
 //
-// assembly-client-config.adoc
+// assembly-tuning-config.adoc
 
 [id='con-producer-config-properties-{context}']
 = Kafka producer configuration tuning

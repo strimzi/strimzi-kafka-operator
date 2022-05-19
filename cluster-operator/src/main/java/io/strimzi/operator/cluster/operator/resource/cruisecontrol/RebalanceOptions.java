@@ -53,6 +53,7 @@ public class RebalanceOptions extends AbstractRebalanceOptions {
             return self();
         }
 
+        @Override
         public RebalanceOptions build() {
             return new RebalanceOptions(this);
         }

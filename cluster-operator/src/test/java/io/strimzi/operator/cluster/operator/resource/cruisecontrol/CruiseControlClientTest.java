@@ -26,6 +26,8 @@ import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.Cruise
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(VertxExtension.class)
 public class CruiseControlClientTest {
@@ -129,7 +131,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -142,7 +144,7 @@ public class CruiseControlClientTest {
     public void testCCAddBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
                 .withVerboseResponse()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -154,7 +156,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -165,7 +167,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBrokerProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
@@ -176,18 +178,19 @@ public class CruiseControlClientTest {
     @Test
     public void testCCAddBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         AddBrokerOptions options = new AddBrokerOptions.AddBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
                 result -> {
-                    assertThat(result.isBrokersNotExist(), is(true));
+                    assertThat(result, instanceOf(IllegalArgumentException.class));
+                    assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
                 });
     }
 
     @Test
     public void testCCRemoveBroker(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -200,7 +203,7 @@ public class CruiseControlClientTest {
     public void testCCRemoveBrokerVerbose(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
                 .withVerboseResponse()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceVerbose(vertx, context, 0, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -212,7 +215,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -223,7 +226,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
@@ -234,11 +237,12 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRemoveBrokerDoesNotExist(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RemoveBrokerOptions options = new RemoveBrokerOptions.RemoveBrokerOptionsBuilder()
-                .withBrokers(List.of("3"))
+                .withBrokers(List.of(3))
                 .build();
         this.ccBrokerDoesNotExist(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
                 result -> {
-                    assertThat(result.isBrokersNotExist(), is(true));
+                    assertThat(result, instanceOf(IllegalArgumentException.class));
+                    assertTrue(result.getMessage().contains("Some/all brokers specified don't exist"));
                 });
     }
 
@@ -366,7 +370,7 @@ public class CruiseControlClientTest {
         }
     }
 
-    private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<CruiseControlRebalanceResponse> assertion) throws IOException, URISyntaxException {
+    private void ccBrokerDoesNotExist(Vertx vertx, VertxTestContext context, AbstractRebalanceOptions options, CruiseControlEndpoints endpoint, Consumer<Throwable> assertion) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCBrokerDoesNotExist(ccServer, endpoint);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
@@ -375,14 +379,14 @@ public class CruiseControlClientTest {
         switch (endpoint) {
             case ADD_BROKER:
                 client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
                 client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
-                        .onComplete(context.succeeding(result -> context.verify(() -> {
+                        .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
                             checkpoint.flag();
                         })));

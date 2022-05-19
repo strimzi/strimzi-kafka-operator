@@ -17,6 +17,8 @@ import io.strimzi.systemtest.AbstractST;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -34,6 +36,8 @@ import org.apache.logging.log4j.Logger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -46,6 +50,8 @@ class RackAwarenessST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
+        Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
+
         TestStorage storage = storageMap.get(extensionContext);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 1, 1)
@@ -93,6 +99,8 @@ class RackAwarenessST extends AbstractST {
     @Tag(CONNECT)
     @ParallelNamespaceTest
     void testConnectRackAwareness(ExtensionContext extensionContext) {
+        Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
+
         TestStorage storage = storageMap.get(extensionContext);
         String invalidTopologyKey = "invalid-topology-key";
 
@@ -137,6 +145,8 @@ class RackAwarenessST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @ParallelNamespaceTest
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
+        Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
+
         TestStorage storage = storageMap.get(extensionContext);
         String kafkaClusterSourceName = storage.getClusterName() + "-source";
         String kafkaClusterTargetName = storage.getClusterName() + "-target";
