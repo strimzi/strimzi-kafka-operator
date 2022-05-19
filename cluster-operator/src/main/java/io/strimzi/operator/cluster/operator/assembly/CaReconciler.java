@@ -369,7 +369,7 @@ public class CaReconciler {
             kafkaPodRollReasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
         }
 
-        if (clusterCa.keyReplaced() || kafkaPodRollReasons.shouldRoll()) {
+        if (clusterCa.keyReplaced() || kafkaPodRollReasons.shouldRestart()) {
             Future<Void> zkRollFuture;
 
             Function<Pod, RestartReasons> rollKafkaPodAndLogReasons = pod -> {

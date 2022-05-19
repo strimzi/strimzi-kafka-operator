@@ -1013,7 +1013,7 @@ public class KafkaReconciler {
         return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
                 .compose(pods -> {
                     for (Pod pod : pods) {
-                        if (needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, currentReplicas, kafka.getReplicas()).shouldRoll())   {
+                        if (needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, currentReplicas, kafka.getReplicas()).shouldRestart())   {
                             // At least one broker needs rolling update => we can trigger it without checking the other brokers
                             LOGGER.debugCr(reconciliation, "Kafka brokers needs rolling update to add or remove JBOD volumes");
 

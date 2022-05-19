@@ -174,7 +174,7 @@ public class ReconcilerUtils {
             restartReasons.add(RestartReason.SERVER_CERT_UPDATED);
         }
 
-        if (restartReasons.shouldRoll()) {
+        if (restartReasons.shouldRestart()) {
             LOGGER.debugCr(reconciliation, "Rolling pod {} due to {}",
                     pod.getMetadata().getName(), restartReasons.getAllReasonNotes());
         }

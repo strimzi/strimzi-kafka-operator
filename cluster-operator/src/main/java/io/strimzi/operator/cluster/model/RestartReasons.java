@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -18,7 +18,7 @@ import java.util.stream.Stream;
  */
 public class RestartReasons implements Iterable<RestartReason> {
 
-    private final EnumMap<RestartReason, List<String>> reasons = new EnumMap<>(RestartReason.class);
+    private final EnumMap<RestartReason, Set<String>> reasons = new EnumMap<>(RestartReason.class);
 
 
     public static RestartReasons empty() {
@@ -36,8 +36,8 @@ public class RestartReasons implements Iterable<RestartReason> {
      * @return this instance, to make it easy to chain additions
      */
     public RestartReasons add(RestartReason reason, String explicitNote) {
-        List<String> notes = reasons.computeIfAbsent(reason, unused -> new ArrayList<>());
-        if (explicitNote != null && !notes.contains(explicitNote)) {
+        Set<String> notes = reasons.computeIfAbsent(reason, unused -> new HashSet<>());
+        if (explicitNote != null) {
             notes.add(explicitNote);
         }
 
@@ -58,7 +58,7 @@ public class RestartReasons implements Iterable<RestartReason> {
         return reasons.keySet();
     }
 
-    public boolean shouldRoll() {
+    public boolean shouldRestart() {
         return !reasons.isEmpty();
     }
 
@@ -76,7 +76,7 @@ public class RestartReasons implements Iterable<RestartReason> {
             return null;
         }
 
-        List<String> explicitNotes = reasons.get(reason);
+        Set<String> explicitNotes = reasons.get(reason);
         if (explicitNotes.isEmpty()) {
             return reason.getDefaultNote();
         } else {
@@ -87,7 +87,7 @@ public class RestartReasons implements Iterable<RestartReason> {
     // For logging, generally
     public List<String> getAllReasonNotes() {
         return reasons.entrySet().stream().flatMap(entry -> {
-            List<String> explicitNotes = entry.getValue();
+            Set<String> explicitNotes = entry.getValue();
             if (explicitNotes.isEmpty()) {
                 return Stream.of(entry.getKey().getDefaultNote());
             } else {
