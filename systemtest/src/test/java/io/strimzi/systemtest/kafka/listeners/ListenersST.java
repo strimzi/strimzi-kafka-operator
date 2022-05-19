@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
@@ -1960,7 +1961,9 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
+        if (!Environment.isKRaftModeEnabled()) {
+            PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
+        }
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName, ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
 
@@ -1997,7 +2000,9 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
+        if (!Environment.isKRaftModeEnabled()) {
+            PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
+        }
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
                 ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
@@ -2035,7 +2040,9 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
+        if (!Environment.isKRaftModeEnabled()) {
+            PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
+        }
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
                 ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");

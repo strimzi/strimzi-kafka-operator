@@ -544,8 +544,13 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaBuilder.build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).build());
 
-        topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get()
-            .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;
+        if (!Environment.isKRaftModeEnabled()) {
+            topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get()
+                    .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;
+        } else {
+            // TODO check this value
+            topicOperatorReconciliationInterval = 120_000;
+        }
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
