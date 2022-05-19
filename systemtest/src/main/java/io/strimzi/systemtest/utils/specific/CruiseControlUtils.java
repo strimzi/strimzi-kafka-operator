@@ -53,9 +53,13 @@ public class CruiseControlUtils {
         HTTPS
     }
 
+    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
+        return callApi(namespaceName, method, endpoint, scheme, withCredentials, "");
+    }
+
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
+    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials, String endpointSuffix) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
         String args = " -k ";
 
@@ -65,7 +69,7 @@ public class CruiseControlUtils {
         }
 
         return cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
-            "curl -X" + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
+            "curl -X " + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString() + endpointSuffix).out();
     }
 
     @SuppressWarnings("Regexp")
