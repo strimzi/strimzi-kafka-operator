@@ -1,0 +1,10 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+# no goals specified, using the default goals from the Cruise Control configuration
+spec:
+  mode: add-brokers
+  brokers: [3, 4]
