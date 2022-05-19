@@ -115,7 +115,6 @@ For Kafka, the following aspects of a deployment can impact the resources you ne
 * The number of producers and consumers
 * The number of topics and partitions
 
-Resource requests set the resources a container needs to start.
 The values specified for resource requests are reserved and always available to the container.
 Resource limits specify the maximum resources that can be consumed by a given container.
 The amount between the request and limit is not reserved and might not be always available.
@@ -459,9 +458,9 @@ Use the `-Xms` option to set an initial heap size and the `-Xmx` option to set a
 
 Specify heap size to have more control over the memory allocated to your JVM.
 Heap sizes should make the best use of a container's xref:con-common-configuration-resources-reference[memory limit (and request)] without exceeding it.
-Heap size and any other memory requirements need to fit within a specified memory limit. 
-If you don't specify heap size in your configuration, but you configure a memory limit (and request), the Cluster Operator imposes default heap sizes automatically.
-The Cluster Operator sets default maximum and minimum heap values based on a percentage allocation of available memory in the node where the container is running.
+Heap size and any other memory requirements need to fit within a specified memory limit.
+If you don't specify heap size in your configuration, but you configure a memory resource limit (and request), the Cluster Operator imposes default heap sizes automatically.
+The Cluster Operator sets default maximum and minimum heap values based on a percentage of the memory resource configuration.
 
 The following table shows the default heap values.
 
@@ -514,7 +513,6 @@ Setting an appropriate memory request can prevent the following:
 If `-Xms` is set to `-Xmx`, the container will crash immediately; if not, the container will crash at a later time.
 
 In this example, the JVM uses 2 GiB (=2,147,483,648 bytes) for its heap.
-Its total memory usage is approximately 8 GiB.
 Total JVM memory usage can be a lot more than the maximum heap size.
 
 .Example `-Xmx` and `-Xms` configuration
