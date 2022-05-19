@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.backup;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.USER_PATH;
@@ -61,7 +60,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
 
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
@@ -69,7 +68,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withTopicName(topicName)
             .withConsumerGroup(groupId)
             .withMessageCount(firstBatchSize)
@@ -77,7 +76,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
 
         // send messages and consume them
         resourceManager.createResource(context, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, firstBatchSize);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), firstBatchSize);
 
         // save consumer group offsets
         int offsetsBeforeBackup = KafkaUtils.getCurrentOffsets(KafkaResources.kafkaPodName(clusterName, 0), topicName, groupId);
@@ -89,12 +88,12 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(context, clients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, firstBatchSize);
+        ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), firstBatchSize);
 
         // backup command
-        LOGGER.info("Running backup procedure for {}/{}", INFRA_NAMESPACE, clusterName);
+        LOGGER.info("Running backup procedure for {}/{}", clusterOperator.getDeploymentNamespace(), clusterName);
         String[] backupCommand = new String[] {
-            USER_PATH + "/../tools/cold-backup/run.sh", "backup", "-n", INFRA_NAMESPACE, "-c", clusterName, "-t", backupFilePath, "-y"
+            USER_PATH + "/../tools/cold-backup/run.sh", "backup", "-n", clusterOperator.getDeploymentNamespace(), "-c", clusterName, "-t", backupFilePath, "-y"
         };
         Exec.exec(Level.INFO, backupCommand);
 
@@ -106,9 +105,9 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
             .runInstallation();
 
         // restore command
-        LOGGER.info("Running restore procedure for {}/{}", INFRA_NAMESPACE, clusterName);
+        LOGGER.info("Running restore procedure for {}/{}", clusterOperator.getDeploymentNamespace(), clusterName);
         String[] restoreCommand = new String[] {
-            USER_PATH + "/../tools/cold-backup/run.sh", "restore", "-n", INFRA_NAMESPACE, "-c", clusterName, "-s", backupFilePath, "-y"
+            USER_PATH + "/../tools/cold-backup/run.sh", "restore", "-n", clusterOperator.getDeploymentNamespace(), "-c", clusterName, "-s", backupFilePath, "-y"
         };
         Exec.exec(Level.INFO, restoreCommand);
 
@@ -124,8 +123,8 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
 
         // check consumer group recovery
         resourceManager.createResource(context, clients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, secondBatchSize);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
+        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), secondBatchSize);
+        JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), consumerName);
 
         // check total number of messages
         int batchSize = firstBatchSize + secondBatchSize;
@@ -135,7 +134,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
                 .build();
 
         resourceManager.createResource(context, clients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, batchSize);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
+        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), batchSize);
+        JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), consumerName);
     }
 }

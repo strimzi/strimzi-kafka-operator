@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.OLM_UPGRADE;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -161,8 +162,8 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
         // ======== Kafka upgrade ends ========
 
-        ClientUtils.waitForClientSuccess(producerName, Constants.INFRA_NAMESPACE, messageUpgradeCount);
-        ClientUtils.waitForClientSuccess(consumerName, Constants.INFRA_NAMESPACE, messageUpgradeCount);
+        ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), messageUpgradeCount);
+        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), messageUpgradeCount);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -172,15 +173,15 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     void setup() {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(Constants.INFRA_NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(Constants.INFRA_NAMESPACE))
-            .withWatchingNamespaces(Constants.INFRA_NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(INFRA_NAMESPACE))
+            .withWatchingNamespaces(INFRA_NAMESPACE)
             .createInstallation();
 
         this.kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withNamespaceName(Constants.INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicUpgradeName)
             .withMessageCount(messageUpgradeCount)

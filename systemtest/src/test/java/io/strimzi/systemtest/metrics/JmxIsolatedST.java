@@ -51,7 +51,7 @@ public class JmxIsolatedST extends AbstractST {
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String zkSecretName = clusterName + "-zookeeper-jmx";
         final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = clusterName + "-kafka-jmx";

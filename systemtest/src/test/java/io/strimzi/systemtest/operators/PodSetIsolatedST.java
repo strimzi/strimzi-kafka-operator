@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -50,12 +49,12 @@ public class PodSetIsolatedST extends AbstractST {
     @IsolatedTest("We are changing CO env variables in this test")
     void testPodSetOnlyReconciliation(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME);
+        final Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME);
         final int replicas = 3;
         final int probeTimeoutSeconds = 6;
 
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
-        List<EnvVar> envVars = kubeClient().getDeployment(INFRA_NAMESPACE, Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<EnvVar> envVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         envVars.addAll(INITIAL_ENV_VARS);
         envVars.add(reconciliationEnv);
 
@@ -64,9 +63,9 @@ public class PodSetIsolatedST extends AbstractST {
         LOGGER.info("Changing {} to 'true', so only SPS will be reconciled", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
         DeploymentResource.replaceDeployment(Constants.STRIMZI_DEPLOYMENT_NAME,
-            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), INFRA_NAMESPACE);
+            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getDeploymentNamespace());
 
-        DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
         Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
@@ -95,9 +94,9 @@ public class PodSetIsolatedST extends AbstractST {
 
         envVars.remove(reconciliationEnv);
         DeploymentResource.replaceDeployment(Constants.STRIMZI_DEPLOYMENT_NAME,
-            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), INFRA_NAMESPACE);
+            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getDeploymentNamespace());
 
-        DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         LOGGER.info("Because the configuration was changed, pods should be rolled");
 

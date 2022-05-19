@@ -62,7 +62,6 @@ import java.util.regex.Pattern;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
@@ -190,7 +189,7 @@ class LoggingChangeST extends AbstractST {
             .withNewMetadata()
                 .withName(configMapCOName)
                 // we are using this namespace because CO is deployed @BeforeAll
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
@@ -575,8 +574,8 @@ class LoggingChangeST extends AbstractST {
     @IsolatedTest("Scraping log from shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetClusterOperatorLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME);
-        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        final Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME);
+        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
         final String command = "cat /opt/strimzi/custom-config/log4j2.properties";
 
         String log4jConfig =
@@ -607,32 +606,32 @@ class LoggingChangeST extends AbstractST {
             .withNewMetadata()
                 .addToLabels("app", "strimzi")
                 .withName(STRIMZI_DEPLOYMENT_NAME)
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .withData(Collections.singletonMap("log4j2.properties", log4jConfig))
             .build();
 
         LOGGER.info("Checking that original logging config is different from the new one");
-        assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
+        assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(coMap);
+        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).createOrReplace(coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
+            () -> cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
         );
 
         LOGGER.info("Checking log4j2.properties in CO pod");
-        String podLogConfig = cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        String podLogConfig = cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME)));
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                String coLog = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
                 LOGGER.warn(coLog);
                 return coLog != null && coLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
             });
@@ -642,23 +641,23 @@ class LoggingChangeST extends AbstractST {
         coMap.setData(Collections.singletonMap("log4j2.properties", log4jConfig));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(coMap);
+        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).createOrReplace(coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
+            () -> cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
         );
 
         LOGGER.info("Checking log4j2.properties in CO pod");
-        podLogConfig = cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        podLogConfig = cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME)));
 
         TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                String coLog = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
                 return coLog != null && !coLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
             });
     }

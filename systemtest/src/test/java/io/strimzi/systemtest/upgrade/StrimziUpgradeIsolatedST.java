@@ -39,9 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
+import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -91,7 +91,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         String startInterBrokerProtocol = getValueForLastKafkaVersionInFile(startKafkaVersionsYaml, "protocol");
 
         // Modify + apply installation files
-        copyModifyApply(coDir, INFRA_NAMESPACE, extensionContext, "");
+        copyModifyApply(coDir, clusterOperator.getDeploymentNamespace(), extensionContext, "");
         // Apply Kafka Persistent without version
         LOGGER.info("Deploy Kafka from: {}", startKafkaPersistent.getPath());
         // Change kafka version of it's empty (null is for remove the version)
@@ -102,12 +102,12 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(startKafkaVersion));
 
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        Map<String, String> zooSnapshot = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
-        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        Map<String, String> zooSnapshot = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Update CRDs, CRB, etc.
-        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(ResourceManager.getCoDeploymentName()).delete();
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
@@ -116,8 +116,8 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
             .runBundleInstallation();
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, zooSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zooSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(latestKafkaVersion));
@@ -134,13 +134,13 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), INFRA_NAMESPACE);
-        convertCRDs(conversionTool, INFRA_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), clusterOperator.getDeploymentNamespace());
+        convertCRDs(conversionTool, clusterOperator.getDeploymentNamespace());
         // Make snapshots of all pods
         makeSnapshots();
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, INFRA_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
         logPodImages(clusterName);
         //  Upgrade kafka
         changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, extensionContext);
@@ -149,7 +149,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, producerName, consumerName, INFRA_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, producerName, consumerName, clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
     }
@@ -165,14 +165,14 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, INFRA_NAMESPACE);
-        convertCRDs(conversionTool, INFRA_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, clusterOperator.getDeploymentNamespace());
+        convertCRDs(conversionTool, clusterOperator.getDeploymentNamespace());
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, INFRA_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
         // Wait till first upgrade finished
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
@@ -184,7 +184,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, producerName, consumerName, INFRA_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, producerName, consumerName, clusterOperator.getDeploymentNamespace());
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -255,18 +255,18 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", INFRA_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", clusterOperator.getDeploymentNamespace());
 
         logPodImages(clusterName);
 
         // Upgrade CRDs and upgrade CO to 0.24
         if (testParameters.getBoolean("convertCRDs")) {
-            convertCRDs(testParameters.getJsonObject("conversionTool"), INFRA_NAMESPACE);
+            convertCRDs(testParameters.getJsonObject("conversionTool"), clusterOperator.getDeploymentNamespace());
         }
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
-        changeClusterOperator(testParameters, INFRA_NAMESPACE, extensionContext);
+        changeClusterOperator(testParameters, clusterOperator.getDeploymentNamespace(), extensionContext);
 
         if (TestKafkaVersion.supportedVersionsContainsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getString("fromVersion")).version())) {
             waitForKafkaClusterRollingUpdate();
@@ -281,7 +281,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
-        verifyProcedure(testParameters, producerName, consumerName, INFRA_NAMESPACE);
+        verifyProcedure(testParameters, producerName, consumerName, clusterOperator.getDeploymentNamespace());
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
@@ -294,12 +294,12 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(INFRA_NAMESPACE);
+        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
     }
 
     @AfterEach
     protected void tearDownEnvironmentAfterEach() {
-        deleteInstalledYamls(coDir, INFRA_NAMESPACE);
+        deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
         cluster.deleteNamespaces();
     }
 
