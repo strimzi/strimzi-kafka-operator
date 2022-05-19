@@ -115,7 +115,7 @@ For Kafka, the following aspects of a deployment can impact the resources you ne
 * The number of producers and consumers
 * The number of topics and partitions
 
-The values specified for resource requests are reserved and always available to a container.
+The values specified for resource requests are reserved and always available to the container.
 Resource limits specify the maximum resources that can be consumed by a given container.
 The amount between the request and limit is not reserved and might not be always available.
 A container can use the resources up to the limit only when they are available.
@@ -453,11 +453,14 @@ This is different from the units used for xref:con-common-configuration-resource
 
 .`-Xms` and `-Xmx` options
 
-Specify heap configuration for your components using the `-Xms` option to set an initial heap size and the `-Xmx` option to set a maximum heap size.
+In addition to setting memory request and limit values for your containers, you can use the `-Xms` and `-Xmx` JVM options to set specific heap sizes for your JVM.
+Use the `-Xms` option to set an initial heap size and the `-Xmx` option to set a maximum heap size.
 
-If you don't specify heap configuration, but configure memory request or limit, the Cluster Operator imposes default heap sizes automatically.
-
-The Cluster Operator sets maximum and minimum heap values based on a percentage allocation of available memory in the node.
+Specify heap size to have more control over the memory allocated to your JVM.
+Heap sizes should make the best use of a container's xref:con-common-configuration-resources-reference[memory limit (and request)] without exceeding it.
+Heap size and any other memory requirements need to fit within a specified memory limit.
+If you don't specify heap size in your configuration, but you configure a memory resource limit (and request), the Cluster Operator imposes default heap sizes automatically.
+The Cluster Operator sets default maximum and minimum heap values based on a percentage of the memory resource configuration.
 
 The following table shows the default heap values.
 
@@ -499,13 +502,9 @@ The following table shows the default heap values.
 
 |===
 
-Heap configuration values should make the best use of a container's xref:con-common-configuration-resources-reference[memory request] without exceeding it.
-
-* If a memory request or limit is specified, a JVM's minimum and maximum memory is set to a value corresponding to the limit.
-* If a memory request or limit is not specified, a JVM's minimum memory is set to `128M`.
-The JVM's maximum memory is not defined to allow the memory to increase as needed. This is ideal for single node environments in test and development.
-
-Total JVM memory usage can be a lot more than the maximum heap size.
+If a memory limit (and request) is not specified, a JVM's minimum heap size is set to `128M`.
+The JVM's maximum heap size is not defined to allow the memory to increase as needed.
+This is ideal for single node environments in test and development.
 
 Setting an appropriate memory request can prevent the following:
 
@@ -514,7 +513,7 @@ Setting an appropriate memory request can prevent the following:
 If `-Xms` is set to `-Xmx`, the container will crash immediately; if not, the container will crash at a later time.
 
 In this example, the JVM uses 2 GiB (=2,147,483,648 bytes) for its heap.
-Its total memory usage is approximately 8GiB.
+Total JVM memory usage can be a lot more than the maximum heap size.
 
 .Example `-Xmx` and `-Xms` configuration
 [source,yaml,subs=attributes+]
