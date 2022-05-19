@@ -1614,14 +1614,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         });
     }
 
-    private void assertAnnotationValidationCondition(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, String reason) {
-        context.verify(() -> {
-            KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
-            assertThat(kafkaRebalance, StateMatchers.hasState());
-            assertThat(reason, is(kafkaRebalance.getStatus().getConditions().get(1).getReason()));
-        });
-    }
-
     private void assertState(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceState state, Class reason, String message) {
         context.verify(() -> {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();

@@ -139,7 +139,6 @@ public class KafkaRebalanceStateMachineTest {
      * @param kcRebalance The Kafka Rebalance instance that will be returned by the resourceSupplier.
      * @return A future for the {@link KafkaRebalanceStatus} returned by the {@link KafkaRebalanceAssemblyOperator#computeNextStatus} method
      */
-
     private Future<KafkaRebalanceStatus> checkTransition(Vertx vertx, VertxTestContext context,
                                                          KafkaRebalanceState currentState,
                                                          KafkaRebalanceState nextState,
@@ -172,7 +171,7 @@ public class KafkaRebalanceStateMachineTest {
                 .compose(result -> {
                     context.verify(() -> {
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
-                        if (initialAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(initialAnnotation)){
+                        if (initialAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(initialAnnotation)) {
                             assertThat("InvalidAnnotation", is(result.status.getConditions().get(0).getReason()));
                         }
                     });
