@@ -17,12 +17,12 @@ public class BrokerCapacity {
 
     private int id;
     private String cpu;
-    private String disk;
+    private Object disk;
     private String inboundNetwork;
     private String outboundNetwork;
     private final String doc;
 
-    public BrokerCapacity(int brokerId, String cpu, String disk, String inboundNetwork, String outboundNetwork) {
+    public BrokerCapacity(int brokerId, String cpu, Object disk, String inboundNetwork, String outboundNetwork) {
         this.id = brokerId;
         this.cpu = cpu;
         this.disk = disk;
@@ -39,7 +39,7 @@ public class BrokerCapacity {
         return cpu;
     }
 
-    public String getDisk() {
+    public Object getDisk() {
         return disk;
     }
 
@@ -63,7 +63,7 @@ public class BrokerCapacity {
         this.cpu = cpu;
     }
 
-    public void setDisk(String disk) {
+    public void setDisk(Object disk) {
         this.disk = disk;
     }
 

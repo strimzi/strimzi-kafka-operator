@@ -135,9 +135,9 @@ public class Capacity {
         return BrokerCapacity.DEFAULT_CPU_UTILIZATION_CAPACITY;
     }
 
-    public static String processDisk(Storage storage, int brokerId) {
+    public static Object processDisk(Storage storage, int brokerId) {
         if (storage instanceof JbodStorage) {
-            return generateJbodDiskCapacity(storage, brokerId).encodePrettily();
+            return generateJbodDiskCapacity(storage, brokerId);
         } else {
             return generateDiskCapacity(storage);
         }
@@ -236,7 +236,7 @@ public class Capacity {
 
     private void processCapacityEntries(io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity) {
         String cpu = processCpu();
-        String disk = processDisk(storage, BrokerCapacity.DEFAULT_BROKER_ID);
+        Object disk = processDisk(storage, BrokerCapacity.DEFAULT_BROKER_ID);
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
