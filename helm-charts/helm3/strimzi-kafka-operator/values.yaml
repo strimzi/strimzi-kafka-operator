@@ -7,7 +7,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.28.0
+defaultImageTag: 0.29.0
 
 image:
   registry: ""
@@ -16,6 +16,7 @@ image:
   tag: ""
 logVolume: co-config-volume
 logConfigMap: strimzi-cluster-operator
+logConfiguration: ""
 logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
 fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
@@ -96,7 +97,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.21.4
+    tag: 0.21.5
 kafkaExporter:
   image:
     registry: ""
@@ -116,12 +117,6 @@ kafkaMirrorMaker2:
     name: kafka
     tagPrefix: ""
 cruiseControl:
-  image:
-    registry: ""
-    repository: ""
-    name: kafka
-    tagPrefix: ""
-tlsSidecarCruiseControl:
   image:
     registry: ""
     repository: ""

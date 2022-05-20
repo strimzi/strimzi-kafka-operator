@@ -68,9 +68,7 @@ spec:
                   matchLabels:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
-                description: Selector is a label query which matches all the pods
-                  managed by this `StrimziPodSet`. Only `matchLabels` is supported.
-                  If `matchExpressions` is set, it will be ignored.
+                description: "Selector is a label query which matches all the pods managed by this `StrimziPodSet`. Only `matchLabels` is supported. If `matchExpressions` is set, it will be ignored."
               pods:
                 type: array
                 items:
@@ -91,39 +89,30 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The unique identifier of a condition, used to distinguish
-                        between other conditions in the resource.
+                      description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
                     status:
                       type: string
-                      description: The status of the condition, either True, False
-                        or Unknown.
+                      description: "The status of the condition, either True, False or Unknown."
                     lastTransitionTime:
                       type: string
-                      description: Last time the condition of a type changed from
-                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                        in the UTC time zone.
+                      description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
                     reason:
                       type: string
-                      description: The reason for the condition's last transition
-                        (a single word in CamelCase).
+                      description: The reason for the condition's last transition (a single word in CamelCase).
                     message:
                       type: string
-                      description: Human-readable message indicating details about
-                        the condition's last transition.
+                      description: Human-readable message indicating details about the condition's last transition.
                 description: List of status conditions.
               observedGeneration:
                 type: integer
-                description: The generation of the CRD that was last reconciled by
-                  the operator.
+                description: The generation of the CRD that was last reconciled by the operator.
               pods:
                 type: integer
                 description: Number of pods managed by the StrimziPodSet controller.
               readyPods:
                 type: integer
-                description: Number of pods managed by the StrimziPodSet controller
-                  that are ready.
+                description: Number of pods managed by the StrimziPodSet controller that are ready.
               currentPods:
                 type: integer
-                description: Number of pods managed by the StrimziPodSet controller
-                  that have the current revision.
+                description: Number of pods managed by the StrimziPodSet controller that have the current revision.
             description: The status of the StrimziPodSet.
