@@ -412,7 +412,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, c -> c.getSpec().setReplicas(scaleTo), namespaceName);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, deploymentName, scaleTo);
-        connectPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         assertThat(connectPods.size(), is(scaleTo));
 
         LOGGER.info("Scaling down to {}", initialReplicas);

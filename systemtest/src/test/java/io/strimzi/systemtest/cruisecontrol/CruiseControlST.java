@@ -77,6 +77,7 @@ public class CruiseControlST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlST.class.getSimpleName()).stream().findFirst().get();
 
     @IsolatedTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -223,6 +224,7 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

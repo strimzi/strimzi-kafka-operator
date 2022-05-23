@@ -355,6 +355,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicStatus(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -365,6 +366,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicStatusNotReady(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -451,6 +453,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicDecreaseStatus(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -475,6 +478,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicChangingInSyncReplicasStatus(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 

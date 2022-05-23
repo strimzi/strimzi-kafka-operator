@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -123,8 +124,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName)));
 
-        LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Adding Cruise Control to the classic Kafka.");
@@ -136,9 +139,11 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that in Kafka config map there is configuration to cruise control metric reporter");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName));
 
-        LOGGER.info("Verifying that {} topics are created after CC is instantiated.", Constants.CRUISE_CONTROL_NAME);
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Verifying that {} topics are created after CC is instantiated.", Constants.CRUISE_CONTROL_NAME);
 
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        }
     }
 
     @ParallelNamespaceTest
