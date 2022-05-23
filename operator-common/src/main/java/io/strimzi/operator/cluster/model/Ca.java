@@ -805,9 +805,12 @@ public abstract class Ca {
      * NOTE: mostly used when a CA certificate is renewed by replacing the key
      */
     public void maybeDeleteOldCerts() {
-        this.caCertsRemoved = removeCerts(this.caCertSecret.getData(), entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches()) > 0;
-        if (this.caCertsRemoved) {
-            LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
+        // the operator doesn't have to touch Secret provided by the user with his own custom CA certificate
+        if (this.generateCa) {
+            this.caCertsRemoved = removeCerts(this.caCertSecret.getData(), entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches()) > 0;
+            if (this.caCertsRemoved) {
+                LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
+            }
         }
     }
 
