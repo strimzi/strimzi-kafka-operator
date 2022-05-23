@@ -287,6 +287,11 @@ public class KubeClient {
         return listPodsByPrefixInName(getNamespace(), podNamePrefix);
     }
 
+    public List<Pod> listPodsByPrefixAndExcludeContaining(String namespaceName, String podNamePrefix, String exclude) {
+        return listPodsByPrefixInName(namespaceName, podNamePrefix).stream()
+            .filter(pod -> !pod.getMetadata().getName().contains(exclude)).collect(Collectors.toList());
+    }
+
     /**
      * Gets pod
      */
