@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -400,7 +401,7 @@ class ConnectIsolatedST extends AbstractST {
         String deploymentName = KafkaConnectResources.deploymentName(clusterName);
 
         // kafka cluster Connect already deployed
-        List<Pod> connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, KafkaConnectResources.deploymentName(clusterName), "build");
+        List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         int initialReplicas = connectPods.size();
         assertThat(initialReplicas, is(1));
         final int scaleTo = initialReplicas + 3;
@@ -416,7 +417,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, c -> c.getSpec().setReplicas(initialReplicas), namespaceName);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, deploymentName, initialReplicas);
-        connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, KafkaConnectResources.deploymentName(clusterName), "build");
+        connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         assertThat(connectPods.size(), is(initialReplicas));
     }
 
@@ -885,7 +886,7 @@ class ConnectIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 2, false).build());
 
         final String connectDeploymentName = KafkaConnectResources.deploymentName(clusterName);
-        List<Pod> connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, KafkaConnectResources.deploymentName(clusterName), "build");
+        List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
 
         assertThat(connectPods.size(), is(2));
         //scale down
@@ -895,7 +896,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
         PodUtils.waitForPodsReady(kubeClient(namespaceName).getDeploymentSelectors(namespaceName, connectDeploymentName), 0, true);
 
-        connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, KafkaConnectResources.deploymentName(clusterName), "build");
+        connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
@@ -928,7 +929,7 @@ class ConnectIsolatedST extends AbstractST {
             .build());
 
         String connectDeploymentName = KafkaConnectResources.deploymentName(clusterName);
-        List<Pod> connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, KafkaConnectResources.deploymentName(clusterName), "build");
+        List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
 
         assertThat(connectPods.size(), is(2));
         //scale down
@@ -938,7 +939,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, connectDeploymentName), 0, true);
 
-        connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, connectDeploymentName, "build");
+        connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         KafkaConnectorStatus connectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
@@ -983,7 +984,7 @@ class ConnectIsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaConnectResources.deploymentName(clusterName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
-        List<Pod> connectPods = kubeClient(namespaceName).listPodsByPrefixAndExcludeContaining(namespaceName, KafkaConnectResources.deploymentName(clusterName), "build");
+        List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         assertThat(connectPods.size(), is(4));
         assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getReplicas(), is(4));
         assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getReplicas(), is(4));
