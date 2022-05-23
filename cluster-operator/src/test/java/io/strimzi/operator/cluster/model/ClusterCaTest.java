@@ -149,7 +149,7 @@ public class ClusterCaTest {
                 .withData(clusterCaKeyData)
                 .build();
 
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, clusterCaCert, clusterCaKey, 0,0, false, CertificateExpirationPolicy.RENEW_CERTIFICATE);
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, clusterCaCert, clusterCaKey, 0, 0, false, CertificateExpirationPolicy.RENEW_CERTIFICATE);
 
         // simulate a renewal with new private key ...
         clusterCaKeyData.put(Ca.CA_KEY, Base64.getEncoder().encodeToString("new-dummy-key".getBytes()));
