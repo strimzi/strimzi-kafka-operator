@@ -30,9 +30,9 @@
     "strimziFeatureGatesFlagsAfter": "-ControlPlaneListener"
   },
   {
-    "fromVersion":"0.28.0",
-    "fromExamples":"strimzi-0.28.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip",
+    "fromVersion":"0.29.0",
+    "fromExamples":"strimzi-0.29.0",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.29.0/strimzi-0.29.0.zip",
     "convertCRDs": false,
     "conversionTool": {
       "urlToConversionTool": "",
@@ -60,9 +60,9 @@
     "strimziFeatureGatesFlagsAfter": "+UseStrimziPodSets"
   },
   {
-    "fromVersion":"0.28.0",
-    "fromExamples":"strimzi-0.28.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip",
+    "fromVersion":"0.29.0",
+    "fromExamples":"strimzi-0.29.0",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.29.0/strimzi-0.29.0.zip",
     "convertCRDs": false,
     "conversionTool": {
       "urlToConversionTool": "",
