@@ -782,7 +782,7 @@ public class KafkaRebalanceAssemblyOperator
         } else {
             // Stay in the current NotReady state
             Set<Condition> conditions = validate(reconciliation, kafkaRebalance);
-            validateAnnotation(conditions, KafkaRebalanceState.NotReady, rebalanceAnnotation);
+            validateAnnotation(reconciliation, conditions, KafkaRebalanceState.NotReady, rebalanceAnnotation, kafkaRebalance);
             return Future.succeededFuture(new MapAndStatus<>(null, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions)));
         }
     }
@@ -854,7 +854,7 @@ public class KafkaRebalanceAssemblyOperator
                                             // is ready, so stop the polling
                                             KafkaRebalanceStatus status = rebalanceMapAndStatus.getStatus();
                                             Set<Condition> conditions = new HashSet<>();
-                                            validateAnnotation(conditions, KafkaRebalanceState.PendingProposal, rebalanceAnnotation(reconciliation, currentKafkaRebalance));
+                                            validateAnnotation(reconciliation, conditions, KafkaRebalanceState.PendingProposal, rebalanceAnnotation(reconciliation, currentKafkaRebalance), kafkaRebalance);
                                             status.addConditions(conditions);
                                             rebalanceMapAndStatus.setStatus(status);
                                             if (rebalanceMapAndStatus.getStatus().getOptimizationResult() != null &&
@@ -927,9 +927,9 @@ public class KafkaRebalanceAssemblyOperator
                 LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh);
                 return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
             default:
-                LOGGER.warnCr(reconciliation, "Ignore annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotation);
+                LOGGER.warnCr(reconciliation, "Ignore annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, kafkaRebalance.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_REBALANCE));
                 Set<Condition> conditions = validate(reconciliation, kafkaRebalance);
-                validateAnnotation(conditions, KafkaRebalanceState.ProposalReady, rebalanceAnnotation);
+                validateAnnotation(reconciliation, conditions, KafkaRebalanceState.ProposalReady, rebalanceAnnotation, kafkaRebalance);
                 return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                         .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
         }
@@ -986,7 +986,7 @@ public class KafkaRebalanceAssemblyOperator
                                 } else {
                                     LOGGER.infoCr(reconciliation, "Getting Cruise Control rebalance user task status");
                                     Set<Condition> conditions = validate(reconciliation, kafkaRebalance);
-                                    validateAnnotation(conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(reconciliation, currentKafkaRebalance));
+                                    validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(reconciliation, currentKafkaRebalance), kafkaRebalance);
                                     apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId)
                                         .onSuccess(cruiseControlResponse -> {
                                             JsonObject taskStatusJson = cruiseControlResponse.getJson();
@@ -1090,7 +1090,7 @@ public class KafkaRebalanceAssemblyOperator
             return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
         } else {
             Set<Condition> conditions = validate(reconciliation, kafkaRebalance);
-            validateAnnotation(conditions, KafkaRebalanceState.Stopped, rebalanceAnnotation);
+            validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Stopped, rebalanceAnnotation, kafkaRebalance);
             return Future.succeededFuture(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, conditions));
         }
     }
@@ -1117,7 +1117,7 @@ public class KafkaRebalanceAssemblyOperator
             return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
         } else {
             Set<Condition> conditions = validate(reconciliation, kafkaRebalance);
-            validateAnnotation(conditions, KafkaRebalanceState.Ready, rebalanceAnnotation);
+            validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Ready, rebalanceAnnotation, kafkaRebalance);
             return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                     .compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), conditions))));
         }
@@ -1313,9 +1313,6 @@ public class KafkaRebalanceAssemblyOperator
             }
         } catch (IllegalArgumentException e) {
             rebalanceAnnotation = KafkaRebalanceAnnotation.unknown;
-            LOGGER.warnCr(reconciliation, "Wrong annotation value {}={} on {}/{}. The rebalance resource supports the following annotations: approve, refresh, stop.",
-                    ANNO_STRIMZI_IO_REBALANCE, rebalanceAnnotationValue,
-                    kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
         }
         return rebalanceAnnotation;
     }
@@ -1340,11 +1337,14 @@ public class KafkaRebalanceAssemblyOperator
      * @param rebalanceAnnotation Contains the rebalance annotation
      * @return the value for the strimzio.io/rebalance annotation on the provided KafkaRebalance resource instance
      */
-    private void validateAnnotation(Set<Condition> conditions, KafkaRebalanceState state, KafkaRebalanceAnnotation rebalanceAnnotation) {
+
+    private void validateAnnotation(Reconciliation reconciliation, Set<Condition> conditions, KafkaRebalanceState state, KafkaRebalanceAnnotation rebalanceAnnotation, KafkaRebalance kafkaRebalance) {
+        String warningMessage = "Wrong annotation value: " + kafkaRebalance.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_REBALANCE)
+                + ". The rebalance resource supports the following annotations in " + state.toString() + " state: " + state.getValidAnnotations();
         if (rebalanceAnnotation != KafkaRebalanceAnnotation.none) {
             if (!state.isValidateAnnotation(rebalanceAnnotation)) {
-                conditions.add(StatusUtils.buildWarningCondition("InvalidAnnotation", "Wrong annotation value: " + rebalanceAnnotation
-                        + ". The rebalance resource supports the following annotations in " + state.toString() + " state: " + state.getValidAnnotations()));
+                LOGGER.warnCr(reconciliation, warningMessage);
+                conditions.add(StatusUtils.buildWarningCondition("InvalidAnnotation", warningMessage));
             }
         }
     }
