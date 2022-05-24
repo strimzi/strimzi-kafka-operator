@@ -60,6 +60,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    public static final String ENV_VAR_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     public static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
@@ -78,6 +79,7 @@ public class EntityUserOperator extends AbstractModel {
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
     private boolean aclsAdminApiSupported = false;
+    private boolean kraftEnabled = false;
     private List<String> maintenanceWindows;
 
     /**
@@ -111,10 +113,11 @@ public class EntityUserOperator extends AbstractModel {
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
+     * @param kraftEnabled Indicates whether KRaft is enabled int he Kafka cluster
      *
      * @return Entity User Operator instance, null if not configured
      */
-    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
+    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, boolean kraftEnabled) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getUserOperator() != null) {
             EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
@@ -157,6 +160,8 @@ public class EntityUserOperator extends AbstractModel {
                 // plugin. This information is passed to the User Operator.
                 result.aclsAdminApiSupported = kafkaAssembly.getSpec().getKafka().getAuthorization().supportsAdminApi();
             }
+
+            result.kraftEnabled = kraftEnabled;
 
             if (kafkaAssembly.getSpec().getMaintenanceTimeWindows() != null)    {
                 result.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
@@ -202,6 +207,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(buildEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
+        varList.add(buildEnvVar(ENV_VAR_KRAFT_ENABLED, String.valueOf(kraftEnabled)));
         ModelUtils.javaOptions(varList, getJvmOptions());
 
         // Add shared environment variables used for all containers

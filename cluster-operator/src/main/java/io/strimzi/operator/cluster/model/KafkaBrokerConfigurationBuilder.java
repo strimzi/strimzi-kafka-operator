@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
  */
 public class KafkaBrokerConfigurationBuilder {
     private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
+    private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
 
     // Names of environment variables placeholders replaced only in the running container
     //       => needed both for shared and per-broker configuration
@@ -298,13 +299,14 @@ public class KafkaBrokerConfigurationBuilder {
         configureControlPlaneListener();
 
         // Replication listener
-        listeners.add("REPLICATION-9091://0.0.0.0:9091");
-        advertisedListeners.add(String.format("REPLICATION-9091://%s:9091",
+        listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
+        advertisedListeners.add(String.format("%s://%s:9091",
+                REPLICATION_LISTENER_NAME,
                 // Pod name constructed to be templatable for each individual ordinal
                 DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
                         podNameProvider.get())
         ));
-        securityProtocol.add("REPLICATION-9091:SSL");
+        securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
         configureReplicationListener();
 
         for (GenericKafkaListener listener : kafkaListeners) {
@@ -342,7 +344,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
-        writer.println("inter.broker.listener.name=REPLICATION-9091");
+        writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
         writer.println("sasl.enabled.mechanisms=");
         writer.println("ssl.secure.random.implementation=SHA1PRNG");
         writer.println("ssl.endpoint.identification.algorithm=HTTPS");
@@ -384,14 +386,16 @@ public class KafkaBrokerConfigurationBuilder {
      * rather static, it always uses TLS with TLS client auth.
      */
     private void configureReplicationListener() {
+        final String replicationListenerName = REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
+
         printSectionHeader("Replication listener");
-        writer.println("listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("listener.name.replication-9091.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("listener.name.replication-9091.ssl.keystore.type=PKCS12");
-        writer.println("listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("listener.name.replication-9091.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("listener.name.replication-9091.ssl.truststore.type=PKCS12");
-        writer.println("listener.name.replication-9091.ssl.client.auth=required");
+        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.type=PKCS12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.type=PKCS12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.client.auth=required");
         writer.println();
     }
 
@@ -598,10 +602,11 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName   The name of the cluster (used to configure the replication super users)
      * @param authorization The authorization configuration from the Kafka CR
+     * @param useKRaft      Use KRaft mode in the configuration
      *
      * @return  Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization)  {
+    public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization, boolean useKRaft)  {
         if (authorization != null) {
             List<String> superUsers = new ArrayList<>();
 
@@ -615,7 +620,7 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
-            configureAuthorization(clusterName, superUsers, authorization);
+            configureAuthorization(clusterName, superUsers, authorization, useKRaft);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
         }
@@ -629,11 +634,18 @@ public class KafkaBrokerConfigurationBuilder {
      * @param clusterName Name of the cluster
      * @param superUsers Super users list who have all the rights on the cluster
      * @param authorization The authorization configuration from the Kafka CR
+     * @param useKRaft      Use KRaft mode in the configuration
      */
-    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
+    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization, boolean useKRaft) {
         if (KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
             KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
-            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
+
+            if (useKRaft) {
+                writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
+                writer.println("early.start.listeners=" + String.join(",", List.of(CONTROL_PLANE_LISTENER_NAME, REPLICATION_LISTENER_NAME)));
+            } else {
+                writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
+            }
 
             // User configured super users
             if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
