@@ -109,7 +109,7 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * All Kafka nodes have both the `controller` and `broker` KRaft roles.
   Kafka clusters with separate `controller` and `broker` nodes are not supported.
 
-.Enabling the UseStrimziPodSets feature gate
+.Enabling the UseKRaft feature gate
 To enable the `UseKRaft` feature gate, specify `+UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 IMPORTANT: The `UseKRaft` feature gate depends on the `UseStrimziPodSets` feature gate.
