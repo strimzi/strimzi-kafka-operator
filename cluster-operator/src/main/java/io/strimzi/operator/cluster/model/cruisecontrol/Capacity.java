@@ -118,6 +118,15 @@ public class Capacity {
 
     private final TreeMap<Integer, BrokerCapacity> capacityEntries;
 
+    public static final String CAPACITIES_KEY = "brokerCapacities";
+    private static final String BROKER_ID_KEY = "brokerId";
+    public static final String CAPACITY_KEY = "capacity";
+    public static final String DISK_KEY = "DISK";
+    private static final String CPU_KEY = "CPU";
+    private static final String INBOUND_NETWORK_KEY = "NW_IN";
+    private static final String OUTBOUND_NETWORK_KEY = "NW_OUT";
+    private static final String DOC_KEY = "doc";
+
     private final int replicas;
     private final Storage storage;
 
@@ -135,7 +144,7 @@ public class Capacity {
         return BrokerCapacity.DEFAULT_CPU_UTILIZATION_CAPACITY;
     }
 
-    public static Object processDisk(Storage storage, int brokerId) {
+    public static DiskCapacity processDisk(Storage storage, int brokerId) {
         if (storage instanceof JbodStorage) {
             return generateJbodDiskCapacity(storage, brokerId);
         } else {
@@ -168,10 +177,10 @@ public class Capacity {
      *
      * @param storage Storage configuration for Kafka cluster
      * @param brokerId Id of the broker
-     * @return Disk capacity configuration value as a JsonObject for broker brokerId
+     * @return Disk capacity configuration value for broker brokerId
      */
-    private static JsonObject generateJbodDiskCapacity(Storage storage, int brokerId) {
-        JsonObject disks = new JsonObject();
+    private static DiskCapacity generateJbodDiskCapacity(Storage storage, int brokerId) {
+        DiskCapacity disks = new DiskCapacity();
         String size = "";
 
         for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
@@ -183,7 +192,7 @@ public class Capacity {
             } else if (volume instanceof EphemeralStorage) {
                 size = ((EphemeralStorage) volume).getSizeLimit();
             }
-            disks.put(path, String.valueOf(getSizeInMiB(size)));
+            disks.add(path, String.valueOf(getSizeInMiB(size)));
         }
         return disks;
     }
@@ -192,16 +201,16 @@ public class Capacity {
      * Generate total disk capacity using the supplied storage configuration
      *
      * @param storage Storage configuration for Kafka cluster
-     * @return Disk capacity per broker as a String
+     * @return Disk capacity per broker
      */
-    public static String generateDiskCapacity(Storage storage) {
+    public static DiskCapacity generateDiskCapacity(Storage storage) {
         if (storage instanceof PersistentClaimStorage) {
-            return getSizeInMiB(((PersistentClaimStorage) storage).getSize());
+            return DiskCapacity.of(getSizeInMiB(((PersistentClaimStorage) storage).getSize()));
         } else if (storage instanceof EphemeralStorage) {
             if (((EphemeralStorage) storage).getSizeLimit() != null) {
-                return getSizeInMiB(((EphemeralStorage) storage).getSizeLimit());
+                return DiskCapacity.of(getSizeInMiB(((EphemeralStorage) storage).getSizeLimit()));
             } else {
-                return BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB;
+                return DiskCapacity.of(BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB);
             }
         } else {
             throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
@@ -236,7 +245,7 @@ public class Capacity {
 
     private void processCapacityEntries(io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity) {
         String cpu = processCpu();
-        Object disk = processDisk(storage, BrokerCapacity.DEFAULT_BROKER_ID);
+        DiskCapacity disk = processDisk(storage, BrokerCapacity.DEFAULT_BROKER_ID);
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
@@ -302,14 +311,14 @@ public class Capacity {
      */
     private JsonObject generateBrokerCapacity(BrokerCapacity brokerCapacity) {
         return new JsonObject()
-            .put("brokerId", brokerCapacity.getId())
-            .put("capacity", new JsonObject()
-                .put("DISK", brokerCapacity.getDisk())
-                .put("CPU", brokerCapacity.getCpu())
-                .put("NW_IN", brokerCapacity.getInboundNetwork())
-                .put("NW_OUT", brokerCapacity.getOutboundNetwork())
+            .put(BROKER_ID_KEY, brokerCapacity.getId())
+            .put(CAPACITY_KEY, new JsonObject()
+                .put(DISK_KEY, brokerCapacity.getDisk().getJson())
+                .put(CPU_KEY, brokerCapacity.getCpu())
+                .put(INBOUND_NETWORK_KEY, brokerCapacity.getInboundNetwork())
+                .put(OUTBOUND_NETWORK_KEY, brokerCapacity.getOutboundNetwork())
             )
-            .put("doc", brokerCapacity.getDoc());
+            .put(DOC_KEY, brokerCapacity.getDoc());
     }
 
     /**

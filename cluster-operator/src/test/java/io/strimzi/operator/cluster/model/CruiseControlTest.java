@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
@@ -205,7 +204,7 @@ public class CruiseControlTest {
     }
 
     private static boolean isJBOD(Map<String, Object> brokerCapacity) {
-        return brokerCapacity.get("DISK") instanceof Map;
+        return brokerCapacity.get(Capacity.DISK_KEY) instanceof JsonObject;
     }
 
     @ParallelTest
@@ -253,9 +252,9 @@ public class CruiseControlTest {
         
         capacity = new Capacity(resource.getSpec(), jbodStorage);
 
-        JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray("brokerCapacities");
+        JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
         for (Object brokerEntry : brokerEntries) {
-            HashMap<String, Object> brokerCapacity = new ObjectMapper().readValue(((JsonObject) brokerEntry).getJsonObject("capacity").toString(), HashMap.class);
+            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
             assertThat(isJBOD(brokerCapacity), is(true));
         }
 
@@ -293,9 +292,9 @@ public class CruiseControlTest {
         resource = createKafka(cruiseControlSpec);
         capacity = new Capacity(resource.getSpec(), kafkaStorage);
 
-        brokerEntries = capacity.generateCapacityConfig().getJsonArray("brokerCapacities");
+        brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
         for (Object brokerEntry : brokerEntries) {
-            HashMap<String, Object> brokerCapacity = new ObjectMapper().readValue(((JsonObject) brokerEntry).getJsonObject("capacity").toString(), HashMap.class);
+            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
             assertThat(isJBOD(brokerCapacity), is(false));
         }
 
