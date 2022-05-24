@@ -315,9 +315,9 @@ public class Capacity {
     /**
      * Generate a capacity configuration for cluster
      *
-     * @return Cruise Control capacity configuration as a String
+     * @return Cruise Control capacity configuration as a JsonObject
      */
-    public String generateCapacityConfig() {
+    public JsonObject generateCapacityConfig() {
         JsonArray brokerList = new JsonArray();
         for (BrokerCapacity brokerCapacity : capacityEntries.values()) {
             JsonObject brokerEntry = generateBrokerCapacity(brokerCapacity);
@@ -327,7 +327,11 @@ public class Capacity {
         JsonObject config = new JsonObject();
         config.put("brokerCapacities", brokerList);
 
-        return config.encodePrettily();
+        return config;
+    }
+
+    public String toString() {
+        return generateCapacityConfig().encodePrettily();
     }
 
     public TreeMap<Integer, BrokerCapacity> getCapacityEntries() {
