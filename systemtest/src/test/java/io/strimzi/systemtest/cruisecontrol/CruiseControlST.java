@@ -357,7 +357,7 @@ public class CruiseControlST extends AbstractST {
         assertThat(kafkaRebalanceStatus.getConditions().get(0).getReason(), is("InvalidResourceException"));
     }
 
-    @ParallelNamespaceTest
+    @IsolatedTest
     void testCruiseControlDuringBrokerScaleUpAndDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int initialReplicas = 3;
@@ -368,16 +368,16 @@ public class CruiseControlST extends AbstractST {
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3).build()
         );
 
+        LOGGER.info("Checking that {} topic has replicas on first 3 brokers", testStorage.getTopicName());
+        List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertEquals(0, (int) topicReplicas.stream().filter(line -> line.contains("3") || line.contains("4")).count());
+
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo), testStorage.getNamespaceName());
         kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaleTo, kafkaPods);
-
-        LOGGER.info("Checking that {} topic has replicas on first 3 brokers", testStorage.getTopicName());
-        List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
-        assertEquals(0, (int) topicReplicas.stream().filter(line -> line.contains("3") || line.contains("4")).count());
 
         LOGGER.info("Creating KafkaRebalance with add_brokers mode");
 
