@@ -155,7 +155,7 @@ public class CruiseControlApiST extends AbstractST {
     void testCruiseControlAPIForScalingBrokersUpAndDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 4, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 5, 3).build());
 
         LOGGER.info("Checking if we are able to execute GET request on {} and {} endpoints", CruiseControlEndpoints.ADD_BROKER, CruiseControlEndpoints.REMOVE_BROKER);
 
@@ -172,15 +172,15 @@ public class CruiseControlApiST extends AbstractST {
         LOGGER.info("Waiting for CC will have for enough metrics to be recorded to make a proposal ");
         CruiseControlUtils.waitForRebalanceEndpointIsReady(testStorage.getNamespaceName());
 
-        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.ADD_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true, "?brokerid=2");
+        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.ADD_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true, "?brokerid=3,4");
 
         assertCCGoalsInResponse(response);
-        assertThat(response, containsString("Cluster load after adding broker [2]"));
+        assertThat(response, containsString("Cluster load after adding broker [3, 4]"));
 
-        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REMOVE_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true, "?brokerid=2");
+        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REMOVE_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true, "?brokerid=3,4");
 
         assertCCGoalsInResponse(response);
-        assertThat(response, containsString("Cluster load after removing broker [2]"));
+        assertThat(response, containsString("Cluster load after removing broker [3, 4]"));
     }
 
     private void assertCCGoalsInResponse(String response) {
