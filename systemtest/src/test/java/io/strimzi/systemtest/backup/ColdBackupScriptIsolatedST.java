@@ -11,6 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 
@@ -47,6 +48,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
+    @KRaftNotSupported("TODO - debug")
     void backupAndRestore(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group", newGroupId = "new-group";

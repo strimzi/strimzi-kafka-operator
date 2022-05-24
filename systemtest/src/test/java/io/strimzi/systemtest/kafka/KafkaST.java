@@ -313,13 +313,13 @@ class KafkaST extends AbstractST {
         assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=1"));
         assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=1"));
 
-        LOGGER.info("Testing Zookeepers");
-        checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
-        checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarGeneral);
-
         if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Testing Zookeepers");
+            checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", initialDelaySeconds, timeoutSeconds,
+                    periodSeconds, successThreshold, failureThreshold);
+            checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
+            checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarGeneral);
+
             LOGGER.info("Checking configuration of TO and UO");
             checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", initialDelaySeconds, timeoutSeconds,
                     periodSeconds, successThreshold, failureThreshold);

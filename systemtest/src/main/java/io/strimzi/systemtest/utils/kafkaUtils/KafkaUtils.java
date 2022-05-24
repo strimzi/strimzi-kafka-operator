@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -178,50 +177,39 @@ public class KafkaUtils {
         Map<String, String>[] zkPods = new Map[1];
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
-        Map<String, String>[] zkSnapshot = new Map[1];
-        AtomicBoolean zkSameAsLast = new AtomicBoolean(false);
 
         LOGGER.info("Waiting for cluster stability");
 
         int[] count = {0};
 
+        kafkaPods[0] = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+
         if (!Environment.isKRaftModeEnabled()) {
             zkPods[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
+            eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         }
-        kafkaPods[0] = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            if (!Environment.isKRaftModeEnabled()) {
-                zkSnapshot[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
-            }
             Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-            if (!Environment.isKRaftModeEnabled()) {
-                zkSameAsLast.set(zkSnapshot[0].equals(zkPods[0]));
-            }
             boolean kafkaSameAsLast = kafkaSnapshot.equals(kafkaPods[0]);
-            boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
-            if (!zkSameAsLast.get()) {
-                LOGGER.warn("ZK Cluster not stable");
-            }
             if (!kafkaSameAsLast) {
                 LOGGER.warn("Kafka Cluster not stable");
             }
-            if (!eoSameAsLast) {
-                LOGGER.warn("EO not stable");
-            }
-            if (kafkaSameAsLast && eoSameAsLast) {
-                int c = count[0]++;
-                LOGGER.debug("All stable after {} polls", c);
-                if (c > 60) {
-                    LOGGER.info("Kafka cluster is stable after {} polls.", c);
-                    return true;
-                }
-                return false;
-            }
+
             if (!Environment.isKRaftModeEnabled()) {
-                if (zkSameAsLast.get()) {
+                Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
+                Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+
+                boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
+                boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
+
+                if (!zkSameAsLast) {
+                    LOGGER.warn("ZK Cluster not stable");
+                }
+                if (!eoSameAsLast) {
+                    LOGGER.warn("EO not stable");
+                }
+                if (zkSameAsLast && eoSameAsLast && kafkaSameAsLast) {
                     int c = count[0]++;
                     LOGGER.debug("All stable after {} polls", c);
                     if (c > 60) {
@@ -230,10 +218,22 @@ public class KafkaUtils {
                     }
                     return false;
                 }
-                zkPods[0] = zkSnapshot[0];
+                zkPods[0] = zkSnapshot;
+                eoPods[0] = eoSnapshot;
+            } else {
+                if (kafkaSameAsLast) {
+                    int c = count[0]++;
+                    LOGGER.debug("All stable after {} polls", c);
+                    if (c > 60) {
+                        LOGGER.info("Kafka cluster is stable after {} polls.", c);
+                        return true;
+                    }
+                    return false;
+                }
             }
+
             kafkaPods[0] = kafkaSnapshot;
-            eoPods[0] = eoSnapshot;
+
             count[0] = 0;
             return false;
         });

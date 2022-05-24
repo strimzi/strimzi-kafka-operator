@@ -1454,11 +1454,17 @@ class SecurityST extends AbstractST {
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        // Check Zookeeper certificate dates
-        Secret zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
-        X509Certificate zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
-        Date initialZkCertStartTime = zkBrokerCert.getNotBefore();
-        Date initialZkCertEndTime = zkBrokerCert.getNotAfter();
+        Date initialZkCertStartTime = null;
+        Date initialZkCertEndTime = null;
+        Secret zkCertCreationSecret = null;
+        X509Certificate zkBrokerCert = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            // Check Zookeeper certificate dates
+            zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
+            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
+            initialZkCertStartTime = zkBrokerCert.getNotBefore();
+            initialZkCertEndTime = zkBrokerCert.getNotAfter();
+        }
 
         LOGGER.info("Change of kafka validity and renewal days - reconciliation should start.");
         CertificateAuthority newClusterCA = new CertificateAuthority();
@@ -1471,7 +1477,9 @@ class SecurityST extends AbstractST {
         //   a) ZooKeeper
         //   b) Kafka
         //   c) and other components to trust the new Cluster CA certificate. (i.e., EntityOperator)
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
         if (!Environment.isKRaftModeEnabled()) {
             DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);

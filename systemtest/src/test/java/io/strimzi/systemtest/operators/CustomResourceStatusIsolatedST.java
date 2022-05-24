@@ -135,7 +135,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         assertKafkaStatus(1, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + clusterOperator.getDeploymentNamespace() + ".svc");
 
         KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
-            k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
+            k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
         });
@@ -145,7 +145,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         LOGGER.info("Recovery cluster to Ready state ...");
         KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
-            k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
+            k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
                     .build());
         });

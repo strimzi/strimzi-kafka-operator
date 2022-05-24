@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
@@ -84,9 +85,6 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .build());
         drainCleaner.createDrainCleaner(extensionContext);
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(testStorage.getClusterName());
-        String zkName = KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName());
-
         KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
             .withMessageCount(300)
             .withTopicName(testStorage.getTopicName())
@@ -105,16 +103,24 @@ public class DrainCleanerIsolatedST extends AbstractST {
             String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
             String kafkaPodName = KafkaResources.kafkaPodName(testStorage.getClusterName(), i);
 
+            Map<String, String> zkPod = null;
+            if (!Environment.isKRaftModeEnabled()) {
+                zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
+                        .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            }
             Map<String, String> kafkaPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            Map<String, String> zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
-                .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            LOGGER.info("Evicting pods: {} and {}", zkPodName, kafkaPodName);
-            kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+            if (!Environment.isKRaftModeEnabled()) {
+                LOGGER.info("Evicting pods: {}", zkPodName);
+                kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+            }
+            LOGGER.info("Evicting pods: {}", kafkaPodName);
             kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
 
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+            if (!Environment.isKRaftModeEnabled()) {
+                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+            }
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         }
 
