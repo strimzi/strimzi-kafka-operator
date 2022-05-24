@@ -42,7 +42,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
 @Tag(REGRESSION)
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+@KRaftNotSupported("UserOperator and scram-sha are not supported by KRaft mode and is used in this test class")
 @ParallelSuite
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);

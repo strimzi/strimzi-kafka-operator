@@ -557,6 +557,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testReconcileStateMetricInTopicOperator(ExtensionContext extensionContext) {
         cluster.setNamespace(SECOND_NAMESPACE);
 
