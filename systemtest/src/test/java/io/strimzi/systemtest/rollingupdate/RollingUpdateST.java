@@ -571,10 +571,10 @@ class RollingUpdateST extends AbstractST {
                     .build());
             if (!Environment.isKRaftModeEnabled()) {
                 kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
-                        .withNewValueFrom()
+                    .withNewValueFrom()
                         .withConfigMapKeyRef(log4jLoggimgCMselector)
-                        .endValueFrom()
-                        .build());
+                    .endValueFrom()
+                    .build());
             }
         }, namespaceName);
 

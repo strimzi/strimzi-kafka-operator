@@ -289,10 +289,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         if (!Environment.isKRaftModeEnabled()) {
             kubeClient(namespaceName).editPod(KafkaResources.zookeeperPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
-                    .editMetadata()
+                .editMetadata()
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .build());
+                .endMetadata()
+                .build());
 
             // same as above
             zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
@@ -313,10 +313,10 @@ class AlternativeReconcileTriggersST extends AbstractST {
         if (!Environment.isKRaftModeEnabled()) {
             zkSnapshot.keySet().forEach(podName -> {
                 kubeClient(namespaceName).editPod(podName).edit(pod -> new PodBuilder(pod)
-                        .editMetadata()
+                    .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                        .endMetadata()
-                        .build());
+                    .endMetadata()
+                    .build());
             });
 
             LOGGER.info("Checking if the rolling update will be successful for ZK");
