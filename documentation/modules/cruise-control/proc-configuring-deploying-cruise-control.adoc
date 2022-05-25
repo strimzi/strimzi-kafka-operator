@@ -2,13 +2,16 @@
 //
 // assembly-cruise-control-concepts.adoc
 
-[id='proc-deploying-cruise-control-{context}']
-= Deploying Cruise Control
+[id='proc-configuring-deploying-cruise-control-{context}']
+= Configuring and deploying Cruise Control with Kafka
 
 [role="_abstract"]
-To deploy Cruise Control to your Strimzi cluster, define the configuration using the `cruiseControl` property in the `Kafka` resource, and then create or update the resource.
-
+Through `Kafka` resource configuration, the Cluster Operator can deploy Cruise Control when deploying a Kafka cluster.
+You can use the `cruiseControl` properties of the `Kafka` resource to configure the deployment.
 Deploy one instance of Cruise Control per Kafka cluster.
+
+Use `goals` configuration in the Cruise Control `config` to specify optimization goals for generating optimization proposals.
+You can use `brokerCapacity` to change the default capacity limits for goals related to resource distribution.
 
 .Prerequisites
 
@@ -17,7 +20,7 @@ Deploy one instance of Cruise Control per Kafka cluster.
 
 .Procedure
 
-. Edit the `Kafka` resource and add the `cruiseControl` property.
+. Edit the `cruiseControl` property for the `Kafka` resource.
 +
 The properties you can configure are shown in this example configuration:
 +
@@ -35,26 +38,34 @@ spec:
       outboundNetwork: 10000KB/s
       # ...
     config: # <2>
-      default.goals: >
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
-         # ...
+      default.goals: > # <3>
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
+        # ...
+      hard.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal
+        # ...
       cpu.balance.threshold: 1.1
       metadata.max.age.ms: 300000
       send.buffer.bytes: 131072
+      webserver.http.cors.enabled: true # <4>
+      webserver.http.cors.origin: "*"
+      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
       # ...
-    resources: # <3>
+    resources: # <5>
       requests:
         cpu: 1
         memory: 512Mi
       limits:
         cpu: 2
         memory: 2Gi
-    logging: # <4>
+    logging: # <6>
         type: inline
         loggers:
           rootLogger.level: "INFO"
-    template: # <5>
+    template: # <7>
       pod:
         metadata:
           labels:
@@ -63,23 +74,29 @@ spec:
           runAsUser: 1000001
           fsGroup: 0
         terminationGracePeriodSeconds: 120
-    readinessProbe: # <6>
+    readinessProbe: # <8>
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    livenessProbe: # <7>
+    livenessProbe:
       initialDelaySeconds: 15
       timeoutSeconds: 5
+    metricsConfig: # <9>
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: cruise-control-metrics
+          key: metrics-config.yml
 # ...
 ----
-<1> Specifies capacity limits for broker resources. For more information, see xref:capacity-configuration[Capacity configuration].
-<2> Defines the Cruise Control configuration, including the default optimization goals (in `default.goals`) and any customizations to the main optimization goals (in `goals`) or the hard goals (in `hard.goals`).
-You can provide any xref:ref-cruise-control-configuration-{context}[standard Cruise Control configuration option] apart from those managed directly by Strimzi.
-For more information on configuring optimization goals, see xref:con-optimization-goals-{context}[].
-<3> CPU and memory resources reserved for Cruise Control. For more information, see xref:con-common-configuration-resources-reference[].
-<4> Defined loggers and log levels added directly (inline) or indirectly (external) through a ConfigMap. A custom ConfigMap must be placed under the log4j.properties key. Cruise Control has a single logger named `rootLogger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF. For more information, see xref:logging-configuration[Logging configuration].
-<5> xref:assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
-<6> xref:con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
-<7> xref:con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
+<1> xref:property-cruise-control-broker-capacity-reference[Capacity limits for broker resources].
+<2> Cruise Control configuration. xref:property-kafka-config-reference[Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi].
+<3> xref:con-optimization-goals-{context}[Optimization goals configuration], which can include configuration for default optimization goals (`default.goals`), main optimization goals (`goals`), and hard goals (`hard.goals`).
+<4> xref:property-cruise-control-config-cors-reference[CORS enabled and configured] for read-only access through the Cruise Control API.
+<5> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<6> xref:property-cruise-control-logging-reference[Cruise Control loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. Cruise Control has a single logger named `rootLogger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<7> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with additional security attributes.
+<8> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<9> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 
 . Create or update the resource:
 +
@@ -147,4 +164,5 @@ After configuring and deploying Cruise Control, you can xref:proc-generating-opt
 
 [role="_additional-resources"]
 .Additional resources
-* xref:type-CruiseControlTemplate-reference[].
+* xref:con-optimization-goals-{context}[Optimization goals overview]
+* xref:type-CruiseControlSpec-reference[`CruiseControlSpec` `schema reference]
