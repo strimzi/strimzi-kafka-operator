@@ -178,4 +178,15 @@ public class CruiseControlUtils {
                     "com.linkedin.cruisecontrol.exception.NotEnoughValidWindowsException: ");
             });
     }
+
+    /**
+     * Returns user defined network capacity value without KiB/s suffix.
+     *
+     * @param userCapacity User defined network capacity with KiB/s suffix.
+     *
+     * @return User defined network capacity without KiB/s as a Double.
+     */
+    public static Double removeNetworkCapacityKibSuffix(String userCapacity) {
+        return Double.valueOf(userCapacity.substring(0, userCapacity.length() - 5));
+    }
 }

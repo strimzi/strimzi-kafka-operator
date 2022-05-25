@@ -3,6 +3,7 @@
 ## 0.30.0
 
 * Remove Kafka 3.0.0 and 3.0.1
+* Add network capacity overrides for Cruise Control capacity config
 
 ## 0.29.0
 

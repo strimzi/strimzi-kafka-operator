@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
@@ -42,7 +43,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
@@ -59,6 +60,8 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 
 import java.util.ArrayList;
@@ -67,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
@@ -175,7 +179,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.generateCapacityConfig()).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.toString()).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
@@ -199,10 +203,14 @@ public class CruiseControlTest {
         return ccEnvVars.stream().filter(var -> envVar.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow();
     }
 
+    private static boolean isJBOD(Map<String, Object> brokerCapacity) {
+        return brokerCapacity.get(Capacity.DISK_KEY) instanceof JsonObject;
+    }
+
     @ParallelTest
-    public void testBrokerCapacities() {
+    public void testBrokerCapacities() throws JsonProcessingException {
         // Test user defined capacities
-        BrokerCapacity userDefinedBrokerCapacity = new BrokerCapacity();
+        io.strimzi.api.kafka.model.balancing.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.balancing.BrokerCapacity();
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 
@@ -215,7 +223,7 @@ public class CruiseControlTest {
 
         Capacity capacity = new Capacity(resource.getSpec(), kafkaStorage);
 
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorage();
@@ -243,7 +251,68 @@ public class CruiseControlTest {
             .build();
         
         capacity = new Capacity(resource.getSpec(), jbodStorage);
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
+
+        JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        for (Object brokerEntry : brokerEntries) {
+            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
+            assertThat(isJBOD(brokerCapacity), is(true));
+        }
+
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
+
+        // Test capacity overrides
+        String inboundNetwork = "50000KB/s";
+        String inboundNetworkOverride0 = "25000KB/s";
+        String inboundNetworkOverride1 = "10000KiB/s";
+        String outboundNetworkOverride1 = "15000KB/s";
+
+        int broker0 = 0;
+        int broker1 = 1;
+        int broker2 = 2;
+
+        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
+        List<Integer> overrideList1 = List.of(broker1);
+
+        cruiseControlSpec = new CruiseControlSpecBuilder()
+            .withImage(ccImage)
+            .withNewBrokerCapacity()
+                .withInboundNetwork(inboundNetwork)
+                .addNewOverride()
+                    .withBrokers(overrideList0)
+                    .withInboundNetwork(inboundNetworkOverride0)
+                .endOverride()
+                .addNewOverride()
+                    .withBrokers(overrideList1)
+                    .withInboundNetwork(inboundNetworkOverride1)
+                    .withOutboundNetwork(outboundNetworkOverride1)
+                .endOverride()
+            .endBrokerCapacity()
+            .build();
+
+        resource = createKafka(cruiseControlSpec);
+        capacity = new Capacity(resource.getSpec(), kafkaStorage);
+
+        brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        for (Object brokerEntry : brokerEntries) {
+            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
+            assertThat(isJBOD(brokerCapacity), is(false));
+        }
+
+        TreeMap<Integer, BrokerCapacity> capacityEntries = capacity.getCapacityEntries();
+
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetwork)));
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+
+        assertThat(capacityEntries.get(broker0).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker0).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+
+        // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
+        assertThat(capacityEntries.get(broker1).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+        assertThat(capacityEntries.get(broker1).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
+
+        assertThat(capacityEntries.get(broker2).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
+
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
     }
 
     @ParallelTest

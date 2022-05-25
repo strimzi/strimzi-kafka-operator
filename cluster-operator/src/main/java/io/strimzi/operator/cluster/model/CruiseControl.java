@@ -399,7 +399,7 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
 
-        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.generateCapacityConfig()));
+        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
 
         varList.add(buildEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(buildEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
