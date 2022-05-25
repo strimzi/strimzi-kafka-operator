@@ -97,15 +97,14 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected File kafkaYaml;
 
-    public static List<VersionModificationData> getVersionModificationData(String filename){
+    public static List<VersionModificationData> getVersionModificationData(String filename) {
         try {
             ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
             CollectionType modificationDataListType = mapper.getTypeFactory().constructCollectionType(List.class, VersionModificationData.class);
             List<VersionModificationData> versionModificationDataList = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/" + filename), modificationDataListType);
 
             return versionModificationDataList;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             LOGGER.error("Error while parsing ST data from YAML ", ex);
         }
         return null;
@@ -121,10 +120,10 @@ public class AbstractUpgradeST extends AbstractST {
 
         // Generate procedures for upgrade
         Map<String, String> procedures = new HashMap<>() {{
-            put("kafkaVersion", testKafkaVersion.version());
-            put("logMessageVersion", testKafkaVersion.messageVersion());
-            put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
-        }};
+                put("kafkaVersion", testKafkaVersion.version());
+                put("logMessageVersion", testKafkaVersion.messageVersion());
+                put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
+            }};
 
         upgradeDataList.forEach(upgradeData -> {
             // Set latest upgrade parameters
@@ -275,7 +274,7 @@ public class AbstractUpgradeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeClusterOperator(JsonObject testParameters, String namespace, ExtensionContext extensionContext) throws IOException {
+    protected void changeClusterOperator(VersionModificationData testParameters, String namespace, ExtensionContext extensionContext) throws IOException {
         File coDir;
         // Modify + apply installation files
         LOGGER.info("Update CO from {} to {}", testParameters.getFromVersion(), testParameters.getToVersion());
@@ -439,7 +438,7 @@ public class AbstractUpgradeST extends AbstractST {
             }
         }
         // Create bunch of topics for upgrade if it's specified in configuration
-        if (testParameters.getAdditionalTopics() != null && testParameters.getAdditionalTopics() > 0 ) {
+        if (testParameters.getAdditionalTopics() != null && testParameters.getAdditionalTopics() > 0) {
             for (int x = 0; x < upgradeTopicCount; x++) {
                 if ("HEAD".equals(testParameters.getFromVersion())) {
                     resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, topicName + "-" + x, 1, 1, 1)

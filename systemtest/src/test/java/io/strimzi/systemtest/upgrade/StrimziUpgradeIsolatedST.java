@@ -217,15 +217,15 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         return acrossUpgradeData;
     }
 
-    private Map<String, String> buildProceduresForUpgradeAcrossVersions(){
+    private Map<String, String> buildProceduresForUpgradeAcrossVersions() {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion latestKafkaSupported = sortedVersions.get(sortedVersions.size() - 1);
         // Generate procedures for upgrade
-        Map<String, String> procedures = new HashMap<>(){{
-            put("kafkaVersion", latestKafkaSupported.version());
-            put("logMessageVersion", latestKafkaSupported.messageVersion());
-            put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
-        }};
+        Map<String, String> procedures = new HashMap<>() {{
+                put("kafkaVersion", latestKafkaSupported.version());
+                put("logMessageVersion", latestKafkaSupported.messageVersion());
+                put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
+            }};
 
         return procedures;
     }
@@ -263,7 +263,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
 
         // Upgrade CRDs and upgrade CO to 0.24
-        if (testParameters.getConversionTool() != null ) {
+        if (testParameters.getConversionTool() != null) {
             convertCRDs(testParameters.getConversionTool(), clusterOperator.getDeploymentNamespace());
         }
 
