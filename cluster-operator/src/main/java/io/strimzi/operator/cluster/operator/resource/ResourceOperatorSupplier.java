@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -89,7 +88,7 @@ public class ResourceOperatorSupplier {
     public final AdminClientProvider adminClientProvider;
     public final ZookeeperLeaderFinder zookeeperLeaderFinder;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(vertx, client,
             new ZookeeperLeaderFinder(vertx,
             // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -97,12 +96,12 @@ public class ResourceOperatorSupplier {
                     new DefaultAdminClientProvider(),
                     new DefaultZookeeperScalerProvider(),
                     new MicrometerMetricsProvider(),
-                    pfa, gates, operationTimeoutMs);
+                    pfa, operationTimeoutMs);
     }
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
+                                    MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new StatefulSetOperator(vertx, client, operationTimeoutMs),
@@ -110,7 +109,7 @@ public class ResourceOperatorSupplier {
                 new SecretOperator(vertx, client),
                 new PvcOperator(vertx, client),
                 new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
+                new ServiceAccountOperator(vertx, client),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),

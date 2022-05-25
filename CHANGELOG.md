@@ -4,6 +4,8 @@
 
 * Remove Kafka 3.0.0 and 3.0.1
 * Add network capacity overrides for Cruise Control capacity config
+* The `ServiceAccountPatching` feature gate moves to GA.
+  It cannot be disabled anymore and will be permanently enabled.
 
 ## 0.29.0
 

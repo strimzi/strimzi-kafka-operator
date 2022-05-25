@@ -46,14 +46,9 @@ IMPORTANT: The `ControlPlaneListener` feature gate must be disabled when upgradi
 
 == ServiceAccountPatching feature gate
 
-The `ServiceAccountPatching` feature gate has a default state of _enabled_.
-
-By default, the Cluster Operator reconciles service accounts and updates them when needed.
-For example, you can change service account labels and annotations after the operands are already created.
-To disable service account patching, disable the `ServiceAccountPatching` feature gate.
-
-.Disabling the ServiceAccountPatching feature gate
-To disable the `ServiceAccountPatching` feature gate, specify `-ServiceAccountPatching` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+The `ServiceAccountPatching` feature gate has moved to GA stage in Strimzi 0.30 and is permanently enabled without the possibility to disable it.
+The Cluster Operator now always reconciles service accounts and updates them when needed.
+For example, when you change the desired service account labels or annotations using the `template` property of our custom resources, the operator will automatically update them on the existing service account resources.
 
 [id='ref-operator-use-strimzi-pod-sets-feature-gate-{context}']
 == UseStrimziPodSets feature gate
