@@ -111,7 +111,6 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected static Stream<Arguments> loadYamlUpgradeData() {
-
         List<VersionModificationData> upgradeDataList = getVersionModificationData(UPGRADE_YAML_FILE);
         List<Arguments> parameters = new LinkedList<>();
 
@@ -163,12 +162,11 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
         // #################    Update CRs to latest version   ###################
         // #######################################################################
-        String toUrl = testParameters.getUrlTo();
         String examplesPath = "";
-        if (toUrl.equals("HEAD")) {
+        if (testParameters.getUrlTo().equals("HEAD")) {
             examplesPath = PATH_TO_PACKAGING_EXAMPLES + "";
         } else {
-            File dir = FileUtils.downloadAndUnzip(toUrl);
+            File dir = FileUtils.downloadAndUnzip(testParameters.getUrlTo());
             examplesPath = dir.getAbsolutePath() + "/" + testParameters.getToExamples() + "/examples";
         }
 
@@ -278,7 +276,7 @@ public class AbstractUpgradeST extends AbstractST {
         File coDir;
         // Modify + apply installation files
         LOGGER.info("Update CO from {} to {}", testParameters.getFromVersion(), testParameters.getToVersion());
-        if ("HEAD".equals(testParameters.getToVersion())) {
+        if (testParameters.getToVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
             String url = testParameters.getUrlTo();
@@ -381,7 +379,7 @@ public class AbstractUpgradeST extends AbstractST {
         String url = null;
         File dir = null;
 
-        if ("HEAD".equals(testParameters.getFromVersion())) {
+        if (testParameters.getFromVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
             url = testParameters.getUrlFrom();
@@ -398,7 +396,7 @@ public class AbstractUpgradeST extends AbstractST {
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
             // Deploy a Kafka cluster
-            if ("HEAD".equals(testParameters.getFromExamples())) {
+            if (testParameters.getFromExamples().equals("HEAD")) {
                 resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
                     .editSpec()
                         .editKafka()
@@ -418,7 +416,7 @@ public class AbstractUpgradeST extends AbstractST {
             }
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL, operatorVersion)).contains(userName)) {
-            if ("HEAD".equals(testParameters.getFromVersion())) {
+            if (testParameters.getFromVersion().equals("HEAD")) {
                 resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
             } else {
                 kafkaUserYaml = new File(dir, testParameters.getFromExamples() + "/examples/user/kafka-user.yaml");
@@ -428,7 +426,7 @@ public class AbstractUpgradeST extends AbstractST {
             }
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(topicName)) {
-            if ("HEAD".equals(testParameters.getFromVersion())) {
+            if (testParameters.getFromVersion().equals("HEAD")) {
                 resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
             } else {
                 kafkaTopicYaml = new File(dir, testParameters.getFromExamples() + "/examples/topic/kafka-topic.yaml");
@@ -440,7 +438,7 @@ public class AbstractUpgradeST extends AbstractST {
         // Create bunch of topics for upgrade if it's specified in configuration
         if (testParameters.getAdditionalTopics() != null && testParameters.getAdditionalTopics() > 0) {
             for (int x = 0; x < upgradeTopicCount; x++) {
-                if ("HEAD".equals(testParameters.getFromVersion())) {
+                if (testParameters.getFromVersion().equals("HEAD")) {
                     resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, topicName + "-" + x, 1, 1, 1)
                         .editSpec()
                             .withTopicName(topicName + "-" + x)
