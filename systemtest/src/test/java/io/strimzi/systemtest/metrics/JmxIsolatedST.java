@@ -49,7 +49,7 @@ public class JmxIsolatedST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    @KRaftNotSupported("TODO - debug")
+    @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());

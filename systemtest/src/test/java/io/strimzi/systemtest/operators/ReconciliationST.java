@@ -66,6 +66,7 @@ public class ReconciliationST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @KRaftNotSupported("Probably bug - https://github.com/strimzi/strimzi-kafka-operator/issues/6862")
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

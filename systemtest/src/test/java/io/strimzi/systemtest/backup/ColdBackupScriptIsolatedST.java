@@ -48,7 +48,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
-    @KRaftNotSupported("TODO - debug")
+    @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
     void backupAndRestore(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group", newGroupId = "new-group";
