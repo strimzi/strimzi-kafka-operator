@@ -1,0 +1,23 @@
+- fromVersion: HEAD
+  toVersion: 0.28.0
+  fromExamples: HEAD
+  toExamples: strimzi-0.28.0
+  urlFrom: HEAD
+  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip
+  additionalTopics: 2
+  oldestKafka: 3.0.0
+  imagesAfterOperatorDowngrade:
+    zookeeper: strimzi/kafka:0.28.0-kafka-3.1.0
+    kafka: strimzi/kafka:0.28.0-kafka-3.1.0
+    topicOperator: strimzi/operator:0.28.0
+    userOperator: strimzi/operator:0.28.0
+  deployKafkaVersion: 3.1.0
+  client:
+    continuousClientsMessages: 500
+  environmentInfo:
+    maxK8sVersion: latest
+    status: stable
+    flakyEnvVariable: none
+    reason: Test is working on all environment used by QE.
+  featureGatesBefore: "+UseStrimziPodSets"
+  featureGatesAfter: "-UseStrimziPodSets"

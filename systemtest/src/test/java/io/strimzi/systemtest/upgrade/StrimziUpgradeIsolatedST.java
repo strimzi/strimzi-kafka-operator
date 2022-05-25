@@ -17,10 +17,9 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.VersionModificationData;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -37,6 +36,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.UPGRADE;
@@ -65,15 +65,16 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
-    @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>)")
-    @MethodSource("loadJsonUpgradeData")
+    @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
+    @MethodSource("loadYamlUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
+    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, VersionModificationData testParameters, Map<String, String> proceduresAfter, ExtensionContext extensionContext) throws Exception {
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(testParameters.getEnvironmentInfo().get("flakyEnvVariable")));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(testParameters.getEnvironmentInfo().get("maxK8sVersion")));
 
-        LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})", fromVersion, toVersion, fgBefore, fgAfter);
-        performUpgrade(parameters, extensionContext);
+        LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})",
+                fromVersion, toVersion, fgBefore, fgAfter);
+        performUpgrade(testParameters, proceduresAfter, extensionContext);
     }
 
     @Test
@@ -125,8 +126,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        JsonObject acrossUpgradeData = buildDataForUpgradeAcrossVersions();
-        JsonObject conversionTool = getConversionToolDataFromUpgradeJSON();
+        VersionModificationData acrossUpgradeData = buildDataForUpgradeAcrossVersions();
+        Map<String, String> procedures = buildProceduresForUpgradeAcrossVersions();
+        Map<String, String> conversionTool = getConversionToolDataFromUpgradeYAML();
 
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -134,7 +136,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getStartingKafkaVersion(), clusterOperator.getDeploymentNamespace());
         convertCRDs(conversionTool, clusterOperator.getDeploymentNamespace());
         // Make snapshots of all pods
         makeSnapshots();
@@ -143,9 +145,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         changeClusterOperator(acrossUpgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
         logPodImages(clusterName);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(procedures, acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(acrossUpgradeData.getJsonObject("imagesAfterKafkaUpgrade"));
+        checkAllImages(acrossUpgradeData.getImagesAfterKafkaUpgrade());
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
@@ -156,8 +158,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        JsonObject acrossUpgradeData = buildDataForUpgradeAcrossVersions();
-        JsonObject conversionTool = getConversionToolDataFromUpgradeJSON();
+        VersionModificationData acrossUpgradeData = buildDataForUpgradeAcrossVersions();
+        Map<String, String> procedures = buildProceduresForUpgradeAcrossVersions();
+        Map<String, String> conversionTool = getConversionToolDataFromUpgradeYAML();
 
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
@@ -178,9 +181,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         LOGGER.info("Rolling to new images has finished!");
         logPodImages(clusterName);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, extensionContext);
+        changeKafkaAndLogFormatVersion(procedures, acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(acrossUpgradeData.getJsonObject("imagesAfterKafkaUpgrade"));
+        checkAllImages(acrossUpgradeData.getImagesAfterKafkaUpgrade());
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
@@ -190,51 +193,51 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         assertNoCoErrorsLogged(0);
     }
 
-    private JsonObject buildDataForUpgradeAcrossVersions() throws IOException {
-        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-        TestKafkaVersion latestKafkaSupported = sortedVersions.get(sortedVersions.size() - 1);
+    private VersionModificationData buildDataForUpgradeAcrossVersions() throws IOException {
 
-        JsonArray upgradeJson = readUpgradeJson(UPGRADE_JSON_FILE);
+        List<VersionModificationData> upgradeYaml = getVersionModificationData(UPGRADE_YAML_FILE);
 
-        JsonObject acrossUpgradeData = upgradeJson.getJsonObject(upgradeJson.size() - 1);
-        JsonObject startingVersion = getDataForStartUpgrade(upgradeJson);
+        VersionModificationData acrossUpgradeData = upgradeYaml.get(upgradeYaml.size() - 1);
+        VersionModificationData startingVersion = getDataForStartUpgrade(upgradeYaml);
 
-        acrossUpgradeData.put("fromVersion", startingVersion.getValue("fromVersion"));
-        acrossUpgradeData.put("fromExamples", startingVersion.getValue("fromExamples"));
-        acrossUpgradeData.put("urlFrom", startingVersion.getValue("urlFrom"));
+        acrossUpgradeData.setFromVersion(startingVersion.getFromVersion());
+        acrossUpgradeData.setFromExamples(startingVersion.getFromExamples());
+        acrossUpgradeData.setUrlFrom(startingVersion.getUrlFrom());
 
-        acrossUpgradeData.put("urlTo", "HEAD");
-        acrossUpgradeData.put("toVersion", "HEAD");
-        acrossUpgradeData.put("toExamples", "HEAD");
+        acrossUpgradeData.setUrlTo("HEAD");
+        acrossUpgradeData.setToVersion("HEAD");
+        acrossUpgradeData.setToExamples("HEAD");
 
-        acrossUpgradeData.put("startingKafkaVersion", startingVersion.getString("oldestKafka"));
-        acrossUpgradeData.put("defaultKafka", startingVersion.getString("defaultKafka"));
-        acrossUpgradeData.put("oldestKafka", startingVersion.getString("oldestKafka"));
+        acrossUpgradeData.setStartingKafkaVersion(startingVersion.getOldestKafka());
+        acrossUpgradeData.setDefaultKafka(startingVersion.getDefaultKafka());
+        acrossUpgradeData.setOldestKafka(startingVersion.getOldestKafka());
 
-        // Generate procedures for upgrade
-        JsonObject procedures = new JsonObject();
-        procedures.put("kafkaVersion", latestKafkaSupported.version());
-        procedures.put("logMessageVersion", latestKafkaSupported.messageVersion());
-        procedures.put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
-        acrossUpgradeData.put("proceduresAfterOperatorUpgrade", procedures);
-
-        LOGGER.info("Upgrade Json for the test: {}", acrossUpgradeData.encodePrettily());
+        LOGGER.info("Upgrade yaml for the test: {}", acrossUpgradeData.toString());
 
         return acrossUpgradeData;
     }
 
-    private JsonObject getDataForStartUpgrade(JsonArray upgradeJson) throws IOException {
+    private Map<String, String> buildProceduresForUpgradeAcrossVersions(){
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-        Collections.reverse(upgradeJson.getList());
+        TestKafkaVersion latestKafkaSupported = sortedVersions.get(sortedVersions.size() - 1);
+        // Generate procedures for upgrade
+        Map<String, String> procedures = new HashMap<>(){{
+            put("kafkaVersion", latestKafkaSupported.version());
+            put("logMessageVersion", latestKafkaSupported.messageVersion());
+            put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
+        }};
 
-        JsonObject startingVersion = null;
+        return procedures;
+    }
 
-        for (Object item : upgradeJson) {
-            TestKafkaVersion defaultVersion = getDefaultKafkaVersionPerStrimzi(((JsonObject) item).getValue("fromVersion").toString());
+    private VersionModificationData getDataForStartUpgrade(List<VersionModificationData> upgradeYaml) throws IOException {
+        Collections.reverse(upgradeYaml);
 
-            ((JsonObject) item).put("defaultKafka", defaultVersion.version());
+        VersionModificationData startingVersion = null;
 
-            startingVersion = (JsonObject) item;
+        for (VersionModificationData item : upgradeYaml) {
+            item.setDefaultKafka(getDefaultKafkaVersionPerStrimzi(item.getFromVersion()).version());
+            startingVersion = item;
             break;
         }
         return startingVersion;
@@ -248,7 +251,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         return kafkaVersionNode.get(field).asText();
     }
 
-    private void performUpgrade(JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
+    private void performUpgrade(VersionModificationData testParameters, Map<String, String> procedures, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
@@ -260,23 +263,23 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
 
         // Upgrade CRDs and upgrade CO to 0.24
-        if (testParameters.getBoolean("convertCRDs")) {
-            convertCRDs(testParameters.getJsonObject("conversionTool"), clusterOperator.getDeploymentNamespace());
+        if (testParameters.getConversionTool() != null ) {
+            convertCRDs(testParameters.getConversionTool(), clusterOperator.getDeploymentNamespace());
         }
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
         changeClusterOperator(testParameters, clusterOperator.getDeploymentNamespace(), extensionContext);
 
-        if (TestKafkaVersion.supportedVersionsContainsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getString("fromVersion")).version())) {
+        if (TestKafkaVersion.supportedVersionsContainsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getFromVersion()).version())) {
             waitForKafkaClusterRollingUpdate();
         }
 
         logPodImages(clusterName);
         // Upgrade kafka
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfterOperatorUpgrade"), testParameters, extensionContext);
+        changeKafkaAndLogFormatVersion(procedures, testParameters, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(testParameters.getJsonObject("imagesAfterKafkaUpgrade"));
+        checkAllImages(testParameters.getImagesAfterKafkaUpgrade());
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);

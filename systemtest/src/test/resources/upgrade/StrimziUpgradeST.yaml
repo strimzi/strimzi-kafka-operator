@@ -1,0 +1,60 @@
+- fromVersion: 0.22.1
+  fromExamples: strimzi-0.22.1
+  oldestKafka: 2.6.0
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.1/strimzi-0.22.1.zip
+  conversionTool:
+    urlToConversionTool: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip
+    toConversionTool: api-conversion-0.22.0
+  additionalTopics: 2
+  imagesAfterKafkaUpgrade:
+    zookeeper: strimzi/kafka:latest-kafka-3.2.0
+    kafka: strimzi/kafka:latest-kafka-3.2.0
+    topicOperator: strimzi/operator:latest
+    userOperator: strimzi/operator:latest
+  client:
+    continuousClientsMessages: 500
+  environmentInfo:
+    maxK8sVersion: '1.21'
+    status: stable
+    flakyEnvVariable: none
+    reason: Test is working on environment, where k8s server version is < 1.22
+  featureGatesBefore: ''
+  featureGatesAfter: "-ControlPlaneListener"
+- fromVersion: 0.28.0
+  fromExamples: strimzi-0.28.0
+  oldestKafka: 3.0.0
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip
+  additionalTopics: 2
+  imagesAfterKafkaUpgrade:
+    zookeeper: strimzi/kafka:latest-kafka-3.2.0
+    kafka: strimzi/kafka:latest-kafka-3.2.0
+    topicOperator: strimzi/operator:latest
+    userOperator: strimzi/operator:latest
+  client:
+    continuousClientsMessages: 500
+  environmentInfo:
+    maxK8sVersion: latest
+    status: stable
+    flakyEnvVariable: none
+    reason: Test is working on environment, where k8s server version is < 1.22
+  featureGatesBefore: ''
+  featureGatesAfter: ''
+- fromVersion: 0.28.0
+  fromExamples: strimzi-0.28.0
+  oldestKafka: 3.0.0
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip
+  additionalTopics: 2
+  imagesAfterKafkaUpgrade:
+    zookeeper: strimzi/kafka:latest-kafka-3.2.0
+    kafka: strimzi/kafka:latest-kafka-3.2.0
+    topicOperator: strimzi/operator:latest
+    userOperator: strimzi/operator:latest
+  client:
+    continuousClientsMessages: 500
+  environmentInfo:
+    maxK8sVersion: latest
+    status: stable
+    flakyEnvVariable: none
+    reason: Test is working on environment, where k8s server version is < 1.22
+  featureGatesBefore: "-UseStrimziPodSets"
+  featureGatesAfter: "+UseStrimziPodSets"

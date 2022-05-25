@@ -5,9 +5,9 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.VersionModificationData;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -36,18 +36,18 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeIsolatedST.class);
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
-    @MethodSource("loadJsonDowngradeData")
+    @MethodSource("loadYamlDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testDowngradeStrimziVersion(String from, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
+    void testDowngradeStrimziVersion(String from, String to, VersionModificationData parameters, ExtensionContext extensionContext) throws Exception {
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvironmentInfo().get("flakyEnvVariable")));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvironmentInfo().get("maxK8sVersion")));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
         performDowngrade(parameters, extensionContext);
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
+    private void performDowngrade(VersionModificationData testParameters, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
@@ -56,7 +56,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
         logPodImages(clusterName);
         // Downgrade CO
         changeClusterOperator(testParameters, clusterOperator.getDeploymentNamespace(), extensionContext);
@@ -65,7 +65,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
-        checkAllImages(testParameters.getJsonObject("imagesAfterOperatorDowngrade"));
+        checkAllImages(testParameters.getImagesAfterOperatorDowngrade());
         // Verify upgrade
         verifyProcedure(testParameters, producerName, consumerName, clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
