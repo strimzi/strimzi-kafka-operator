@@ -16,6 +16,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -58,6 +59,7 @@ class RecoveryIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RecoveryIsolatedST.class);
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromEntityOperatorDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", sharedClusterName);
@@ -92,6 +94,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         // kafka cluster already deployed
         String zookeeperName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
@@ -123,6 +126,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperServiceDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -151,6 +155,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperHeadlessServiceDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
@@ -186,6 +191,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperMetricsConfigDeletion() {
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", sharedClusterName);
 
@@ -277,6 +283,7 @@ class RecoveryIsolatedST extends AbstractST {
 
     @IsolatedTest
     @StrimziPodSetTest
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromKafkaAndZookeeperPodDeletion() {
         final String kafkaName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
         final String zkName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);

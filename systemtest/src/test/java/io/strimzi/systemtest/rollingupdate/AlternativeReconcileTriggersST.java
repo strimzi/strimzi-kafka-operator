@@ -19,6 +19,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -68,6 +69,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(AlternativeReconcileTriggersST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings("checkstyle:MethodLength")
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
@@ -259,9 +261,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        final String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
-        final String zkSsName = KafkaResources.zookeeperStatefulSetName(clusterName);
-
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -270,10 +269,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
         Pod kafkaPod = kubeClient(namespaceName).getPod(KafkaResources.kafkaPodName(clusterName, 0));
         // snapshot of one single Kafka pod
         Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
-
-        Pod zkPod = kubeClient(namespaceName).getPod(KafkaResources.zookeeperPodName(clusterName, 0));
-        // snapshot of one single ZK pod
-        Map<String, String> zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
+        Map<String, String> zkSnapshot = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            Pod zkPod = kubeClient(namespaceName).getPod(KafkaResources.zookeeperPodName(clusterName, 0));
+            // snapshot of one single ZK pod
+            zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
+        }
 
         LOGGER.info("Trying to roll just single Kafka and single ZK pod");
         kubeClient(namespaceName).editPod(KafkaResources.kafkaPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
@@ -286,15 +287,16 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
-        kubeClient(namespaceName).editPod(KafkaResources.zookeeperPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata()
-            .build());
+        if (!Environment.isKRaftModeEnabled()) {
+            kubeClient(namespaceName).editPod(KafkaResources.zookeeperPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
+                .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                .endMetadata()
+                .build());
 
-        // same as above
-        zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
-
+            // same as above
+            zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
+        }
 
         LOGGER.info("Adding anno to all ZK and Kafka pods");
         kafkaSnapshot.keySet().forEach(podName -> {
@@ -308,16 +310,18 @@ class AlternativeReconcileTriggersST extends AbstractST {
         LOGGER.info("Checking if the rolling update will be successful for Kafka");
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
-        zkSnapshot.keySet().forEach(podName -> {
-            kubeClient(namespaceName).editPod(podName).edit(pod -> new PodBuilder(pod)
-                .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .build());
-        });
+        if (!Environment.isKRaftModeEnabled()) {
+            zkSnapshot.keySet().forEach(podName -> {
+                kubeClient(namespaceName).editPod(podName).edit(pod -> new PodBuilder(pod)
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build());
+            });
 
-        LOGGER.info("Checking if the rolling update will be successful for ZK");
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
+            LOGGER.info("Checking if the rolling update will be successful for ZK");
+            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
+        }
     }
 
     /**
@@ -325,6 +329,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * not like it. This tests tries to add and remove volume from JBOD to test both of these situations.
      */
     @ParallelNamespaceTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case. JBOD is not supported as well.")
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 

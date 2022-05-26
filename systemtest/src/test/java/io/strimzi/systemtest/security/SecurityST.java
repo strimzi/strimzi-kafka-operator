@@ -26,6 +26,8 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -122,10 +124,12 @@ class SecurityST extends AbstractST {
         LOGGER.info("OPENSSL OUTPUT: \n\n{}\n\n", outputCertificate);
         verifyCerts(clusterName, outputCertificate, "kafka");
 
-        LOGGER.info("Check zookeeper client certificate");
-        outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.zookeeperServiceName(clusterName) + ":2181", KafkaResources.zookeeperServiceName(clusterName),
-                KafkaResources.kafkaPodName(clusterName, 0), "kafka");
-        verifyCerts(clusterName, outputCertificate, "zookeeper");
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Check zookeeper client certificate");
+            outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.zookeeperServiceName(clusterName) + ":2181", KafkaResources.zookeeperServiceName(clusterName),
+                    KafkaResources.kafkaPodName(clusterName, 0), "kafka");
+            verifyCerts(clusterName, outputCertificate, "zookeeper");
+        }
 
         List<String> kafkaPorts = new ArrayList<>(Arrays.asList("9091", "9093"));
         List<String> zkPorts = new ArrayList<>(Arrays.asList("2181", "3888"));
@@ -141,11 +145,13 @@ class SecurityST extends AbstractST {
                 verifyCerts(clusterName, output, "kafka");
             }
 
-            for (String zkPort : zkPorts) {
-                LOGGER.info("Check zookeeper certificate for port {}", zkPort);
-                output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(namespaceName, KafkaResources.zookeeperPodName(clusterName, podId),
-                        KafkaResources.zookeeperHeadlessServiceName(clusterName), zkPort, "zookeeper");
-                verifyCerts(clusterName, output, "zookeeper");
+            if (!Environment.isKRaftModeEnabled()) {
+                for (String zkPort : zkPorts) {
+                    LOGGER.info("Check zookeeper certificate for port {}", zkPort);
+                    output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(namespaceName, KafkaResources.zookeeperPodName(clusterName, podId),
+                            KafkaResources.zookeeperHeadlessServiceName(clusterName), zkPort, "zookeeper");
+                    verifyCerts(clusterName, output, "zookeeper");
+                }
             }
         });
     }
@@ -164,6 +170,7 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaCerts")
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
                 extensionContext,
@@ -180,6 +187,7 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaCerts")
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -198,6 +206,7 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaCerts")
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -340,6 +349,7 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaKeys")
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -354,6 +364,7 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaKeys")
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -368,6 +379,7 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaKeys")
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -571,6 +583,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -612,6 +625,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCertRenewalInMaintenanceTimeWindow(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
         final String clusterSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
@@ -725,6 +739,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -894,6 +909,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -994,6 +1010,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAclWithSuperUser(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1097,6 +1114,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -1420,7 +1438,10 @@ class SecurityST extends AbstractST {
 
         final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
-        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), ts.getEoDeploymentName());
+        Map<String, String> eoPod = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), ts.getEoDeploymentName());
+        }
 
         Secret clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
@@ -1433,11 +1454,17 @@ class SecurityST extends AbstractST {
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        // Check Zookeeper certificate dates
-        Secret zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
-        X509Certificate zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
-        Date initialZkCertStartTime = zkBrokerCert.getNotBefore();
-        Date initialZkCertEndTime = zkBrokerCert.getNotAfter();
+        Date initialZkCertStartTime = null;
+        Date initialZkCertEndTime = null;
+        Secret zkCertCreationSecret = null;
+        X509Certificate zkBrokerCert = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            // Check Zookeeper certificate dates
+            zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
+            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
+            initialZkCertStartTime = zkBrokerCert.getNotBefore();
+            initialZkCertEndTime = zkBrokerCert.getNotAfter();
+        }
 
         LOGGER.info("Change of kafka validity and renewal days - reconciliation should start.");
         CertificateAuthority newClusterCA = new CertificateAuthority();
@@ -1450,9 +1477,13 @@ class SecurityST extends AbstractST {
         //   a) ZooKeeper
         //   b) Kafka
         //   c) and other components to trust the new Cluster CA certificate. (i.e., EntityOperator)
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);
+        if (!Environment.isKRaftModeEnabled()) {
+            DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);
+        }
 
         // Read renewed secret/certs again
         clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
@@ -1466,33 +1497,38 @@ class SecurityST extends AbstractST {
         Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
-        // Check renewed Zookeeper certificate dates
-        zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
-        zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
-        Date changedZkCertStartTime = zkBrokerCert.getNotBefore();
-        Date changedZkCertEndTime = zkBrokerCert.getNotAfter();
-
         LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
         LOGGER.info("KafkaBroker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
         LOGGER.info("KafkaBroker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
-        LOGGER.info("Zookeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
-        LOGGER.info("Zookeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
 
         String msg = "Error: original cert-end date: '" + initialCertEndTime +
-            "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
+                "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
         assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
         assertThat("Broker certificates start dates have not been renewed.",
-            initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
+                initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
         assertThat("Broker certificates end dates have not been renewed.",
-            initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
-        assertThat("Zookeeper certificates start dates have not been renewed.",
-            initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
-        assertThat("Zookeeper certificates end dates have not been renewed.",
-            initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
+                initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+
+        if (!Environment.isKRaftModeEnabled()) {
+            // Check renewed Zookeeper certificate dates
+            zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
+            zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
+            Date changedZkCertStartTime = zkBrokerCert.getNotBefore();
+            Date changedZkCertEndTime = zkBrokerCert.getNotAfter();
+
+            LOGGER.info("Zookeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
+            LOGGER.info("Zookeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
+
+            assertThat("Zookeeper certificates start dates have not been renewed.",
+                    initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
+            assertThat("Zookeeper certificates end dates have not been renewed.",
+                    initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
+        }
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testClientsCACertRenew(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext, namespace);
 

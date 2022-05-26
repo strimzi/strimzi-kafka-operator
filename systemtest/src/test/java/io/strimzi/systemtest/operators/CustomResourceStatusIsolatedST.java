@@ -35,6 +35,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -134,7 +135,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         assertKafkaStatus(1, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + clusterOperator.getDeploymentNamespace() + ".svc");
 
         KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
-            k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
+            k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
         });
@@ -144,7 +145,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         LOGGER.info("Recovery cluster to Ready state ...");
         KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
-            k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
+            k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
                     .build());
         });
@@ -154,6 +155,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaUserStatus(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
@@ -168,6 +170,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaUserStatusNotReady(ExtensionContext extensionContext) {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
@@ -352,6 +355,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicStatus(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -362,6 +366,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicStatusNotReady(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -448,6 +453,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicDecreaseStatus(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -472,6 +478,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicChangingInSyncReplicasStatus(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -541,8 +548,13 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaBuilder.build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).build());
 
-        topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get()
-            .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;
+        if (!Environment.isKRaftModeEnabled()) {
+            topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get()
+                    .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;
+        } else {
+            // TODO check this value
+            topicOperatorReconciliationInterval = 120_000;
+        }
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {

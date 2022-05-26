@@ -15,6 +15,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -65,6 +66,7 @@ public class ReconciliationST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
+    @KRaftNotSupported("Probably bug - https://github.com/strimzi/strimzi-kafka-operator/issues/6862")
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -132,6 +134,7 @@ public class ReconciliationST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

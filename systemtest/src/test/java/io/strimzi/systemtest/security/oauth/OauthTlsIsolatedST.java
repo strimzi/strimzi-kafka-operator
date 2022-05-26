@@ -18,6 +18,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -64,6 +65,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
 @IsolatedSuite
+@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
 public class OauthTlsIsolatedST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsIsolatedST.class);
 

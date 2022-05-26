@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 @Tag(UPGRADE)
 @IsolatedSuite
+@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeIsolatedST.class);

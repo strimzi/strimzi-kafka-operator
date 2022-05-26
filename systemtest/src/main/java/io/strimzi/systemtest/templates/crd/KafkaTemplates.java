@@ -263,6 +263,7 @@ public class KafkaTemplates {
                 .endEntityOperator()
                 .endSpec();
         }
+
         return kb;
     }
 

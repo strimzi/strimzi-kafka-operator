@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -64,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 @ParallelSuite
+@KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
 public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);

@@ -7,6 +7,7 @@ package io.strimzi.systemtest.cruisecontrol;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -40,6 +41,7 @@ public class CruiseControlApiST extends AbstractST {
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
         final TestStorage testStorage = new TestStorage(extensionContext);
 

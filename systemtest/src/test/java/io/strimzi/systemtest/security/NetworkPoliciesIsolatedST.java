@@ -18,6 +18,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -65,6 +66,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
     @IsolatedTest("Specific cluster operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -163,6 +165,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
     @IsolatedTest("Specific cluster operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testNetworkPoliciesWithTlsListener(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 

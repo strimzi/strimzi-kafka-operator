@@ -24,6 +24,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -86,6 +87,7 @@ class LoggingChangeST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(LoggingChangeST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -238,14 +240,19 @@ class LoggingChangeST extends AbstractST {
 
         Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> eoPods = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        }
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
         StUtils.checkLogForJSONFormat(clusterOperator.getDeploymentNamespace(), operatorSnapshot, ResourceManager.getCoDeploymentName());
         StUtils.checkLogForJSONFormat(namespaceName, kafkaPods, "kafka");
         StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
-        StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
-        StUtils.checkLogForJSONFormat(namespaceName, eoPods, "user-operator");
+        if (!Environment.isKRaftModeEnabled()) {
+            StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
+            StUtils.checkLogForJSONFormat(namespaceName, eoPods, "user-operator");
+        }
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
@@ -254,6 +261,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -632,7 +640,7 @@ class LoggingChangeST extends AbstractST {
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String coLog = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
-                LOGGER.warn(coLog);
+                LOGGER.debug(coLog);
                 return coLog != null && coLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
             });
 
