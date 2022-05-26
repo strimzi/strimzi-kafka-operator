@@ -4,13 +4,8 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -26,10 +21,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 public class KafkaMirrorMakerTemplates {
 
     private KafkaMirrorMakerTemplates() {}
-
-    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> kafkaMirrorMakerClient() {
-        return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
-    }
 
     public static KafkaMirrorMakerBuilder kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
@@ -78,10 +69,6 @@ public class KafkaMirrorMakerTemplates {
 
         return kmmb;
 
-    }
-
-    public static void deleteKafkaMirrorMakerWithoutWait(String resourceName) {
-        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     private static KafkaMirrorMaker getKafkaMirrorMakerFromYaml(String yamlPath) {

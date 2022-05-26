@@ -118,7 +118,7 @@ class ConnectIsolatedST extends AbstractST {
                 "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(storage.getClusterName()) + "\n");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), 1).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), 1).build());
 
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
@@ -161,7 +161,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getClusterName(), storage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(storage.getNamespaceName(), storage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -253,7 +253,7 @@ class ConnectIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaUser);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getClusterName(), storage.getTopicName()).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(storage.getNamespaceName(), storage.getClusterName(), 1)
             .editSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(storage.getClusterName()))
                 .withNewKafkaClientAuthenticationScramSha512()
@@ -313,7 +313,7 @@ class ConnectIsolatedST extends AbstractST {
         TestStorage storage = new TestStorage(extensionContext);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(storage.getNamespaceName(), storage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -363,7 +363,7 @@ class ConnectIsolatedST extends AbstractST {
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1)
             .editSpec()
                 .withResources(new ResourceRequirementsBuilder()
                     .addToLimits("memory", new Quantity("400M"))
@@ -396,7 +396,7 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Running kafkaConnectScaleUP {} in namespace", namespaceName);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1, false).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 1).build());
 
         String deploymentName = KafkaConnectResources.deploymentName(clusterName);
 
@@ -444,7 +444,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaUser);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getClusterName(), storage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(storage.getNamespaceName(), storage.getClusterName(), 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
@@ -519,7 +519,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaUser);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getClusterName(), storage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(storage.getNamespaceName(), storage.getClusterName(), 1)
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
@@ -600,7 +600,7 @@ class ConnectIsolatedST extends AbstractST {
         final int updatedFailureThreshold = 1;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 1)
             .editSpec()
                 .withNewTemplate()
                     .withNewConnectContainer()
@@ -674,7 +674,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 3).build());
         // Crate connect cluster with default connect image
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, storage.getNamespaceName(), storage.getClusterName(), 3)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(storage.getNamespaceName(), storage.getClusterName(), 3)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -756,7 +756,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, weirdUserName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -820,7 +820,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, weirdUserName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -883,7 +883,7 @@ class ConnectIsolatedST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 2, false).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 2).build());
 
         final String connectDeploymentName = KafkaConnectResources.deploymentName(clusterName);
         List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
@@ -912,7 +912,7 @@ class ConnectIsolatedST extends AbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 2, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 2)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -958,7 +958,7 @@ class ConnectIsolatedST extends AbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, namespaceName, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1075,7 +1075,7 @@ class ConnectIsolatedST extends AbstractST {
         kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).createOrReplace(dotedConfigMap);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -1178,7 +1178,7 @@ class ConnectIsolatedST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -1266,7 +1266,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, userName).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1)
                 .withNewSpec()
                     .withBootstrapServers(KafkaResources.plainBootstrapAddress(clusterName))
                     .withNewKafkaClientAuthenticationScramSha512()

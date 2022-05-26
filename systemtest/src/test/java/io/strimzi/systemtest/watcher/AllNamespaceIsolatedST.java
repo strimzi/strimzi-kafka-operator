@@ -102,7 +102,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, kafkaConnectName, SECOND_NAMESPACE, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(kafkaConnectName, SECOND_NAMESPACE, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

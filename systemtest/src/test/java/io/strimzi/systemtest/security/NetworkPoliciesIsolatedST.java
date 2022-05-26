@@ -321,7 +321,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()

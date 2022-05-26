@@ -130,7 +130,7 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, clusterName, clusterOperator.getDeploymentNamespace(), oauthClusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, clusterOperator.getDeploymentNamespace(), oauthClusterName, 1)
             .editSpec()
                 .withConfig(connectorConfig)
                 .addToConfig("key.converter.schemas.enable", false)

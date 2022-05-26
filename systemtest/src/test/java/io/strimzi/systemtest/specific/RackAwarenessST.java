@@ -107,7 +107,7 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 1, 1).build());
 
         LOGGER.info("Deploy KafkaConnect with an invalid topology key: {}", invalidTopologyKey);
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), 1)
                 .editSpec()
                     .withNewRack(invalidTopologyKey)
                 .endSpec()
