@@ -1,23 +1,23 @@
-- fromVersion: HEAD
-  toVersion: 0.28.0
-  fromExamples: HEAD
-  toExamples: strimzi-0.28.0
-  urlFrom: HEAD
-  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip
-  additionalTopics: 2
-  oldestKafka: 3.0.0
-  imagesAfterOperatorDowngrade:
+- fromVersion: HEAD  # String - From this version we will downgrade the CO
+  toVersion: 0.28.0  # String - From this version we will upgrade the CO to latest = "HEAD"
+  fromExamples: HEAD  # String - Folder name which contains examples to deploy. Downloaded from "urlFrom"
+  toExamples: strimzi-0.28.0  # String - Folder name which contains examples to upgrade / downgrade to. Downloaded from "urlTo"
+  urlFrom: HEAD  # String - url, from which examples are downloaded
+  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip # String - url, from which examples are downloaded during downgrade
+  additionalTopics: 2  # int - number of additional topics, which will be created
+  oldestKafka: 3.0.0  # String - version of Kafka, used in initial deployment of Kafka CR
+  imagesAfterOperations:  # Strings - images that corresponding pods should contain. They are checked after upgrade
     zookeeper: strimzi/kafka:0.28.0-kafka-3.1.0
     kafka: strimzi/kafka:0.28.0-kafka-3.1.0
     topicOperator: strimzi/operator:0.28.0
     userOperator: strimzi/operator:0.28.0
-  deployKafkaVersion: 3.1.0
+  deployKafkaVersion: 3.1.0  # String - version of Kafka, used in deployment
   client:
-    continuousClientsMessages: 500
+    continuousClientsMessages: 500  # int - message count sent during upgrade
   environmentInfo:
     maxK8sVersion: latest
-    status: stable
-    flakyEnvVariable: none
-    reason: Test is working on all environment used by QE.
-  featureGatesBefore: "+UseStrimziPodSets"
-  featureGatesAfter: "-UseStrimziPodSets"
+    status: stable  # String - info about stability of the testing environment
+    flakyEnvVariable: none  # String - name of the environmental variable which is flaky on current environment
+    reason: Test is working on all environment used by QE.  # String - reason why we skip / not skip the test case (information, not propagated to test itself)
+  featureGatesBefore: "+UseStrimziPodSets" # String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
+  featureGatesAfter: "-UseStrimziPodSets"  # String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO

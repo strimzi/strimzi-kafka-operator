@@ -4,9 +4,6 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.type.CollectionType;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -27,8 +24,9 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.VersionModificationData;
+import io.strimzi.systemtest.utils.UpgradeDowngradeData;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.systemtest.utils.UpgradeDowngradeDatalist;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -97,21 +95,8 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected File kafkaYaml;
 
-    public static List<VersionModificationData> getVersionModificationData(String filename) {
-        try {
-            ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-            CollectionType modificationDataListType = mapper.getTypeFactory().constructCollectionType(List.class, VersionModificationData.class);
-            List<VersionModificationData> versionModificationDataList = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/" + filename), modificationDataListType);
-
-            return versionModificationDataList;
-        } catch (Exception ex) {
-            LOGGER.error("Error while parsing ST data from YAML ", ex);
-        }
-        return null;
-    }
-
     protected static Stream<Arguments> loadYamlUpgradeData() {
-        List<VersionModificationData> upgradeDataList = getVersionModificationData(UPGRADE_YAML_FILE);
+        UpgradeDowngradeDatalist upgradeDataList = new UpgradeDowngradeDatalist(UPGRADE_YAML_FILE);
         List<Arguments> parameters = new LinkedList<>();
 
         List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
@@ -124,17 +109,12 @@ public class AbstractUpgradeST extends AbstractST {
                 put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             }};
 
-        upgradeDataList.forEach(upgradeData -> {
-            // Set latest upgrade parameters
-            upgradeData.setUrlTo("HEAD");
-            upgradeData.setToVersion("HEAD");
-            upgradeData.setToExamples("HEAD");
-
+        upgradeDataList.getData().forEach(upgradeData -> {
+            upgradeData.setProcedures(procedures);
             parameters.add(Arguments.of(
                     upgradeData.getFromVersion(), upgradeData.getToVersion(),
                     upgradeData.getFeatureGatesBefore(), upgradeData.getFeatureGatesAfter(),
-                    upgradeData,
-                    procedures
+                    upgradeData
             ));
         });
 
@@ -149,7 +129,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndLogFormatVersion(Map<String, String> procedures, VersionModificationData testParameters, ExtensionContext extensionContext) throws IOException {
+    protected void changeKafkaAndLogFormatVersion(UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws IOException {
         // Get Kafka configurations
         String operatorVersion = testParameters.getToVersion();
         String currentLogMessageFormat = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
@@ -157,7 +137,7 @@ public class AbstractUpgradeST extends AbstractST {
         // Get Kafka version
         String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
         kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
-        String kafkaVersionFromProcedure = procedures.get("kafkaVersion");
+        String kafkaVersionFromProcedure = testParameters.getProcedureKafkaVersion();
 
         // #######################################################################
         // #################    Update CRs to latest version   ###################
@@ -186,7 +166,7 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
 
 
-        if (!procedures.isEmpty() && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
+        if (!testParameters.getProcedures().isEmpty() && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
             if (!kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure) && extensionContext.getTestClass().get().getSimpleName().toLowerCase(Locale.ROOT).contains("upgrade")) {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
@@ -194,8 +174,8 @@ public class AbstractUpgradeST extends AbstractST {
                 kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
             }
 
-            String logMessageVersion = procedures.get("logMessageVersion");
-            String interBrokerProtocolVersion = procedures.get("interBrokerProtocolVersion");
+            String logMessageVersion = testParameters.getProcedureLogMessageVersion();
+            String interBrokerProtocolVersion = testParameters.getProcedureInterBrokerProtocolVersion();
 
             if (!logMessageVersion.isEmpty() || !interBrokerProtocolVersion.isEmpty()) {
                 if (!logMessageVersion.isEmpty()) {
@@ -227,10 +207,10 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected static Stream<Arguments> loadYamlDowngradeData() {
-        List<VersionModificationData>  versionModificationData = getVersionModificationData(DOWNGRADE_YAML_FILE);
+        UpgradeDowngradeDatalist upgradeDowngradeData = new UpgradeDowngradeDatalist(DOWNGRADE_YAML_FILE);
         List<Arguments> parameters = new LinkedList<>();
 
-        versionModificationData.forEach(downgradeData -> {
+        upgradeDowngradeData.getData().forEach(downgradeData -> {
             parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData));
         });
 
@@ -272,7 +252,7 @@ public class AbstractUpgradeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeClusterOperator(VersionModificationData testParameters, String namespace, ExtensionContext extensionContext) throws IOException {
+    protected void changeClusterOperator(UpgradeDowngradeData testParameters, String namespace, ExtensionContext extensionContext) throws IOException {
         File coDir;
         // Modify + apply installation files
         LOGGER.info("Update CO from {} to {}", testParameters.getFromVersion(), testParameters.getToVersion());
@@ -332,14 +312,14 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void checkAllImages(Map<String, String> images) {
-        if (images.isEmpty()) {
+    protected void checkAllImages(UpgradeDowngradeData modificationData) {
+        if (modificationData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
-        String zkImage = images.get("zookeeper");
-        String kafkaImage = images.get("kafka");
-        String tOImage = images.get("topicOperator");
-        String uOImage = images.get("userOperator");
+        String zkImage = modificationData.getZookeeperImage();
+        String kafkaImage = modificationData.getKafkaImage();
+        String tOImage = modificationData.getTopicOperatorImage();
+        String uOImage = modificationData.getUserOperatorImage();
 
         List<EnvVar> envVars = kubeClient().getDeployment(io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME)
             .getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
@@ -367,10 +347,9 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, VersionModificationData testParameters, String producerName, String consumerName,
-                                                     String continuousTopicName, String continuousConsumerGroup,
-                                                     String kafkaVersion, String namespace) throws IOException {
-        int continuousClientsMessageCount = (int) testParameters.getClient().get("continuousClientsMessages");
+    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, UpgradeDowngradeData testParameters, String producerName, String consumerName,
+                                                     String continuousTopicName, String continuousConsumerGroup, String namespace, String kafkaVersion) throws IOException {
+        int continuousClientsMessageCount = testParameters.getContinuousClientsMessages();
 
         LOGGER.info("Test upgrade of ClusterOperator from version {} to version {}", testParameters.getFromVersion(), testParameters.getToVersion());
         cluster.setNamespace(namespace);
@@ -491,8 +470,8 @@ public class AbstractUpgradeST extends AbstractST {
         logPodImages(clusterName);
     }
 
-    protected void verifyProcedure(VersionModificationData testParameters, String producerName, String consumerName, String namespace) {
-        int continuousClientsMessageCount = (int) testParameters.getClient().get("continuousClientsMessages");
+    protected void verifyProcedure(UpgradeDowngradeData testParameters, String producerName, String consumerName, String namespace) {
+        int continuousClientsMessageCount = testParameters.getContinuousClientsMessages();
 
         if (testParameters.getAdditionalTopics() != null) {
             // Check that topics weren't deleted/duplicated during upgrade procedures
@@ -527,15 +506,10 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected Map<String, String> getConversionToolDataFromUpgradeYAML() {
-        List<VersionModificationData> versionModificationData = getVersionModificationData(UPGRADE_YAML_FILE);
-        return versionModificationData.get(0).getConversionTool();
-    }
-
-    protected void convertCRDs(Map<String, String> conversionTool, String namespace) throws IOException {
-        String url = conversionTool.get("urlToConversionTool");
+    protected void convertCRDs(String urlToConversionTool, String toConversionTool, String namespace) throws IOException {
+        String url = urlToConversionTool;
         File dir = FileUtils.downloadAndUnzip(url);
-        String convertorPath = dir.getAbsolutePath() + "/" + conversionTool.get("toConversionTool") + "/bin/api-conversion.sh";
+        String convertorPath = dir.getAbsolutePath() + "/" + toConversionTool + "/bin/api-conversion.sh";
 
         Exec.exec("chmod", "+x", convertorPath);
 

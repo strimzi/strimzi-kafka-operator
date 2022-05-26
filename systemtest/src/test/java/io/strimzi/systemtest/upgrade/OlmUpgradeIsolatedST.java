@@ -17,7 +17,8 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.VersionModificationData;
+import io.strimzi.systemtest.utils.UpgradeDowngradeData;
+import io.strimzi.systemtest.utils.UpgradeDowngradeDatalist;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
@@ -66,8 +67,8 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testStrimziUpgrade(ExtensionContext extensionContext) throws IOException {
-        List<VersionModificationData> modificationDataList = getVersionModificationData(UPGRADE_YAML_FILE);
-        VersionModificationData latestUpgradeData = modificationDataList.get(modificationDataList.size() - 1);
+        UpgradeDowngradeDatalist upgradeDowngradeDatalist = new UpgradeDowngradeDatalist(UPGRADE_YAML_FILE);
+        UpgradeDowngradeData latestUpgradeData = upgradeDowngradeDatalist.getData(upgradeDowngradeDatalist.getDataSize() - 1);
 
         List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
@@ -80,15 +81,14 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
                 put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             }};
 
+        latestUpgradeData.setProcedures(procedures);
         latestUpgradeData.setToVersion(Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION);
-        latestUpgradeData.setToExamples("HEAD");
-        latestUpgradeData.setUrlTo("HEAD");
 
         // perform verification of to version
-        performUpgradeVerification(latestUpgradeData, procedures, extensionContext);
+        performUpgradeVerification(latestUpgradeData, extensionContext);
     }
 
-    private void performUpgradeVerification(VersionModificationData testParameters, Map<String, String> procedures, ExtensionContext extensionContext) throws IOException {
+    private void performUpgradeVerification(UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws IOException {
         LOGGER.info("Upgrade data: {}", testParameters.toString());
         final String fromVersion = testParameters.getFromVersion();
         final String toVersion = testParameters.getToVersion();
@@ -160,7 +160,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         // ======== Kafka upgrade starts ========
         logPodImages(clusterName);
-        changeKafkaAndLogFormatVersion(procedures, testParameters, extensionContext);
+        changeKafkaAndLogFormatVersion(testParameters, extensionContext);
         logPodImages(clusterName);
         // ======== Kafka upgrade ends ========
 

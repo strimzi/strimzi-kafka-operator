@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.VersionModificationData;
+import io.strimzi.systemtest.utils.UpgradeDowngradeData;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
@@ -38,7 +38,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
     @MethodSource("loadYamlDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testDowngradeStrimziVersion(String from, String to, VersionModificationData parameters, ExtensionContext extensionContext) throws Exception {
+    void testDowngradeStrimziVersion(String from, String to, UpgradeDowngradeData parameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvironmentInfo().get("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvironmentInfo().get("maxK8sVersion")));
 
@@ -47,7 +47,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(VersionModificationData testParameters, ExtensionContext extensionContext) throws IOException {
+    private void performDowngrade(UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
@@ -65,7 +65,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
-        checkAllImages(testParameters.getImagesAfterOperatorDowngrade());
+        checkAllImages(testParameters);
         // Verify upgrade
         verifyProcedure(testParameters, producerName, consumerName, clusterOperator.getDeploymentNamespace());
         // Check errors in CO log

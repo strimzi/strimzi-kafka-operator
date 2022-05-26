@@ -7,11 +7,13 @@ package io.strimzi.systemtest.utils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class VersionModificationData {
-    private static final Logger LOGGER = LogManager.getLogger(VersionModificationData.class);
-    private Integer additionalTopics;
+public class UpgradeDowngradeData {
+    private static final Logger LOGGER = LogManager.getLogger(UpgradeDowngradeData.class);
+    private int additionalTopics;
     private String fromVersion;
     private String fromExamples;
     private String urlFrom;
@@ -22,15 +24,15 @@ public class VersionModificationData {
     private String featureGatesBefore;
     private String featureGatesAfter;
     private Map<String, String> conversionTool;
-    private Map<String, String> imagesAfterKafkaUpgrade;
+    private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
+    private Map<String, String> procedures;
 
     // Downgrade specific variables
     private String toVersion;
     private String toExamples;
     private String urlTo;
-    private Map<String, String> imagesAfterOperatorDowngrade;
 
     public Integer getAdditionalTopics() {
         return additionalTopics;
@@ -76,16 +78,77 @@ public class VersionModificationData {
         return conversionTool;
     }
 
-    public Map<String, String> getImagesAfterKafkaUpgrade() {
-        return imagesAfterKafkaUpgrade;
+    public String getToConversionTool() {
+        return conversionTool.get("toConversionTool");
+    }
+
+    public String getUrlToConversionTool() {
+        return conversionTool.get("urlToConversionTool");
+    }
+
+    public Map<String, String> getImagesAfterOperations() {
+
+        return imagesAfterOperations;
+    }
+
+    public String getZookeeperImage() {
+        return imagesAfterOperations.get("zookeeper");
+    }
+
+    public String getKafkaImage() {
+        return imagesAfterOperations.get("kafka");
+    }
+
+    public String getTopicOperatorImage() {
+        return imagesAfterOperations.get("topicOperator");
+    }
+
+    public String getUserOperatorImage() {
+        return imagesAfterOperations.get("userOperator");
     }
 
     public Map<String, Object> getClient() {
         return client;
     }
 
+    public int getContinuousClientsMessages() {
+        return (int) client.get("continuousClientsMessages");
+    }
+
     public Map<String, String> getEnvironmentInfo() {
         return environmentInfo;
+    }
+
+    public String getEnvMaxK8sVersion() {
+        return environmentInfo.get("maxK8sVersion");
+    }
+
+    public String getEnvStatus() {
+        return environmentInfo.get("status");
+    }
+
+    public String getEnvFlakyVariable() {
+        return environmentInfo.get("flakyEnvVariable");
+    }
+
+    public String getEnvReason() {
+        return environmentInfo.get("reason");
+    }
+
+    public Map<String, String> getProcedures() {
+        return procedures;
+    }
+
+    public String getProcedureKafkaVersion() {
+        return procedures.get("kafkaVersion");
+    }
+
+    public String getProcedureLogMessageVersion() {
+        return procedures.get("logMessageVersion");
+    }
+
+    public String getProcedureInterBrokerProtocolVersion() {
+        return procedures.get("interBrokerProtocolVersion");
     }
 
     public String getToVersion() {
@@ -98,10 +161,6 @@ public class VersionModificationData {
 
     public String getUrlTo() {
         return urlTo;
-    }
-
-    public Map<String, String> getImagesAfterOperatorDowngrade() {
-        return imagesAfterOperatorDowngrade;
     }
 
     public void setAdditionalTopics(Integer additionalTopics) {
@@ -148,9 +207,6 @@ public class VersionModificationData {
         this.conversionTool = conversionTool;
     }
 
-    public void setImagesAfterKafkaUpgrade(Map<String, String> imagesAfterKafkaUpgrade) {
-        this.imagesAfterKafkaUpgrade = imagesAfterKafkaUpgrade;
-    }
 
     public void setClient(Map<String, Object> client) {
         this.client = client;
@@ -158,6 +214,10 @@ public class VersionModificationData {
 
     public void setEnvironmentInfo(Map<String, String> environmentInfo) {
         this.environmentInfo = environmentInfo;
+    }
+
+    public void setProcedures(Map<String, String> procedures) {
+        this.procedures = procedures;
     }
 
     public void setToVersion(String toVersion) {
@@ -172,13 +232,19 @@ public class VersionModificationData {
         this.urlTo = urlTo;
     }
 
-    public void setImagesAfterOperatorDowngrade(Map<String, String> imagesAfterOperatorDowngrade) {
-        this.imagesAfterOperatorDowngrade = imagesAfterOperatorDowngrade;
+    public String getDefaultKafkaVersionPerStrimzi() {
+        try {
+            List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + getFromVersion() + "/kafka-versions.yaml");
+            return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).collect(Collectors.toList()).get(0).version();
+        } catch (Exception e) {
+            LOGGER.error("Cannot parse Kafka versions from URL", e);
+        }
+        throw new RuntimeException("Failed to get Kafka version");
     }
-
     @Override
     public String toString() {
-        return "VersionModificationData{" +
+        return "\n" +
+                "VersionModificationData{" +
                 "additionalTopics=" + additionalTopics +
                 ", fromVersion='" + fromVersion + '\'' +
                 ", fromExamples='" + fromExamples + '\'' +
@@ -190,13 +256,12 @@ public class VersionModificationData {
                 ", featureGatesBefore='" + featureGatesBefore + '\'' +
                 ", featureGatesAfter='" + featureGatesAfter + '\'' +
                 ", conversionTool=" + conversionTool +
-                ", imagesAfterKafkaUpgrade=" + imagesAfterKafkaUpgrade +
+                ", imagesAfterOperations=" + imagesAfterOperations +
                 ", client=" + client +
                 ", environmentInfo=" + environmentInfo +
                 ", toVersion='" + toVersion + '\'' +
                 ", toExamples='" + toExamples + '\'' +
                 ", urlTo='" + urlTo + '\'' +
-                ", imagesAfterOperatorDowngrade=" + imagesAfterOperatorDowngrade +
-                '}';
+                "\n}";
     }
 }
