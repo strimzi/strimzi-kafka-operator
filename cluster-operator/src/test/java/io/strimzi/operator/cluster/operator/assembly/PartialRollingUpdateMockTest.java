@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
@@ -156,7 +155,7 @@ public class PartialRollingUpdateMockTest {
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
-                FeatureGates.NONE, 60_000L);
+                60_000L);
     }
 
     private void updateStatefulSetGeneration(String stsName, String annotation, String generation)  {

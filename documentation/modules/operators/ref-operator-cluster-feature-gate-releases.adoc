@@ -18,7 +18,7 @@ GA stage features are stable and should not change in the future.
 Alpha and beta stage features are removed if they do not prove to be useful.
 
 * The `ControlPlaneListener` feature gate moved to beta stage in Strimzi 0.27 and is expected to remain in the beta stage until Strimzi 0.31.
-* The `ServiceAccountPatching` feature gate moved to beta stage in Strimzi 0.27 and is expected to remain in the beta stage until Strimzi 0.30.
+* The `ServiceAccountPatching` feature gate moved to GA stage in Strimzi 0.30. It is now permanently enabled and cannot be disabled.
 * The `UseStrimziPodSets` feature gate is currently planned to move to the beta stage in Strimzi 0.30.
 * The `UseKRaft` feature gate is available for development only and does not currently have a planned release for moving to the beta phase.
 
@@ -41,7 +41,7 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 ¦`ServiceAccountPatching`
 ¦0.24
 ¦0.27
-¦ -
+¦0.30
 
 ¦`UseStrimziPodSets`
 ¦0.28
