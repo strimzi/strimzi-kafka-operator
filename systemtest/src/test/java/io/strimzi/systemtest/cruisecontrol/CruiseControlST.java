@@ -359,7 +359,7 @@ public class CruiseControlST extends AbstractST {
 
     @IsolatedTest
     void testCruiseControlDuringBrokerScaleUpAndDown(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
         final int initialReplicas = 3;
         final int scaleTo = 5;
 
