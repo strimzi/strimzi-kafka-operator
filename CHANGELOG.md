@@ -3,7 +3,8 @@
 ## 0.30.0
 
 * Remove Kafka 3.0.0 and 3.0.1
-* Add support for `simple` authorization and for the User Operator to the `UseKRaft` feature gate 
+* Add support for `simple` authorization and for the User Operator to the experimental `UseKRaft` feature gate
+  _(Note: Due to [KAFKA-13909](https://issues.apache.org/jira/browse/KAFKA-13909), broker restarts currently don't work when authorization is enabled.)_
 * Add network capacity overrides for Cruise Control capacity config
 * The `ServiceAccountPatching` feature gate moves to GA.
   It cannot be disabled anymore and will be permanently enabled.
