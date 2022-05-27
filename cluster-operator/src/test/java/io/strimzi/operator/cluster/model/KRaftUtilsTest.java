@@ -73,7 +73,7 @@ public class KRaftUtilsTest {
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForKRaft(spec));
 
-        assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Authentication of type 'scram-sha-512` is currently not supported when the UseKRaft feature gate is enabled, Authorization of type 'simple` is currently not supported when the UseKRaft feature gate is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled]"));
+        assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Authentication of type 'scram-sha-512` is currently not supported when the UseKRaft feature gate is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled]"));
     }
 
     @ParallelTest
@@ -81,6 +81,18 @@ public class KRaftUtilsTest {
         Set<String> errors = new HashSet<>(0);
         KRaftUtils.validateEntityOperatorSpec(errors, null);
 
+        assertThat(errors, is(Collections.emptySet()));
+    }
+
+    @ParallelTest
+    public void testEnabledOnlyUserOperator() {
+        Set<String> errors = new HashSet<>(0);
+        EntityOperatorSpec eo = new EntityOperatorSpecBuilder()
+                .withNewUserOperator()
+                .endUserOperator()
+                .build();
+
+        KRaftUtils.validateEntityOperatorSpec(errors, eo);
         assertThat(errors, is(Collections.emptySet()));
     }
 
@@ -96,20 +108,20 @@ public class KRaftUtilsTest {
 
         KRaftUtils.validateEntityOperatorSpec(errors, eo);
 
-        assertThat(errors, is(Set.of("Entity Operator is currently not supported when the UseKRaft feature gate is enabled")));
+        assertThat(errors, is(Set.of("Topic Operator is currently not supported when the UseKRaft feature gate is enabled")));
     }
 
     @ParallelTest
-    public void testKafkaAuthorization() {
+    public void testEnabledEntityOperatorOnlyTopicOperator() {
         Set<String> errors = new HashSet<>(0);
-        KafkaClusterSpec kcs = new KafkaClusterSpecBuilder()
-                .withNewKafkaAuthorizationSimple()
-                .endKafkaAuthorizationSimple()
+        EntityOperatorSpec eo = new EntityOperatorSpecBuilder()
+                .withNewTopicOperator()
+                .endTopicOperator()
                 .build();
 
-        KRaftUtils.validateKafkaSpec(errors, kcs);
+        KRaftUtils.validateEntityOperatorSpec(errors, eo);
 
-        assertThat(errors, is(Set.of("Authorization of type 'simple` is currently not supported when the UseKRaft feature gate is enabled")));
+        assertThat(errors, is(Set.of("Topic Operator is currently not supported when the UseKRaft feature gate is enabled")));
     }
 
     @ParallelTest

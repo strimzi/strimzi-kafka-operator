@@ -94,9 +94,8 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
 * Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
-* The Entity Operator (including the User Operator and Topic operator) is not supported.
-  The `spec.entityOperator` property *must be removed* from the `Kafka` custom resource.
-* `simple` authorization is not supported.
+* The Topic Operator is not supported.
+  The `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * SCRAM-SHA-512 authentication is not supported.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
@@ -104,7 +103,7 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * All Kafka nodes have both the `controller` and `broker` KRaft roles.
   Kafka clusters with separate `controller` and `broker` nodes are not supported.
 
-.Enabling the UseKRaft feature gate
+.Enabling the UseStrimziPodSets feature gate
 To enable the `UseKRaft` feature gate, specify `+UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 IMPORTANT: The `UseKRaft` feature gate depends on the `UseStrimziPodSets` feature gate.

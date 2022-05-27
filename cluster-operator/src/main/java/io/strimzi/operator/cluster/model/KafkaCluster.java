@@ -1933,7 +1933,7 @@ public class KafkaCluster extends AbstractModel {
                 .withZookeeper(cluster)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
                 .withListeners(cluster, namespace, listeners, controlPlaneListener)
-                .withAuthorization(cluster, authorization)
+                .withAuthorization(cluster, authorization, false)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                 .withUserConfiguration(configuration)
                 .build().trim();
@@ -2028,8 +2028,7 @@ public class KafkaCluster extends AbstractModel {
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
                             controlPlaneListener, true)
-                    // Not supported right now
-                    //.withAuthorization(cluster, authorization)
+                    .withAuthorization(cluster, authorization, true)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
                     .build().trim();
@@ -2046,7 +2045,7 @@ public class KafkaCluster extends AbstractModel {
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
                             controlPlaneListener, false)
-                    .withAuthorization(cluster, authorization)
+                    .withAuthorization(cluster, authorization, false)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
                     .build().trim();

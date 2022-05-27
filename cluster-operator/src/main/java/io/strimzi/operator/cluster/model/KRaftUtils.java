@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
-import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
@@ -40,14 +39,14 @@ public class KRaftUtils {
     }
 
     /**
-     * Checks whether the Entity Operator is configured or not
+     * Checks whether the Topic Operator is configured or not
      *
      * @param errors            Set with detected errors to which any new errors should be added
      * @param entityOperator    The Entity Operator spec which should be checked
      */
     /* test */ static void validateEntityOperatorSpec(Set<String> errors, EntityOperatorSpec entityOperator) {
-        if (entityOperator != null) {
-            errors.add("Entity Operator is currently not supported when the UseKRaft feature gate is enabled");
+        if (entityOperator != null && entityOperator.getTopicOperator() != null) {
+            errors.add("Topic Operator is currently not supported when the UseKRaft feature gate is enabled");
         }
     }
 
@@ -59,12 +58,6 @@ public class KRaftUtils {
      */
     /* test */ static void validateKafkaSpec(Set<String> errors, KafkaClusterSpec kafka) {
         if (kafka != null) {
-            // Check authorization
-            if (kafka.getAuthorization() != null
-                    && KafkaAuthorizationSimple.TYPE_SIMPLE.equals(kafka.getAuthorization().getType())) {
-                errors.add("Authorization of type 'simple` is currently not supported when the UseKRaft feature gate is enabled");
-            }
-
             // Check number of disks in JBOD storage
             if (kafka.getStorage() != null
                     && JbodStorage.TYPE_JBOD.equals(kafka.getStorage().getType())) {
