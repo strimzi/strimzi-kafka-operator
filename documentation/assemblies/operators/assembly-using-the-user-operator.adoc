@@ -24,7 +24,7 @@ For deployment instructions, see the following:
 [IMPORTANT]
 ====
 To deploy the standalone User Operator, you need to set environment variables to connect to a Kafka cluster.
-These environment variables are internal to Strimzi and do not need to be set if you are deploying the User Operator using the Cluster Operator.
+These environment variables do not need to be set if you are deploying the User Operator using the Cluster Operator as they will be set by the Cluster Operator.
 ====
 
 .Authenticating and authorizing access to Kafka
