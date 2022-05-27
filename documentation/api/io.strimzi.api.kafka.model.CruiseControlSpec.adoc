@@ -171,7 +171,8 @@ spec:
     # ...
 ----
 
-== Capacity overrides
+[id='property-cruise-control-capacity-overrides-{context}']
+=== Capacity overrides
 
 Brokers might be running on nodes with heterogeneous network resources.
 If that's the case, specify `overrides` that set the network capacity limits for each broker.
@@ -204,12 +205,10 @@ spec:
         outboundNetwork: 30000KiB/s
 ----
 
-.Additional resources
-For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference^].
+For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
-[[logging-configuration]]
-[discrete]
-== Logging configuration
+[id='property-cruise-control-logging-{context}']
+=== Logging configuration
 
 Cruise Control has its own configurable logger:
 
