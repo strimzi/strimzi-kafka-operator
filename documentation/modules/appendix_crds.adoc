@@ -1304,6 +1304,13 @@ Configuration of how TLS certificates are used within the cluster. This applies 
 
 Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
+xref:type-CruiseControlSpec-schema-{context}[Full list of `CruiseControlSpec` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.CruiseControlSpec.adoc[leveloffset=+1]
+
+[id='type-CruiseControlSpec-schema-{context}']
+==== `CruiseControlSpec` schema properties
+
 
 [options="header"]
 |====

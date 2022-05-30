@@ -16,7 +16,7 @@ Strimzi utilizes the REST API to support the following Cruise Control features:
 
 * Rebalancing a Kafka cluster based on an optimization proposal.
 
-Other Cruise Control features are not currently supported, including anomaly detection, notifications, write-your-own goals, and changing the topic replication factor.
+Other Cruise Control features are not currently supported, including self healing, notifications, write-your-own goals, and changing the topic replication factor.
 
 Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files].
 Example YAML configuration files for Cruise Control are provided in `examples/cruise-control/`.
@@ -29,9 +29,7 @@ include::../../modules/cruise-control/con-optimization-proposals.adoc[leveloffse
 
 include::../../modules/cruise-control/con-rebalance-performance.adoc[leveloffset=+1]
 
-include::../../modules/cruise-control/ref-cruise-control-configuration.adoc[leveloffset=+1]
-
-include::../../modules/cruise-control/proc-deploying-cruise-control.adoc[leveloffset=+1]
+include::../../modules/cruise-control/proc-configuring-deploying-cruise-control.adoc[leveloffset=+1]
 
 include::../../modules/cruise-control/proc-generating-optimization-proposals.adoc[leveloffset=+1]
 

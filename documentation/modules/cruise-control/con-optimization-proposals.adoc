@@ -7,7 +7,7 @@
 = Optimization proposals overview
 
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers.
-Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:capacity-configuration[capacity limits on broker resources].
+Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:property-cruise-control-broker-capacity-reference[capacity limits on broker resources].
 
 All optimization proposals are _estimates_ of the impact of a proposed rebalance.
 You can approve or reject a proposal.
