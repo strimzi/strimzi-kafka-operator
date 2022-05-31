@@ -3,8 +3,9 @@
 // assembly-upgrade.adoc
 
 [id='proc-upgrading-the-co-{context}']
-= Upgrading the Cluster Operator
+= Upgrading the Cluster Operator using installation files
 
+[role="_abstract"]
 This procedure describes how to upgrade a Cluster Operator deployment to use Strimzi {ProductVersion}.
 
 Follow this procedure if you deployed the Cluster Operator using the installation YAML files.

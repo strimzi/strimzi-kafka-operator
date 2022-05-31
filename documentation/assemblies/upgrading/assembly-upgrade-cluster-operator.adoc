@@ -1,0 +1,48 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='assembly-upgrade-cluster-operator-{context}']
+= Upgrading the Cluster Operator
+
+[role="_abstract"]
+How you upgrade the Cluster Operator depends on the way you deployed it.
+
+Using installation files:: If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator].
+
+Using the {OperatorHub}:: If you deployed Strimzi from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi operators to a new Strimzi version.
++
+Depending on your chosen upgrade strategy, after updating the channel, either:
++
+** An automatic upgrade is initiated
++
+** A manual upgrade will require approval before the installation begins
++
+For more information on using OperatorHub.io to upgrade Operators, see the {OLMOperatorDocs}.
+
+Using a Helm chart:: If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
++
+The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
+Install the new CRDs manually after upgrading the Cluster Operator.
+You can access the CRDs from the {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
+
+[id='con-upgrade-cluster-operator-unsupported-kafka-{context}']
+== Upgrading the Cluster Operator returns Kafka version error
+
+If you apply a multi-version upgrade to a Cluster Operator that currently uses an unsupported Kafka version, you get an _unsupported Kafka version_ error.
+This applies to upgrades through the {OperatorHub} as well as using installation files.
+
+If this error occurs, upgrade Kafka to a supported Kafka version.
+Change the `spec.kafka.version` in the `Kafka` resource to the supported version.
+
+You can use `kubectl` to check for error messages like this in the `status` of the `Kafka` resource.
+
+.Checking the Kafka status for errors
+[source,shell, subs=+quotes]
+----
+kubectl get kafka _<kafka_cluster_name>_ -n _<namespace>_ -o jsonpath='{.status.conditions}'
+----
+
+Replace _<kafka_cluster_name>_ with the name of your Kafka cluster and _<namespace>_ with the Kubernetes namespace where the pod is running.
+
+include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]
