@@ -125,7 +125,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist(UPGRADE_YAML_FILE);
+        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist();
         UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
 
         String continuousTopicName = "continuous-topic";
@@ -156,7 +156,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist(UPGRADE_YAML_FILE);
+        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist();
         UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
 
         String continuousTopicName = "continuous-topic";

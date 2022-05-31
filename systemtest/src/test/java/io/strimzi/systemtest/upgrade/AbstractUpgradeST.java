@@ -89,14 +89,10 @@ public class AbstractUpgradeST extends AbstractST {
     protected final int upgradeTopicCount = 40;
     // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
     protected final int expectedTopicCount = upgradeTopicCount + 3;
-
-    public static final String UPGRADE_YAML_FILE = "StrimziUpgradeST.yaml";
-    public static final String DOWNGRADE_YAML_FILE = "StrimziDowngradeST.yaml";
-
     protected File kafkaYaml;
 
     protected static Stream<Arguments> loadYamlUpgradeData() {
-        UpgradeDowngradeDatalist upgradeDataList = new UpgradeDowngradeDatalist(UPGRADE_YAML_FILE);
+        UpgradeDowngradeDatalist upgradeDataList = new UpgradeDowngradeDatalist();
         List<Arguments> parameters = new LinkedList<>();
 
         List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
@@ -109,7 +105,7 @@ public class AbstractUpgradeST extends AbstractST {
                 put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             }};
 
-        upgradeDataList.getData().forEach(upgradeData -> {
+        upgradeDataList.getUpgradeData().forEach(upgradeData -> {
             upgradeData.setProcedures(procedures);
             parameters.add(Arguments.of(
                     upgradeData.getFromVersion(), upgradeData.getToVersion(),
@@ -207,10 +203,10 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected static Stream<Arguments> loadYamlDowngradeData() {
-        UpgradeDowngradeDatalist upgradeDowngradeData = new UpgradeDowngradeDatalist(DOWNGRADE_YAML_FILE);
+        UpgradeDowngradeDatalist upgradeDowngradeData = new UpgradeDowngradeDatalist();
         List<Arguments> parameters = new LinkedList<>();
 
-        upgradeDowngradeData.getData().forEach(downgradeData -> {
+        upgradeDowngradeData.getDowngradeData().forEach(downgradeData -> {
             parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData));
         });
 

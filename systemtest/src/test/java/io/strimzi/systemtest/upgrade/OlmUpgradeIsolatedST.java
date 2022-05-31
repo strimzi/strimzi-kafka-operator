@@ -67,8 +67,8 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testStrimziUpgrade(ExtensionContext extensionContext) throws IOException {
-        UpgradeDowngradeDatalist upgradeDowngradeDatalist = new UpgradeDowngradeDatalist(UPGRADE_YAML_FILE);
-        UpgradeDowngradeData latestUpgradeData = upgradeDowngradeDatalist.getData(upgradeDowngradeDatalist.getDataSize() - 1);
+        UpgradeDowngradeDatalist upgradeDowngradeDatalist = new UpgradeDowngradeDatalist();
+        UpgradeDowngradeData latestUpgradeData = upgradeDowngradeDatalist.getUpgradeData(upgradeDowngradeDatalist.getUpgradeDataSize() - 1);
 
         List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);

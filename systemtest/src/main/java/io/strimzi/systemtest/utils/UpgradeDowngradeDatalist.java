@@ -19,51 +19,51 @@ import java.util.Map;
 public class UpgradeDowngradeDatalist {
     private static final Logger LOGGER = LogManager.getLogger(UpgradeDowngradeDatalist.class);
 
-    private List<UpgradeDowngradeData> data;
+    private List<UpgradeDowngradeData> upgradeData;
+    private List<UpgradeDowngradeData> downgradeData;
 
-    public UpgradeDowngradeDatalist(String fileName) {
+    public UpgradeDowngradeDatalist() {
         try {
             ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
             CollectionType modificationDataListType = mapper.getTypeFactory().constructCollectionType(List.class, UpgradeDowngradeData.class);
-            List<UpgradeDowngradeData> datalist = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/" + fileName), modificationDataListType);
+            List<UpgradeDowngradeData> upgradeDatalist = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/StrimziUpgradeST.yaml"), modificationDataListType);
 
-            if (fileName.contains("Upgrade")) {
-                datalist.forEach(upgradeData -> {
-                    // Set upgrade destination data to latest version which is HEAD
-                    upgradeData.setUrlTo("HEAD");
-                    upgradeData.setToVersion("HEAD");
-                    upgradeData.setToExamples("HEAD");
-                });
-            }
+            upgradeDatalist.forEach(upgradeData -> {
+                // Set upgrade data destination to latest version which is HEAD
+                upgradeData.setUrlTo("HEAD");
+                upgradeData.setToVersion("HEAD");
+                upgradeData.setToExamples("HEAD");
+            });
+            this.upgradeData = upgradeDatalist;
+            this.downgradeData = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/StrimziDowngradeST.yaml"), modificationDataListType);
 
-            this.data = datalist;
-
-        } catch (Exception ex) {
-            LOGGER.error("Error while parsing ST data from YAML ", ex);
+        } catch (Exception e) {
+            LOGGER.error("Error while parsing ST data from YAML ");
+            throw new RuntimeException(e);
         }
     }
 
-    public List<UpgradeDowngradeData> getData() {
-        return data;
+    public List<UpgradeDowngradeData> getUpgradeData() {
+        return upgradeData;
     }
 
-    public UpgradeDowngradeData getData(int index) {
-        return data.get(index);
+    public UpgradeDowngradeData getUpgradeData(int index) {
+        return upgradeData.get(index);
     }
 
-    public int getDataSize() {
-        return data.size();
+    public int getUpgradeDataSize() {
+        return upgradeData.size();
     }
 
-    public void setData(List<UpgradeDowngradeData> data) {
-        this.data = data;
+    public List<UpgradeDowngradeData> getDowngradeData() {
+        return downgradeData;
     }
 
     public UpgradeDowngradeData buildDataForUpgradeAcrossVersions() {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion latestKafkaSupported = sortedVersions.get(sortedVersions.size() - 1);
 
-        UpgradeDowngradeData acrossUpgradeData = getData(getDataSize() - 1);
+        UpgradeDowngradeData acrossUpgradeData = getUpgradeData(getUpgradeDataSize() - 1);
         UpgradeDowngradeData startingVersion = acrossUpgradeData;
 
         startingVersion.setDefaultKafka(acrossUpgradeData.getDefaultKafkaVersionPerStrimzi());
