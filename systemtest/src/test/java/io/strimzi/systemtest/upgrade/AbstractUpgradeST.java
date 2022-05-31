@@ -344,7 +344,7 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, UpgradeDowngradeData testParameters, String producerName, String consumerName,
-                                                     String continuousTopicName, String continuousConsumerGroup, String namespace, String kafkaVersion) throws IOException {
+                                                     String continuousTopicName, String continuousConsumerGroup, String kafkaVersion, String namespace) throws IOException {
         int continuousClientsMessageCount = testParameters.getContinuousClientsMessages();
 
         LOGGER.info("Test upgrade of ClusterOperator from version {} to version {}", testParameters.getFromVersion(), testParameters.getToVersion());
