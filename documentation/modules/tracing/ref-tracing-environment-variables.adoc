@@ -89,6 +89,7 @@ The value can also refer to an environment variable using the format `${envVarNa
 
 |===
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[]

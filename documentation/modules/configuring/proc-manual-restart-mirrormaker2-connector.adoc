@@ -26,7 +26,7 @@ kubectl get KafkaMirrorMaker2
 kubectl describe KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_
 ----
 
-. To restart the connector, annotate the `KafkaMirrorMaker2` resource in Kubernetes. 
+. To restart the connector, annotate the `KafkaMirrorMaker2` resource in Kubernetes.
 In this example, `kubectl annotate` restarts a connector named `+my-source->my-target.MirrorSourceConnector+`:
 +
 [source,shell,subs="+quotes"]
@@ -36,9 +36,10 @@ kubectl annotate KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_ "strimzi.io/restart
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
-The Kafka MirrorMaker 2.0 connector is restarted, as long as the annotation was detected by the reconciliation process. 
+The Kafka MirrorMaker 2.0 connector is restarted, as long as the annotation was detected by the reconciliation process.
 When the restart request is accepted, the annotation is removed from the `KafkaMirrorMaker2` custom resource.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:assembly-mirrormaker-{context}[Kafka MirrorMaker 2.0 cluster configuration].

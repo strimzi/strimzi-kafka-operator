@@ -69,5 +69,7 @@ spec:
     # ...
 ----
 
+[role="_additional-resources"]
 .Additional resources
+
  * For more information on the Kafka component metrics exposed using JMX, see the {kafkaDoc}.

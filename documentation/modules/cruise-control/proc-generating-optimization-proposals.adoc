@@ -223,6 +223,7 @@ This has no effect on the rebalance behavior, since the ratio between CPU utiliz
 
 xref:proc-approving-optimization-proposal-{context}[]
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:con-optimization-proposals-{context}[]

@@ -199,7 +199,7 @@ User-provided optimization goals must:
 
 To ignore the configured hard goals when generating an optimization proposal, add the `skipHardGoalCheck: true` property to the `KafkaRebalance` custom resource. See xref:proc-generating-optimization-proposals-{context}[].
 
-[role="_abstract"]
+[role="_additional-resources"]
 .Additional resources
 
 * xref:proc-configuring-deploying-cruise-control-{context}[Configuring and deploying Cruise Control with Kafka]
