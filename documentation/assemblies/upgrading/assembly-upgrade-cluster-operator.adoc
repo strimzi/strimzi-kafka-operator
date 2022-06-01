@@ -14,8 +14,14 @@ Using the OperatorHub.io:: If you deployed Strimzi from {OperatorHub}, use the O
 +
 Updating the channel starts one of the following types of upgrade, depending on your chosen upgrade strategy:
 +
-** An automatic upgrade is initiated
-** A manual upgrade that requires approval before installation begins
+--
+* An automatic upgrade is initiated
+* A manual upgrade that requires approval before installation begins
+--
++
+NOTE: If you subscribe to the _stable_ channel, you can get automatic updates without changing channels.
+However, enabling automatic updates is not recommended because of the potential for missing any pre-installation upgrade steps.
+Use automatic upgrades only on version-specific channels.
 +
 For more information on using OperatorHub.io to upgrade Operators, see the {OLMOperatorDocs}.
 
@@ -28,8 +34,8 @@ You can access the CRDs from the {ReleaseDownload} or find them in the `crd` sub
 [id='con-upgrade-cluster-operator-unsupported-kafka-{context}']
 == Upgrading the Cluster Operator returns Kafka version error
 
-If you apply a multi-version upgrade to a Cluster Operator that currently uses an unsupported Kafka version, you get an _unsupported Kafka version_ error.
-This applies to upgrades through the {OperatorHub} as well as using installation files.
+If you upgrade the Cluster Operator and get an _unsupported Kafka version_ error, your Kafka cluster deployment has an older Kafka version that is not supported by the new operator version.
+This error applies to all installation methods.
 
 If this error occurs, upgrade Kafka to a supported Kafka version.
 Change the `spec.kafka.version` in the `Kafka` resource to the supported version.
