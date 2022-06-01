@@ -125,7 +125,6 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  mode: full
   goals:
     - RackAwareGoal
     - ReplicaCapacityGoal
@@ -142,7 +141,6 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  mode: full
   goals:
     - RackAwareGoal
     - ReplicaCapacityGoal
@@ -159,7 +157,7 @@ kubectl apply -f _<kafka_rebalance_configuration_file>_
 The Cluster Operator requests the optimization proposal from Cruise Control.
 This might take a few minutes depending on the size of the Kafka cluster.
 
-. Check the status of the optimization proposal:
+. Wait for the status of the optimization proposal to change to `ProposalReady`:
 +
 [source,shell,subs="+quotes"]
 ----
