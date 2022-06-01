@@ -67,13 +67,13 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
     @MethodSource("io.strimzi.systemtest.utils.UpgradeDowngradeData#loadYamlUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws Exception {
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(testParameters.getEnvFlakyVariable()));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(testParameters.getEnvMaxK8sVersion()));
+    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws Exception {
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(upgradeData.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})",
                 fromVersion, toVersion, fgBefore, fgAfter);
-        performUpgrade(testParameters, extensionContext);
+        performUpgrade(upgradeData, extensionContext);
     }
 
     @Test
@@ -211,40 +211,40 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         return kafkaVersionNode.get(field).asText();
     }
 
-    private void performUpgrade(UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws IOException {
+    private void performUpgrade(UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, upgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", clusterOperator.getDeploymentNamespace());
 
         logPodImages(clusterName);
 
         // Upgrade CRDs and upgrade CO to 0.24
-        if (testParameters.getConversionTool() != null) {
-            convertCRDs(testParameters.getUrlToConversionTool(), testParameters.getToConversionTool(), clusterOperator.getDeploymentNamespace());
+        if (upgradeData.getConversionTool() != null) {
+            convertCRDs(upgradeData.getUrlToConversionTool(), upgradeData.getToConversionTool(), clusterOperator.getDeploymentNamespace());
         }
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
-        changeClusterOperator(testParameters, clusterOperator.getDeploymentNamespace(), extensionContext);
+        changeClusterOperator(upgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
 
-        if (TestKafkaVersion.supportedVersionsContainsVersion(testParameters.getDefaultKafkaVersionPerStrimzi())) {
+        if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeData.getDefaultKafkaVersionPerStrimzi())) {
             waitForKafkaClusterRollingUpdate();
         }
 
         logPodImages(clusterName);
         // Upgrade kafka
-        changeKafkaAndLogFormatVersion(testParameters, extensionContext);
+        changeKafkaAndLogFormatVersion(upgradeData, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(testParameters);
+        checkAllImages(upgradeData);
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
-        verifyProcedure(testParameters, producerName, consumerName, clusterOperator.getDeploymentNamespace());
+        verifyProcedure(upgradeData, producerName, consumerName, clusterOperator.getDeploymentNamespace());
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);

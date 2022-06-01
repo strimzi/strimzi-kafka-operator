@@ -88,10 +88,10 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         performUpgradeVerification(latestUpgradeData, extensionContext);
     }
 
-    private void performUpgradeVerification(UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws IOException {
-        LOGGER.info("Upgrade data: {}", testParameters.toString());
-        final String fromVersion = testParameters.getFromVersion();
-        final String toVersion = testParameters.getToVersion();
+    private void performUpgradeVerification(UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws IOException {
+        LOGGER.info("Upgrade data: {}", upgradeData.toString());
+        final String fromVersion = upgradeData.getFromVersion();
+        final String toVersion = upgradeData.getToVersion();
         LOGGER.info("====================================================================================");
         LOGGER.info("============== Verification version of CO: " + fromVersion + " => " + toVersion);
         LOGGER.info("====================================================================================");
@@ -102,11 +102,11 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         //   b) approve installation
         clusterOperator.runManualOlmInstallation(fromVersion, "strimzi-0.27.x");
 
-        String url = testParameters.getUrlFrom();
+        String url = upgradeData.getUrlFrom();
         File dir = FileUtils.downloadAndUnzip(url);
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
-        kafkaYaml = new File(dir, testParameters.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
+        kafkaYaml = new File(dir, upgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
         LOGGER.info("Deploy Kafka from: {}", kafkaYaml.getPath());
         KubeClusterResource.cmdKubeClient().create(kafkaYaml);
         // Wait for readiness
@@ -114,7 +114,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         clusterOperator.getOlmResource().getClosedMapInstallPlan().put(clusterOperator.getOlmResource().getNonUsedInstallPlan(), Boolean.TRUE);
 
-        this.kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, testParameters.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
+        this.kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
         this.kafkaUpgradeTopic.getMetadata().setName(topicUpgradeName);
         this.kafkaUpgradeTopic.getSpec().setReplicas(3);
         this.kafkaUpgradeTopic.getSpec().setAdditionalProperty("min.insync.replicas", 2);
@@ -160,7 +160,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         // ======== Kafka upgrade starts ========
         logPodImages(clusterName);
-        changeKafkaAndLogFormatVersion(testParameters, extensionContext);
+        changeKafkaAndLogFormatVersion(upgradeData, extensionContext);
         logPodImages(clusterName);
         // ======== Kafka upgrade ends ========
 

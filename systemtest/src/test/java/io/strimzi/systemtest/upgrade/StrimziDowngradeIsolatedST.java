@@ -47,7 +47,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws IOException {
+    private void performDowngrade(UpgradeDowngradeData downgradeData, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
@@ -56,18 +56,18 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, downgradeData.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(testParameters, clusterOperator.getDeploymentNamespace(), extensionContext);
+        changeClusterOperator(downgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
-        checkAllImages(testParameters);
+        checkAllImages(downgradeData);
         // Verify upgrade
-        verifyProcedure(testParameters, producerName, consumerName, clusterOperator.getDeploymentNamespace());
+        verifyProcedure(downgradeData, producerName, consumerName, clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
     }

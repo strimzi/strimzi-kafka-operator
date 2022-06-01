@@ -266,8 +266,8 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void checkAllImages(UpgradeDowngradeData modificationData) {
-        if (modificationData.getImagesAfterOperations().isEmpty()) {
+    protected void checkAllImages(UpgradeDowngradeData upgradeDowngradeData) {
+        if (upgradeDowngradeData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
 
@@ -277,10 +277,10 @@ public class AbstractUpgradeST extends AbstractST {
         boolean spsEnabled = envVars.stream()
             .anyMatch(envVar -> envVar.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV) && envVar.getValue() != null && envVar.getValue().contains("+UseStrimziPodSets"));
 
-        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.zookeeperStatefulSetName(clusterName), spsEnabled), modificationData.getZookeeperImage());
-        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.kafkaStatefulSetName(clusterName), spsEnabled), modificationData.getKafkaImage());
-        checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), modificationData.getTopicOperatorImage());
-        checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, modificationData.getUserOperatorImage());
+        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.zookeeperStatefulSetName(clusterName), spsEnabled), upgradeDowngradeData.getZookeeperImage());
+        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.kafkaStatefulSetName(clusterName), spsEnabled), upgradeDowngradeData.getKafkaImage());
+        checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), upgradeDowngradeData.getTopicOperatorImage());
+        checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, upgradeDowngradeData.getUserOperatorImage());
     }
 
     protected void checkContainerImages(Map<String, String> matchLabels, String image) {
