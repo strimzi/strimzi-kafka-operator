@@ -811,7 +811,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
             .editSpec()
                 .withNewTls()
                     .addNewTrustedCertificate()
@@ -1264,7 +1264,7 @@ class SecurityST extends AbstractST {
         configWithLowestVersionOfTls.put(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion1);
         configWithLowestVersionOfTls.put(SslConfigs.SSL_PROTOCOL_CONFIG, tlsVersion1);
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
             .editSpec()
                 .withConfig(configWithLowestVersionOfTls)
             .endSpec()
@@ -1330,7 +1330,7 @@ class SecurityST extends AbstractST {
 
         configWithCipherSuitesSha256.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha256);
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
             .editSpec()
                 .withConfig(configWithCipherSuitesSha256)
             .endSpec()

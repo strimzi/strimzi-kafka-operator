@@ -272,7 +272,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         final TestStorage ts = new TestStorage(extensionContext);
         String connectUrl = KafkaConnectResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ts.getNamespaceName(), 8083);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(extensionContext, ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(ts.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .withNamespace(ts.getNamespaceName())

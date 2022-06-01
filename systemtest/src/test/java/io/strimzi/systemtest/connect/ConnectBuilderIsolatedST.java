@@ -38,6 +38,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -167,7 +168,9 @@ class ConnectBuilderIsolatedST extends AbstractST {
                 .build())
             .build();
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(storage.getNamespaceName(), storage.getScraperName()).build());
+
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -231,7 +234,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         final String imageName = getImageNameForTestCase();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getNamespaceName(), storage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -297,7 +300,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(storage.getNamespaceName()).create(imageStream);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -343,7 +346,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getNamespaceName(), topicName).build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -362,7 +365,12 @@ class ConnectBuilderIsolatedST extends AbstractST {
                     .addToLoggers("connect.root.logger.level", "INFO")
                 .endInlineLogging()
             .endSpec()
-            .build());
+            .build();
+
+        resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(storage.getNamespaceName(), storage.getScraperName()).build());
+
+        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(storage.getClusterName()));
 
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", topicName);
@@ -424,7 +432,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getNamespaceName(), topicName).build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -484,7 +492,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(storage.getNamespaceName(), storage.getTopicName()).build(),
-            KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), Constants.INFRA_NAMESPACE, storage.getNamespaceName(), 1, false)
+            KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), Constants.INFRA_NAMESPACE, storage.getNamespaceName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
