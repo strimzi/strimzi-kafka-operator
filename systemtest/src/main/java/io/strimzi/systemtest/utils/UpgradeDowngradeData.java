@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 public class UpgradeDowngradeData {
     private static final Logger LOGGER = LogManager.getLogger(UpgradeDowngradeData.class);
     private int additionalTopics;
