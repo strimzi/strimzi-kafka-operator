@@ -36,11 +36,11 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeIsolatedST.class);
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
-    @MethodSource("loadYamlDowngradeData")
+    @MethodSource("io.strimzi.systemtest.utils.UpgradeDowngradeData#loadYamlDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
     void testDowngradeStrimziVersion(String from, String to, UpgradeDowngradeData parameters, ExtensionContext extensionContext) throws Exception {
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvironmentInfo().get("flakyEnvVariable")));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvironmentInfo().get("maxK8sVersion")));
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvFlakyVariable()));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
         performDowngrade(parameters, extensionContext);

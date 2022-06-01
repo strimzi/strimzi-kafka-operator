@@ -1,25 +1,50 @@
-- fromVersion: 0.22.1  # String - From this version we will upgrade the CO to latest = "HEAD"
-  fromExamples: strimzi-0.22.1  # String - Folder name which contains examples to deploy. Downloaded from "urlFrom"
-  oldestKafka: 2.6.0  # String - version of Kafka, used in initial deployment of Kafka CR
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.1/strimzi-0.22.1.zip  # String - url, from which examples are downloaded
+#  --- Structure ---
+#- fromVersion: String - From this version we will upgrade the CO to latest = "HEAD"
+#  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "urlFrom"
+#  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
+#  urlFrom: String - url, from which examples are downloaded
+#  conversionTool:
+#    urlToConversionTool:  String - url, from which conversion tool is downloaded
+#    toConversionTool: String - name of folder, which contains conversion tool
+#  additionalTopics: int - number of additional topics, which will be created
+#  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after upgrade
+#    zookeeper:
+#    kafka:
+#    topicOperator:
+#    userOperator:
+#  client:
+#    continuousClientsMessages: int - message count sent during upgrade
+#  environmentInfo:
+#    maxK8sVersion: String - maximal version of Kubernetes on which the upgrade test runs
+#    status: String - info about stability of the testing environment
+#    flakyEnvVariable:  String - name of the environmental variable which is flaky on current environment
+#    reason:  #  String - reason why we skip / not skip the test case
+#  featureGatesBefore: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
+#  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
+#  --- Structure ---
+
+- fromVersion: 0.22.1
+  fromExamples: strimzi-0.22.1
+  oldestKafka: 2.6.0
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.1/strimzi-0.22.1.zip
   conversionTool:
-    urlToConversionTool: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip  # String - url, from which conversion tool is downloaded
-    toConversionTool: api-conversion-0.22.0  # String - name of folder, which contains conversion tool
-  additionalTopics: 2  # int - number of additional topics, which will be created
-  imagesAfterOperations:  # Strings - images that corresponding pods should contain. They are checked after upgrade
+    urlToConversionTool: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip
+    toConversionTool: api-conversion-0.22.0
+  additionalTopics: 2
+  imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.2.0
     kafka: strimzi/kafka:latest-kafka-3.2.0
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
-    continuousClientsMessages: 500  # int - message count sent during upgrade
+    continuousClientsMessages: 500
   environmentInfo:
-    maxK8sVersion: "1.21"  # String - maximal version of Kubernetes on which the upgrade test runs
-    status: stable  # String - info about stability of the testing environment
-    flakyEnvVariable: none  # String - name of the environmental variable which is flaky on current environment
-    reason: Test is working on environment, where k8s server version is < 1.22  #  String - reason why we skip / not skip the test case
-  featureGatesBefore: ""  # String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on initial deploy of CO
-  featureGatesAfter: "-ControlPlaneListener"  # String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
+    maxK8sVersion: "1.21"
+    status: stable
+    flakyEnvVariable: none
+    reason: Test is working on environment, where k8s server version is < 1.22
+  featureGatesBefore: ""
+  featureGatesAfter: "-ControlPlaneListener"
 - fromVersion: 0.28.0
   fromExamples: strimzi-0.28.0
   oldestKafka: 3.0.0

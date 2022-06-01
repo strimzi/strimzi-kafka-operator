@@ -218,6 +218,11 @@
             <scope>provided</scope>
             <version>${sundrio.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

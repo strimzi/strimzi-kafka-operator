@@ -6,10 +6,15 @@ package io.strimzi.systemtest.utils;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.junit.jupiter.params.provider.Arguments;
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 
 public class UpgradeDowngradeData {
     private static final Logger LOGGER = LogManager.getLogger(UpgradeDowngradeData.class);
@@ -237,10 +242,48 @@ public class UpgradeDowngradeData {
             List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + getFromVersion() + "/kafka-versions.yaml");
             return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).collect(Collectors.toList()).get(0).version();
         } catch (Exception e) {
-            LOGGER.error("Cannot parse Kafka versions from URL", e);
+            LOGGER.error("Cannot parse Kafka versions from URL");
+            throw new RuntimeException(e);
         }
-        throw new RuntimeException("Failed to get Kafka version");
     }
+
+    protected static Stream<Arguments> loadYamlUpgradeData() {
+        UpgradeDowngradeDatalist upgradeDataList = new UpgradeDowngradeDatalist();
+        List<Arguments> parameters = new LinkedList<>();
+
+        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
+        TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
+
+        // Generate procedures for upgrade
+        Map<String, String> procedures = new HashMap<>() {{
+                put("kafkaVersion", testKafkaVersion.version());
+                put("logMessageVersion", testKafkaVersion.messageVersion());
+                put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
+            }};
+
+        upgradeDataList.getUpgradeData().forEach(upgradeData -> {
+            upgradeData.setProcedures(procedures);
+            parameters.add(Arguments.of(
+                    upgradeData.getFromVersion(), upgradeData.getToVersion(),
+                    upgradeData.getFeatureGatesBefore(), upgradeData.getFeatureGatesAfter(),
+                    upgradeData
+            ));
+        });
+
+        return parameters.stream();
+    }
+
+    protected static Stream<Arguments> loadYamlDowngradeData() {
+        UpgradeDowngradeDatalist upgradeDowngradeData = new UpgradeDowngradeDatalist();
+        List<Arguments> parameters = new LinkedList<>();
+
+        upgradeDowngradeData.getDowngradeData().forEach(downgradeData -> {
+            parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData));
+        });
+
+        return parameters.stream();
+    }
+
     @Override
     public String toString() {
         return "\n" +

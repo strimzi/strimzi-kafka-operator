@@ -19,6 +19,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.UpgradeDowngradeData;
+
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
@@ -65,7 +66,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
-    @MethodSource("loadYamlUpgradeData")
+    @MethodSource("io.strimzi.systemtest.utils.UpgradeDowngradeData#loadYamlUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
     void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, UpgradeDowngradeData testParameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(testParameters.getEnvFlakyVariable()));
