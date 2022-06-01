@@ -38,6 +38,7 @@ spec:
 [source,shell,subs=+quotes]
 kubectl apply -f _<kafka_configuration_file>_
 
+[role="_additional-resources"]
 .Additional resources
 
 Performing rolling updates:

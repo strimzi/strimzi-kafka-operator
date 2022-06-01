@@ -108,6 +108,7 @@ d| -
 Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance.
 Using lower values reduces the load but increases the amount of time taken, and vice versa.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:type-CruiseControlSpec-reference[].

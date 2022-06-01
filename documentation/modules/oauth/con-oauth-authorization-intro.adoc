@@ -21,6 +21,7 @@ ZooKeeper stores ACL rules that grant or deny access to resources based on _user
 However, OAuth 2.0 token-based authorization with  Keycloak offers far greater flexibility on how you wish to implement access control to Kafka brokers.
 In addition, you can configure your Kafka brokers to use OAuth 2.0 authorization and ACLs.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:assembly-oauth-authentication_str[Using OAuth 2.0 token-based authentication]

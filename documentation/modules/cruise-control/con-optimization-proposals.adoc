@@ -271,6 +271,7 @@ Use the `add-brokers` and `remove-brokers` modes only if you want to scale your 
 The procedure to run a rebalance is actually the same across the three different modes.
 The only difference is with specifying a mode through the `spec.mode` property and, if needed, listing brokers that have been added or will be removed through the `spec.brokers` property.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:con-optimization-goals-{context}[]
