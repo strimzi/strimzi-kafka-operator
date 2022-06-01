@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(INTERNAL_CLIENTS_USED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IsolatedSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+@KRaftNotSupported("OAuth is not supported by KRaft mode and is used in this test case")
 public class OauthAuthorizationIsolatedST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationIsolatedST.class);
 

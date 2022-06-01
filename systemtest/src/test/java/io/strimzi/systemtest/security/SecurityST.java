@@ -27,7 +27,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -170,7 +169,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaCerts")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
                 extensionContext,
@@ -187,7 +185,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaCerts")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -206,7 +203,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaCerts")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -349,7 +345,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaKeys")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -364,7 +359,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaKeys")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -379,7 +373,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaKeys")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -583,7 +576,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -625,7 +617,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCertRenewalInMaintenanceTimeWindow(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
         final String clusterSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
@@ -739,7 +730,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -909,7 +899,6 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1010,7 +999,6 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAclWithSuperUser(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1114,7 +1102,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -1528,7 +1515,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testClientsCACertRenew(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext, namespace);
 

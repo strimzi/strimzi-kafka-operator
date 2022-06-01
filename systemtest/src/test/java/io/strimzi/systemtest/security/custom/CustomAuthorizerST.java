@@ -36,7 +36,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 
 @Tag(REGRESSION)
 @ParallelSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+@KRaftNotSupported("Custom Authorizer is not supported by KRaft mode and is used in this test case")
 public class CustomAuthorizerST extends AbstractST {
     static final String CLUSTER_NAME = "custom-authorizer";
     static final String ADMIN = "sre-admin";

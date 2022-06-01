@@ -102,7 +102,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
 @IsolatedSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
 public class MetricsIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsIsolatedST.class);

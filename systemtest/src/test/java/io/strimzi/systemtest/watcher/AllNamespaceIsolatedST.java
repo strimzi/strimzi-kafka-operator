@@ -116,7 +116,6 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     }
 
     @IsolatedTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testUOWatchingOtherNamespace(ExtensionContext extensionContext) {
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
@@ -126,7 +125,6 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     }
 
     @IsolatedTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testUserInDifferentNamespace(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, SECOND_NAMESPACE);
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
