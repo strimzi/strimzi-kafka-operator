@@ -22,10 +22,15 @@ For a Kafka deployment, the following examples are provided:
 In this procedure, we use the examples for an _ephemeral_ and _persistent_ Kafka cluster deployment.
 
 Ephemeral cluster:: In general, an ephemeral (or temporary) Kafka cluster is suitable for development and testing purposes, not for production. This deployment uses `emptyDir` volumes for storing broker information (for ZooKeeper) and topics or partitions (for Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
-Persistent cluster:: A persistent Kafka cluster uses `PersistentVolumes` to store ZooKeeper and Kafka data. The `PersistentVolume` is
-acquired using a `PersistentVolumeClaim` to make it independent of the actual type of the `PersistentVolume`. For example, it can use
-ifdef::Kubernetes[HostPath volumes on Minikube or]
-Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
+Persistent cluster:: A persistent Kafka cluster uses persistent volumes to store ZooKeeper and Kafka data. A `PersistentVolume` is acquired using a `PersistentVolumeClaim` to make it independent of the actual type of the `PersistentVolume`. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
+When no `StorageClass` is specified, Kubernetes will try to use the default `StorageClass`.
++
+The following examples show some common types of persistent volumes:
++
+* If your Kubernetes cluster runs on Amazon AWS, Kubernetes can provision Amazon EBS volumes
+* If your Kubernetes cluster runs on Microsoft Azure, Kubernetes can provision Azure Disk Storage volumes
+* If your Kubernetes cluster runs on Google Cloud, Kubernetes can provision Persistent Disk volumes
+* If your Kubernetes cluster runs on bare metal, Kubernetes can provision local persistent volumes
 
 The example YAML files specify the latest supported Kafka version, and configuration for its supported log message format version and inter-broker protocol version.
 The `inter.broker.protocol.version` property for the Kafka `config` must be the version supported by the specified Kafka version (`spec.kafka.version`).
