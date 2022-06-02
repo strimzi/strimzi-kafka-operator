@@ -242,10 +242,7 @@ class LoggingChangeST extends AbstractST {
 
         Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> eoPods = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-        }
+        Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
         StUtils.checkLogForJSONFormat(clusterOperator.getDeploymentNamespace(), operatorSnapshot, ResourceManager.getCoDeploymentName());
@@ -253,8 +250,8 @@ class LoggingChangeST extends AbstractST {
         StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
         if (!Environment.isKRaftModeEnabled()) {
             StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
-            StUtils.checkLogForJSONFormat(namespaceName, eoPods, "user-operator");
         }
+        StUtils.checkLogForJSONFormat(namespaceName, eoPods, "user-operator");
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
