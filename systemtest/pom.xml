@@ -128,7 +128,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.opentest4j</groupId>
@@ -217,11 +217,6 @@
             <artifactId>sundr-codegen</artifactId>
             <scope>provided</scope>
             <version>${sundrio.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

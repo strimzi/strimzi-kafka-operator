@@ -17,8 +17,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.UpgradeDowngradeData;
-import io.strimzi.systemtest.utils.UpgradeDowngradeDatalist;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;

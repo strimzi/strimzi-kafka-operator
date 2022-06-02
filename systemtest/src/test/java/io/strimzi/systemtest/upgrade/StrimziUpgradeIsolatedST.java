@@ -14,11 +14,9 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.UpgradeDowngradeDatalist;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.UpgradeDowngradeData;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
@@ -34,8 +32,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.UPGRADE;
@@ -65,7 +61,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
-    @MethodSource("io.strimzi.systemtest.utils.UpgradeDowngradeData#loadYamlUpgradeData")
+    @MethodSource("io.strimzi.systemtest.upgrade.UpgradeDowngradeData#loadYamlUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
     void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
@@ -188,19 +184,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
-    }
-
-    private UpgradeDowngradeData getDataForStartUpgrade(List<UpgradeDowngradeData> upgradeYaml) throws IOException {
-        Collections.reverse(upgradeYaml);
-
-        UpgradeDowngradeData startingVersion = null;
-
-        for (UpgradeDowngradeData item : upgradeYaml) {
-            item.setDefaultKafka(item.getDefaultKafkaVersionPerStrimzi());
-            startingVersion = item;
-            break;
-        }
-        return startingVersion;
     }
 
     String getValueForLastKafkaVersionInFile(File kafkaVersions, String field) throws IOException {
