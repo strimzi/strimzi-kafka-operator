@@ -9,20 +9,19 @@ public class BrokerCapacity {
     // CC designates the id of this default broker entry as "-1".
     public static final int DEFAULT_BROKER_ID = -1;
     public static final String DEFAULT_BROKER_DOC = "This is the default capacity. Capacity unit used for disk is in MiB, cpu is in percentage, network throughput is in KiB.";
-
-    public static final String DEFAULT_CPU_UTILIZATION_CAPACITY = "100";  // as a percentage (0-100)
+    public static final String DEFAULT_CPU_CORE_CAPACITY = "1";  // as a percentage (0-100)
     public static final String DEFAULT_DISK_CAPACITY_IN_MIB = "100000";
     public static final String DEFAULT_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000";
     public static final String DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000";
 
     private int id;
-    private String cpu;
+    private CpuCapacity cpu;
     private DiskCapacity disk;
     private String inboundNetwork;
     private String outboundNetwork;
     private final String doc;
 
-    public BrokerCapacity(int brokerId, String cpu, DiskCapacity disk, String inboundNetwork, String outboundNetwork) {
+    public BrokerCapacity(int brokerId, CpuCapacity cpu, DiskCapacity disk, String inboundNetwork, String outboundNetwork) {
         this.id = brokerId;
         this.cpu = cpu;
         this.disk = disk;
@@ -35,7 +34,7 @@ public class BrokerCapacity {
         return id;
     }
 
-    public String getCpu() {
+    public CpuCapacity getCpu() {
         return cpu;
     }
 
@@ -59,7 +58,7 @@ public class BrokerCapacity {
         this.id = id;
     }
 
-    public void setCpu(String cpu) {
+    public void setCpu(CpuCapacity cpu) {
         this.cpu = cpu;
     }
 

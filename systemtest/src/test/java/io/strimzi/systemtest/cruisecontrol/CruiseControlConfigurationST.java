@@ -73,7 +73,9 @@ public class CruiseControlConfigurationST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         double disk = 100_000;
-        double cpu = 100;
+        String cpu = "1.222";
+        String cpuOverride0 = "2575m";
+        String cpuOverride1 = "3";
         String inboundNetwork = "10000KiB/s";
         String outboundNetwork = "10000KiB/s";
         String inboundNetworkOverride0 = "20000KiB/s";
@@ -91,13 +93,16 @@ public class CruiseControlConfigurationST extends AbstractST {
             .editOrNewSpec()
                 .editCruiseControl()
                     .withNewBrokerCapacity()
+                        .withCpuCores(cpu)
                         .withInboundNetwork(inboundNetwork)
                         .addNewOverride()
                             .withBrokers(overrideList0)
+                            .withCpuCores(cpuOverride0)
                             .withInboundNetwork(inboundNetworkOverride0)
                         .endOverride()
                         .addNewOverride()
                             .withBrokers(overrideList1)
+                            .withCpuCores(cpuOverride1)
                             .withInboundNetwork(inboundNetworkOverride1)
                             .withOutboundNetwork(outboundNetworkOverride1)
                         .endOverride()
@@ -124,8 +129,10 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         LOGGER.info("Verifying default cruise control capacities");
         JsonObject defaultBrokerCapacity = defaultBroker.getJsonObject("capacity");
+        String cpuCapacity = "{num.cores=" + cpu + "}";
+
         assertThat(Double.valueOf(defaultBrokerCapacity.getString("DISK")), is(disk));
-        assertThat(Double.valueOf(defaultBrokerCapacity.getString("CPU")), is(cpu));
+        assertThat(defaultBrokerCapacity.getString("CPU"), is(cpuCapacity));
         assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetwork)));
         assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
 
@@ -133,13 +140,17 @@ public class CruiseControlConfigurationST extends AbstractST {
         JsonObject broker0Capacity = brokerCapacities.getJsonObject(1).getJsonObject("capacity");
         JsonObject broker1Capacity = brokerCapacities.getJsonObject(2).getJsonObject("capacity");
         JsonObject broker2Capacity = brokerCapacities.getJsonObject(3).getJsonObject("capacity");
+        cpuCapacity = "{num.cores=2.575}";
 
+        assertThat(broker0Capacity.getString("CPU"), is(cpuCapacity));
         assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
         assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
 
+        assertThat(broker1Capacity.getString("CPU"), is(cpuCapacity));
         assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
         assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
 
+        assertThat(broker2Capacity.getString("CPU"), is(cpuCapacity));
         assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
         assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
     }

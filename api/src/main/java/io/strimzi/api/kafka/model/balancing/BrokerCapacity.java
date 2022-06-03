@@ -30,7 +30,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"disk", "cpuUtilization", "inboundNetwork", "outboundNetwork", "overrides"})
+@JsonPropertyOrder({"disk", "cpuUtilization", "cpuCores", "inboundNetwork", "outboundNetwork", "overrides"})
 @EqualsAndHashCode
 public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
@@ -38,6 +38,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     private String disk;
     private Integer cpuUtilization;
+    private String cpuCores;
     private String inboundNetwork;
     private String outboundNetwork;
     private List<BrokerCapacityOverride> overrides;
@@ -70,6 +71,19 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     public void setCpuUtilization(Integer cpuUtilization) {
         this.cpuUtilization = cpuUtilization;
+    }
+
+    @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Pattern("^\\d+m|\\d*(\\.\\d{0,3})*$")
+    @Description("Broker capacity for CPU resource in cores or milliCPU. " +
+            "For example, 1, 1.500, 1500m.")
+    public String getCpuCores() {
+        return cpuCores;
+    }
+
+    public void setCpuCores(String cpuCores) {
+        this.cpuCores = cpuCores;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

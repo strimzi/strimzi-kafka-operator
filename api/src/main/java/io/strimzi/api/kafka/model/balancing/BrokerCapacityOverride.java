@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -28,12 +29,13 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"brokers", "inboundNetwork", "outboundNetwork"})
+@JsonPropertyOrder({"brokers", "cpuCores", "inboundNetwork", "outboundNetwork"})
 @EqualsAndHashCode
 public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private List<Integer> brokers;
+    private String cpuCores;
     private String inboundNetwork;
     private String outboundNetwork;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -48,6 +50,19 @@ public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serial
 
     public void setBrokers(List<Integer> brokers) {
         this.brokers = brokers;
+    }
+
+    @Minimum(0)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Pattern("^\\d+m|\\d*(\\.\\d{0,3})*$")
+    @Description("Broker capacity for CPU resource in cores or milliCPU. " +
+            "For example, 1, 1.500, 1500m.")
+    public String getCpuCores() {
+        return cpuCores;
+    }
+
+    public void setCpuCores(String cpuCores) {
+        this.cpuCores = cpuCores;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
