@@ -22,6 +22,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PemTrustOptions;
 
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
@@ -435,6 +436,10 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             // Vert.x throws a NoStackTraceTimeoutException (inherits from TimeoutException) when the request times out
             // so we catch and raise a TimeoutException instead
             result.fail(new TimeoutException(t.getMessage()));
+        } else if (t instanceof NoRouteToHostException) {
+            // Netty throws a AnnotatedNoRouteToHostException when the request times out
+            //so we catch and raise a NoRouteToHostException instead
+            result.fail(new NoRouteToHostException(t.getMessage()));
         } else if (t instanceof ConnectException) {
             // Vert.x throws a AnnotatedConnectException (inherits from ConnectException) when the request times out
             // so we catch and raise a ConnectException instead
