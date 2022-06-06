@@ -13,10 +13,10 @@ public class CpuCapacity {
     private String cores;
 
     public CpuCapacity(String cores) {
-        this.cores = milliCputoCpu(Quantities.parseCpuAsMilliCpus(cores));
+        this.cores = milliCpuToCpu(Quantities.parseCpuAsMilliCpus(cores));
     }
 
-    public static String milliCputoCpu(int milliCPU) {
+    public static String milliCpuToCpu(int milliCPU) {
         return String.valueOf(milliCPU / 1000.0);
     }
 

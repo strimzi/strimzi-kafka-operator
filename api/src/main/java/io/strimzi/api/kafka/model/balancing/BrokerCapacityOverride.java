@@ -54,9 +54,10 @@ public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serial
 
     @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Pattern("^\\d+m|\\d*(\\.\\d{0,3})*$")
-    @Description("Broker capacity for CPU resource in cores or milliCPU. " +
-            "For example, 1, 1.500, 1500m.")
+    @Pattern("^[0-9]+m|[0-9]*(\\.[0-9]{0,3})*$")
+    @Description("Broker capacity for CPU resource in cores or millicores. " +
+            "For example, 1, 1.500, 1500m. " +
+            "For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu")
     public String getCpuCores() {
         return cpuCores;
     }

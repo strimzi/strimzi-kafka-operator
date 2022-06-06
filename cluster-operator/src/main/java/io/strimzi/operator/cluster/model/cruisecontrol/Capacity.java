@@ -169,7 +169,7 @@ public class Capacity {
 
         if (limit != null) {
             if (request == null || limit.intValue() == request.intValue()) {
-                return CpuCapacity.milliCputoCpu(limit);
+                return CpuCapacity.milliCpuToCpu(limit);
             }
         }
         return null;
@@ -178,7 +178,7 @@ public class Capacity {
     public static CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
         if (cpuBasedOnRequirements != null) {
             if ((override != null && override.getCpuCores() != null) || (bc != null && bc.getCpuCores() != null)) {
-                LOGGER.warnOp("Ignoring CPU capacity override settings since they are set automatically set to resource limits");
+                LOGGER.warnOp("Ignoring CPU capacity override settings since they are automatically set to resource limits");
             }
             return new CpuCapacity(cpuBasedOnRequirements);
         } else if (override != null && override.getCpuCores() != null) {
