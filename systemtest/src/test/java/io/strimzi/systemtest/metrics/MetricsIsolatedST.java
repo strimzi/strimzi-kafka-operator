@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
@@ -161,6 +162,7 @@ public class MetricsIsolatedST extends AbstractST {
 
     @ParallelTest
     @Tag(ACCEPTANCE)
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperQuorumSize() {
         Pattern quorumSize = Pattern.compile("zookeeper_quorumsize ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(quorumSize, zookeeperMetricsData);
@@ -168,6 +170,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperAliveConnections() {
         Pattern numAliveConnections = Pattern.compile("zookeeper_numaliveconnections ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
@@ -175,6 +178,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperWatchersCount() {
         Pattern watchersCount = Pattern.compile("zookeeper_inmemorydatatree_watchcount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(watchersCount, zookeeperMetricsData);
@@ -742,10 +746,12 @@ public class MetricsIsolatedST extends AbstractST {
 
         kafkaMetricsData = collector.collectMetricsFromPods();
 
-        zookeeperMetricsData = collector.toBuilder()
-            .withComponentType(ComponentType.Zookeeper)
-            .build()
-            .collectMetricsFromPods();
+        if (!Environment.isKRaftModeEnabled()) {
+            zookeeperMetricsData = collector.toBuilder()
+                    .withComponentType(ComponentType.Zookeeper)
+                    .build()
+                    .collectMetricsFromPods();
+        }
 
         kafkaConnectMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.KafkaConnect)

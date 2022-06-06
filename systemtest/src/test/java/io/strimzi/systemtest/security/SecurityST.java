@@ -277,9 +277,11 @@ class SecurityST extends AbstractST {
             kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
         }
 
-        if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart ...");
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            if (zkShouldRoll) {
+                LOGGER.info("Wait for zk to rolling restart ...");
+                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+            }
         }
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart ...");
@@ -326,8 +328,10 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        if (!zkShouldRoll) {
-            assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+        if (!Environment.isKRaftModeEnabled()) {
+            if (!zkShouldRoll) {
+                assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+            }
         }
         if (!kafkaShouldRoll) {
             assertThat("Kafka pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector()), is(kafkaPods));
@@ -383,7 +387,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
                                             int expectedRolls,
                                             boolean zkShouldRoll,
@@ -450,11 +454,13 @@ class SecurityST extends AbstractST {
         }
 
         for (int i = 1; i <= expectedRolls; i++) {
-            if (zkShouldRoll) {
-                LOGGER.info("Wait for zk to rolling restart ({})...", i);
-                zkPods = i < expectedRolls ?
-                        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods) :
-                        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+            if (!Environment.isKRaftModeEnabled()) {
+                if (zkShouldRoll) {
+                    LOGGER.info("Wait for zk to rolling restart ({})...", i);
+                    zkPods = i < expectedRolls ?
+                            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods) :
+                            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+                }
             }
 
             if (kafkaShouldRoll) {
@@ -516,8 +522,10 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        if (!zkShouldRoll) {
-            assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+        if (!Environment.isKRaftModeEnabled()) {
+            if (!zkShouldRoll) {
+                assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+            }
         }
 
         if (!kafkaShouldRoll) {
@@ -1550,7 +1558,9 @@ class SecurityST extends AbstractST {
         // On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
         // `Kafka pods`.
         // a) ZooKeeper must not roll
-        RollingUpdateUtils.waitForNoRollingUpdate(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitForNoRollingUpdate(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods);
+        }
 
         // b) Kafka has to roll
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);

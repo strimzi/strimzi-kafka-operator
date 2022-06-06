@@ -183,7 +183,7 @@ class KafkaST extends AbstractST {
         final int updatedPeriodSeconds = 5;
         final int updatedFailureThreshold = 1;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewReadinessProbe()
@@ -286,7 +286,13 @@ class KafkaST extends AbstractST {
                     .endTlsSidecar()
                 .endEntityOperator()
                 .endSpec()
-            .build());
+            .build();
+
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().getEntityOperator().setTopicOperator(null);
+        }
+
+        resourceManager.createResource(extensionContext, kafka);
 
         final Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         final Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
@@ -687,29 +693,26 @@ class KafkaST extends AbstractST {
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        String eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
-                .get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(null), namespaceName);
 
-        //Waiting when EO pod will be recreated without UO
-        PodUtils.deletePodWithWait(namespaceName, eoPodName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
+        if (!Environment.isKRaftModeEnabled()) {
+            //Waiting when EO pod will be recreated without UO
+            DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+            PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
 
-        //Checking that UO was removed
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), not(containsString("user-operator")));
+            //Checking that UO was removed
+            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
+                pod.getSpec().getContainers().forEach(container -> {
+                    assertThat(container.getName(), not(containsString("user-operator")));
+                });
             });
-        });
-
-        eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
-                .get(0).getMetadata().getName();
+        } else {
+            DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
+        }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), namespaceName);
         //Waiting when EO pod will be recreated with UO
-        PodUtils.deletePodWithWait(namespaceName, eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Checking that UO was created
@@ -1596,7 +1599,7 @@ class KafkaST extends AbstractST {
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1643,7 +1646,11 @@ class KafkaST extends AbstractST {
                         .endTemplate()
                     .endCruiseControl()
                 .endSpec()
-                .build());
+                .build();
+
+        kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+
+        resourceManager.createResource(extensionContext, kafka);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
