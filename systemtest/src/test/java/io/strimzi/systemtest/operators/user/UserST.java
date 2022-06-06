@@ -213,6 +213,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TODO - debug")
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(namespace, userClusterName, "encrypted-arnost").build();
 
@@ -220,6 +221,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TODO - debug")
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(namespace, userClusterName, kafkaUserName).build();
