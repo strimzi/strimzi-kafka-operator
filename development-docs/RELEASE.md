@@ -62,8 +62,8 @@ The release process should normally look like this:
 
 13. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
 14. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
-15. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziUpgradeST.json` file for the upgrade tests
-16. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziDowngradeST.json` file and remove the old one for the downgrade tests
+15. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziUpgradeST.yaml` file for the upgrade tests
+16. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/StrimziDowngradeST.yaml` file and remove the old one for the downgrade tests
 
 ## Updating Kafka Bridge version
 

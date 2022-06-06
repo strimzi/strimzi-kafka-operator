@@ -54,7 +54,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeIsolatedST.class);
 
-    // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
+    // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.yaml
     // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
     private final String strimziReleaseWithOlderKafkaVersion = "0.23.0";
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
