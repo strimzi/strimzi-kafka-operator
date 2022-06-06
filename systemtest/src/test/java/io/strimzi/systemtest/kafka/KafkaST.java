@@ -290,6 +290,7 @@ class KafkaST extends AbstractST {
 
         if (Environment.isKRaftModeEnabled()) {
             kafka.getSpec().getEntityOperator().setTopicOperator(null);
+            kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
         }
 
         resourceManager.createResource(extensionContext, kafka);

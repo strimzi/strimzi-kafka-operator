@@ -140,6 +140,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(topicPartitions, kafkaMetricsData);
@@ -262,7 +263,9 @@ public class MetricsIsolatedST extends AbstractST {
                     assertThat("Value from collected metric should be non-empty", !value.isEmpty());
                     assertThat(value, CoreMatchers.containsString("kafka_consumergroup_current_offset"));
                     assertThat(value, CoreMatchers.containsString("kafka_consumergroup_lag"));
-                    assertThat(value, CoreMatchers.containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
+                    if (!Environment.isKRaftModeEnabled()) {
+                        assertThat(value, CoreMatchers.containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
+                    }
                 });
 
                 return true;

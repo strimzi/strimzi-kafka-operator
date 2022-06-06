@@ -1150,7 +1150,7 @@ class SecurityST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
-                .getZookeeper()
+                .getKafka()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
@@ -1163,10 +1163,10 @@ class SecurityST extends AbstractST {
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()))
+                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()))
                     .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
                 if (pendingPods.isEmpty()) {
-                    LOGGER.info("No pods of {} are in desired state", KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+                    LOGGER.info("No pods of {} are in desired state", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
                     return false;
                 } else {
                     LOGGER.info("Pod in 'Pending' state: {}", pendingPods.get(0).getMetadata().getName());
@@ -1184,7 +1184,7 @@ class SecurityST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
-                .getZookeeper()
+                .getKafka()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("200m"))
                     .build());
@@ -1192,7 +1192,9 @@ class SecurityST extends AbstractST {
 
         // Wait until the certificates have been replaced
         SecretUtils.waitForCertToChange(testStorage.getNamespaceName(), clusterCaCert, KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1, eoPods);
 
