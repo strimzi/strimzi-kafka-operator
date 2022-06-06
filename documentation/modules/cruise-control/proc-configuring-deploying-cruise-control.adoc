@@ -176,4 +176,4 @@ After configuring and deploying Cruise Control, you can xref:proc-generating-opt
 [role="_additional-resources"]
 .Additional resources
 * xref:con-optimization-goals-{context}[Optimization goals overview]
-* xref:type-CruiseControlSpec-reference[`CruiseControlSpec` `schema reference]
+* xref:type-CruiseControlSpec-reference[`CruiseControlSpec` schema reference]
