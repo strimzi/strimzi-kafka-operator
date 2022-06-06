@@ -94,7 +94,7 @@ If you want to rebalance a Kafka cluster before scaling down, specify the `remov
 In this mode, replicas are moved off the brokers that are going to be removed.
 You need to specify the brokers that are being removed as a list.
 
-.Example of rebalancing to run before a scale down by using the `remove-brokers` mode
+.Example configuration specifying `remove-brokers` mode
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
