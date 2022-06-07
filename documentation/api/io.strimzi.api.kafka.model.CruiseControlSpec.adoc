@@ -164,7 +164,7 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      cpuCores: 2
+      cpuCores: "2"
       inboundNetwork: 10000KiB/s
       outboundNetwork: 10000KiB/s
     # ...
@@ -194,12 +194,12 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      cpuCores: 1
+      cpuCores: "1"
       inboundNetwork: 10000KiB/s
       outboundNetwork: 10000KiB/s
       overrides:
       - brokers: [0]
-        cpuCores: 2.755
+        cpuCores: "2.755"
         inboundNetwork: 20000KiB/s
         outboundNetwork: 20000KiB/s
       - brokers: [1, 2]

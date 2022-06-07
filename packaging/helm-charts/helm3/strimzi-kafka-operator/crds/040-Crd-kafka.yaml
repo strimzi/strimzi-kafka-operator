@@ -4650,7 +4650,7 @@ spec:
                         cpuCores:
                           type: string
                           minimum: 0
-                          pattern: "^\\d+m|\\d*(\\.\\d{0,3})*$"
+                          pattern: "^[0-9]+(([.][0-9]{0,3})|[m]?)$"
                           description: "Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu."
                         inboundNetwork:
                           type: string
@@ -4673,7 +4673,7 @@ spec:
                               cpuCores:
                                 type: string
                                 minimum: 0
-                                pattern: "^[0-9]+m|[0-9]*(\\.[0-9]{0,3})*$"
+                                pattern: "^[0-9]+(([.][0-9]{0,3})|[m]?)$"
                                 description: "Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu."
                               inboundNetwork:
                                 type: string

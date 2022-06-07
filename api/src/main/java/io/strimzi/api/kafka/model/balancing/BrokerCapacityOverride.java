@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
@@ -52,9 +51,8 @@ public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serial
         this.brokers = brokers;
     }
 
-    @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Pattern("^[0-9]+m|[0-9]*(\\.[0-9]{0,3})*$")
+    @Pattern("^[0-9]+([.][0-9]{0,3}|[m]?)$")
     @Description("Broker capacity for CPU resource in cores or millicores. " +
             "For example, 1, 1.500, 1500m. " +
             "For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu")

@@ -73,9 +73,8 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
         this.cpuUtilization = cpuUtilization;
     }
 
-    @Minimum(0)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Pattern("^\\d+m|\\d*(\\.\\d{0,3})*$")
+    @Pattern("^[0-9]+([.][0-9]{0,3}|[m]?)$")
     @Description("Broker capacity for CPU resource in cores or millicores. " +
             "For example, 1, 1.500, 1500m. " +
             "For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu")
