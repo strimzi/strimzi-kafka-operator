@@ -4,12 +4,6 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.KafkaUserList;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
@@ -18,14 +12,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 public class KafkaUserTemplates {
 
     private KafkaUserTemplates() {}
-
-    public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {
-        return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaClient() {
-        return Crds.kafkaOperation(ResourceManager.kubeClient().getClient());
-    }
 
     public static KafkaUserBuilder tlsUser(String namespaceName, String clusterName, String name) {
         return defaultUser(namespaceName, clusterName, name)
@@ -71,11 +57,6 @@ public class KafkaUserTemplates {
 
     public static KafkaUserBuilder defaultUser(String clusterName, String name) {
         return defaultUser(ResourceManager.kubeClient().getNamespace(), clusterName, name);
-    }
-
-    public static KafkaUser kafkaUserWithoutWait(KafkaUser user) {
-        kafkaUserClient().inNamespace(ResourceManager.kubeClient().getNamespace()).createOrReplace(user);
-        return user;
     }
 
     public static KafkaUserBuilder userWithQuotas(KafkaUser user, Integer prodRate, Integer consRate, Integer requestPerc, Double mutRate) {

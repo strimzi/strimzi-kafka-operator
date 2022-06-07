@@ -266,7 +266,7 @@ class LogSettingST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectClusterName = clusterName + "-connect";
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, namespace, LOG_SETTING_CLUSTER_NAME, 1, true)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(connectClusterName, namespace, LOG_SETTING_CLUSTER_NAME, 1)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()

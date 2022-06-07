@@ -63,6 +63,7 @@ $ kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
 
 . Use the Kafka Connect REST API or the KafkaConnector custom resources to use the connector plugins you added.
 
+[role="_additional-resources"]
 .Additional resources
 
 See the _Using Strimzi_ guide for more information on:

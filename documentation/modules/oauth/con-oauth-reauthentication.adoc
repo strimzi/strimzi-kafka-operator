@@ -5,18 +5,18 @@
 [id='{context}']
 = Session re-authentication for Kafka brokers
 
-You can configure `oauth` listeners to use Kafka _session re-authentication_ for OAuth 2.0 sessions between Kafka clients and Kafka brokers. 
-This mechanism enforces the expiry of an authenticated session between the client and the broker after a defined period of time. 
+You can configure `oauth` listeners to use Kafka _session re-authentication_ for OAuth 2.0 sessions between Kafka clients and Kafka brokers.
+This mechanism enforces the expiry of an authenticated session between the client and the broker after a defined period of time.
 When a session expires, the client immediately starts a new session by reusing the existing connection rather than dropping it.
 
-Session re-authentication is disabled by default. 
-To enable it, you set a time value for `maxSecondsWithoutReauthentication` in the `oauth` listener configuration. 
-The same property is used to configure session re-authentication for OAUTHBEARER and PLAIN authentication. 
+Session re-authentication is disabled by default.
+To enable it, you set a time value for `maxSecondsWithoutReauthentication` in the `oauth` listener configuration.
+The same property is used to configure session re-authentication for OAUTHBEARER and PLAIN authentication.
 For an example configuration, see xref:proc-oauth-authentication-broker-config-{context}[].
 
-Session re-authentication must be supported by the Kafka client libraries used by the client. 
+Session re-authentication must be supported by the Kafka client libraries used by the client.
 
-Session re-authentication can be used with _fast local JWT_ or _introspection endpoint_ token validation. 
+Session re-authentication can be used with _fast local JWT_ or _introspection endpoint_ token validation.
 
 .Client re-authentication
 
@@ -26,8 +26,8 @@ If token validation is successful, a new client session is started using the exi
 If the client fails to re-authenticate, the broker will close the connection if further attempts are made to send or receive messages.
 Java clients that use Kafka client library 2.2 or later automatically re-authenticate if the re-authentication mechanism is enabled on the broker.
 
-Session re-authentication also applies to refresh tokens, if used. 
-When the session expires, the client refreshes the access token by using its refresh token. 
+Session re-authentication also applies to refresh tokens, if used.
+When the session expires, the client refreshes the access token by using its refresh token.
 The client then uses the new access token to re-authenticate to the existing session.
 
 .Session expiry for OAUTHBEARER and PLAIN
@@ -38,19 +38,20 @@ For OAUTHBEARER and PLAIN, using the client ID and secret method:
 
 * The broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`.
 
-* The session will expire earlier if the access token expires before the configured time. 
+* The session will expire earlier if the access token expires before the configured time.
 
 For PLAIN using the long-lived access token method:
 
-* The broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`. 
+* The broker's authenticated session will expire at the configured `maxSecondsWithoutReauthentication`.
 
-* Re-authentication will fail if the access token expires before the configured time. 
+* Re-authentication will fail if the access token expires before the configured time.
 Although session re-authentication is attempted, PLAIN has no mechanism for refreshing tokens.
 
-If `maxSecondsWithoutReauthentication` is _not_ configured, OAUTHBEARER and PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate. 
-Authenticated sessions do not end with access token expiry. 
+If `maxSecondsWithoutReauthentication` is _not_ configured, OAUTHBEARER and PLAIN clients can remain connected to brokers indefinitely, without needing to re-authenticate.
+Authenticated sessions do not end with access token expiry.
 However, this can be considered when configuring authorization, for example, by using `keycloak` authorization or installing a custom authorizer.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:con-oauth-authentication-broker-{context}[]

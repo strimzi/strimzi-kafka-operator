@@ -211,7 +211,7 @@ public class CruiseControlST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName, errMessage, Duration.ofMinutes(6).toMillis());
 
-        KafkaStatus kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+        KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
         assertThat(kafkaStatus.getConditions().stream().filter(c -> "InvalidResourceException".equals(c.getReason())).findFirst().orElse(null), is(notNullValue()));
 
@@ -219,7 +219,7 @@ public class CruiseControlST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().getKafka().setReplicas(3), namespaceName);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        kafkaStatus = KafkaTemplates.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+        kafkaStatus = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         assertThat(kafkaStatus.getConditions().get(0).getMessage(), is(not(errMessage)));
     }
 
@@ -271,7 +271,7 @@ public class CruiseControlST extends AbstractST {
         String ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in pod configuration file.");
-        Map<String, Object> actualStrategies = KafkaTemplates.kafkaClient().inNamespace(namespaceName)
+        Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(namespaceName)
             .withName(clusterName).get().getSpec().getCruiseControl().getConfig();
         assertThat(actualStrategies, anEmptyMap());
 

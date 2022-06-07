@@ -58,6 +58,7 @@ kubectl apply -f _<kafka_configuration_file>_
 
 . Create new topics or reassign existing partitions to the new disks.
 
+[role="_additional-resources"]
 .Additional resources
 
 For more information about reassigning topics, see xref:con-partition-reassignment-{context}[].

@@ -69,12 +69,13 @@ m¦loadbalancer
 You can use a matching wildcard name.
 
 m¦NodePort
-¦Addresses of all Kubernetes worker nodes that the Kafka broker pods might be scheduled to. 
+¦Addresses of all Kubernetes worker nodes that the Kafka broker pods might be scheduled to.
 
 You can use a matching wildcard name.
 
 |===
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:proc-installing-certs-per-listener-{context}[]

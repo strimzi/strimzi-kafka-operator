@@ -49,5 +49,6 @@ spec:
   # ...
 ----
 
+[role="_additional-resources"]
 .Additional resources
 * {external-cors-link}
