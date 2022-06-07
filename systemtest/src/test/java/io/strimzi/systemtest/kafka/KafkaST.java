@@ -330,14 +330,15 @@ class KafkaST extends AbstractST {
             checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", initialDelaySeconds, timeoutSeconds,
                     periodSeconds, successThreshold, failureThreshold);
             checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarGeneral);
+
+            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                    periodSeconds, successThreshold, failureThreshold);
+            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarGeneral);
         }
 
         checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarGeneral);
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarGeneral);
 
         LOGGER.info("Updating configuration of Kafka cluster");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
@@ -433,13 +434,15 @@ class KafkaST extends AbstractST {
             checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                     updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
             checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarUpdated);
-            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarUpdated);
+
             checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                     updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
             checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarUpdated);
         }
+
+        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarUpdated);
     }
 
     @ParallelNamespaceTest

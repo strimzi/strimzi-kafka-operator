@@ -948,6 +948,12 @@ class SecurityST extends AbstractST {
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
                     .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(topicName)
+                            .endAclRuleTopicResource()
+                        .withOperation(AclOperation.CREATE)  // describe is for that user can find out metadata
+                    .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
             .build());
