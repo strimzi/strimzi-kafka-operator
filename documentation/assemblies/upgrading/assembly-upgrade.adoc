@@ -13,47 +13,9 @@ Each Kafka release introduces new features, improvements, and bug fixes to your 
 
 Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version if you encounter issues with the newer version.
 
-.Upgrade paths
+Released versions of Strimzi are available from the {ReleaseDownload}.
 
-Two upgrade paths are possible:
-
-Incremental::
-Upgrading Strimzi from the previous minor version to version {ProductVersion}.
-
-Multi-version::
-Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
-+
-For example, upgrading from Strimzi 0.23.0 directly to Strimzi {ProductVersion}.
-
-.Upgrading from a version earlier than {ConvertAfterProductVersion}
-The `v1beta2` API version for all custom resources was introduced with Strimzi {ConvertAfterProductVersion}.
-For Strimzi {ConvertBeforeProductVersion} and newer, the `v1alpha1` and `v1beta1` API versions were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser`.
-
-If you are upgrading from a Strimzi version prior to version {ConvertAfterProductVersion}:
-
-. Upgrade Strimzi to {ConvertAfterProductVersion}
-. Convert the custom resources to `v1beta2`
-. Upgrade Strimzi to {ConvertBeforeProductVersion} or newer
-
-NOTE: As an alternative, you can install the custom resources from version {ConvertAfterProductVersion}, convert the resources, and then upgrade to {ConvertBeforeProductVersion} or newer.
-
-.Kafka version support
-
-You can review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table.
-
-* The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version").
-
-* The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
-
-Decide which Kafka version to upgrade to before beginning the Strimzi upgrade process.
-
-[NOTE]
-====
-You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
-In some cases, you can also downgrade to a previous supported Kafka version.
-====
-
-.Downtime and availability
+.Upgrade downtime and availability
 
 If topics are configured for high availability, upgrading Strimzi should not cause any downtime for consumers and producers that publish and read data from those topics.
 Highly available topics have a replication factor of at least 3 and partitions distributed evenly among the brokers.
@@ -62,13 +24,13 @@ Upgrading Strimzi triggers rolling updates, where all brokers are restarted in t
 During rolling updates, not all brokers are online, so overall _cluster availability_ is temporarily reduced.
 A reduction in cluster availability increases the chance that a broker failure will result in lost messages.
 
+include::modules/con-upgrade-paths.adoc[leveloffset=+1]
+
 include::modules/con-upgrade-sequence.adoc[leveloffset=+1]
 
 include::modules/con-upgrade-cluster.adoc[leveloffset=+1]
 
-include::assembly-upgrade-resources.adoc[leveloffset=+1]
-
-include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]
+include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
 

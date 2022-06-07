@@ -47,7 +47,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -57,7 +56,6 @@ import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
 import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -109,55 +107,6 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected static Map<String, JsonObject> buildMidStepUpgradeData(JsonObject jsonData) {
-        List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.getSupportedKafkaVersions();
-        TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
-
-        Map<String, JsonObject> steps = new HashMap<>();
-
-        String midStepUrl = jsonData.getString("urlFrom");
-        String midStepVersion = jsonData.getString("fromVersion");
-        String midStepExamples = jsonData.getString("fromExamples");
-
-        JsonObject conversionTool = jsonData.getJsonObject("conversionTool");
-
-        // X -> 0.22.0 data
-        JsonObject midStep = JsonObject.mapFrom(jsonData);
-        JsonObject afterMidStep = JsonObject.mapFrom(jsonData);
-        if (jsonData.getString("prevVersion").isEmpty()) {
-            midStep.put("urlFrom", jsonData.getString("urlFrom"));
-            midStep.put("fromVersion", jsonData.getString("fromVersion"));
-            midStep.put("fromExamples", jsonData.getString("fromExamples"));
-            afterMidStep.put("urlFrom", "HEAD");
-            afterMidStep.put("fromVersion", "HEAD");
-            afterMidStep.put("fromExamples", "HEAD");
-        } else {
-            midStep.put("urlFrom", jsonData.getString("urlPrevVersion"));
-            midStep.put("fromVersion", jsonData.getString("prevVersion"));
-            midStep.put("fromExamples", jsonData.getString("prevVersionExamples"));
-            afterMidStep.put("urlFrom", midStepUrl);
-            afterMidStep.put("fromVersion", midStepVersion);
-            afterMidStep.put("fromExamples", midStepExamples);
-        }
-
-        midStep.put("urlTo", midStepUrl);
-        midStep.put("toVersion", midStepVersion);
-        midStep.put("toExamples", midStepExamples);
-        midStep.put("urlToConversionTool", conversionTool.getString("urlToConversionTool"));
-        midStep.put("toConversionTool", conversionTool.getString("toConversionTool"));
-
-        JsonObject midStepProcedures = new JsonObject();
-        midStepProcedures.put("kafkaVersion", testKafkaVersion.version());
-        midStepProcedures.put("logMessageVersion", testKafkaVersion.messageVersion());
-        midStepProcedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
-        midStep.put("proceduresAfterOperatorUpgrade", midStepProcedures);
-
-        steps.put("midStep", midStep);
-        steps.put("toHEAD", afterMidStep);
-
-        return steps;
-    }
-
     protected static Stream<Arguments> loadJsonUpgradeData() {
         JsonArray upgradeData = readUpgradeJson(UPGRADE_JSON_FILE);
         List<Arguments> parameters = new LinkedList<>();
@@ -192,8 +141,8 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void makeSnapshots() {
         coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
-        kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
+        zkPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
+        kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
         eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
     }
 
@@ -241,7 +190,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until Kafka rolling update is finished");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
             }
 
             String logMessageVersion = procedures.getString("logMessageVersion");
@@ -262,7 +211,7 @@ public class AbstractUpgradeST extends AbstractST {
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
                         (currentLogMessageFormat != null && !currentLogMessageFormat.isEmpty() && !currentLogMessageFormat.equals(logMessageVersion))) {
                     LOGGER.info("Wait until Kafka rolling update is finished");
-                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
+                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
                 }
                 makeSnapshots();
             }
@@ -271,7 +220,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until Kafka rolling update is finished");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaPods);
             }
         }
     }
@@ -306,9 +255,9 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaClusterRollingUpdate() {
         LOGGER.info("Waiting for ZK StatefulSet roll");
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, zkPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);

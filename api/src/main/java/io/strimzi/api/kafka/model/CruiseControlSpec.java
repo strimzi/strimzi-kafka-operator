@@ -11,6 +11,7 @@ import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,

@@ -5,13 +5,27 @@
 [id='using-the-topic-operator-{context}']
 = Using the Topic Operator
 
+[role="_abstract"]
 When you create, modify or delete a topic using the `KafkaTopic` resource,
 the Topic Operator ensures those changes are reflected in the Kafka cluster.
 
-The _Deploying and Upgrading Strimzi_ guide provides instructions to deploy the Topic Operator:
+For more information on the `KafkaTopic` resource, see the xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
 
-* link:{BookURLDeploying}#deploying-the-topic-operator-using-the-cluster-operator-{context}[Using the Cluster Operator (recommended)^]
-* link:{BookURLDeploying}#deploying-the-topic-operator-standalone-{context}[Standalone to operate with Kafka clusters not managed by Strimzi^]
+.Deploying the Topic Operator
+
+You can deploy the Topic Operator using the Cluster Operator or as a standalone operator.
+You would use a standalone Topic Operator with a Kafka cluster that is not managed by the Cluster Operator.
+
+For deployment instructions, see the following:
+
+* link:{BookURLDeploying}#deploying-the-topic-operator-using-the-cluster-operator-{context}[Deploying the Topic Operator using the Cluster Operator (recommended)^]
+* link:{BookURLDeploying}#deploying-the-topic-operator-standalone-{context}[Deploying the standalone Topic Operator^]
+
+[IMPORTANT]
+====
+To deploy the standalone Topic Operator, you need to set environment variables to connect to a Kafka cluster.
+These environment variables do not need to be set if you are deploying the Topic Operator using the Cluster Operator as they will be set by the Cluster Operator.
+====
 
 include::../../modules/operators/ref-operator-topic.adoc[leveloffset=+1]
 include::../../modules/operators/con-topic-operator-store.adoc[leveloffset=+1]

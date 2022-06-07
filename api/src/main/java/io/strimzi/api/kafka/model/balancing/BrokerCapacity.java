@@ -18,12 +18,11 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of the Cruise Control broker capacity settings. Since the Kafka brokers
- * in Strimzi are homogeneous, the capacity values for each resource will be
- * used for every broker.
+ * Representation of the Cruise Control broker capacity settings.
  */
 @Buildable(
         editableEnabled = false,
@@ -31,7 +30,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"disk", "cpuUtilization", "inboundNetwork", "outboundNetwork"})
+@JsonPropertyOrder({"disk", "cpuUtilization", "inboundNetwork", "outboundNetwork", "overrides"})
 @EqualsAndHashCode
 public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
@@ -41,6 +40,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
     private Integer cpuUtilization;
     private String inboundNetwork;
     private String outboundNetwork;
+    private List<BrokerCapacityOverride> overrides;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Deprecated
@@ -96,6 +96,17 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     public void setOutboundNetwork(String outboundNetwork) {
         this.outboundNetwork = outboundNetwork;
+    }
+
+    @JsonInclude(content = JsonInclude.Include.NON_NULL, value = JsonInclude.Include.NON_EMPTY)
+    @Description("Overrides for individual brokers. " +
+            "The `overrides` property lets you specify a different capacity configuration for different brokers.")
+    public List<BrokerCapacityOverride> getOverrides() {
+        return overrides;
+    }
+
+    public void setOverrides(List<BrokerCapacityOverride> overrides) {
+        this.overrides = overrides;
     }
 
     @Override

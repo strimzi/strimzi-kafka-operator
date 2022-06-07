@@ -3,7 +3,6 @@
 // assembly-upgrade.adoc
 
 [id='ref-kafka-versions-{context}']
-
 = Kafka versions
 
 Kafka's log message format version and inter-broker protocol version specify, respectively, the log format version appended to messages and the version of the Kafka protocol used in a cluster.
@@ -11,6 +10,7 @@ To ensure the correct versions are used, the upgrade process involves making con
 
 The following table shows the differences between Kafka versions:
 
+.Kafka version differences
 include::snip-kafka-versions.adoc[leveloffset=+1]
 
 .Inter-broker protocol version

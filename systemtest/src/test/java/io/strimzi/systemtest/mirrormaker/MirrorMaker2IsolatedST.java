@@ -25,6 +25,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -62,9 +63,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
-import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -156,7 +154,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         assertThat(kafkaPodJson, hasJsonPath(StUtils.globalVariableJsonPathBuilder(0, "KAFKA_CONNECT_BOOTSTRAP_SERVERS"),
                 hasItem(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))));
         assertThat(StUtils.getPropertiesFromJson(0, kafkaPodJson, "KAFKA_CONNECT_CONFIGURATION"), is(expectedConfig));
-        testDockerImagesForKafkaMirrorMaker2(testStorage.getClusterName(), INFRA_NAMESPACE, testStorage.getNamespaceName());
+        testDockerImagesForKafkaMirrorMaker2(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName());
 
         verifyLabelsOnPods(testStorage.getNamespaceName(), testStorage.getClusterName(), "mirrormaker2", KafkaMirrorMaker2.RESOURCE_KIND);
         verifyLabelsForService(testStorage.getNamespaceName(), testStorage.getClusterName(), "mirrormaker2-api", KafkaMirrorMaker2.RESOURCE_KIND);
@@ -178,13 +176,15 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Mirrored successful");
 
-        KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
-        assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-        assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
+        if (!Environment.isKRaftModeEnabled()) {
+            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
+            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
+            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
 
-        // Replace source topic resource with new data and check that mm2 update target topi
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(testStorage.getNamespaceName(), sourceMirroredTopicName, 8);
+            // Replace source topic resource with new data and check that mm2 update target topi
+            KafkaTopicResource.replaceTopicResourceInSpecificNamespace(testStorage.getTopicName(), kt -> kt.getSpec().setPartitions(8), testStorage.getNamespaceName());
+            KafkaTopicUtils.waitForKafkaTopicPartitionChange(testStorage.getNamespaceName(), sourceMirroredTopicName, 8);
+        }
     }
 
     /**
@@ -193,6 +193,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -322,6 +323,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
      * Test mirroring messages by MirrorMaker 2.0 over tls transport using scram-sha-512 auth
      */
     @ParallelNamespaceTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -510,7 +512,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         assertThat(mm2Status.getConditions().get(0).getType(), is(Ready.toString()));
         assertThat(actualObsGen, is(not(mm2ObsGen)));
 
-        TestUtils.waitFor("Until mirror maker 2 status url is null", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Until mirror maker 2 status url is null", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             KafkaMirrorMaker2Status mm2StatusUrl = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
             return mm2StatusUrl.getUrl() == null;
         });
@@ -532,7 +534,14 @@ class MirrorMaker2IsolatedST extends AbstractST {
         // Deploy Topic for example clients
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editSpec()
+                    .editMirror(0)
+                        .editSourceConnector()
+                            .addToConfig("refresh.topics.interval.seconds", "1")
+                        .endSourceConnector()
+                    .endMirror()
+                .endSpec().build());
 
         // Deploying example clients for checking if mm2 will mirror messages with headers
 
@@ -590,6 +599,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editMirror(0)
                     .editSourceConnector()
                         .addToConfig("replication.policy.class", "org.apache.kafka.connect.mirror.IdentityReplicationPolicy")
+                        .addToConfig("refresh.topics.interval.seconds", "1")
                     .endSourceConnector()
                 .endMirror()
             .endSpec()
@@ -618,14 +628,16 @@ class MirrorMaker2IsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.consumerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        LOGGER.info("Checking if the mirrored topic name is same as the original one");
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Checking if the mirrored topic name is same as the original one");
 
-        List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0);
-        assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
+            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0);
+            assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
 
-        List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0, testStorage.getTopicName());
-        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + testStorage.getTopicName()));
-        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+            List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0, testStorage.getTopicName());
+            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + testStorage.getTopicName()));
+            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+        }
     }
 
     /*
@@ -654,6 +666,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .editMirror(0)
                     .editSourceConnector()
                         .addToConfig("replication.policy.class", "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy")
+                        .addToConfig("refresh.topics.interval.seconds", "1")
                     .endSourceConnector()
                 .endMirror()
             .endSpec()
@@ -682,14 +695,16 @@ class MirrorMaker2IsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.consumerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        LOGGER.info("Checking if the mirrored topic name is same as the original one");
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Checking if the mirrored topic name is same as the original one");
 
-        List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0);
-        assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
+            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0);
+            assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
 
-        List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0, testStorage.getTopicName());
-        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + testStorage.getTopicName()));
-        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+            List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0, testStorage.getTopicName());
+            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + testStorage.getTopicName()));
+            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+        }
     }
 
     @ParallelNamespaceTest
@@ -745,6 +760,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("This the is failing with KRaft and need more investigation")
     void testRestoreOffsetsInConsumerGroup(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -934,6 +950,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
@@ -1104,6 +1121,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateTLS(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
@@ -1339,7 +1357,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()

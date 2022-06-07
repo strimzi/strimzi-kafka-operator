@@ -46,14 +46,9 @@ IMPORTANT: The `ControlPlaneListener` feature gate must be disabled when upgradi
 
 == ServiceAccountPatching feature gate
 
-The `ServiceAccountPatching` feature gate has a default state of _enabled_.
-
-By default, the Cluster Operator reconciles service accounts and updates them when needed.
-For example, you can change service account labels and annotations after the operands are already created.
-To disable service account patching, disable the `ServiceAccountPatching` feature gate.
-
-.Disabling the ServiceAccountPatching feature gate
-To disable the `ServiceAccountPatching` feature gate, specify `-ServiceAccountPatching` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+The `ServiceAccountPatching` feature gate has moved to GA, which means it is now permanently enabled and cannot be disabled.
+With `ServiceAccountPatching` enabled, the Cluster Operator always reconciles service accounts and updates them when needed.
+For example, when you change service account labels or annotations using the `template` property of a custom resource, the operator automatically updates them on the existing service account resources.
 
 [id='ref-operator-use-strimzi-pod-sets-feature-gate-{context}']
 == UseStrimziPodSets feature gate
@@ -99,9 +94,8 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
 * Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
-* The Entity Operator (including the User Operator and Topic operator) is not supported.
-  The `spec.entityOperator` property *must be removed* from the `Kafka` custom resource.
-* `simple` authorization is not supported.
+* The Topic Operator is not supported.
+  The `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * SCRAM-SHA-512 authentication is not supported.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.

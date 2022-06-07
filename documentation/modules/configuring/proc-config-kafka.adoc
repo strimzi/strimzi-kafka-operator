@@ -191,7 +191,7 @@ spec:
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes]. If your cluster already has topics defined, you can
 xref:scaling-clusters-{context}[scale clusters].
 <2> Kafka version, which can be changed to a supported version by following link:{BookURLDeploying}#assembly-upgrade-str[the upgrade procedure].
-<3> Specified xref:property-kafka-logging-reference[Kafka loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<3> xref:property-kafka-logging-reference[Kafka loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <4> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <5> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <6> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka.
@@ -206,7 +206,7 @@ xref:scaling-clusters-{context}[scale clusters].
 <15> External listener configuration specifies xref:assembly-accessing-kafka-outside-cluster-str[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
 <16> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
 <17> Authorization xref:con-securing-kafka-authorization-str[enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker.] Simple authorization uses the `AclAuthorizer` Kafka plugin.
-<18> The `config` specifies the broker configuration. xref:property-kafka-config-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
+<18> Broker configuration. xref:property-kafka-config-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
 <19> xref:con-common-configuration-ssl-reference[SSL properties for listeners with TLS encryption enabled to enable a specific _cipher suite_ or TLS version].
 <20> xref:assembly-storage-{context}[Storage] is configured as `ephemeral`, `persistent-claim` or `jbod`.
 <21> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].

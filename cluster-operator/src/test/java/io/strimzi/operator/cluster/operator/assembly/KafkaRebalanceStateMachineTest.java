@@ -49,6 +49,7 @@ import java.util.List;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -170,6 +171,9 @@ public class KafkaRebalanceStateMachineTest {
                 .compose(result -> {
                     context.verify(() -> {
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));
+                        if (initialAnnotation != KafkaRebalanceAnnotation.none && !currentState.isValidateAnnotation(initialAnnotation)) {
+                            assertThat("InvalidAnnotation", is(result.status.getConditions().get(0).getReason()));
+                        }
                     });
                     return Future.succeededFuture(result.getStatus());
                 });
@@ -831,6 +835,42 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalanceState.NotReady, KafkaRebalanceState.PendingProposal,
                 KafkaRebalanceAnnotation.refresh, kcRebalance)
                 .onComplete(result -> checkOptimizationResults(result, context, true));
+    }
+
+    @Test
+    public void testProposalReadyWithWrongAnnotation(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, EMPTY_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.ProposalReady,  KafkaRebalanceAnnotation.unknown);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady, KafkaRebalanceAnnotation.unknown);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.ProposalReady, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.ProposalReady, KafkaRebalanceAnnotation.unknown);
+    }
+
+    @Test
+    public void testReadyWithWrongAnnotation(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, EMPTY_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.Ready, KafkaRebalanceAnnotation.approve);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.Ready, KafkaRebalanceAnnotation.approve);
+
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC);
+        this.testStateWithWrongAnnotation(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.Ready, KafkaRebalanceAnnotation.approve);
+    }
+
+    private void testStateWithWrongAnnotation(Vertx vertx, VertxTestContext context,
+                                              int pendingCalls, CruiseControlEndpoints endpoint,
+                                              KafkaRebalance kcRebalance, KafkaRebalanceState kafkaRebalanceState,
+                                              KafkaRebalanceAnnotation kafkaRebalanceAnnotation) throws IOException, URISyntaxException {
+        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+
+        checkTransition(vertx, context,
+                kafkaRebalanceState, kafkaRebalanceState,
+                kafkaRebalanceAnnotation, kcRebalance)
+                .onComplete(result -> defaultStatusHandler(result, context));
     }
 
     private static class StateMatchers extends AbstractResourceStateMatchers {

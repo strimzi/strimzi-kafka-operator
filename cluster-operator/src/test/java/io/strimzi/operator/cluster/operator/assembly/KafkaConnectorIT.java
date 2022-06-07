@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.operator.resource.DefaultZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -140,7 +139,7 @@ public class KafkaConnectorIT {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 metrics,
-                pfa, FeatureGates.NONE, 10_000,
+                pfa, 10_000,
                 KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1()));
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,

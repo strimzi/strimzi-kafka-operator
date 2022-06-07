@@ -251,6 +251,14 @@ public class Environment {
     }
 
     /**
+     * Determine wheter KRaft mode of Kafka cluster is enabled in ClusterOperator or not.
+     * @return true if KRaft mode is enabled, otherwise false
+     */
+    public static boolean isKRaftModeEnabled() {
+        return STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_POD_SET) && STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
+    }
+
+    /**
      * Provides boolean information, if testing environment support shared memory (i.e., environment, where all
      * components share memory). In general, we use {@link Environment#RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link Environment#RESOURCE_ALLOCATION_STRATEGY_ENV}
      * is not specified.

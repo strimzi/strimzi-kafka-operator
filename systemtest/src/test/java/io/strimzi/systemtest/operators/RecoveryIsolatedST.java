@@ -16,6 +16,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -41,9 +42,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
-import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -58,6 +59,7 @@ class RecoveryIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RecoveryIsolatedST.class);
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromEntityOperatorDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", sharedClusterName);
@@ -80,11 +82,11 @@ class RecoveryIsolatedST extends AbstractST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
         String kafkaUid = StUtils.getStrimziPodSetOrStatefulSetUID(kafkaName);
 
-        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
         StUtils.deleteStrimziPodSetOrStatefulSet(kafkaName);
 
         PodUtils.waitForPodsWithPrefixDeletion(kafkaName);
-        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", kafkaName);
         StUtils.waitForStrimziPodSetOrStatefulSetRecovery(kafkaName, kafkaUid);
@@ -92,16 +94,17 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         // kafka cluster already deployed
         String zookeeperName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
         String zookeeperUid = StUtils.getStrimziPodSetOrStatefulSetUID(zookeeperName);
 
-        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
         StUtils.deleteStrimziPodSetOrStatefulSet(zookeeperName);
 
         PodUtils.waitForPodsWithPrefixDeletion(zookeeperName);
-        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
 
         LOGGER.info("Waiting for recovery {}", zookeeperName);
         StUtils.waitForStrimziPodSetOrStatefulSetRecovery(zookeeperName, zookeeperUid);
@@ -123,6 +126,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperServiceDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
@@ -151,6 +155,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperHeadlessServiceDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
@@ -186,6 +191,7 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromZookeeperMetricsConfigDeletion() {
         LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", sharedClusterName);
 
@@ -220,7 +226,7 @@ class RecoveryIsolatedST extends AbstractST {
     void testRecoveryFromKafkaBridgeServiceDeletion() {
         LOGGER.info("Running deleteKafkaBridgeService with cluster {}", sharedClusterName);
         String kafkaBridgeServiceName = KafkaBridgeResources.serviceName(sharedClusterName);
-        String kafkaBridgeServiceUid = kubeClient().namespace(INFRA_NAMESPACE).getServiceUid(kafkaBridgeServiceName);
+        String kafkaBridgeServiceUid = kubeClient().namespace(clusterOperator.getDeploymentNamespace()).getServiceUid(kafkaBridgeServiceName);
         kubeClient().deleteService(kafkaBridgeServiceName);
 
         LOGGER.info("Waiting for service {} recovery", kafkaBridgeServiceName);
@@ -271,12 +277,13 @@ class RecoveryIsolatedST extends AbstractST {
 
         KafkaResource.replaceKafkaResource(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(INFRA_NAMESPACE, kafkaSelector, KAFKA_REPLICAS);
+        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 
     @IsolatedTest
     @StrimziPodSetTest
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromKafkaAndZookeeperPodDeletion() {
         final String kafkaName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
         final String zkName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);

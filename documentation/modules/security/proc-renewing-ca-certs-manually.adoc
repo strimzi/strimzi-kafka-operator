@@ -75,6 +75,7 @@ notAfter=Jun 30 09:43:54 2021 GMT
 When components are using the new certificates, older certificates might still be active.
 Delete the old certificates to remove any potential security risk.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:certificates-and-secrets-str[]

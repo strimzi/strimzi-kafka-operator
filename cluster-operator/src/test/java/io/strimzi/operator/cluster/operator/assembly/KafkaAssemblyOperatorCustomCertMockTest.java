@@ -23,7 +23,6 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -136,7 +135,6 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 mock(ZookeeperScalerProvider.class),
                 mock(MetricsProvider.class),
                 platformFeaturesAvailability,
-                FeatureGates.NONE,
                 10000,
                 KubernetesRestartEventPublisher.createPublisher(client, "op", platformFeaturesAvailability.hasEventsApiV1())
         );

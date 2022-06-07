@@ -87,7 +87,11 @@ spec:
 <1> The Kubernetes namespace for the Topic Operator to watch for `KafkaTopic` resources. Specify the namespace of the Kafka cluster.
 <2> The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
-<3> The label selector to identify the `KafkaTopic` resources managed by the Topic Operator.
+<3> The label to identify the `KafkaTopic` resources managed by the Topic Operator.
+This does not have to be the name of the Kafka cluster.
+It can be the label assigned to the `KafkaTopic` resource.
+If you deploy more than one Topic Operator, the labels must be unique for each.
+That is, the operators cannot manage the same resources.
 <4> The host and port pair of the address to connect to the ZooKeeper cluster.
 This must be the same ZooKeeper cluster that your Kafka cluster is using.
 <5> The ZooKeeper session timeout, in milliseconds.

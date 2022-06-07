@@ -27,6 +27,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -101,6 +102,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
 @IsolatedSuite
+@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
 public class MetricsIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsIsolatedST.class);
@@ -370,6 +372,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testTopicOperatorMetrics() {
         topicOperatorMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.TopicOperator)
@@ -554,6 +557,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testReconcileStateMetricInTopicOperator(ExtensionContext extensionContext) {
         cluster.setNamespace(SECOND_NAMESPACE);
 

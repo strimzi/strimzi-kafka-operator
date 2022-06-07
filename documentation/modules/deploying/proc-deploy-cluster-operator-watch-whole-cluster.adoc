@@ -68,8 +68,8 @@ kubectl get deployments -n _<my_cluster_operator_namespace>_
 .Output shows the deployment name and readiness
 [source,shell,subs="+quotes"]
 ----
-NAME                                READY  UP-TO-DATE  AVAILABLE
-strimzi-cluster-operator-<version>  1/1    1           1
+NAME                      READY  UP-TO-DATE  AVAILABLE
+strimzi-cluster-operator  1/1    1           1
 ----
 +
 `READY` shows the number of replicas that are ready/expected.

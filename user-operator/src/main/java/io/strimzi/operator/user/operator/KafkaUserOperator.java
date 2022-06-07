@@ -84,10 +84,12 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
 
     @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-        return CompositeFuture.join(super.allResourceNames(namespace),
-                config.isAclsAdminApiSupported() ? aclOperations.getAllUsers() : Future.succeededFuture(Set.of()),
-                quotasOperator.getAllUsers(),
-                scramCredentialsOperator.getAllUsers()).map(compositeFuture -> {
+        return CompositeFuture.
+                join(super.allResourceNames(namespace),
+                        config.isAclsAdminApiSupported() ? aclOperations.getAllUsers() : Future.succeededFuture(Set.of()),
+                        quotasOperator.getAllUsers(),
+                        config.isKraftEnabled() ? Future.succeededFuture(List.of()) : scramCredentialsOperator.getAllUsers() // SCRAM-SHA authentication is currently not supported when KRaft is used
+                ).map(compositeFuture -> {
                     Set<NamespaceAndName> names = compositeFuture.resultAt(0);
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(1)));
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(2)));
@@ -117,7 +119,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix(), config.isAclsAdminApiSupported());
+            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix(), config.isAclsAdminApiSupported(), config.isKraftEnabled());
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
@@ -254,7 +256,13 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         }
 
         // Reconcile the user SCRAM-SHA-512 credentials
-        Future<ReconcileResult<String>> scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
+        Future<ReconcileResult<String>> scramCredentialsFuture;
+        if (config.isKraftEnabled()) {
+            // SCRAM-SHA authentication is currently not supported when KRaft is used
+            scramCredentialsFuture = Future.succeededFuture(ReconcileResult.noop(null));
+        } else {
+            scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
+        }
 
         // Quotas need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
         Future<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas);
@@ -301,6 +309,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     /**
      * Deletes the user
      *
+     * @param reconciliation    Reconciliation marker
+     *
      * @return A Future
      */
     @Override
@@ -311,10 +321,28 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         return CompositeFuture.join(secretOperations.reconcile(reconciliation, namespace, KafkaUserModel.getSecretName(config.getSecretPrefix(), user), null),
                 config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
                 config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
-                scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)
+                deleteScramCredentials(reconciliation, user)
                         .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null))
                         .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)))
             .map(Boolean.TRUE);
+    }
+
+    /**
+     * Utility method to delete SCRAM-SHA credentials. It checks if the SCRAM-SHA API is available and if it is, it
+     * deletes the credentials. If it is not supported, it just returns success.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param user              Name of the user resource which should be deleted
+     *
+     * @return  Future indicating the deletion result
+     */
+    private Future<ReconcileResult<String>> deleteScramCredentials(Reconciliation reconciliation, String user)    {
+        if (config.isKraftEnabled())   {
+            // SCRAM-SHA authentication is currently not supported when KRaft is used
+            return Future.succeededFuture(ReconcileResult.noop(null));
+        } else {
+            return scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null);
+        }
     }
 
     @Override

@@ -86,35 +86,35 @@ class HttpBridgeIsolatedST extends AbstractST {
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .build();
 
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
 
-        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(httpBridgeClusterName))
             .withConsumerName(consumerName)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerStrimzi());
 
-        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         // Checking labels for Kafka Bridge
-        verifyLabelsOnPods(INFRA_NAMESPACE, httpBridgeClusterName, "my-bridge", "KafkaBridge");
-        verifyLabelsForService(INFRA_NAMESPACE, httpBridgeClusterName, "my-bridge", "KafkaBridge");
+        verifyLabelsOnPods(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "my-bridge", "KafkaBridge");
+        verifyLabelsForService(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "my-bridge", "KafkaBridge");
     }
 
     @ParallelTest
@@ -125,7 +125,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
@@ -137,7 +137,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
@@ -148,12 +148,12 @@ class HttpBridgeIsolatedST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(httpBridgeClusterName))
             .withProducerName(producerName)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
 
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
     @ParallelTest
@@ -188,7 +188,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .withNewTemplate()
@@ -217,18 +217,18 @@ class HttpBridgeIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName));
+        Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
         LOGGER.info("Verify values before update");
-        checkReadinessLivenessProbe(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
+        checkReadinessLivenessProbe(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
+        checkSpecificVariablesInContainer(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(INFRA_NAMESPACE, kubeClient(INFRA_NAMESPACE).listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(clusterOperator.getDeploymentNamespace(), kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -245,21 +245,21 @@ class HttpBridgeIsolatedST extends AbstractST {
             kb.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
             kb.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             kb.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-        }, INFRA_NAMESPACE);
+        }, clusterOperator.getDeploymentNamespace());
 
-        DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), 1, bridgeSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), 1, bridgeSnapshot);
 
         LOGGER.info("Verify values after update");
-        checkReadinessLivenessProbe(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+        checkReadinessLivenessProbe(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarUpdated);
-        checkComponentConfiguration(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_PRODUCER_CONFIG", producerConfig);
-        checkComponentConfiguration(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_CONSUMER_CONFIG", consumerConfig);
+        checkSpecificVariablesInContainer(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarUpdated);
+        checkComponentConfiguration(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_PRODUCER_CONFIG", producerConfig);
+        checkComponentConfiguration(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), "KAFKA_BRIDGE_CONSUMER_CONFIG", consumerConfig);
     }
 
     @ParallelTest
     void testDiscoveryAnnotation() {
-        Service bridgeService = kubeClient(INFRA_NAMESPACE).getService(INFRA_NAMESPACE, KafkaBridgeResources.serviceName(httpBridgeClusterName));
+        Service bridgeService = kubeClient().getService(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.serviceName(httpBridgeClusterName));
         String bridgeServiceDiscoveryAnnotation = bridgeService.getMetadata().getAnnotations().get("strimzi.io/discovery");
         JsonArray serviceDiscoveryArray = new JsonArray(bridgeServiceDiscoveryAnnotation);
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(8080, "http", "none", false)));
@@ -272,23 +272,23 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
-        List<String> bridgePods = kubeClient(INFRA_NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+        List<String> bridgePods = kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         String deploymentName = KafkaBridgeResources.deploymentName(bridgeName);
 
         assertThat(bridgePods.size(), is(1));
 
         LOGGER.info("Scaling KafkaBridge to zero replicas");
-        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0), INFRA_NAMESPACE);
+        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0), clusterOperator.getDeploymentNamespace());
 
-        KafkaBridgeUtils.waitForKafkaBridgeReady(INFRA_NAMESPACE, httpBridgeClusterName);
-        PodUtils.waitForPodsReady(kubeClient(INFRA_NAMESPACE).getDeploymentSelectors(deploymentName), 0, true);
+        KafkaBridgeUtils.waitForKafkaBridgeReady(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName);
+        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
 
-        bridgePods = kubeClient(INFRA_NAMESPACE).listPodNames(INFRA_NAMESPACE, httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get().getStatus();
+        bridgePods = kubeClient().listPodNames(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+        KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
         assertThat(bridgeStatus.getConditions().get(0).getType(), is(Ready.toString()));
@@ -300,29 +300,29 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
         int scaleTo = 4;
-        long bridgeObsGen = KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration();
-        String bridgeGenName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(bridgeName).get(0).getMetadata().getGenerateName();
+        long bridgeObsGen = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getObservedGeneration();
+        String bridgeGenName = kubeClient(clusterOperator.getDeploymentNamespace()).listPodsByPrefixInName(bridgeName).get(0).getMetadata().getGenerateName();
 
         LOGGER.info("-------> Scaling KafkaBridge subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
-        cmdKubeClient(INFRA_NAMESPACE).scaleByName(KafkaBridge.RESOURCE_KIND, bridgeName, scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(INFRA_NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
+        cmdKubeClient(clusterOperator.getDeploymentNamespace()).scaleByName(KafkaBridge.RESOURCE_KIND, bridgeName, scaleTo);
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> bridgePods = kubeClient(INFRA_NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+        List<String> bridgePods = kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         assertThat(bridgePods.size(), is(4));
-        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get().getSpec().getReplicas(), is(4));
-        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get().getStatus().getReplicas(), is(4));
+        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getSpec().getReplicas(), is(4));
+        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getReplicas(), is(4));
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
         */
-        assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
+        assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
         for (String pod : bridgePods) {
             assertThat(pod.contains(bridgeGenName), is(true));
         }
@@ -334,7 +334,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .editOrNewTemplate()
@@ -349,10 +349,10 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         LOGGER.info("Adding label to KafkaBridge resource, the CR should be recreated");
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName,
-            kb -> kb.getMetadata().setLabels(Collections.singletonMap("some", "label")), INFRA_NAMESPACE);
-        DeploymentUtils.waitForDeploymentAndPodsReady(INFRA_NAMESPACE, bridgeDepName, 1);
+            kb -> kb.getMetadata().setLabels(Collections.singletonMap("some", "label")), clusterOperator.getDeploymentNamespace());
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), bridgeDepName, 1);
 
-        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get();
+        KafkaBridge kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get();
 
         LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
         assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(1L));
@@ -361,15 +361,15 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName,
-            kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), INFRA_NAMESPACE);
-        KafkaBridgeUtils.waitForKafkaBridgeReady(INFRA_NAMESPACE, bridgeName);
+            kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), clusterOperator.getDeploymentNamespace());
+        KafkaBridgeUtils.waitForKafkaBridgeReady(clusterOperator.getDeploymentNamespace(), bridgeName);
 
         LOGGER.info("Adding another label to KafkaBridge resource, pods should be rolled");
-        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"), INFRA_NAMESPACE);
-        DeploymentUtils.waitForDeploymentAndPodsReady(INFRA_NAMESPACE, bridgeDepName, 1);
+        KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"), clusterOperator.getDeploymentNamespace());
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), bridgeDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(INFRA_NAMESPACE).withName(bridgeName).get();
+        kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get();
         assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(2L));
         assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("another=label"));
         assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
@@ -381,12 +381,12 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
         // get service with custom labels
-        final Service kafkaBridgeService = kubeClient(INFRA_NAMESPACE).getService(INFRA_NAMESPACE, KafkaBridgeResources.serviceName(bridgeName));
+        final Service kafkaBridgeService = kubeClient().getService(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.serviceName(bridgeName));
 
         // filter only app-bar service
         final Map<String, String> filteredActualKafkaBridgeCustomLabels =
@@ -435,7 +435,7 @@ class HttpBridgeIsolatedST extends AbstractST {
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeClusterName, 1, 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
@@ -443,7 +443,7 @@ class HttpBridgeIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeClusterName,
             KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .withNewConsumer()

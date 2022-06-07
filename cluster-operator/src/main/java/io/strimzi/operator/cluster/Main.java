@@ -111,7 +111,7 @@ public class Main {
                 vertx,
                 client,
                 pfa,
-                config.featureGates(),
+
                 config.getOperationTimeoutMs(),
                 KubernetesRestartEventPublisher.createPublisher(client, config.getOperatorName(), pfa.hasEventsApiV1())
         );

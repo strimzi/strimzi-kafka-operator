@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -35,6 +36,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 
 @Tag(REGRESSION)
 @ParallelSuite
+@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
 public class CustomAuthorizerST extends AbstractST {
     static final String CLUSTER_NAME = "custom-authorizer";
     static final String ADMIN = "sre-admin";

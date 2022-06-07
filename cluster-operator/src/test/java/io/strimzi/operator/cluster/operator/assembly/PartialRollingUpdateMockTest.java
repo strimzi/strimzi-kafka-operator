@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
@@ -159,7 +158,7 @@ public class PartialRollingUpdateMockTest {
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
                 pfa,
-                FeatureGates.NONE,
+
                 60_000L,
                 KubernetesRestartEventPublisher.createPublisher(bootstrapClient, "op", pfa.hasEventsApiV1()));
     }

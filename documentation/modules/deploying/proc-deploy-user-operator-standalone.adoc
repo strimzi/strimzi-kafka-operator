@@ -83,7 +83,11 @@ spec:
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
 <3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
 <4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
-<5> The label selector used to identify the `KafkaUser` resources managed by the User Operator.
+<5> The label to identify the `KafkaUser` resources managed by the User Operator.
+This does not have to be the name of the Kafka cluster.
+It can be the label assigned to the `KafkaUser` resource.
+If you deploy more than one User Operator, the labels must be unique for each.
+That is, the operators cannot manage the same resources.
 <6> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
 <7> The level for printing logging messages.

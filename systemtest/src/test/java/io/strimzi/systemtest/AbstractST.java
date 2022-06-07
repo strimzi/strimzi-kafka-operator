@@ -170,7 +170,6 @@ public abstract class AbstractST implements TestSeparator {
 
     public Map<String, String> getImagesFromConfig(String namespaceName) {
         Map<String, String> images = new HashMap<>();
-        LOGGER.info(ResourceManager.getCoDeploymentName());
         for (Container c : kubeClient(namespaceName).getDeployment(namespaceName, ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());

@@ -22,9 +22,8 @@ For more information, see xref:con-optimization-proposals-modes-{context}[Rebala
 
 .Prerequisites
 
-* You have xref:proc-deploying-cruise-control-{context}[deployed Cruise Control] to your Strimzi cluster.
-
-* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:capacity-configuration[capacity limits on broker resources].
+* You have xref:proc-configuring-deploying-cruise-control-{context}[deployed Cruise Control] to your Strimzi cluster.
+* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:property-cruise-control-broker-capacity-reference[capacity limits on broker resources].
 
 .Procedure
 
@@ -224,6 +223,7 @@ This has no effect on the rebalance behavior, since the ratio between CPU utiliz
 
 xref:proc-approving-optimization-proposal-{context}[]
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:con-optimization-proposals-{context}[]

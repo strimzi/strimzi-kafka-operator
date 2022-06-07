@@ -34,6 +34,7 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -125,13 +126,13 @@ public class OauthAbstractST extends AbstractST {
         LOGGER.info("Deploying keycloak...");
 
         // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
-        // Keycloak do not support cluster-wide namespace, thus we need it to deploy in non-OLM cluster wide namespace
+        // Keycloak do not support cluster-wide namespace and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
-        if (kubeClient().getNamespace(Constants.INFRA_NAMESPACE) == null) {
-            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), Constants.INFRA_NAMESPACE);
+        if (kubeClient().getNamespace(clusterOperator.getDeploymentNamespace()) == null) {
+            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
         }
 
-        KeycloakUtils.deployKeycloak(Constants.INFRA_NAMESPACE, namespace);
+        KeycloakUtils.deployKeycloak(clusterOperator.getDeploymentNamespace(), namespace);
 
         SecretUtils.waitForSecretReady(namespace, "credential-example-keycloak", () -> { });
         String passwordEncoded = kubeClient(namespace).getSecret(namespace, "credential-example-keycloak").getData().get("ADMIN_PASSWORD");
