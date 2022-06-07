@@ -131,7 +131,8 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
-        convertCRDs(acrossUpgradeData.getUrlToConversionTool(), acrossUpgradeData.getToConversionTool(), clusterOperator.getDeploymentNamespace());
+        UpgradeDowngradeData conversionData = new UpgradeDowngradeDatalist().getUpgradeData(0);
+        convertCRDs(conversionData.getUrlToConversionTool(), conversionData.getUrlTo(), clusterOperator.getDeploymentNamespace());
         // Make snapshots of all pods
         makeSnapshots();
 
@@ -162,7 +163,8 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, clusterOperator.getDeploymentNamespace());
-        convertCRDs(acrossUpgradeData.getUrlToConversionTool(), acrossUpgradeData.getToConversionTool(), clusterOperator.getDeploymentNamespace());
+        UpgradeDowngradeData conversionTool = new UpgradeDowngradeDatalist().getUpgradeData(0);
+        convertCRDs(conversionTool.getUrlToConversionTool(), conversionTool.getToConversionTool(), clusterOperator.getDeploymentNamespace());
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
