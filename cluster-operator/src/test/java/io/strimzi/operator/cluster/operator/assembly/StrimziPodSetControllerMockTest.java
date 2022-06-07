@@ -340,7 +340,7 @@ public class StrimziPodSetControllerMockTest {
             // Scale-down the pod-set
             podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1));
 
-            // Wait until the pod is ready
+            // Wait until the pod is deleted
             TestUtils.waitFor(
                     "Wait for second Pod to be deleted",
                     100,

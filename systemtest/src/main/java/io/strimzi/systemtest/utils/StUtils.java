@@ -621,17 +621,6 @@ public class StUtils {
         return getStrimziPodSetOrStatefulSetUID(kubeClient().getNamespace(), resourceName);
     }
 
-    public static Map<String, String> getStrimziPodSetOrStatefulSetMatchLabels(String namespaceName, String resourceName, boolean isSpsEnabled) {
-        if (isSpsEnabled) {
-            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getSpec().getSelector().getMatchLabels();
-        }
-        return kubeClient().getStatefulSet(namespaceName, resourceName).getSpec().getSelector().getMatchLabels();
-    }
-
-    public static Map<String, String> getStrimziPodSetOrStatefulSetMatchLabels(String resourceName, boolean isSpsEnabled) {
-        return getStrimziPodSetOrStatefulSetMatchLabels(kubeClient().getNamespace(), resourceName, isSpsEnabled);
-    }
-
     /**
      * Returns a list of names of ConfigMaps with broker configuration files. For StatefulSets, the list has only one
      * item with the shared ConfigMap. For StrimziPodSets, it should be a ConfigMap per broker.

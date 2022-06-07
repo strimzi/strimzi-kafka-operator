@@ -157,7 +157,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for enabled UseStrimziPodSets gate")
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testStrimziPodSetsFeatureGate(ExtensionContext extensionContext) {
+    public void testDisabledStrimziPodSetsFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -173,7 +173,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         int zooReplicas = 1;
         int kafkaReplicas = 1;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-UseStrimziPodSets", null));
 
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -272,9 +272,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
         int messageCount = 500;
 
         List<EnvVar> coEnvVars = new ArrayList<>();
-        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-UseStrimziPodSets", null));
+        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
 
-        LOGGER.info("Deploying CO with STS - SPS is disabled");
+        LOGGER.info("Deploying CO with SPS - STS is disabled");
 
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -308,9 +308,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
             clients.consumerStrimzi()
         );
 
-        LOGGER.info("Changing FG env variable to enable SPS");
+        LOGGER.info("Changing FG env variable to enable STS");
         coEnvVars = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("+UseStrimziPodSets");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-UseStrimziPodSets");
 
         Deployment coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
@@ -323,7 +323,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         KafkaUtils.waitForKafkaReady(clusterName);
 
-        LOGGER.info("Changing FG env variable to disable again SPS");
+        LOGGER.info("Changing FG env variable to disable again STS");
         coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("");
 
         coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
