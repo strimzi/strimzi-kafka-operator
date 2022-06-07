@@ -213,7 +213,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("TODO - debug")
+    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(namespace, userClusterName, "encrypted-arnost").build();
 
@@ -221,7 +221,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("TODO - debug")
+    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(namespace, userClusterName, kafkaUserName).build();
