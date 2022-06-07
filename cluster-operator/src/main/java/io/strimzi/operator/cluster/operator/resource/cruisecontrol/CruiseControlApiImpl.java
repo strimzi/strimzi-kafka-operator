@@ -437,7 +437,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             // so we catch and raise a TimeoutException instead
             result.fail(new TimeoutException(t.getMessage()));
         } else if (t instanceof NoRouteToHostException) {
-            // Netty throws a AnnotatedNoRouteToHostException when it cannot resolve the host
+            // Netty throws a AnnotatedNoRouteToHostException (inherits from NoRouteToHostException) when it cannot resolve the host
             //so we catch and raise a NoRouteToHostException instead
             result.fail(new NoRouteToHostException(t.getMessage()));
         } else if (t instanceof ConnectException) {
