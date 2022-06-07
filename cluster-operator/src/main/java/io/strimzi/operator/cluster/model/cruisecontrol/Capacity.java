@@ -50,15 +50,15 @@ import java.util.TreeMap;
  *         deleteClaim: false
  *  cruiseControl:
  *    brokerCapacity:
- *     cpuCores: "1"
+ *     cpu: "1"
  *     inboundNetwork: 10000KB/s
  *     outboundNetwork: 10000KB/s
  *     overrides:
  *       - brokers: [0]
- *         cpuCores: "2.345"
+ *         cpu: "2.345"
  *         outboundNetwork: 40000KB/s
  *       - brokers: [1, 2]
- *         cpuCores: 4000m
+ *         cpu: 4000m
  *         inboundNetwork: 60000KB/s
  *         outboundNetwork: 20000KB/s
  *
