@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
 @IsolatedSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+@KRaftNotSupported("OAuth is not supported by KRaft mode and is used in this test case")
 public class OauthTlsIsolatedST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsIsolatedST.class);
 

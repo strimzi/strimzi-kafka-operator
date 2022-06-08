@@ -53,7 +53,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(BRIDGE)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+@KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
 @ParallelSuite
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 

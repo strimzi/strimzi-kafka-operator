@@ -62,7 +62,6 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
 @ParallelSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
 class UserST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(UserST.class);
@@ -71,6 +70,7 @@ class UserST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(UserST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelTest
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testUserWithNameMoreThan64Chars(ExtensionContext extensionContext) {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
         String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
@@ -117,6 +117,7 @@ class UserST extends AbstractST {
 
     @ParallelTest
     @Tag(ACCEPTANCE)
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testUpdateUser(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
@@ -163,6 +164,7 @@ class UserST extends AbstractST {
     @Tag(SCALABILITY)
     @IsolatedTest
     @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
@@ -171,6 +173,7 @@ class UserST extends AbstractST {
     @Tag(SCALABILITY)
     @IsolatedTest
     @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         int numberOfUsers = 100;
@@ -210,6 +213,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(namespace, userClusterName, "encrypted-arnost").build();
 
@@ -217,6 +221,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(namespace, userClusterName, kafkaUserName).build();
@@ -225,6 +230,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.scramShaUser(namespace, userClusterName, "scramed-arnost").build();
 
@@ -306,6 +312,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 

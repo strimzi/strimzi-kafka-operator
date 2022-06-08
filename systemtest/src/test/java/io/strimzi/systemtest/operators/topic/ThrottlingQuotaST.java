@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+@KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
 public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);

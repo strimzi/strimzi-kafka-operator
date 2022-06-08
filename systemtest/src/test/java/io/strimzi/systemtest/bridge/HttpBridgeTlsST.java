@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
@@ -44,7 +43,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(BRIDGE)
 @Tag(ACCEPTANCE)
 @Tag(INTERNAL_CLIENTS_USED)
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
 @ParallelSuite
 class HttpBridgeTlsST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);

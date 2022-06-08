@@ -82,7 +82,7 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    @KRaftNotSupported("UserOperator and Zookeeper are not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Zookeeper are not supported by KRaft mode and is used in this test case")
     void testRecoveryDuringZookeeperRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -158,7 +158,6 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testRecoveryDuringKafkaRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -202,8 +201,10 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
-        LOGGER.info("Verifying stability of zookeeper pods");
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Verifying stability of zookeeper pods");
+            PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+        }
 
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
@@ -244,7 +245,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -356,7 +357,7 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 

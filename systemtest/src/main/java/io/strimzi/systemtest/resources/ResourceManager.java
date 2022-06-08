@@ -160,7 +160,7 @@ public class ResourceManager {
             if (Environment.isKRaftModeEnabled()) {
                 if (Objects.equals(resource.getKind(), Kafka.RESOURCE_KIND)) {
                     // Remove TO when KRaft mode is enabled, because it is not supported
-                    ((Kafka) resource).getSpec().setEntityOperator(null);
+                    ((Kafka) resource).getSpec().getEntityOperator().setTopicOperator(null);
                 }
                 if (Objects.equals(resource.getKind(), KafkaTopic.RESOURCE_KIND)) {
                     // Do not create KafkaTopic when KRaft is enabled

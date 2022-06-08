@@ -156,7 +156,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaUserStatus(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
@@ -171,7 +170,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaUserStatusNotReady(ExtensionContext extensionContext) {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
