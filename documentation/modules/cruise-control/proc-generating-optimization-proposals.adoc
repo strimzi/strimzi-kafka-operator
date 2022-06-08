@@ -12,9 +12,9 @@ You can use the results of the optimization proposal to rebalance your Kafka clu
 
 You can run the optimization proposal in one of the following modes:
 
-* `full`
+* `full` (default)
 * `add-brokers`
-* `remove-brokers`.
+* `remove-brokers`
 
 The mode you use depends on whether you are rebalancing across all the brokers already running in the Kafka cluster;
 or you want to rebalance after scaling up or before scaling down your Kafka cluster.
@@ -27,11 +27,14 @@ For more information, see xref:con-optimization-proposals-modes-{context}[Rebala
 
 .Procedure
 
-. Create a `KafkaRebalance` resource:
-
-.. To use the _default optimization goals_ defined in the `Kafka` resource, leave the `spec` property empty.
-Cruise Control rebalances a Kafka cluster in `full` mode by default.
+. Create a `KafkaRebalance` resource and specify the appropriate mode.
 +
+`full` mode (default)::
++
+--
+To use the _default optimization goals_ defined in the `Kafka` resource, leave the `spec` property empty.
+Cruise Control rebalances a Kafka cluster in `full` mode by default.
+
 .Example configuration with full rebalancing by default
 [source,yaml,subs="attributes+"]
 ----
@@ -43,9 +46,9 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec: {}
 ----
-+
+
 You can also run a full rebalance by specifying the `full` mode through the `spec.mode` property.
-+
+
 .Example configuration specifying `full` mode
 [source,yaml,subs="attributes+"]
 ----
@@ -58,12 +61,15 @@ metadata:
 spec:
   mode: full
 ----
+--
+`add-brokers` mode::
 +
+--
 If you want to rebalance a Kafka cluster after scaling up, specify the `add-brokers` mode.
-+
+
 In this mode, existing replicas are moved to the newly added brokers.
 You need to specify the brokers as a list.
-+
+
 .Example configuration specifying `add-brokers` mode
 [source,yaml,subs="attributes+"]
 ----
@@ -78,13 +84,17 @@ spec:
   brokers: [3, 4] <1>
 ----
 <1> List of newly added brokers added by the scale up operation. This property is mandatory.
+--
+
+`remove-brokers` mode::
 +
+--
 If you want to rebalance a Kafka cluster before scaling down, specify the `remove-brokers` mode.
-+
+
 In this mode, replicas are moved off the brokers that are going to be removed.
 You need to specify the brokers that are being removed as a list.
-+
-.Example of rebalancing to run before a scale down by using the `remove-brokers` mode
+
+.Example configuration specifying `remove-brokers` mode
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaRebalanceApiVersion}
@@ -98,10 +108,11 @@ spec:
   brokers: [3, 4] <1>
 ----
 <1> List of brokers to be removed by the scale down operation. This property is mandatory.
+--
 +
 NOTE: The following steps and the steps to approve or stop a rebalance are the same regardless of the rebalance mode you are using.
 
-.. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
+. To configure _user-provided optimization goals_ instead of using the default goals, add the `goals` property and enter one or more goals.
 +
 In the following example, rack awareness and replica capacity are configured as user-provided optimization goals:
 +
@@ -119,7 +130,7 @@ spec:
     - ReplicaCapacityGoal
 ----
 
-.. To ignore the configured hard goals, add the `skipHardGoalCheck: true` property:
+. To ignore the configured hard goals, add the `skipHardGoalCheck: true` property:
 +
 [source,yaml,subs="attributes+"]
 ----
@@ -140,35 +151,36 @@ spec:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl apply -f _your-file_
+kubectl apply -f _<kafka_rebalance_configuration_file>_
 ----
 +
 The Cluster Operator requests the optimization proposal from Cruise Control.
 This might take a few minutes depending on the size of the Kafka cluster.
 
-. Check the status of the `KafkaRebalance` resource:
+. Wait for the status of the optimization proposal to change to `ProposalReady`:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe kafkarebalance _rebalance-cr-name_
+kubectl get kafkarebalance -o wide -w -n _<namespace>_
 ----
 +
-Cruise Control returns one of two statuses:
-
-** `PendingProposal`: The rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
-
-** `ProposalReady`: The optimization proposal is ready for review and, if desired, approval.
-The optimization proposal is contained in the `Status.Optimization Result` property of the `KafkaRebalance` resource.
+--
+`PendingProposal`:: A `PendingProposal` status means the rebalance operator is polling the Cruise Control API to check if the optimization proposal is ready.
+`ProposalReady`:: A `ProposalReady` status means the optimization proposal is ready for review and approval.
+--
++
+When the status changes to `ProposalReady`, the optimization proposal is ready to approve.
 
 . Review the optimization proposal.
 +
+The optimization proposal is contained in the `Status.Optimization Result` property of the `KafkaRebalance` resource.
++
 [source,shell,subs="+quotes"]
 ----
-kubectl describe kafkarebalance _rebalance-cr-name_
+kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_
 ----
 +
-Here is an example proposal:
-+
+.Example optimization proposal
 [source,shell,subs="+quotes"]
 ----
 Status:
@@ -225,5 +237,4 @@ xref:proc-approving-optimization-proposal-{context}[]
 
 [role="_additional-resources"]
 .Additional resources
-
 * xref:con-optimization-proposals-{context}[]
