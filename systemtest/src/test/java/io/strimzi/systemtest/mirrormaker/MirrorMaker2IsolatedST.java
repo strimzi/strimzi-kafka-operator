@@ -40,6 +40,7 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -70,7 +71,6 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -589,8 +589,11 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
-            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build()
+            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
+
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
@@ -632,12 +635,12 @@ class MirrorMaker2IsolatedST extends AbstractST {
         if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Checking if the mirrored topic name is same as the original one");
 
-            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0);
+            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
             assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
 
-            List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0, testStorage.getTopicName());
-            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + testStorage.getTopicName()));
-            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+            String kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), testStorage.getTopicName());
+            assertThat(kafkaTopicSpec, containsString("Topic:" + testStorage.getTopicName()));
+            assertThat(kafkaTopicSpec, containsString("PartitionCount:3"));
         }
     }
 
@@ -656,8 +659,11 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
-            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build()
+            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
+
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
@@ -699,12 +705,12 @@ class MirrorMaker2IsolatedST extends AbstractST {
         if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Checking if the mirrored topic name is same as the original one");
 
-            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0);
+            List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
             assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
 
-            List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), kafkaClusterTargetName, 0, testStorage.getTopicName());
-            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + testStorage.getTopicName()));
-            assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+            String kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), testStorage.getTopicName());
+            assertThat(kafkaTopicSpec, containsString("Topic:" + testStorage.getTopicName()));
+            assertThat(kafkaTopicSpec, containsString("PartitionCount:3"));
         }
     }
 

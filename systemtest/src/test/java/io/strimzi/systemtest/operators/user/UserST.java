@@ -24,6 +24,7 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -31,12 +32,12 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -49,7 +50,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -68,6 +68,7 @@ class UserST extends AbstractST {
 
     private final String userClusterName = "user-cluster-name";
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(UserST.class.getSimpleName()).stream().findFirst().get();
+    private String scraperPodName = "";
 
     @ParallelTest
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
@@ -279,19 +280,14 @@ class UserST extends AbstractST {
 
         final String userName = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
-        String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --user " + userName;
-        LOGGER.debug("Command for kafka-configs.sh {}", command);
-
         TestUtils.waitFor("all KafkaUser " + userName + " attributes are present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                ExecResult result = cmdKubeClient(namespace).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
-                boolean res = result.out().contains("Quota configs for user-principal '" + userName + "' are");
-                res = res && result.out().contains("request_percentage=" + reqPerc);
-                res = res && result.out().contains("producer_byte_rate=" + prodRate);
-                res = res && result.out().contains("consumer_byte_rate=" + consRate);
-                res = res && result.out().contains("controller_mutation_rate=" + mutRate);
-
-                return res;
+                String result = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
+                return result.contains("Quota configs for user-principal '" + userName + "' are") &&
+                    result.contains("request_percentage=" + reqPerc) &&
+                    result.contains("producer_byte_rate=" + prodRate) &&
+                    result.contains("consumer_byte_rate=" + consRate) &&
+                    result.contains("controller_mutation_rate=" + mutRate);
             });
 
         // delete user
@@ -300,14 +296,14 @@ class UserST extends AbstractST {
 
         TestUtils.waitFor("all KafkaUser " + userName + " attributes will be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                ExecResult resultAfterDelete = cmdKubeClient(namespace).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
+                String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
 
                 return
-                    !resultAfterDelete.out().contains(userName) &&
-                    !resultAfterDelete.out().contains("request_percentage") &&
-                    !resultAfterDelete.out().contains("producer_byte_rate") &&
-                    !resultAfterDelete.out().contains("consumer_byte_rate") &&
-                    !resultAfterDelete.out().contains("controller_mutation_rate");
+                    !resultAfterDelete.contains(userName) &&
+                    !resultAfterDelete.contains("request_percentage") &&
+                    !resultAfterDelete.contains("producer_byte_rate") &&
+                    !resultAfterDelete.contains("consumer_byte_rate") &&
+                    !resultAfterDelete.contains("controller_mutation_rate");
             });
     }
 
@@ -544,10 +540,16 @@ class UserST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(namespace, scraperName).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
     }
 }

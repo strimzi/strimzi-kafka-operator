@@ -4,35 +4,27 @@
  */
 package io.strimzi.systemtest.cli;
 
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.apache.logging.log4j.Level;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KafkaCmdClient {
 
-    private static final int PORT = 9092;
-
-
-    public static List<String> listTopicsUsingPodCli(String namespaceName, String clusterName, int kafkaPodId) {
-        String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        return Arrays.asList(cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --list --bootstrap-server localhost:" + PORT).out().split("\\s+"));
+    public static List<String> listTopicsUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer) {
+        return Arrays.asList(cmdKubeClient(namespaceName).execInPod(scraperPodName, "/bin/bash", "-c",
+            "bin/kafka-topics.sh --list --bootstrap-server " + bootstrapServer).out().split("\\s+"));
     }
 
-    public static List<String> listTopicsUsingPodCli(String clusterName, int kafkaPodId) {
-        return listTopicsUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId);
-    }
-
-    public static String createTopicUsingPodCli(String namespaceName, String clusterName, int kafkaPodId, String topic, int replicationFactor, int partitions) {
-        String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        String response = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server localhost:" + PORT + " --create " + " --topic " + topic +
+    public static String createTopicUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, String topic, int replicationFactor, int partitions) {
+        String response = cmdKubeClient(namespaceName).execInPod(scraperPodName, "/bin/bash", "-c",
+            "bin/kafka-topics.sh --bootstrap-server " + bootstrapServer + " --create " + " --topic " + topic +
                 " --replication-factor " + replicationFactor + " --partitions " + partitions).out();
 
         KafkaTopicUtils.waitForKafkaTopicCreation(namespaceName, topic);
@@ -40,48 +32,84 @@ public class KafkaCmdClient {
         return response;
     }
 
-    public static String createTopicUsingPodCli(String clusterName, int kafkaPodId, String topic, int replicationFactor, int partitions) {
-        return createTopicUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId, topic, replicationFactor, partitions);
+    public static String deleteTopicUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, String topic) {
+        return cmdKubeClient(namespaceName).execInPod(scraperPodName, "/bin/bash", "-c",
+            "bin/kafka-topics.sh --bootstrap-server " + bootstrapServer + " --delete --topic " + topic).out();
     }
 
-    public static String deleteTopicUsingPodCli(String namespaceName, String clusterName, int kafkaPodId, String topic) {
-        String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server localhost:" + PORT + " --delete --topic " + topic).out();
+    public static String updateTopicPartitionsCountUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, String topic, int partitions) {
+        return cmdKubeClient(namespaceName).execInPod(scraperPodName, "/bin/bash", "-c",
+            "bin/kafka-topics.sh --bootstrap-server " + bootstrapServer + " --alter --topic " + topic + " --partitions " + partitions).out();
     }
 
-    public static List<String> describeTopicUsingPodCli(String clusterName, int kafkaPodId, String topic) {
-        return describeTopicUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId, topic);
-    }
-
-    public static List<String> describeTopicUsingPodCli(String namespaceName, String clusterName, int kafkaPodId, String topic) {
-        String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        return Arrays.asList(cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server localhost:" + PORT + " --describe --topic " + topic).out().replace(": ", ":").split("\\s+"));
-    }
-
-    public static String updateTopicPartitionsCountUsingPodCli(String namespaceName, String clusterName, int kafkaPodId, String topic, int partitions) {
-        String podName = KafkaResources.kafkaPodName(clusterName, kafkaPodId);
-        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "bin/kafka-topics.sh --bootstrap-server localhost:" + PORT + " --alter --topic " + topic + " --partitions " + partitions).out();
-    }
-
-    public static String updateTopicPartitionsCountUsingPodCli(String clusterName, int kafkaPodId, String topic, int partitions) {
-        return updateTopicPartitionsCountUsingPodCli(kubeClient().getNamespace(), clusterName, kafkaPodId, topic, partitions);
-    }
-
-    public static String listTopicsUsingPodCliWithConfigProperties(String namespaceName, String bootstrapName, String kafkaPodName, String properties) {
+    public static String listTopicsUsingPodCliWithConfigProperties(String namespaceName, String scraperPodName, String bootstrapServer, String properties) {
         cmdKubeClient().namespace(namespaceName).execInPod(Level.TRACE,
-            kafkaPodName,
+            scraperPodName,
             "/bin/bash", "-c", "echo \"" + properties + "\" | tee /tmp/config.properties"
         );
 
-        return cmdKubeClient().namespace(namespaceName).execInPod(Level.DEBUG, kafkaPodName, "/opt/kafka/bin/kafka-topics.sh",
+        return cmdKubeClient().namespace(namespaceName).execInPod(Level.DEBUG, scraperPodName, "/opt/kafka/bin/kafka-topics.sh",
                 "--list",
                 "--bootstrap-server",
-                bootstrapName,
+                bootstrapServer,
                 "--command-config",
                 "/tmp/config.properties")
             .out();
+    }
+
+    public static String describeTopicUsingPodCli(final String namespaceName, String scraperPodName, String bootstrapServer, String topicName) {
+        return cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName, "/opt/kafka/bin/kafka-topics.sh",
+                "--topic",
+                topicName,
+                "--describe",
+                "--bootstrap-server",
+                bootstrapServer)
+            .out();
+    }
+
+    public static String describeUserUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, String userName) {
+        return describeKafkaEntityUsingPodCli(namespaceName, scraperPodName, bootstrapServer, "user", userName);
+    }
+
+    public static String describeKafkaBrokerLoggersUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, int podNum) {
+        return describeKafkaEntityUsingPodCli(namespaceName, scraperPodName, bootstrapServer, "brokers-loggers", String.valueOf(podNum));
+    }
+
+    public static String describeKafkaBrokerUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, int podNum) {
+        return describeKafkaEntityUsingPodCli(namespaceName, scraperPodName, bootstrapServer, "brokers", String.valueOf(podNum));
+    }
+
+    public static String describeKafkaEntityUsingPodCli(String namespaceName, String scraperPodName, String bootstrapServer, String entityType, String entityName) {
+        return cmdKubeClient().namespace(namespaceName).execInPod(Level.DEBUG, scraperPodName, "/bin/bash", "-c", "bin/kafka-configs.sh",
+                "--bootstrap-server",
+                bootstrapServer,
+                "--entity-type",
+                entityType,
+                "--entity-name",
+                entityName,
+                "--describe")
+            .out();
+    }
+
+    public static int getCurrentOffsets(String namespaceName, String scraperPodName, String bootstrapServer, String topicName, String consumerGroup) {
+        String offsetOutput = cmdKubeClient().namespace(namespaceName).execInPod(scraperPodName, "/opt/kafka/bin/kafka-consumer-groups.sh",
+                "--describe",
+                "--bootstrap-server",
+                bootstrapServer,
+                "--group",
+                consumerGroup)
+            .out()
+            .trim();
+
+        String replaced = offsetOutput.replaceAll("\\s\\s+", " ");
+
+        List<String> lines = Arrays.asList(replaced.split("\n"));
+        List<String> headers = Arrays.asList(lines.get(0).split(" "));
+        List<String> matchingLine = Arrays.asList(lines.stream().filter(line -> line.contains(topicName)).findFirst().get().split(" "));
+
+        Map<String, String> valuesMap = IntStream.range(0, headers.size()).boxed().collect(Collectors.toMap(headers::get, matchingLine::get));
+
+
+        return Integer.parseInt(valuesMap.get("CURRENT-OFFSET"));
     }
 }

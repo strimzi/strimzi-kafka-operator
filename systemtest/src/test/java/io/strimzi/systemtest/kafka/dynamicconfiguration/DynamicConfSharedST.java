@@ -11,6 +11,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
@@ -31,6 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
@@ -48,6 +50,7 @@ public class DynamicConfSharedST extends AbstractST {
 
     private final String dynamicConfigurationSharedClusterName = "dynamic-configuration-shared-cluster-name";
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(DynamicConfSharedST.class.getSimpleName()).stream().findFirst().get();
+    private String scraperPodName;
 
     @TestFactory
     Iterator<DynamicTest> testDynConfiguration() {
@@ -66,7 +69,8 @@ public class DynamicConfSharedST extends AbstractST {
 
                 // verify phase
                 assertThat(KafkaUtils.verifyCrDynamicConfiguration(namespace, dynamicConfigurationSharedClusterName, key, value), is(true));
-                assertThat(KafkaUtils.verifyPodDynamicConfiguration(namespace, KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
+                assertThat(KafkaUtils.verifyPodDynamicConfiguration(namespace, scraperPodName,
+                    KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
             }));
         }
 
@@ -215,11 +219,17 @@ public class DynamicConfSharedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        String sharedScraperName = dynamicConfigurationSharedClusterName + "-shared";
+
         LOGGER.info("Deploying shared Kafka across all test cases!");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(namespace, sharedScraperName).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(namespace, sharedScraperName).get(0).getMetadata().getName();
     }
 }
