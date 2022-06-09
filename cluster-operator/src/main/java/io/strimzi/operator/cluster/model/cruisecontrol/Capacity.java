@@ -140,7 +140,25 @@ public class Capacity {
 
     private enum ResourceRequirementType {
         REQUEST,
-        LIMIT
+        LIMIT;
+
+        private Quantity getQuantity(ResourceRequirements resources) {
+            Map<String, Quantity> resourceRequirement;
+            switch (this) {
+                case REQUEST:
+                    resourceRequirement = resources.getRequests();
+                    break;
+                case LIMIT:
+                    resourceRequirement = resources.getLimits();
+                    break;
+                default:
+                    resourceRequirement = null;
+            }
+            if (resourceRequirement != null) {
+                return resourceRequirement.get(RESOURCE_TYPE);
+            }
+            return null;
+        }
     }
 
     public Capacity(KafkaSpec spec, Storage storage) {
@@ -152,12 +170,9 @@ public class Capacity {
 
     private static Integer getResourceRequirement(ResourceRequirements resources, ResourceRequirementType requirementType) {
         if (resources != null) {
-            Map<String, Quantity> resourceRequirement = requirementType == ResourceRequirementType.REQUEST ? resources.getRequests() : resources.getLimits();
-            if (resourceRequirement != null) {
-                Quantity quantity = resourceRequirement.get(RESOURCE_TYPE);
-                if (quantity != null) {
-                    return Quantities.parseCpuAsMilliCpus(quantity.toString());
-                }
+            Quantity quantity = requirementType.getQuantity(resources);
+            if (quantity != null) {
+                return Quantities.parseCpuAsMilliCpus(quantity.toString());
             }
         }
         return null;
