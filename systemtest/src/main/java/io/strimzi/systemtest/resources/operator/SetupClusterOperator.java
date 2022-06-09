@@ -8,9 +8,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -262,8 +264,7 @@ public class SetupClusterOperator {
         }
         // 060-Deployment
         ResourceManager.setCoDeploymentName(clusterOperatorName);
-        ResourceManager.getInstance().createResource(extensionContext,
-            new BundleResource.BundleResourceBuilder()
+        Deployment deployment = new BundleResource.BundleResourceBuilder()
                 .withName(clusterOperatorName)
                 .withNamespace(namespaceInstallTo)
                 .withWatchingNamespaces(namespaceToWatch)
@@ -273,7 +274,11 @@ public class SetupClusterOperator {
                 .withExtraLabels(extraLabels)
                 .buildBundleInstance()
                 .buildBundleDeployment()
-                .build());
+                .build();
+        Map<String, Quantity> existingLimits = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits();
+        existingLimits.put("memory", Quantity.parse("768Mi"));
+        deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().setLimits(existingLimits);
+        ResourceManager.getInstance().createResource(extensionContext, deployment);
     }
 
     private void olmInstallation() {
