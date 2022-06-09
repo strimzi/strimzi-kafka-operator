@@ -130,7 +130,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getStartingKafkaVersion(), clusterOperator.getDeploymentNamespace());
         UpgradeDowngradeData conversionData = new UpgradeDowngradeDatalist().getUpgradeData(0);
         convertCRDs(conversionData.getUrlToConversionTool(), conversionData.getToConversionTool(), clusterOperator.getDeploymentNamespace());
         // Make snapshots of all pods
