@@ -236,7 +236,7 @@ To configure topic offset synchronization, this property must also be set for th
 <39> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <40> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <41> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<42> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
+<42> RACK OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. Use this option only if you need to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. This configuration specifies a zone using the standard `topology.kubernetes.io/zone` label.
 <43> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <44> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
 <45> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].

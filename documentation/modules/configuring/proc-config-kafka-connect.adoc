@@ -175,7 +175,7 @@ You can also use _configuration provider plugins_ to xref:assembly-loading-confi
 <15> xref:con-common-configuration-prometheus-reference[Prometheus metrics], which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <16> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka Connect.
 <17> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<18> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
+<18> RACK OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. Use this option only if you need to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. This configuration specifies a zone using the standard `topology.kubernetes.io/zone` label.  
 <19> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <20> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
 
