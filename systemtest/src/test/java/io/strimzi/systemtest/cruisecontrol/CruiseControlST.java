@@ -359,6 +359,7 @@ public class CruiseControlST extends AbstractST {
     }
 
     @IsolatedTest
+    @KRaftNotSupported("Scale-up / scale-down not working in KRaft mode - https://github.com/strimzi/strimzi-kafka-operator/issues/6862")
     void testCruiseControlDuringBrokerScaleUpAndDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
         final int initialReplicas = 3;
