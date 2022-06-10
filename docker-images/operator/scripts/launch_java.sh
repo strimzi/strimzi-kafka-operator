@@ -43,9 +43,9 @@ calc_max_memory() {
    if [ "${mem_limit}" -le 314572800 ]; then
     # Restore the one-fourth default heap size instead of the one-half below 300MB threshold
     # See https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/parallel.html#default_heap_size
-    calc_mem_opt "${mem_limit}" "50" "mx"
+    calc_maximum_size_opt "${mem_limit}" "50" "mx"
   else
-    calc_mem_opt "${mem_limit}" "75" "mx"
+    calc_maximum_size_opt "${mem_limit}" "75" "mx"
   fi
 }
 
