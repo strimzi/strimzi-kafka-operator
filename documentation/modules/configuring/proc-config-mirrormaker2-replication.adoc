@@ -155,7 +155,9 @@ spec:
     "-Xmx": "1g"
     "-Xms": "1g"
   image: my-org/my-image:latest <41>
-  template: <42>
+  rack:
+    topologyKey: topology.kubernetes.io/zone <42>
+  template: <43>
     pod:
       affinity:
         podAntiAffinity:
@@ -168,7 +170,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: <43>
+    connectContainer: <44>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -177,8 +179,8 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
   tracing:
-    type: jaeger <44>
-  externalConfiguration: <45>
+    type: jaeger <45>
+  externalConfiguration: <46>
     env:
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
@@ -234,10 +236,11 @@ To configure topic offset synchronization, this property must also be set for th
 <39> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <40> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <41> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<42> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<43> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
-<44> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
-<45> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
+<42> SPECIALIZED OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
+<43> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<44> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+<45> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<46> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
 You can also use _configuration provider plugins_ to xref:assembly-loading-config-with-providers-str[load configuration values from external sources].
 
 . Create or update the resource:

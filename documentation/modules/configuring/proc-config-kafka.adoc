@@ -211,7 +211,7 @@ xref:scaling-clusters-{context}[scale clusters].
 <20> xref:assembly-storage-{context}[Storage] is configured as `ephemeral`, `persistent-claim` or `jbod`.
 <21> Storage size for xref:proc-resizing-persistent-volumes-{context}[persistent volumes may be increased] and additional xref:proc-adding-volumes-to-jbod-storage-{context}[volumes may be added to JBOD storage].
 <22> Persistent storage has xref:ref-persistent-storage-{context}[additional configuration options], such as a storage `id` and `class` for dynamic volume provisioning.
-<23> xref:type-Rack-reference[Rack awareness] is configured to spread replicas across different racks. A `topologykey` must match the label of a cluster node.
+<23> xref:type-Rack-reference[Rack awareness] configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
 <24> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 <25> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <26> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
