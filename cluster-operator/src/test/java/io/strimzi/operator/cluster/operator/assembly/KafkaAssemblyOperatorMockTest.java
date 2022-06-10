@@ -281,7 +281,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, kubernetesVersion);
         ResourceOperatorSupplier supplier = supplierWithMocks();
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
     }

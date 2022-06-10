@@ -22,7 +22,7 @@ public class FeatureGates {
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, true);
-    private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, false);
+    private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, true);
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
 
     /**

@@ -255,7 +255,7 @@ public class Environment {
 
     public static boolean isStrimziPodSetEnabled() {
         // REMINDER: this will not work once StrimziPodSet will be moved to beta FG
-        return STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_POD_SET);
+        return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS);
     }
 
     /**
@@ -263,7 +263,7 @@ public class Environment {
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
-        return STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_POD_SET) && STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
+        return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS) && STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
     }
 
     /**
