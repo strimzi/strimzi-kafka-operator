@@ -617,7 +617,7 @@ class KafkaST extends AbstractST {
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName),
-                containsString("PartitionCount:2"));
+                containsString("PartitionCount: 2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, topicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -629,7 +629,7 @@ class KafkaST extends AbstractST {
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
         assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName),
-            containsString("PartitionCount:2"));
+            containsString("PartitionCount: 2"));
         testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, cliTopicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -868,18 +868,20 @@ class KafkaST extends AbstractST {
         final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+        );
+
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
         // Creating topic without any label
         resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, "topic-without-labels", 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata()
-            .build(),
-            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+            .build()
         );
-
-        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
         // Checking that resource was created
         assertThat(cmdKubeClient(namespaceName).list("kafkatopic"), hasItems("topic-without-labels"));

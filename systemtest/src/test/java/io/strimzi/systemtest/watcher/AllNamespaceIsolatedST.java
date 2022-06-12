@@ -210,7 +210,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         scraperPodName = kubeClient().listPodsByPrefixInName(THIRD_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
-        cluster.setNamespace(THIRD_NAMESPACE);
+        cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 1).build());
 

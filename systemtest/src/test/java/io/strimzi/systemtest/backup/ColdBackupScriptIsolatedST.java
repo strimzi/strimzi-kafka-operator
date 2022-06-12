@@ -116,6 +116,10 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
+        resourceManager.createResource(context, ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build());
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
+
         // restore command
         LOGGER.info("Running restore procedure for {}/{}", clusterOperator.getDeploymentNamespace(), clusterName);
         String[] restoreCommand = new String[] {

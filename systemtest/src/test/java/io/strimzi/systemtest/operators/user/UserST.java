@@ -68,6 +68,8 @@ class UserST extends AbstractST {
 
     private final String userClusterName = "user-cluster-name";
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(UserST.class.getSimpleName()).stream().findFirst().get();
+
+    private final String scraperName = userClusterName + "-" + Constants.SCRAPER_NAME;
     private String scraperPodName = "";
 
     @ParallelTest
@@ -540,8 +542,6 @@ class UserST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
-
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(namespace)

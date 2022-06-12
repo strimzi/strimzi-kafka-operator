@@ -821,7 +821,7 @@ class LoggingChangeST extends AbstractST {
             ScraperTemplates.scraperPod(namespaceName, scraperName).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
@@ -845,7 +845,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for dynamic change in the kafka pod");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("root=DEBUG"));
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("root=DEBUG"));
 
         TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
@@ -903,7 +903,7 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Waiting for dynamic change in the kafka pod");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("root=INFO"));
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("root=INFO"));
 
         TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
@@ -933,7 +933,7 @@ class LoggingChangeST extends AbstractST {
             ScraperTemplates.scraperPod(namespaceName, scraperName).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         InlineLogging il = new InlineLogging();
@@ -945,7 +945,7 @@ class LoggingChangeST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, kafkaPods);
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("paprika=INFO"));
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("paprika=INFO"));
     }
 
     @ParallelNamespaceTest
@@ -1024,7 +1024,7 @@ class LoggingChangeST extends AbstractST {
             ScraperTemplates.scraperPod(namespaceName, scraperName).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         configMap = new ConfigMapBuilder()
@@ -1056,7 +1056,7 @@ class LoggingChangeST extends AbstractST {
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaPods);
         assertThat("Kafka pod should not roll", RollingUpdateUtils.componentHasRolled(namespaceName, kafkaSelector, kafkaPods), is(false));
         TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("kafka.authorizer.logger=ERROR"));
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("kafka.authorizer.logger=ERROR"));
 
         // log4j.appender.CONSOLE.layout.ConversionPattern is changed and thus we need RU
         configMap = new ConfigMapBuilder()
@@ -1088,7 +1088,7 @@ class LoggingChangeST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, kafkaPods);
 
         TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("kafka.authorizer.logger=DEBUG"));
+            () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0).contains("kafka.authorizer.logger=DEBUG"));
     }
 
     @ParallelNamespaceTest

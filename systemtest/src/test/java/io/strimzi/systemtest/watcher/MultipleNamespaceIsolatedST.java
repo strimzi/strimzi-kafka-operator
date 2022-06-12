@@ -51,7 +51,7 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         cluster.setNamespace(SECOND_NAMESPACE);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(SECOND_NAMESPACE, scraperPodName, KafkaResources.bootstrapServiceName(MAIN_NAMESPACE_CLUSTER_NAME));
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(SECOND_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(MAIN_NAMESPACE_CLUSTER_NAME));
         assertThat(topics, not(hasItems(topicName)));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, clusterOperator.getDeploymentNamespace()).build());

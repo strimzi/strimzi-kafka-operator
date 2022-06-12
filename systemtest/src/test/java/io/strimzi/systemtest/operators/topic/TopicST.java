@@ -454,8 +454,8 @@ public class TopicST extends AbstractST {
                     String topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
                     LOGGER.info("Checking topic {} in Kafka {}", topicName, clusterName);
                     LOGGER.debug("Topic {} info: {}", topicName, topicInfo);
-                    assertThat(topicInfo, containsString("Topic:" + topicName));
-                    assertThat(topicInfo, containsString("PartitionCount:" + topicPartitions));
+                    assertThat(topicInfo, containsString("Topic: " + topicName));
+                    assertThat(topicInfo, containsString("PartitionCount: " + topicPartitions));
                     return true;
                 } catch (KubeClusterException e) {
                     LOGGER.info("Describing topic using pod cli occurred following error:{}", e.getMessage());

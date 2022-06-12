@@ -639,8 +639,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
 
             String kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), testStorage.getTopicName());
-            assertThat(kafkaTopicSpec, containsString("Topic:" + testStorage.getTopicName()));
-            assertThat(kafkaTopicSpec, containsString("PartitionCount:3"));
+            assertThat(kafkaTopicSpec, containsString("Topic: " + testStorage.getTopicName()));
+            assertThat(kafkaTopicSpec, containsString("PartitionCount: 3"));
         }
     }
 
@@ -709,8 +709,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(testStorage.getTopicName())).findAny());
 
             String kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(kafkaClusterTargetName), testStorage.getTopicName());
-            assertThat(kafkaTopicSpec, containsString("Topic:" + testStorage.getTopicName()));
-            assertThat(kafkaTopicSpec, containsString("PartitionCount:3"));
+            assertThat(kafkaTopicSpec, containsString("Topic: " + testStorage.getTopicName()));
+            assertThat(kafkaTopicSpec, containsString("PartitionCount: 3"));
         }
     }
 
