@@ -26,7 +26,7 @@ function create_truststore {
 # $4: Private key to be imported
 # $5: Alias of the certificate
 function create_keystore_without_ca_file {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1"
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -macalg sha256
 }
 
 if [ "$STRIMZI_PUBLIC_CA" != "true" ]; then
