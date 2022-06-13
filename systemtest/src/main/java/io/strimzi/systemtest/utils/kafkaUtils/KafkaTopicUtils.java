@@ -187,31 +187,13 @@ public class KafkaTopicUtils {
         return false;
     }
 
-    public static void waitForKafkaTopicsCount(final String namespaceName, int topicCount, String clusterName) {
-        LOGGER.info("Wait until we create {} KafkaTopics", topicCount);
-        TestUtils.waitFor(topicCount + " KafkaTopics creation",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0).size() == topicCount);
-        LOGGER.info("{} KafkaTopics were created", topicCount);
-    }
-
-    public static String describeTopicViaKafkaPod(final String namespaceName, String topicName, String kafkaPodName, String bootstrapServer) {
-        return cmdKubeClient().namespace(namespaceName).execInPod(kafkaPodName, "/opt/kafka/bin/kafka-topics.sh",
-            "--topic",
-            topicName,
-            "--describe",
-            "--bootstrap-server",
-            bootstrapServer)
-            .out();
-    }
-
-    public static void waitForKafkaTopicSpecStability(final String namespaceName, String topicName, String podName, String bootstrapServer) {
+    public static void waitForKafkaTopicSpecStability(final String namespaceName, String topicName, String scraperPodName, String bootstrapServer) {
         int[] stableCounter = {0};
 
-        String oldSpec = describeTopicViaKafkaPod(namespaceName, topicName, podName, bootstrapServer);
+        String oldSpec = KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, bootstrapServer, topicName);
 
         TestUtils.waitFor("KafkaTopic's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (oldSpec.equals(describeTopicViaKafkaPod(namespaceName, topicName, podName, bootstrapServer))) {
+            if (oldSpec.equals(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, bootstrapServer, topicName))) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.info("KafkaTopic's spec is stable for {} polls intervals", stableCounter[0]);
@@ -239,14 +221,14 @@ public class KafkaTopicUtils {
         );
     }
 
-    public static void waitForTopicsByPrefixDeletionUsingPodCli(String namespace, String prefix, String bootstrapName, String kafkaPodName, String properties) {
+    public static void waitForTopicsByPrefixDeletionUsingPodCli(String namespace, String prefix, String bootstrapName, String scraperPodName, String properties) {
         LOGGER.info("Waiting for all topics with prefix {} will be deleted from Kafka", prefix);
         TestUtils.waitFor(String.format("all topics with prefix %s deletion", prefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, bootstrapName, kafkaPodName, properties).contains(prefix));
+            () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, scraperPodName, bootstrapName, properties).contains(prefix));
     }
 
     public static List<String> getKafkaTopicReplicasForEachPartition(String namespaceName, String topicName, String podName, String bootstrapServer) {
-        return Arrays.stream(describeTopicViaKafkaPod(namespaceName, topicName, podName, bootstrapServer)
+        return Arrays.stream(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, podName, bootstrapServer, topicName)
             .replaceFirst("Topic.*\n", "")
             .replaceAll(".*Replicas: ", "")
             .replaceAll("\tIsr.*", "")

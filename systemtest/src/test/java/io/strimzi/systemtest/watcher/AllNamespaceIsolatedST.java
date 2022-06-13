@@ -26,6 +26,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,6 +57,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceIsolatedST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
+    private String scraperPodName;
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
@@ -67,7 +69,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(THIRD_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(MAIN_NAMESPACE_CLUSTER_NAME));
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, SECOND_NAMESPACE).build());
@@ -180,6 +182,8 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
 
+        final String scraperName = MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.SCRAPER_NAME;
+
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
@@ -200,7 +204,11 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(THIRD_NAMESPACE, scraperName).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(THIRD_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
         cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO

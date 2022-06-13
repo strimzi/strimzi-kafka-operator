@@ -47,6 +47,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -587,9 +588,14 @@ class KafkaST extends AbstractST {
     void testForTopicOperator(ExtensionContext extensionContext) throws InterruptedException {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+        );
 
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         final String cliTopicName = "topic-from-cli";
 
@@ -599,19 +605,19 @@ class KafkaST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicReady(namespaceName, topicName);
 
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getMetadata().getName(), is(topicName));
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0), hasItem(topicName));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItem(topicName));
 
-        KafkaCmdClient.createTopicUsingPodCli(namespaceName, clusterName, 0, cliTopicName, 1, 1);
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0), hasItems(topicName, cliTopicName));
+        KafkaCmdClient.createTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName, 1, 1);
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItems(topicName, cliTopicName));
         assertThat(cmdKubeClient(namespaceName).list(KafkaTopic.RESOURCE_KIND), hasItems(cliTopicName, topicName));
 
         //Updating first topic using pod CLI
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespaceName, clusterName, 0, topicName, 2);
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName, 2);
 
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, clusterName, 0, topicName),
-                hasItems("PartitionCount:2"));
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName),
+                containsString("PartitionCount: 2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, topicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -622,8 +628,8 @@ class KafkaST extends AbstractST {
 
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, clusterName, 0, cliTopicName),
-                hasItems("PartitionCount:2"));
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName),
+            containsString("PartitionCount: 2"));
         testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, cliTopicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -633,12 +639,12 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName(KafkaTopic.RESOURCE_KIND, cliTopicName);
 
         //Deleting another topic using pod CLI
-        KafkaCmdClient.deleteTopicUsingPodCli(namespaceName, clusterName, 0, topicName);
+        KafkaCmdClient.deleteTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
         KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName, topicName);
 
         //Checking all topics were deleted
         Thread.sleep(Constants.TIMEOUT_TEARDOWN);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
         assertThat(topics, not(hasItems(topicName)));
         assertThat(topics, not(hasItems(cliTopicName)));
     }
@@ -859,21 +865,28 @@ class KafkaST extends AbstractST {
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+        );
+
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
         // Creating topic without any label
         resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, "topic-without-labels", 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata()
-            .build());
+            .build()
+        );
 
         // Checking that resource was created
         assertThat(cmdKubeClient(namespaceName).list("kafkatopic"), hasItems("topic-without-labels"));
         // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0), not(hasItems("topic-without-labels")));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
         String tOPodName = cmdKubeClient(namespaceName).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
@@ -885,7 +898,7 @@ class KafkaST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName,  "topic-without-labels");
 
         //Checking all topics were deleted
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 

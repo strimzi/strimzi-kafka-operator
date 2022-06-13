@@ -19,6 +19,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClientsBuild
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -53,6 +54,7 @@ public class ThrottlingQuotaST extends AbstractST {
     private TestStorage sharedTestStorage;
 
     private KafkaAdminClientsBuilder adminClientsBuilder;
+    private String scraperPodName = "";
 
     @ParallelTest
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
@@ -62,7 +64,6 @@ public class ThrottlingQuotaST extends AbstractST {
         final String alterAdminName = "alter-" + testStorage.getAdminName();
         final String deleteAdminName = "delete-" + testStorage.getAdminName();
         final String listAdminName = "list-" + testStorage.getAdminName();
-        final String kafkaPodName = KafkaResources.kafkaPodName(sharedTestStorage.getClusterName(), 0);
         final String plainBootstrapName = KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName());
 
         int numOfTopics = 25;
@@ -86,7 +87,7 @@ public class ThrottlingQuotaST extends AbstractST {
         KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
         // we need to wait for all KafkaTopics to be deleted from Kafka before proceeding - using Kafka pod cli (with AdminClient props)
         KafkaTopicUtils.waitForTopicsByPrefixDeletionUsingPodCli(testStorage.getNamespaceName(),
-            testStorage.getTopicName(), plainBootstrapName, kafkaPodName, createTopicJob.getAdditionalConfig());
+            testStorage.getTopicName(), plainBootstrapName, scraperPodName, createTopicJob.getAdditionalConfig());
 
         numOfPartitions = 5;
 
@@ -170,7 +171,7 @@ public class ThrottlingQuotaST extends AbstractST {
         KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
         // we need to wait for all KafkaTopics to be deleted from Kafka before proceeding - using Kafka pod cli (with AdminClient props)
         KafkaTopicUtils.waitForTopicsByPrefixDeletionUsingPodCli(testStorage.getNamespaceName(),
-            testStorage.getTopicName(), plainBootstrapName, kafkaPodName, createTopicJob.getAdditionalConfig());
+            testStorage.getTopicName(), plainBootstrapName, scraperPodName, createTopicJob.getAdditionalConfig());
 
         // List topics after deletion
         resourceManager.createResource(extensionContext, listTopicJob.defaultAdmin());
@@ -214,7 +215,11 @@ public class ThrottlingQuotaST extends AbstractST {
                             .build())
                 .endKafka()
             .endSpec()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUserName())
             .editOrNewSpec()

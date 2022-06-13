@@ -29,6 +29,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -139,8 +140,15 @@ public class ReconciliationST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build(),
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+        );
+
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
+
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         LOGGER.info("Adding pause annotation into KafkaTopic resource and changing replication factor");
@@ -150,7 +158,7 @@ public class ReconciliationST extends AbstractST {
         }, namespaceName);
 
         KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, topicName, CustomResourceStatus.ReconciliationPaused);
-        KafkaTopicUtils.waitForKafkaTopicSpecStability(namespaceName, topicName, KafkaResources.kafkaPodName(clusterName, 0), KafkaResources.plainBootstrapAddress(clusterName));
+        KafkaTopicUtils.waitForKafkaTopicSpecStability(namespaceName, topicName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
 
         LOGGER.info("Setting annotation to \"false\", partitions should be scaled to {}", SCALE_TO);
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName,

@@ -7,16 +7,19 @@ package io.strimzi.systemtest.backup;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.USER_PATH;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -51,6 +54,8 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
     @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
     void backupAndRestore(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
+        String scraperName = mapWithScraperNames.get(context.getDisplayName());
+
         String groupId = "my-group", newGroupId = "new-group";
 
         String topicName = mapWithTestTopics.get(context.getDisplayName());
@@ -60,11 +65,16 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
         int firstBatchSize = 100, secondBatchSize = 10;
         String backupFilePath = USER_PATH + "/target/" + clusterName + ".tgz";
 
-        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+        resourceManager.createResource(context,
+            KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
+                .editMetadata()
+                    .withNamespace(clusterOperator.getDeploymentNamespace())
+                .endMetadata()
+                .build(),
+            ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build()
+        );
+
+        String scraperPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(producerName)
@@ -81,7 +91,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
         ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), firstBatchSize);
 
         // save consumer group offsets
-        int offsetsBeforeBackup = KafkaUtils.getCurrentOffsets(KafkaResources.kafkaPodName(clusterName, 0), topicName, groupId);
+        int offsetsBeforeBackup = KafkaCmdClient.getCurrentOffsets(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName, groupId);
         assertThat("No offsets map before backup", offsetsBeforeBackup > 0);
 
         // send additional messages
@@ -106,6 +116,10 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
+        resourceManager.createResource(context, ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build());
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
+
         // restore command
         LOGGER.info("Running restore procedure for {}/{}", clusterOperator.getDeploymentNamespace(), clusterName);
         String[] restoreCommand = new String[] {
@@ -120,7 +134,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
             .withMessageCount(secondBatchSize)
             .build();
 
-        int offsetsAfterRestore = KafkaUtils.getCurrentOffsets(KafkaResources.kafkaPodName(clusterName, 0), topicName, groupId);
+        int offsetsAfterRestore = KafkaCmdClient.getCurrentOffsets(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName, groupId);
         assertThat("Current consumer group offsets are not the same as before the backup", offsetsAfterRestore, is(offsetsBeforeBackup));
 
         // check consumer group recovery
