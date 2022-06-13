@@ -40,7 +40,7 @@ public class JmxUtils {
         String[] cmd = new String[] {
             "java",
             "-jar",
-            "jmxterm/jmxterm.jar",
+            "/tmp/jmxterm.jar",
             "-i",
             "/tmp/" + serviceName + ".sh"
         };
@@ -50,19 +50,11 @@ public class JmxUtils {
 
     public static void downloadJmxTermToPod(String namespace, String podName) {
         String[] cmd = new String[] {
-            "mkdir",
-            "jmxterm",
-
-        };
-
-        cmdKubeClient().namespace(namespace).execInPod(podName, cmd);
-
-        cmd = new String[] {
             "curl",
             "-L",
             "https://github.com/jiaqi/jmxterm/releases/download/v1.0.2/jmxterm-1.0.2-uber.jar",
             "-o",
-            "jmxterm/jmxterm.jar"
+            "/tmp/jmxterm.jar"
         };
 
         cmdKubeClient().namespace(namespace).execInPod(podName, cmd);

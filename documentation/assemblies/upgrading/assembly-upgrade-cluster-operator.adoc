@@ -1,0 +1,53 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='assembly-upgrade-cluster-operator-{context}']
+= Upgrading the Cluster Operator
+
+[role="_abstract"]
+Use the same method to upgrade the Cluster Operator as the initial method of deployment.
+
+Using installation files:: If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator].
+
+Using the OperatorHub.io:: If you deployed Strimzi from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi operators to a new Strimzi version.
++
+Updating the channel starts one of the following types of upgrade, depending on your chosen upgrade strategy:
++
+--
+* An automatic upgrade is initiated
+* A manual upgrade that requires approval before installation begins
+--
++
+NOTE: If you subscribe to the _stable_ channel, you can get automatic updates without changing channels.
+However, enabling automatic updates is not recommended because of the potential for missing any pre-installation upgrade steps.
+Use automatic upgrades only on version-specific channels.
++
+For more information on using OperatorHub.io to upgrade Operators, see the {OLMOperatorDocs}.
+
+Using a Helm chart:: If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
++
+The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
+Install the new CRDs manually after upgrading the Cluster Operator.
+You can access the CRDs from the {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.
+
+[id='con-upgrade-cluster-operator-unsupported-kafka-{context}']
+== Upgrading the Cluster Operator returns Kafka version error
+
+If you upgrade the Cluster Operator and get an _unsupported Kafka version_ error, your Kafka cluster deployment has an older Kafka version that is not supported by the new operator version.
+This error applies to all installation methods.
+
+If this error occurs, upgrade Kafka to a supported Kafka version.
+Change the `spec.kafka.version` in the `Kafka` resource to the supported version.
+
+You can use `kubectl` to check for error messages like this in the `status` of the `Kafka` resource.
+
+.Checking the Kafka status for errors
+[source,shell, subs=+quotes]
+----
+kubectl get kafka _<kafka_cluster_name>_ -n _<namespace>_ -o jsonpath='{.status.conditions}'
+----
+
+Replace `_<kafka_cluster_name>_` with the name of your Kafka cluster and `_<namespace>_` with the Kubernetes namespace where the pod is running.
+
+include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]

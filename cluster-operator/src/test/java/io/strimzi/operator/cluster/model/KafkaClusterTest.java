@@ -1266,6 +1266,43 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    public void testNodePortWithLoadbalancer() {
+        GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
+                .withNodePort(32189)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerConfig0 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withBroker(0)
+                .withNodePort(32001)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.LOADBALANCER)
+                        .withTls(true)
+                        .withNewConfiguration()
+                        .withBootstrap(bootstrapConfig)
+                        .withBrokers(brokerConfig0)
+                        .endConfiguration()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, 32189, "TCP"))));
+        assertThat(kc.generateExternalServices(0).get(0).getSpec().getPorts().get(0).getNodePort(), is(32001));
+
+        assertThat(ListenersUtils.bootstrapNodePort(kc.getListeners().get(0)), is(32189));
+        assertThat(ListenersUtils.brokerNodePort(kc.getListeners().get(0), 0), is(32001));
+    }
+
+    @ParallelTest
     public void testExternalNodePorts() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))

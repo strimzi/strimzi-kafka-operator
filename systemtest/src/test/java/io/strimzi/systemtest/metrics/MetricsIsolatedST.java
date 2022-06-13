@@ -25,8 +25,10 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -138,6 +140,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(topicPartitions, kafkaMetricsData);
@@ -160,6 +163,7 @@ public class MetricsIsolatedST extends AbstractST {
 
     @ParallelTest
     @Tag(ACCEPTANCE)
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperQuorumSize() {
         Pattern quorumSize = Pattern.compile("zookeeper_quorumsize ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(quorumSize, zookeeperMetricsData);
@@ -167,6 +171,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperAliveConnections() {
         Pattern numAliveConnections = Pattern.compile("zookeeper_numaliveconnections ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
@@ -174,6 +179,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperWatchersCount() {
         Pattern watchersCount = Pattern.compile("zookeeper_inmemorydatatree_watchcount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(watchersCount, zookeeperMetricsData);
@@ -257,7 +263,9 @@ public class MetricsIsolatedST extends AbstractST {
                     assertThat("Value from collected metric should be non-empty", !value.isEmpty());
                     assertThat(value, CoreMatchers.containsString("kafka_consumergroup_current_offset"));
                     assertThat(value, CoreMatchers.containsString("kafka_consumergroup_lag"));
-                    assertThat(value, CoreMatchers.containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
+                    if (!Environment.isKRaftModeEnabled()) {
+                        assertThat(value, CoreMatchers.containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
+                    }
                 });
 
                 return true;
@@ -370,6 +378,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testTopicOperatorMetrics() {
         topicOperatorMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.TopicOperator)
@@ -554,6 +563,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testReconcileStateMetricInTopicOperator(ExtensionContext extensionContext) {
         cluster.setNamespace(SECOND_NAMESPACE);
 
@@ -739,10 +749,12 @@ public class MetricsIsolatedST extends AbstractST {
 
         kafkaMetricsData = collector.collectMetricsFromPods();
 
-        zookeeperMetricsData = collector.toBuilder()
-            .withComponentType(ComponentType.Zookeeper)
-            .build()
-            .collectMetricsFromPods();
+        if (!Environment.isKRaftModeEnabled()) {
+            zookeeperMetricsData = collector.toBuilder()
+                    .withComponentType(ComponentType.Zookeeper)
+                    .build()
+                    .collectMetricsFromPods();
+        }
 
         kafkaConnectMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.KafkaConnect)

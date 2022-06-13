@@ -327,7 +327,7 @@ public class KafkaCluster extends AbstractModel {
                 LOGGER.warnCr(reconciliation, "Only the following changes to Kafka storage are allowed: " +
                         "changing the deleteClaim flag, " +
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
-                        "changing overrides to nodes which do not exist yet" +
+                        "changing overrides to nodes which do not exist yet " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
                 LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the custom resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
@@ -1933,7 +1933,7 @@ public class KafkaCluster extends AbstractModel {
                 .withZookeeper(cluster)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
                 .withListeners(cluster, namespace, listeners, controlPlaneListener)
-                .withAuthorization(cluster, authorization)
+                .withAuthorization(cluster, authorization, false)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                 .withUserConfiguration(configuration)
                 .build().trim();
@@ -2028,8 +2028,7 @@ public class KafkaCluster extends AbstractModel {
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
                             controlPlaneListener, true)
-                    // Not supported right now
-                    //.withAuthorization(cluster, authorization)
+                    .withAuthorization(cluster, authorization, true)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
                     .build().trim();
@@ -2046,7 +2045,7 @@ public class KafkaCluster extends AbstractModel {
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
                             controlPlaneListener, false)
-                    .withAuthorization(cluster, authorization)
+                    .withAuthorization(cluster, authorization, false)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
                     .build().trim();

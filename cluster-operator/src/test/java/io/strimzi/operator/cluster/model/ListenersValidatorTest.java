@@ -330,12 +330,30 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
+                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
+    }
+
+    @ParallelTest
+    public void testLoadBalancerListenerWithNodePort() {
+        String name = "lb";
+
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withNewConfiguration()
+                .withNewBootstrap()
+                .withNodePort(32189)
+                .endBootstrap()
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+
+        ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners);
     }
 
     @ParallelTest

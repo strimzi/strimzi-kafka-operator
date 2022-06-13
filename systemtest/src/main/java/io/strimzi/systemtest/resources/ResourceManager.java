@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -74,6 +75,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -155,6 +157,18 @@ public class ResourceManager {
             LOGGER.info("Create/Update {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
+            if (Environment.isKRaftModeEnabled()) {
+                if (Objects.equals(resource.getKind(), Kafka.RESOURCE_KIND)) {
+                    // Remove TO when KRaft mode is enabled, because it is not supported
+                    ((Kafka) resource).getSpec().getEntityOperator().setTopicOperator(null);
+                }
+                if (Objects.equals(resource.getKind(), KafkaTopic.RESOURCE_KIND)) {
+                    // Do not create KafkaTopic when KRaft is enabled
+                    LOGGER.warn("KafkaTopic {} will not be created, because TopicOperator is not enabled with KRaft mode", resource.getMetadata().getName());
+                    continue;
+                }
+            }
+
             // ignore test context of shared Cluster Operator
             if (testContext != BeforeAllOnce.getSharedExtensionContext()) {
                 // if it is parallel namespace test we are gonna replace resource a namespace
@@ -223,6 +237,9 @@ public class ResourceManager {
         if (waitReady) {
             for (T resource : resources) {
                 ResourceType<T> type = findResourceType(resource);
+                if (Objects.equals(resource.getKind(), KafkaTopic.RESOURCE_KIND)) {
+                    continue;
+                }
                 assertTrue(waitResourceCondition(resource, ResourceCondition.readiness(type)),
                     String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
             }

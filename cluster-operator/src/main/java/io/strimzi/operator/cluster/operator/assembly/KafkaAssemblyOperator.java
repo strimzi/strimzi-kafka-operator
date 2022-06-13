@@ -153,7 +153,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Run reconciliations of the different components
                 .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileZooKeeper(this::dateSupplier))
                 .compose(state -> state.reconcileKafka(this::dateSupplier))
-                .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileEntityOperator(this::dateSupplier))
+                .compose(state -> state.reconcileEntityOperator(this::dateSupplier))
                 .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
                 .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
                 .compose(state -> state.reconcileJmxTrans())

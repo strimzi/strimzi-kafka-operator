@@ -165,6 +165,8 @@ public interface Constants {
      * Feature gate related constants
      */
     String USE_STRIMZI_POD_SET = "+UseStrimziPodSets";
+    String USE_STRIMZI_STATEFULSETS = "-UseStrimziPodSets";
+    String USE_KRAFT_MODE = "+UseKRaft";
 
     /**
      * Default value which allows execution of tests with any tags

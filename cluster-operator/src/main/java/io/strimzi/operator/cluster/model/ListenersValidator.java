@@ -340,6 +340,7 @@ public class ListenersValidator {
      */
     private static void validateBootstrapNodePort(Set<String> errors, GenericKafkaListener listener) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && listener.getConfiguration().getBootstrap().getNodePort() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure bootstrap.nodePort because it is not NodePort based listener");
         }
@@ -406,6 +407,7 @@ public class ListenersValidator {
      */
     private static void validateBrokerNodePort(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && broker.getNodePort() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure brokers[].nodePort because it is not NodePort based listener");
         }

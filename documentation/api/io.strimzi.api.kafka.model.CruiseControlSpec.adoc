@@ -1,0 +1,261 @@
+Configures a Cruise Control cluster.
+
+Configuration options relate to:
+
+* Goals configuration
+* Capacity limits for resource distribution goals
+
+[id='property-cruise-control-config-{context}']
+=== `config`
+
+Use the `config` properties to configure Cruise Control options as keys.
+
+Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi.
+
+Configuration options that cannot be configured relate to the following:
+
+* Security (Encryption, Authentication, and Authorization)
+* Connection to the Kafka cluster
+* Client ID configuration
+* ZooKeeper connectivity
+* Web server configuration
+* Self healing
+
+The values can be one of the following JSON types:
+
+* String
+* Number
+* Boolean
+
+You can specify and configure the options listed in the {CruiseControlConfigDocs} with the exception of those options that are managed directly by Strimzi.
+See the description of the `config` property for a list of forbidden prefixes.
+
+When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
+All other supported options are passed to Cruise Control.
+
+There are exceptions to the forbidden options.
+For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+You can also configure `webserver` properties to enable Cross-Origin Resource Sharing (CORS).
+
+.Example Cruise Control configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    config:
+      default.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+      cpu.balance.threshold: 1.1
+      metadata.max.age.ms: 300000
+      send.buffer.bytes: 131072
+      webserver.http.cors.enabled: true
+      webserver.http.cors.origin: "*"
+      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type"
+    # ...
+----
+
+[id='property-cruise-control-config-cors-{context}']
+=== Cross-Origin Resource Sharing (CORS)
+
+Cross-Origin Resource Sharing (CORS) is a HTTP mechanism for controlling access to REST APIs.
+Restrictions can be on access methods or originating URLs of client applications.
+You can enable CORS with Cruise Control using the `webserver.http.cors.enabled` property in the `config`.
+When enabled, CORS permits read access to the Cruise Control REST API from applications that have different originating URLs than Strimzi.
+This allows applications from specified origins to use `GET` requests to fetch information about the Kafka cluster through the Cruise Control API.
+For example, applications can fetch information on the current cluster load or the most recent optimization proposal.
+`POST` requests are not permitted.
+
+NOTE: For more information on using CORS with Cruise Control, see {CruiseControlApiDocs}.
+
+.Enabling CORS for Cruise Control
+
+You enable and configure CORS in `Kafka.spec.cruiseControl.config`.
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    config:
+      webserver.http.cors.enabled: true # <1>
+      webserver.http.cors.origin: "*" # <2>
+      webserver.http.cors.exposeheaders: "User-Task-ID,Content-Type" # <3>
+
+    # ...
+----
+<1> Enables CORS.
+<2> Specifies permitted origins for the `Access-Control-Allow-Origin` HTTP response header. You can use a wildcard or specify a single origin as a URL. If you use a wildcard, a response is returned following requests from any origin.
+<3> Exposes specified header names for the `Access-Control-Expose-Headers` HTTP response header. Applications in permitted origins can read responses with the specified headers.
+
+=== Cruise Control REST API security
+
+The Cruise Control REST API is secured with HTTP Basic authentication and SSL to protect the cluster against potentially destructive Cruise Control operations, such as decommissioning Kafka brokers.
+We recommend that Cruise Control in Strimzi is **only used with these settings enabled**.
+
+However, it is possible to disable these settings by specifying the following Cruise Control configuration:
+
+* To disable the built-in HTTP Basic authentication, set `webserver.security.enable` to `false`.
+* To disable the built-in SSL, set `webserver.ssl.enable` to `false`.
+
+.Cruise Control configuration to disable API authorization, authentication, and SSL
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    config:
+      webserver.security.enable: false
+      webserver.ssl.enable: false
+# ...
+----
+
+
+[id='property-cruise-control-broker-capacity-{context}']
+=== brokerCapacity
+
+Cruise Control uses capacity limits to determine if optimization goals for resource distribution are being broken.
+There are four goals of this type:
+
+* `DiskUsageDistributionGoal`            - Disk utilization distribution
+* `CpuUsageDistributionGoal`             - CPU utilization distribution
+* `NetworkInboundUsageDistributionGoal`  - Network inbound utilization distribution
+* `NetworkOutboundUsageDistributionGoal` - Network outbound utilization distribution
+
+You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
+They are enabled by default and you can change their default values.
+Capacity limits can be set for the following broker resources:
+
+* `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
+* `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
+
+For network throughput, use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second.
+
+NOTE: Disk and CPU capacity limits are automatically generated by Strimzi, so you do not need to set them.
+
+[NOTE]
+====
+In order to guarantee accurate rebalance proposal when using CPU goals, you can set CPU requests equal to CPU limits in `Kafka.spec.kafka.resources`.
+That way, all CPU resources are reserved upfront and are always available.
+This configuration allows Cruise Control to properly evaluate the CPU utilization when preparing the rebalance proposals based on CPU goals.
+====
+
+.Example Cruise Control brokerCapacity configuration using bibyte units
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    brokerCapacity:
+      inboundNetwork: 10000KiB/s
+      outboundNetwork: 10000KiB/s
+    # ...
+----
+
+[id='property-cruise-control-capacity-overrides-{context}']
+=== Capacity overrides
+
+Brokers might be running on nodes with heterogeneous network resources.
+If that's the case, specify `overrides` that set the network capacity limits for each broker.
+The overrides ensure an accurate rebalance between the brokers.
+Override capacity limits can be set for the following broker resources:
+
+* `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
+* `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
+
+.An example of Cruise Control capacity overrides configuration using bibyte units
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    brokerCapacity:
+      inboundNetwork: 10000KiB/s
+      outboundNetwork: 10000KiB/s
+      overrides:
+      - brokers: [0]
+        inboundNetwork: 20000KiB/s
+        outboundNetwork: 20000KiB/s
+      - brokers: [1, 2]
+        inboundNetwork: 30000KiB/s
+        outboundNetwork: 30000KiB/s
+----
+
+For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
+
+[id='property-cruise-control-logging-{context}']
+=== Logging configuration
+
+Cruise Control has its own configurable logger:
+
+* `rootLogger.level`
+
+Cruise Control uses the Apache `log4j2` logger implementation.
+
+Use the `logging` property to configure loggers and logger levels.
+
+You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
+If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
+Here we see examples of `inline` and `external` logging.
+
+.Inline logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+# ...
+spec:
+  cruiseControl:
+    # ...
+    logging:
+      type: inline
+      loggers:
+        rootLogger.level: "INFO"
+    # ...
+----
+
+.External logging
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+# ...
+spec:
+  cruiseControl:
+    # ...
+    logging:
+      type: external
+      valueFrom:
+        configMapKeyRef:
+          name: customConfigMap
+          key: cruise-control-log4j.properties
+    # ...
+----
+
+.Garbage collector (GC)
+
+Garbage collector logging can also be enabled (or disabled) using the xref:con-common-configuration-garbage-collection-reference[`jvmOptions` property].

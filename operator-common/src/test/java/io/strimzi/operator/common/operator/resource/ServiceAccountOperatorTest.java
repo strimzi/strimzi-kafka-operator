@@ -160,7 +160,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, true);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)

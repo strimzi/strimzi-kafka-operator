@@ -61,13 +61,13 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testFeatureGatesParsing() {
         assertThat(new FeatureGates("+ControlPlaneListener").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("+ServiceAccountPatching").serviceAccountPatchingEnabled(), is(true));
-        assertThat(new FeatureGates("+ControlPlaneListener,-ServiceAccountPatching").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("+ControlPlaneListener,-ServiceAccountPatching").serviceAccountPatchingEnabled(), is(false));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +ServiceAccountPatching").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +ServiceAccountPatching").serviceAccountPatchingEnabled(), is(true));
-        assertThat(new FeatureGates("+ServiceAccountPatching,-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
-        assertThat(new FeatureGates("+ServiceAccountPatching,-ControlPlaneListener").serviceAccountPatchingEnabled(), is(true));
+        assertThat(new FeatureGates("+UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
+        assertThat(new FeatureGates("+ControlPlaneListener,-UseStrimziPodSets").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("+ControlPlaneListener,-UseStrimziPodSets").useStrimziPodSetsEnabled(), is(false));
+        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +UseStrimziPodSets").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
+        assertThat(new FeatureGates("+UseStrimziPodSets,-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
+        assertThat(new FeatureGates("+UseStrimziPodSets,-ControlPlaneListener").useStrimziPodSetsEnabled(), is(true));
     }
 
     @ParallelTest

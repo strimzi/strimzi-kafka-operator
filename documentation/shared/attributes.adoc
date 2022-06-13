@@ -78,6 +78,7 @@
 :K8sPriorityClass: link:https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption[Pod Priority and Preemption^]
 :K8sServiceDiscovery: https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
 :K8sWellKnownLabelsAnnotationsAndTaints: link:https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/[Well-Known Labels, Annotations and Taints^]
+:K8sZoneLabel: link:https://kubernetes.io/docs/reference/labels-annotations-taints/#topologykubernetesiozone[topology.kubernetes.io/zone^]
 :K8sDockerSecret: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^]
 :MavenCentral: https://mvnrepository.com/repos/central[Maven Central repository^]
 :Minikube: link:https://kubernetes.io/docs/tasks/tools/install-minikube/[Install and start Minikube]

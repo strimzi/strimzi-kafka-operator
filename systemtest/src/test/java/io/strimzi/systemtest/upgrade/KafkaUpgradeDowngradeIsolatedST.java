@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 @Tag(UPGRADE)
 @IsolatedSuite
+@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeIsolatedST.class);

@@ -5,24 +5,27 @@
 [id='con-optimization-goals-{context}']
 = Optimization goals overview
 
-To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals], which you can approve or reject.  
+To rebalance a Kafka cluster, Cruise Control uses optimization goals to generate xref:con-optimization-proposals-{context}[optimization proposals], which you can approve or reject.
 
-Optimization goals are constraints on workload redistribution and resource utilization across a Kafka cluster. 
-Strimzi supports most of the optimization goals developed in the Cruise Control project. 
+Optimization goals are constraints on workload redistribution and resource utilization across a Kafka cluster.
+Strimzi supports most of the optimization goals developed in the Cruise Control project.
 The supported goals, in the default descending order of priority, are as follows:
 
 . Rack-awareness
 . Minimum number of leader replicas per broker for a set of topics
 . Replica capacity
-. _Capacity_: Disk capacity, Network inbound capacity, Network outbound capacity, CPU capacity
+. Capacity goals
+** Disk capacity
+** Network inbound capacity
+** Network outbound capacity
+** CPU capacity
 . Replica distribution
 . Potential network output
-. _Resource distribution_: Disk utilization distribution, Network inbound utilization distribution, Network outbound utilization distribution, CPU utilization distribution
-+
-[NOTE]
-====
-The resource distribution goals are controlled using xref:capacity-configuration[capacity limits] on broker resources.
-====
+. Resource distribution goals
+** Disk utilization distribution
+** Network inbound utilization distribution
+** Network outbound utilization distribution
+** CPU utilization distribution
 . Leader bytes-in rate distribution
 . Topic replica distribution
 . Leader replica distribution
@@ -34,11 +37,15 @@ For more information on each optimization goal, see link:https://github.com/link
 
 NOTE: "Write your own" goals and Kafka assigner goals are not yet supported.
 
-[discrete]
 == Goals configuration in Strimzi custom resources
 
-You configure optimization goals in `Kafka` and `KafkaRebalance` custom resources. Cruise Control has configurations for xref:hard-soft-goals[hard] optimization goals that must be satisfied, as well as xref:main-goals[main], xref:#default-goals[default], and xref:#user-provided-goals[user-provided] optimization goals. 
-Optimization goals for resource distribution (disk, network inbound, network outbound, and CPU) are subject to xref:capacity-configuration[capacity limits] on broker resources.
+You configure optimization goals in `Kafka` and `KafkaRebalance` custom resources.
+Cruise Control has configurations for xref:hard-soft-goals[hard] optimization goals that must be satisfied, as well as xref:main-goals[main], xref:#default-goals[default], and xref:#user-provided-goals[user-provided] optimization goals.
+
+[NOTE]
+====
+Resource distribution goals are subject to xref:property-cruise-control-broker-capacity-reference[capacity limits] on broker resources.
+====
 
 The following sections describe each goal configuration in more detail.
 
@@ -46,15 +53,15 @@ The following sections describe each goal configuration in more detail.
 [discrete]
 === Hard goals and soft goals
 
-Hard goals are goals that _must_ be satisfied in optimization proposals. 
-Goals that are not configured as hard goals are known as _soft goals_. 
+Hard goals are goals that _must_ be satisfied in optimization proposals.
+Goals that are not configured as hard goals are known as _soft goals_.
 You can think of soft goals as _best effort_ goals: they do _not_ need to be satisfied in optimization proposals, but are included in optimization calculations.
 An optimization proposal that violates one or more soft goals, but satisfies all hard goals, is valid.
 
-Cruise Control will calculate optimization proposals that satisfy all the hard goals and as many soft goals as possible (in their priority order). 
+Cruise Control will calculate optimization proposals that satisfy all the hard goals and as many soft goals as possible (in their priority order).
 An optimization proposal that does _not_ satisfy all the hard goals is rejected by Cruise Control and not sent to the user for approval.
 
-NOTE: For example, you might have a soft goal to distribute a topic's replicas evenly across the cluster (the topic replica distribution goal). 
+NOTE: For example, you might have a soft goal to distribute a topic's replicas evenly across the cluster (the topic replica distribution goal).
 Cruise Control will ignore this goal if doing so enables all the configured hard goals to be met.
 
 In Cruise Control, the following xref:main-goals[main optimization goals] are preset as hard goals:
@@ -96,7 +103,7 @@ spec:
 
 Increasing the number of configured hard goals will reduce the likelihood of Cruise Control generating valid optimization proposals.
 
-If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does _not_ check that the list of user-provided optimization goals (in `KafkaRebalance.spec.goals`) contains _all_ the configured hard goals (`hard.goals`). 
+If `skipHardGoalCheck: true` is specified in the `KafkaRebalance` custom resource, Cruise Control does _not_ check that the list of user-provided optimization goals (in `KafkaRebalance.spec.goals`) contains _all_ the configured hard goals (`hard.goals`).
 Therefore, if some, but not all, of the user-provided optimization goals are in the `hard.goals` list, Cruise Control will still treat them as hard goals even if `skipHardGoalCheck: true` is specified.
 
 [[main-goals]]
@@ -106,7 +113,7 @@ Therefore, if some, but not all, of the user-provided optimization goals are in 
 The _main optimization goals_ are available to all users.
 Goals that are not listed in the main optimization goals are not available for use in Cruise Control operations.
 
-Unless you change the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], Strimzi will inherit the following main optimization goals from Cruise Control, in descending priority order:
+Unless you change the Cruise Control xref:proc-configuring-deploying-cruise-control-{context}[deployment configuration], Strimzi will inherit the following main optimization goals from Cruise Control, in descending priority order:
 
 [source]
 RackAwareGoal; ReplicaCapacityGoal; DiskCapacityGoal; NetworkInboundCapacityGoal; NetworkOutboundCapacityGoal; CpuCapacityGoal; ReplicaDistributionGoal; PotentialNwOutGoal; DiskUsageDistributionGoal; NetworkInboundUsageDistributionGoal; NetworkOutboundUsageDistributionGoal; CpuUsageDistributionGoal; TopicReplicaDistributionGoal; LeaderReplicaDistributionGoal; LeaderBytesInDistributionGoal; PreferredLeaderElectionGoal
@@ -128,18 +135,18 @@ NOTE: If you change the inherited main optimization goals, you must ensure that 
 === Default optimization goals
 
 Cruise Control uses the _default optimization goals_ to generate the _cached optimization proposal_.
-For more information about the cached optimization proposal, see xref:con-optimization-proposals-{context}[]. 
+For more information about the cached optimization proposal, see xref:con-optimization-proposals-{context}[].
 
 You can override the default optimization goals by setting xref:user-provided-goals[user-provided optimization goals] in a `KafkaRebalance` custom resource.
 
-Unless you specify `default.goals` in the Cruise Control xref:proc-deploying-cruise-control-{context}[deployment configuration], the main optimization goals are used as the default optimization goals. 
+Unless you specify `default.goals` in the Cruise Control xref:proc-configuring-deploying-cruise-control-{context}[deployment configuration], the main optimization goals are used as the default optimization goals.
 In this case, the cached optimization proposal is generated using the main optimization goals.
 
 * To use the main optimization goals as the default goals, do not specify the `default.goals` property in `Kafka.spec.cruiseControl.config`.
 
 * To modify the default optimization goals, edit the `default.goals` property in `Kafka.spec.cruiseControl.config`.
 You must use a subset of the main optimization goals.
- 
+
 .Example `Kafka` configuration for default optimization goals
 
 [source,yaml,subs="attributes+"]
@@ -162,10 +169,10 @@ spec:
       outboundNetwork: 10000KB/s
     config:
       default.goals: >
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
-         com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
-      # ...         
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
+      # ...
 ----
 
 If no default optimization goals are specified, the cached proposal is generated using the main optimization goals.
@@ -174,7 +181,7 @@ If no default optimization goals are specified, the cached proposal is generated
 [discrete]
 === User-provided optimization goals
 
-_User-provided optimization goals_ narrow down the configured default goals for a particular optimization proposal. 
+_User-provided optimization goals_ narrow down the configured default goals for a particular optimization proposal.
 You can set them, as required, in `spec.goals` in a `KafkaRebalance` custom resource:
 
 ----
@@ -182,7 +189,7 @@ KafkaRebalance.spec.goals
 ----
 
 User-provided optimization goals can generate optimization proposals for different scenarios.
-For example, you might want to optimize leader replica distribution across the Kafka cluster without considering disk capacity or disk utilization. 
+For example, you might want to optimize leader replica distribution across the Kafka cluster without considering disk capacity or disk utilization.
 So, you create a `KafkaRebalance` custom resource containing a single user-provided goal for leader replica distribution.
 
 User-provided optimization goals must:
@@ -190,10 +197,10 @@ User-provided optimization goals must:
 * Include all configured xref:hard-soft-goals[hard goals], or an error occurs
 * Be a subset of the main optimization goals
 
-To ignore the configured hard goals when generating an optimization proposal, add the `skipHardGoalCheck: true` property to the `KafkaRebalance` custom resource. See xref:proc-generating-optimization-proposals-{context}[]. 
+To ignore the configured hard goals when generating an optimization proposal, add the `skipHardGoalCheck: true` property to the `KafkaRebalance` custom resource. See xref:proc-generating-optimization-proposals-{context}[].
 
+[role="_additional-resources"]
 .Additional resources
 
-* xref:ref-cruise-control-configuration-{context}[]
-
+* xref:proc-configuring-deploying-cruise-control-{context}[Configuring and deploying Cruise Control with Kafka]
 * link:https://github.com/linkedin/cruise-control/wiki/Configurations[Configurations^] in the Cruise Control Wiki.

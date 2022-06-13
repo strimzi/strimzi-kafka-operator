@@ -46,7 +46,7 @@ public class ScraperTemplates {
                         .withContainers(
                             new ContainerBuilder()
                                 .withName(podName)
-                                .withImage("registry.access.redhat.com/ubi8/openjdk-11:latest")
+                                .withImage(Environment.SCRAPER_IMAGE)
                                 .withCommand("sleep")
                                 .withArgs("infinity")
                                 .withImagePullPolicy(Environment.COMPONENTS_IMAGE_PULL_POLICY)

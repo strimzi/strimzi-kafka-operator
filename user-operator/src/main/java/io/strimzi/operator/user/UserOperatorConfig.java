@@ -30,6 +30,7 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    public static final String STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     public static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
     public static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
 
@@ -39,6 +40,8 @@ public class UserOperatorConfig {
     public static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 12;
     // Defaults to true for backwards compatibility in standalone UO deployments
     public static final boolean DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED = true;
+    // Defaults to false for backwards compatibility in standalone UO deployments
+    public static final boolean DEFAULT_STRIMZI_KRAFT_ENABLED = false;
 
     private final String namespace;
     private final long reconciliationIntervalMs;
@@ -53,6 +56,7 @@ public class UserOperatorConfig {
     private final int clientsCaValidityDays;
     private final int clientsCaRenewalDays;
     private final boolean aclsAdminApiSupported;
+    private final boolean kraftEnabled;
     private final int scramPasswordLength;
     private final List<String> maintenanceWindows;
 
@@ -70,6 +74,7 @@ public class UserOperatorConfig {
      * @param caNamespace Namespace with the CA secret.
      * @param secretPrefix Prefix used for the Secret names
      * @param aclsAdminApiSupported Indicates whether Kafka Admin API can be used to manage ACL rights
+     * @param kraftEnabled Indicates whether KRaft is used in the Kafka cluster
      * @param clientsCaValidityDays Number of days for which the certificate should be valid
      * @param clientsCaRenewalDays How long before the certificate expiration should the user certificate be renewed
      * @param scramPasswordLength Length used for the Scram-Sha Password
@@ -87,6 +92,7 @@ public class UserOperatorConfig {
                               String caNamespace,
                               String secretPrefix,
                               boolean aclsAdminApiSupported,
+                              boolean kraftEnabled,
                               int clientsCaValidityDays,
                               int clientsCaRenewalDays,
                               int scramPasswordLength,
@@ -102,6 +108,7 @@ public class UserOperatorConfig {
         this.caNamespace = caNamespace;
         this.secretPrefix = secretPrefix;
         this.aclsAdminApiSupported = aclsAdminApiSupported;
+        this.kraftEnabled = kraftEnabled;
         this.clientsCaValidityDays = clientsCaValidityDays;
         this.clientsCaRenewalDays = clientsCaRenewalDays;
         this.scramPasswordLength = scramPasswordLength;
@@ -171,6 +178,7 @@ public class UserOperatorConfig {
         }
 
         boolean aclsAdminApiSupported = getBooleanProperty(map, UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED);
+        boolean kraftEnabled = getBooleanProperty(map, UserOperatorConfig.STRIMZI_KRAFT_ENABLED, UserOperatorConfig.DEFAULT_STRIMZI_KRAFT_ENABLED);
 
         int clientsCaValidityDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
 
@@ -180,7 +188,8 @@ public class UserOperatorConfig {
 
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, labels,
                 caCertSecretName, caKeySecretName, clusterCaCertSecretName, euoKeySecretName, caNamespace, secretPrefix,
-                aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays, scramPasswordLength, maintenanceWindows);
+                aclsAdminApiSupported, kraftEnabled, clientsCaValidityDays, clientsCaRenewalDays,
+                scramPasswordLength, maintenanceWindows);
     }
 
     /**
@@ -336,6 +345,14 @@ public class UserOperatorConfig {
     }
 
     /**
+     * @return  Indicates whether KRaft is used in the Kafka cluster or not. When it is used, some APIs might need to be
+     * disabled or used differently.
+     */
+    public boolean isKraftEnabled() {
+        return kraftEnabled;
+    }
+
+    /**
      * @return List of maintenance windows. Null if no maintenance windows were specified.
      */
     public List<String> getMaintenanceWindows() {
@@ -355,6 +372,7 @@ public class UserOperatorConfig {
                 ",caNamespace=" + caNamespace +
                 ",secretPrefix=" + secretPrefix +
                 ",aclsAdminApiSupported=" + aclsAdminApiSupported +
+                ",kraftEnabled=" + kraftEnabled +
                 ",clientsCaValidityDays=" + clientsCaValidityDays +
                 ",clientsCaRenewalDays=" + clientsCaRenewalDays +
                 ",scramPasswordLength=" + scramPasswordLength +

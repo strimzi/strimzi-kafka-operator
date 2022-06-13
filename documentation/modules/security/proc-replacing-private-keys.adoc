@@ -49,6 +49,7 @@ If maintenance time windows are configured, the Cluster Operator will generate t
 
 Client applications must reload the cluster and clients CA certificates that were renewed by the Cluster Operator.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:certificates-and-secrets-str[]

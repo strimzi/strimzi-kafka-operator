@@ -70,6 +70,7 @@ status:
 
 * To resume reconciliation, you can set the annotation to `false`, or remove the annotation.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:assembly-customizing-kubernetes-resources-str[Customizing Kubernetes resources]

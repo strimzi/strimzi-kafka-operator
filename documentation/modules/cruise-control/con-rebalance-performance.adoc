@@ -56,7 +56,7 @@ Cruise Control does not perform inter-broker and intra-broker balancing at the s
 == Rebalance tuning options
 
 Cruise Control provides several configuration options for tuning the rebalance parameters discussed above.
-You can set these tuning options at either the xref:ref-cruise-control-configuration-{context}[Cruise Control server] or xref:proc-generating-optimization-proposals-{context}[optimization proposal] levels:
+You can set these tuning options when xref:proc-configuring-deploying-cruise-control-{context}[configuring and deploying Cruise Control with Kafka] or xref:proc-generating-optimization-proposals-{context}[optimization proposal] levels:
 
 * The Cruise Control server setting can be set in the Kafka custom resource under `Kafka.spec.cruiseControl.config`.
 * The individual rebalance performance configurations can be set under `KafkaRebalance.spec`.
@@ -108,6 +108,7 @@ d| -
 Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance.
 Using lower values reduces the load but increases the amount of time taken, and vice versa.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:type-CruiseControlSpec-reference[].

@@ -7,6 +7,7 @@ package io.strimzi.systemtest.cruisecontrol;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
@@ -40,6 +42,7 @@ public class CruiseControlApiST extends AbstractST {
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -76,21 +79,7 @@ public class CruiseControlApiST extends AbstractST {
         response = CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         // all goals stats that contains
-        assertThat(response, containsString("RackAwareGoal"));
-        assertThat(response, containsString("ReplicaCapacityGoal"));
-        assertThat(response, containsString("DiskCapacityGoal"));
-        assertThat(response, containsString("NetworkInboundCapacityGoal"));
-        assertThat(response, containsString("NetworkOutboundCapacityGoal"));
-        assertThat(response, containsString("CpuCapacityGoal"));
-        assertThat(response, containsString("ReplicaDistributionGoal"));
-        assertThat(response, containsString("DiskUsageDistributionGoal"));
-        assertThat(response, containsString("NetworkInboundUsageDistributionGoal"));
-        assertThat(response, containsString("NetworkOutboundUsageDistributionGoal"));
-        assertThat(response, containsString("CpuUsageDistributionGoal"));
-        assertThat(response, containsString("TopicReplicaDistributionGoal"));
-        assertThat(response, containsString("LeaderReplicaDistributionGoal"));
-        assertThat(response, containsString("LeaderBytesInDistributionGoal"));
-        assertThat(response, containsString("PreferredLeaderElectionGoal"));
+        assertCCGoalsInResponse(response);
 
         assertThat(response, containsString("Cluster load after rebalance"));
 
@@ -139,13 +128,14 @@ public class CruiseControlApiST extends AbstractST {
     void testCruiseControlBasicAPIRequestsWithSecurityDisabled(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
+        Map<String, Object> config = new HashMap<>();
+        config.put("webserver.security.enable", "false");
+        config.put("webserver.ssl.enable", "false");
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
             .editOrNewSpec()
-                .withNewCruiseControl().withConfig(
-                        new HashMap<String, Object>() {{
-                            put("webserver.security.enable", "false");
-                            put("webserver.ssl.enable", "false");
-                        }})
+                .withNewCruiseControl()
+                    .withConfig(config)
                 .endCruiseControl()
             .endSpec()
             .build());
@@ -159,5 +149,55 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, not(containsString("404")));
         assertThat(response, containsString("RUNNING"));
         assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
+    }
+
+    @ParallelNamespaceTest
+    void testCruiseControlAPIForScalingBrokersUpAndDown(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 5, 3).build());
+
+        LOGGER.info("Checking if we are able to execute GET request on {} and {} endpoints", CruiseControlEndpoints.ADD_BROKER, CruiseControlEndpoints.REMOVE_BROKER);
+
+        String response = CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.ADD_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
+
+        assertThat(response, is("Unrecognized endpoint in request '/add_broker'\n" +
+            "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
+
+        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REMOVE_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
+
+        assertThat(response, is("Unrecognized endpoint in request '/remove_broker'\n" +
+            "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
+
+        LOGGER.info("Waiting for CC will have for enough metrics to be recorded to make a proposal ");
+        CruiseControlUtils.waitForRebalanceEndpointIsReady(testStorage.getNamespaceName());
+
+        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.ADD_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true, "?brokerid=3,4");
+
+        assertCCGoalsInResponse(response);
+        assertThat(response, containsString("Cluster load after adding broker [3, 4]"));
+
+        response =  CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REMOVE_BROKER,  CruiseControlUtils.SupportedSchemes.HTTPS, true, "?brokerid=3,4");
+
+        assertCCGoalsInResponse(response);
+        assertThat(response, containsString("Cluster load after removing broker [3, 4]"));
+    }
+
+    private void assertCCGoalsInResponse(String response) {
+        assertThat(response, containsString("RackAwareGoal"));
+        assertThat(response, containsString("ReplicaCapacityGoal"));
+        assertThat(response, containsString("DiskCapacityGoal"));
+        assertThat(response, containsString("NetworkInboundCapacityGoal"));
+        assertThat(response, containsString("NetworkOutboundCapacityGoal"));
+        assertThat(response, containsString("CpuCapacityGoal"));
+        assertThat(response, containsString("ReplicaDistributionGoal"));
+        assertThat(response, containsString("DiskUsageDistributionGoal"));
+        assertThat(response, containsString("NetworkInboundUsageDistributionGoal"));
+        assertThat(response, containsString("NetworkOutboundUsageDistributionGoal"));
+        assertThat(response, containsString("CpuUsageDistributionGoal"));
+        assertThat(response, containsString("TopicReplicaDistributionGoal"));
+        assertThat(response, containsString("LeaderReplicaDistributionGoal"));
+        assertThat(response, containsString("LeaderBytesInDistributionGoal"));
+        assertThat(response, containsString("PreferredLeaderElectionGoal"));
     }
 }

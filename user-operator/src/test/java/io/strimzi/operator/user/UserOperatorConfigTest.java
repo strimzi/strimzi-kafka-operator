@@ -32,6 +32,7 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, "1000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, "10");
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, "false");
+        envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, "true");
         envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, "20");
 
 
@@ -54,6 +55,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
+        assertThat(config.isKraftEnabled(), is(true));
         assertThat(config.getScramPasswordLength(), is(20));
         assertThat(config.getMaintenanceWindows(), is(nullValue()));
     }
@@ -152,6 +154,15 @@ public class UserOperatorConfigTest {
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
         assertThat(config.isAclsAdminApiSupported(), is(UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED));
+    }
+
+    @Test
+    public void testFromMapKraftEnabledDefaults()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_KRAFT_ENABLED);
+
+        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThat(config.isKraftEnabled(), is(UserOperatorConfig.DEFAULT_STRIMZI_KRAFT_ENABLED));
     }
 
     @Test

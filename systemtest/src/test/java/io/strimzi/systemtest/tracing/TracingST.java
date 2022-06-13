@@ -359,7 +359,7 @@ public class TracingST extends AbstractST {
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
         resourceManager.createResource(extensionContext,
-            KafkaConnectTemplates.kafkaConnect(extensionContext, storageMap.get(extensionContext).getClusterName(), 1)
+            KafkaConnectTemplates.kafkaConnect(storageMap.get(extensionContext).getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

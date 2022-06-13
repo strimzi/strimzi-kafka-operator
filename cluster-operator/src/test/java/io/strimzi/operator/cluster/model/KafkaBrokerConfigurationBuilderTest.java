@@ -197,7 +197,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testNoAuthorization()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", null)
+                .withAuthorization("my-cluster", null, false)
                 .build();
 
         assertThat(configuration, isEquivalent(""));
@@ -210,10 +210,25 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", auth)
+                .withAuthorization("my-cluster", auth, false)
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.authorizer.AclAuthorizer\n" +
+                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
+    }
+
+    @ParallelTest
+    public void testSimpleAuthorizationWithSuperUsersAndKRaft()  {
+        KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
+                .addToSuperUsers("jakub", "CN=kuba")
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+                .withAuthorization("my-cluster", auth, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer\n" +
+                "early.start.listeners=CONTROLPLANE-9090,REPLICATION-9091\n" +
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
@@ -223,7 +238,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", auth)
+                .withAuthorization("my-cluster", auth, false)
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.authorizer.AclAuthorizer\n" +
@@ -250,7 +265,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", auth)
+                .withAuthorization("my-cluster", auth, false)
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
@@ -284,7 +299,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", auth)
+                .withAuthorization("my-cluster", auth, false)
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
@@ -308,7 +323,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", auth)
+                .withAuthorization("my-cluster", auth, false)
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
@@ -333,7 +348,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withAuthorization("my-cluster", auth)
+                .withAuthorization("my-cluster", auth, false)
                 .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +

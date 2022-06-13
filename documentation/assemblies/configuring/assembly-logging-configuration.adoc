@@ -58,7 +58,7 @@ For more information on configuring logging for specific Kafka components or ope
 * xref:property-kafka-connect-logging-reference[Kafka Connect and Mirror Maker 2.0 logging]
 * xref:property-mm-loggers-reference[MirrorMaker logging]
 * xref:property-kafka-bridge-logging-reference[Kafka Bridge logging]
-* xref:ref-cruise-control-configuration-str[Cruise Control logging]
+* xref:property-cruise-control-logging-reference[Cruise Control logging]
 
 .Operator logging
 

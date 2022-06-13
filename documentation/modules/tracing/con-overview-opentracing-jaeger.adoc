@@ -23,8 +23,8 @@ Jaeger is a tracing system for microservices-based distributed systems.
 
 image:image_con-overview-distributed-tracing.png[The Jaeger user interface showing a simple query]
 
+[role="_additional-resources"]
 .Additional resources
 
 * {OpenTracingHome}
-
 * {JaegerHome}

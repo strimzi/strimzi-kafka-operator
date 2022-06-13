@@ -21,7 +21,9 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -80,6 +82,7 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
+    @KRaftNotSupported("Zookeeper are not supported by KRaft mode and is used in this test case")
     void testRecoveryDuringZookeeperRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -198,8 +201,10 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Verifying stability of kafka pods except the one, which is in pending phase");
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
-        LOGGER.info("Verifying stability of zookeeper pods");
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Verifying stability of zookeeper pods");
+            PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+        }
 
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
@@ -240,6 +245,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -351,6 +357,7 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -465,7 +472,10 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
+        Map<String, String> zkPods = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
+        }
 
         // Changes to readiness probe should trigger a rolling update
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
@@ -473,7 +483,9 @@ class RollingUpdateST extends AbstractST {
         }, namespaceName);
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
-        assertThat(PodUtils.podSnapshot(namespaceName, zkSelector), is(zkPods));
+        if (!Environment.isKRaftModeEnabled()) {
+            assertThat(PodUtils.podSnapshot(namespaceName, zkSelector), is(zkPods));
+        }
     }
 
     @ParallelNamespaceTest
@@ -513,7 +525,10 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
+        Map<String, String> zkPods = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
+        }
 
         String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                 "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
@@ -555,20 +570,26 @@ class RollingUpdateST extends AbstractST {
                         .withConfigMapKeyRef(log4jLoggimgCMselector)
                     .endValueFrom()
                     .build());
-            kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
+            if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
                     .withNewValueFrom()
                         .withConfigMapKeyRef(log4jLoggimgCMselector)
                     .endValueFrom()
                     .build());
+            }
         }, namespaceName);
 
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+        }
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapLoggers);
 
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+        }
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
     }
 
@@ -586,12 +607,17 @@ class RollingUpdateST extends AbstractST {
             .build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespace, kafkaSelector);
-        Map<String, String> zkPods = PodUtils.podSnapshot(namespace, zkSelector);
+        Map<String, String> zkPods = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods = PodUtils.podSnapshot(namespace, zkSelector);
+        }
 
         // Changes to readiness probe should trigger a rolling update
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
-            kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
+            if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
+            }
         }, namespace);
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
@@ -603,7 +629,9 @@ class RollingUpdateST extends AbstractST {
         kubeClient(clusterOperator.getDeploymentNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator pod deleted");
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespace, zkSelector, 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolled(namespace, zkSelector, 3, zkPods);
+        }
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(namespace).listPods(namespace).stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
@@ -617,6 +645,7 @@ class RollingUpdateST extends AbstractST {
 
     @IsolatedTest
     @Tag(ROLLING_UPDATE)
+    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     @SuppressWarnings("checkstyle:MethodLength")
     void testMetricsChange(ExtensionContext extensionContext) throws JsonProcessingException {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);

@@ -14,6 +14,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -242,5 +243,14 @@ public class KafkaTopicUtils {
         LOGGER.info("Waiting for all topics with prefix {} will be deleted from Kafka", prefix);
         TestUtils.waitFor(String.format("all topics with prefix %s deletion", prefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, bootstrapName, kafkaPodName, properties).contains(prefix));
+    }
+
+    public static List<String> getKafkaTopicReplicasForEachPartition(String namespaceName, String topicName, String podName, String bootstrapServer) {
+        return Arrays.stream(describeTopicViaKafkaPod(namespaceName, topicName, podName, bootstrapServer)
+            .replaceFirst("Topic.*\n", "")
+            .replaceAll(".*Replicas: ", "")
+            .replaceAll("\tIsr.*", "")
+            .split("\n"))
+            .collect(Collectors.toList());
     }
 }

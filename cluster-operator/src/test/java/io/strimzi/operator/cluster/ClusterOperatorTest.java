@@ -63,8 +63,8 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
 
-        if (strimziPodSets) {
-            env.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+UseStrimziPodSets");
+        if (!strimziPodSets) {
+            env.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-UseStrimziPodSets");
         }
 
         if (podSetsOnly) {

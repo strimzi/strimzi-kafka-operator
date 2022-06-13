@@ -200,12 +200,12 @@ prerequisites_check:
 	SED=$(SED) ./tools/prerequisites-check.sh
 
 checksum_examples:
-	@$(FIND) ./examples/ -type f -print0 | $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
+	@$(FIND) ./examples/ -type f -print0 | LC_ALL=C $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
 
 checksum_install:
-	@$(FIND) ./install/ -type f -print0 | $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
+	@$(FIND) ./install/ -type f -print0 | LC_ALL=C $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
 
 checksum_helm:
-	@$(FIND) ./helm-charts/ -type f -print0 | $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
+	@$(FIND) ./helm-charts/ -type f -print0 | LC_ALL=C $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
 
 .PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check
