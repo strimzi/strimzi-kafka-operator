@@ -27,9 +27,5 @@ To deploy the standalone User Operator, you need to set environment variables to
 These environment variables do not need to be set if you are deploying the User Operator using the Cluster Operator as they will be set by the Cluster Operator.
 ====
 
-.Authenticating and authorizing access to Kafka
-Use `KafkaUser` to enable the authentication and authorization mechanisms that a specific client uses to access Kafka.
-
-For more information on using `KafkUser` to manage users and secure access to Kafka brokers, see xref:assembly-securing-kafka-{context}[Securing access to Kafka brokers].
-
+include::../../modules/operators/proc-configuring-kafka-user.adoc[leveloffset=+1]
 include::../../modules/operators/proc-user-operator-with-resource-requests-limits.adoc[leveloffset=+1]
