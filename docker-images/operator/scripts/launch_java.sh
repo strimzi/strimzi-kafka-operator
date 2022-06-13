@@ -14,25 +14,12 @@ function get_gc_opts {
   fi
 }
 
-# Generic formula evaluation based on awk
-calc() {
-  local formula="$1"
-  shift
-  echo "$@" | awk '
-    function round(x) {
-      return int(x + 0.5)
-    }
-    {print '"int(${formula})"'}
-  '
-}
-
 calc_maximum_size_opt() {
   local max_mem="$1"
-  local fraction="$2"
+  local percentage="$2"
 
-  local val
-  val=$(calc "round($1*$2/100/1048576)" "${max_mem}" "${fraction}")
-  echo "-Xmx${val}m"
+  local value_in_mb=$((max_mem*percentage/100/1048576))
+  echo "-Xmx${value_in_mb}m"
 }
 
 # Calculate the value of -Xmx options base on cgroups_v2 values
@@ -43,9 +30,9 @@ calc_max_memory() {
    if [ "${mem_limit}" -le 314572800 ]; then
     # Restore the one-fourth default heap size instead of the one-half below 300MB threshold
     # See https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/parallel.html#default_heap_size
-    calc_maximum_size_opt "${mem_limit}" "50" "mx"
+    calc_maximum_size_opt "${mem_limit}" "50"
   else
-    calc_maximum_size_opt "${mem_limit}" "75" "mx"
+    calc_maximum_size_opt "${mem_limit}" "75"
   fi
 }
 
