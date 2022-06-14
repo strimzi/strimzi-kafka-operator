@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -68,6 +69,7 @@ public class JbodStorageMockTest {
     private KubernetesClient client;
     private MockKube2 mockKube;
     private KafkaAssemblyOperator operator;
+    private StrimziPodSetController podSetController;
 
     private List<SingleVolumeStorage> volumes;
 
@@ -139,6 +141,9 @@ public class JbodStorageMockTest {
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                         ResourceUtils.metricsProvider(), pfa, 60_000L, restartEventPublisher);
 
+        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.strimziPodSetOperator, ros.podOperations, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+        podSetController.start();
+
         this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
@@ -146,6 +151,7 @@ public class JbodStorageMockTest {
 
     @AfterEach
     private void afterEach() {
+        podSetController.stop();
         mockKube.stop();
     }
 

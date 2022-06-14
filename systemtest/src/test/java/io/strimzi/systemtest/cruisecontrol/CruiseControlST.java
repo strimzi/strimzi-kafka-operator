@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -34,6 +35,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
@@ -49,6 +51,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -63,6 +66,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
@@ -351,5 +356,76 @@ public class CruiseControlST extends AbstractST {
         // The intra-broker rebalance will fail for Kafka clusters with a non-JBOD configuration.
         KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaRebalanceStatus.getConditions().get(0).getReason(), is("InvalidResourceException"));
+    }
+
+    @IsolatedTest
+    @KRaftNotSupported("Scale-up / scale-down not working in KRaft mode - https://github.com/strimzi/strimzi-kafka-operator/issues/6862")
+    void testCruiseControlDuringBrokerScaleUpAndDown(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final int initialReplicas = 3;
+        final int scaleTo = 5;
+
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3).build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
+
+        String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
+
+        LOGGER.info("Checking that {} topic has replicas on first 3 brokers", testStorage.getTopicName());
+        List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertEquals(0, (int) topicReplicas.stream().filter(line -> line.contains("3") || line.contains("4")).count());
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
+
+        LOGGER.info("Scaling Kafka up to {}", scaleTo);
+
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(scaleTo), testStorage.getNamespaceName());
+        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaleTo, kafkaPods);
+
+        LOGGER.info("Creating KafkaRebalance with add_brokers mode");
+
+        // when using add_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
+        resourceManager.createResource(extensionContext, false,
+            KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editOrNewSpec()
+                    .withMode(KafkaRebalanceMode.ADD_BROKERS)
+                    .withBrokers(3, 4)
+                .endSpec()
+                .build()
+        );
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),  testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
+
+        LOGGER.info("Checking that {} topic has replicas on one of the new brokers (or both)", testStorage.getTopicName());
+        topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertTrue(topicReplicas.stream().anyMatch(line -> line.contains("3") || line.contains("4")));
+
+        LOGGER.info("Creating KafkaRebalance with remove_brokers mode - it needs to be done before actual scaling down of Kafka pods");
+
+        // when using remove_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
+        resourceManager.createResource(extensionContext, false,
+            KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editOrNewSpec()
+                    .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
+                    .withBrokers(3, 4)
+                .endSpec()
+                .build()
+        );
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),  testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        LOGGER.info("Checking that {} topic has replicas only on first 3 brokers", testStorage.getTopicName());
+        topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
+        assertEquals(0, (int) topicReplicas.stream().filter(line -> line.contains("3") || line.contains("4")).count());
+
+        LOGGER.info("Scaling Kafka down to {}", initialReplicas);
+
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas, kafkaPods);
     }
 }

@@ -130,7 +130,8 @@ public class PartialRollingUpdateMockTest {
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
         ResourceOperatorSupplier supplier = supplier(client, pfa);
-        kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+
+        kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000, "-UseStrimziPodSets"));
 
         LOGGER.info("Initial reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);

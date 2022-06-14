@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -23,6 +24,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -39,7 +41,6 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
@@ -155,16 +156,19 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
                 .withNewEntityOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
+        );
+
+        String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // Wait some time after kafka is ready before delete topics files
         Thread.sleep(60000);
         // Remove all topic data from topic store
 
-        String deleteTopicStoreTopics = "./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete " +
-            "&& ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete";
+        KafkaCmdClient.deleteTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "__strimzi-topic-operator-kstreams-topic-store-changelog");
+        KafkaCmdClient.deleteTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "__strimzi_store_topic");
 
-        cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c", deleteTopicStoreTopics);
         // Wait till exec result will be finish
         Thread.sleep(30000);
         KafkaResource.replaceKafkaResource(testStorage.getClusterName(), k -> {

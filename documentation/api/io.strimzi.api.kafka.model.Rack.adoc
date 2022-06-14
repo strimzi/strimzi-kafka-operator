@@ -101,7 +101,7 @@ spec:
 
 When deploying MirrorMaker 2 using Strimzi, you can use the `rack` section in the `KafkaMirrorMaker2` custom resource to automatically configure the `client.rack` option.
 
-.Example `rack` configuration for Mirror Maker 2
+.Example `rack` configuration for MirrorMaker 2.0
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}

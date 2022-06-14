@@ -200,9 +200,9 @@ public class ManualPodCleanerTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "+UseStrimziPodSets");
-        } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+        } else {
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
         ManualPodCleaner cleaner = new ManualPodCleaner(

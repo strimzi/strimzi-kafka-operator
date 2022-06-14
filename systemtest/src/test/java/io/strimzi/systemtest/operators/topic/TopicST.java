@@ -25,6 +25,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
@@ -41,7 +42,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -53,8 +53,8 @@ import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -71,8 +71,10 @@ public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private static final String TOPIC_CLUSTER_NAME = "topic-cluster-name";
+    private static final String SCRAPER_NAME = TOPIC_CLUSTER_NAME + "-" + Constants.SCRAPER_NAME;
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(TopicST.class.getSimpleName()).stream().findFirst().get();
+    private String scraperPodName;
 
     @ParallelTest
     void testMoreReplicasThanAvailableBrokers(ExtensionContext extensionContext) {
@@ -118,7 +120,7 @@ public class TopicST extends AbstractST {
         int topicPartitions = 3;
 
         LOGGER.debug("Creating topic {} with {} replicas and {} partitions", topicName, 3, topicPartitions);
-        KafkaCmdClient.createTopicUsingPodCli(namespace, TOPIC_CLUSTER_NAME, 0, topicName, 3, topicPartitions);
+        KafkaCmdClient.createTopicUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(TOPIC_CLUSTER_NAME), topicName, 3, topicPartitions);
 
         KafkaTopic kafkaTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).get();
 
@@ -127,7 +129,7 @@ public class TopicST extends AbstractST {
         topicPartitions = 5;
         LOGGER.info("Editing topic via Kafka, settings to partitions {}", topicPartitions);
 
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespace, TOPIC_CLUSTER_NAME, 0, topicName, topicPartitions);
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(TOPIC_CLUSTER_NAME), topicName, topicPartitions);
         LOGGER.debug("Topic {} updated from {} to {} partitions", topicName, 3, topicPartitions);
 
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(namespace, topicName, topicPartitions);
@@ -437,7 +439,7 @@ public class TopicST extends AbstractST {
 
     boolean hasTopicInKafka(String topicName, String clusterName) {
         LOGGER.info("Checking topic {} in Kafka", topicName);
-        return KafkaCmdClient.listTopicsUsingPodCli(namespace, clusterName, 0).contains(topicName);
+        return KafkaCmdClient.listTopicsUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)).contains(topicName);
     }
 
     boolean hasTopicInCRK8s(KafkaTopic kafkaTopic, String topicName) {
@@ -449,10 +451,11 @@ public class TopicST extends AbstractST {
         TestUtils.waitFor("Describing topic " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> {
                 try {
-                    List<String> topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, clusterName, 0, topicName);
+                    String topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
                     LOGGER.info("Checking topic {} in Kafka {}", topicName, clusterName);
                     LOGGER.debug("Topic {} info: {}", topicName, topicInfo);
-                    assertThat(topicInfo, hasItems("Topic:" + topicName, "PartitionCount:" + topicPartitions));
+                    assertThat(topicInfo, containsString("Topic: " + topicName));
+                    assertThat(topicInfo, containsString("PartitionCount: " + topicPartitions));
                     return true;
                 } catch (KubeClusterException e) {
                     LOGGER.info("Describing topic using pod cli occurred following error:{}", e.getMessage());
@@ -464,7 +467,7 @@ public class TopicST extends AbstractST {
     void verifyTopicViaKafkaTopicCRK8s(KafkaTopic kafkaTopic, String topicName, int topicPartitions, String clusterName) {
         LOGGER.info("Checking in KafkaTopic CR that topic {} was created with expected settings", topicName);
         assertThat(kafkaTopic, is(notNullValue()));
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespace, clusterName, 0), hasItem(topicName));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItem(topicName));
         assertThat(kafkaTopic.getMetadata().getName(), is(topicName));
         assertThat(kafkaTopic.getSpec().getPartitions(), is(topicPartitions));
     }
@@ -472,10 +475,15 @@ public class TopicST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", namespace);
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(TOPIC_CLUSTER_NAME, 3, 1)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(namespace, SCRAPER_NAME).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(namespace, SCRAPER_NAME).get(0).getMetadata().getName();
     }
 }

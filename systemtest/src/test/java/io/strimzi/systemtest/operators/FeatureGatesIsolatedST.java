@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
@@ -24,8 +26,10 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -153,7 +157,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for enabled UseStrimziPodSets gate")
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testStrimziPodSetsFeatureGate(ExtensionContext extensionContext) {
+    public void testDisabledStrimziPodSetsFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -169,7 +173,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         int zooReplicas = 1;
         int kafkaReplicas = 1;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-UseStrimziPodSets", null));
 
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -268,9 +272,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
         int messageCount = 500;
 
         List<EnvVar> coEnvVars = new ArrayList<>();
-        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-UseStrimziPodSets", null));
+        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
 
-        LOGGER.info("Deploying CO with STS - SPS is disabled");
+        LOGGER.info("Deploying CO with SPS - STS is disabled");
 
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -304,9 +308,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
             clients.consumerStrimzi()
         );
 
-        LOGGER.info("Changing FG env variable to enable SPS");
+        LOGGER.info("Changing FG env variable to enable STS");
         coEnvVars = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("+UseStrimziPodSets");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-UseStrimziPodSets");
 
         Deployment coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
@@ -319,7 +323,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         KafkaUtils.waitForKafkaReady(clusterName);
 
-        LOGGER.info("Changing FG env variable to disable again SPS");
+        LOGGER.info("Changing FG env variable to disable again STS");
         coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("");
 
         coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
@@ -341,11 +345,12 @@ public class FeatureGatesIsolatedST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     public void testKRaftMode(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String producerName = "producer-test-" + new Random().nextInt(Integer.MAX_VALUE);
-        final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final String clusterName = testStorage.getClusterName();
+        final String producerName = testStorage.getProducerName();
+        final String consumerName = testStorage.getConsumerName();
+        final String topicName = testStorage.getTopicName();
 
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
@@ -365,24 +370,50 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .createInstallation()
                 .runInstallation();
 
-        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas).build();
-        kafka.getSpec().setEntityOperator(null); // The builder cannot disable the EO. It has to be done this way.
+        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas)
+            .editSpec()
+                .editKafka()
+                .withListeners(
+                        new GenericKafkaListenerBuilder()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withPort(9092)
+                                .withTls(false)
+                                .build(),
+                        new GenericKafkaListenerBuilder()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .build()
+                )
+                .endKafka()
+            .endSpec()
+            .build();
+        kafka.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
         resourceManager.createResource(extensionContext, kafka);
+
+        resourceManager.createResource(extensionContext,
+            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+        );
 
         LOGGER.info("Try to send some messages to Kafka over next few minutes.");
 
-        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+                .withUserName(testStorage.getUserName())
                 .withTopicName(topicName)
                 .withMessageCount(messageCount)
                 .withDelayMs(500)
                 .withNamespaceName(INFRA_NAMESPACE)
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
 
         // Check that there is no ZooKeeper
         Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);

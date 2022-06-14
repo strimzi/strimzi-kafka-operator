@@ -131,7 +131,7 @@ public class KafkaUpgradeDowngradeMockTest {
         ResourceOperatorSupplier supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, 2_000, restartEventPublisher);
 
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
 
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);

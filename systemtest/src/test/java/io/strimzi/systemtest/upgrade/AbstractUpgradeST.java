@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Constants;
@@ -12,8 +11,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -341,14 +340,20 @@ public class AbstractUpgradeST extends AbstractST {
         String tOImage = images.getString("topicOperator");
         String uOImage = images.getString("userOperator");
 
-        List<EnvVar> envVars = kubeClient().getDeployment(io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME)
-            .getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        Map<String, String> zkSelector = Labels.EMPTY
+                .withStrimziKind(Kafka.RESOURCE_KIND)
+                .withStrimziCluster(clusterName)
+                .withStrimziName(KafkaResources.zookeeperStatefulSetName(clusterName))
+                .toMap();
 
-        boolean spsEnabled = envVars.stream()
-            .anyMatch(envVar -> envVar.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV) && envVar.getValue() != null && envVar.getValue().contains("+UseStrimziPodSets"));
+        Map<String, String> kafkaSelector = Labels.EMPTY
+                .withStrimziKind(Kafka.RESOURCE_KIND)
+                .withStrimziCluster(clusterName)
+                .withStrimziName(KafkaResources.kafkaStatefulSetName(clusterName))
+                .toMap();
 
-        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.zookeeperStatefulSetName(clusterName), spsEnabled), zkImage);
-        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.kafkaStatefulSetName(clusterName), spsEnabled), kafkaImage);
+        checkContainerImages(zkSelector, zkImage);
+        checkContainerImages(kafkaSelector, kafkaImage);
         checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), tOImage);
         checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, uOImage);
     }

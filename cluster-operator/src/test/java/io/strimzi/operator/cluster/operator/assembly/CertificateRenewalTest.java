@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -34,6 +33,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.test.TestUtils;
 
 import io.vertx.core.Future;
@@ -126,7 +126,7 @@ public class CertificateRenewalTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
         DeploymentOperator deploymentOps = supplier.deploymentOperations;
-        StatefulSetOperator stsOps = supplier.stsOperations;
+        StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
         PodOperator podOps = supplier.podOperations;
 
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
@@ -146,7 +146,7 @@ public class CertificateRenewalTest {
 
         when(deploymentOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
 
-        when(stsOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
+        when(spsOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
 
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 

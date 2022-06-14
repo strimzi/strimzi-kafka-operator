@@ -649,45 +649,61 @@ public class Util {
         }
     }
 
+    /**
+     * Utility method which gets the secret and validates that the required fields are present in it
+     *
+     * @param secretOperator    Secret operator to get the secret from the Kubernetes API
+     * @param namespace         Namespace where the Secret exist
+     * @param name              Name of the Secret
+     * @param items             List of items which should be present in the Secret
+     *
+     * @return      Future with the Secret if is exits and has the required items. Failed future with an error message otherwise.
+     */
+    /* test */ static Future<Secret> getValidatedSecret(SecretOperator secretOperator, String namespace, String name, String... items)  {
+        return secretOperator.getAsync(namespace, name)
+                .compose(secret -> {
+                    if (secret == null) {
+                        return Future.failedFuture(new InvalidConfigurationException("Secret " + name + " not found"));
+                    } else {
+                        List<String> errors = new ArrayList<>(0);
+
+                        for (String item : items)   {
+                            if (!secret.getData().containsKey(item))    {
+                                // Item not found => error will be raised
+                                errors.add(item);
+                            }
+                        }
+
+                        if (errors.isEmpty()) {
+                            return Future.succeededFuture(secret);
+                        } else {
+                            return Future.failedFuture(new InvalidConfigurationException(String.format("Items with key(s) %s are missing in Secret %s", errors, name)));
+                        }
+                    }
+                });
+    }
+
     private static Future<String> getCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
-        return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
-                .compose(secret -> secret == null ? Future.failedFuture("Secret " + certSecretSource.getSecretName() + " not found") : Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate())));
+        return getValidatedSecret(secretOperator, namespace, certSecretSource.getSecretName(), certSecretSource.getCertificate())
+                .compose(secret -> Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate())));
     }
 
     private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {
-        return secretOperator.getAsync(namespace, auth.getCertificateAndKey().getSecretName())
-                .compose(secret -> secret == null ? Future.failedFuture("Secret " + auth.getCertificateAndKey().getSecretName() + " not found") :
-                        Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
+        return getValidatedSecret(secretOperator, namespace, auth.getCertificateAndKey().getSecretName(), auth.getCertificateAndKey().getCertificate(), auth.getCertificateAndKey().getKey())
+                .compose(secret -> Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
     }
 
     private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
         if (auth instanceof KafkaClientAuthenticationPlain) {
-            return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName())
-            .compose(secret -> {
-                if (secret == null) {
-                    return Future.failedFuture("Secret " + ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName() + " not found");
-                } else {
-                    String passwordKey = ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword();
-                    if (!secret.getData().containsKey(passwordKey)) {
-                        return Future.failedFuture(String.format("Secret %s does not contain key %s", ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName(), passwordKey));
-                    }
-                    return Future.succeededFuture(secret.getData().get(passwordKey));
-                }   
-            });
-        }
-        if (auth instanceof KafkaClientAuthenticationScram) {
-            return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getSecretName())
-            .compose(secret -> {
-                if (secret == null) {
-                    return Future.failedFuture("Secret " + ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getSecretName() + " not found");
-                } else {
-                    String passwordKey = ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getPassword();
-                    if (!secret.getData().containsKey(passwordKey)) {
-                        return Future.failedFuture(String.format("Secret %s does not contain key %s", ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getSecretName(), passwordKey));
-                    }
-                    return Future.succeededFuture(secret.getData().get(passwordKey));
-                }
-            });                    
+            KafkaClientAuthenticationPlain plainAuth = (KafkaClientAuthenticationPlain) auth;
+
+            return getValidatedSecret(secretOperator, namespace, plainAuth.getPasswordSecret().getSecretName(), plainAuth.getPasswordSecret().getPassword())
+                    .compose(secret -> Future.succeededFuture(secret.getData().get(plainAuth.getPasswordSecret().getPassword())));
+        } else if (auth instanceof KafkaClientAuthenticationScram) {
+            KafkaClientAuthenticationScram scramAuth = (KafkaClientAuthenticationScram) auth;
+
+            return getValidatedSecret(secretOperator, namespace, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())
+                    .compose(secret -> Future.succeededFuture(secret.getData().get(scramAuth.getPasswordSecret().getPassword())));
         } else {
             return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
         }

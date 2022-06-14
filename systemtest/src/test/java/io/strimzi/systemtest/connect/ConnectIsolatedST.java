@@ -230,7 +230,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(storage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectWithPlainAndScramShaAuthentication(ExtensionContext extensionContext) {
@@ -433,7 +433,6 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(connectPods.size(), is(initialReplicas));
     }
 
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndTlsClientAuthentication(ExtensionContext extensionContext) {
@@ -515,7 +514,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(storage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSecretsWithKafkaConnectWithTlsAndScramShaAuthentication(ExtensionContext extensionContext) {
@@ -750,7 +749,6 @@ class ConnectIsolatedST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
     @ParallelNamespaceTest
     void testConnectTlsAuthWithWeirdUserName(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -815,7 +813,7 @@ class ConnectIsolatedST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(CONNECTOR_OPERATOR)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
     @ParallelNamespaceTest
     void testConnectScramShaAuthWithWeirdUserName(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1246,7 +1244,7 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     // changing the password in secret should cause the RU of connect pod

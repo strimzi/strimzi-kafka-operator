@@ -155,7 +155,6 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testSendMessagesTlsAuthenticated(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -215,7 +214,7 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -278,7 +277,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int passwordLength = 25;
@@ -349,7 +348,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesCustomListenerTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -539,7 +538,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testNodePortTls(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -626,7 +624,6 @@ public class ListenersST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testLoadBalancerTls(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -679,7 +676,6 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCustomSoloCertificatesForNodePort(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -764,7 +760,6 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCustomChainCertificatesForNodePort(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
@@ -851,7 +846,6 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCustomSoloCertificatesForLoadBalancer(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -938,7 +932,6 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCustomChainCertificatesForLoadBalancer(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
@@ -1031,7 +1024,6 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCustomSoloCertificatesForRoute(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
@@ -1116,7 +1108,6 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCustomChainCertificatesForRoute(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -1205,7 +1196,6 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertLoadBalancerAndTlsRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -1455,7 +1445,6 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertNodePortAndTlsRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -1696,7 +1685,6 @@ public class ListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)
     @OpenShiftOnly
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testCustomCertRouteAndTlsRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -2051,7 +2039,7 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testMessagesTlsScramShaWithPredefinedPassword(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 

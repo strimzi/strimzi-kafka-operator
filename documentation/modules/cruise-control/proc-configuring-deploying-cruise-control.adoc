@@ -14,6 +14,8 @@ Use `goals` configuration in the Cruise Control `config` to specify optimization
 You can use `brokerCapacity` to change the default capacity limits for goals related to resource distribution.
 If brokers are running on nodes with heterogeneous network resources, you can use `overrides` to set network capacity limits for each broker.
 
+If an empty object (`{}`) is used for the `cruiseControl` configuration, all properties use their default values.
+
 .Prerequisites
 
 * A Kubernetes cluster
@@ -111,7 +113,7 @@ spec:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl apply -f _kafka.yaml_
+kubectl apply -f _<kafka_configuration_file>_
 ----
 
 . Check the status of the deployment:
@@ -174,4 +176,4 @@ After configuring and deploying Cruise Control, you can xref:proc-generating-opt
 [role="_additional-resources"]
 .Additional resources
 * xref:con-optimization-goals-{context}[Optimization goals overview]
-* xref:type-CruiseControlSpec-reference[`CruiseControlSpec` `schema reference]
+* xref:type-CruiseControlSpec-reference[`CruiseControlSpec` schema reference]

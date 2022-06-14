@@ -8,6 +8,9 @@
 * Add network capacity overrides for Cruise Control capacity config
 * The `ServiceAccountPatching` feature gate moves to GA.
   It cannot be disabled anymore and will be permanently enabled.
+* The `UseStrimziPodSets` feature gate moves to beta stage.
+  By default, StrimziPodSets are used instead of StatefulSets.
+  If needed, `UseStrimziPodSets` can be disabled in the feature gates configuration in the Cluster Operator.
 
 ## 0.29.0
 

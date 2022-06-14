@@ -153,7 +153,6 @@ public class MirrorMakerIsolatedST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
@@ -266,7 +265,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
      * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings("checkstyle:methodlength")
     void testMirrorMakerTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());

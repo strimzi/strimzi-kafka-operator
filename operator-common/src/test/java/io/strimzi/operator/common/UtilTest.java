@@ -320,7 +320,7 @@ public class UtilTest {
         Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.failed()); 
-            assertEquals("Secret my-secret does not contain key password1", handler.cause().getMessage());
+            assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
         });        
     }
 
@@ -362,7 +362,7 @@ public class UtilTest {
         Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.failed()); 
-            assertEquals("Secret my-secret does not contain key password1", handler.cause().getMessage());
+            assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
         });        
     }
 
@@ -387,4 +387,64 @@ public class UtilTest {
         });        
     }
 
+    @Test
+    public void testGetValidateSecret() {
+        String namespace = "ns";
+        String secretName = "my-secret";
+
+        Secret secret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withData(Map.of("key1", "value", "key2", "value", "key3", "value"))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(secret));
+
+        Util.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
+                .onComplete(r -> {
+                    assertThat(r.succeeded(), is(true));
+                    assertThat(r.result(), is(secret));
+                });
+    }
+
+    @Test
+    public void testGetValidateSecretMissingSecret() {
+        String namespace = "ns";
+        String secretName = "my-secret";
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(null));
+
+        Util.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
+                .onComplete(r -> {
+                    assertThat(r.succeeded(), is(false));
+                    assertThat(r.cause().getMessage(), is("Secret my-secret not found"));
+                });
+    }
+
+    @Test
+    public void testGetValidateSecretMissingKeys() {
+        String namespace = "ns";
+        String secretName = "my-secret";
+
+        Secret secret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(namespace)
+                .endMetadata()
+                .withData(Map.of("key1", "value", "key2", "value", "key3", "value"))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(secret));
+
+        Util.getValidatedSecret(secretOps, namespace, secretName, "key1", "key4", "key5")
+                .onComplete(r -> {
+                    assertThat(r.succeeded(), is(false));
+                    assertThat(r.cause().getMessage(), is("Items with key(s) [key4, key5] are missing in Secret my-secret"));
+                });
+    }
 }

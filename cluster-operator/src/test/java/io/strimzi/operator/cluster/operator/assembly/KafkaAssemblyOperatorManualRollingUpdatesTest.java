@@ -164,9 +164,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "+UseStrimziPodSets");
-        } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+        } else {
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
@@ -297,9 +297,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "+UseStrimziPodSets");
-        } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+        } else {
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
@@ -437,9 +437,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "+UseStrimziPodSets");
-        } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+        } else {
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(

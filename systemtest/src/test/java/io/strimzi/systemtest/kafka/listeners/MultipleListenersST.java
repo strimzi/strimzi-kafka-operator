@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -48,7 +47,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @ParallelSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test class")
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);

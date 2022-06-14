@@ -20,6 +20,7 @@ import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -37,7 +38,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIXES;
 import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
@@ -186,28 +185,29 @@ public class KafkaUtils {
 
         if (!Environment.isKRaftModeEnabled()) {
             zkPods[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
-            eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         }
+        eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+            Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean kafkaSameAsLast = kafkaSnapshot.equals(kafkaPods[0]);
+            boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
+
             if (!kafkaSameAsLast) {
                 LOGGER.warn("Kafka Cluster not stable");
+            }
+            if (!eoSameAsLast) {
+                LOGGER.warn("EO not stable");
             }
 
             if (!Environment.isKRaftModeEnabled()) {
                 Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
-                Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
                 boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
-                boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
 
                 if (!zkSameAsLast) {
                     LOGGER.warn("ZK Cluster not stable");
-                }
-                if (!eoSameAsLast) {
-                    LOGGER.warn("EO not stable");
                 }
                 if (zkSameAsLast && eoSameAsLast && kafkaSameAsLast) {
                     int c = count[0]++;
@@ -219,9 +219,8 @@ public class KafkaUtils {
                     return false;
                 }
                 zkPods[0] = zkSnapshot;
-                eoPods[0] = eoSnapshot;
             } else {
-                if (kafkaSameAsLast) {
+                if (kafkaSameAsLast && eoSameAsLast) {
                     int c = count[0]++;
                     LOGGER.debug("All stable after {} polls", c);
                     if (c > 60) {
@@ -231,8 +230,8 @@ public class KafkaUtils {
                     return false;
                 }
             }
-
             kafkaPods[0] = kafkaSnapshot;
+            eoPods[0] = eoSnapshot;
 
             count[0] = 0;
             return false;
@@ -299,15 +298,16 @@ public class KafkaUtils {
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
 
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+        int[] brokerId = {0};
 
         for (Pod pod : kafkaPods) {
 
             TestUtils.waitFor("Wait until dyn.configuration is changed", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
-                    String result = cmdKubeClient(namespaceName).execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+                    String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
 
                     LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
 
@@ -501,30 +501,5 @@ public class KafkaUtils {
 
     private static String namespacedBootstrapAddress(String clusterName, String namespace, int port) {
         return KafkaResources.bootstrapServiceName(clusterName) + "." + namespace + ".svc:" + port;
-    }
-
-    /**
-     * Kafka scripts related methods
-     */
-    public static int getCurrentOffsets(String podName, String topicName, String consumerGroup) {
-        String offsetOutput = cmdKubeClient().execInPod(podName, "/opt/kafka/bin/kafka-consumer-groups.sh",
-                "--describe",
-                "--bootstrap-server",
-                "localhost:9092",
-                "--group",
-                consumerGroup)
-            .out()
-            .trim();
-
-        String replaced = offsetOutput.replaceAll("\\s\\s+", " ");
-
-        List<String> lines = Arrays.asList(replaced.split("\n"));
-        List<String> headers = Arrays.asList(lines.get(0).split(" "));
-        List<String> matchingLine = Arrays.asList(lines.stream().filter(line -> line.contains(topicName)).findFirst().get().split(" "));
-
-        Map<String, String> valuesMap = IntStream.range(0, headers.size()).boxed().collect(Collectors.toMap(headers::get, matchingLine::get));
-
-
-        return Integer.parseInt(valuesMap.get("CURRENT-OFFSET"));
     }
 }

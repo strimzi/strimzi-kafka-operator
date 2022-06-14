@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -39,7 +38,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-@KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
 public class OpaIntegrationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);
     private static final String OPA_SUPERUSER = "arnost";

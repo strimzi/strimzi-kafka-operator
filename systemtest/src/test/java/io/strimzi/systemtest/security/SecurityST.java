@@ -27,7 +27,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -170,7 +169,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaCerts")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
                 extensionContext,
@@ -187,7 +185,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaCerts")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -206,7 +203,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaCerts")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
             extensionContext,
@@ -281,9 +277,11 @@ class SecurityST extends AbstractST {
             kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
         }
 
-        if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart ...");
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            if (zkShouldRoll) {
+                LOGGER.info("Wait for zk to rolling restart ...");
+                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+            }
         }
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart ...");
@@ -330,8 +328,10 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        if (!zkShouldRoll) {
-            assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+        if (!Environment.isKRaftModeEnabled()) {
+            if (!zkShouldRoll) {
+                assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+            }
         }
         if (!kafkaShouldRoll) {
             assertThat("Kafka pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector()), is(kafkaPods));
@@ -349,7 +349,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClusterCaKeys")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -364,7 +363,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("ClientsCaKeys")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -379,7 +377,6 @@ class SecurityST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     @Tag("AllCaKeys")
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
@@ -390,7 +387,7 @@ class SecurityST extends AbstractST {
                 true);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
                                             int expectedRolls,
                                             boolean zkShouldRoll,
@@ -457,11 +454,13 @@ class SecurityST extends AbstractST {
         }
 
         for (int i = 1; i <= expectedRolls; i++) {
-            if (zkShouldRoll) {
-                LOGGER.info("Wait for zk to rolling restart ({})...", i);
-                zkPods = i < expectedRolls ?
-                        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods) :
-                        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+            if (!Environment.isKRaftModeEnabled()) {
+                if (zkShouldRoll) {
+                    LOGGER.info("Wait for zk to rolling restart ({})...", i);
+                    zkPods = i < expectedRolls ?
+                            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods) :
+                            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+                }
             }
 
             if (kafkaShouldRoll) {
@@ -523,8 +522,10 @@ class SecurityST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        if (!zkShouldRoll) {
-            assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+        if (!Environment.isKRaftModeEnabled()) {
+            if (!zkShouldRoll) {
+                assertThat("ZK pods should not roll, but did.", PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
+            }
         }
 
         if (!kafkaShouldRoll) {
@@ -583,7 +584,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -625,7 +625,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCertRenewalInMaintenanceTimeWindow(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
         final String clusterSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
@@ -739,7 +738,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCertRegeneratedAfterInternalCAisDeleted(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -909,7 +907,6 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -950,6 +947,12 @@ class SecurityST extends AbstractST {
                             .withName(topicName)
                         .endAclRuleTopicResource()
                         .withOperation(AclOperation.DESCRIBE)  // describe is for that user can find out metadata
+                    .endAcl()
+                    .addNewAcl()
+                        .withNewAclRuleTopicResource()
+                            .withName(topicName)
+                            .endAclRuleTopicResource()
+                        .withOperation(AclOperation.CREATE)  // describe is for that user can find out metadata
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
@@ -1010,7 +1013,6 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testAclWithSuperUser(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1114,7 +1116,6 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
@@ -1155,7 +1156,7 @@ class SecurityST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
-                .getZookeeper()
+                .getKafka()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
@@ -1168,10 +1169,10 @@ class SecurityST extends AbstractST {
         TestUtils.waitFor("Waiting for some kafka pod to be in the pending phase because of selected high cpu resource",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()))
+                List<Pod> pendingPods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()))
                     .stream().filter(pod -> pod.getStatus().getPhase().equals("Pending")).collect(Collectors.toList());
                 if (pendingPods.isEmpty()) {
-                    LOGGER.info("No pods of {} are in desired state", KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+                    LOGGER.info("No pods of {} are in desired state", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
                     return false;
                 } else {
                     LOGGER.info("Pod in 'Pending' state: {}", pendingPods.get(0).getMetadata().getName());
@@ -1189,7 +1190,7 @@ class SecurityST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
-                .getZookeeper()
+                .getKafka()
                 .setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("200m"))
                     .build());
@@ -1197,7 +1198,9 @@ class SecurityST extends AbstractST {
 
         // Wait until the certificates have been replaced
         SecretUtils.waitForCertToChange(testStorage.getNamespaceName(), clusterCaCert, KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1, eoPods);
 
@@ -1438,10 +1441,7 @@ class SecurityST extends AbstractST {
 
         final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
-        Map<String, String> eoPod = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), ts.getEoDeploymentName());
-        }
+        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), ts.getEoDeploymentName());
 
         Secret clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
@@ -1481,9 +1481,7 @@ class SecurityST extends AbstractST {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
         }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
-        if (!Environment.isKRaftModeEnabled()) {
-            DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);
-        }
+        DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
         clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
@@ -1528,7 +1526,6 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     void testClientsCACertRenew(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext, namespace);
 
@@ -1569,7 +1566,9 @@ class SecurityST extends AbstractST {
         // On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
         // `Kafka pods`.
         // a) ZooKeeper must not roll
-        RollingUpdateUtils.waitForNoRollingUpdate(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitForNoRollingUpdate(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods);
+        }
 
         // b) Kafka has to roll
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);

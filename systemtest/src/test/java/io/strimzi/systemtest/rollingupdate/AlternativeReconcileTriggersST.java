@@ -69,7 +69,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(AlternativeReconcileTriggersST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case")
     @SuppressWarnings("checkstyle:MethodLength")
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
@@ -146,31 +145,33 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
-        // wait when annotation will be removed
+        // wait when annotation will be removed from kafka
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName) == null
-                        || !StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+                () -> StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), kafkaName) == null
+                        || !StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), kafkaName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        // rolling update for zookeeper
-        // set annotation to trigger Zookeeper rolling update
-        LOGGER.info("Annotate Zookeeper {} {} with manual rolling update annotation",
-            Environment.isStrimziPodSetEnabled() ? StrimziPodSet.RESOURCE_KIND : Constants.STATEFUL_SET, zkName);
+        if (!Environment.isKRaftModeEnabled()) {
+            // rolling update for zookeeper
+            // set annotation to trigger Zookeeper rolling update
+            LOGGER.info("Annotate Zookeeper {} {} with manual rolling update annotation",
+                    Environment.isStrimziPodSetEnabled() ? StrimziPodSet.RESOURCE_KIND : Constants.STATEFUL_SET, zkName);
 
-        StUtils.annotateStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+            StUtils.annotateStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName)
-            .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
+            // check annotation to trigger rolling update
+            assertThat(Boolean.parseBoolean(StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName)
+                    .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
 
-        // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName) == null
-                        || !StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+            // wait when annotation will be removed
+            TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                    () -> StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName) == null
+                            || !StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+        }
 
         clients = new KafkaClientsBuilder(clients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
@@ -329,7 +330,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
      * not like it. This tests tries to add and remove volume from JBOD to test both of these situations.
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("UserOperator is not supported by KRaft mode and is used in this test case. JBOD is not supported as well.")
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
