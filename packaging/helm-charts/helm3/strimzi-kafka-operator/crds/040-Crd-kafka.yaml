@@ -4647,10 +4647,9 @@ spec:
                           minimum: 0
                           maximum: 100
                           description: Broker capacity for CPU resource utilization as a percentage (0 - 100).
-                        cpuCores:
+                        cpu:
                           type: string
-                          minimum: 0
-                          pattern: "^[0-9]+(([.][0-9]{0,3})|[m]?)$"
+                          pattern: "^[0-9]+([.][0-9]{0,3}|[m]?)$"
                           description: "Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu."
                         inboundNetwork:
                           type: string
@@ -4670,10 +4669,9 @@ spec:
                                 items:
                                   type: integer
                                 description: List of Kafka brokers (broker identifiers).
-                              cpuCores:
+                              cpu:
                                 type: string
-                                minimum: 0
-                                pattern: "^[0-9]+(([.][0-9]{0,3})|[m]?)$"
+                                pattern: "^[0-9]+([.][0-9]{0,3}|[m]?)$"
                                 description: "Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more details on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu."
                               inboundNetwork:
                                 type: string

@@ -140,7 +140,7 @@ You specify capacity limits for Kafka broker resources in the `brokerCapacity` p
 They are enabled by default and you can change their default values.
 Capacity limits can be set for the following broker resources:
 
-* `cpuCores`        - CPU resource in millicores or CPU cores (Default: 1)
+* `cpu`             - CPU resource in millicores or CPU cores (Default: 1)
 * `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
 * `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
 
@@ -164,7 +164,7 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      cpuCores: "2"
+      cpu: "2"
       inboundNetwork: 10000KiB/s
       outboundNetwork: 10000KiB/s
     # ...
@@ -178,7 +178,7 @@ If that's the case, specify `overrides` that set the network capacity and CPU li
 The overrides ensure an accurate rebalance between the brokers.
 Override capacity limits can be set for the following broker resources:
 
-* `cpuCores`        - CPU resource in millicores or CPU cores (Default: 1)
+* `cpu`             - CPU resource in millicores or CPU cores (Default: 1)
 * `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
 * `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
 
@@ -199,7 +199,7 @@ spec:
       outboundNetwork: 10000KiB/s
       overrides:
       - brokers: [0]
-        cpuCores: "2.755"
+        cpu: "2.755"
         inboundNetwork: 20000KiB/s
         outboundNetwork: 20000KiB/s
       - brokers: [1, 2]

@@ -11,6 +11,7 @@
 * The `UseStrimziPodSets` feature gate moves to beta stage.
   By default, StrimziPodSets are used instead of StatefulSets.
   If needed, `UseStrimziPodSets` can be disabled in the feature gates configuration in the Cluster Operator.
+* Add CPU capacity overrides for Cruise Control capacity config
 
 ## 0.29.0
 

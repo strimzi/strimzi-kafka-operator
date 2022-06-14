@@ -214,7 +214,7 @@ public class CruiseControlTest {
         String userDefinedCpuCapacity = "2575m";
 
         io.strimzi.api.kafka.model.balancing.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.balancing.BrokerCapacity();
-        userDefinedBrokerCapacity.setCpuCores(userDefinedCpuCapacity);
+        userDefinedBrokerCapacity.setCpu(userDefinedCpuCapacity);
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 
@@ -236,11 +236,8 @@ public class CruiseControlTest {
                         new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).build()
                 ).build();
 
-        Map<String, Quantity> requests = new HashMap<>(1);
-        requests.put(Capacity.RESOURCE_TYPE, new Quantity("400m"));
-
-        Map<String, Quantity> limits = new HashMap<>(1);
-        limits.put(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
+        Map<String, Quantity> requests = Map.of(Capacity.RESOURCE_TYPE, new Quantity("400m"));
+        Map<String, Quantity> limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
         resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
@@ -282,11 +279,11 @@ public class CruiseControlTest {
         cruiseControlSpec = new CruiseControlSpecBuilder()
             .withImage(ccImage)
             .withNewBrokerCapacity()
-                .withCpuCores(userDefinedCpuCapacity)
+                .withCpu(userDefinedCpuCapacity)
                 .withInboundNetwork(inboundNetwork)
                 .addNewOverride()
                     .withBrokers(overrideList0)
-                    .withCpuCores(userDefinedCpuCapacityOverride0)
+                    .withCpu(userDefinedCpuCapacityOverride0)
                     .withInboundNetwork(inboundNetworkOverride0)
                 .endOverride()
                 .addNewOverride()
@@ -327,11 +324,8 @@ public class CruiseControlTest {
         // Test generated CPU capacity
         userDefinedCpuCapacity = "500m";
 
-        requests = new HashMap<>(1);
-        requests.put(Capacity.RESOURCE_TYPE, new Quantity(userDefinedCpuCapacity));
-
-        limits = new HashMap<>(1);
-        limits.put(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
+        requests = Map.of(Capacity.RESOURCE_TYPE, new Quantity(userDefinedCpuCapacity));
+        limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
         resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()

@@ -50,15 +50,15 @@ import java.util.TreeMap;
  *         deleteClaim: false
  *  cruiseControl:
  *    brokerCapacity:
- *     cpuCores: 1
+ *     cpuCores: "1"
  *     inboundNetwork: 10000KB/s
  *     outboundNetwork: 10000KB/s
  *     overrides:
  *       - brokers: [0]
- *         cpuCores: 2
+ *         cpuCores: "2.345"
  *         outboundNetwork: 40000KB/s
  *       - brokers: [1, 2]
- *         cpuCores: 4
+ *         cpuCores: 4000m
  *         inboundNetwork: 60000KB/s
  *         outboundNetwork: 20000KB/s
  *
@@ -86,7 +86,7 @@ import java.util.TreeMap;
  *             "/var/lib/kafka0/kafka-log0": "100000",
  *             "/var/lib/kafka1/kafka-log0": "200000"
  *          },
- *         "CPU": {"num.cores": "2"},
+ *         "CPU": {"num.cores": "2.345"},
  *         "NW_IN": "10000",
  *         "NW_OUT": "40000"
  *       },
@@ -177,14 +177,14 @@ public class Capacity {
 
     public static CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
         if (cpuBasedOnRequirements != null) {
-            if ((override != null && override.getCpuCores() != null) || (bc != null && bc.getCpuCores() != null)) {
+            if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
                 LOGGER.warnOp("Ignoring CPU capacity override settings since they are automatically set to resource limits");
             }
             return new CpuCapacity(cpuBasedOnRequirements);
-        } else if (override != null && override.getCpuCores() != null) {
-            return new CpuCapacity(override.getCpuCores());
-        } else if (bc != null && bc.getCpuCores() != null) {
-            return new CpuCapacity(bc.getCpuCores());
+        } else if (override != null && override.getCpu() != null) {
+            return new CpuCapacity(override.getCpu());
+        } else if (bc != null && bc.getCpu() != null) {
+            return new CpuCapacity(bc.getCpu());
         } else {
             return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
         }
