@@ -74,6 +74,8 @@ fi
 
 # We need to disable the native ZK authorisation (we secure ZK through the TLS-Sidecars) to allow use of the reconfiguration options.
 KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.skipACL=yes"
+# We set the electionPortBindRetry zo 0 to retry forever - the recommended option for Kubernetes
+KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.electionPortBindRetry=0"
 export KAFKA_OPTS
 
 set -x
