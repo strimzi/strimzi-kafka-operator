@@ -27,13 +27,7 @@ calc_max_memory() {
   local mem_limit
   mem_limit="$(cat ${mem_file_cgroups_v2})"
 
-   if [ "${mem_limit}" -le 314572800 ]; then
-    # Restore the one-fourth default heap size instead of the one-half below 300MB threshold
-    # See https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/parallel.html#default_heap_size
-    calc_maximum_size_opt "${mem_limit}" "50"
-  else
-    calc_maximum_size_opt "${mem_limit}" "75"
-  fi
+  calc_maximum_size_opt "${mem_limit}" "20"
 }
 
 export MALLOC_ARENA_MAX=2
@@ -51,6 +45,8 @@ JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
 if [[ ! -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
   JAVA_OPTS="${JAVA_OPTS} -XX:MinRAMPercentage=10 -XX:MaxRAMPercentage=20 -XX:InitialRAMPercentage=10"
 elif [[ -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"Xmx"* ]]; then
+  # This workaround for cgroups v2 must be removed once java version used by the operator is updated.
+  # https://developers.redhat.com/articles/2022/04/19/java-17-whats-new-openjdks-container-awareness#
   # Calculate -Xmx java option
   JAVA_OPTS="${JAVA_OPTS} $(calc_max_memory)"
 fi
