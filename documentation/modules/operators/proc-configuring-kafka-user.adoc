@@ -132,7 +132,7 @@ status:
     type: NotReady
 ----
 +
-In this example, the reason the user is not ready is because simple authorization is missing in the `Kafka` configuration.
+In this example, the reason the user is not ready is because simple authorization is not enabled in the `Kafka` configuration.
 +
 .Kafka configuration for simple authorization
 [source,yaml,subs="attributes+"]
