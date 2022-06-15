@@ -2,17 +2,11 @@
 //
 // assembly-using-the-user-operator.adoc
 
-[id='proc-configuring-kafka-user-{context}']
+[id='proc-configuring-secure-kafka-user-{context}']
 = Securing user access to Kafka
 
-Use the properties of the `KafkaUser` resource to configure a Kafka user.
-
-You can use `kubectl apply` to create or modify users, and `kubectl delete` to delete existing users.
-
-For example:
-
-* `kubectl apply -f _USER-CONFIG-FILE_`
-* `kubectl delete KafkaUser _USER-NAME_`
+[role="_abstract"]
+Create or modify a `KafkaUser` to represent a client that requires secure access to the Kafka cluster.
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent `Kafka` configuration:
 
@@ -76,9 +70,9 @@ spec:
 . Create or update the `KafkaUser` resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _USER-CONFIG-FILE_
+kubectl apply -f _<user_config_file>_
 +
 The user is created, as well as a Secret with the same name as the `KafkaUser` resource.
 The Secret contains a private and public key for TLS client authentication.
 
-For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^] in the _Deploying and Upgrading Strimzi_ guide.
+For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^].
