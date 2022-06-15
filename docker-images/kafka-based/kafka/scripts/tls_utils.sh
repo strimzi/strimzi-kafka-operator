@@ -30,7 +30,7 @@ function create_truststore {
 # $5: CA public key to be imported
 # $6: Alias of the certificate
 function create_keystore {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password pass:"$2" -out "$1"
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -chain -CAfile "$5" -name "$6" -password pass:"$2" -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -macalg sha256
 }
 
 # Parameters:
@@ -40,7 +40,7 @@ function create_keystore {
 # $4: Private key to be imported
 # $5: Alias of the certificate
 function create_keystore_without_ca_file {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1"
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1" -certpbe aes-128-cbc -keypbe aes-128-cbc -macalg sha256
 }
 
 # Searches the directory with the CAs and finds the CA matching our key.
