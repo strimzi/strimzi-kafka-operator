@@ -5,12 +5,14 @@
 package io.strimzi.operator.common.operator.resource;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -23,7 +25,7 @@ import io.vertx.core.Vertx;
         justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
-            L extends CustomResourceList<T>>
+            L extends DefaultKubernetesResourceList<T>>
         extends AbstractWatchableStatusedResourceOperator<C, T, L, Resource<T>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CrdOperator.class);
@@ -79,17 +81,13 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     public Future<T> patchAsync(Reconciliation reconciliation, T resource) {
-        return patchAsync(reconciliation, resource, true);
-    }
-
-    public Future<T> patchAsync(Reconciliation reconciliation, T resource, boolean cascading) {
         Promise<T> blockingPromise = Promise.promise();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
             String namespace = resource.getMetadata().getNamespace();
             String name = resource.getMetadata().getName();
             try {
-                T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(resource);
+                T result = operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), resource);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {
@@ -109,7 +107,7 @@ public class CrdOperator<C extends KubernetesClient,
             String name = resource.getMetadata().getName();
 
             try {
-                T result = operation().inNamespace(namespace).withName(name).replaceStatus(resource);
+                T result = operation().inNamespace(namespace).resource(resource).replaceStatus();
                 LOGGER.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
                 future.complete(result);
             } catch (Exception e) {

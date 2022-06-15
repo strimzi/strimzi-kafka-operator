@@ -59,7 +59,7 @@ public class SessionStartupDoesNotBlockMainThreadTest {
     NonNamespaceOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> nonNsOp;
 
     @Mock
-    FilterWatchListDeletable<KafkaTopic, KafkaTopicList> filterWatchListDeletable;
+    FilterWatchListDeletable<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> filterWatchListDeletable;
 
     @Mock
     Watch watch;

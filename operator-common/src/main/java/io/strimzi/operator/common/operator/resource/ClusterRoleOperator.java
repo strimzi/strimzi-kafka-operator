@@ -36,8 +36,7 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
     public static ClusterRole convertYamlToClusterRole(String yaml) {
         try {
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-            ClusterRole cr = yamlReader.readValue(yaml, ClusterRole.class);
-            return cr;
+            return yamlReader.readValue(yaml, ClusterRole.class);
         } catch (IOException e)   {
             throw new RuntimeException(e);
         }

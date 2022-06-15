@@ -52,11 +52,12 @@ public class MockPodController extends AbstractMockController {
                             if (annotations != null && annotations.containsKey(ANNO_DO_NOT_SET_READY)) {
                                 return;
                             } else {
-                                client.pods().inNamespace(podMeta.getNamespace()).withName(podMeta.getName()).replaceStatus(new PodBuilder(pod)
-                                        .withStatus(new PodStatusBuilder()
-                                                .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
+                                client.pods().inNamespace(pod.getMetadata().getNamespace()).resource(new PodBuilder(pod)
+                                                .withStatus(new PodStatusBuilder()
+                                                        .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
+                                                        .build())
                                                 .build())
-                                        .build());
+                                        .replaceStatus();
                             }
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {

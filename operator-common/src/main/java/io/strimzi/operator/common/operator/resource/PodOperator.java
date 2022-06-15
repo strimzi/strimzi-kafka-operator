@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Pod}s, which support {@link #isReady(String, String)}.
  */
-public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, PodResource<Pod>> {
+public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, PodResource> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodOperator.class);
     private static final String NO_UID = "NULL";
@@ -34,7 +34,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
     }
 
     @Override
-    protected MixedOperation<Pod, PodList, PodResource<Pod>> operation() {
+    protected MixedOperation<Pod, PodList, PodResource> operation() {
         return client.pods();
     }
 
@@ -59,18 +59,18 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
         // Delete the pod
         LOGGER.debugCr(reconciliation, "Waiting for pod {} to be deleted", podName);
         Future<Void> podReconcileFuture =
-                reconcile(reconciliation, namespace, podName, null).compose(ignore -> {
-                    Future<Void> del = waitFor(reconciliation, namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
-                        // predicate - changed generation means pod has been updated
-                        String newUid = getPodUid(get(namespace, podName));
-                        boolean done = !deleted.equals(newUid);
-                        if (done) {
-                            LOGGER.debugCr(reconciliation, "Rolling pod {} finished", podName);
-                        }
-                        return done;
-                    });
-                    return del;
-                });
+                reconcile(reconciliation, namespace, podName, null)
+                        .compose(ignore -> waitFor(reconciliation, namespace, podName, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+                            // predicate - changed generation means pod has been updated
+                            String newUid = getPodUid(get(namespace, podName));
+                            boolean done = !deleted.equals(newUid);
+
+                            if (done) {
+                                LOGGER.debugCr(reconciliation, "Rolling pod {} finished", podName);
+                            }
+
+                            return done;
+                        }));
 
         podReconcileFuture.onComplete(deleteResult -> {
             if (deleteResult.succeeded()) {

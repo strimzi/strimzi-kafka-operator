@@ -17,10 +17,7 @@ import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
-
 public class StatefulSetDiff extends AbstractJsonDiff {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatefulSetDiff.class.getName());
 
     private static final String SHORTENED_STRIMZI_DOMAIN = Annotations.STRIMZI_DOMAIN.substring(0, Annotations.STRIMZI_DOMAIN.length() - 1);
@@ -70,8 +67,8 @@ public class StatefulSetDiff extends AbstractJsonDiff {
     private final boolean changesSpecReplicas;
 
     public StatefulSetDiff(Reconciliation reconciliation, StatefulSet current, StatefulSet desired) {
-        JsonNode source = patchMapper().valueToTree(current);
-        JsonNode target = patchMapper().valueToTree(desired);
+        JsonNode source = PATCH_MAPPER.valueToTree(current);
+        JsonNode target = PATCH_MAPPER.valueToTree(desired);
         JsonNode diff = JsonDiff.asJson(source, target);
         int num = 0;
         boolean changesVolumeClaimTemplate = false;

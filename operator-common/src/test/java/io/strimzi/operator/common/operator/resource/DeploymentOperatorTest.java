@@ -40,7 +40,7 @@ public class DeploymentOperatorTest extends
                 .endMetadata()
                 .withNewSpec()
                     .withNewStrategy()
-                        .withNewType("RollingUpdate")
+                        .withType("RollingUpdate")
                     .endStrategy()
                 .endSpec()
                 .build();
@@ -51,7 +51,7 @@ public class DeploymentOperatorTest extends
         return new DeploymentBuilder(resource())
                 .editSpec()
                     .editStrategy()
-                        .withNewType("Recreate")
+                        .withType("Recreate")
                     .endStrategy()
                 .endSpec()
                 .build();

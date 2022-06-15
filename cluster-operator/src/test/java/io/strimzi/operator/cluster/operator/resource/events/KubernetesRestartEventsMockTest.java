@@ -266,7 +266,7 @@ public class KubernetesRestartEventsMockTest {
                 .endStatus()
                 .build();
 
-        pvcOps().withName(pvc.getMetadata().getName()).patch(patch);
+        pvcOps().resource(patch).replace();
 
         defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(FILE_SYSTEM_RESIZE_NEEDED, context));
     }
@@ -420,7 +420,7 @@ public class KubernetesRestartEventsMockTest {
                 .endMetadata()
                 .build();
 
-        stsOps().withName(kafkaSet.getMetadata().getName()).patch(patchedSet);
+        stsOps().resource(patchedSet).replace();
 
         defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
     }
@@ -469,7 +469,7 @@ public class KubernetesRestartEventsMockTest {
                 .endStatus()
                 .build();
 
-        podOps().withName(kafkaPod.getMetadata().getName()).patch(patch);
+        podOps().resource(patch).replace();
 
         defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(POD_STUCK, context));
     }
@@ -637,7 +637,7 @@ public class KubernetesRestartEventsMockTest {
         return podOps().withLabel(appName, "kafka").list().getItems().get(0);
     }
 
-    private NonNamespaceOperation<Pod, PodList, PodResource<Pod>> podOps() {
+    private NonNamespaceOperation<Pod, PodList, PodResource> podOps() {
         return client.pods().inNamespace(NAMESPACE);
     }
 
@@ -664,7 +664,7 @@ public class KubernetesRestartEventsMockTest {
                     .addToAnnotations(annotationName, annotationValue)
                 .endMetadata()
                 .build();
-        podOps().withName(kafkaPod.getMetadata().getName()).patch(podPatch);
+        podOps().resource(podPatch).replace();
     }
 
     private ClusterCa createClusterCa() {
@@ -702,7 +702,7 @@ public class KubernetesRestartEventsMockTest {
         Secret brokerSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
         Secret patchedSecret = modifySecretWithAnnotation(brokerSecret, annotation, value);
 
-        client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).patch(patchedSecret);
+        client.secrets().resource(patchedSecret).replace();
     }
 
     private Secret modifySecretWithAnnotation(Secret brokerSecret, String annotation, String value) {

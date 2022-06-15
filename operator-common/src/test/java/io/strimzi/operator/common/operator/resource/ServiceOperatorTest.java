@@ -45,7 +45,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
                     .withName(RESOURCE_NAME)
                 .endMetadata()
                 .withNewSpec()
-                    .withNewType("LoadBalancer")
+                    .withType("LoadBalancer")
                 .endSpec()
                 .build();
     }
@@ -54,7 +54,7 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     protected Service modifiedResource() {
         return new ServiceBuilder(resource())
                 .editSpec()
-                    .withNewType("NodePort")
+                    .withType("NodePort")
                 .endSpec()
                 .build();
     }

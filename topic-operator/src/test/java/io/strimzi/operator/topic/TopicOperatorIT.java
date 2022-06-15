@@ -351,7 +351,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         Status status = new StatusBuilder()
                 .withStatus("pokazene")
                 .withCode(HttpURLConnection.HTTP_GONE)
-                .withNewMessage("pokazene")
+                .withMessage("pokazene")
                 .build();
         WatcherException e = new WatcherException(status.toString());
         LOGGER.info("stopping TW");

@@ -32,7 +32,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
     }
     @Override
     public void create(KafkaRebalance resource) {
-        kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+        kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
     }
     @Override
     public void delete(KafkaRebalance resource) {
@@ -46,10 +46,6 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceClient() {
         return Crds.kafkaRebalanceOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static void replaceKafkaRebalanceResource(String resourceName, Consumer<KafkaRebalance> editor) {
-        ResourceManager.replaceCrdResource(KafkaRebalance.class, KafkaRebalanceList.class, resourceName, editor);
     }
 
     public static void replaceKafkaRebalanceResourceInSpecificNamespace(String resourceName, Consumer<KafkaRebalance> editor, String namespaceName) {

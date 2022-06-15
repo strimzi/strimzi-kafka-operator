@@ -45,7 +45,7 @@ public class MockServiceController extends AbstractMockController {
                         String namespace = svc.getMetadata().getNamespace();
 
                         try {
-                            client.endpoints().inNamespace(namespace).withName(name).createOrReplace(new EndpointsBuilder()
+                            client.endpoints().inNamespace(namespace).resource(new EndpointsBuilder()
                                     .withNewMetadata()
                                     .withName(name)
                                     .withNamespace(namespace)
@@ -54,7 +54,8 @@ public class MockServiceController extends AbstractMockController {
                                             .withAddresses(new EndpointAddressBuilder().withHostname("some-address").build())
                                             .withPorts(new EndpointPortBuilder().withPort(1234).build())
                                             .build())
-                                    .build());
+                                    .build())
+                                    .createOrReplace();
                         } catch (KubernetesClientException e)   {
                             LOGGER.error("Failed to update Endpoint {} in namespace {}", name, namespace, e);
                         }
