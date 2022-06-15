@@ -109,7 +109,7 @@ my-user-3  my-cluster  tls             simple        True
 +
 User creation is successful when the `READY` output shows `True`.
 
-. If the `READY` column stays blank, get more details on the status from the resource YAML.
+. If the `READY` column stays blank, get more details on the status from the resource YAML or User Operator logs.
 +
 Messages provide details on the reason for the current status.
 +
