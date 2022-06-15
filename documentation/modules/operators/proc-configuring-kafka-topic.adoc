@@ -76,7 +76,7 @@ my-topic-3   my-cluster  10          3                  True
 +
 Topic creation is successful when the `READY` output shows `True`.
 
-. If the `READY` column stays blank, get more details on the status from the resource YAML.
+. If the `READY` column stays blank, get more details on the status from the resource YAML or from the Topic Operator logs.
 +
 Messages provide details on the reason for the current status.
 +
