@@ -844,6 +844,8 @@ spec:
                                     type: object
                               maxSkew:
                                 type: integer
+                              minDomains:
+                                type: integer
                               topologyKey:
                                 type: string
                               whenUnsatisfiable:

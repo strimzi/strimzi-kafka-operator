@@ -72,7 +72,7 @@ public class MockKube2 {
                 .load(crdPath)
                 .get();
 
-        client.apiextensions().v1().customResourceDefinitions().create(kafkaCrd);
+        client.apiextensions().v1().customResourceDefinitions().resource(kafkaCrd).create();
     }
 
     /**
@@ -264,7 +264,7 @@ public class MockKube2 {
         @SuppressWarnings({ "rawtypes" })
         private <T extends CustomResource, L extends CustomResourceList<T>> void initializeResources(MixedOperation<T, L, Resource<T>> op, T... resources)   {
             for (T resource : resources)  {
-                op.inNamespace(resource.getMetadata().getNamespace()).create(resource);
+                op.inNamespace(resource.getMetadata().getNamespace()).resource(resource).create();
             }
         }
 

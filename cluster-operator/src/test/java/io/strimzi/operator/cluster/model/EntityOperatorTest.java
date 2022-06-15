@@ -864,7 +864,7 @@ public class EntityOperatorTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                    .addNewDrop("ALL")
+                    .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 
@@ -901,7 +901,7 @@ public class EntityOperatorTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                .addNewDrop("ALL")
+                .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 
@@ -938,7 +938,7 @@ public class EntityOperatorTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                    .addNewDrop("ALL")
+                    .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 

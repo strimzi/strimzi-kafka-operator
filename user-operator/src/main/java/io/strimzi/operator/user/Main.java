@@ -6,8 +6,8 @@ package io.strimzi.operator.user;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -58,7 +58,7 @@ public class Main {
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
 
-        KubernetesClient client = new DefaultKubernetesClient();
+        KubernetesClient client = new KubernetesClientBuilder().build();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 
         run(vertx, client, adminClientProvider, config).onComplete(ar -> {

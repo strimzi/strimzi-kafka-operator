@@ -29,6 +29,6 @@ public class StorageClassOperator extends AbstractNonNamespacedResourceOperator<
     @Override
     protected NonNamespaceOperation<StorageClass, StorageClassList,
                 Resource<StorageClass>> operation() {
-        return client.storage().storageClasses();
+        return client.storage().v1().storageClasses();
     }
 }

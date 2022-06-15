@@ -5,7 +5,9 @@
 package io.strimzi.test.k8s.cluster;
 
 import io.fabric8.kubernetes.client.Config;
-import io.fabric8.openshift.client.DefaultOpenShiftClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.fabric8.openshift.client.OpenShiftConfig;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
@@ -21,7 +23,7 @@ import java.util.Locale;
 public interface KubeCluster {
 
     String ENV_VAR_TEST_CLUSTER = "TEST_CLUSTER";
-    Config CONFIG = Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null));
+    OpenShiftConfig CONFIG = OpenShiftConfig.wrap(Config.autoConfigure(System.getenv().getOrDefault("TEST_CLUSTER_CONTEXT", null)));
 
     /** Return true iff this kind of cluster installed on the local machine. */
     boolean isAvailable();
@@ -33,7 +35,7 @@ public interface KubeCluster {
     KubeCmdClient defaultCmdClient();
 
     default KubeClient defaultClient() {
-        return new KubeClient(new DefaultOpenShiftClient(CONFIG), "myproject");
+        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build().adapt(OpenShiftClient.class), "myproject");
     }
 
     /**

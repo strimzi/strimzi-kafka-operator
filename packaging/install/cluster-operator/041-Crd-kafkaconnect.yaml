@@ -831,6 +831,8 @@ spec:
                                   type: object
                             maxSkew:
                               type: integer
+                            minDomains:
+                              type: integer
                             topologyKey:
                               type: string
                             whenUnsatisfiable:
@@ -1506,6 +1508,8 @@ spec:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
                             maxSkew:
+                              type: integer
+                            minDomains:
                               type: integer
                             topologyKey:
                               type: string

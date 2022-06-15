@@ -4,9 +4,7 @@
  */
 package io.strimzi.test.k8s.cluster;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.http.HttpClient;
-import io.fabric8.kubernetes.client.utils.HttpClientUtils;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
@@ -17,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A {@link KubeCluster} implementation for any {@code Kubernetes} cluster.
@@ -52,16 +49,7 @@ public class Kubernetes implements KubeCluster {
 
     @Override
     public KubeClient defaultClient() {
-        HttpClient httpClient = HttpClientUtils.createHttpClient(CONFIG);
-
-        httpClient = httpClient.newBuilder()
-                .preferHttp11()
-                .connectTimeout(60L, TimeUnit.SECONDS)
-                .writeTimeout(60L, TimeUnit.SECONDS)
-                .readTimeout(60L, TimeUnit.SECONDS)
-                .build();
-
-        return new KubeClient(new DefaultKubernetesClient(httpClient, CONFIG), "default");
+        return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build(), "default");
     }
 
     public String toString() {

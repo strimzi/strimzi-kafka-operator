@@ -836,7 +836,7 @@ public class CruiseControlTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                    .addNewDrop("ALL")
+                    .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 

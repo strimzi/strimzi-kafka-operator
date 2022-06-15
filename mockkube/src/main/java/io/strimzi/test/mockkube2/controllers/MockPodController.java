@@ -41,11 +41,12 @@ public class MockPodController extends AbstractMockController {
                     case ADDED:
                     case MODIFIED:
                         try {
-                            client.pods().inNamespace(pod.getMetadata().getNamespace()).withName(pod.getMetadata().getName()).replaceStatus(new PodBuilder(pod)
-                                    .withStatus(new PodStatusBuilder()
-                                            .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
+                            client.pods().inNamespace(pod.getMetadata().getNamespace()).resource(new PodBuilder(pod)
+                                            .withStatus(new PodStatusBuilder()
+                                                    .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
+                                                    .build())
                                             .build())
-                                    .build());
+                                    .replaceStatus();
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {
                                 LOGGER.info("Pod {} in namespace {} changed while trying to update status", pod.getMetadata().getName(), pod.getMetadata().getNamespace());

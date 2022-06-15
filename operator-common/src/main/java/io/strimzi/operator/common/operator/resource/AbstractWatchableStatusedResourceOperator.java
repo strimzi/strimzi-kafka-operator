@@ -27,9 +27,6 @@ public abstract class AbstractWatchableStatusedResourceOperator<
         L extends KubernetesResourceList<T>,
         R extends Resource<T>>
         extends AbstractWatchableResourceOperator<C, T, L, R> {
-
-    public final static String ANY_NAMESPACE = "*";
-
     /**
      * Constructor.
      *

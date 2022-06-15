@@ -11,10 +11,12 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
-import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -300,7 +302,7 @@ public class StrimziPodSetController implements Runnable {
                             .withStatus(desiredStatus)
                             .build();
 
-                    strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).withName(reconciliation.name()).patchStatus(updatedPodSet);
+                    strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).resource(updatedPodSet).replaceStatus();
                 }
             } catch (KubernetesClientException e)   {
                 if (e.getCode() == 409) {
@@ -330,7 +332,7 @@ public class StrimziPodSetController implements Runnable {
             // Pod does not exist => we create it
             LOGGER.debugCr(reconciliation, "Creating pod {} in namespace {}", pod.getMetadata().getName(), reconciliation.namespace());
             pod.getMetadata().setOwnerReferences(List.of(owner));
-            podOperator.client().inNamespace(reconciliation.namespace()).create(pod);
+            podOperator.client().inNamespace(reconciliation.namespace()).resource(pod).create();
         } else {
             if (ModelUtils.hasOwnerReference(currentPod, owner))    {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", pod.getMetadata().getName(), reconciliation.namespace());
@@ -344,7 +346,7 @@ public class StrimziPodSetController implements Runnable {
                     podWithOwnerReference.getMetadata().setOwnerReferences(List.of(owner));
                 }
 
-                podOperator.client().inNamespace(reconciliation.namespace()).withName(pod.getMetadata().getName()).patch(podWithOwnerReference);
+                podOperator.client().inNamespace(reconciliation.namespace()).withName(pod.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), podWithOwnerReference);
             }
 
             if (Readiness.isPodReady(currentPod))   {
