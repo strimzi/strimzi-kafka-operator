@@ -13,6 +13,7 @@
   If needed, `UseStrimziPodSets` can be disabled in the feature gates configuration in the Cluster Operator.
 * Use better encryption and digest algorithms when creating the PKCS12 stores.
   For existing clusters, the certificates will not be updated during upgrade but only next time the PKCS12 store is created. 
+* Add CPU capacity overrides for Cruise Control capacity config
 
 ## 0.29.0
 

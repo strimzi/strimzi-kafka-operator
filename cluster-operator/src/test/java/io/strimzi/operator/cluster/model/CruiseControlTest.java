@@ -45,8 +45,8 @@ import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
@@ -54,6 +54,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -210,7 +211,10 @@ public class CruiseControlTest {
     @ParallelTest
     public void testBrokerCapacities() throws JsonProcessingException {
         // Test user defined capacities
+        String userDefinedCpuCapacity = "2575m";
+
         io.strimzi.api.kafka.model.balancing.BrokerCapacity userDefinedBrokerCapacity = new io.strimzi.api.kafka.model.balancing.BrokerCapacity();
+        userDefinedBrokerCapacity.setCpu(userDefinedCpuCapacity);
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 
@@ -226,41 +230,40 @@ public class CruiseControlTest {
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
         // Test generated disk capacity
-        JbodStorage jbodStorage = new JbodStorage();
-        List<SingleVolumeStorage> volumes = new ArrayList<>();
+        JbodStorage jbodStorage = new JbodStorageBuilder()
+                .withVolumes(
+                        new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize("50Gi").build(),
+                        new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).build()
+                ).build();
 
-        PersistentClaimStorage p1 = new PersistentClaimStorage();
-        p1.setId(0);
-        p1.setSize("50Gi");
-        volumes.add(p1);
-
-        PersistentClaimStorage p2 = new PersistentClaimStorage();
-        p2.setId(1);
-        volumes.add(p2);
-
-        jbodStorage.setVolumes(volumes);
+        Map<String, Quantity> requests = Map.of(Capacity.RESOURCE_TYPE, new Quantity("400m"));
+        Map<String, Quantity> limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
         resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
                 .editKafka()
                     .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
                     .withStorage(jbodStorage)
+                    .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
                 .endKafka()
                 .withCruiseControl(cruiseControlSpec)
             .endSpec()
             .build();
         
         capacity = new Capacity(resource.getSpec(), jbodStorage);
+        String cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
 
         JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
         for (Object brokerEntry : brokerEntries) {
             Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
             assertThat(isJBOD(brokerCapacity), is(true));
+            assertThat(brokerCapacity.get(Capacity.CPU_KEY).toString(), is(cpuCapacity));
         }
 
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
         // Test capacity overrides
+        String userDefinedCpuCapacityOverride0 = "1.222";
         String inboundNetwork = "50000KB/s";
         String inboundNetworkOverride0 = "25000KB/s";
         String inboundNetworkOverride1 = "10000KiB/s";
@@ -276,9 +279,11 @@ public class CruiseControlTest {
         cruiseControlSpec = new CruiseControlSpecBuilder()
             .withImage(ccImage)
             .withNewBrokerCapacity()
+                .withCpu(userDefinedCpuCapacity)
                 .withInboundNetwork(inboundNetwork)
                 .addNewOverride()
                     .withBrokers(overrideList0)
+                    .withCpu(userDefinedCpuCapacityOverride0)
                     .withInboundNetwork(inboundNetworkOverride0)
                 .endOverride()
                 .addNewOverride()
@@ -299,7 +304,7 @@ public class CruiseControlTest {
         }
 
         TreeMap<Integer, BrokerCapacity> capacityEntries = capacity.getCapacityEntries();
-
+        assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacity).toString()));
         assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetwork)));
         assertThat(capacityEntries.get(BrokerCapacity.DEFAULT_BROKER_ID).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
@@ -307,12 +312,40 @@ public class CruiseControlTest {
         assertThat(capacityEntries.get(broker0).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
         // When the same broker id is specified in brokers list of multiple overrides, use the value specified in the first override.
+        assertThat(capacityEntries.get(broker1).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacityOverride0).toString()));
         assertThat(capacityEntries.get(broker1).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
         assertThat(capacityEntries.get(broker1).getOutboundNetwork(), is(BrokerCapacity.DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND));
 
+        assertThat(capacityEntries.get(broker2).getCpu().toString(), is(new CpuCapacity(userDefinedCpuCapacityOverride0).toString()));
         assertThat(capacityEntries.get(broker2).getInboundNetwork(), is(Capacity.getThroughputInKiB(inboundNetworkOverride0)));
 
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
+
+        // Test generated CPU capacity
+        userDefinedCpuCapacity = "500m";
+
+        requests = Map.of(Capacity.RESOURCE_TYPE, new Quantity(userDefinedCpuCapacity));
+        limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
+
+        resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+            .editSpec()
+                .editKafka()
+                .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
+                .withStorage(jbodStorage)
+                .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
+            .endKafka()
+            .withCruiseControl(cruiseControlSpec)
+            .endSpec()
+            .build();
+
+        capacity = new Capacity(resource.getSpec(), kafkaStorage);
+        cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
+
+        brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
+        for (Object brokerEntry : brokerEntries) {
+            Map<String, Object> brokerCapacity = ((JsonObject) brokerEntry).getJsonObject(Capacity.CAPACITY_KEY).getMap();
+            assertThat(brokerCapacity.get(Capacity.CPU_KEY).toString(), is(cpuCapacity));
+        }
     }
 
     @ParallelTest

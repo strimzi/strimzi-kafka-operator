@@ -1379,6 +1379,8 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |string
 |cpuUtilization   1.2+<.<a|*The `cpuUtilization` property has been deprecated.* The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |integer
+|cpu              1.2+<.<a|Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu.
+|string
 |inboundNetwork   1.2+<.<a|Broker capacity for inbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
 |string
 |outboundNetwork  1.2+<.<a|Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
@@ -1398,6 +1400,8 @@ Used in: xref:type-BrokerCapacity-{context}[`BrokerCapacity`]
 |Property                |Description
 |brokers          1.2+<.<a|List of Kafka brokers (broker identifiers).
 |integer array
+|cpu              1.2+<.<a|Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu.
+|string
 |inboundNetwork   1.2+<.<a|Broker capacity for inbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
 |string
 |outboundNetwork  1.2+<.<a|Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
