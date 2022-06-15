@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildList;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Build}s.
  */
-public class BuildOperator extends AbstractResourceOperator<OpenShiftClient, Build, BuildList, BuildResource<Build, LogWatch>> {
+public class BuildOperator extends AbstractResourceOperator<OpenShiftClient, Build, BuildList, BuildResource> {
     /**
      * Constructor
      *
@@ -27,7 +26,7 @@ public class BuildOperator extends AbstractResourceOperator<OpenShiftClient, Bui
     }
 
     @Override
-    protected MixedOperation<Build, BuildList, BuildResource<Build, LogWatch>> operation() {
+    protected MixedOperation<Build, BuildList, BuildResource> operation() {
         return client.builds();
     }
 }

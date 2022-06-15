@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
+import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
@@ -267,7 +267,7 @@ public class ClusterOperatorTest {
         SharedIndexInformer mockCmInformer = mock(SharedIndexInformer.class);
         when(mockCmInformer.getIndexer()).thenReturn(mockCmIndexer);
 
-        FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
+        AnyNamespaceOperation mockFilteredCms = mock(AnyNamespaceOperation.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
         when(mockFilteredCms.watch(any())).thenAnswer(invo -> {
             numWatchers.incrementAndGet();
@@ -286,7 +286,7 @@ public class ClusterOperatorTest {
 
         // Mock Pods
         MixedOperation mockPods = mock(MixedOperation.class);
-        FilterWatchListMultiDeletable mockFilteredPods = mock(FilterWatchListMultiDeletable.class);
+        AnyNamespaceOperation mockFilteredPods = mock(AnyNamespaceOperation.class);
         Indexer mockPodIndexer = mock(Indexer.class);
         SharedIndexInformer mockPodInformer = mock(SharedIndexInformer.class);
         when(client.pods()).thenReturn(mockPods);

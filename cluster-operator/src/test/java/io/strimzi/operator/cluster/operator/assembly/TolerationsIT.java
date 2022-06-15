@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.operator.common.Reconciliation;
@@ -83,9 +83,9 @@ public class TolerationsIT {
                 .endSpec()
                 .build();
 
-        KubernetesClient client = new DefaultKubernetesClient();
+        KubernetesClient client = new KubernetesClientBuilder().build();
 
-        client.apps().statefulSets().inNamespace(namespace).create(ss);
+        client.apps().statefulSets().inNamespace(namespace).resource(ss).create();
         StatefulSet stsk8s = client.apps().statefulSets().inNamespace(namespace).withName("foo").get();
         StatefulSetDiff diff = new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss, stsk8s);
         Checkpoint checkpoint = context.checkpoint();

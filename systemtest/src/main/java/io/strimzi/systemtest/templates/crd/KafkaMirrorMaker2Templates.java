@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.templates.crd;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -17,7 +16,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -36,20 +34,8 @@ public class KafkaMirrorMaker2Templates {
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, String sourceNs, String targetNs) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).resource(metricsCm).createOrReplace();
         return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false, sourceNs, targetNs);
-    }
-
-    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false);
-    }
-
-    public static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
-        KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener);
     }
 
     private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
@@ -120,9 +106,6 @@ public class KafkaMirrorMaker2Templates {
         return kmm2b;
     }
 
-    public static void deleteKafkaMirrorMaker2WithoutWait(String resourceName) {
-        KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
     private static KafkaMirrorMaker2 getKafkaMirrorMaker2FromYaml(String yamlPath) {
         return TestUtils.configFromYaml(yamlPath, KafkaMirrorMaker2.class);
     }

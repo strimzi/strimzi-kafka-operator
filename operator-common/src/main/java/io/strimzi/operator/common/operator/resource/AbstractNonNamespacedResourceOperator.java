@@ -4,15 +4,15 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
@@ -206,14 +206,11 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * and completes the given future accordingly.
      */
     protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String name, T current, T desired) {
-        return internalPatch(reconciliation, name, current, desired, true);
-    }
-
-    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String name, T current, T desired, boolean cascading) {
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
-                T result = operation().withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
+                T result = operation().withName(name).patch(PatchContext.of(PatchType.JSON), desired);
                 LOGGER.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
+
                 return Future.succeededFuture(wasChanged(current, result) ?
                         ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
@@ -243,8 +240,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      */
     protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String name, T desired) {
         try {
-            ReconcileResult<T> result = ReconcileResult.created(operation().withName(name).create(desired));
+            ReconcileResult<T> result = ReconcileResult.created(operation().resource(desired).create());
             LOGGER.debugCr(reconciliation, "{} {} has been created", resourceKind, name);
+
             return Future.succeededFuture(result);
         } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while creating {} {}", resourceKind, name, e);
@@ -294,8 +292,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return resourceSupport.listAsync(listOperation(selector));
     }
 
-    protected FilterWatchListDeletable<T, L> listOperation(Labels selector) {
-        FilterWatchListMultiDeletable<T, L> operation = operation();
+    protected FilterWatchListDeletable<T, L, R> listOperation(Labels selector) {
+        NonNamespaceOperation<T, L, R> operation = operation();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();

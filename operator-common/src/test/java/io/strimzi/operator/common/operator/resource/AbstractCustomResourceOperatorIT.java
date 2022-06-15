@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 // Methods must be be non static as they make a non-static call to getCrd()
 // to correctly setup the test environment before the tests.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends CustomResourceList<T>> {
+public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends DefaultKubernetesResourceList<T>> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractCustomResourceOperatorIT.class);
     protected static final String RESOURCE_NAME = "my-test-resource";
     protected static final Condition READY_CONDITION = new ConditionBuilder()
@@ -82,7 +82,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
-        client = new DefaultKubernetesClient();
+        client = new KubernetesClientBuilder().build();
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Namespace {} is already created, going to delete it", namespace);

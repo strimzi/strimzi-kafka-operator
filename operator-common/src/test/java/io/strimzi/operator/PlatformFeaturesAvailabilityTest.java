@@ -10,8 +10,9 @@ import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.api.model.APIGroupBuilder;
 import io.fabric8.kubernetes.api.model.GroupVersionForDiscovery;
 import io.fabric8.kubernetes.api.model.GroupVersionForDiscoveryBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -58,7 +59,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         startMockApi(vertx, version, Collections.emptyList());
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
         Checkpoint a = context.checkpoint();
 
@@ -84,7 +85,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         startMockApi(vertx, version, Collections.emptyList());
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
         Checkpoint async = context.checkpoint();
 
@@ -102,7 +103,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         startMockApi(vertx, apis);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
         Checkpoint async = context.checkpoint();
 
@@ -123,7 +124,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         startMockApi(vertx, apis);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
         Checkpoint async = context.checkpoint();
 
@@ -144,7 +145,7 @@ public class PlatformFeaturesAvailabilityTest {
 
         startMockApi(vertx, apis);
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
         Checkpoint async = context.checkpoint();
 
@@ -160,7 +161,7 @@ public class PlatformFeaturesAvailabilityTest {
     public void testApiDetectionKubernetes(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
         startMockApi(vertx, Collections.emptyList());
 
-        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+        KubernetesClient client = buildKubernetesClient("127.0.0.1:" + server.actualPort());
 
         Checkpoint async = context.checkpoint();
 
@@ -191,6 +192,10 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(vi.getMinor(), is("16"));
         });
         context.completeNow();
+    }
+
+    KubernetesClient buildKubernetesClient(String masterUrl)    {
+        return new KubernetesClientBuilder().withConfig(new ConfigBuilder().withMasterUrl(masterUrl).build()).build();
     }
 
     void startMockApi(Vertx vertx, String version, List<APIGroup> apis) throws InterruptedException, ExecutionException {

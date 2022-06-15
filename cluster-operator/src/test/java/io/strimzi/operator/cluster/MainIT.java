@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
@@ -44,7 +44,7 @@ public class MainIT {
 
     @BeforeEach
     private void createClient() {
-        client = new DefaultKubernetesClient();
+        client = new KubernetesClientBuilder().build();
     }
 
     @AfterEach

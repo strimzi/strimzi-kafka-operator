@@ -80,10 +80,8 @@ public class KafkaAdminClients extends BaseClients {
     public void setAdminOperation(AdminClientOperation adminOperation) {
         if (adminOperation == null) {
             throw new InvalidParameterException("TopicOperation must be set.");
-        } else if ((this.getTopicName() == null || this.getTopicName().isEmpty())
-            && !(adminOperation.equals(AdminClientOperation.HELP) || adminOperation.equals(AdminClientOperation.LIST_TOPICS))) {
-            throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
         }
+
         this.adminOperation = adminOperation;
     }
 
@@ -108,6 +106,11 @@ public class KafkaAdminClients extends BaseClients {
     }
 
     public Job defaultAdmin() {
+        if ((this.getTopicName() == null || this.getTopicName().isEmpty())
+            && !(this.getAdminOperation().equals(AdminClientOperation.HELP) || this.getAdminOperation().equals(AdminClientOperation.LIST_TOPICS))) {
+            throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
+        }
+
         Map<String, String> adminLabels = new HashMap<>();
         adminLabels.put("app", adminName);
         adminLabels.put(Constants.KAFKA_ADMIN_CLIENT_LABEL_KEY, Constants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);

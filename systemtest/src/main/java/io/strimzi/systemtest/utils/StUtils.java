@@ -12,7 +12,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -526,7 +525,6 @@ public class StUtils {
         } else {
             kubeClient(namespaceName)
                 .statefulSet(resourceName)
-                .withPropagationPolicy(DeletionPropagation.ORPHAN)
                 .edit(sts -> new StatefulSetBuilder(sts)
                 .editMetadata()
                     .addToAnnotations(annotations)

@@ -30,7 +30,7 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
     }
     @Override
     public void create(KafkaBridge resource) {
-        kafkaBridgeClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+        kafkaBridgeClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
     }
     @Override
     public void delete(KafkaBridge resource) {
@@ -44,10 +44,6 @@ public class KafkaBridgeResource implements ResourceType<KafkaBridge> {
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeClient() {
         return Crds.kafkaBridgeOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static void replaceBridgeResource(String resourceName, Consumer<KafkaBridge> editor) {
-        ResourceManager.replaceCrdResource(KafkaBridge.class, KafkaBridgeList.class, resourceName, editor);
     }
 
     public static void replaceBridgeResourceInSpecificNamespace(String resourceName, Consumer<KafkaBridge> editor, String namespaceName) {

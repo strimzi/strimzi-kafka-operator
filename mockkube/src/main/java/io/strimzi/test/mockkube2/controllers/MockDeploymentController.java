@@ -40,13 +40,14 @@ public class MockDeploymentController extends AbstractMockController {
                     case ADDED:
                     case MODIFIED:
                         try {
-                            client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).withName(deployment.getMetadata().getName()).replaceStatus(new DeploymentBuilder(deployment)
-                                    .withStatus(new DeploymentStatusBuilder()
-                                            .withObservedGeneration(deployment.getMetadata().getGeneration())
-                                            .withReplicas(deployment.getSpec().getReplicas())
-                                            .withAvailableReplicas(deployment.getSpec().getReplicas())
+                            client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(new DeploymentBuilder(deployment)
+                                            .withStatus(new DeploymentStatusBuilder()
+                                                    .withObservedGeneration(deployment.getMetadata().getGeneration())
+                                                    .withReplicas(deployment.getSpec().getReplicas())
+                                                    .withAvailableReplicas(deployment.getSpec().getReplicas())
+                                                    .build())
                                             .build())
-                                    .build());
+                                    .replaceStatus();
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {
                                 LOGGER.info("StatefulSet {} in namespace {} changed while trying to update status", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace());

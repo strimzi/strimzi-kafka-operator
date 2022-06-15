@@ -4,13 +4,12 @@
  */
 package io.strimzi.api.kafka;
 
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.strimzi.api.kafka.model.KafkaUser;
 
-import io.fabric8.kubernetes.client.CustomResourceList;
-
 /**
- * A {@code CustomResourceList<KafkaUser>} required for using Fabric8 CRD support.
+ * A {@code DefaultKubernetesResourceList<KafkaUser>} required for using Fabric8 CRD support.
  */
-public class KafkaUserList extends CustomResourceList<KafkaUser> {
+public class KafkaUserList extends DefaultKubernetesResourceList<KafkaUser> {
     private static final long serialVersionUID = 1L;
 }

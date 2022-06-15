@@ -12,12 +12,12 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
+import io.fabric8.kubernetes.client.GracePeriodConfigurable;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Deletable;
-import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -37,6 +37,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.exceptions.base.MockitoException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
 
@@ -197,16 +198,15 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
                 .build();
 
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
+        when(mockDeletable.delete()).thenReturn(List.of());
 
-        Resource mockERPD = mock(resourceType());
-        when(mockERPD.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockDeletable);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        GracePeriodConfigurable gpc = mock(GracePeriodConfigurable.class);
+        when(gpc.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(sts1);
-        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.ORPHAN))).thenReturn(mockERPD);
-        when(mockResource.create(any(StatefulSet.class))).thenReturn(sts1);
+        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.ORPHAN))).thenReturn(gpc);
+        when(mockResource.create()).thenReturn(sts1);
 
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
@@ -219,6 +219,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+        when(mockNameable.resource(eq(sts2))).thenReturn(mockResource);
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
@@ -249,15 +250,14 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     @Test
     public void testCascadingDeleteAsync(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
+        when(mockDeletable.delete()).thenReturn(List.of());
 
-        Resource mockERPD = mock(resourceType());
-        when(mockERPD.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockDeletable);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        GracePeriodConfigurable gpc = mock(GracePeriodConfigurable.class);
+        when(gpc.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         ArgumentCaptor<DeletionPropagation> cascadingCaptor = ArgumentCaptor.forClass(DeletionPropagation.class);
-        when(mockRSR.withPropagationPolicy(cascadingCaptor.capture())).thenReturn(mockERPD);
+        when(mockRSR.withPropagationPolicy(cascadingCaptor.capture())).thenReturn(gpc);
 
         ArgumentCaptor<Watcher> watcherCaptor = ArgumentCaptor.forClass(Watcher.class);
         when(mockRSR.watch(watcherCaptor.capture())).thenReturn(mock(Watch.class));
@@ -269,7 +269,6 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
         PodOperator podOperator = mock(PodOperator.class);
-        PvcOperator pvcOperator = mock(PvcOperator.class);
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
@@ -292,15 +291,14 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     @Test
     public void testNonCascadingDeleteAsync(VertxTestContext context)   {
         Deletable mockDeletable = mock(Deletable.class);
-        when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
+        when(mockDeletable.delete()).thenReturn(List.of());
 
-        Resource mockERPD = mock(resourceType());
-        when(mockERPD.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockDeletable);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        GracePeriodConfigurable gpc = mock(GracePeriodConfigurable.class);
+        when(gpc.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         ArgumentCaptor<DeletionPropagation> cascadingCaptor = ArgumentCaptor.forClass(DeletionPropagation.class);
-        when(mockRSR.withPropagationPolicy(cascadingCaptor.capture())).thenReturn(mockERPD);
+        when(mockRSR.withPropagationPolicy(cascadingCaptor.capture())).thenReturn(gpc);
         ArgumentCaptor<Watcher> watcherCaptor = ArgumentCaptor.forClass(Watcher.class);
         when(mockRSR.watch(watcherCaptor.capture())).thenReturn(mock(Watch.class));
 
@@ -311,7 +309,6 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
         PodOperator podOperator = mock(PodOperator.class);
-        PvcOperator pvcOperator = mock(PvcOperator.class);
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
@@ -333,8 +330,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
     @Test
     public void testDeleteAsyncNotDeleted(VertxTestContext context)   {
-        EditReplacePatchDeletable mockERPD = mock(EditReplacePatchDeletable.class);
-        when(mockERPD.delete()).thenReturn(Boolean.FALSE);
+        GracePeriodConfigurable mockERPD = mock(GracePeriodConfigurable.class);
+        when(mockERPD.delete()).thenReturn(List.of());
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         when(mockRSR.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockERPD);
@@ -346,7 +343,6 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
         PodOperator podOperator = mock(PodOperator.class);
-        PvcOperator pvcOperator = mock(PvcOperator.class);
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
@@ -368,12 +364,11 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenThrow(new MockitoException("Something failed"));
 
-        Resource mockERPD = mock(resourceType());
-        when(mockERPD.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockDeletable);
-        when(mockERPD.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+        GracePeriodConfigurable gpc = mock(GracePeriodConfigurable.class);
+        when(gpc.withGracePeriod(anyLong())).thenReturn(mockDeletable);
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
-        when(mockRSR.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockERPD);
+        when(mockRSR.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(gpc);
         when(mockRSR.watch(any())).thenReturn(mock(Watch.class));
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -383,7 +378,6 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
 
         PodOperator podOperator = mock(PodOperator.class);
-        PvcOperator pvcOperator = mock(PvcOperator.class);
 
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);

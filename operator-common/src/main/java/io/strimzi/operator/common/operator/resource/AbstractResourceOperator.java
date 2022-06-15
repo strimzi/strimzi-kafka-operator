@@ -10,11 +10,13 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -236,13 +238,9 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * and completes the given future accordingly.
      */
     protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
-        return internalPatch(reconciliation, namespace, name, current, desired, true);
-    }
-
-    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T current, T desired, boolean cascading) {
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
-                T result = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
+                T result = operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), desired);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
@@ -272,7 +270,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      */
     protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
         try {
-            ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).withName(name).create(desired));
+            ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).resource(desired).create());
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been created", resourceKind, name, namespace);
             return Future.succeededFuture(result);
         } catch (Exception e) {
@@ -322,11 +320,11 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     protected List<T> listInAnyNamespace(Labels selector) {
-        FilterWatchListMultiDeletable<T, L> operation = operation().inAnyNamespace();
+        AnyNamespaceOperation<T, L, R> operation = operation().inAnyNamespace();
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            FilterWatchListDeletable<T, L> tlBooleanWatchWatcherFilterWatchListDeletable = operation.withLabels(labels);
+            FilterWatchListDeletable<T, L, R> tlBooleanWatchWatcherFilterWatchListDeletable = operation.withLabels(labels);
             return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
@@ -342,7 +340,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
 
         if (selector != null) {
             Map<String, String> labels = selector.toMap();
-            FilterWatchListDeletable<T, L> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
+            FilterWatchListDeletable<T, L, R> tlBooleanWatchWatcherFilterWatchListDeletable = tldrNonNamespaceOperation.withLabels(labels);
             return tlBooleanWatchWatcherFilterWatchListDeletable
                     .list()
                     .getItems();
@@ -361,7 +359,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A Future with a list of matching resources.
      */
     public Future<List<T>> listAsync(String namespace, Labels selector) {
-        FilterWatchListDeletable<T, L> x;
+        FilterWatchListDeletable<T, L, R> x;
 
         if (ANY_NAMESPACE.equals(namespace))  {
             x = operation().inAnyNamespace();
@@ -376,7 +374,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     }
 
     public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
-        FilterWatchListDeletable<T, L> x;
+        FilterWatchListDeletable<T, L, R> x;
 
         if (ANY_NAMESPACE.equals(namespace))  {
             x = operation().inAnyNamespace();

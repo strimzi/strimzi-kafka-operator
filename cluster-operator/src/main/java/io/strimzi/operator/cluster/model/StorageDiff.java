@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 import static java.util.Objects.isNull;
 
 /**
@@ -96,8 +95,8 @@ public class StorageDiff extends AbstractJsonDiff {
                 isEmpty &= diff.isEmpty();
             }
         } else {
-            JsonNode source = patchMapper().valueToTree(current == null ? "{}" : current);
-            JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
+            JsonNode source = PATCH_MAPPER.valueToTree(current == null ? "{}" : current);
+            JsonNode target = PATCH_MAPPER.valueToTree(desired == null ? "{}" : desired);
             JsonNode diff = JsonDiff.asJson(source, target);
 
             int num = 0;

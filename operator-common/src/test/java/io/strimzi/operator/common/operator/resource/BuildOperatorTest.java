@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.client.dsl.LogWatch;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildBuilder;
@@ -15,7 +14,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Build, BuildList, BuildResource<Build, LogWatch>> {
+public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Build, BuildList, BuildResource> {
 
     @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {
@@ -69,7 +68,7 @@ public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftCli
         return new BuildBuilder(resource())
                 .editSpec()
                     .editSource()
-                        .withNewDockerfile("FROM centos:8\nUSER 1001")
+                        .withDockerfile("FROM centos:8\nUSER 1001")
                     .endSource()
                 .endSpec()
                 .build();

@@ -7,7 +7,7 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.client.internal.readiness.Readiness;
+import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.test.TestUtils;

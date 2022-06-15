@@ -4,12 +4,12 @@
  */
 package io.strimzi.api.kafka;
 
-import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.strimzi.api.kafka.model.KafkaConnector;
 
 /**
- * A {@code CustomResourceList<KafkaConnector>} required for using Fabric8 CRD support.
+ * A {@code DefaultKubernetesResourceList<KafkaConnector>} required for using Fabric8 CRD support.
  */
-public class KafkaConnectorList extends CustomResourceList<KafkaConnector> {
+public class KafkaConnectorList extends DefaultKubernetesResourceList<KafkaConnector> {
     private static final long serialVersionUID = 1L;
 }

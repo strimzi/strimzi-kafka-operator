@@ -4,9 +4,8 @@
  */
 package io.strimzi.systemtest.resources;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
@@ -18,9 +17,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -258,9 +255,14 @@ public class ResourceManager {
             LOGGER.info("Delete of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
-            type.delete(resource);
-            assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
-                String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
+            try {
+                type.delete(resource);
+                assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
+                        String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
+            } catch (Exception e)   {
+                LOGGER.error("Failed to delete {} {} in namespace {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace(), e);
+            }
+
         }
     }
 
@@ -293,7 +295,7 @@ public class ResourceManager {
     }
 
     /**
-     * Auxiliary method for copying {@link Constants.TEST_SUITE_NAME_LABEL} and {@link Constants.TEST_CASE_NAME_LABEL} labels
+     * Auxiliary method for copying {@link Constants#TEST_SUITE_NAME_LABEL} and {@link Constants#TEST_CASE_NAME_LABEL} labels
      * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
      * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
      *
@@ -341,20 +343,16 @@ public class ResourceManager {
         }
     }
 
-    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
-
-    public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor, String namespace) {
-        Resource<T> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).withName(resourceName);
-        T resource = namedResource.get();
-        editor.accept(resource);
-        namedResource.replace(resource);
+    public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor, String namespace) {
+        T toBeReplaced = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).withName(resourceName).get();
+        editor.accept(toBeReplaced);
+        Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).resource(toBeReplaced).replace();
     }
 
-    public static <T extends CustomResource, L extends CustomResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor) {
-        Resource<T> namedResource = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(kubeClient().getNamespace()).withName(resourceName);
-        T resource = namedResource.get();
-        editor.accept(resource);
-        namedResource.replace(resource);
+    public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor) {
+        T toBeReplaced = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(kubeClient().getNamespace()).withName(resourceName).get();
+        editor.accept(toBeReplaced);
+        Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(kubeClient().getNamespace()).resource(toBeReplaced).replace();
     }
 
     public void deleteResources(ExtensionContext testContext) throws Exception {

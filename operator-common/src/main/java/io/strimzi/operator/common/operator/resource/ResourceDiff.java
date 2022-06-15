@@ -12,16 +12,14 @@ import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.regex.Pattern;
 
-import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
-
 class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceDiff.class.getName());
 
     private final boolean isEmpty;
 
     public ResourceDiff(Reconciliation reconciliation, String resourceKind, String resourceName, T current, T desired, Pattern ignorableFields) {
-        JsonNode source = patchMapper().valueToTree(current == null ? "{}" : current);
-        JsonNode target = patchMapper().valueToTree(desired == null ? "{}" : desired);
+        JsonNode source = PATCH_MAPPER.valueToTree(current == null ? "{}" : current);
+        JsonNode target = PATCH_MAPPER.valueToTree(desired == null ? "{}" : desired);
         JsonNode diff = JsonDiff.asJson(source, target);
 
         int num = 0;

@@ -42,6 +42,6 @@ class V1Beta1RestartEventPublisher extends KubernetesRestartEventPublisher {
                 .withEventTime(eventTime)
                 .withNote(note);
 
-        client.events().v1beta1().events().inNamespace(podReference.getNamespace()).create(builder.build());
+        client.events().v1beta1().events().inNamespace(podReference.getNamespace()).resource(builder.build()).create();
     }
 }

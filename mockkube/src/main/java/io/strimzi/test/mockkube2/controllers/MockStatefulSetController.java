@@ -67,13 +67,15 @@ public class MockStatefulSetController extends AbstractMockController {
                                     });
 
                             // Set StatefulSet status
-                            client.apps().statefulSets().inNamespace(namespace).withName(name).replaceStatus(new StatefulSetBuilder(sts)
+                            client.apps().statefulSets().inNamespace(namespace).resource(new StatefulSetBuilder(sts)
                                     .withStatus(new StatefulSetStatusBuilder()
                                             .withObservedGeneration(sts.getMetadata().getGeneration())
+                                            .withCurrentReplicas(sts.getSpec().getReplicas())
                                             .withReplicas(sts.getSpec().getReplicas())
                                             .withReadyReplicas(sts.getSpec().getReplicas())
                                             .build())
-                                    .build());
+                                    .build())
+                                    .replaceStatus();
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {
                                 LOGGER.info("StatefulSet {} in namespace {} changed while trying to update status", name, namespace);
@@ -137,7 +139,7 @@ public class MockStatefulSetController extends AbstractMockController {
             Pod pod = client.pods().inNamespace(namespace).withName(name).get();
 
             if (pod == null) {
-                client.pods().inNamespace(namespace).createOrReplace(new PodBuilder()
+                client.pods().inNamespace(namespace).resource(new PodBuilder()
                         .withNewMetadataLike(sts.getSpec().getTemplate().getMetadata())
                             .withNamespace(namespace)
                             .withName(name)
@@ -147,7 +149,8 @@ public class MockStatefulSetController extends AbstractMockController {
                             .endOwnerReference()
                         .endMetadata()
                         .withNewSpecLike(sts.getSpec().getTemplate().getSpec()).endSpec()
-                        .build());
+                        .build())
+                        .createOrReplace();
             }
         } catch (KubernetesClientException e) {
             LOGGER.error("Failed to recreate Pod {} in namespace {}", name, namespace, e);

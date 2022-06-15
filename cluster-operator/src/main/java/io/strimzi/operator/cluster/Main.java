@@ -6,8 +6,8 @@ package io.strimzi.operator.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -77,7 +77,7 @@ public class Main {
         // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
         
-        KubernetesClient client = new DefaultKubernetesClient();
+        KubernetesClient client = new KubernetesClientBuilder().build();
 
         maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
             if (crs.succeeded())    {

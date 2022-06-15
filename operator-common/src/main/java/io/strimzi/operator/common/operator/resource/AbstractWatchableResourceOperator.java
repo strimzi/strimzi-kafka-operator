@@ -50,7 +50,7 @@ public abstract class AbstractWatchableResourceOperator<
     }
 
     public Watch watch(String namespace, Optional<LabelSelector> selector, Watcher<T> watcher) {
-        FilterWatchListDeletable<T, L> operation
+        FilterWatchListDeletable<T, L, R> operation
                 = ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);
         if (selector.isPresent()) {
             operation = operation.withLabelSelector(selector.get());

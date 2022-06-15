@@ -4,13 +4,13 @@
  */
 package io.strimzi.api.kafka;
 
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersionBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceSubresourceStatus;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -279,7 +279,7 @@ public class Crds {
         return client.resources(StrimziPodSet.class, StrimziPodSetList.class);
     }
 
-    public static <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>>
+    public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> MixedOperation<T, L, Resource<T>>
             operation(KubernetesClient client,
                       Class<T> cls,
                       Class<L> listCls) {

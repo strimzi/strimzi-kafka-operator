@@ -48,7 +48,7 @@ public class KafkaConnectTemplates {
     public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).resource(metricsCm).createOrReplace();
         return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, clusterName, kafkaConnectReplicas);
     }
 
