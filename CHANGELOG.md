@@ -12,6 +12,7 @@
   By default, StrimziPodSets are used instead of StatefulSets.
   If needed, `UseStrimziPodSets` can be disabled in the feature gates configuration in the Cluster Operator.
 * Add CPU capacity overrides for Cruise Control capacity config
+* Use CustomResource existing spec and status to fix Quarkus native build's serialization
 
 ## 0.29.0
 

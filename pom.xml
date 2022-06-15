@@ -88,7 +88,7 @@
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
-        <sundrio.version>0.40.1</sundrio.version>
+        <sundrio.version>0.90.4</sundrio.version>
         <fabric8.kubernetes-client.version>5.12.2</fabric8.kubernetes-client.version>
         <fabric8.openshift-client.version>5.12.2</fabric8.openshift-client.version>
         <fabric8.kubernetes-model.version>5.12.2</fabric8.kubernetes-model.version>
