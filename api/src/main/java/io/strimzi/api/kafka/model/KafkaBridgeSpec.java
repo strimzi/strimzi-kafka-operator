@@ -187,7 +187,7 @@ public class KafkaBridgeSpec extends Spec {
     }
 
     @Description("Template for Kafka Bridge resources. " +
-            "The template allows users to specify how is the `Deployment` and `Pods` generated.")
+            "The template allows users to specify how a `Deployment` and `Pod` is generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaBridgeTemplate getTemplate() {
         return template;
