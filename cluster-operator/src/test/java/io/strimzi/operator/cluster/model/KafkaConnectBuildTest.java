@@ -159,6 +159,7 @@ public class KafkaConnectBuildTest {
         Map<String, Quantity> request = new HashMap<>();
         request.put("cpu", new Quantity("1000m"));
         request.put("memory", new Quantity("1Gi"));
+        request.put("ephemeral-storage", new Quantity("1Gi"));
 
         KafkaConnect kc = new KafkaConnectBuilder()
                 .withNewMetadata()

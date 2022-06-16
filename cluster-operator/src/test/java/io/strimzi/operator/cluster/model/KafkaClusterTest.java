@@ -130,6 +130,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({
@@ -4214,5 +4215,54 @@ public class KafkaClusterTest {
         EnvVar kraftEnabledEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_KRAFT_ENABLED.equals(env.getName())).findFirst().orElse(null);
         assertThat(kraftEnabledEnvVar, is(Matchers.notNullValue()));
         assertThat(kraftEnabledEnvVar.getValue().isEmpty(), is(false));
+    }
+
+    @ParallelTest
+    public void testGenerateSTSWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        // Check ephemeral storage request size
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
+        assertNull(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits());
+
+        // Check ephemeral storage request size
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                        .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withEphemeralRequestSize("100Mi")
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        sts = kc.generateStatefulSet(false, null, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
     }
 }

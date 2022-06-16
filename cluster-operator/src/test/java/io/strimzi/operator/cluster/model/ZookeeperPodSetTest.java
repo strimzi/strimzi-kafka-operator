@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -38,6 +39,7 @@ import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +54,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @ParallelSuite
@@ -475,6 +478,51 @@ public class ZookeeperPodSetTest {
         pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+        }
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        // Check ephemeral storage request size
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
+        StrimziPodSet ps = zc.generatePodSet(3, true, null, null, Map.of());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(requests));
+            assertNull(pod.getSpec().getContainers().get(0).getResources().getLimits());
+        }
+
+
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+        // Check ephemeral storage with custom request size
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withEphemeralRequestSize("100Mi")
+                            .endPod()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        ps = zc.generatePodSet(3, true, null, null, Map.of());
+        pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(requests));
+            assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
         }
     }
 }

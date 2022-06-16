@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
@@ -56,6 +57,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ParallelSuite
 public class KafkaExporterTest {
@@ -423,5 +425,50 @@ public class KafkaExporterTest {
     @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        // Check ephemeral storage request size
+        Deployment dep = ke.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
+        assertNull(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits());
+
+        // Check ephemeral storage custom request size
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
+        KafkaExporterSpec exporterSpec = new KafkaExporterSpecBuilder()
+                .withLogging(exporterOperatorLogging)
+                .withGroupRegex(groupRegex)
+                .withTopicRegex(topicRegex)
+                .withImage(keImage)
+                .withEnableSaramaLogging(true)
+                .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                .withNewTemplate()
+                    .withNewPod()
+                        .withEphemeralRequestSize("100Mi")
+                    .endPod()
+                .endTemplate()
+                .build();
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
+                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(),
+                resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+
+        dep = ke.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
     }
 }

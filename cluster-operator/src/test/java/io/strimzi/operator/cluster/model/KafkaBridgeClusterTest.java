@@ -704,6 +704,7 @@ public class KafkaBridgeClusterTest {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -1144,5 +1145,34 @@ public class KafkaBridgeClusterTest {
         assertThat(javaOpts.getValue(), containsString("-Xms128m"));
         assertThat(javaOpts.getValue(), containsString("-Xmx256m"));
         assertThat(javaOpts.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        // Check ephemeral storage request size
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                .withNewTemplate()
+                    .withNewPod()
+                        .withEphemeralRequestSize("100Mi")
+                    .endPod()
+                .endTemplate()
+                .endSpec()
+                .build();
+        KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        Deployment dep = kbc.generateDeployment(new HashMap<String, String>(), true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
     }
 }

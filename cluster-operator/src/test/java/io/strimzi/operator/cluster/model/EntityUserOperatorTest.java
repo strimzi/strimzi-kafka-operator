@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -34,6 +35,8 @@ import io.strimzi.test.annotations.ParallelTest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import static io.strimzi.test.TestUtils.map;
 import static java.util.Collections.emptyMap;
@@ -41,6 +44,7 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ParallelSuite
 public class EntityUserOperatorTest {
@@ -417,5 +421,16 @@ public class EntityUserOperatorTest {
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, true);
 
         assertThat(entityUserOperator.watchedNamespace(), is("some-other-namespace"));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        // Check ephemeral storage request size
+        List<Container> containers = entityUserOperator.getContainers(null);
+        assertThat(containers.get(0).getResources().getRequests(), is(requests));
+        assertNull(containers.get(0).getResources().getLimits());
     }
 }

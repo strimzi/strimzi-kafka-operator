@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
@@ -27,11 +28,14 @@ import io.strimzi.test.annotations.ParallelTest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ParallelSuite
 public class EntityTopicOperatorTest {
@@ -283,5 +287,16 @@ public class EntityTopicOperatorTest {
 
         assertThat(binding.getRoleRef().getKind(), is("Role"));
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        // Check ephemeral storage request size
+        List<Container> containers = entityTopicOperator.getContainers(null);
+        assertThat(containers.get(0).getResources().getRequests(), is(requests));
+        assertNull(containers.get(0).getResources().getLimits());
     }
 }

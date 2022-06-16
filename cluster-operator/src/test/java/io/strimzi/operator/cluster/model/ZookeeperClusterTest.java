@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
@@ -91,6 +92,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasKey;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -808,7 +810,7 @@ public class ZookeeperClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
 
         io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));        
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
     }
 
     @ParallelTest
@@ -1312,5 +1314,52 @@ public class ZookeeperClusterTest {
 
         assertThat(zc.isMetricsEnabled(), is(false));
         assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testGenerateSTSWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        // Check ephemeral storage request size
+        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay,
+                healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
+        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(), is(requests));
+        assertNull(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits());
+
+        // Check ephemeral storage with custom request size
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+        ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                jmxMetricsConfig, configurationJson, zooConfigurationJson))
+                .editSpec()
+                    .editZookeeper()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                        .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withEphemeralRequestSize("100Mi")
+                            .endPod()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
+        sts = zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(), is(requests));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
     }
 }

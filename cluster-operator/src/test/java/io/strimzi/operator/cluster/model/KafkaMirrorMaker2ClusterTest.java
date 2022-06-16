@@ -1388,6 +1388,7 @@ public class KafkaMirrorMaker2ClusterTest {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -1933,5 +1934,37 @@ public class KafkaMirrorMaker2ClusterTest {
         ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        // Check ephemeral storage request size
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                    .withNewTemplate()
+                        .withNewPod()
+                            .withEphemeralRequestSize("100Mi")
+                        .endPod()
+                    .endTemplate()
+                .endSpec()
+                .build();
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource,
+                VERSIONS);
+
+        Deployment dep = kmm2.generateDeployment(
+                Collections.EMPTY_MAP, true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
     }
 }

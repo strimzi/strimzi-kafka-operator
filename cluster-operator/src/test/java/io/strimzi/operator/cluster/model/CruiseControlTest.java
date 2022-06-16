@@ -677,6 +677,7 @@ public class CruiseControlTest {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -1029,6 +1030,35 @@ public class CruiseControlTest {
         assertThat(configEnvVar.isPresent(), is(true));
         String config = configEnvVar.get().getValue();
         topicConfigs.forEach((configParam, name) -> assertThat(config, containsString(String.format("%s=%s", configParam, name))));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("cpu", new Quantity("250m"));
+        requests.put("memory", new Quantity("512Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
+        Map<String, Quantity> limits = new HashMap<>(2);
+        limits.put("cpu", new Quantity("500m"));
+        limits.put("memory", new Quantity("1024Mi"));
+
+        // Check ephemeral storage custom request size
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withImage(ccImage)
+                .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
+                .withNewTemplate()
+                    .withNewPod()
+                        .withEphemeralRequestSize("100Mi")
+                    .endPod()
+                .endTemplate()
+                .build();
+        Kafka resource = createKafka(cruiseControlSpec);
+        CruiseControl cc = createCruiseControl(resource);
+        Deployment dep = cc.generateDeployment(true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
     }
 
     @AfterAll

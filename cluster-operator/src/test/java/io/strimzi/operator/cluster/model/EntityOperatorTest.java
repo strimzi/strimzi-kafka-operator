@@ -67,6 +67,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ParallelSuite
 public class EntityOperatorTest {
@@ -1020,5 +1021,32 @@ public class EntityOperatorTest {
 
         role = eo.generateRole(namespace, "some-other-namespace");
         assertThat(role.getMetadata().getOwnerReferences().size(), is(0));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+        Map<String, Quantity> requests = new HashMap<>(2);
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
+
+        // Check ephemeral storage request size
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withTlsSidecar(tlsSidecar)
+                        .withTopicOperator(entityTopicOperatorSpec)
+                        .withUserOperator(entityUserOperatorSpec)
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(),
+                resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, true);
+
+        Deployment dep = eo.generateDeployment(true, null, null);
+        int containerSize = dep.getSpec().getTemplate().getSpec().getContainers().size();
+        for (int i = 0; i < containerSize; i++) {
+            assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(i).getResources().getRequests(),
+                    is(requests));
+            assertNull(dep.getSpec().getTemplate().getSpec().getContainers().get(i).getResources().getLimits());
+        }
     }
 }
