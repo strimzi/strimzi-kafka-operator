@@ -120,5 +120,6 @@ spec:
             requests:
               cpu: 200m
               memory: 384Mi
+              ephemeral-storage: 1Gi
   strategy:
     type: Recreate

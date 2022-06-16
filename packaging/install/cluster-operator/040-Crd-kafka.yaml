@@ -1238,6 +1238,10 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          ephemeralRequestSize:
+                            type: string
+                            pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                            description: Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -2355,6 +2359,10 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          ephemeralRequestSize:
+                            type: string
+                            pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                            description: Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -3429,6 +3437,10 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          ephemeralRequestSize:
+                            type: string
+                            pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                            description: Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -4383,6 +4395,10 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          ephemeralRequestSize:
+                            type: string
+                            pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                            description: Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5215,6 +5231,10 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          ephemeralRequestSize:
+                            type: string
+                            pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                            description: Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5802,6 +5822,10 @@ spec:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
                             description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                          ephemeralRequestSize:
+                            type: string
+                            pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                            description: Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
