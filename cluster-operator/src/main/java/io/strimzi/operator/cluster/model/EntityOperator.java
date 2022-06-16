@@ -239,6 +239,9 @@ public class EntityOperator extends AbstractModel {
                     .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
                     .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
                     .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
+                    .editOrNewResources()
+                        .addToRequests(getEphemeralStorageRequest())
+                    .endResources()
                     .withEnv(getTlsSidecarEnvVars())
                     .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                             VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT),

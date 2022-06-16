@@ -37,7 +37,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit"})
+    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit", "ephemeralRequestSize"})
 @EqualsAndHashCode
 @DescriptionFile
 public class PodTemplate implements Serializable, UnknownPropertyPreserving {
@@ -55,6 +55,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
     private String tmpDirSizeLimit;
+    private String ephemeralRequestSize;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -194,6 +195,18 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setTmpDirSizeLimit(String tmpDirSizeLimit) {
         this.tmpDirSizeLimit = tmpDirSizeLimit;
+    }
+
+    @Pattern(Constants.MEMORY_REGEX)
+    @DefaultValue("5Mi")
+    @Description("Defines the total amount (for example `500Mi`) of local ephemeral storage request. " +
+            "Default value is `1Gi`.")
+    public String getEphemeralRequestSize() {
+        return ephemeralRequestSize;
+    }
+
+    public void setEphemeralRequestSize(String ephemeralRequestSize) {
+        this.ephemeralRequestSize = ephemeralRequestSize;
     }
 
     @Override

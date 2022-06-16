@@ -275,6 +275,7 @@ public class ModelUtils {
             model.templatePodTopologySpreadConstraints = pod.getTopologySpreadConstraints();
             model.templatePodEnableServiceLinks = pod.getEnableServiceLinks();
             model.templateTmpDirSizeLimit = pod.getTmpDirSizeLimit();
+            model.templateEphemeralRequestSize = pod.getEphemeralRequestSize();
         }
     }
 

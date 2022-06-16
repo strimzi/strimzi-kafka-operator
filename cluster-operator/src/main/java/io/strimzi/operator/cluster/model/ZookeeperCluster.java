@@ -503,6 +503,9 @@ public class ZookeeperCluster extends AbstractModel {
                 .withLivenessProbe(ProbeGenerator.execProbe(livenessProbeOptions, Collections.singletonList(livenessPath)))
                 .withReadinessProbe(ProbeGenerator.execProbe(readinessProbeOptions, Collections.singletonList(readinessPath)))
                 .withResources(getResources())
+                .editOrNewResources()
+                    .addToRequests(getEphemeralStorageRequest())
+                .endResources()
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateZookeeperContainerSecurityContext)
                 .build();

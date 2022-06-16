@@ -153,6 +153,7 @@ public abstract class AbstractModel {
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
+    /*test*/ static final String EPHEMERAL_STORAGE_REQUESTS_SIZE = "1Gi";
 
     /**
      * Annotation on PVCs storing the original configuration
@@ -300,6 +301,7 @@ public abstract class AbstractModel {
     protected Map<String, String> templateJmxSecretLabels;
     protected Map<String, String> templateJmxSecretAnnotations;
     protected String templateTmpDirSizeLimit;
+    protected String templateEphemeralRequestSize;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -1799,5 +1801,13 @@ public abstract class AbstractModel {
 
     protected VolumeMount createTempDirVolumeMount(String volumeName) {
         return VolumeUtils.createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
+    }
+
+    public Map<String, Quantity> getEphemeralStorageRequest() {
+        Map<String, Quantity> requests = new HashMap<String, Quantity>();
+        requests.put("ephemeral-storage",
+                new Quantity(templateEphemeralRequestSize == null ? EPHEMERAL_STORAGE_REQUESTS_SIZE
+                        : templateEphemeralRequestSize));
+        return requests;
     }
 }

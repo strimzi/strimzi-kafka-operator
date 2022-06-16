@@ -213,6 +213,9 @@ public class KafkaExporter extends AbstractModel {
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, METRICS_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, METRICS_PORT_NAME))
                 .withResources(getResources())
+                .editOrNewResources()
+                    .addToRequests(getEphemeralStorageRequest())
+                .endResources()
                 .withVolumeMounts(createTempDirVolumeMount(),
                         VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
