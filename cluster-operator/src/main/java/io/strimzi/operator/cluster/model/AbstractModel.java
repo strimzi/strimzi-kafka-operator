@@ -33,6 +33,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -154,6 +155,7 @@ public abstract class AbstractModel {
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
     /*test*/ static final String EPHEMERAL_STORAGE_REQUESTS_SIZE = "1Gi";
+    /*test*/ static final String EPHEMERAL_STORAGE_LIMITS_SIZE = "1Gi";
 
     /**
      * Annotation on PVCs storing the original configuration
@@ -301,7 +303,8 @@ public abstract class AbstractModel {
     protected Map<String, String> templateJmxSecretLabels;
     protected Map<String, String> templateJmxSecretAnnotations;
     protected String templateTmpDirSizeLimit;
-    protected String templateEphemeralRequestSize;
+    protected String templateEphemeralStorageRequest;
+    protected String templateEphemeralStorageLimit;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -1104,6 +1107,7 @@ public abstract class AbstractModel {
                     .build();
         }
 
+        configureContainersWithEphemeralStorageResource(volumes, containers);
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1246,6 +1250,7 @@ public abstract class AbstractModel {
                     .build();
         }
 
+        configureContainersWithEphemeralStorageResource(volumes, containers);
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(podName)
@@ -1300,6 +1305,7 @@ public abstract class AbstractModel {
                     .build();
         }
 
+        configureContainersWithEphemeralStorageResource(volumes, containers);
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1338,6 +1344,7 @@ public abstract class AbstractModel {
             List<Volume> volumes,
             List<LocalObjectReference> imagePullSecrets) {
 
+        configureContainersWithEphemeralStorageResource(volumes, containers);
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1803,11 +1810,111 @@ public abstract class AbstractModel {
         return VolumeUtils.createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
     }
 
+    private void configureEphemeralStorageResourceRequest(Container container) {
+        // if ephemeral storage is found, add the resource request to the container
+        Map<String, Quantity> requests = getEphemeralStorageRequest();
+        if (container.getResources() == null) {
+            container.setResources(new ResourceRequirementsBuilder().withRequests(requests).build());
+            return;
+        }
+        Map<String, Quantity> currentRequests = container.getResources().getRequests();
+        if (currentRequests != null) {
+            currentRequests.putAll(requests);
+            container.getResources().setRequests(currentRequests);
+        } else {
+            container.getResources().setRequests(requests);
+        }
+        return;
+    }
+
+    private void configureEphemeralStorageResourceLimit(Container container, Map<String, Boolean> esVolumeType) {
+
+        // if read only root filestorage is set to true, then we don't need to add a
+        // ES limit
+        boolean readOnlyRootfsContainer = Optional.ofNullable(container.getSecurityContext())
+                .map(sc -> sc.getReadOnlyRootFilesystem()).orElse(false);
+        if (!readOnlyRootfsContainer) {
+            if (esVolumeType.get("hasEmptyDirWithNoSizeLimit")
+                    || esVolumeType.get("hasESVolumesWithoutEmptyDir")) {
+                // if we have non readOnlyRootfsContainer and emptyDir with no SizeLimit found
+                // or nonEmptyDir ES Volumes is present, then we need to add a limit
+                Map<String, Quantity> limits = getEphemeralStorageLimit();
+                if (container.getResources() == null) {
+                    container.setResources(new ResourceRequirementsBuilder().withRequests(limits).build());
+                    return;
+                }
+                Map<String, Quantity> currentLimits = container.getResources().getLimits();
+                if (currentLimits != null) {
+                    currentLimits.putAll(limits);
+                    container.getResources().setLimits(currentLimits);
+                } else {
+                    container.getResources().setLimits(limits);
+                }
+            }
+        }
+        return;
+    }
+
+    public void configureContainersWithEphemeralStorageResource(List<Volume> volumes, List<Container> containers) {
+        // Add ephemeral storage request and limit to containers
+        Map<String, Boolean> esVolumeDetails = getESVolumeDetails(volumes);
+        containers.forEach(container -> {
+            if (esVolumeDetails.get("hasESVolumes")) {
+                // if we have ephemeral storage volumes, then we need to add a request and limit
+                configureEphemeralStorageResourceRequest(container);
+                configureEphemeralStorageResourceLimit(container, esVolumeDetails);
+            }
+        });
+        return;
+    }
+
+    public static Map<String, Boolean> getESVolumeDetails(List<Volume> volumes) {
+        Map<String, Boolean> esVolumeDetails = new HashMap<>();
+        // Get all ephemeral storage volumes
+        List<Volume> esVolumes = volumes.stream().filter(volume -> (volume.getEmptyDir() != null)
+                        || (volume.getConfigMap() != null) || (volume.getDownwardAPI() != null) || (volume.getSecret() != null))
+                .collect(Collectors.toList());
+        // All the ES volumes which include "configMap", "downwardAPI", "emptyDir" and
+        // "secret". If no ES volumes are found, then the "hasESVolumes" will be set
+        // to true.
+        boolean hasESVolumes = esVolumes.stream().findFirst().isPresent();
+        esVolumeDetails.put("hasESVolumes", hasESVolumes);
+        // If no emptyDir volumes are found but has other ES volumes ("configMap",
+        // "downwardAPI" and "secret"), then the "hasEmptyDirWithNoSizeLimit" will be
+        // set to true.
+        boolean emptyDirVolumesFound = esVolumes.stream().filter(volume -> volume.getEmptyDir() != null)
+                .count() > 0;
+        boolean hasESVolumesWithoutEmptyDir = false;
+        if (!emptyDirVolumesFound) {
+            hasESVolumesWithoutEmptyDir = esVolumes.stream().filter(volume -> volume.getEmptyDir() == null)
+                    .count() > 0;
+        }
+        esVolumeDetails.put("hasESVolumesWithoutEmptyDir", hasESVolumesWithoutEmptyDir);
+        // If emptyDir volumes are found and has no size limit set, then the
+        // "hasEmptyDirWithNoSizeLimit" will be set to false.
+        boolean hasEmptyDirWithNoSizeLimit = esVolumes.stream().filter(volume -> volume.getEmptyDir() != null
+                && volume.getEmptyDir().getSizeLimit() == null).count() > 0;
+        esVolumeDetails.put("hasEmptyDirWithNoSizeLimit", hasEmptyDirWithNoSizeLimit);
+
+        return esVolumeDetails;
+    }
+
     public Map<String, Quantity> getEphemeralStorageRequest() {
+        // Get the ephemeral storage request from the model
         Map<String, Quantity> requests = new HashMap<String, Quantity>();
         requests.put("ephemeral-storage",
-                new Quantity(templateEphemeralRequestSize == null ? EPHEMERAL_STORAGE_REQUESTS_SIZE
-                        : templateEphemeralRequestSize));
+                new Quantity(templateEphemeralStorageRequest == null ? EPHEMERAL_STORAGE_REQUESTS_SIZE
+                        : templateEphemeralStorageRequest));
+        // TODO: Verify that requests don't exceed limits
         return requests;
+    }
+
+    public Map<String, Quantity> getEphemeralStorageLimit() {
+        // Get the ephemeral storage limit from the model
+        Map<String, Quantity> limits = new HashMap<String, Quantity>();
+        limits.put("ephemeral-storage",
+                new Quantity(templateEphemeralStorageLimit == null ? EPHEMERAL_STORAGE_LIMITS_SIZE
+                        : templateEphemeralStorageLimit));
+        return limits;
     }
 }

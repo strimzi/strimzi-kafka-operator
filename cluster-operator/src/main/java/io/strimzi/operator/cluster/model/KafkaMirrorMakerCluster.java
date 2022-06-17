@@ -295,9 +295,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                         .endExec().build())
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
-                .editOrNewResources()
-                    .addToRequests(getEphemeralStorageRequest())
-                .endResources()
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
                 .build();

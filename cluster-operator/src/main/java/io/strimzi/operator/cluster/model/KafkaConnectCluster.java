@@ -480,9 +480,6 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
-                .editOrNewResources()
-                    .addToRequests(getEphemeralStorageRequest())
-                .endResources()
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)
                 .build();
