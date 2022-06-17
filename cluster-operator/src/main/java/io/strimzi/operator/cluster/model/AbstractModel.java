@@ -1855,7 +1855,7 @@ public abstract class AbstractModel {
         return;
     }
 
-    public void configureContainersWithEphemeralStorageResource(List<Volume> volumes, List<Container> containers) {
+    private void configureContainersWithEphemeralStorageResource(List<Volume> volumes, List<Container> containers) {
         // Add ephemeral storage request and limit to containers
         Map<String, Boolean> esVolumeDetails = getESVolumeDetails(volumes);
         containers.forEach(container -> {

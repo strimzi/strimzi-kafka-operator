@@ -199,7 +199,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     }
 
     @Pattern(Constants.MEMORY_REGEX)
-    @DefaultValue("5Mi")
+    @DefaultValue("1Gi")
     @Description("Defines the total amount (for example `500Mi`) of local ephemeral storage request. " +
             "Default value is `1Gi`.")
     public String getEphemeralStorageRequest() {
@@ -211,7 +211,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     }
 
     @Pattern(Constants.MEMORY_REGEX)
-    @DefaultValue("5Mi")
+    @DefaultValue("1Gi")
     @Description("Defines the total amount (for example `500Mi`) of local ephemeral storage limit. " +
             "Default value is `1Gi`.")
     public String getEphemeralStorageLimit() {
