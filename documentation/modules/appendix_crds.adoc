@@ -949,10 +949,12 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#hostalias-v1-core[HostAlias] array
 |tmpDirSizeLimit                1.2+<.<a|Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
 |string
-|ephemeralRequestSize           1.2+<.<a|Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
+|ephemeralStorageRequest        1.2+<.<a|Defines the total amount (for example `500Mi`) of local ephemeral storage request. Default value is `1Gi`.
 |string
 |enableServiceLinks             1.2+<.<a|Indicates whether information about services should be injected into Pod's environment variables.
 |boolean
+|ephemeralStorageLimit          1.2+<.<a|Defines the total amount (for example `500Mi`) of local ephemeral storage limit. Default value is `1Gi`.
+|string
 |topologySpreadConstraints      1.2+<.<a|The pod's topology spread constraints. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#topologyspreadconstraint-v1-core[external documentation for core/v1 topologyspreadconstraint].
 
 
