@@ -1024,8 +1024,8 @@ public class EntityOperatorTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
-        Map<String, Quantity> requests = new HashMap<>(2);
+    public void testResourcesWithEphemeralStorage() {
+        Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("ephemeral-storage", new Quantity("1Gi"));
 
         // Check ephemeral storage request size

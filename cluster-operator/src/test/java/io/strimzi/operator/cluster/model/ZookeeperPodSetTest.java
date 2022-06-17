@@ -482,7 +482,7 @@ public class ZookeeperPodSetTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+    public void testResourcesWithEphemeralStorage() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("ephemeral-storage", new Quantity("1Gi"));
 
@@ -495,10 +495,8 @@ public class ZookeeperPodSetTest {
             assertNull(pod.getSpec().getContainers().get(0).getResources().getLimits());
         }
 
-
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
-        requests.put("ephemeral-storage", new Quantity("100Mi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -510,12 +508,13 @@ public class ZookeeperPodSetTest {
                         .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                         .withNewTemplate()
                             .withNewPod()
-                                .withEphemeralRequestSize("100Mi")
+                                .withEphemeralStorageRequest("100Mi")
                             .endPod()
                         .endTemplate()
                     .endZookeeper()
                 .endSpec()
                 .build();
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
 
         zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ps = zc.generatePodSet(3, true, null, null, Map.of());

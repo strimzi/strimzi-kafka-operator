@@ -428,7 +428,7 @@ public class KafkaExporterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+    public void testResourcesWithEphemeralStorage() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("ephemeral-storage", new Quantity("1Gi"));
 
@@ -456,7 +456,7 @@ public class KafkaExporterTest {
                 .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                 .withNewTemplate()
                     .withNewPod()
-                        .withEphemeralRequestSize("100Mi")
+                        .withEphemeralStorageRequest("100Mi")
                     .endPod()
                 .endTemplate()
                 .build();

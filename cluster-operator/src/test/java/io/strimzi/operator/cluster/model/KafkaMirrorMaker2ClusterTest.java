@@ -1937,7 +1937,7 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+    public void testResourcesWithEphemeralStorage() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
@@ -1953,7 +1953,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                     .withNewTemplate()
                         .withNewPod()
-                            .withEphemeralRequestSize("100Mi")
+                            .withEphemeralStorageRequest("100Mi")
                         .endPod()
                     .endTemplate()
                 .endSpec()

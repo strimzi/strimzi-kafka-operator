@@ -677,7 +677,6 @@ public class CruiseControlTest {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
-        requests.put("ephemeral-storage", new Quantity("1Gi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -695,6 +694,7 @@ public class CruiseControlTest {
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
 
+        requests.put("ephemeral-storage", new Quantity("1Gi"));
         assertThat(ccContainer.getResources().getLimits(), is(limits));
         assertThat(ccContainer.getResources().getRequests(), is(requests));
     }
@@ -1033,11 +1033,10 @@ public class CruiseControlTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+    public void testResourcesWithEphemeralStorage() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
-        requests.put("ephemeral-storage", new Quantity("100Mi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -1049,10 +1048,12 @@ public class CruiseControlTest {
                 .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                 .withNewTemplate()
                     .withNewPod()
-                        .withEphemeralRequestSize("100Mi")
+                        .withEphemeralStorageRequest("100Mi")
                     .endPod()
                 .endTemplate()
                 .build();
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
         Kafka resource = createKafka(cruiseControlSpec);
         CruiseControl cc = createCruiseControl(resource);
         Deployment dep = cc.generateDeployment(true, null, null);

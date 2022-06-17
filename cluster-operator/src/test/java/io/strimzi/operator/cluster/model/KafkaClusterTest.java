@@ -130,7 +130,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasProperty;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({
@@ -4218,9 +4217,11 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateSTSWithEphemeralStorageWithRequestSize() {
-        Map<String, Quantity> requests = new HashMap<>(2);
+    public void testResourcesWithEphemeralStorage() {
+        Map<String, Quantity> requests = new HashMap<>();
         requests.put("ephemeral-storage", new Quantity("1Gi"));
+        Map<String, Quantity> limits = new HashMap<>();
+        limits.put("ephemeral-storage", new Quantity("1Gi"));
 
         // Check ephemeral storage request size
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
@@ -4235,16 +4236,14 @@ public class KafkaClusterTest {
         StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
                 is(requests));
-        assertNull(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits());
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
 
         // Check ephemeral storage request size
-        Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
         limits.put("memory", new Quantity("1024Mi"));
 
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
-        requests.put("ephemeral-storage", new Quantity("100Mi"));
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
@@ -4253,12 +4252,16 @@ public class KafkaClusterTest {
                         .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                         .withNewTemplate()
                             .withNewPod()
-                                .withEphemeralRequestSize("100Mi")
+                                .withEphemeralStorageRequest("100Mi")
+                                .withEphemeralStorageLimit("100Mi")
                             .endPod()
                         .endTemplate()
                     .endKafka()
                 .endSpec()
                 .build();
+        limits.put("ephemeral-storage", new Quantity("100Mi"));
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
+
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
         sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),

@@ -155,6 +155,7 @@ public class KafkaConnectBuildTest {
         Map<String, Quantity> limit = new HashMap<>();
         limit.put("cpu", new Quantity("500m"));
         limit.put("memory", new Quantity("512Mi"));
+        limit.put("ephemeral-storage", new Quantity("1Gi"));
 
         Map<String, Quantity> request = new HashMap<>();
         request.put("cpu", new Quantity("1000m"));

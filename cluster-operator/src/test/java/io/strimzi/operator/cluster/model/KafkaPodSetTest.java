@@ -554,7 +554,7 @@ public class KafkaPodSetTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithEphemeralStorageWithRequestSize() {
+    public void testResourcesWithEphemeralStorage() {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("ephemeral-storage", new Quantity("1Gi"));
 
@@ -569,7 +569,6 @@ public class KafkaPodSetTest {
 
         requests.put("cpu", new Quantity("250m"));
         requests.put("memory", new Quantity("512Mi"));
-        requests.put("ephemeral-storage", new Quantity("100Mi"));
 
         Map<String, Quantity> limits = new HashMap<>(2);
         limits.put("cpu", new Quantity("500m"));
@@ -581,12 +580,13 @@ public class KafkaPodSetTest {
                     .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                     .withNewTemplate()
                         .withNewPod()
-                            .withEphemeralRequestSize("100Mi")
+                            .withEphemeralStorageRequest("100Mi")
                         .endPod()
                     .endTemplate()
                     .endKafka()
                 .endSpec()
                 .build();
+        requests.put("ephemeral-storage", new Quantity("100Mi"));
 
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ps = kc.generatePodSet(3, true, null, null, brokerId -> new HashMap<>());
