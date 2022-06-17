@@ -299,11 +299,11 @@ public class AbstractModelTest {
         assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(false));
 
         // With persistent volume claim volume
-        Storage PERSISTENT_CLAIM_STORAGE = new PersistentClaimStorageBuilder()
+        Storage persistentClaimStorage = new PersistentClaimStorageBuilder()
                 .withDeleteClaim(false)
                 .withSize("20Gi")
                 .build();
-        List<Volume> volumeWithPVs = VolumeUtils.createPodSetVolumes("my-pod", PERSISTENT_CLAIM_STORAGE, false);
+        List<Volume> volumeWithPVs = VolumeUtils.createPodSetVolumes("my-pod", persistentClaimStorage, false);
         esVolumeDetails = Model.getESVolumeDetails(volumeWithPVs);
         assertThat(esVolumeDetails.get("hasESVolumes"), is(false));
         assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(false));
