@@ -4223,7 +4223,7 @@ public class KafkaClusterTest {
         Map<String, Quantity> limits = new HashMap<>();
         limits.put("ephemeral-storage", new Quantity("1Gi"));
 
-        // Check ephemeral storage request size
+        // Check ephemeral storage request and limit are set
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
@@ -4238,7 +4238,28 @@ public class KafkaClusterTest {
                 is(requests));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(limits));
 
-        // Check ephemeral storage request size
+        // Check ephemeral storage is not set for limit when readOnlyRootFilesystem is true
+        kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                        .withNewTemplate()
+                            .withNewKafkaContainer()
+                                .withSecurityContext(new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build())
+                            .endKafkaContainer()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        sts = kc.generateStatefulSet(false, null, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests(),
+                is(requests));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits(), is(nullValue()));
+
+        // Check ephemeral storage custom request and limit are set
         limits.put("cpu", new Quantity("500m"));
         limits.put("memory", new Quantity("1024Mi"));
 
