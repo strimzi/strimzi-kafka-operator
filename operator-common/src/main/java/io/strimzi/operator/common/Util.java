@@ -773,4 +773,17 @@ public class Util {
     public static String encodeToBase64(String encode)  {
         return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
     }
+
+    public static Throwable aggregate(Throwable current, Throwable next) {
+        if (next == null) {
+            return current;
+        }
+
+        if (current == null) {
+            return next;
+        } else {
+            current.addSuppressed(next);
+            return current;
+        }
+    }
 }

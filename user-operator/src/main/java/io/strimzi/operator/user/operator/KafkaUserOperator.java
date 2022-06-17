@@ -18,6 +18,7 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -26,14 +27,18 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -230,6 +235,31 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
 
                     return Future.succeededFuture();
                 });
+    }
+
+    private Future<Void> reconcileNext(String trigger, Queue<NamespaceAndName> work, Throwable cause) {
+        var resourceRef = work.poll();
+        if (resourceRef == null) {
+            return cause == null ?
+                    Future.succeededFuture() : Future.failedFuture(cause);
+        } else {
+            resourceCounter(resourceRef.getNamespace()).getAndIncrement();
+            Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
+            return reconcile(reconciliation)
+                    .transform(result -> reconcileNext(trigger, work, Util.aggregate(cause, result.cause())));
+        }
+    }
+
+    public void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
+        if (namespace.equals("*")) {
+            resetCounters();
+        } else {
+            resourceCounter(namespace).set(0);
+            pausedResourceCounter(namespace).set(0);
+        }
+
+        reconcileNext(trigger, new ArrayDeque<>(desiredNames), null)
+                .onComplete(handler);
     }
 
     /**

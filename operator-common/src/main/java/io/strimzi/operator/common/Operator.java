@@ -15,14 +15,11 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -71,32 +68,6 @@ public interface Operator {
 
     void resetCounters();
 
-    static Throwable aggregate(Throwable current, Throwable next) {
-        if (next == null) {
-            return current;
-        }
-
-        if (current == null) {
-            return next;
-        } else {
-            current.addSuppressed(next);
-            return current;
-        }
-    }
-
-    default Future<Void> reconcileNext(String trigger, Queue<NamespaceAndName> work, Throwable cause) {
-        var resourceRef = work.poll();
-        if (resourceRef == null) {
-            return cause == null ?
-                    Future.succeededFuture() : Future.failedFuture(cause);
-        } else {
-            resourceCounter(resourceRef.getNamespace()).getAndIncrement();
-            Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
-            return reconcile(reconciliation)
-                    .transform(result -> reconcileNext(trigger, work, aggregate(cause, result.cause())));
-        }
-    }
-
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
         if (namespace.equals("*")) {
             resetCounters();
@@ -105,8 +76,17 @@ public interface Operator {
             pausedResourceCounter(namespace).set(0);
         }
 
-        reconcileNext(trigger, new ArrayDeque<>(desiredNames), null)
-                .onComplete(handler);
+        if (desiredNames.size() > 0) {
+            List<Future> futures = new ArrayList<>();
+            for (NamespaceAndName resourceRef : desiredNames) {
+                resourceCounter(resourceRef.getNamespace()).getAndIncrement();
+                Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
+                futures.add(reconcile(reconciliation));
+            }
+            CompositeFuture.join(futures).map((Void) null).onComplete(handler);
+        } else {
+            handler.handle(Future.succeededFuture());
+        }
     }
 
     /**
