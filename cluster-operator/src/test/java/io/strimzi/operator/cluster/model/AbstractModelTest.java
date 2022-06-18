@@ -5,12 +5,15 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.DownwardAPIVolumeSource;
 import io.fabric8.kubernetes.api.model.DownwardAPIVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
@@ -247,45 +250,54 @@ public class AbstractModelTest {
     }
 
     @ParallelTest
-    void testGetESVolumeDetails() {
+    void testgetESConfiugrationDetails() {
         // ES volume with no size limit set
+        SecurityContext securityContextWithReadOnlyRootFileSystem = new SecurityContextBuilder().withReadOnlyRootFilesystem(true).build();
+        SecurityContext securityContextWithoutReadOnlyRootFileSystem = new SecurityContextBuilder().withReadOnlyRootFilesystem(false).build();
+        Container container = new ContainerBuilder()
+            .withName("busybox")
+            .withImage("busybox:latest")
+            .withCommand("sleep", "3600")
+            .withImagePullPolicy("IfNotPresent")
+            .withSecurityContext(securityContextWithReadOnlyRootFileSystem)
+            .build();
+        // ES volume without size limit set and has readonly root filesystem set as false
         Storage ephemeral = new EphemeralStorageBuilder().build();
         List<Volume> volumeWithoutSizeLimit = VolumeUtils.createStatefulSetVolumes(ephemeral, false);
-        Map<String, Boolean> esVolumeDetails = Model.getESVolumeDetails(volumeWithoutSizeLimit);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(true));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(false));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(true));
+        Map<String, Boolean> esVolumeDetails = Model.getESConfiugrationDetails(volumeWithoutSizeLimit, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(true));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(false));
 
+        // ES volume without size limit set and has readonly root filesystem
+        container.setSecurityContext(securityContextWithoutReadOnlyRootFileSystem);
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithoutSizeLimit, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(true));
         // ES volume with size limit set
         ephemeral = new EphemeralStorageBuilder().withSizeLimit("10Mi").build();
         List<Volume> volumeWithSizeLimit = VolumeUtils.createStatefulSetVolumes(ephemeral, false);
-        esVolumeDetails = Model.getESVolumeDetails(volumeWithSizeLimit);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(true));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(false));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(false));
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithSizeLimit, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(true));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(false));
 
         // ES volume with + without no size limit set and no empty dir ES volume
         // (secret)
         volumeWithSizeLimit.add(VolumeUtils.createSecretVolume("my-secret", "my-secret", true));
         volumeWithSizeLimit.addAll(volumeWithoutSizeLimit);
-        esVolumeDetails = Model.getESVolumeDetails(volumeWithSizeLimit);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(true));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(false));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(true));
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithSizeLimit, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(true));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(true));
 
         // With secret volume
         List<Volume> volumeWithSecret = Arrays.asList(VolumeUtils.createSecretVolume("my-secret", "my-secret", true));
-        esVolumeDetails = Model.getESVolumeDetails(volumeWithSecret);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(true));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(true));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(false));
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithSecret, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(true));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(true));
 
         // With config map volume
         List<Volume> volumeWithConfig = Arrays.asList(VolumeUtils.createConfigMapVolume("config-map", "config-map"));
-        esVolumeDetails = Model.getESVolumeDetails(volumeWithConfig);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(true));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(true));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(false));
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithConfig, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(true));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(true));
 
         // With downward API volume
         DownwardAPIVolumeSource downwardVolumeSource = new DownwardAPIVolumeSourceBuilder().build();
@@ -293,10 +305,9 @@ public class AbstractModelTest {
                 .withName("downward-api")
                 .withDownwardAPI(downwardVolumeSource)
                 .build());
-        esVolumeDetails = Model.getESVolumeDetails(volumeWithDownwardAPI);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(true));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(true));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(false));
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithDownwardAPI, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(true));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(true));
 
         // With persistent volume claim volume
         Storage persistentClaimStorage = new PersistentClaimStorageBuilder()
@@ -304,9 +315,8 @@ public class AbstractModelTest {
                 .withSize("20Gi")
                 .build();
         List<Volume> volumeWithPVs = VolumeUtils.createPodSetVolumes("my-pod", persistentClaimStorage, false);
-        esVolumeDetails = Model.getESVolumeDetails(volumeWithPVs);
-        assertThat(esVolumeDetails.get("hasESVolumes"), is(false));
-        assertThat(esVolumeDetails.get("hasESVolumesWithoutEmptyDir"), is(false));
-        assertThat(esVolumeDetails.get("hasEmptyDirWithNoSizeLimit"), is(false));
+        esVolumeDetails = Model.getESConfiugrationDetails(volumeWithPVs, container);
+        assertThat(esVolumeDetails.get("setEphemeralStorageRequest"), is(false));
+        assertThat(esVolumeDetails.get("setEphemeralStorageLimit"), is(false));
     }
 }

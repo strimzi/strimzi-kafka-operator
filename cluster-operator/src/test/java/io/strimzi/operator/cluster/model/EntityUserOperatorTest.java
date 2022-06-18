@@ -418,5 +418,4 @@ public class EntityUserOperatorTest {
 
         assertThat(entityUserOperator.watchedNamespace(), is("some-other-namespace"));
     }
-
 }

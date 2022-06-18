@@ -284,5 +284,4 @@ public class EntityTopicOperatorTest {
         assertThat(binding.getRoleRef().getKind(), is("Role"));
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
-
 }
