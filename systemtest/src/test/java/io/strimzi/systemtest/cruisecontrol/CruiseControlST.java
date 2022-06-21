@@ -366,12 +366,20 @@ public class CruiseControlST extends AbstractST {
         final int scaleTo = 5;
 
         resourceManager.createResource(extensionContext,
-            KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), initialReplicas, initialReplicas).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3).build(),
+            KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), initialReplicas, initialReplicas)
+                .editOrNewMetadata()
+                    .withNamespace(namespace)
+                .endMetadata()
+                .build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3)
+                .editOrNewMetadata()
+                    .withNamespace(namespace)
+                .endMetadata()
+                .build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that {} topic has replicas on first 3 brokers", testStorage.getTopicName());
         List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
@@ -389,6 +397,9 @@ public class CruiseControlST extends AbstractST {
         // when using add_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
         resourceManager.createResource(extensionContext, false,
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editOrNewMetadata()
+                    .withNamespace(namespace)
+                .endMetadata()
                 .editOrNewSpec()
                     .withMode(KafkaRebalanceMode.ADD_BROKERS)
                     .withBrokers(3, 4)
@@ -409,6 +420,9 @@ public class CruiseControlST extends AbstractST {
         // when using remove_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
         resourceManager.createResource(extensionContext, false,
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editOrNewMetadata()
+                    .withNamespace(namespace)
+                .endMetadata()
                 .editOrNewSpec()
                     .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
                     .withBrokers(3, 4)
