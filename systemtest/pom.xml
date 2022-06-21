@@ -212,12 +212,6 @@
             <version>${sundrio.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>io.sundr</groupId>
-            <artifactId>sundr-codegen</artifactId>
-            <scope>provided</scope>
-            <version>${sundrio.version}</version>
-        </dependency>
     </dependencies>
 
     <build>

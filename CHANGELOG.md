@@ -14,6 +14,7 @@
 * Use better encryption and digest algorithms when creating the PKCS12 stores.
   For existing clusters, the certificates will not be updated during upgrade but only next time the PKCS12 store is created. 
 * Add CPU capacity overrides for Cruise Control capacity config
+* Use CustomResource existing spec and status to fix Quarkus native build's serialization
 
 ## 0.29.0
 
