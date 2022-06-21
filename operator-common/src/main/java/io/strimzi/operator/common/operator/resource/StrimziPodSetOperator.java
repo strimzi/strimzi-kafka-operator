@@ -70,10 +70,14 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
     public boolean isReady(String namespace, String name) {
         StrimziPodSet podSet = operation().inNamespace(namespace).withName(name).get();
 
-        int replicas = podSet.getSpec().getPods().size();
+        if (podSet != null) {
+            int replicas = podSet.getSpec().getPods().size();
 
-        return podSet.getStatus() != null
-                && replicas == podSet.getStatus().getPods()
-                && replicas == podSet.getStatus().getReadyPods();
+            return podSet.getStatus() != null
+                    && replicas == podSet.getStatus().getPods()
+                    && replicas == podSet.getStatus().getReadyPods();
+        } else {
+            return false;
+        }
     }
 }
