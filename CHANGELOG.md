@@ -15,6 +15,7 @@
   For existing clusters, the certificates will not be updated during upgrade but only next time the PKCS12 store is created. 
 * Add CPU capacity overrides for Cruise Control capacity config
 * Use CustomResource existing spec and status to fix Quarkus native build's serialization
+* Update JMX Exporter to version 0.17.0
 
 ## 0.29.0
 
