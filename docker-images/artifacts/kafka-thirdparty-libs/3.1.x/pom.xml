@@ -23,7 +23,7 @@
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
         <kafka-kubernetes-config-provider.version>1.0.0</kafka-kubernetes-config-provider.version>
         <kafka-env-var-config-provider.version>1.0.0</kafka-env-var-config-provider.version>
-        <jmx-prometheus-javaagent.version>0.16.1</jmx-prometheus-javaagent.version>
+        <jmx-prometheus-javaagent.version>0.17.0</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.7</json-smart.version>
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
         <jaeger-client.version>1.6.0</jaeger-client.version>
