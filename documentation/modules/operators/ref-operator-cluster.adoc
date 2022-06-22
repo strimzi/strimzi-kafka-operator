@@ -350,10 +350,10 @@ The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the ini
 include::../install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
 ----
 
-The `strimzi-topic-operator` `ClusterRole` represents the access needed by the Topic Operator. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
+The `strimzi-entity-operator` `ClusterRole` represents the access needed by the Topic and User Operators. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
 
 [source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic Operator
+.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic and User Operators
 ----
 include::../install/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml[]
 ----
