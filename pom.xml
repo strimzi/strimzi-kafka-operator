@@ -590,6 +590,7 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>strimzi-test-container</artifactId>
                 <version>${strimzi-test-container.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
