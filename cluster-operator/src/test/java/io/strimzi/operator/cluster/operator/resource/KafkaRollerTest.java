@@ -735,7 +735,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Future<Void> restart(Pod pod) {
+        protected Future<Void> restart(Pod pod, RestartContext restartContext) {
             restarted.add(pod.getMetadata().getName());
             return succeededFuture();
         }
