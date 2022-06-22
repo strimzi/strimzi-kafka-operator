@@ -47,5 +47,5 @@ Refer to the schema reference for more information on access configuration prope
 
 //steps to secure the brokers
 include::modules/proc-securing-kafka.adoc[leveloffset=+1]
-include::modules/proc-configuring-kafka-user.adoc[leveloffset=+1]
+include::modules/proc-configuring-secure-kafka-user.adoc[leveloffset=+1]
 include::modules/proc-restricting-access-to-listeners-using-network-policies.adoc[leveloffset=+1]

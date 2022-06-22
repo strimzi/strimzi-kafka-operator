@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-class Quantities {
+public class Quantities {
     private Quantities() {
 
     }

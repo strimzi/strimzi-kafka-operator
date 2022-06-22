@@ -46,8 +46,8 @@ public class ValidationVisitorTest {
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
         assertThat(warningMessages, hasItem("Contains object at path spec.kafka with an unknown property: foo"));
-        assertThat(warningMessages, hasItem("In API version v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
-        assertThat(warningMessages, hasItem("In API version v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
+        assertThat(warningMessages, hasItem("In API version kafka.strimzi.io/v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
+        assertThat(warningMessages, hasItem("In API version kafka.strimzi.io/v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
                 "The Kafka Exporter service has been removed."));
 
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
@@ -55,10 +55,10 @@ public class ValidationVisitorTest {
                 "Contains object at path spec.kafka with an unknown property: foo"));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
+                "In API version kafka.strimzi.io/v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
+                "In API version kafka.strimzi.io/v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
                 "The Kafka Exporter service has been removed."));
     }
 }

@@ -75,7 +75,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     @Override
     protected Kafka modifiedResource() {
         return new KafkaBuilder(resource())
-                .editSpec()
+                .editOrNewSpec()
                     .withNewEntityOperator()
                         .withNewTopicOperator()
                         .endTopicOperator()
@@ -100,7 +100,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     public void testUpdateStatusAsync(VertxTestContext context) throws IOException {
         Kafka resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.updateStatus(any())).thenReturn(resource);
+        when(mockResource.replaceStatus(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);

@@ -3,16 +3,17 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='proc-configuring-kafka-topic-{context}']
-= Configuring a Kafka topic
+= Configuring Kafka topics
 
-Use the properties of the `KafkaTopic` resource to configure a Kafka topic.
+[role="_abstract"]
+Use the properties of the `KafkaTopic` resource to configure Kafka topics.
 
 You can use `kubectl apply` to create or modify topics, and `kubectl delete` to delete existing topics.
 
 For example:
 
-* `kubectl apply -f <topic-config-file>`
-* `kubectl delete KafkaTopic <topic-name>`
+* `kubectl apply -f _<topic_config_file>_`
+* `kubectl delete KafkaTopic _<topic_name>_`
 
 This procedure shows how to create a topic with 10 partitions and 2 replicas.
 
@@ -20,11 +21,11 @@ This procedure shows how to create a topic with 10 partitions and 2 replicas.
 
 It is important that you consider the following before making your changes:
 
-* Kafka does _not_ support making the following changes through the `KafkaTopic` resource:
-** Changing topic names using `spec.topicName`
-** Decreasing partition size using `spec.partitions`
-* You cannot use `spec.replicas` to change the number of replicas that were initially specified.
+* Kafka does not support decreasing the number of partitions.
 * Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
+* Strimzi does not support making the following changes through the `KafkaTopic` resource:
+** Using `spec.replicas` to change the number of replicas that were initially specified
+** Changing topic names using `spec.topicName`
 
 .Prerequisites
 
@@ -34,9 +35,9 @@ It is important that you consider the following before making your changes:
 
 .Procedure
 
-. Prepare a file containing the `KafkaTopic` to be created.
+. Configure the `KafkaTopic` resource.
 +
-.An example `KafkaTopic`
+.Example Kafka topic configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaTopicApiVersion}
@@ -55,4 +56,79 @@ TIP: When modifying a topic, you can get the current version of the resource usi
 . Create the `KafkaTopic` resource in Kubernetes.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _TOPIC-CONFIG-FILE_
+kubectl apply -f _<topic_config_file>_
+
+. Wait for the ready status of the topic to change to `True`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkatopics -o wide -w -n _<namespace>_
+----
++
+.Kafka topic status
+[source,shell,subs="+quotes"]
+----
+NAME         CLUSTER     PARTITIONS  REPLICATION FACTOR READY
+my-topic-1   my-cluster  10          3                  True
+my-topic-2   my-cluster  10          3
+my-topic-3   my-cluster  10          3                  True
+----
++
+Topic creation is successful when the `READY` output shows `True`.
+
+. If the `READY` column stays blank, get more details on the status from the resource YAML or from the Topic Operator logs.
++
+Messages provide details on the reason for the current status.
++
+[source,shell,subs="+quotes"]
+----
+oc get kafkatopics my-topic-2 -o yaml
+----
++
+.Details on a topic with a `NotReady` status
+[source,shell,subs="+quotes"]
+----
+# ...
+status:
+  conditions:
+  - lastTransitionTime: "2022-06-13T10:14:43.351550Z"
+    message: Number of partitions cannot be decreased
+    reason: PartitionDecreaseException
+    status: "True"
+    type: NotReady
+----
++
+In this example, the reason the topic is not ready is because the original number of partitions was reduced in the `KafkaTopic` configuration.
+Kafka does not support this.
++
+After resetting the topic configuration, the status shows the topic is ready.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkatopics my-topic-2 -o wide -w -n _<namespace>_
+----
++
+.Status update of the topic
+[source,shell,subs="+quotes"]
+----
+NAME         CLUSTER     PARTITIONS  REPLICATION FACTOR READY
+my-topic-2   my-cluster  10          3                  True
+----
++
+Fetching the details shows no messages
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkatopics my-topic-2 -o yaml
+----
++
+.Details on a topic with a `READY` status
+[source,shell,subs="+quotes"]
+----
+# ...
+status:
+  conditions:
+  - lastTransitionTime: '2022-06-13T10:15:03.761084Z'
+    status: 'True'
+    type: Ready
+----

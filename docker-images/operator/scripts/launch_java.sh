@@ -2,6 +2,8 @@
 set -e
 set +x
 
+mem_file_cgroups_v2="/sys/fs/cgroup/memory.max"
+
 # expand gc options based upon java version
 function get_gc_opts {
   if [ "${STRIMZI_GC_LOG_ENABLED}" == "true" ]; then
@@ -10,6 +12,22 @@ function get_gc_opts {
     # no gc options
     echo ""
   fi
+}
+
+calc_maximum_size_opt() {
+  local max_mem="$1"
+  local percentage="$2"
+
+  local value_in_mb=$((max_mem*percentage/100/1048576))
+  echo "-Xmx${value_in_mb}m"
+}
+
+# Calculate the value of -Xmx options base on cgroups_v2 values
+calc_max_memory() {
+  local mem_limit
+  mem_limit="$(cat ${mem_file_cgroups_v2})"
+
+  calc_maximum_size_opt "${mem_limit}" "20"
 }
 
 export MALLOC_ARENA_MAX=2
@@ -24,8 +42,13 @@ JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
 
 # Default memory options used when the user didn't configured any of these options, we set the defaults
-if [[ "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
+if [[ ! -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
   JAVA_OPTS="${JAVA_OPTS} -XX:MinRAMPercentage=10 -XX:MaxRAMPercentage=20 -XX:InitialRAMPercentage=10"
+elif [[ -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"Xmx"* ]]; then
+  # This workaround for cgroups v2 must be removed once java version used by the operator is updated.
+  # https://developers.redhat.com/articles/2022/04/19/java-17-whats-new-openjdks-container-awareness#
+  # Calculate -Xmx java option
+  JAVA_OPTS="${JAVA_OPTS} $(calc_max_memory)"
 fi
 
 # Disable FIPS if needed

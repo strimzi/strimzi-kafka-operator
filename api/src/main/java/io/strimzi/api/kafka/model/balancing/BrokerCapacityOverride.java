@@ -28,12 +28,13 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"brokers", "inboundNetwork", "outboundNetwork"})
+@JsonPropertyOrder({"brokers", "cpu", "inboundNetwork", "outboundNetwork"})
 @EqualsAndHashCode
 public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private List<Integer> brokers;
+    private String cpu;
     private String inboundNetwork;
     private String outboundNetwork;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -48,6 +49,19 @@ public class BrokerCapacityOverride implements UnknownPropertyPreserving, Serial
 
     public void setBrokers(List<Integer> brokers) {
         this.brokers = brokers;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Pattern("^[0-9]+([.][0-9]{0,3}|[m]?)$")
+    @Description("Broker capacity for CPU resource in cores or millicores. " +
+            "For example, 1, 1.500, 1500m. " +
+            "For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu")
+    public String getCpu() {
+        return cpu;
+    }
+
+    public void setCpu(String cpu) {
+        this.cpu = cpu;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

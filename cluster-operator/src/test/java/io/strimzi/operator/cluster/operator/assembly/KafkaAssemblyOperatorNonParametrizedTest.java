@@ -4,6 +4,18 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -34,17 +46,6 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
@@ -174,13 +175,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
     @Test
     public void testClusterCASecretsWithoutOwnerReference(VertxTestContext context) {
-        OwnerReference ownerReference = new OwnerReferenceBuilder()
-                        .withKind("Kafka")
-                        .withName(NAME)
-                        .withBlockOwnerDeletion(false)
-                        .withController(false)
-                        .build();
-
         CertificateAuthority caConfig = new CertificateAuthority();
         caConfig.setGenerateSecretOwnerReference(false);
 
@@ -202,6 +196,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                         .endEphemeralStorage()
                     .endZookeeper()
                 .endSpec()
+                .build();
+
+        OwnerReference ownerReference = new OwnerReferenceBuilder()
+                .withKind(kafka.getKind())
+                .withApiVersion(kafka.getApiVersion())
+                .withName(kafka.getMetadata().getName())
+                .withBlockOwnerDeletion(false)
+                .withController(false)
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -252,13 +254,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
     @Test
     public void testClientsCASecretsWithoutOwnerReference(VertxTestContext context) {
-        OwnerReference ownerReference = new OwnerReferenceBuilder()
-                        .withKind("Kafka")
-                        .withName(NAME)
-                        .withBlockOwnerDeletion(false)
-                        .withController(false)
-                        .build();
-
         CertificateAuthority caConfig = new CertificateAuthority();
         caConfig.setGenerateSecretOwnerReference(false);
 
@@ -281,7 +276,15 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-
+        
+        OwnerReference ownerReference = new OwnerReferenceBuilder()
+                .withKind(kafka.getKind())
+                .withApiVersion(kafka.getApiVersion())
+                .withName(kafka.getMetadata().getName())
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+        
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
         PodOperator podOps = supplier.podOperations;

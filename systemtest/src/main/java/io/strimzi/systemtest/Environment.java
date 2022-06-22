@@ -206,7 +206,7 @@ public class Environment {
     public static final String TEST_HTTP_PRODUCER_IMAGE = getOrDefault(TEST_HTTP_PRODUCER_IMAGE_ENV, TEST_HTTP_PRODUCER_IMAGE_DEFAULT);
     public static final String TEST_HTTP_CONSUMER_IMAGE = getOrDefault(TEST_HTTP_CONSUMER_IMAGE_ENV, TEST_HTTP_CONSUMER_IMAGE_DEFAULT);
 
-    private static final String SCRAPER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + STRIMZI_ORG_DEFAULT + "/kafka:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
+    private static final String SCRAPER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String SCRAPER_IMAGE = getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
 
     // variables for kafka bridge image
