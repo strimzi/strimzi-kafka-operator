@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+set -e
+
+# Clean-up /tmp directory from files which might have remained from previous container restart
+rm -rfv /tmp/*
+
 export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.cluster.Main
 
