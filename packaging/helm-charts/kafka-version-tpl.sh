@@ -20,7 +20,6 @@ kafka_exporter_version="{{ default .Values.defaultImageRegistry .Values.kafkaExp
 
 for version in "${versions[@]}"
 do
-    zookeeper_version="{{ default .Values.defaultImageRegistry .Values.zookeeper.image.registry }}/{{ default .Values.defaultImageRepository .Values.zookeeper.image.repository }}/{{ .Values.zookeeper.image.name }}:{{ default .Values.defaultImageTag .Values.zookeeper.image.tagPrefix }}-kafka-${version}"
     entity_operator_tls_sidecar_version="{{ default .Values.defaultImageRegistry .Values.tlsSidecarEntityOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarEntityOperator.image.repository }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarEntityOperator.image.tagPrefix }}-kafka-${version}"
     kafka_exporter_version="{{ default .Values.defaultImageRegistry .Values.kafkaExporter.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaExporter.image.repository }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaExporter.image.tagPrefix }}-kafka-${version}"
     cruise_control_version="{{ default .Values.defaultImageRegistry .Values.cruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.cruiseControl.image.repository }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.cruiseControl.image.tagPrefix }}-kafka-${version}"

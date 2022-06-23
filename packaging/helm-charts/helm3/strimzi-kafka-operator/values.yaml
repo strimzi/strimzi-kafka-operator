@@ -41,15 +41,9 @@ priorityClassName: ""
 podSecurityContext: {}
 securityContext: {}
 
-# Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
+# Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
 # repository name with your registry URL.
-# Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
-zookeeper:
-  image:
-    registry: ""
-    repository: ""
-    name: kafka
-    tagPrefix: ""
+# Ex) repository: registry.xyzcorp.com/strimzi/kafka
 kafka:
   image:
     registry: ""

@@ -112,10 +112,6 @@ the documentation for more details.
 | `priorityClassName`                  | Cluster Operator pod's priority class name | `nil`                                               |
 | `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
 | `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
-| `zookeeper.image.registry  `         | Override default ZooKeeper image registry | `nil`                                                |
-| `zookeeper.image.repository`         | Override default ZooKeeper image repository | `nil`                                              |
-| `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
-| `zookeeper.image.tag`                | Override default ZooKeeper tag registry   | `nil`                                                |
 | `jmxtrans.image.registry`            | Override default JmxTrans image registry                   | `nil`                               |
 | `jmxtrans.image.repository`          | Override default JmxTrans image repository                 | `nil`                               |
 | `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
