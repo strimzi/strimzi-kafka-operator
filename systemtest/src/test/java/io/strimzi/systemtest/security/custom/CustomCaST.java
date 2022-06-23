@@ -48,6 +48,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Provides test cases to verify custom key-pair (public key + private key) manipulation. For instance:
@@ -81,7 +82,7 @@ public class CustomCaST extends AbstractST {
         // 4. Update the Secret for the CA certificate.
         //  a) Edit the existing secret to add the new CA certificate and update the certificate generation annotation value.
         //  b) Rename the current CA certificate to retain it
-        final Secret clusterCaCertificateSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
+        Secret clusterCaCertificateSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
         final String oldCaCertName = clusterCa.retrieveOldCertificateName(clusterCaCertificateSecret, "ca.crt");
 
         // store the old cert
@@ -146,6 +147,10 @@ public class CustomCaST extends AbstractST {
 
         // 10. Try to produce messages
         producerMessages(extensionContext, ts);
+
+        // 12. Check that old certificate is not removed after RUs
+        clusterCaCertificateSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
+        assertNotNull(clusterCaCertificateSecret.getData().get(oldCaCertName));
     }
 
     @ParallelNamespaceTest
