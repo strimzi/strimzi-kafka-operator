@@ -1,3 +1,4 @@
+
 # CHANGELOG
 
 ## 0.30.0
@@ -15,7 +16,7 @@
   For existing clusters, the certificates will not be updated during upgrade but only next time the PKCS12 store is created. 
 * Add CPU capacity overrides for Cruise Control capacity config
 * Use CustomResource existing spec and status to fix Quarkus native build's serialization
-
+* Operator emits Kafka events to explain why it restarted a Kafka broker
 ## 0.29.0
 
 * Add support for Apache Kafka 3.0.1, 3.1.1 and 3.2.0
