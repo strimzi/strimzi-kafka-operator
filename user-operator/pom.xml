@@ -84,7 +84,6 @@
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>strimzi-test-container</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>

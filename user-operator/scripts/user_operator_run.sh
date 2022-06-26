@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# Clean-up /tmp directory from files which might have remained from previous container restart
+rm -rfv /tmp/*
+
 if [ -f /opt/user-operator/custom-config/log4j2.properties ];
 then
     export JAVA_OPTS="${JAVA_OPTS} -Dlog4j2.configurationFile=file:/opt/user-operator/custom-config/log4j2.properties"
