@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -51,7 +50,6 @@ import java.util.function.Supplier;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -262,7 +260,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
     static class MockKafkaReconciler extends KafkaReconciler {
         public MockKafkaReconciler(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange) {
-            super(reconciliation, kafkaCr, null, 0, CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx, mock(KubernetesRestartEventPublisher.class));
+            super(reconciliation, kafkaCr, null, 0, CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx);
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
         }
 

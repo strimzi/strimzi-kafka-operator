@@ -90,8 +90,9 @@ public class ResourceOperatorSupplier {
     public final ZookeeperLeaderFinder zookeeperLeaderFinder;
     public final KubernetesRestartEventPublisher restartEventsPublisher;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs, KubernetesRestartEventPublisher restartEventPublisher) {
-        this(vertx, client,
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs, String operatorName) {
+        this(vertx,
+                client,
                 new ZookeeperLeaderFinder(vertx,
                         // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                         () -> new BackOff(5_000, 2, 4)),
@@ -100,7 +101,8 @@ public class ResourceOperatorSupplier {
                 new MicrometerMetricsProvider(),
                 pfa,
                 operationTimeoutMs,
-                restartEventPublisher);
+                KubernetesRestartEventPublisher.createPublisher(client, operatorName, pfa.hasEventsApiV1())
+        );
     }
 
     public ResourceOperatorSupplier(Vertx vertx,

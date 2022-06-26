@@ -147,7 +147,7 @@ public class CaReconciler {
         this.clientsCaConfig = kafkaCr.getSpec().getClientsCa();
         this.caLabels = Labels
                 .generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME)
-                .toMap();;
+                .toMap();
         this.clusterOperatorSecretLabels = Labels.fromResource(kafkaCr)
                 .withStrimziKind(reconciliation.kind())
                 .withStrimziCluster(reconciliation.name())

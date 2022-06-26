@@ -152,6 +152,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(this::dateSupplier))
                 .compose(state -> state.versionChange())
+
                 // Run reconciliations of the different components
                 .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileZooKeeper(this::dateSupplier))
                 .compose(state -> state.reconcileKafka(this::dateSupplier))
@@ -159,6 +160,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
                 .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
                 .compose(state -> state.reconcileJmxTrans())
+
                 // Finish the reconciliation
                 .map((Void) null)
                 .onComplete(chainPromise);
@@ -465,7 +467,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         KafkaReconciler kafkaReconciler(Storage oldStorage, int currentReplicas) {
             return new KafkaReconciler(
                     reconciliation,
-                    kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, eventsPublisher
+                    kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx
             );
         }
 

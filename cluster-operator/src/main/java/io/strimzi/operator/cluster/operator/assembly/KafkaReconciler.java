@@ -173,7 +173,6 @@ public class KafkaReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
-     * @param eventsPublisher           Publishes K8s events on Kafka pod restarts
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
@@ -186,13 +185,12 @@ public class KafkaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
-            Vertx vertx,
-            KubernetesRestartEventPublisher eventsPublisher
+            Vertx vertx
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.eventsPublisher = eventsPublisher;
+        this.eventsPublisher = supplier.restartEventsPublisher;
         this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, config.versions(), oldStorage, currentReplicas, config.featureGates().useKRaftEnabled());
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)

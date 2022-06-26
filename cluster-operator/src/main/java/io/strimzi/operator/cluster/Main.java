@@ -18,7 +18,6 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -111,9 +110,8 @@ public class Main {
                 vertx,
                 client,
                 pfa,
-
                 config.getOperationTimeoutMs(),
-                KubernetesRestartEventPublisher.createPublisher(client, config.getOperatorName(), pfa.hasEventsApiV1())
+                config.getOperatorName()
         );
 
         KafkaAssemblyOperator kafkaClusterOperations = null;
