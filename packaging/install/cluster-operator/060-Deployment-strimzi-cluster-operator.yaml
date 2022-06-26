@@ -87,10 +87,6 @@ spec:
               value: quay.io/strimzi/kaniko-executor:latest
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
               value: quay.io/strimzi/maven-builder:latest
-            - name: STRIMZI_OPERATOR_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.name
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
