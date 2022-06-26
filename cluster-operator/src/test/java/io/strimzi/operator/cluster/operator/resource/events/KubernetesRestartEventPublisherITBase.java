@@ -10,13 +10,15 @@ import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 
 import java.util.HashMap;
 import java.util.Random;
+import java.util.function.BiFunction;
 
-public class EventITHelper {
+public class KubernetesRestartEventPublisherITBase {
 
     private static KubeClusterResource cluster;
     private static KubernetesClient kubeClient;
@@ -81,5 +83,10 @@ public class EventITHelper {
                 .withTerminationGracePeriodSeconds(0L)
                 .endSpec()
                 .build();
+    }
+
+    static boolean checkClusterVersionMatches(BiFunction<Integer, Integer, Boolean> majorMinorPred) {
+        VersionInfo version = KubeClusterResource.getInstance().client().getClient().getKubernetesVersion();
+        return majorMinorPred.apply(Integer.parseInt(version.getMajor()), Integer.parseInt(version.getMinor()));
     }
 }

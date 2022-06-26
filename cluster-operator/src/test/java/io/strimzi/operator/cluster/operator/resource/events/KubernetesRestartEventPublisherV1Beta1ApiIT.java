@@ -14,40 +14,46 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import java.util.List;
 import java.util.Set;
 
-import static io.strimzi.operator.cluster.operator.resource.events.EventITHelper.referenceFromPod;
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
-public class KubernetesRestartEventPublisherV1Beta1ApiIT {
+@EnabledIf("clusterSupportsEventsApiV1Beta1")
+public class KubernetesRestartEventPublisherV1Beta1ApiIT extends KubernetesRestartEventPublisherITBase {
 
     private static final String TEST_NAMESPACE = "v1beta1-test-ns";
     private static KubernetesClient kubeClient;
     private Pod pod;
 
+    //Don't run for clusters 1.25+ as v1beta1 is removed
+    static boolean clusterSupportsEventsApiV1Beta1() {
+        return checkClusterVersionMatches((major, minor) -> major == 1 && minor < 25);
+    }
+
     @BeforeAll
     static void beforeAll() {
-        kubeClient = EventITHelper.prepareNamespace(TEST_NAMESPACE);
+        kubeClient = prepareNamespace(TEST_NAMESPACE);
     }
 
     @AfterAll
     static void afterAll() {
-        EventITHelper.teardownNamespace(TEST_NAMESPACE);
+        teardownNamespace(TEST_NAMESPACE);
     }
 
     @BeforeEach
     void setup() {
-        pod = EventITHelper.createPod(TEST_NAMESPACE);
+        pod = createPod(TEST_NAMESPACE);
     }
 
     @AfterEach
     void teardown() {
-        EventITHelper.teardownPod(TEST_NAMESPACE, pod);
+        teardownPod(TEST_NAMESPACE, pod);
         kubeClient.events().v1beta1().events().delete();
     }
 
