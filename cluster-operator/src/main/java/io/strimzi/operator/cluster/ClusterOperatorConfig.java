@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * Cluster Operator configuration
@@ -530,6 +531,10 @@ public class ClusterOperatorConfig {
         return podSetControllerWorkQueueSize;
     }
 
+    public String getOperatorName() {
+        return operatorName;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -552,9 +557,5 @@ public class ClusterOperatorConfig {
                 ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
                 ",operatorName=" + operatorName +
                 ")";
-    }
-
-    public String getOperatorName() {
-        return operatorName;
     }
 }
