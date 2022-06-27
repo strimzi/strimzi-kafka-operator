@@ -11,8 +11,7 @@ This procedure describes how to deploy the User Operator using the Cluster Opera
 You configure the `entityOperator` property of the `Kafka` resource to include the `userOperator`.
 By default, the User Operator watches for `KafkaUser` resources in the namespace of the Kafka cluster deployment.
 You can also specify a namespace using `watchedNamespace` in the User Operator `spec`.
-The User Operator can only watch a single Kafka cluster in a namespace.
-If you want to use the operator with more than one Kafka cluster, install the clusters to separate namespaces.
+A single User Operator can watch a single namespace. 
 
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
