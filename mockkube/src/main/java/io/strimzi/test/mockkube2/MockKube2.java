@@ -27,10 +27,11 @@ import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.strimzi.test.mockkube2.controllers.MockServiceController;
 import io.strimzi.test.mockkube2.controllers.MockStatefulSetController;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.LogManager;
 
 /**
  * MockKube2 is a utility class which helps to use the Fabric8 Kubernetes Mock Server. It provides methods to easily
@@ -102,8 +103,6 @@ public class MockKube2 {
     public static class MockKube2Builder {
         private final KubernetesClient client;
         private final MockKube2 mock;
-
-        private Level mockWebServerLoggingLevel = Level.WARNING;
 
         public MockKube2Builder(KubernetesClient client) {
             this.client = client;
@@ -257,19 +256,6 @@ public class MockKube2 {
         }
 
         /**
-         * The Fabric8 MockWebServer is rather chatty and logs a lot of stuff at INFO that would be better logged at
-         * DEBUG. And it also uses the java.util.logging package directly, so can't be controlled via log4j conf files.
-         * As such, it's now defaulted to WARNING, but use this method to change it as needed
-         * @param loggingLevel - level to set mockwebserver to
-         * @return MockKube builder instance
-         */
-        @SuppressWarnings("unused")
-        public MockKube2Builder withMockWebServerLoggingLevel(Level loggingLevel) {
-            this.mockWebServerLoggingLevel = loggingLevel;
-            return this;
-        }
-
-        /**
          * Create an instance of the custom resource in the Kubernetes mock server
          *
          * @param op        Kubernetes client operation for working with given custom resource
@@ -291,8 +277,16 @@ public class MockKube2 {
          * @return  MockKube instance
          */
         public MockKube2 build()   {
-            Logger.getLogger("okhttp3.mockwebserver.MockWebServer").setLevel(mockWebServerLoggingLevel);
+            configureJulLogging();
             return mock;
+        }
+
+        private void configureJulLogging() {
+            try (InputStream ins = MockKube2.class.getResourceAsStream("/jul-logging.properties")) {
+                LogManager.getLogManager().updateConfiguration(ins, null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
