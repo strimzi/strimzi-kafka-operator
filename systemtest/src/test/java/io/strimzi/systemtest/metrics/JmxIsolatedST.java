@@ -8,6 +8,9 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
+import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
+import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
@@ -57,12 +60,27 @@ public class JmxIsolatedST extends AbstractST {
         final String zkSecretName = clusterName + "-zookeeper-jmx";
         final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = clusterName + "-kafka-jmx";
+        final String jmxTransName = clusterName + "-kafka-jmx-trans";
+
+        final String jmxTransMetricTypeName = "BrokerTopicMetrics";
+        final String jmxTransMetricName = "BytesOutPerSec";
 
         Map<String, String> jmxSecretLabels = Collections.singletonMap("my-label", "my-value");
         Map<String, String> jmxSecretAnnotations = Collections.singletonMap("my-annotation", "some-value");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
+                .withNewJmxTrans()
+                    .withOutputDefinitions(new JmxTransOutputDefinitionTemplateBuilder()
+                            .withName("standardOut")
+                            .withOutputType("com.googlecode.jmxtrans.model.output.StdOutWriter")
+                            .build())
+                    .withKafkaQueries( new JmxTransQueryTemplateBuilder()
+                            .withTargetMBean("kafka.server:type=" + jmxTransMetricTypeName + ",name=" +jmxTransMetricName )
+                            .withAttributes("Count")
+                            .withOutputs("standardOut")
+                            .build())
+                .endJmxTrans()
                 .editKafka()
                     .withNewJmxOptions()
                         .withAuthentication(new KafkaJmxAuthenticationPassword())
@@ -100,6 +118,12 @@ public class JmxIsolatedST extends AbstractST {
         String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaConnectResources.serviceName(clusterName), connectJmxSecretName, scraperPodName, "bean kafka.connect:type=app-info\nget -i *");
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
+
+        // Check Jmx Trans log result
+        String jmxTransPodName = kubeClient().listPodsByPrefixInName(jmxTransName).get(0).getMetadata().getName();
+        String jmxTransResult = kubeClient().logs(jmxTransPodName);
+        String expectedJmxTransContainString = "typeName=type="+ jmxTransMetricTypeName + ",name=" + jmxTransMetricName;
+        assertThat("Result from Kafka JmxTrans doesn't contain correct logs, result: " + jmxTransResult, jmxTransResult, containsString(expectedJmxTransContainString));
 
         if (!Environment.isKRaftModeEnabled()) {
             Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
