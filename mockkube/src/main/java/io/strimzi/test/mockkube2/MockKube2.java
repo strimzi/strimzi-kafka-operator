@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 
 /**
@@ -103,6 +104,8 @@ public class MockKube2 {
     public static class MockKube2Builder {
         private final KubernetesClient client;
         private final MockKube2 mock;
+
+        private Level mockWebServerLoggingLevel = Level.INFO;
 
         public MockKube2Builder(KubernetesClient client) {
             this.client = client;
@@ -255,6 +258,19 @@ public class MockKube2 {
             return this;
         }
 
+
+        /**
+         * Set the mock web server's logging level as needed, defaults to INFO
+         * @param level logging level for mock web server
+         *
+         * @return MockKube builder instance
+         */
+        @SuppressWarnings("unused")
+        public MockKube2Builder withMockWebServerLoggingLevel(Level level) {
+            this.mockWebServerLoggingLevel = level;
+            return this;
+        }
+
         /**
          * Create an instance of the custom resource in the Kubernetes mock server
          *
@@ -281,9 +297,20 @@ public class MockKube2 {
             return mock;
         }
 
+        /**
+         * The MockWebServer underlying fabric8's mockk8s uses JUL for logging, so this allows setting the logging level
+         * as desired when running tests
+         */
         private void configureJulLogging() {
+            // As we can only modify existing keys, not add new ones, the referenced file contains the key we need
             try (InputStream ins = MockKube2.class.getResourceAsStream("/jul-logging.properties")) {
-                LogManager.getLogManager().updateConfiguration(ins, null);
+                LogManager.getLogManager().updateConfiguration(ins, key -> {
+                    if ("okhttp3.mockwebserver.level".equals(key)) {
+                        return (unused, unused2) -> mockWebServerLoggingLevel.getName();
+                    } else {
+                        return (prevValue, unused) -> prevValue;
+                    }
+                });
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
