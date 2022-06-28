@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
-import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
@@ -75,8 +74,8 @@ public class JmxIsolatedST extends AbstractST {
                             .withName("standardOut")
                             .withOutputType("com.googlecode.jmxtrans.model.output.StdOutWriter")
                             .build())
-                    .withKafkaQueries( new JmxTransQueryTemplateBuilder()
-                            .withTargetMBean("kafka.server:type=" + jmxTransMetricTypeName + ",name=" +jmxTransMetricName )
+                    .withKafkaQueries(new JmxTransQueryTemplateBuilder()
+                            .withTargetMBean("kafka.server:type=" + jmxTransMetricTypeName + ",name=" + jmxTransMetricName)
                             .withAttributes("Count")
                             .withOutputs("standardOut")
                             .build())
@@ -122,7 +121,7 @@ public class JmxIsolatedST extends AbstractST {
         // Check Jmx Trans log result
         String jmxTransPodName = kubeClient().listPodsByPrefixInName(jmxTransName).get(0).getMetadata().getName();
         String jmxTransResult = kubeClient().logs(jmxTransPodName);
-        String expectedJmxTransContainString = "typeName=type="+ jmxTransMetricTypeName + ",name=" + jmxTransMetricName;
+        String expectedJmxTransContainString = "typeName=type=" + jmxTransMetricTypeName + ",name=" + jmxTransMetricName;
         assertThat("Result from Kafka JmxTrans doesn't contain correct logs, result: " + jmxTransResult, jmxTransResult, containsString(expectedJmxTransContainString));
 
         if (!Environment.isKRaftModeEnabled()) {
