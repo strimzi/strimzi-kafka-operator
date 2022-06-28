@@ -15,24 +15,13 @@ The Entity Operator comprises the:
 
 Through `Kafka` resource configuration, the Cluster Operator can deploy the Entity Operator, including one or both operators, when deploying a Kafka cluster.
 
+The operators are automatically configured to manage the topics and users of the Kafka cluster.
+The Topic Operator and User Operator can only watch a single namespace.
+For more information, see xref:con-operators-namespaces-{context}[].
+
 NOTE: When deployed, the Entity Operator contains the operators according to the deployment configuration.
 
-The operators are automatically configured to manage the topics and users of the Kafka cluster.
-
-.Specifying a Kafka cluster to watch
-
-The Topic Operator and User Operator watch for topics and users in the namespace of a Kafka cluster deployment.
-
-If you deploy the operators using the Cluster Operator, they watch the Kafka cluster deployed by the Cluster Operator by default.
-You can also specify a namespace using `watchedNamespace` in the operator configuration.
-
-For a standalone deployment of each operator, you specify a namespace and connection to the Kafka cluster to watch in the configuration.
-
-The operators can only watch a single Kafka cluster in a namespace.
-If you want to use the operators with more than one Kafka cluster, install the clusters to separate namespaces.
-
 include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
-
 //topic operator config
 include::../../modules/configuring/con-configuring-topic-operator.adoc[leveloffset=+1]
 //user operator config
