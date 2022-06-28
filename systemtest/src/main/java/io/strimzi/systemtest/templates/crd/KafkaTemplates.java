@@ -208,11 +208,23 @@ public class KafkaTemplates {
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
+                        // Because of cgroups v2 and calculation of HEAP, we need to specify the memory for UserOperator
+                        // Using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
                     .endUserOperator()
                     .editTopicOperator()
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
+                        // Because of cgroups v2 and calculation of HEAP, we need to specify the memory for TopicOperator
+                        // Using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
@@ -235,22 +247,6 @@ public class KafkaTemplates {
                         .addToRequests("memory", new Quantity("256Mi"))
                         .build())
                 .endZookeeper()
-                .editEntityOperator()
-                    .editUserOperator()
-                        // For UserOperator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
-                        .withResources(new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity("256Mi"))
-                            .addToRequests("memory", new Quantity("256Mi"))
-                            .build())
-                    .endUserOperator()
-                    .editTopicOperator()
-                        // For TopicOperator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
-                        .withResources(new ResourceRequirementsBuilder()
-                            .addToLimits("memory", new Quantity("256Mi"))
-                            .addToRequests("memory", new Quantity("256Mi"))
-                            .build())
-                    .endTopicOperator()
-                .endEntityOperator()
                 .endSpec();
         }
 
