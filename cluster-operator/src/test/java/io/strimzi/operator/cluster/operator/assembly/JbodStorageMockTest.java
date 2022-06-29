@@ -54,6 +54,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
@@ -133,13 +134,12 @@ public class JbodStorageMockTest {
         mockKube.start();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
-        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(this.vertx, this.client,
                         ResourceUtils.zookeeperLeaderFinder(this.vertx, this.client),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                        ResourceUtils.metricsProvider(), pfa, 60_000L, restartEventPublisher);
+                        ResourceUtils.metricsProvider(), pfa, 60_000L, mock(KubernetesRestartEventPublisher.class));
 
         podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.strimziPodSetOperator, ros.podOperations, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         podSetController.start();

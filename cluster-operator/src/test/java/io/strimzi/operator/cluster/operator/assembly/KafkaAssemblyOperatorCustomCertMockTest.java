@@ -33,11 +33,6 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
-import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -74,7 +69,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
-import static org.mockito.Mockito.mock;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
@@ -127,17 +121,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
             .build();
         client.secrets().inNamespace(namespace).create(secret);
         PlatformFeaturesAvailability platformFeaturesAvailability = new PlatformFeaturesAvailability(false, kubernetesVersion);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                vertx,
-                client,
-                mock(ZookeeperLeaderFinder.class),
-                mock(AdminClientProvider.class),
-                mock(ZookeeperScalerProvider.class),
-                mock(MetricsProvider.class),
-                platformFeaturesAvailability,
-                10000,
-                KubernetesRestartEventPublisher.createPublisher(client, "op", platformFeaturesAvailability.hasEventsApiV1())
-        );
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, platformFeaturesAvailability, 10000, "op");
 
         operator = new MockKafkaAssemblyOperator(
                 vertx,

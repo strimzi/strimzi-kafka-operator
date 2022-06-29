@@ -110,7 +110,6 @@ public class KafkaReconciler {
     /* test */ final Reconciliation reconciliation;
     private final Vertx vertx;
     private final long operationTimeoutMs;
-    private final KubernetesRestartEventPublisher eventsPublisher;
     /* test */ final KafkaCluster kafka;
     private final Storage oldStorage;
     private final ClusterCa clusterCa;
@@ -141,6 +140,8 @@ public class KafkaReconciler {
     /* test */ final IngressOperator ingressOperator;
     /* test */ final IngressV1Beta1Operator ingressV1Beta1Operator;
     private final NodeOperator nodeOperator;
+
+    private final KubernetesRestartEventPublisher eventsPublisher;
 
     private final AdminClientProvider adminClientProvider;
 
@@ -190,7 +191,6 @@ public class KafkaReconciler {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.eventsPublisher = supplier.restartEventsPublisher;
         this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, config.versions(), oldStorage, currentReplicas, config.featureGates().useKRaftEnabled());
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
@@ -233,6 +233,7 @@ public class KafkaReconciler {
         this.ingressOperator = supplier.ingressOperations;
         this.ingressV1Beta1Operator = supplier.ingressV1Beta1Operations;
         this.nodeOperator = supplier.nodeOperator;
+        this.eventsPublisher = supplier.restartEventsPublisher;
 
         this.adminClientProvider = supplier.adminClientProvider;
     }

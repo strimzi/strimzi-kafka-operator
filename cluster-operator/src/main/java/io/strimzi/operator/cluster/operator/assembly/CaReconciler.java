@@ -78,6 +78,7 @@ public class CaReconciler {
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
     private final CertManager certManager;
     private final PasswordGenerator passwordGenerator;
+    private final KubernetesRestartEventPublisher eventPublisher;
 
     // Fields based on the Kafka CR required for the reconciliation
     private final List<String> maintenanceWindows;
@@ -85,7 +86,6 @@ public class CaReconciler {
     private final CertificateAuthority clusterCaConfig;
     private final CertificateAuthority clientsCaConfig;
     private final Map<String, String> caLabels;
-    private final KubernetesRestartEventPublisher eventPublisher;
     private final Labels clusterOperatorSecretLabels;
     private final Map<String, String> clusterCaCertLabels;
     private final Map<String, String> clusterCaCertAnnotations;
