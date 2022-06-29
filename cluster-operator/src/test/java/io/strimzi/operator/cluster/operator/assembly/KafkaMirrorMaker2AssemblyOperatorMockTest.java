@@ -107,7 +107,6 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
     private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
-        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -115,7 +114,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
-                pfa, 60_000L, restartEventPublisher);
+                pfa, 60_000L);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         kco = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa,

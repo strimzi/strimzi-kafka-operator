@@ -159,9 +159,7 @@ public class PartialRollingUpdateMockTest {
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
                 pfa,
-
-                60_000L,
-                KubernetesRestartEventPublisher.createPublisher(bootstrapClient, "op", pfa.hasEventsApiV1()));
+                60_000L);
     }
 
     private void updateStatefulSetGeneration(String stsName, String annotation, String generation)  {

@@ -105,6 +105,27 @@ public class ResourceOperatorSupplier {
         );
     }
 
+    // Exposed for testing
+    public ResourceOperatorSupplier(Vertx vertx,
+                                    KubernetesClient client,
+                                    ZookeeperLeaderFinder zlf,
+                                    AdminClientProvider adminClientProvider,
+                                    ZookeeperScalerProvider zkScalerProvider,
+                                    MetricsProvider metricsProvider,
+                                    PlatformFeaturesAvailability pfa,
+                                    long operationTimeoutMs) {
+        this(vertx,
+                client,
+                zlf,
+                adminClientProvider,
+                zkScalerProvider,
+                metricsProvider,
+                pfa,
+                operationTimeoutMs,
+                KubernetesRestartEventPublisher.createPublisher(client, "operatorName", pfa.hasEventsApiV1()));
+    }
+
+    //Exposed for testing
     public ResourceOperatorSupplier(Vertx vertx,
                                     KubernetesClient client,
                                     ZookeeperLeaderFinder zlf,

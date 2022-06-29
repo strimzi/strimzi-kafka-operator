@@ -165,7 +165,7 @@ public class ConnectorMockTest {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 metricsProvider,
-                pfa, 10_000, mock(KubernetesRestartEventPublisher.class));
+                pfa, 10_000);
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),

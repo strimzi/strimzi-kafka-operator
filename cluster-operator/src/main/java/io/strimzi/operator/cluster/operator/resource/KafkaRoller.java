@@ -697,8 +697,8 @@ public class KafkaRoller {
      * @return a Future which completes when the Pod has been recreated
      */
     protected Future<Void> restart(Pod pod, RestartContext restartContext) {
-        vertx.executeBlocking(ignored -> eventsPublisher.publishRestartEvents(pod, restartContext.restartReasons));
-        return  podOperations.restart(reconciliation, pod, operationTimeoutMs);
+        return  podOperations.restart(reconciliation, pod, operationTimeoutMs)
+                             .onComplete(i -> vertx.executeBlocking(ignored -> eventsPublisher.publishRestartEvents(pod, restartContext.restartReasons)));
     }
 
     /**

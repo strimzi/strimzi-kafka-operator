@@ -123,9 +123,8 @@ public class KafkaUpgradeDowngradeMockTest {
                 .build();
         mockKube.start();
 
-        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
         ResourceOperatorSupplier supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, 2_000, restartEventPublisher);
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, 2_000);
 
         // This currently uses StatefulSets because of https://github.com/strimzi/strimzi-kafka-operator/issues/6946
         // This should move to StrimziPodSets after we move to Fabric8 6.0.0

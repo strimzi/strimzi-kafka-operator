@@ -139,7 +139,7 @@ public class JbodStorageMockTest {
                 new ResourceOperatorSupplier(this.vertx, this.client,
                         ResourceUtils.zookeeperLeaderFinder(this.vertx, this.client),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                        ResourceUtils.metricsProvider(), pfa, 60_000L, mock(KubernetesRestartEventPublisher.class));
+                        ResourceUtils.metricsProvider(), pfa, 60_000L);
 
         podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.strimziPodSetOperator, ros.podOperations, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         podSetController.start();

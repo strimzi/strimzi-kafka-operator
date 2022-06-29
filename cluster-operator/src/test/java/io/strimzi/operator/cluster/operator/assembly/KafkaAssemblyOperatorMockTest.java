@@ -281,18 +281,17 @@ public class  KafkaAssemblyOperatorMockTest {
         mockKube.start();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, kubernetesVersion);
-        KubernetesRestartEventPublisher restartEventPublisher = KubernetesRestartEventPublisher.createPublisher(client, "op", pfa.hasEventsApiV1());
-        ResourceOperatorSupplier supplier = supplierWithMocks(restartEventPublisher);
+        ResourceOperatorSupplier supplier = supplierWithMocks();
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
     }
 
-    private ResourceOperatorSupplier supplierWithMocks(KubernetesRestartEventPublisher restartEventPublisher) {
+    private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
         return new ResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion), 2_000, restartEventPublisher);
+                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion), 2_000);
     }
 
     private void assertResourceRequirements(VertxTestContext context, String statefulSetName) {
