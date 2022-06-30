@@ -6,26 +6,53 @@
 = Handling high volumes of messages
 
 [role="_abstract"]
-If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration to support it.
+If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration to support it. The configuration can help manage throughput and issues with latency. 
 
-The flush pipeline for data replication is *source topic -> (Kafka Connect) source message queue -> producer buffer -> target topic*.
-An offset flush timeout period (`offset.flush.timeout.ms`) is the time to wait for the producer buffer (`producer.buffer.memory`) to flush and offset data to be committed.
-Try to avoid a situation where a large producer buffer and an insufficient offset flush timeout period causes a _failed to flush_ or _failed to commit offsets_ type of error.
+MirrorMaker 2.0 uses an internal producer client (`KafkaProducer`) to replicate data from the source to target Kafka cluster. 
+To control the streaming of high volumes of data, you can tune the following producer configuration for optimal throughput: 
 
-This type of error means that there are too many messages in the producer buffer, so they can't all be flushed before the offset flush timeout is reached.
+* Producer batch size 
+* Producer buffer size 
 
-If you are getting this type of error, try the following configuration changes:
+.Producer batch size
+In certain circumstances, you might want to increase the size of the message batches sent in a single produce request.
+You increase the batch size using the `batch.size` producer configuration to reduce the number of outstanding messages ready to be sent.
+A larger batch size reduces the number of requests and the backlog in the message queue.
+A produce request is sent to the target cluster when the batch size is reached.
+By increasing the batch size, produce requests are delayed and more messages are added to the batch and sent to brokers at the same time.  
+This can improve throughput when you have just a few topic partitions that handle large numbers of messages. 
+
+NOTE: To be able to increase the batch size, the `connector.client.config.override.policy` must be set to `All`. This is the default setting. The property enables connector client configurations.   
+
+.Producer buffer size
+The data replication pipeline is as follows:
+
+*source topic -> (Kafka Connect tasks) source message queue -> producer buffer -> target topic*.
+
+The producer sends messages in its buffer to topics in the target Kafka cluster.
+While this is happening, Kafka Connect tasks continue to poll topics in the source Kafka cluster to add messages to the source message queue.
+
+The size of the buffer is set using the `producer.buffer.memory` property. 
+The producer waits for a specified timeout period (`offset.flush.timeout.ms`) before the buffer is flushed. 
+This should be enough time for the sent messages to be acknowledged by the brokers and offset data committed.
+
+Try to avoid a situation where there are too many messages in the buffer, so they can't all be flushed before the offset flush timeout is reached.
+The offset flush timeout period needs to be sufficient for the size of the buffer.
+
+If the producer is unable to keep up with the throughput of messages in the source message queue, buffering is blocked until there is space available in the buffer within a time period allocated by `max.block.ms`.
+Any unacknowledged messages still in the buffer are sent during this period.
+New messages are not added to the buffer until these messages are acknowledged and flushed.
+
+You can try the following configuration changes to keep the underlying source message queue of outstanding messages at a manageable size:
 
 * Decreasing the default value in bytes of the `producer.buffer.memory`
 * Increasing the default value in milliseconds of the `offset.flush.timeout.ms`
+* Ensuring that there are enough xref:con-common-configuration-resources-reference[CPU and memory resources]
+* Increasing the number of tasks that run in parallel by doing the following:
+** xref:con-mirrormaker-tasks-max-{context}[Increasing the number of tasks] using the `tasksMax` property
+** Increasing the number of nodes for the workers that run tasks using the `replicas` property
 
-The changes should help to keep the underlying Kafka Connect queue of outstanding messages at a manageable size.
-You might need to adjust the values to have the desired effect.
-
-If these configuration changes don't resolve the error, you can try increasing the number of tasks that run in parallel by doing the following.
-
-* xref:con-mirrormaker-tasks-max-{context}[Increasing the number of tasks] using the `tasksMax` property
-* Increasing the number of nodes for the workers that run tasks using the `replicas` property
+You might need to keep adjusting the configuration values until they have the desired effect.
 
 .Example MirrorMaker 2.0 configuration for handling high volumes of messages
 [source,yaml,subs="+quotes,attributes"]
@@ -45,12 +72,21 @@ spec:
     config:
       offset.flush.timeout.ms: 10000
       producer.buffer.memory: 8388608
+      producer.batch.size: 327680
     bootstrapServers: my-cluster-target-kafka-bootstrap:9092
   mirrors:
   - sourceCluster: "my-cluster-source"
     targetCluster: "my-cluster-target"
     sourceConnector:
       tasksMax: 10
+    # ...
+  resources: 
+    requests:
+      cpu: "1"
+      memory: Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi      
 ----
 
 == Checking the message flow
