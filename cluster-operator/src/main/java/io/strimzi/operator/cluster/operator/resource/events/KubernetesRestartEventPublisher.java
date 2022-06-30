@@ -17,9 +17,6 @@ import org.apache.logging.log4j.Logger;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -37,9 +34,6 @@ public abstract class KubernetesRestartEventPublisher {
 
     protected String action = "StrimziInitiatedPodRestart";
     protected String controller = "strimzi.io/cluster-operator";
-
-    // Matches first character or characters following an underscore
-    private static final Pattern PASCAL_CASE_HELPER = Pattern.compile("^.|_.");
 
     // K8s events are required to have a message of 1KiB or smaller
     private static final int MAX_MESSAGE_LENGTH = 1000;
@@ -79,7 +73,7 @@ public abstract class KubernetesRestartEventPublisher {
             for (RestartReason reason : reasons) {
                 String note = maybeTruncated(reasons.getNoteFor(reason));
                 String type = "Normal";
-                String k8sFormattedReason = pascalCasedReason(reason);
+                String k8sFormattedReason = reason.pascalCased();
                 LOG.debug("Publishing K8s event, time {}, type, {}, reason, {}, note, {}, pod, {}",
                         k8sEventTime, type, k8sFormattedReason, note, podReference);
                 publishEvent(k8sEventTime, podReference, k8sFormattedReason, type, note);
@@ -99,12 +93,6 @@ public abstract class KubernetesRestartEventPublisher {
      * @param note         - the note to attach to the event
      */
     protected abstract void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note);
-
-    // Go loves PascalCase so Kubernetes does too
-    String pascalCasedReason(RestartReason reason) {
-        Matcher matcher = PASCAL_CASE_HELPER.matcher(reason.name().toLowerCase(Locale.ROOT));
-        return matcher.replaceAll(result -> result.group().replace("_", "").toUpperCase(Locale.ROOT));
-    }
 
     ObjectReference createPodReference(Pod pod) {
         return new ObjectReferenceBuilder().withKind("Pod")

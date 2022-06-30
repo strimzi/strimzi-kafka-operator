@@ -761,6 +761,10 @@ public class ResourceUtils {
         return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
     }
 
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, featureGates);
+    }
+
     /**
      * Find the first resource in the given resources with the given name.
      * @param resources The resources to search.

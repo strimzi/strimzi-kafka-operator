@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource.events;
 
-import io.fabric8.kubernetes.api.model.ListOptions;
-import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.events.v1beta1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;

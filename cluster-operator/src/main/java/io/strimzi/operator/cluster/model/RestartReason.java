@@ -5,6 +5,10 @@
 
 package io.strimzi.operator.cluster.model;
 
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Defines all the (existing) reasons a Kafka broker pod may need to be restarted
  */
@@ -29,13 +33,21 @@ public enum RestartReason {
     //Used in logging and Kubernetes event notes
     private final String defaultNote;
 
+    // Matches first character or characters following an underscore
+    private static final Pattern PASCAL_CASE_HELPER = Pattern.compile("^.|_.");
+
     RestartReason(String defaultNote) {
         this.defaultNote = defaultNote;
     }
 
-
     public String getDefaultNote() {
         return defaultNote;
+    }
+
+    // Go loves PascalCase so Kubernetes does too
+    public String pascalCased() {
+        Matcher matcher = PASCAL_CASE_HELPER.matcher(this.name().toLowerCase(Locale.ROOT));
+        return matcher.replaceAll(result -> result.group().replace("_", "").toUpperCase(Locale.ROOT));
     }
 }
 

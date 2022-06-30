@@ -21,8 +21,6 @@ import org.mockito.Mockito;
 import java.util.HashSet;
 import java.util.Set;
 
-import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
-import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -51,12 +49,6 @@ class KubernetesRestartEventPublisherTest {
 
         KubernetesRestartEventPublisher shouldBeV1Beta1 = KubernetesRestartEventPublisher.createPublisher(client, "", false);
         assertThat(shouldBeV1Beta1, isA(V1Beta1RestartEventPublisher.class));
-    }
-
-    @Test
-    void testReasonFormattedAsPascalCase() {
-        assertThat(publisher.pascalCasedReason(CA_CERT_HAS_OLD_GENERATION), is("CaCertHasOldGeneration"));
-        assertThat(publisher.pascalCasedReason(FILE_SYSTEM_RESIZE_NEEDED), is("FileSystemResizeNeeded"));
     }
 
     @Test

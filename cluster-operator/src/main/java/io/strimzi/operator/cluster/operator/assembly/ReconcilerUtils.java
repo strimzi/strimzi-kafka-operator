@@ -125,16 +125,16 @@ public class ReconcilerUtils {
      * @param nodeCertsChange           Indicates whether any certificates changed
      * @param cas                       Certificate authorities to be checked for changes
      *
-     * @return null or empty if the restart is not needed, reason String otherwise
+     * @return empty RestartReasons if restart is not needed, non-empty RestartReasons otherwise
      */
     public static RestartReasons reasonsToRestartPod(Reconciliation reconciliation, HasMetadata ctrlResource, Pod pod, Set<String> fsResizingRestartRequest, boolean nodeCertsChange, Ca... cas) {
+        RestartReasons restartReasons = RestartReasons.empty();
+
         if (pod == null)    {
             // When the Pod doesn't exist, it doesn't need to be restarted.
             // It will be created with new configuration.
-            return RestartReasons.empty();
+            return restartReasons;
         }
-
-        RestartReasons restartReasons = RestartReasons.empty();
 
         if (ctrlResource instanceof StatefulSet) {
             StatefulSet sts = (StatefulSet) ctrlResource;
