@@ -25,6 +25,8 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -235,7 +237,7 @@ public class KafkaReconcilerRestartEventsMockTest {
     }
 
     @Test
-    public void testEventEmittedWhenPodInStatefulSetHasOldGeneration(Vertx vertx, VertxTestContext context) {
+    void testEventEmittedWhenPodInStatefulSetHasOldGeneration(Vertx vertx, VertxTestContext context) {
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
 
         // Grab STS generation
@@ -243,7 +245,7 @@ public class KafkaReconcilerRestartEventsMockTest {
         int statefulSetGen = StatefulSetOperator.getStsGeneration(kafkaSet);
 
         // And set pod generation to be lower than it to trigger reconciliation
-        Pod kafkaPod = podOps().withLabel("app.kubernetes.io/name", "kafka").list().getItems().get(0);
+        Pod kafkaPod = kafkaPod();
         Map<String, String> podAnnotationsCopy = new HashMap<>(kafkaPod.getMetadata().getAnnotations());
         podAnnotationsCopy.put(ANNO_STRIMZI_IO_GENERATION, String.valueOf(statefulSetGen - 1));
         kafkaPod.getMetadata().setAnnotations(podAnnotationsCopy);
@@ -251,16 +253,47 @@ public class KafkaReconcilerRestartEventsMockTest {
 
         reconciler.reconcile(new KafkaStatus(), Date::new)
                   .onComplete(context.succeeding(i -> context.verify(() -> {
-                      TestUtils.waitFor("Event publication in worker thread", 500, 10000, () -> !listEvents().isEmpty());
-
-                      List<Event> events = listEvents();
-                      assertThat(events.size(), is(1));
-                      Event restartEvent = events.get(0);
-
-                      assertThat(restartEvent.getRegarding().getName(), is(kafkaPod.getMetadata().getName()));
-                      assertThat(restartEvent.getReason(), is(RestartReason.POD_HAS_OLD_GENERATION.pascalCased()));
+                      verifyRestartReasonReceivedForPod(kafkaPod, RestartReason.POD_HAS_OLD_GENERATION);
                       context.completeNow();
                   })));
+    }
+
+    @Test
+    void testEventEmittedWhenJbodVolumeMembershipAltered(Vertx vertx, VertxTestContext context) {
+        Kafka kafkaWithLessVolumes = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewJbodStorage()
+                            .withVolumes(volumeWithId(0))
+                        .endJbodStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        //Default Kafka CR has two volumes, so drop from 1, then back to 2, and expect 2 events
+        KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation, kafkaWithLessVolumes, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
+
+        lowerVolumes.reconcile(new KafkaStatus(), Date::new)
+                    .onComplete(context.succeeding(i -> context.verify(() -> {
+                        verifyRestartReasonReceivedForPod(kafkaPod(), RestartReason.JBOD_VOLUMES_CHANGED);
+                        context.completeNow();
+                    })));
+    }
+
+    private void verifyRestartReasonReceivedForPod(Pod kafkaPod, RestartReason restart) {
+        TestUtils.waitFor("Event publication in worker thread", 500, 10000, () -> !listEvents().isEmpty());
+
+        List<Event> events = listEvents();
+        assertThat(events.size(), is(1));
+        Event restartEvent = events.get(0);
+
+        assertThat(restartEvent.getRegarding().getName(), is(kafkaPod.getMetadata().getName()));
+        assertThat(restartEvent.getReason(), is(restart.pascalCased()));
+    }
+
+
+    private Pod kafkaPod() {
+        return podOps().withLabel("app.kubernetes.io/name", "kafka").list().getItems().get(0);
     }
 
     private NonNamespaceOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> stsOps() {
@@ -331,8 +364,9 @@ public class KafkaReconcilerRestartEventsMockTest {
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
                                 .build())
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
+                        .withNewJbodStorage()
+                            .withVolumes(List.of(volumeWithId(0), volumeWithId(1)))
+                        .endJbodStorage()
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(1)
@@ -341,5 +375,12 @@ public class KafkaReconcilerRestartEventsMockTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
+    }
+
+    private static PersistentClaimStorage volumeWithId(int id) {
+        return new PersistentClaimStorageBuilder()
+                .withId(id)
+                .withDeleteClaim(true)
+                .withSize("100Mi").build();
     }
 }
