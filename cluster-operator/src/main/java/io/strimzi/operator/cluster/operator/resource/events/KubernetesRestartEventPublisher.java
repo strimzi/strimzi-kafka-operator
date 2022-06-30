@@ -27,13 +27,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public abstract class KubernetesRestartEventPublisher {
 
     private static final Logger LOG = LogManager.getLogger(KubernetesRestartEventPublisher.class);
-
     private final Clock clock;
-
     private static final DateTimeFormatter K8S_MICROTIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
 
-    protected String action = "StrimziInitiatedPodRestart";
-    protected String controller = "strimzi.io/cluster-operator";
+    protected static final String ACTION = "StrimziInitiatedPodRestart";
+    protected static final String CONTROLLER = "strimzi.io/cluster-operator";
 
     // K8s events are required to have a message of 1KiB or smaller
     private static final int MAX_MESSAGE_LENGTH = 1000;
@@ -105,11 +103,11 @@ public abstract class KubernetesRestartEventPublisher {
     /**
      * While the core event API doesn't set a limit on note sizes, events.k8s.io/v1beta1 and v1 do, which is 1kB.
      * It's a reasonably safe bet that notes will only include characters in the ASCII subset, so that's all that is supported.
-     * An exception is thrown if multi-byte characters appear in the note.
+     * An exception is thrown if multibyte characters appear in the note.
      *
      * @param note the candidate string for truncation
      * @return the note unchanged if <=1kB, truncated otherwise, with the last 3 characters being "..." to indicate truncation
-     * @throws UnsupportedOperationException if the note contains multi-byte characters when represented as UTF-8
+     * @throws UnsupportedOperationException if the note contains multibyte characters when represented as UTF-8
      */
     String maybeTruncated(String note) throws UnsupportedOperationException {
         byte[] stringBytes = note.getBytes(UTF_8);

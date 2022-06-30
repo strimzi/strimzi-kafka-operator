@@ -6,7 +6,10 @@ package io.strimzi.operator.cluster.operator.resource.events;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.events.v1beta1.Event;
+import io.fabric8.kubernetes.api.model.events.v1beta1.EventList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import org.junit.jupiter.api.AfterAll;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.condition.EnabledIf;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,7 +58,7 @@ public class KubernetesRestartEventPublisherV1Beta1ApiIT extends KubernetesResta
     @AfterEach
     void teardown() {
         teardownPod(TEST_NAMESPACE, pod);
-        kubeClient.events().v1beta1().events().inNamespace(TEST_NAMESPACE).delete();
+        eventOps().delete();
     }
 
     @Test
@@ -63,12 +67,23 @@ public class KubernetesRestartEventPublisherV1Beta1ApiIT extends KubernetesResta
         publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)
                                                           .add(RestartReason.MANUAL_ROLLING_UPDATE));
 
-        List<Event> items = kubeClient.events().v1beta1().events().inNamespace(TEST_NAMESPACE).list(strimziEventsOnly).getItems();
-        assertThat(items, hasSize(2));
-        assertThat(items.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "ManualRollingUpdate")));
+        // Unable to use field selectors beyond name and namespace for events.k8s.1o/v1b1 API on the version of
+        // Minikube currently on Azure Pipelines,
+        List<Event> events = eventOps().list()
+                                       .getItems()
+                                       .stream()
+                                       .filter(e -> KubernetesRestartEventPublisher.ACTION.equals(e.getAction()))
+                                       .collect(Collectors.toList());
 
-        Event exemplar = items.get(0);
+        assertThat(events, hasSize(2));
+        assertThat(events.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "ManualRollingUpdate")));
+
+        Event exemplar = events.get(0);
         assertThat(exemplar.getAction(), is("StrimziInitiatedPodRestart"));
         assertThat(exemplar.getRegarding(), is(referenceFromPod(pod)));
+    }
+
+    private NonNamespaceOperation<Event, EventList, Resource<Event>> eventOps() {
+        return kubeClient.events().v1beta1().events().inNamespace(TEST_NAMESPACE);
     }
 }

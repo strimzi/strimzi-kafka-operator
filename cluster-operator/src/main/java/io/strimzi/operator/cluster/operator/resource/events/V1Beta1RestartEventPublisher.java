@@ -30,11 +30,11 @@ class V1Beta1RestartEventPublisher extends KubernetesRestartEventPublisher {
     protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
         EventBuilder builder = new EventBuilder();
 
-        builder.withAction(action)
+        builder.withAction(ACTION)
                 .withNewMetadata()
                     .withGenerateName("strimzi-event")
                 .endMetadata()
-                .withReportingController(controller)
+                .withReportingController(CONTROLLER)
                 .withReportingInstance(operatorName)
                 .withRegarding(podReference)
                 .withReason(reason)
