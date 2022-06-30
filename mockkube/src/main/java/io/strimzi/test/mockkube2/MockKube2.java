@@ -27,12 +27,11 @@ import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.strimzi.test.mockkube2.controllers.MockServiceController;
 import io.strimzi.test.mockkube2.controllers.MockStatefulSetController;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
+
+import static io.strimzi.test.mockkube2.logging.JulLoggingConfiguration.configureJulLogging;
 
 /**
  * MockKube2 is a utility class which helps to use the Fabric8 Kubernetes Mock Server. It provides methods to easily
@@ -104,8 +103,6 @@ public class MockKube2 {
     public static class MockKube2Builder {
         private final KubernetesClient client;
         private final MockKube2 mock;
-
-        private Level mockWebServerLoggingLevel = Level.INFO;
 
         public MockKube2Builder(KubernetesClient client) {
             this.client = client;
@@ -266,8 +263,18 @@ public class MockKube2 {
          * @return MockKube builder instance
          */
         @SuppressWarnings("unused")
-        public MockKube2Builder withMockWebServerLoggingLevel(Level level) {
-            this.mockWebServerLoggingLevel = level;
+        public MockKube2Builder withMockWebServerLoggingSettings(Level level) {
+            return withMockWebServerLoggingSettings(level, false);
+        }
+
+        /**
+         * Set the mock web server's logging level and output stream
+         * @param level defaults to INFO
+         * @param logToStdOut defaults to false, which maintains consistency with existing behaviour which logs to stderr
+         * @return MockKube builder instance
+         */
+        public MockKube2Builder withMockWebServerLoggingSettings(Level level, boolean logToStdOut) {
+            configureJulLogging(level, logToStdOut);
             return this;
         }
 
@@ -293,27 +300,7 @@ public class MockKube2 {
          * @return  MockKube instance
          */
         public MockKube2 build()   {
-            configureJulLogging();
             return mock;
-        }
-
-        /**
-         * The MockWebServer underlying fabric8's mockk8s uses JUL for logging, so this allows setting the logging level
-         * as desired when running tests
-         */
-        private void configureJulLogging() {
-            // As we can only modify existing keys, not add new ones, the referenced file contains the key we need
-            try (InputStream ins = MockKube2.class.getResourceAsStream("/jul-logging.properties")) {
-                LogManager.getLogManager().updateConfiguration(ins, key -> {
-                    if ("okhttp3.mockwebserver.level".equals(key)) {
-                        return (unused, unused2) -> mockWebServerLoggingLevel.getName();
-                    } else {
-                        return (prevValue, unused) -> prevValue;
-                    }
-                });
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
     }
 }
