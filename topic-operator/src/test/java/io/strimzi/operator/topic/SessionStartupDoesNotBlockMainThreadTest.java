@@ -25,7 +25,6 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -44,9 +43,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// Disabled because they were flaky in some environments.
-// Should be re-enabled after Vert.x 4.3.0 upgrade => https://github.com/strimzi/strimzi-kafka-operator/issues/6741
-@Disabled
 public class SessionStartupDoesNotBlockMainThreadTest {
 
     @Mock
