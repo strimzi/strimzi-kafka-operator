@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.resource.events;
 
+import io.fabric8.kubernetes.api.model.ListOptions;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.events.v1beta1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -54,7 +56,7 @@ public class KubernetesRestartEventPublisherV1Beta1ApiIT extends KubernetesResta
     @AfterEach
     void teardown() {
         teardownPod(TEST_NAMESPACE, pod);
-        kubeClient.events().v1beta1().events().delete();
+        kubeClient.events().v1beta1().events().inNamespace(TEST_NAMESPACE).delete();
     }
 
     @Test
@@ -63,7 +65,7 @@ public class KubernetesRestartEventPublisherV1Beta1ApiIT extends KubernetesResta
         publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)
                                                           .add(RestartReason.MANUAL_ROLLING_UPDATE));
 
-        List<Event> items = kubeClient.events().v1beta1().events().list().getItems();
+        List<Event> items = kubeClient.events().v1beta1().events().inNamespace(TEST_NAMESPACE).list(strimziEventsOnly).getItems();
         assertThat(items, hasSize(2));
         assertThat(items.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "ManualRollingUpdate")));
 

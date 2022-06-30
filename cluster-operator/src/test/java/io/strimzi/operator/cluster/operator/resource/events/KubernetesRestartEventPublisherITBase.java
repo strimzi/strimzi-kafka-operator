@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.operator.resource.events;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.ListOptions;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -23,6 +25,7 @@ public class KubernetesRestartEventPublisherITBase {
     private static KubeClusterResource cluster;
     private static KubernetesClient kubeClient;
     private static KubeCmdClient<?> cmdClient;
+    protected final ListOptions strimziEventsOnly = new ListOptionsBuilder().withFieldSelector("reportingController=strimzi.io/cluster-operator").build();
 
     static KubernetesClient prepareNamespace(String testNamespace) {
         cluster = KubeClusterResource.getInstance();

@@ -7,7 +7,10 @@ package io.strimzi.operator.cluster.operator.resource.events;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
+import io.fabric8.kubernetes.api.model.events.v1.EventList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.common.Reconciliation;
@@ -27,6 +30,7 @@ import java.time.ZoneId;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -41,6 +45,9 @@ class V1RestartEventPublisherTest {
     @Mock
     Reconciliation reconciliation;
 
+    @Mock
+    MixedOperation<Event, EventList, Resource<Event>> mockEventCreator;
+
     @Captor
     ArgumentCaptor<Event> eventCaptor;
 
@@ -48,11 +55,14 @@ class V1RestartEventPublisherTest {
 
     private MockitoSession mockitoSession;
 
+    private final String namespace = "test-ns";
+
     @BeforeEach
     void setup() {
         mockitoSession = Mockito.mockitoSession().initMocks(this).startMocking();
         when(pod.getMetadata().getName()).thenReturn("example-pod");
-        when(pod.getMetadata().getNamespace()).thenReturn("test-ns");
+        when(pod.getMetadata().getNamespace()).thenReturn(namespace);
+        when(client.events().v1().events().inNamespace(eq(namespace))).thenReturn(mockEventCreator);
         clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), ZoneId.of("UTC"));
     }
 
@@ -68,12 +78,12 @@ class V1RestartEventPublisherTest {
         RestartReasons reasons = new RestartReasons().add(RestartReason.JBOD_VOLUMES_CHANGED);
         eventPublisher.publishRestartEvents(pod, reasons);
 
-        verify(client.events().v1().events()).create(eventCaptor.capture());
+        verify(mockEventCreator).create(eventCaptor.capture());
 
         Event publishedEvent = eventCaptor.getValue();
         assertThat(publishedEvent.getRegarding().getKind(), is("Pod"));
         assertThat(publishedEvent.getRegarding().getName(), is("example-pod"));
-        assertThat(publishedEvent.getRegarding().getNamespace(), is("test-ns"));
+        assertThat(publishedEvent.getRegarding().getNamespace(), is(namespace));
 
         assertThat(publishedEvent.getReportingController(), is("strimzi.io/cluster-operator"));
         assertThat(publishedEvent.getReportingInstance(), is("cluster-operator-id"));

@@ -54,7 +54,7 @@ public class KubernetesRestartEventPublisherV1ApiIT extends KubernetesRestartEve
     @AfterEach
     void teardown() {
         teardownPod(TEST_NAMESPACE, pod);
-        kubeClient.events().v1().events().delete();
+        kubeClient.events().v1().events().inNamespace(TEST_NAMESPACE).delete();
     }
 
     @Test
@@ -63,7 +63,7 @@ public class KubernetesRestartEventPublisherV1ApiIT extends KubernetesRestartEve
         publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)
                                                           .add(RestartReason.JBOD_VOLUMES_CHANGED));
 
-        List<Event> items = kubeClient.events().v1().events().list().getItems();
+        List<Event> items = kubeClient.events().v1().events().inNamespace(TEST_NAMESPACE).list(strimziEventsOnly).getItems();
         assertThat(items, hasSize(2));
         assertThat(items.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "JbodVolumesChanged")));
 
