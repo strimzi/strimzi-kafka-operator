@@ -278,7 +278,8 @@ public class CaReconciler {
                             clientsCaKeySecret,
                             ModelUtils.getCertificateValidity(clientsCaConfig),
                             ModelUtils.getRenewalDays(clientsCaConfig),
-                            clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(), clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
+                            clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
+                            clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
                     clientsCa.initBrokerSecret(brokersSecret);
                     clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                             caLabels, Map.of(), Map.of(),

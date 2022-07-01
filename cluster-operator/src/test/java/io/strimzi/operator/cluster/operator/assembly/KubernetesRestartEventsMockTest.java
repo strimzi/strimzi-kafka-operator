@@ -6,9 +6,14 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatus;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatusBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
@@ -16,6 +21,7 @@ import io.fabric8.kubernetes.api.model.events.v1.EventList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.model.Kafka;
@@ -33,7 +39,7 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -57,29 +63,53 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.MockKube2;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 
+import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.ResourceUtils.createInitialCaCertSecret;
+import static io.strimzi.operator.cluster.ResourceUtils.createInitialCaKeySecret;
 import static io.strimzi.operator.cluster.ResourceUtils.dummyClusterOperatorConfig;
+import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaCertSecretName;
+import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecretName;
+import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
+import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
+import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_RENEWED;
+import static io.strimzi.operator.cluster.model.RestartReason.CLIENT_CA_CERT_KEY_REPLACED;
+import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
+import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
+import static io.strimzi.operator.cluster.model.RestartReason.JBOD_VOLUMES_CHANGED;
+import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_GENERATION;
+import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_REVISION;
 import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -88,15 +118,17 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
-public class KafkaReconcilerRestartEventsMockTest {
+public class KubernetesRestartEventsMockTest {
     private final static String NAMESPACE = "testns";
     private final static String CLUSTER_NAME = "testkafka";
     private final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -109,6 +141,7 @@ public class KafkaReconcilerRestartEventsMockTest {
 
     private final ClusterCa clusterCa = createClusterCa();
     private final ClientsCa clientsCa = createClientsCa();
+    private final String appName = "app.kubernetes.io/name";
 
 
     private ResourceOperatorSupplier supplier;
@@ -141,7 +174,7 @@ public class KafkaReconcilerRestartEventsMockTest {
 
         supplier = new ResourceOperatorSupplier(vertx,
                 client,
-                mock(ZookeeperLeaderFinder.class),
+                ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(),
                 ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
@@ -231,17 +264,17 @@ public class KafkaReconcilerRestartEventsMockTest {
             verify(eventPublisher, times(1)).publishRestartEvents(podCaptor.capture(), reasonsCaptor.capture());
 
             assertThat(podCaptor.getValue().getMetadata().getName(), is(firstPod.get().getMetadata().getName()));
-            assertThat(reasonsCaptor.getValue(), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+            assertThat(reasonsCaptor.getValue(), is(RestartReasons.of(POD_HAS_OLD_REVISION)));
             context.completeNow();
         })));
     }
 
     @Test
     void testEventEmittedWhenPodInStatefulSetHasOldGeneration(Vertx vertx, VertxTestContext context) {
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
+        KafkaReconciler reconciler = createDefaultReconciler(vertx);
 
         // Grab STS generation
-        StatefulSet kafkaSet = stsOps().withLabel("app.kubernetes.io/name", "kafka").list().getItems().get(0);
+        StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
         int statefulSetGen = StatefulSetOperator.getStsGeneration(kafkaSet);
 
         // And set pod generation to be lower than it to trigger reconciliation
@@ -251,15 +284,12 @@ public class KafkaReconcilerRestartEventsMockTest {
         kafkaPod.getMetadata().setAnnotations(podAnnotationsCopy);
         podOps().withName(kafkaPod.getMetadata().getName()).patch(kafkaPod);
 
-        reconciler.reconcile(new KafkaStatus(), Date::new)
-                  .onComplete(context.succeeding(i -> context.verify(() -> {
-                      verifyRestartReasonReceivedForPod(kafkaPod, RestartReason.POD_HAS_OLD_GENERATION);
-                      context.completeNow();
-                  })));
+        reconciler.reconcile(new KafkaStatus(), Date::new).onComplete(verifyEventPublished(POD_HAS_OLD_GENERATION, context));
     }
 
     @Test
     void testEventEmittedWhenJbodVolumeMembershipAltered(Vertx vertx, VertxTestContext context) {
+        //Default Kafka CR has two volumes, so drop to 1
         Kafka kafkaWithLessVolumes = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -270,36 +300,203 @@ public class KafkaReconcilerRestartEventsMockTest {
                 .endSpec()
                 .build();
 
-        //Default Kafka CR has two volumes, so drop from 1, then back to 2, and expect 2 events
-        KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation, kafkaWithLessVolumes, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
+        KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation,
+                kafkaWithLessVolumes,
+                null,
+                1,
+                clusterCa,
+                clientsCa,
+                VERSION_CHANGE,
+                useStsForNowConf,
+                supplier,
+                PFA,
+                vertx
+        );
 
-        lowerVolumes.reconcile(new KafkaStatus(), Date::new)
-                    .onComplete(context.succeeding(i -> context.verify(() -> {
-                        verifyRestartReasonReceivedForPod(kafkaPod(), RestartReason.JBOD_VOLUMES_CHANGED);
-                        context.completeNow();
-                    })));
+        lowerVolumes.reconcile(new KafkaStatus(), Date::new).onComplete(verifyEventPublished(JBOD_VOLUMES_CHANGED, context));
     }
 
-    private void verifyRestartReasonReceivedForPod(Pod kafkaPod, RestartReason restart) {
-        TestUtils.waitFor("Event publication in worker thread", 500, 10000, () -> !listEvents().isEmpty());
+    @Test
+    void testEventEmittedWhenFileSystemResizeRequested(Vertx vertx, VertxTestContext context) {
+        // Pretend the resizing process is underway by adding a condition of FileSystemResizePending
+        // This will cause the pod to restart to pick up resized PVC
+        PersistentVolumeClaimStatus pvcStatus = new PersistentVolumeClaimStatusBuilder()
+                .withPhase("Bound")
+                .addNewCondition()
+                    .withType("FileSystemResizePending")
+                    .withStatus("true")
+                .endCondition()
+                .build();
+        PersistentVolumeClaim pvc = pvcOps().withLabel(appName, "kafka").list().getItems().get(0);
+        pvc.setStatus(pvcStatus);
+        pvcOps().withName(pvc.getMetadata().getName()).patch(pvc);
 
-        List<Event> events = listEvents();
-        assertThat(events.size(), is(1));
-        Event restartEvent = events.get(0);
 
-        assertThat(restartEvent.getRegarding().getName(), is(kafkaPod.getMetadata().getName()));
-        assertThat(restartEvent.getReason(), is(restart.pascalCased()));
+        KafkaReconciler reconciler = createDefaultReconciler(vertx);
+
+        reconciler.reconcile(new KafkaStatus(), Date::new).onComplete(verifyEventPublished(FILE_SYSTEM_RESIZE_NEEDED, context));
     }
 
+    @Test
+    void testEventEmittedWhenCaCertHasOldGeneration(Vertx vertx, VertxTestContext context) {
+        Secret patched = new SecretBuilder(clusterCa.caCertSecret())
+            .editMetadata()
+                .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1")
+            .endMetadata()
+            .build();
+        ClusterCa oldGenClusterCa = createClusterCaWith(patched, null);
+
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                1,
+                oldGenClusterCa,
+                clientsCa,
+                VERSION_CHANGE,
+                useStsForNowConf,
+                supplier,
+                PFA,
+                vertx);
+
+        reconciler.reconcile(new KafkaStatus(), Date::new).onComplete(verifyEventPublished(CA_CERT_HAS_OLD_GENERATION, context));
+    }
+
+    @Test
+    void testEventEmittedWhenCaCertRemoved(Vertx vertx, VertxTestContext context) throws CertificateException {
+        ClusterCa ca = new OverridingClusterCa() {
+            @Override
+            public boolean certsRemoved() {
+                return true;
+            }
+        };
+
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                1,
+                ca,
+                clientsCa,
+                VERSION_CHANGE,
+                useStsForNowConf,
+                supplier,
+                PFA,
+                vertx);
+
+        reconciler.reconcile(new KafkaStatus(), Date::new).onComplete(verifyEventPublished(CA_CERT_REMOVED, context));
+    }
+
+    @Test
+    void testEventEmittedWhenCaCertRenewed(Vertx vertx, VertxTestContext context) throws CertificateException {
+        ClusterCa ca = new OverridingClusterCa() {
+            @Override
+            public boolean certRenewed() {
+                return true;
+            }
+        };
+
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
+                KAFKA,
+                null,
+                1,
+                ca,
+                clientsCa,
+                VERSION_CHANGE,
+                useStsForNowConf,
+                supplier,
+                PFA,
+                vertx);
+
+        reconciler.reconcile(new KafkaStatus(), Date::new).onComplete(verifyEventPublished(CA_CERT_RENEWED, context));
+    }
+
+    @Test
+    void testEventEmittedWhenClientCaCertKeyReplaced(Vertx vertx, VertxTestContext context) throws CertificateException {
+        Kafka kafkaWithoutClientCaGen = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editOrNewClientsCa()
+                        .withGenerateCertificateAuthority(false)
+                    .endClientsCa()
+                .endSpec()
+                .build();
+
+        Secret brokerSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+        Secret patchedSecret = new SecretBuilder(brokerSecret)
+                .editMetadata()
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000")
+                .endMetadata()
+                .build();
+
+        client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).patch(patchedSecret);
+
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStsForNowConf, supplier, vertx, mockCertManager, passwordGenerator);
+        reconciler.reconcile(Date::new).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
+    }
+
+    @Test
+    void testEventEmittedWhenClusterCaCertKeyReplaced(Vertx vertx, VertxTestContext context) throws CertificateException {
+        Kafka kafkaWithoutClusterCaGen = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editOrNewClusterCa()
+                        .withGenerateCertificateAuthority(false)
+                    .endClusterCa()
+                .endSpec()
+                .build();
+
+        Secret brokerSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+        Secret patchedSecret = new SecretBuilder(brokerSecret)
+                .editMetadata()
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100000")
+                .endMetadata()
+                .build();
+
+        client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).patch(patchedSecret);
+
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStsForNowConf, supplier, vertx, mockCertManager, passwordGenerator);
+        reconciler.reconcile(Date::new).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
+    }
+
+//    CONFIG_CHANGE_REQUIRES_RESTART("Pod needs to be restarted, because reconfiguration cannot be done dynamically"),
+//    CUSTOM_LISTENER_CA_CERT_CHANGE("Custom certificate one or more listeners changed"),
+//    MANUAL_ROLLING_UPDATE("Pod was manually annotated to be rolled"),
+//    POD_FORCE_RESTART_ON_ERROR("Pod needs to be forcibly restarted due to an error"),
+//    POD_STUCK("Pod needs to be restarted, because it seems to be stuck and restart might help"),
+//    POD_UNRESPONSIVE("Pod needs to be restarted, because it does not seem to responding to connection attempts"),
+//    SERVER_CERT_UPDATED("Server certificates updated");
+
+    private <T> Handler<AsyncResult<T>> verifyEventPublished(RestartReason expectedReason, VertxTestContext context) {
+        return context.succeeding(i -> context.verify(() -> {
+            TestUtils.waitFor("Event publication in worker thread", 500, 10000, () -> !listEvents().isEmpty());
+            String expectedReasonPascal = expectedReason.pascalCased();
+
+            List<Event> events = listEvents();
+            Optional<Event> maybeEvent = events.stream().filter(e -> e.getReason().equals(expectedReasonPascal)).findFirst();
+
+            if (maybeEvent.isEmpty()) {
+                List<String> foundEvents = listEvents().stream().map(Event::getReason).collect(Collectors.toList());
+                throw new AssertionError("Expected restart event " + expectedReasonPascal + " not found. Found these events: " + foundEvents);
+            }
+
+            Event restartEvent = maybeEvent.get();
+            assertThat(restartEvent.getRegarding().getName(), is(kafkaPod().getMetadata().getName()));
+            context.completeNow();
+        }));
+    }
+
+    private KafkaReconciler createDefaultReconciler(Vertx vertx) {
+        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
+    }
+
+    private NonNamespaceOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> pvcOps() {
+        return client.persistentVolumeClaims().inNamespace(NAMESPACE);
+    }
 
     private Pod kafkaPod() {
-        return podOps().withLabel("app.kubernetes.io/name", "kafka").list().getItems().get(0);
+        return podOps().withLabel(appName, "kafka").list().getItems().get(0);
     }
 
     private NonNamespaceOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> stsOps() {
         return client.apps().statefulSets().inNamespace(NAMESPACE);
     }
-
 
     private List<Event> listEvents() {
         EventList list = client.events().v1().events().inNamespace(NAMESPACE).list();
@@ -328,9 +525,9 @@ public class KafkaReconcilerRestartEventsMockTest {
                 mockCertManager,
                 passwordGenerator,
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
-                ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
+                createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
                 KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
-                ResourceUtils.createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()),
+                createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()),
                 365,
                 30,
                 true,
@@ -339,13 +536,18 @@ public class KafkaReconcilerRestartEventsMockTest {
     }
 
     private ClusterCa createClusterCa() {
+        return createClusterCaWith(null, null);
+    }
+
+
+    private ClusterCa createClusterCaWith(Secret caCertSecret, Secret  caKeySecret) {
         return new ClusterCa(
                 Reconciliation.DUMMY_RECONCILIATION,
                 mockCertManager,
                 passwordGenerator,
                 CLUSTER_NAME,
-                ResourceUtils.createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
-                ResourceUtils.createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, AbstractModel.clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
+                caCertSecret != null ? caCertSecret : createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
+                caKeySecret != null ? caKeySecret : createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
     }
 
@@ -382,5 +584,32 @@ public class KafkaReconcilerRestartEventsMockTest {
                 .withId(id)
                 .withDeleteClaim(true)
                 .withSize("100Mi").build();
+    }
+
+    class OverridingClusterCa extends ClusterCa {
+        OverridingClusterCa() {
+            super(Reconciliation.DUMMY_RECONCILIATION,
+                    mockCertManager,
+                    passwordGenerator,
+                    CLUSTER_NAME,
+                    createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
+                    createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()));
+        }
+    }
+
+    class OverridingClientsCa extends ClientsCa {
+        OverridingClientsCa() {
+            super(Reconciliation.DUMMY_RECONCILIATION,
+                    mockCertManager,
+                    passwordGenerator,
+                    KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
+                    createInitialCaCertSecret(NAMESPACE, CLUSTER_NAME, clusterCaCertSecretName(CLUSTER_NAME), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"),
+                    KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
+                    createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey()),
+                    365,
+                    30,
+                    true,
+                    null);
+        }
     }
 }
