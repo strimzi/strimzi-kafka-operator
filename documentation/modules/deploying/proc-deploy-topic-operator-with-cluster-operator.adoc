@@ -11,7 +11,10 @@ This procedure describes how to deploy the Topic Operator using the Cluster Oper
 You configure the `entityOperator` property of the `Kafka` resource to include the `topicOperator`.
 By default, the Topic Operator watches for `KafkaTopic` resources in the namespace of the Kafka cluster deployed by the Cluster Operator.
 You can also specify a namespace using `watchedNamespace` in the Topic Operator `spec`.
-A single Topic Operator can watch a single namespace. 
+A single Topic Operator can watch a single namespace.
+One namespace should be watched by only one Topic Operator.
+
+If you use Strimzi to deploy multiple Kafka clusters into the same namespace, enable the Topic Operator for only one Kafka cluster or use the `watchedNamespace` property to configure the Topic Operators to watch other namespaces.
 
 If you want to use the Topic Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-topic-operator-standalone-{context}[deploy the Topic Operator as a standalone component].

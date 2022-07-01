@@ -19,7 +19,7 @@ The operators are automatically configured to manage the topics and users of the
 The Topic Operator and User Operator can only watch a single namespace.
 For more information, see xref:con-operators-namespaces-{context}[].
 
-NOTE: When deployed, the Entity Operator contains the operators according to the deployment configuration.
+NOTE: When deployed, the Entity Operator pod contains the operators according to the deployment configuration.
 
 include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
 //topic operator config

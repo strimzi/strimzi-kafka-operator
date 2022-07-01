@@ -12,6 +12,7 @@ You configure the `entityOperator` property of the `Kafka` resource to include t
 By default, the User Operator watches for `KafkaUser` resources in the namespace of the Kafka cluster deployment.
 You can also specify a namespace using `watchedNamespace` in the User Operator `spec`.
 A single User Operator can watch a single namespace. 
+One namespace should be watched by only one User Operator.
 
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].

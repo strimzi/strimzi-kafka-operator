@@ -18,8 +18,9 @@ Add or set the environment variables needed to make a connection to a Kafka clus
 The Topic Operator watches for `KafkaTopic` resources in a single namespace.
 You specify the namespace to watch, and the connection to the Kafka cluster, in the Topic Operator configuration.
 A single Topic Operator can watch a single namespace. 
-Use more than one Topic Operator to watch different namespaces. 
-In this way, you can use the Topic Operator with multiple Kafka clusters.  
+One namespace should be watched by only one Topic Operator.
+If you want to use more than one Topic Operator, configure each of them to watch different namespaces.
+In this way, you can use Topic Operators with multiple Kafka clusters.  
 
 .Prerequisites
 
