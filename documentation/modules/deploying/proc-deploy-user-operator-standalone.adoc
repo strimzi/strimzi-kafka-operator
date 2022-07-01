@@ -15,6 +15,13 @@ Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-user-operator.yaml` deployment file to deploy the User Operator.
 Add or set the environment variables needed to make a connection to a Kafka cluster.
 
+The User Operator watches for `KafkaUser` resources in a single namespace.
+You specify the namespace to watch, and the connection to the Kafka cluster, in the User Operator configuration.
+A single User Operator can watch a single namespace.    
+One namespace should be watched by only one User Operator.
+If you want to use more than one User Operator, configure each of them to watch different namespaces. 
+In this way, you can use the User Operator with multiple Kafka clusters.  
+
 .Prerequisites
 
 * You are running a Kafka cluster for the User Operator to connect to.

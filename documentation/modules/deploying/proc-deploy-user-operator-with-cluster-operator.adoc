@@ -9,7 +9,10 @@
 This procedure describes how to deploy the User Operator using the Cluster Operator.
 
 You configure the `entityOperator` property of the `Kafka` resource to include the `userOperator`.
-By default, the User Operator watches for `KafkaUsers` in the namespace of the Kafka cluster deployment.
+By default, the User Operator watches for `KafkaUser` resources in the namespace of the Kafka cluster deployment.
+You can also specify a namespace using `watchedNamespace` in the User Operator `spec`.
+A single User Operator can watch a single namespace. 
+One namespace should be watched by only one User Operator.
 
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
@@ -41,4 +44,24 @@ spec:
 Use an empty object (`{}`) if you want all properties to use their default values.
 . Create or update the resource:
 [source,shell,subs=+quotes]
-kubectl apply -f _<your-file>_
+kubectl apply -f _<kafka_configuration_file>_
+
+. Check the status of the deployment:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get pods -n _<my_cluster_operator_namespace>_
+----
++
+.Output shows the pod name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-entity-operator  3/3     Running   0
+# ...
+----
++
+`my-cluster` is the name of the Kafka cluster.
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `STATUS` shows as `Running`.

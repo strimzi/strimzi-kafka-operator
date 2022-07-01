@@ -15,6 +15,13 @@ Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-topic-operator.yaml` deployment file to deploy the Topic Operator.
 Add or set the environment variables needed to make a connection to a Kafka cluster.
 
+The Topic Operator watches for `KafkaTopic` resources in a single namespace.
+You specify the namespace to watch, and the connection to the Kafka cluster, in the Topic Operator configuration.
+A single Topic Operator can watch a single namespace. 
+One namespace should be watched by only one Topic Operator.
+If you want to use more than one Topic Operator, configure each of them to watch different namespaces.
+In this way, you can use Topic Operators with multiple Kafka clusters.  
+
 .Prerequisites
 
 * You are running a Kafka cluster for the Topic Operator to connect to.

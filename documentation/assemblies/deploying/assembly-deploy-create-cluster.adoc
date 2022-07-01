@@ -15,7 +15,7 @@ This applies, for example, to a Kafka cluster running outside of Kubernetes.
 But you can deploy and use the Topic Operator and User Operator as standalone components.
 
 NOTE: The Cluster Operator can watch one, multiple, or all namespaces in a Kubernetes cluster.
-The Topic Operator and User Operator watch for `KafkaTopics` and `KafkaUsers` in the single namespace of the Kafka cluster deployment.
+The Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in a single namespace. For more information, see link:{BookURLDeploying}#con-operators-namespaces-str[Watching namespaces with Strimzi operators^].
 
 == Deploying a Kafka cluster with the Topic Operator and User Operator
 

@@ -8,6 +8,7 @@
 
 Use the Strimzi operators to manage your Kafka cluster, and Kafka topics and users.
 
+include::../../modules/operators/con-operators-namespaces.adoc[leveloffset=+1]
 include::assembly-using-the-cluster-operator.adoc[leveloffset=+1]
 include::assembly-using-the-topic-operator.adoc[leveloffset=+1]
 include::assembly-using-the-user-operator.adoc[leveloffset=+1]
