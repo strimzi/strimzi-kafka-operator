@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -23,7 +22,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.HasConfigurableMetrics;
@@ -39,7 +37,6 @@ import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -53,7 +50,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -108,26 +104,6 @@ public class ModelUtils {
     public static String defaultResourceLabels(String cluster) {
         return String.format("%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster);
-    }
-
-    /**
-     * @param sts The StatefulSet
-     * @param containerName The name of the container whoes environment variables are to be retrieved
-     * @return The environment of the Kafka container in the sts.
-     */
-    public static Map<String, String> getContainerEnv(StatefulSet sts, String containerName) {
-        for (Container container : sts.getSpec().getTemplate().getSpec().getContainers()) {
-            if (containerName.equals(container.getName())) {
-                LinkedHashMap<String, String> map = new LinkedHashMap<>(container.getEnv() == null ? 2 : container.getEnv().size());
-                if (container.getEnv() != null) {
-                    for (EnvVar envVar : container.getEnv()) {
-                        map.put(envVar.getName(), envVar.getValue());
-                    }
-                }
-                return map;
-            }
-        }
-        throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
     }
 
     static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {

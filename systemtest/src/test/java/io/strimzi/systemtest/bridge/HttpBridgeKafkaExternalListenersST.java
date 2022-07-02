@@ -36,8 +36,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -56,8 +54,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
 @ParallelSuite
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
-
-    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeKafkaExternalListenersST.class.getSimpleName()).stream().findFirst().get();

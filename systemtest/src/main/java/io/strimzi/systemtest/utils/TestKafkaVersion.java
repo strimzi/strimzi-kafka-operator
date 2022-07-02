@@ -9,8 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.test.TestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,8 +23,6 @@ import java.util.stream.Collectors;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
-
-    private static final Logger LOGGER = LogManager.getLogger(TestKafkaVersion.class);
     private static List<TestKafkaVersion> kafkaVersions;
     private static List<TestKafkaVersion> supportedKafkaVersions;
 

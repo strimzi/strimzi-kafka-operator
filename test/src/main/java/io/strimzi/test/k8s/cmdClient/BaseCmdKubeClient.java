@@ -43,7 +43,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     private static final String DELETE = "delete";
     private static final String REPLACE = "replace";
 
-    public static final String STATEFUL_SET = "statefulset";
     public static final String CM = "cm";
 
     String namespace = defaultNamespace();

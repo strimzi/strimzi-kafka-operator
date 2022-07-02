@@ -26,7 +26,6 @@ public class HelmClient {
     private static final String HELM_3_CMD = "helm3";
     private static final String INSTALL_TIMEOUT_SECONDS = "120s";
 
-    private boolean initialized;
     private String namespace;
 
     private static String helmCommand = HELM_CMD;

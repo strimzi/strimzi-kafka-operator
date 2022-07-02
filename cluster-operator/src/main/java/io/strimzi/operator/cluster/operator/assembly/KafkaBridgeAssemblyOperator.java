@@ -4,13 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
@@ -28,7 +26,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -133,13 +130,5 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return serviceAccountOperations.reconcile(reconciliation, namespace,
                 KafkaBridgeResources.serviceAccountName(bridge.getCluster()),
                 bridge.generateServiceAccount());
-    }
-
-    public static Future<ConfigMap> getLoggingCmAsync(ConfigMapOperator configMapOperations, String namespace, KafkaBridgeCluster model) {
-        if (model.getLogging() instanceof ExternalLogging) {
-            return Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) model.getLogging());
-        } else {
-            return Future.succeededFuture(null);
-        }
     }
 }

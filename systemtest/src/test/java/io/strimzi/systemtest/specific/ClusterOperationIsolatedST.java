@@ -16,8 +16,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -33,9 +31,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @Tag(SPECIFIC)
 @IsolatedSuite
 public class ClusterOperationIsolatedST extends AbstractST {
-
-    private static final Logger LOGGER = LogManager.getLogger(ClusterOperationIsolatedST.class);
-
     public static final String NAMESPACE = "cluster-operations-test";
 
     @IsolatedTest
