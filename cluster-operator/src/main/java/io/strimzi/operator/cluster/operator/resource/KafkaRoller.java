@@ -340,7 +340,7 @@ public class KafkaRoller {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to roll", podRef);
                     throw new ForceableProblem("Pod " + podRef.getPodName() + " is currently the controller and there are other pods still to roll");
                 } else {
-                    if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false)) {
+                    if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                         if (restartContext.forceRestart || !maybeDynamicUpdateBrokerConfig(podRef.getPodId(), restartContext)) {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", podRef);
@@ -364,8 +364,9 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
-                if (canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, true)) {
+                if (canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
                     LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", podRef, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    restartContext.restartReasons.add(RestartReason.POD_FORCE_RESTART_ON_ERROR);
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                 } else {
                     LOGGER.warnCr(reconciliation, "Pod {} can't be safely force-rolled; original error: ", podRef, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
@@ -616,7 +617,7 @@ public class KafkaRoller {
         }
     }
 
-    private boolean canRoll(PodRef podRef, long timeout, TimeUnit unit, boolean ignoreSslError)
+    private boolean canRoll(PodRef podRef, long timeout, TimeUnit unit, boolean ignoreSslError, RestartContext restartContext)
             throws ForceableProblem, InterruptedException {
         try {
             return await(availability(allClient).canRoll(podRef.getPodId()), timeout, unit,
@@ -624,6 +625,7 @@ public class KafkaRoller {
         } catch (ForceableProblem e) {
             // If we're not able to connect then roll
             if (ignoreSslError && e.getCause() instanceof SslAuthenticationException) {
+                restartContext.restartReasons.add(RestartReason.POD_UNRESPONSIVE);
                 return true;
             } else {
                 throw e;

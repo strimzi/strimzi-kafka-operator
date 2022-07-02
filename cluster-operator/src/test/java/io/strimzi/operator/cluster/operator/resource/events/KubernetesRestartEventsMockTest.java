@@ -2,14 +2,13 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.assembly;
+package io.strimzi.operator.cluster.operator.resource.events;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatus;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimStatusBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodList;
@@ -51,10 +50,13 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.assembly.CaReconciler;
+import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaListenersReconciler;
+import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -136,8 +138,11 @@ import static org.mockito.Mockito.when;
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KubernetesRestartEventsMockTest {
+
     private final static String NAMESPACE = "testns";
     private final static String CLUSTER_NAME = "testkafka";
+
+    private final static Kafka KAFKA = kafka();
     private final static KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final static PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_22);
     private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(
@@ -146,7 +151,6 @@ public class KubernetesRestartEventsMockTest {
             VERSIONS.defaultVersion().protocolVersion(),
             VERSIONS.defaultVersion().messageVersion()
     );
-    private final static Kafka KAFKA = kafka();
 
     private final MockCertManager mockCertManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
@@ -161,7 +165,6 @@ public class KubernetesRestartEventsMockTest {
     // Injected by Fabric8 Mock Kubernetes Server
     @SuppressWarnings("unused")
     private KubernetesClient client;
-
 
     // Have to use statefulsets for all mock kube tests due to a bug in the mock server that prevents the
     // strimzi pod sets ever coming ready: https://github.com/fabric8io/kubernetes-client/issues/4139
@@ -251,21 +254,20 @@ public class KubernetesRestartEventsMockTest {
     void testEventEmittedWhenFileSystemResizeRequested(Vertx vertx, VertxTestContext context) {
         // Pretend the resizing process is underway by adding a condition of FileSystemResizePending
         // This will cause the pod to restart to pick up resized PVC
-        PersistentVolumeClaimStatus pvcStatus = new PersistentVolumeClaimStatusBuilder()
-                .withPhase("Bound")
-                .addNewCondition()
-                .withType("FileSystemResizePending")
-                .withStatus("true")
-                .endCondition()
-                .build();
         PersistentVolumeClaim pvc = pvcOps().withLabel(appName, "kafka").list().getItems().get(0);
-        pvc.setStatus(pvcStatus);
-        pvcOps().withName(pvc.getMetadata().getName()).patch(pvc);
+        PersistentVolumeClaim patch = new PersistentVolumeClaimBuilder(pvc)
+                .editOrNewStatus()
+                    .withPhase("Bound")
+                    .addNewCondition()
+                        .withType("FileSystemResizePending")
+                        .withStatus("true")
+                    .endCondition()
+                .endStatus()
+                .build();
 
+        pvcOps().withName(pvc.getMetadata().getName()).patch(patch);
 
-        KafkaReconciler reconciler = defaultReconciler(vertx);
-
-        reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(FILE_SYSTEM_RESIZE_NEEDED, context));
+        defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(FILE_SYSTEM_RESIZE_NEEDED, context));
     }
 
     @Test
@@ -341,9 +343,9 @@ public class KubernetesRestartEventsMockTest {
         // Turn off cert authority generation to cause reconciliation to roll pods
         Kafka kafkaWithoutClientCaGen = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editOrNewClientsCa()
-                .withGenerateCertificateAuthority(false)
-                .endClientsCa()
+                    .editOrNewClientsCa()
+                        .withGenerateCertificateAuthority(false)
+                    .endClientsCa()
                 .endSpec()
                 .build();
 
@@ -359,9 +361,9 @@ public class KubernetesRestartEventsMockTest {
         //Turn off cert authority generation to cause reconciliation to roll pods
         Kafka kafkaWithoutClusterCaGen = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editOrNewClusterCa()
-                .withGenerateCertificateAuthority(false)
-                .endClusterCa()
+                    .editOrNewClusterCa()
+                     .withGenerateCertificateAuthority(false)
+                    .endClusterCa()
                 .endSpec()
                 .build();
 
@@ -450,19 +452,19 @@ public class KubernetesRestartEventsMockTest {
 
         Pod patch = new PodBuilder(kafkaPod)
                 .editOrNewMetadata()
-                // Need to do this as the mock pod controller will otherwise override the status below
-                .addToAnnotations(MockPodController.ANNO_DO_NOT_SET_READY, "True")
-                // Needs to be old gen / old revision for pod stuck to trigger
-                .addToAnnotations(ANNO_STRIMZI_IO_GENERATION, "-1")
+                    // Need to do this as the mock pod controller will otherwise override the Status below
+                    .addToAnnotations(MockPodController.ANNO_DO_NOT_SET_READY, "True")
+                    // Needs to be old gen / old revision for pod stuck to trigger
+                    .addToAnnotations(ANNO_STRIMZI_IO_GENERATION, "-1")
                 .endMetadata()
                 // Make pod unschedulable
                 .editOrNewStatus()
-                .withPhase("Pending")
-                .addNewCondition()
-                .withType("PodScheduled")
-                .withReason("Unschedulable")
-                .withStatus("False")
-                .endCondition()
+                    .withPhase("Pending")
+                    .addNewCondition()
+                        .withType("PodScheduled")
+                        .withReason("Unschedulable")
+                        .withStatus("False")
+                    .endCondition()
                 .endStatus()
                 .build();
 
@@ -473,7 +475,7 @@ public class KubernetesRestartEventsMockTest {
 
     @Test
     void testEventEmittedWhenKafkaBrokerCertsChanged(Vertx vertx, VertxTestContext context) {
-        // Using the real cert manager (after the cluster was created using the mock cert manager) will cause the desired Kafka broker certs to change,
+        // Using the real SSL cert manager (after the cluster was created using the mock cert manager) will cause the desired Kafka broker certs to change,
         // thus the reconciliation will schedule the restart needed to pick them up
         ClusterCa changedCa = new ClusterCa(
                 Reconciliation.DUMMY_RECONCILIATION,
@@ -543,11 +545,18 @@ public class KubernetesRestartEventsMockTest {
         }).when(eventPublisher).publishRestartEvents(any(), any());
 
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, dummyClusterOperatorConfig(), mockSupplier, PFA, vertx) {
+
             @Override
             public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier) {
                 //Run subset of reconciliation to avoid mocking the world in the absence of MockKube
-                listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
-                return podSet().onComplete(i -> rollingUpdate());
+                return listeners().onComplete(i -> podSet()).onComplete(i -> rollingUpdate());
+            }
+
+            @Override
+            protected KafkaListenersReconciler listenerReconciler() {
+                KafkaListenersReconciler mock = mock(KafkaListenersReconciler.class);
+                when(mock.reconcile()).thenReturn(Future.succeededFuture(new KafkaListenersReconciler.ReconciliationResult()));
+                return mock;
             }
         };
 
@@ -707,7 +716,7 @@ public class KubernetesRestartEventsMockTest {
                                 .withTls(false)
                                 .build())
                         .withNewJbodStorage()
-                        .   withVolumes(List.of(volumeWithId(0), volumeWithId(1)))
+                            .withVolumes(List.of(volumeWithId(0), volumeWithId(1)))
                         .endJbodStorage()
                     .endKafka()
                     .withNewZookeeper()

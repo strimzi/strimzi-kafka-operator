@@ -28,7 +28,7 @@ public enum RestartReason {
     POD_HAS_OLD_REVISION("Pod has old revision"),
     POD_STUCK("Pod needs to be restarted, because it seems to be stuck and restart might help"),
     POD_UNRESPONSIVE("Pod needs to be restarted, because it does not seem to responding to connection attempts"),
-    SERVER_CERT_UPDATED("Server certificates updated");
+    KAFKA_CERTIFICATES_CHANGED("Kafka broker TLS certificates updated");
 
     //Used in logging and Kubernetes event notes
     private final String defaultNote;

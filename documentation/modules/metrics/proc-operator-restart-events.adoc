@@ -110,8 +110,8 @@ When Kubernetes 1.25 is released and installed on your cluster, you will also be
 * `PodHasOldRevision` -  The strimzi pod set that the pod is a member of has been updated, so the pod needs to be recreated
 * `PodStuck ` -  The pod is still pending, and either unschedulable, or not scheduled, so the operator is going to restart it as a last ditch effort.
 * `PodUnresponsive` -  Strimzi was unable to connect to the pod, which can indicate a broker not coming up properly, so the operator will restart it to try to resolve the issue
-* `ServerCertUpdated` -  One or more TLS certificates used by the Kafka broker have been updated, and a restart is needed to use them
+* `KafkaCertificatesChanged` -  One or more TLS certificates used by the Kafka broker have been updated, and a restart is needed to use them
 
 == Monitoring restart events
 
-There are multiple open source projects that export Kubernetes events as metrics consumable by popular tools such as Prometheus, searching the web for "Kubernetes event exporter" will help you find the options you have.
+There are multiple open source projects that export Kubernetes events as metrics consumable by popular tools such as Prometheus, searching the web for "Kubernetes events exporter" will yield multiple projects you can use.
