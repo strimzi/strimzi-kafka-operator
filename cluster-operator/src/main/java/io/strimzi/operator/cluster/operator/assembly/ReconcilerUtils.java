@@ -171,7 +171,7 @@ public class ReconcilerUtils {
         }
 
         if (nodeCertsChange) {
-            restartReasons.add(RestartReason.SERVER_CERT_UPDATED);
+            restartReasons.add(RestartReason.KAFKA_CERTIFICATES_CHANGED);
         }
 
         if (restartReasons.shouldRestart()) {
