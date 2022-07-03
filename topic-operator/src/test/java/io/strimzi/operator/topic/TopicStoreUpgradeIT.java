@@ -33,7 +33,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
-public class TopicStoreUpgradeTest {
+public class TopicStoreUpgradeIT {
 
     private Map<String, String> mandatoryConfig;
     private StrimziKafkaCluster cluster;

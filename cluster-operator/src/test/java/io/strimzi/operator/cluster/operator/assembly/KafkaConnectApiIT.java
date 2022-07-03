@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectApiTest {
+public class KafkaConnectApiIT {
     private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
     private Connect connect;
