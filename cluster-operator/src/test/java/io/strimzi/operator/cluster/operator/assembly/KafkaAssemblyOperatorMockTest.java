@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
-public class  KafkaAssemblyOperatorMockTest {
+public class KafkaAssemblyOperatorMockTest {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorMockTest.class);
 
@@ -290,7 +290,7 @@ public class  KafkaAssemblyOperatorMockTest {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
         return new ResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion), 2_000);
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion), 2_000);
     }
 
     private void assertResourceRequirements(VertxTestContext context, String statefulSetName) {

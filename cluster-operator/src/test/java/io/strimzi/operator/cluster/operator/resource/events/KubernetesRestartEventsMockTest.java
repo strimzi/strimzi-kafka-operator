@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource.events;
 
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
@@ -363,7 +361,7 @@ public class KubernetesRestartEventsMockTest {
         Kafka kafkaWithoutClusterCaGen = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editOrNewClusterCa()
-                     .withGenerateCertificateAuthority(false)
+                        .withGenerateCertificateAuthority(false)
                     .endClusterCa()
                 .endSpec()
                 .build();
@@ -416,7 +414,7 @@ public class KubernetesRestartEventsMockTest {
         StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
         StatefulSet patchedSet = new StatefulSetBuilder(kafkaSet)
                 .editMetadata()
-                .addToAnnotations(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .addToAnnotations(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                 .endMetadata()
                 .build();
 
@@ -518,24 +516,22 @@ public class KubernetesRestartEventsMockTest {
 
         when(strimziPodSetOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(null));
 
-        // Grab the first pod created by the SPS, so when it filters on name when checking revisions, it finds what it's expecting
-        AtomicReference<Pod> firstPod = new AtomicReference<>();
+        // Grab the pod created by the SPS, so when it filters on name when checking revisions, it finds what it's expecting
+        AtomicReference<Pod> kafkaPodRef = new AtomicReference<>();
         when(strimziPodSetOps.reconcile(any(), anyString(), anyString(), any(StrimziPodSet.class)))
                 .thenAnswer((Answer<Future<ReconcileResult<StrimziPodSet>>>) invocation -> {
                     StrimziPodSet sps = invocation.getArgument(invocation.getArguments().length - 1, StrimziPodSet.class);
-                    firstPod.set(PodSetUtils.mapToPod(sps.getSpec().getPods().get(0)));
+                    kafkaPodRef.set(PodSetUtils.mapToPod(sps.getSpec().getPods().get(0)));
                     return Future.succeededFuture(ReconcileResult.noop(sps));
                 });
 
         //Update the copy of the first pod to have a revision annotation that doesn't match
-        when(podOps.get(any(), anyString())).thenAnswer(inv -> {
-            Pod pod = firstPod.get();
-            ObjectMeta existingMeta = pod.getMetadata();
-            pod.setMetadata(new ObjectMetaBuilder(existingMeta)
-                    .withAnnotations(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "x"))
-                    .build());
-            return pod;
-        });
+        when(podOps.get(any(), anyString())).thenAnswer(inv -> new PodBuilder(kafkaPodRef.get())
+                .editOrNewMetadata()
+                        .addToAnnotations(PodRevision.STRIMZI_REVISION_ANNOTATION, "x")
+                .endMetadata()
+                .build()
+        );
 
         // As event dispatching is happening in a background thread, we need to capture when it's actually happened, otherwise
         // the test finishes before the background thread completes
@@ -553,6 +549,8 @@ public class KubernetesRestartEventsMockTest {
                 return listeners().onComplete(i -> podSet()).onComplete(i -> rollingUpdate());
             }
 
+            // Override this method to return a mock to be used on a package private field in the reconciler to prevent
+            // an NPE in the podSet() method
             @Override
             protected KafkaListenersReconciler listenerReconciler() {
                 KafkaListenersReconciler mock = mock(KafkaListenersReconciler.class);
@@ -569,7 +567,7 @@ public class KubernetesRestartEventsMockTest {
 
             verify(eventPublisher, times(1)).publishRestartEvents(podCaptor.capture(), reasonsCaptor.capture());
 
-            assertThat(podCaptor.getValue().getMetadata().getName(), is(firstPod.get().getMetadata().getName()));
+            assertThat(podCaptor.getValue().getMetadata().getName(), is(kafkaPodRef.get().getMetadata().getName()));
             assertThat(reasonsCaptor.getValue(), is(RestartReasons.of(POD_HAS_OLD_REVISION)));
             context.completeNow();
         })));
@@ -577,14 +575,14 @@ public class KubernetesRestartEventsMockTest {
 
     private <T> Handler<AsyncResult<T>> verifyEventPublished(RestartReason expectedReason, VertxTestContext context) {
         return context.succeeding(i -> context.verify(() -> {
-            TestUtils.waitFor("Event publication in worker thread", 500, 10000, () -> !listEvents().isEmpty());
+            TestUtils.waitFor("Event publication in worker thread", 500, 10000, () -> !listRestartEvents().isEmpty());
             String expectedReasonPascal = expectedReason.pascalCased();
 
-            List<Event> events = listEvents();
+            List<Event> events = listRestartEvents();
             Optional<Event> maybeEvent = events.stream().filter(e -> e.getReason().equals(expectedReasonPascal)).findFirst();
 
             if (maybeEvent.isEmpty()) {
-                List<String> foundEvents = listEvents().stream().map(Event::getReason).collect(Collectors.toList());
+                List<String> foundEvents = listRestartEvents().stream().map(Event::getReason).collect(Collectors.toList());
                 throw new AssertionError("Expected restart event " + expectedReasonPascal + " not found. Found these events: " + foundEvents);
             }
 
@@ -637,7 +635,7 @@ public class KubernetesRestartEventsMockTest {
         return client.apps().statefulSets().inNamespace(NAMESPACE);
     }
 
-    private List<Event> listEvents() {
+    private List<Event> listRestartEvents() {
         EventList list = client.events().v1().events().inNamespace(NAMESPACE).list();
         return list.getItems()
                    .stream()
@@ -649,7 +647,7 @@ public class KubernetesRestartEventsMockTest {
         Pod kafkaPod = kafkaPod();
         Pod podPatch = new PodBuilder(kafkaPod)
                 .editMetadata()
-                .addToAnnotations(annotationName, annotationValue)
+                    .addToAnnotations(annotationName, annotationValue)
                 .endMetadata()
                 .build();
         podOps().withName(kafkaPod.getMetadata().getName()).patch(podPatch);
@@ -696,7 +694,7 @@ public class KubernetesRestartEventsMockTest {
     private Secret modifySecretWithAnnotation(Secret brokerSecret, String annotation, String value) {
         return new SecretBuilder(brokerSecret)
                 .editMetadata()
-                .addToAnnotations(annotation, value)
+                    .addToAnnotations(annotation, value)
                 .endMetadata()
                 .build();
     }
@@ -733,7 +731,8 @@ public class KubernetesRestartEventsMockTest {
         return new PersistentClaimStorageBuilder()
                 .withId(id)
                 .withDeleteClaim(true)
-                .withSize("100Mi").build();
+                .withSize("100Mi")
+                .build();
     }
 
     class OverridingClusterCa extends ClusterCa {
