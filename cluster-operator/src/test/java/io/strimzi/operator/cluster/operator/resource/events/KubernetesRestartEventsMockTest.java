@@ -105,7 +105,9 @@ import static io.strimzi.operator.cluster.ResourceUtils.createInitialCaKeySecret
 import static io.strimzi.operator.cluster.ResourceUtils.dummyClusterOperatorConfig;
 import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaCertSecretName;
 import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecretName;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS;
+import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_RENEWED;
@@ -114,14 +116,13 @@ import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KE
 import static io.strimzi.operator.cluster.model.RestartReason.CONFIG_CHANGE_REQUIRES_RESTART;
 import static io.strimzi.operator.cluster.model.RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE;
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
+import static io.strimzi.operator.cluster.model.RestartReason.KAFKA_CERTIFICATES_CHANGED;
 import static io.strimzi.operator.cluster.model.RestartReason.JBOD_VOLUMES_CHANGED;
 import static io.strimzi.operator.cluster.model.RestartReason.MANUAL_ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_REVISION;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_STUCK;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_UNRESPONSIVE;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE;
-import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -487,7 +488,7 @@ public class KubernetesRestartEventsMockTest {
         );
 
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, changedCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
-        reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(RestartReason.KAFKA_CERTIFICATES_CHANGED, context));
+        reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
     }
 
