@@ -3,6 +3,7 @@
 
 ## 0.31.0
 
+* Pluggable Pod Security Profiles with built-in support for _restricted_ Kubernetes Security Profile
 
 ## 0.30.0
 

@@ -28,6 +28,8 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -196,7 +198,8 @@ public class KafkaExporter extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 getVolumes(isOpenShift),
-                imagePullSecrets
+                imagePullSecrets,
+                securityProvider.kafkaExporterPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext))
         );
     }
 
@@ -217,7 +220,7 @@ public class KafkaExporter extends AbstractModel {
                         VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(templateContainerSecurityContext)
+                .withSecurityContext(securityProvider.kafkaExporterContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build();
 
         containers.add(container);

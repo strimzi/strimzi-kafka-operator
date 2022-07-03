@@ -70,6 +70,8 @@ import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
@@ -1203,7 +1205,7 @@ public class KafkaCluster extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 imagePullSecrets,
-                isOpenShift);
+                securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
     }
 
     /**
@@ -1236,7 +1238,7 @@ public class KafkaCluster extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 imagePullSecrets,
-                isOpenShift);
+                securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
     }
 
     /**
@@ -1555,7 +1557,7 @@ public class KafkaCluster extends AbstractModel {
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                    .withSecurityContext(templateInitContainerSecurityContext)
+                    .withSecurityContext(securityProvider.kafkaInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
                     .build();
 
             if (getResources() != null) {
@@ -1587,7 +1589,7 @@ public class KafkaCluster extends AbstractModel {
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withCommand("/opt/kafka/kafka_run.sh")
-                .withSecurityContext(templateKafkaContainerSecurityContext)
+                .withSecurityContext(securityProvider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(storage, templateKafkaContainerSecurityContext)))
                 .build();
 
         return singletonList(container);

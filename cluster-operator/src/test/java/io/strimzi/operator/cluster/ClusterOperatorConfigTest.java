@@ -45,6 +45,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-ControlPlaneListener");
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_DNS_CACHE_TTL, "10");
+        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_POD_SECURITY_PROVIDER_CLASS, "my.package.CustomPodSecurityProvider");
     }
 
     @Test
@@ -54,6 +55,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_CONNECT_BUILD_TIMEOUT_MS);
         envVars.remove(ClusterOperatorConfig.STRIMZI_FEATURE_GATES);
+        envVars.remove(ClusterOperatorConfig.STRIMZI_POD_SECURITY_PROVIDER_CLASS);
 
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
@@ -67,6 +69,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.isCreateClusterRoles(), is(false));
         assertThat(config.isNetworkPolicyGeneration(), is(true));
         assertThat(config.isPodSetReconciliationOnly(), is(false));
+        assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS));
     }
 
     @Test
@@ -90,7 +93,8 @@ public class ClusterOperatorConfigTest {
                 10,
                 false,
                 1024,
-                "operator_name");
+                "operator_name",
+                null);
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
@@ -111,6 +115,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.featureGates().controlPlaneListenerEnabled(), is(false));
         assertThat(config.getDnsCacheTtlSec(), is(10));
+        assertThat(config.getPodSecurityProviderClass(), is("my.package.CustomPodSecurityProvider"));
     }
 
     @Test
@@ -126,6 +131,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperatorNamespace(), is(nullValue()));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
         assertThat(config.getDnsCacheTtlSec(), is(ClusterOperatorConfig.DEFAULT_DNS_CACHE_TTL));
+        assertThat(config.getPodSecurityProviderClass(), is(ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS));
     }
 
     private Map<String, String> envWithImages() {
@@ -370,5 +376,14 @@ public class ClusterOperatorConfigTest {
         assertThat(ClusterOperatorConfig.parseBoolean("true", true), is(true));
         assertThat(ClusterOperatorConfig.parseBoolean("false", true), is(false));
         assertThat(ClusterOperatorConfig.parseBoolean("FALSE", true), is(false));
+    }
+
+    @Test
+    public void testParsePodSecurityProviderClass() {
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("Baseline"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_BASELINE_CLASS));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("baseline"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_BASELINE_CLASS));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("RESTRICTED"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_RESTRICTED_CLASS));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("restricted"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_RESTRICTED_CLASS));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("my.package.MyClass"), is("my.package.MyClass"));
     }
 }

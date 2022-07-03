@@ -43,6 +43,8 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -57,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class ZookeeperCluster extends AbstractModel {
     public static final String APPLICATION_NAME = "zookeeper";
 
@@ -423,7 +426,7 @@ public class ZookeeperCluster extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 imagePullSecrets,
-                isOpenShift);
+                securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
     }
 
     /**
@@ -453,7 +456,7 @@ public class ZookeeperCluster extends AbstractModel {
             getInitContainers(imagePullPolicy),
             getContainers(imagePullPolicy),
             imagePullSecrets,
-            isOpenShift);
+            securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
     }
 
     /**
@@ -504,7 +507,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withReadinessProbe(ProbeGenerator.execProbe(readinessProbeOptions, Collections.singletonList(readinessPath)))
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(templateZookeeperContainerSecurityContext)
+                .withSecurityContext(securityProvider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(storage, templateZookeeperContainerSecurityContext)))
                 .build();
 
         containers.add(container);

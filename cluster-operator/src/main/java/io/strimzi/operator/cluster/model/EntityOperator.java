@@ -30,6 +30,8 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -210,7 +212,8 @@ public class EntityOperator extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 getVolumes(isOpenShift),
-                imagePullSecrets
+                imagePullSecrets,
+                securityProvider.entityOperatorPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext))
         );
     }
 
@@ -247,7 +250,7 @@ public class EntityOperator extends AbstractModel {
                             .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
                             .endExec().endPreStop().build())
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
-                    .withSecurityContext(templateTlsSidecarContainerSecurityContext)
+                    .withSecurityContext(securityProvider.entityOperatorTlsSidecarContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateTlsSidecarContainerSecurityContext)))
                     .build();
 
             containers.add(tlsSidecarContainer);
