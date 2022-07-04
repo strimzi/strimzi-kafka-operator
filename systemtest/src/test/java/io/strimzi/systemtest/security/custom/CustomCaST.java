@@ -64,8 +64,6 @@ public class CustomCaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CustomCaST.class.getSimpleName()).stream().findFirst().get();
-
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         final TestStorage ts = new TestStorage(extensionContext);

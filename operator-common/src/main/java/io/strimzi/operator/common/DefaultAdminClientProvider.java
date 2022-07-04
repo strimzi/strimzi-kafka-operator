@@ -8,16 +8,11 @@ import io.fabric8.kubernetes.api.model.Secret;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public class DefaultAdminClientProvider implements AdminClientProvider {
-
-    private static final Logger LOGGER = LogManager.getLogger(DefaultAdminClientProvider.class);
-
     /**
      * Create a Kafka Admin interface instance handling the following different scenarios:
      *

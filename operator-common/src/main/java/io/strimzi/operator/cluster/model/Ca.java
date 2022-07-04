@@ -892,17 +892,6 @@ public abstract class Ca {
         return this.clock.instant().isAfter(renewalPeriodBegin);
     }
 
-    /**
-     * This is a no-static version of the `cert` method so that it can be mocked.
-     *
-     * @param secret    Secret with a certificates
-     * @param key   Key under which the certificate is stored
-     * @return  Decoced X509 certificate
-     */
-    public X509Certificate getAsX509Certificate(Secret secret, String key)  {
-        return cert(secret, key);
-    }
-
     public static X509Certificate cert(Secret secret, String key)  {
         if (secret == null || secret.getData() == null || secret.getData().get(key) == null) {
             return null;

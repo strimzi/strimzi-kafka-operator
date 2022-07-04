@@ -11,8 +11,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.templates.kubernetes.ServiceTemplates;
 import io.strimzi.operator.common.model.Labels;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +21,6 @@ import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridg
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaBridgeUtils {
-
-    private static final Logger LOGGER = LogManager.getLogger(KafkaBridgeUtils.class);
-
     private KafkaBridgeUtils() {}
 
     public static Service createBridgeNodePortService(String clusterName, String namespace, String serviceName) {

@@ -35,7 +35,6 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);
 
-    static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
     static final String MAIN_NAMESPACE_CLUSTER_NAME = "my-cluster";
     static final String SECOND_CLUSTER_NAME = MAIN_NAMESPACE_CLUSTER_NAME + "-second";

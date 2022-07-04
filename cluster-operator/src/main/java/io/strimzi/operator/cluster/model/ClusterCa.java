@@ -119,10 +119,6 @@ public class ClusterCa extends Ca {
         return kafkaExporterSecret;
     }
 
-    public Secret cruiseControlSecret() {
-        return cruiseControlSecret;
-    }
-
     public Map<String, CertAndKey> generateCcCerts(String namespace, String kafkaName, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(kafkaName));
 

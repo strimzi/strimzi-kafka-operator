@@ -614,8 +614,6 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateSecretWithNoTlsAuthenticationKafkaUserReturnsNull()    {
-        Secret userCert = ResourceUtils.createUserSecretTls();
-
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         user.setSpec(new KafkaUserSpec());
 
@@ -626,7 +624,6 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGetSimpleAclRulesWithNoSimpleAuthorizationReturnsNull()    {
-        Secret userCert = ResourceUtils.createUserSecretTls();
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         user.setSpec(new KafkaUserSpec());
 

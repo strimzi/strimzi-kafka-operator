@@ -19,7 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -237,11 +236,6 @@ public class CaRenewalTest {
         @Override
         protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
             return false;
-        }
-
-        @Override
-        public X509Certificate getAsX509Certificate(Secret secret, String key)    {
-            return null;
         }
 
         @Override
