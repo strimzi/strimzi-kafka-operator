@@ -14,10 +14,19 @@ To control the streaming of high volumes of data, you can tune the producer batc
 
 In certain circumstances, you might want to increase the size of the message batches sent in a single produce request.
 You increase the batch size using the `batch.size` producer configuration to reduce the number of outstanding messages ready to be sent.
-A larger batch size reduces the number of requests and the backlog in the message queue.
+Messages being sent to the same partition are batched together.
+A larger batch size reduces the number of requests and the size of the backlog in the message queue.
 A produce request is sent to the target cluster when the batch size is reached.
 By increasing the batch size, produce requests are delayed and more messages are added to the batch and sent to brokers at the same time.  
 This can improve throughput when you have just a few topic partitions that handle large numbers of messages.  
+
+Consider the number and size of records for a suitable producer batch size. 
+Use something like the following formula: `max.poll.records * record-size-avg * 1024`. 
+`max.poll.records` is the maximum number of messages to return in a poll. 
+`record-size-avg` is a metric that gives the average size of a records. 
+
+Use `producer.linger.ms` to add a wait time in milliseconds to delay produce requests when producer load decreases. 
+What the delay means is that more records can be added to batches if they are under the maximum batch size.       
 
 The data replication pipeline is as follows:
 
@@ -29,6 +38,8 @@ While this is happening, Kafka Connect tasks continue to poll topics in the sour
 The size of the buffer is set using the `producer.buffer.memory` property. 
 Tasks wait for a specified timeout period (`offset.flush.timeout.ms`) before the buffer is flushed. 
 This should be enough time for the sent messages to be acknowledged by the brokers and offset data committed. 
+
+NOTE: Kafka 3.1.0 and newer versions do not wait for the producer to empty the message queue before committing offsets, except during shutdown.
 
 Try to avoid a situation where there are too many messages in the buffer, so they can't all be flushed before the offset flush timeout is reached.
 The offset flush timeout period needs to be sufficient for the size of the buffer.
@@ -65,8 +76,8 @@ spec:
   - alias: "my-cluster-target"
     config:
       offset.flush.timeout.ms: 10000
-      producer.buffer.memory: 8388608
       producer.batch.size: 327680
+      producer.linger.ms: 5
     bootstrapServers: my-cluster-target-kafka-bootstrap:9092
   mirrors:
   - sourceCluster: "my-cluster-source"
