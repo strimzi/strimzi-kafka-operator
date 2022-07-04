@@ -19,7 +19,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
-public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
+public class KafkaStreamsTopicStoreIT extends TopicStoreTestBase {
     private static final Map<String, String> MANDATORY_CONFIG;
     private static StrimziKafkaContainer kafkaContainer;
 

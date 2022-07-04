@@ -50,8 +50,8 @@ import static org.hamcrest.Matchers.nullValue;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
-public class TopicOperatorMockTest {
-    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMockTest.class);
+public class TopicOperatorMockIT {
+    private static final Logger LOGGER = LogManager.getLogger(TopicOperatorMockIT.class);
     private static final String NAMESPACE = "my-namespace";
 
     // Injected by Fabric8 Mock Kubernetes Server
