@@ -41,11 +41,14 @@ import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.StorageDiff;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
@@ -138,6 +141,8 @@ public class KafkaReconciler {
     /* test */ final IngressV1Beta1Operator ingressV1Beta1Operator;
     private final NodeOperator nodeOperator;
 
+    private final KubernetesRestartEventPublisher eventsPublisher;
+
     private final AdminClientProvider adminClientProvider;
 
     private final int currentReplicas;
@@ -228,6 +233,7 @@ public class KafkaReconciler {
         this.ingressOperator = supplier.ingressOperations;
         this.ingressV1Beta1Operator = supplier.ingressV1Beta1Operations;
         this.nodeOperator = supplier.nodeOperator;
+        this.eventsPublisher = supplier.restartEventsPublisher;
 
         this.adminClientProvider = supplier.adminClientProvider;
     }
@@ -345,7 +351,7 @@ public class KafkaReconciler {
                         }
                         LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation",
                                 pod.getMetadata().getName());
-                        return List.of("manual rolling update");
+                        return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
                     }, Map.of(), Map.of(), false);
                 } else {
                     // The controller is not annotated to roll all pods.
@@ -379,9 +385,9 @@ public class KafkaReconciler {
                         return maybeRollKafka(kafka.getReplicas(), pod -> {
                             if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
                                 LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation on a pod", pod.getMetadata().getName());
-                                return List.of("manual rolling update annotation on a pod");
+                                return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
                             } else {
-                                return new ArrayList<>();
+                                return RestartReasons.empty();
                             }
                         }, Map.of(), Map.of(), false);
                     } else {
@@ -403,7 +409,7 @@ public class KafkaReconciler {
      */
     protected Future<Void> maybeRollKafka(
             int replicas,
-            Function<Pod, List<String>> podNeedsRestart,
+            Function<Pod, RestartReasons> podNeedsRestart,
             Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
             Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
             boolean allowReconfiguration
@@ -430,7 +436,9 @@ public class KafkaReconciler {
                                 },
                                 logging,
                                 kafka.getKafkaVersion(),
-                                allowReconfiguration
+                                allowReconfiguration,
+                                eventsPublisher
+
                         ).rollingRestart(podNeedsRestart));
     }
 
@@ -935,7 +943,7 @@ public class KafkaReconciler {
      *
      * @return  Empty list when no restart is needed. List containing the restart reason if the restart is needed.
      */
-    private List<String> needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
+    private RestartReasons needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
         if (pod != null
                 && pod.getMetadata() != null) {
             String jsonStorage = Annotations.stringAnnotation(pod, ANNO_STRIMZI_IO_STORAGE, null);
@@ -944,12 +952,12 @@ public class KafkaReconciler {
                 Storage currentStorage = ModelUtils.decodeStorageFromJson(jsonStorage);
 
                 if (new StorageDiff(reconciliation, currentStorage, desiredStorage, currentReplicas, desiredReplicas).isVolumesAddedOrRemoved())    {
-                    return List.of("JBOD volumes were added or removed");
+                    return RestartReasons.of(RestartReason.JBOD_VOLUMES_CHANGED);
                 }
             }
         }
 
-        return new ArrayList<>();
+        return RestartReasons.empty();
     }
 
     /**
@@ -971,7 +979,7 @@ public class KafkaReconciler {
      *
      * @return  Future which completes when the rolling update of all brokers in sequence is complete
      */
-    protected Future<Void> maybeRollKafkaInSequence(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, int nextPod, int lastPod) {
+    protected Future<Void> maybeRollKafkaInSequence(StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, int nextPod, int lastPod) {
         if (nextPod <= lastPod)  {
             final int podToRoll = nextPod;
 
@@ -979,7 +987,7 @@ public class KafkaReconciler {
                 if (pod != null && pod.getMetadata().getName().endsWith("-" + podToRoll))    {
                     return podNeedsRestart.apply(pod);
                 } else {
-                    return new ArrayList<>();
+                    return RestartReasons.empty();
                 }
             }, Map.of(), Map.of(), false)
                     .compose(ignore -> maybeRollKafkaInSequence(sts, podNeedsRestart, nextPod + 1, lastPod));
@@ -1005,7 +1013,7 @@ public class KafkaReconciler {
         return podOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
                 .compose(pods -> {
                     for (Pod pod : pods) {
-                        if (!needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, currentReplicas, kafka.getReplicas()).isEmpty())   {
+                        if (needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, currentReplicas, kafka.getReplicas()).shouldRestart())   {
                             // At least one broker needs rolling update => we can trigger it without checking the other brokers
                             LOGGER.debugCr(reconciliation, "Kafka brokers needs rolling update to add or remove JBOD volumes");
 

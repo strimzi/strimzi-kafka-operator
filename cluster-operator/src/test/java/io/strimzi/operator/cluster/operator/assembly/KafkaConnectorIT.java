@@ -138,7 +138,8 @@ public class KafkaConnectorIT {
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 metrics,
-                pfa, 10_000);
+                pfa, 10_000
+        );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),

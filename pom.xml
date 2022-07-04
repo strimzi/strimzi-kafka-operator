@@ -135,6 +135,7 @@
         <!-- property to skip surefire tests during failsafe execution -->
         <!--suppress UnresolvedMavenProperty -->
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
+        <mockwebserver.version>3.14.7</mockwebserver.version>
     </properties>
 
     <distributionManagement>
@@ -248,6 +249,11 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-events</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-model-extensions</artifactId>
                 <version>${fabric8.kubernetes-model.version}</version>
             </dependency>
@@ -310,6 +316,19 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-server-mock</artifactId>
                 <version>${fabric8.kubernetes-client.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${mockwebserver.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <!-- Pin version of transitive junit dependency of the above dependency to avoid CVE-2020-15250 -->
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.13.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

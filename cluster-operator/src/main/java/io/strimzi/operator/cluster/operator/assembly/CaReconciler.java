@@ -24,11 +24,14 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -75,6 +78,7 @@ public class CaReconciler {
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
     private final CertManager certManager;
     private final PasswordGenerator passwordGenerator;
+    private final KubernetesRestartEventPublisher eventPublisher;
 
     // Fields based on the Kafka CR required for the reconciliation
     private final List<String> maintenanceWindows;
@@ -126,6 +130,8 @@ public class CaReconciler {
         this.zookeeperLeaderFinder = supplier.zookeeperLeaderFinder;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
+
+        this.eventPublisher = supplier.restartEventsPublisher;
 
         // Extract required information from the Kafka CR
         this.maintenanceWindows = kafkaCr.getSpec().getMaintenanceTimeWindows();
@@ -272,7 +278,8 @@ public class CaReconciler {
                             clientsCaKeySecret,
                             ModelUtils.getCertificateValidity(clientsCaConfig),
                             ModelUtils.getRenewalDays(clientsCaConfig),
-                            clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(), clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
+                            clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(),
+                            clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
                     clientsCa.initBrokerSecret(brokersSecret);
                     clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                             caLabels, Map.of(), Map.of(),
@@ -352,85 +359,97 @@ public class CaReconciler {
      * due to a new CA key. It is not necessary when the CA certificate is replace while retaining the existing key.
      */
     Future<Void> rollingUpdateForNewCaKey() {
-        List<String> reason = new ArrayList<>(2);
+        RestartReasons podRollReasons = RestartReasons.empty();
 
         if (clusterCa.keyReplaced()) {
-            reason.add("trust new cluster CA certificate signed by new key");
+            podRollReasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
         }
 
         if (clientsCa.keyReplaced()) {
-            reason.add("trust new clients CA certificate signed by new key");
+            podRollReasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
         }
 
-        if (!reason.isEmpty()) {
-            Future<Void> zkRollFuture;
-            Function<Pod, List<String>> rollPodAndLogReason = pod -> {
+        if (podRollReasons.shouldRestart()) {
+            return maybeRollZookeeper(podRollReasons)
+                    .compose(i -> getKafkaReplicas())
+                    .compose(replicas -> rollKafkaBrokers(replicas, podRollReasons))
+                    .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
+                    .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), podRollReasons))
+                    .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), podRollReasons));
+        } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    // ZooKeeper is rolled only for new Cluster CA key
+    private Future<Void> maybeRollZookeeper(RestartReasons podRestartReasons) {
+        if (podRestartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
+            Labels zkSelectorLabels = Labels.EMPTY
+                    .withStrimziKind(reconciliation.kind())
+                    .withStrimziCluster(reconciliation.name())
+                    .withStrimziName(KafkaResources.zookeeperStatefulSetName(reconciliation.name()));
+
+            Function<Pod, List<String>> rollZkPodAndLogReason = pod -> {
+                List<String> reason = List.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
                 LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
                 return reason;
             };
+            return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
+                    .maybeRollingUpdate(reconciliation, zkSelectorLabels, rollZkPodAndLogReason, clusterCa.caCertSecret(), oldCoSecret);
+        } else {
+            return Future.succeededFuture();
+        }
+    }
 
-            if (clusterCa.keyReplaced()) {
-                // ZooKeeper is rolled only for new Cluster CA key
-                Labels zkSelectorLabels = Labels.EMPTY
-                        .withStrimziKind(reconciliation.kind())
-                        .withStrimziCluster(reconciliation.name())
-                        .withStrimziName(KafkaResources.zookeeperStatefulSetName(reconciliation.name()));
+    private Future<List<String>> getKafkaReplicas() {
+        if (featureGates.useStrimziPodSetsEnabled())   {
+            return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
+                                        .compose(podSet -> {
+                                            if (podSet != null) {
+                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
+                                            } else {
+                                                return Future.succeededFuture(List.of());
+                                            }
+                                        });
+        } else {
+            return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
+                              .compose(sts -> {
+                                  if (sts != null) {
+                                      return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), sts.getSpec().getReplicas()));
+                                  } else {
+                                      return Future.succeededFuture(List.of());
+                                  }
+                              });
+        }
+    }
 
-                zkRollFuture = new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
-                        .maybeRollingUpdate(reconciliation, zkSelectorLabels, rollPodAndLogReason, clusterCa.caCertSecret(), oldCoSecret);
-            } else {
-                zkRollFuture = Future.succeededFuture();
-            }
+    private Future<Void> rollKafkaBrokers(List<String> replicas, RestartReasons podRollReasons) {
+        return new KafkaRoller(
+                reconciliation,
+                vertx,
+                podOperator,
+                1_000,
+                operationTimeoutMs,
+                () -> new BackOff(250, 2, 10),
+                replicas,
+                clusterCa.caCertSecret(),
+                oldCoSecret,
+                adminClientProvider,
+                brokerId -> null,
+                null,
+                null,
+                false,
+                eventPublisher
+        ).rollingRestart(pod -> {
+            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}", pod.getMetadata().getName(), podRollReasons.getReasons());
+            return podRollReasons;
+        });
+    }
 
-            return zkRollFuture
-                    .compose(i -> {
-                        if (featureGates.useStrimziPodSetsEnabled())   {
-                            return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
-                                    .compose(podSet -> {
-                                        if (podSet != null) {
-                                            return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
-                                        } else {
-                                            return Future.succeededFuture(List.<String>of());
-                                        }
-                                    });
-                        } else {
-                            return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
-                                    .compose(sts -> {
-                                        if (sts != null)    {
-                                            return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), sts.getSpec().getReplicas()));
-                                        } else {
-                                            return Future.succeededFuture(List.<String>of());
-                                        }
-                                    });
-                        }
-                    })
-                    .compose(replicas ->
-                            new KafkaRoller(
-                                    reconciliation,
-                                    vertx,
-                                    podOperator,
-                                    1_000,
-                                    operationTimeoutMs,
-                                    () -> new BackOff(250, 2, 10),
-                                    replicas,
-                                    clusterCa.caCertSecret(),
-                                    oldCoSecret,
-                                    adminClientProvider,
-                                    brokerId -> null,
-                                    null,
-                                    null,
-                                    false
-                            ).rollingRestart(rollPodAndLogReason))
-                    .compose(i -> {
-                        if (clusterCa.keyReplaced()) {
-                            // EO, KE and CC need to be rolled only for new Cluster CA key.
-                            return rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), reason.toString())
-                                    .compose(i2 -> rollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), reason.toString()))
-                                    .compose(i2 -> rollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), reason.toString()));
-                        } else {
-                            return Future.succeededFuture();
-                        }
-                    });
+    // Entity Operator, Kafka Exporter, and Cruise Control are only rolled when the cluster CA cert key is replaced
+    Future<Void> maybeRollDeploymentIfExists(String deploymentName, RestartReasons podRollReasons) {
+        if (podRollReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
+            return rollDeploymentIfExists(deploymentName, RestartReason.CLUSTER_CA_CERT_KEY_REPLACED.getDefaultNote());
         } else {
             return Future.succeededFuture();
         }
@@ -440,15 +459,15 @@ public class CaReconciler {
      * Rolls deployments when they exist. This method is used by the CA renewal to roll deployments.
      *
      * @param deploymentName    Name of the deployment which should be rolled if it exists
-     * @param reasons           Reasons for which it is being rolled
+     * @param reason           Reason for which it is being rolled
      *
      * @return  Succeeded future if it succeeded, failed otherwise.
      */
-    private Future<Void> rollDeploymentIfExists(String deploymentName, String reasons)  {
+    private Future<Void> rollDeploymentIfExists(String deploymentName, String reason)  {
         return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                 .compose(dep -> {
                     if (dep != null) {
-                        LOGGER.infoCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reasons);
+                        LOGGER.infoCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reason);
                         return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs);
                     } else {
                         return Future.succeededFuture();

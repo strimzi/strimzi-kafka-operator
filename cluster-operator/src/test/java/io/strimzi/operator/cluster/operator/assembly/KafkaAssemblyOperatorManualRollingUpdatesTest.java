@@ -27,6 +27,8 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -343,9 +345,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
                     // Verify Kafka rolling updates
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(Collections.singletonList("manual rolling update")));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(Collections.singletonList("manual rolling update")));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(Collections.singletonList("manual rolling update")));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
 
                     async.flag();
                 })));
@@ -478,14 +480,14 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     // Verify Zookeeper rolling updates
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
                     assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-0")), is(nullValue()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-1")), is(Collections.singletonList("manual rolling update annotation on a pod")));
-                    assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-2")), is(Collections.singletonList("manual rolling update annotation on a pod")));
+                    assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-1")), is(List.of("manual rolling update annotation on a pod")));
+                    assertThat(zr.zooPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-2")), is(List.of("manual rolling update annotation on a pod")));
 
                     // Verify Kafka rolling updates
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(Collections.singletonList("manual rolling update annotation on a pod")));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(Collections.singletonList("manual rolling update annotation on a pod")));
-                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(Collections.emptyList()));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE)));
+                    assertThat(kr.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2")), is(RestartReasons.empty()));
 
                     async.flag();
                 })));
@@ -567,7 +569,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
     static class MockKafkaReconciler extends KafkaReconciler   {
         int maybeRollKafkaInvocations = 0;
-        Function<Pod, List<String>> kafkaPodNeedsRestart = null;
+        Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
             super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
@@ -581,7 +583,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         @Override
         protected Future<Void> maybeRollKafka(
                 int replicas,
-                Function<Pod, List<String>> podNeedsRestart,
+                Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
                 Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
                 boolean allowReconfiguration

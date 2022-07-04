@@ -676,7 +676,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config
+        );
 
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
@@ -1236,7 +1237,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config
+        );
 
         // Now try to update a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();

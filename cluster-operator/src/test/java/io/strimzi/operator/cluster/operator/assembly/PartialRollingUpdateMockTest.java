@@ -127,10 +127,10 @@ public class PartialRollingUpdateMockTest {
                 .build();
         mockKube.start();
 
-        ResourceOperatorSupplier supplier = supplier(client);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        ResourceOperatorSupplier supplier = supplier(client, pfa);
 
-        kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000, "-UseStrimziPodSets"));
+        kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000, "-UseStrimziPodSets"));
 
         LOGGER.info("Initial reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
@@ -151,11 +151,13 @@ public class PartialRollingUpdateMockTest {
         mockKube.stop();
     }
 
-    ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
-        return new ResourceOperatorSupplier(vertx, bootstrapClient,
+    ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient, PlatformFeaturesAvailability pfa) {
+        return new ResourceOperatorSupplier(vertx,
+                bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
+                ResourceUtils.metricsProvider(),
+                pfa,
                 60_000L);
     }
 

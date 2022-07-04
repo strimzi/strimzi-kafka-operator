@@ -1,3 +1,4 @@
+
 # CHANGELOG
 
 ## 0.30.0
@@ -16,6 +17,7 @@
 * Add CPU capacity overrides for Cruise Control capacity config
 * Use CustomResource existing spec and status to fix Quarkus native build's serialization
 * Update JMX Exporter to version 0.17.0
+* Operator emits Kafka events to explain why it restarted a Kafka broker
 
 ## 0.29.0
 

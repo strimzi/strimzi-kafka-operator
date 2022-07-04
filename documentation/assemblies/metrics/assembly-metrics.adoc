@@ -25,6 +25,8 @@ Depending on your requirements, you can:
 
 With Prometheus and Grafana set up, you can use the example Grafana dashboards provided by Strimzi for monitoring.
 
+The Strimzi Operator xref:proc-operator-restart-events-{context}[emits Kubernetes events] when it restarts a Kafka broker that can help in understanding cluster behaviour.
+
 Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^].
 
 NOTE: Strimzi provides example installation files for Prometheus and Grafana.
@@ -51,3 +53,5 @@ include::assembly-metrics-config-files.adoc[leveloffset=+1]
 include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 //How to add Grafana dashboards
 include::modules/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]
+//How to monitor restart events
+include::modules/proc-operator-restart-events.adoc[leveloffset=+1]

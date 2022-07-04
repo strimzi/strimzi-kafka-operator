@@ -25,4 +25,11 @@ if [ -f /opt/strimzi/custom-config/log4j2.properties ]; then
 else
     echo "Configuration file log4j2.properties not found. Using default static logging setting. Dynamic updates of logging configuration will not work."
 fi
+
+# Used to identify cluster operator instance when publishing events
+if [[ -z "$STRIMZI_OPERATOR_NAME" ]]; then
+  STRIMZI_OPERATOR_NAME="$(cat /proc/sys/kernel/hostname)"
+  export STRIMZI_OPERATOR_NAME
+fi
+
 exec "${STRIMZI_HOME}/bin/launch_java.sh"

@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.mockkube2.controllers;
 
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodConditionBuilder;
@@ -16,6 +17,8 @@ import io.fabric8.kubernetes.client.WatcherException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Map;
+
 /**
  * The MockPodController partially emulates the Kubernetes Pod controller. When new Pod is created
  * or modified, it updates its status to mark it as ready.
@@ -24,6 +27,8 @@ public class MockPodController extends AbstractMockController {
     private static final Logger LOGGER = LogManager.getLogger(MockPodController.class);
 
     private Watch watch;
+
+    public static final String ANNO_DO_NOT_SET_READY = "mock-pod-controller/do-not-set-ready";
 
     public MockPodController(KubernetesClient client) {
         super(client);
@@ -40,12 +45,19 @@ public class MockPodController extends AbstractMockController {
                 switch (action)  {
                     case ADDED:
                     case MODIFIED:
+                        ObjectMeta podMeta = pod.getMetadata();
                         try {
-                            client.pods().inNamespace(pod.getMetadata().getNamespace()).withName(pod.getMetadata().getName()).replaceStatus(new PodBuilder(pod)
-                                    .withStatus(new PodStatusBuilder()
-                                            .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
-                                            .build())
-                                    .build());
+                            //For some test cases, a pod always being set to Ready isn't desired
+                            Map<String, String> annotations = podMeta.getAnnotations();
+                            if (annotations != null && annotations.containsKey(ANNO_DO_NOT_SET_READY)) {
+                                return;
+                            } else {
+                                client.pods().inNamespace(podMeta.getNamespace()).withName(podMeta.getName()).replaceStatus(new PodBuilder(pod)
+                                        .withStatus(new PodStatusBuilder()
+                                                .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
+                                                .build())
+                                        .build());
+                            }
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {
                                 LOGGER.info("Pod {} in namespace {} changed while trying to update status", pod.getMetadata().getName(), pod.getMetadata().getNamespace());

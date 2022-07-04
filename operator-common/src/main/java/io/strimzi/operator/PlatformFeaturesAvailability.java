@@ -238,6 +238,15 @@ public class PlatformFeaturesAvailability {
         return this.kubernetesVersion.compareTo(KubernetesVersion.V1_21) >= 0;
     }
 
+    /**
+     * Returns true when the Kubernetes cluster has V1 version of the Events API resource (Kubernetes 1.19 and newer)
+     *
+     * @return True when events.k8s.io V1 is supported. False otherwise.
+     */
+    public boolean hasEventsApiV1() {
+        return this.kubernetesVersion.compareTo(KubernetesVersion.V1_19) >= 0;
+    }
+
     @Override
     public String toString() {
         return "PlatformFeaturesAvailability(" +

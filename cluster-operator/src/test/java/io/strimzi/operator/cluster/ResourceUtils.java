@@ -52,6 +52,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
@@ -463,11 +464,13 @@ public class ResourceUtils {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer,
                                                           KafkaMirrorMakerConsumerSpec consumer, String include) {
         return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, include);
     }
 
+    @SuppressWarnings("deprecation")
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas,
                                                           KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer,
                                                           String include) {
@@ -644,6 +647,7 @@ public class ResourceUtils {
         return new MicrometerMetricsProvider(new SimpleMeterRegistry());
     }
 
+    @SuppressWarnings("unchecked")
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
@@ -680,7 +684,8 @@ public class ResourceUtils {
                 zookeeperScalerProvider(),
                 metricsProvider(),
                 adminClientProvider(),
-                mock(ZookeeperLeaderFinder.class));
+                mock(ZookeeperLeaderFinder.class),
+                mock(KubernetesRestartEventPublisher.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -691,15 +696,13 @@ public class ResourceUtils {
         if (openShift) {
             when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
             when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
-                return new RouteBuilder()
-                        .withNewStatus()
-                        .addNewIngress()
-                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
-                        .endIngress()
-                        .endStatus()
-                        .build();
-            });
+            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> new RouteBuilder()
+                    .withNewStatus()
+                    .addNewIngress()
+                    .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
+                    .endIngress()
+                    .endStatus()
+                    .build());
         }
 
         when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -738,7 +741,8 @@ public class ResourceUtils {
                 10_000,
                 30,
                 false,
-                1024);
+                1024,
+                "cluster-operator-name");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
@@ -755,6 +759,10 @@ public class ResourceUtils {
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
         return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, featureGates);
     }
 
     /**

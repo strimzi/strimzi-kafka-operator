@@ -400,7 +400,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 10_000,
                 30,
                 false,
-                1024);
+                1024,
+                "cluster-operator-name");
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, config);

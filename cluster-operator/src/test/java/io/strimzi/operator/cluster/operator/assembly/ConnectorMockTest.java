@@ -154,7 +154,6 @@ public class ConnectorMockTest {
         mockKube.start();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_18);
-
         setupMockConnectAPI();
 
         metricsProvider = ResourceUtils.metricsProvider();

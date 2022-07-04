@@ -11,6 +11,9 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
@@ -489,7 +492,7 @@ public class KafkaRollerTest {
     private void doSuccessfulConfigUpdate(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
                                             List<Integer> expected) {
         Checkpoint async = testContext.checkpoint();
-        kafkaRoller.rollingRestart(pod -> emptyList())
+        kafkaRoller.rollingRestart(pod -> RestartReasons.empty())
                 .onComplete(testContext.succeeding(v -> {
                     testContext.verify(() -> assertThat(restarted(), is(expected)));
                     assertNoUnclosedAdminClient(testContext, kafkaRoller);
@@ -503,9 +506,9 @@ public class KafkaRollerTest {
         Checkpoint async = testContext.checkpoint();
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                return singletonList("roll");
+                return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
             } else {
-                return emptyList();
+                return RestartReasons.empty();
             }
         })
             .onComplete(testContext.succeeding(v -> {
@@ -530,9 +533,9 @@ public class KafkaRollerTest {
         CountDownLatch async = new CountDownLatch(1);
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                return singletonList("roll");
+                return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
             } else {
-                return emptyList();
+                return RestartReasons.empty();
             }
         })
             .onComplete(testContext.failing(e -> testContext.verify(() -> {
@@ -636,7 +639,8 @@ public class KafkaRollerTest {
                     brokerId -> "",
                     "",
                     KafkaVersionTestUtils.getLatestVersion(),
-                    true
+                    true,
+                    mock(KubernetesRestartEventPublisher.class)
             );
 
             this.controllers = controllers;
@@ -731,7 +735,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Future<Void> restart(Pod pod) {
+        protected Future<Void> restart(Pod pod, RestartContext restartContext) {
             restarted.add(pod.getMetadata().getName());
             return succeededFuture();
         }

@@ -169,6 +169,12 @@ public class Util {
         return promise.future();
     }
 
+    // Wrapper to minimise usage of raw types in code using composite futures
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static CompositeFuture compositeFuture(List<?> futures) {
+        return CompositeFuture.join((List<Future>) futures);
+    }
+
     /**
      * Parse a map from String.
      * For example a map of images {@code 2.0.0=strimzi/kafka:latest-kafka-2.0.0, 2.1.0=strimzi/kafka:latest-kafka-2.1.0}
