@@ -611,6 +611,14 @@
                 <version>${strimzi-test-container.version}</version>
                 <scope>test</scope>
             </dependency>
+            <!-- Required to be able to use the Test Container on different platforms such as Arm based Macs -->
+            <!-- Can be removed once the Strimzi Test Container is using new Test Container version -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.8.0</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
