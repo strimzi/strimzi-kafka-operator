@@ -28,5 +28,7 @@ include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 include::assemblies/upgrading/assembly-upgrade.adoc[leveloffset=+1]
 //Downgrading the deployment
 include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]
+//How to monitor restart events
+include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //Uninstall the product
 include::assemblies/deploying/assembly-uninstalling.adoc[leveloffset=+1]
