@@ -11,7 +11,7 @@ It consists of four main components--the Load Monitor, the Analyzer, the Anomaly
 
 You can deploy {CruiseControlProject} to your Strimzi cluster and use it to _rebalance_ a Kafka cluster.
 You deploy Cruise Control through configuration of a `Kafka` resource.
-You perform rebalances through the `KafkaBalance` resource, which generates and applies optimization proposals.  
+You perform rebalances through the `KafkaRebalance` resource, which generates and applies optimization proposals.  
 
 Strimzi utilizes the REST API to support the following Cruise Control features:
 
@@ -45,9 +45,9 @@ You can reject the proposal to run it again with an adjusted set of goals.
 You can generate an optimization proposal in one of three modes.
 +
 --
-* *`full` mode* is the default mode and runs a full rebalance.
-* *`add-brokers` mode* is the mode you use after adding brokers when scaling up a Kafka cluster.  
-* *`remove-brokers`* mode is the mode you use before removing brokers when scaling down a Kafka cluster.
+* *`full`* is the default mode and runs a full rebalance.
+* *`add-brokers`* is the mode you use after adding brokers when scaling up a Kafka cluster.  
+* *`remove-brokers`* is the mode you use before removing brokers when scaling down a Kafka cluster.
 --
 
 Other Cruise Control features are not currently supported, including self healing, notifications, write-your-own goals, and changing the topic replication factor.
