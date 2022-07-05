@@ -100,7 +100,7 @@ spec:
 ----
 <1> xref:property-cruise-control-broker-capacity-reference[Capacity limits for broker resources].
 <2> xref:property-cruise-control-capacity-overrides-reference[Overrides set network capacity limits] for specific brokers when running on nodes with heterogeneous network resources.
-<3> Cruise Control configuration. xref:property-kafka-config-reference[Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi].
+<3> Cruise Control configuration. xref:property-cruise-control-config-reference[Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi].
 <4> xref:con-optimization-goals-{context}[Optimization goals configuration], which can include configuration for default optimization goals (`default.goals`), main optimization goals (`goals`), and hard goals (`hard.goals`).
 <5> xref:property-cruise-control-config-cors-reference[CORS enabled and configured] for read-only access to the Cruise Control API.
 <6> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.

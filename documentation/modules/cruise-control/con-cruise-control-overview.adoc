@@ -9,6 +9,7 @@
 [id='con-cruise-control-overview-{context}']
 = Why use Cruise Control?
 
+[role="_abstract"]
 Cruise Control reduces the time and effort involved in running an efficient and balanced Kafka cluster.
 
 A typical cluster can become unevenly loaded over time.
