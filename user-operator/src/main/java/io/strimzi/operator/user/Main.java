@@ -124,8 +124,14 @@ public class Main {
         CompositeFuture.join(clusterCaCertSecretFuture, euoKeySecretFuture)
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
-                        Admin adminClient = adminClientProvider.createAdminClient(config.getKafkaBootstrapServers(),
-                                clusterCaCertSecretFuture.result(), euoKeySecretFuture.result(), euoKeySecretFuture.result() != null ? "entity-operator" : null);
+                        Admin adminClient = adminClientProvider
+                                .createAdminClient(
+                                        config.getKafkaBootstrapServers(),
+                                        clusterCaCertSecretFuture.result(),
+                                        euoKeySecretFuture.result(),
+                                        euoKeySecretFuture.result() != null ? "entity-operator" : null,
+                                        config.getKafkaAdminClientConfiguration()
+                                );
                         promise.complete(adminClient);
                     } else {
                         promise.fail(ar.cause());

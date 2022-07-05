@@ -113,6 +113,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
@@ -581,6 +582,11 @@ public class ResourceUtils {
         return new AdminClientProvider() {
             @Override
             public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+                return createAdminClient(bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName, new Properties());
+            }
+
+            @Override
+            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
                 Admin mock = mock(AdminClient.class);
                 DescribeClusterResult dcr;
                 try {

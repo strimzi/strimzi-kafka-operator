@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -181,5 +182,19 @@ public class UserOperatorConfigTest {
         assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?"), is(List.of("* * 8-10 * * ?")));
         assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(null), is(nullValue()));
         assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(""), is(nullValue()));
+    }
+
+    @Test
+    public void testParseKafkaAdminClientConfiguration()    {
+        Properties config = UserOperatorConfig.parseKafkaAdminClientConfiguration("default.api.timeout.ms=13000\n" +
+                "request.timeout.ms=130000");
+        assertThat(config.get("default.api.timeout.ms"), is("13000"));
+        assertThat(config.get("request.timeout.ms"), is("130000"));
+    }
+
+    @Test
+    public void testParseNullKafkaAdminClientConfiguration()    {
+        Properties config = UserOperatorConfig.parseKafkaAdminClientConfiguration(null);
+        assertThat(config.isEmpty(), is(true));
     }
 }

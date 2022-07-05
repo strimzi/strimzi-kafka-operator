@@ -55,6 +55,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -91,6 +92,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -597,10 +599,22 @@ public class KubernetesRestartEventsMockTest {
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
+        AdminClientProvider adminClientProvider = new AdminClientProvider() {
+            @Override
+            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+                return adminClientSupplier.get();
+            }
+
+            @Override
+            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
+                return adminClientSupplier.get();
+            }
+        };
+
         return new ResourceOperatorSupplier(vertx,
                 client,
                 ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                (bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName) -> adminClientSupplier.get(),
+                adminClientProvider,
                 ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
                 PFA,
