@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: strimzi-cluster-operator
+  name: {{ .Release.Name }}
   labels:
     app: {{ template "strimzi.name" . }}
     chart: {{ template "strimzi.chart" . }}
@@ -12,12 +12,12 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: strimzi-cluster-operator
+      name: {{ .Release.Name }}
       strimzi.io/kind: cluster-operator
   template:
     metadata:
       labels:
-        name: strimzi-cluster-operator
+        name: {{ .Release.Name }}
         strimzi.io/kind: cluster-operator
         {{- with .Values.labels }}
         {{- toYaml . | nindent 8 }}
@@ -27,7 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: strimzi-cluster-operator
+      serviceAccountName: {{ .Release.Name }}
       {{- if .Values.image.imagePullSecrets }}
       imagePullSecrets:
         - name: {{ .Values.image.imagePullSecrets }}
@@ -47,7 +47,7 @@ spec:
           configMap:
             name: {{ .Values.logConfigMap }}
       containers:
-        - name: strimzi-cluster-operator
+        - name: {{ .Release.Name }}
           image: {{ default .Values.defaultImageRegistry .Values.image.registry }}/{{ default .Values.defaultImageRepository .Values.image.repository}}/{{ .Values.image.name }}:{{ default .Values.defaultImageTag .Values.image.tag }}
           ports:
             - containerPort: 8080

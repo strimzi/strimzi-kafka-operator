@@ -9,9 +9,9 @@ kind: RoleBinding
 {{- end }}
 metadata:
   {{- if $root.Values.watchAnyNamespace }}
-  name: strimzi-cluster-operator-namespaced
+  name: {{ $root.Release.Name }}-namespaced
   {{- else }}
-  name: strimzi-cluster-operator
+  name: {{ $root.Release.Name }}
   {{- end }}
   namespace: {{ . }}
   labels:
@@ -22,10 +22,10 @@ metadata:
     heritage: {{ $root.Release.Service }}
 subjects:
   - kind: ServiceAccount
-    name: strimzi-cluster-operator
+    name: {{ $root.Release.Name }}
     namespace: {{ $root.Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: strimzi-cluster-operator-namespaced
+  name: {{ $root.Release.Name }}-namespaced
   apiGroup: rbac.authorization.k8s.io
 {{- end }}

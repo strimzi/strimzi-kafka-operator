@@ -8,7 +8,7 @@ kind: ClusterRoleBinding
 kind: RoleBinding
 {{- end }}
 metadata:
-  name: strimzi-cluster-operator-entity-operator-delegation
+  name: {{ $root.Release.Name }}-entity-operator-delegation
   namespace: {{ . }}
   labels:
     app: {{ template "strimzi.name" $root }}
@@ -20,7 +20,7 @@ metadata:
 # This must be done to avoid escalating privileges which would be blocked by Kubernetes.
 subjects:
   - kind: ServiceAccount
-    name: strimzi-cluster-operator
+    name: {{ $root.Release.Name }}
     namespace: {{ $root.Release.Namespace }}
 roleRef:
   kind: ClusterRole
