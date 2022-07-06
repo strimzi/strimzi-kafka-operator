@@ -13,6 +13,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public class DefaultAdminClientProvider implements AdminClientProvider {
+    @Override
+    public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+        return createAdminClient(bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName, new Properties());
+    }
+
     /**
      * Create a Kafka Admin interface instance handling the following different scenarios:
      *
@@ -35,7 +40,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      * TLS encrypted connection and with TLS client authentication.
      */
     @Override
-    public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+    public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
         String trustedCertificates = null;
         String privateKey = null;
         String certificateChain = null;
@@ -51,28 +56,27 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
             certificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
         }
 
-        Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
+        config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
 
         // configuring TLS encryption if requested
         if (trustedCertificates != null) {
-            p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-            p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
+            config.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+            config.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+            config.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
         }
 
         // configuring TLS client authentication
         if (certificateChain != null && privateKey != null) {
-            p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
-            p.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
+            config.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+            config.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
+            config.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
         }
 
-        p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
-        p.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
-        p.setProperty(AdminClientConfig.RETRIES_CONFIG, "3");
-        p.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
+        config.putIfAbsent(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
+        config.putIfAbsent(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
+        config.putIfAbsent(AdminClientConfig.RETRIES_CONFIG, "3");
+        config.putIfAbsent(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
 
-        return Admin.create(p);
+        return Admin.create(config);
     }
 }
