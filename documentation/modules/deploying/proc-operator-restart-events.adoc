@@ -11,7 +11,7 @@
 [role="_abstract"]
 Use a `kubectl` command to list restart events initiated by the Cluster Operator.
 
-You filter for restart events emitted by the Cluster Operator by setting the Cluster Operator as the reporting component using the `source` or `reportingComponent` event fields.
+Filter restart events emitted by the Cluster Operator by setting the Cluster Operator as the reporting component using the `source` or `reportingComponent` event fields.
 
 .Prerequisites
 

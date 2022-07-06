@@ -6,10 +6,10 @@
 = Reasons for a restart event
 
 [role="_abstract"]
-The Cluster Operator initiates a restart event for a specific  reason.
+The Cluster Operator initiates a restart event for a specific reason.
 You can check the reason by fetching information on the restart event. 
 
-The Cluster Operator will initiate a restart for one of the following reasons:
+Restarts are made for the following reasons:
 
 `CaCertHasOldGeneration`:: The pod is still using a server certificate signed with an old CA, so needs to be restarted as part of the certificate update.
 `CaCertRemoved`:: Expired CA certificates have been removed, and the pod is restarted to run with the current certificates.
@@ -24,6 +24,6 @@ The Cluster Operator will initiate a restart for one of the following reasons:
 `PodForceRestartOnError`:: An error occurred that requires a pod restart to rectify.
 `PodHasOldGeneration`:: The `StatefulSet` that the pod is a member of has been updated, so the pod needs to be recreated.
 `PodHasOldRevision`:: The `StrimziPodSet` that the pod is a member of has been updated, so the pod needs to be recreated.
-`PodStuck`:: The pod is still pending, and is either unschedulable or not scheduled, so the operator has restarted the pod as a final attempt to get it running.
-`PodUnresponsive`:: Strimzi was unable to connect to the pod, which can indicate a broker not starting properly, so the operator will restart it to try to resolve the issue.
+`PodStuck`:: The pod is still pending, and either is not scheduled or cannot be scheduled, so the operator has restarted the pod in a final attempt to get it running.
+`PodUnresponsive`:: Strimzi was unable to connect to the pod, which can indicate a broker not starting correctly, so the operator restarted it in an attempt to resolve the issue.
 `KafkaCertificatesChanged`:: One or more TLS certificates used by the Kafka broker have been updated, and a restart is needed to use them.
