@@ -37,7 +37,7 @@ Topic replication is defined using regular expression patterns to include or exc
 The following MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
 
 MirrorSourceConnector:: A _MirrorSourceConnector_ creates remote topics from the source cluster.
-MirrorCheckpointConnector:: A _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an _offset sync_ topic and _checkpoint_ topic.
+MirrorCheckpointConnector:: A _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an `offset-syncs` topic and `checkpoints` topic.
 The offset sync topic maps the source and target offsets for replicated topic partitions from record metadata.
 A checkpoint is emitted from each source cluster and replicated in the target cluster through the checkpoint topic.
 The checkpoint topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
