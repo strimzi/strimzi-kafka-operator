@@ -204,7 +204,7 @@ public class CruiseControl extends AbstractModel {
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
-            cruiseControl.capacity = new Capacity(kafkaCr.getSpec(), storage);
+            cruiseControl.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), storage);
 
             // Parse different types of metrics configurations
             ModelUtils.parseMetrics(cruiseControl, ccSpec);

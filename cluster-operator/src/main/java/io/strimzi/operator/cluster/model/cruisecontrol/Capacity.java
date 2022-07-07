@@ -14,9 +14,12 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
+import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.Quantities;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -161,11 +164,11 @@ public class Capacity {
         }
     }
 
-    public Capacity(KafkaSpec spec, Storage storage) {
+    public Capacity(Reconciliation reconciliation, KafkaSpec spec, Storage storage) {
         this.capacityEntries = new TreeMap<>();
         this.storage = storage;
 
-        processCapacityEntries(spec);
+        processCapacityEntries(reconciliation, spec);
     }
 
     private static Integer getResourceRequirement(ResourceRequirements resources, ResourceRequirementType requirementType) {
@@ -304,7 +307,7 @@ public class Capacity {
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
     }
 
-    private void processCapacityEntries(KafkaSpec spec) {
+    private void processCapacityEntries(Reconciliation reconciliation, KafkaSpec spec) {
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity = spec.getCruiseControl().getBrokerCapacity();
         String cpuBasedOnRequirements = getCpuBasedOnRequirements(spec.getKafka().getResources());
         int replicas = spec.getKafka().getReplicas();
@@ -323,7 +326,9 @@ public class Capacity {
             // requires a distinct broker capacity entry for every broker because the
             // Kafka volume paths are not homogeneous across brokers and include
             // the broker pod index in their names.
-            for (int id = 0; id < replicas; id++) {
+            List<String> podList = KafkaCluster.generatePodList(reconciliation.name(), replicas);
+            for (int podIndex = 0; podIndex < podList.size(); podIndex++) {
+                int id = KafkaRoller.idOfPod(podList.get(podIndex));
                 disk = processDisk(storage, id);
                 BrokerCapacity broker = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
                 capacityEntries.put(id, broker);

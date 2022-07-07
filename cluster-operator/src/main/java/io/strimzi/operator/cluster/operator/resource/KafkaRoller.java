@@ -392,7 +392,7 @@ public class KafkaRoller {
         return false;
     }
 
-    private int idOfPod(String podName)  {
+    public static int idOfPod(String podName)  {
         return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
     }
 
