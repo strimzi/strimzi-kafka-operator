@@ -19,6 +19,7 @@
 * Update JMX Exporter to version 0.17.0
 * Operator emits Kafka events to explain why it restarted a Kafka broker
 * Better configurability of the Kafka Admin client in the User Operator
+* Update Strimzi Kafka Bridge to 0.21.6
 
 ## 0.29.0
 
