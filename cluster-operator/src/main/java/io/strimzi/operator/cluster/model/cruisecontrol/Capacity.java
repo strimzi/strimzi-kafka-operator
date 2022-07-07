@@ -17,10 +17,10 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
-import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.Quantities;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -328,7 +328,7 @@ public class Capacity {
             // the broker pod index in their names.
             List<String> podList = KafkaCluster.generatePodList(reconciliation.name(), replicas);
             for (int podIndex = 0; podIndex < podList.size(); podIndex++) {
-                int id = KafkaRoller.idOfPod(podList.get(podIndex));
+                int id = Util.idOfPod(podList.get(podIndex));
                 disk = processDisk(storage, id);
                 BrokerCapacity broker = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
                 capacityEntries.put(id, broker);
