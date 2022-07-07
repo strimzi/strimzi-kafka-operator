@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -16,8 +15,6 @@ import io.vertx.core.Vertx;
  * Operator for {@code StrimziPodSet}s
  */
 public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> {
-    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetOperator.class.getName());
-
     protected final long operationTimeoutMs;
 
     /**

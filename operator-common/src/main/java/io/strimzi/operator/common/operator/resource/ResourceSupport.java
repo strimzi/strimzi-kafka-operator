@@ -29,7 +29,7 @@ import java.util.function.Function;
 
 public class ResourceSupport {
     public static final long DEFAULT_TIMEOUT_MS = 300_000;
-    protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceSupport.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceSupport.class);
 
     private final Vertx vertx;
 
