@@ -779,15 +779,4 @@ public class Util {
     public static String encodeToBase64(String encode)  {
         return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
     }
-
-    /**
-     * Returns the id of a pod given the pod name
-     *
-     * @param podName   Name of pod
-     *
-     * @return          Id of the pod
-     */
-    public static int idOfPod(String podName)  {
-        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
-    }
 }
