@@ -739,4 +739,15 @@ public class ModelUtils {
     public static int caCertGeneration(Ca ca) {
         return Annotations.intAnnotation(ca.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, Ca.INIT_GENERATION);
     }
+
+    /**
+     * Returns the id of a pod given the pod name
+     *
+     * @param podName   Name of pod
+     *
+     * @return          Id of the pod
+     */
+    public static int idOfPod(String podName)  {
+        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
+    }
 }

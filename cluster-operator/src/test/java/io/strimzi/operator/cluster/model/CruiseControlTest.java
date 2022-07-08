@@ -225,7 +225,7 @@ public class CruiseControlTest {
 
         Kafka resource = createKafka(cruiseControlSpec);
 
-        Capacity capacity = new Capacity(resource.getSpec(), kafkaStorage);
+        Capacity capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), kafkaStorage);
 
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.toString()));
 
@@ -250,7 +250,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
         
-        capacity = new Capacity(resource.getSpec(), jbodStorage);
+        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), jbodStorage);
         String cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
 
         JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
@@ -295,7 +295,7 @@ public class CruiseControlTest {
             .build();
 
         resource = createKafka(cruiseControlSpec);
-        capacity = new Capacity(resource.getSpec(), kafkaStorage);
+        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), kafkaStorage);
 
         brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
         for (Object brokerEntry : brokerEntries) {
@@ -338,7 +338,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
 
-        capacity = new Capacity(resource.getSpec(), kafkaStorage);
+        capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), kafkaStorage);
         cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
 
         brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);
