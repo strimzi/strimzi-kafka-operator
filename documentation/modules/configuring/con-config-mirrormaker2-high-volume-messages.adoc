@@ -38,11 +38,7 @@ While this is happening, Kafka Connect tasks continue to poll topics in the sour
 The size of the buffer is set using the `producer.buffer.memory` property. 
 Tasks wait for a specified timeout period (`offset.flush.timeout.ms`) before the buffer is flushed. 
 This should be enough time for the sent messages to be acknowledged by the brokers and offset data committed. 
-
-NOTE: Kafka 3.1.0 and newer versions do not wait for the producer to empty the message queue before committing offsets, except during shutdown.
-
-Try to avoid a situation where there are too many messages in the buffer, so they can't all be flushed before the offset flush timeout is reached.
-The offset flush timeout period needs to be sufficient for the size of the buffer.
+Kafka does not wait for the producer to empty the message queue before committing offsets, except during shutdown.
 
 If the producer is unable to keep up with the throughput of messages in the source message queue, buffering is blocked until there is space available in the buffer within a time period allocated by `max.block.ms`.
 Any unacknowledged messages still in the buffer are sent during this period.
@@ -84,7 +80,7 @@ spec:
       tasksMax: 2
       config:
         producer.override.batch.size: 327680
-        producer.override.linger.ms: 5
+        producer.override.linger.ms: 100
     # ...
   resources: 
     requests:
