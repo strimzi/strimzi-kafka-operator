@@ -54,6 +54,8 @@ The following tables describe the producers and consumers for each of the connec
 
 |===
 
+IMPORTANT: The consumer configuration changes depending on the location of the `offset-syncs` topic. The default location is the source Kafka cluster. You can set `offset-syncs.topic.location` to `target` to use the target Kafka cluster. If you use the target Kafka cluster, use `mirrors.checkpointConnector.config: target.consumer.*` for the consumer configuration. 
+
 .Heartbeat connector producer
 [cols="1,1a,3m",options="header"]
 |===
@@ -99,9 +101,6 @@ spec:
         producer.override.request.timeout.ms: 40000
         # ...      
 ----
-
-NOTE: You can configure producers and consumers at the cluster level using `spec.clusters.config.producer.\*` or `spec.clusters.config.consumer.*` properties. 
-If you do this, the changes might impact all internal producers and consumers. 
 
 [role="_additional-resources"]
 .Additional resources
