@@ -1,0 +1,87 @@
+// suppress inspection "KubernetesDeprecatedKeys" for whole file
+// suppress inspection "KubernetesNonEditableKeys" for whole file
+// suppress inspection "KubernetesUnknownKeys" for whole file
+// Module included in the following assemblies:
+//
+// assembly-deploy-restart-events.adoc
+
+[id='proc-operator-restart-events-{context}']
+= Checking Kafka restarts
+
+[role="_abstract"]
+Use a `kubectl` command to list restart events initiated by the Cluster Operator.
+
+Filter restart events emitted by the Cluster Operator by setting the Cluster Operator as the reporting component using the `source` or `reportingComponent` event fields.
+
+.Prerequisites
+
+* The Cluster Operator is running in the Kubernetes cluster.
+
+.Procedure
+
+. Get all restart events emitted by the Cluster Operator:
++
+[source,shell]
+----
+kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator
+----
++
+.Example showing events returned
+[source,shell]
+----
+LAST SEEN   TYPE     REASON                   OBJECT                        MESSAGE
+2m          Normal   JbodVolumesChanged       pod/strimzi-cluster-kafka-0   JBOD volumes were added or removed
+58m         Normal   PodForceRestartOnError   pod/strimzi-cluster-kafka-1   Pod needs to be forcibly restarted due to an error
+5m47s       Normal   ManualRollingUpdate      pod/strimzi-cluster-kafka-2   Pod was manually annotated to be rolled
+----
++
+You can also specify a `reason` or other `field-selector` options to constrain the events returned.
++
+Here, a specific reason is added:
++
+[source,shell]
+----
+kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,reason=PodForceRestartOnError
+----
+
+. Use an output format, such as YAML, to return more detailed information about one or more events.
++
+[source,shell-session]
+----
+kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,reason=PodForceRestartOnError -o yaml
+----
++
+.Example showng detailed events output
+[source,yaml]
+----
+apiVersion: v1
+items:
+- action: StrimziInitiatedPodRestart
+  apiVersion: v1
+  eventTime: "2022-05-13T00:22:34.168086Z"
+  firstTimestamp: null <1>
+  involvedObject:
+      kind: Pod
+      name: strimzi-cluster-kafka-1
+      namespace: kafka
+  kind: Event
+  lastTimestamp: null <1>
+  message: Pod needs to be forcibly restarted due to an error
+  metadata:
+      creationTimestamp: "2022-05-13T00:22:34Z"
+      generateName: strimzi-event
+      name: strimzi-eventwppk6
+      namespace: kafka
+      resourceVersion: "432961"
+      uid: 29fcdb9e-f2cf-4c95-a165-a5efcd48edfc
+  reason: PodForceRestartOnError
+  reportingComponent: strimzi.io/cluster-operator
+  reportingInstance: strimzi-cluster-operator-6458cfb4c6-6bpdp
+  source: {} <1>
+  type: Normal
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
+----
+<1> These fields are deprecated, and will be removed in Kubernetes 1.25. As such, they are not populated for these events.

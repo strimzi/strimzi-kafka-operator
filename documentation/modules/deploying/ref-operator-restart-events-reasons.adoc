@@ -1,0 +1,29 @@
+// Module included in the following assemblies:
+//
+// assembly-deploy-restart-events.adoc
+
+[id='ref-operator-restart-events-reasons-{context}']
+= Reasons for a restart event
+
+[role="_abstract"]
+The Cluster Operator initiates a restart event for a specific reason.
+You can check the reason by fetching information on the restart event. 
+
+Restarts are made for the following reasons:
+
+`CaCertHasOldGeneration`:: The pod is still using a server certificate signed with an old CA, so needs to be restarted as part of the certificate update.
+`CaCertRemoved`:: Expired CA certificates have been removed, and the pod is restarted to run with the current certificates.
+`CaCertRenewed`:: CA certificates have been renewed, and the pod is restarted to run with the updated certificates.
+`ClientCaCertKeyReplaced`:: The key used to sign client CA certificates has been replaced, and the pod is being restarted as part of the CA renewal process.
+`ClusterCaCertKeyReplaced`:: The key used to sign the cluster's CA certificates has been replaced, and the pod is being restarted as part of the CA renewal process.
+`ConfigChangeRequiresRestart`:: Some Kafka configuration properties are changed dynamically, but others require that the broker be restarted.
+`CustomListenerCaCertChanged`:: The CA certificate used to secure the Kafka network listeners has changed, and the pod is restarted to use it.
+`FileSystemResizeNeeded`:: The file system size has been increased, and a restart is needed to apply it.
+`JbodVolumesChanged`:: A disk was added or removed from the Kafka volumes, and a restart is needed to apply the change.
+`ManualRollingUpdate`:: A user annotated the pod, or the `StatefulSet`` or `StrimziPodSet` set it belongs to, to trigger a restart.
+`PodForceRestartOnError`:: An error occurred that requires a pod restart to rectify.
+`PodHasOldGeneration`:: The `StatefulSet` that the pod is a member of has been updated, so the pod needs to be recreated.
+`PodHasOldRevision`:: The `StrimziPodSet` that the pod is a member of has been updated, so the pod needs to be recreated.
+`PodStuck`:: The pod is still pending, and either is not scheduled or cannot be scheduled, so the operator has restarted the pod in a final attempt to get it running.
+`PodUnresponsive`:: Strimzi was unable to connect to the pod, which can indicate a broker not starting correctly, so the operator restarted it in an attempt to resolve the issue.
+`KafkaCertificatesChanged`:: One or more TLS certificates used by the Kafka broker have been updated, and a restart is needed to use them.

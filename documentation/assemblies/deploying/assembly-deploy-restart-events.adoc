@@ -1,0 +1,16 @@
+// This assembly is included in:
+//
+// deploying/deploying.adoc
+
+[id="assembly-deploy-restart-events-{context}"]
+= Finding information on Kafka restarts
+
+[role="_abstract"]
+After the Cluster Operator restarts a Kafka pod in a Kubernetes cluster, it emits a Kubernetes event into the pod's namespace explaining why the pod restarted.
+For help in understanding cluster behavior, you can check restart events from the command line.
+
+TIP: You can export and monitor restart events using metrics collection tools like Prometheus. Use the metrics tool with an _event exporter_ that can export the output in a suitable format. 
+
+include::modules/ref-operator-restart-events-reasons.adoc[leveloffset=+1]
+include::modules/ref-operator-restart-events-fields.adoc[leveloffset=+1]
+include::modules/proc-operator-restart-events.adoc[leveloffset=+1]

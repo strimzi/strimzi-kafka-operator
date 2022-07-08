@@ -44,7 +44,7 @@ If you require a higher timeout, you will need to change the `maxSessionTimeout`
 The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the cluster operator.
 
 `STRIMZI_OPERATOR_NAME`:: Optional, defaults to pod's hostname.
-The operator name identifies the Strimzi instance when xref:{BookURLDeploying}#proc-operator-restart-events-{context}[emitting Kubernetes events].
+The operator name identifies the Strimzi instance when link:{BookURLDeploying}#proc-operator-restart-events-str[emitting Kubernetes events^].
 
 `STRIMZI_OPERATOR_NAMESPACE`:: The name of the namespace where the Strimzi Cluster Operator is running.
 Do not configure this variable manually. Use the Kubernetes Downward API.
