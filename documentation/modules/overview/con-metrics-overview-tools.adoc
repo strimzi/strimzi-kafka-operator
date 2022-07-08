@@ -60,10 +60,10 @@ Based on _optimization goals_ that have been defined, Cruise Control generates _
 When an _optimization proposal_ is approved, Cruise Control applies the rebalancing outlined in the proposal.
 
 You can generate optimization proposals in specific modes. 
-A `full` mode rebalance across all brokers is used by default.
+The `full` mode rebalances across all brokers and is used by default.
 Other modes accommodate changes when scaling a cluster up or down.
-Generate an optimization proposal in `add-brokers` mode to include any newly added brokers in the rebalance.
-Generate an optimization proposal in `remove-brokers` mode to exclude any brokers from the rebalance that are set to be removed.  
+Generate an optimization proposal in `add-brokers` mode to move data from existing brokers to newly added ones.
+Generate an optimization proposal in `remove-brokers` mode to move all data off brokers to be removed, before scaling down.
 
 Prometheus can extract Cruise Control metrics data, including data related to optimization proposals and rebalancing operations.
 A sample configuration file and Grafana dashboard for Cruise Control are provided with Strimzi.
