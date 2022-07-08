@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 
@@ -37,13 +38,14 @@ public class ResourceOperation {
             case KafkaMirrorMaker.RESOURCE_KIND:
             case KafkaBridge.RESOURCE_KIND:
             case Constants.STATEFUL_SET:
+            case StrimziPodSet.RESOURCE_KIND:
             case Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT:
             case Constants.KAFKA_EXPORTER_DEPLOYMENT:
             case Constants.DEPLOYMENT:
                 timeout = Duration.ofMinutes(8).toMillis();
                 break;
             case KafkaConnector.RESOURCE_KIND:
-                timeout = Duration.ofMinutes(4).toMillis();
+                timeout = Duration.ofMinutes(7).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(3).toMillis();
@@ -58,7 +60,7 @@ public class ResourceOperation {
             case ProposalReady:
             case Ready:
             case Rebalancing:
-                timeout = Duration.ofMinutes(10).toMillis();
+                timeout = Duration.ofMinutes(14).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(6).toMillis();

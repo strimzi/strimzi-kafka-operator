@@ -22,10 +22,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,8 +32,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
@@ -64,13 +65,17 @@ public class Main {
         // setting DNS cache TTL
         Security.setProperty("networkaddress.cache.ttl", String.valueOf(config.getDnsCacheTtlSec()));
 
-        //Setup Micrometer metrics options
+        // setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setJvmMetricsEnabled(true)
-                        .setEnabled(true));
+            new MicrometerMetricsOptions()
+                .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                .setJvmMetricsEnabled(true)
+                .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
+
+        // Verticle.stop() methods are not executed if you don't call Vertx.close()
+        // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
         
         KubernetesClient client = new DefaultKubernetesClient();
 
@@ -101,33 +106,39 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         Util.printEnvInfo();
 
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.featureGates(), config.getOperationTimeoutMs());
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
+                vertx,
+                client,
+                pfa,
+                config.getOperationTimeoutMs(),
+                config.getOperatorName()
+        );
 
-        OpenSslCertManager certManager = new OpenSslCertManager();
-        PasswordGenerator passwordGenerator = new PasswordGenerator(12,
-                "abcdefghijklmnopqrstuvwxyz" +
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                "abcdefghijklmnopqrstuvwxyz" +
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                        "0123456789");
+        KafkaAssemblyOperator kafkaClusterOperations = null;
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;
+        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator = null;
+        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator = null;
+        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator = null;
+        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator = null;
 
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
-                certManager, passwordGenerator, resourceOperatorSupplier, config);
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
-                resourceOperatorSupplier, config);
+        if (!config.isPodSetReconciliationOnly()) {
+            OpenSslCertManager certManager = new OpenSslCertManager();
+            PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+                    "abcdefghijklmnopqrstuvwxyz" +
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                    "abcdefghijklmnopqrstuvwxyz" +
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                            "0123456789");
 
-        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
-                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
+        }
 
-        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-
-        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
-                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-
-        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
-                new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-
+        @SuppressWarnings({ "rawtypes" })
         List<Future> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
@@ -162,6 +173,7 @@ public class Main {
 
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
+            @SuppressWarnings({ "rawtypes" })
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
@@ -176,10 +188,11 @@ public class Main {
                 LOGGER.info("Creating cluster role {}", clusterRole.getKey());
 
                 try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue()),
+                        new InputStreamReader(Objects.requireNonNull(Main.class.getResourceAsStream("/cluster-roles/" + clusterRole.getValue())),
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);
+                    @SuppressWarnings({ "rawtypes" })
                     Future fut = cro.reconcile(new Reconciliation("start-cluster-operator", "Deployment", config.getOperatorNamespace(), "cluster-operator"), role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {

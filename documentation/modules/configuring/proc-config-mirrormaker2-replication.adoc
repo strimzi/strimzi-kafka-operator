@@ -3,9 +3,11 @@
 // assembly-config-mirrormaker2.adoc
 
 [id='proc-mirrormaker-replication-{context}']
-= Synchronizing data between Kafka clusters using MirrorMaker 2.0
+= Configuring Kafka MirrorMaker 2.0
 
-Use MirrorMaker 2.0 to synchronize data between Kafka clusters through configuration.
+[role="_abstract"]
+Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
+Use MirrorMaker 2.0 to synchronize data between Kafka clusters
 
 The configuration must specify:
 
@@ -15,8 +17,6 @@ The configuration must specify:
 ** Cluster to cluster
 ** Topic to topic
 
-Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
-
 NOTE: The previous version of MirrorMaker continues to be supported.
 If you wish to use the resources configured for the previous version,
 they must be updated to the format supported by MirrorMaker 2.0.
@@ -24,6 +24,7 @@ they must be updated to the format supported by MirrorMaker 2.0.
 MirrorMaker 2.0 provides default configuration values for properties such as replication factors.
 A minimal configuration, with defaults left unchanged, would be something like this example:
 
+.Minimal configuration for MirrorMaker 2.0
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -47,12 +48,17 @@ spec:
 You can configure access control for source and target clusters using TLS or SASL authentication.
 This procedure shows a configuration that uses TLS encryption and authentication for the source and target cluster.
 
+You can specify the topics and consumer groups you wish to replicate from a source cluster in the `KafkaMirrorMaker2` resource.
+You use the `topicsPattern` and `groupsPattern` properties to do this.
+You can provide a list of names or use a regular expression.
+By default, all topics and consumer groups are replicated if you do not set the `topicsPattern` and `groupsPattern` properties.
+You can also replicate all topics and consumer groups by using `".*"` as a regular expression.
+However, try to specify only the topics and consumer groups you need to avoid causing any unnecessary extra load on the cluster.
+
 .Prerequisites
 
-* See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
-** link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
-** link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
-* Source and target Kafka clusters must be available
+* Strimzi is running
+* Source and target Kafka clusters are available
 
 .Procedure
 
@@ -114,7 +120,7 @@ spec:
         sync.topic.acls.enabled: "false" <23>
         refresh.topics.interval.seconds: 60 <24>
         replication.policy.separator: "" <25>
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy" <26>
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" <26>
     heartbeatConnector: <27>
       config:
         heartbeats.topic.replication.factor: 1 <28>
@@ -125,8 +131,8 @@ spec:
         sync.group.offsets.enabled: true <32>
         sync.group.offsets.interval.seconds: 60 <33>
         emit.checkpoints.interval.seconds: 60 <34>
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy"
-    topicsPattern: ".*" <35>
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
+    topicsPattern: "topic1|topic2|topic3" <35>
     groupsPattern: "group1|group2|group3" <36>
   resources: <37>
     requests:
@@ -149,7 +155,9 @@ spec:
     "-Xmx": "1g"
     "-Xms": "1g"
   image: my-org/my-image:latest <41>
-  template: <42>
+  rack:
+    topologyKey: topology.kubernetes.io/zone <42>
+  template: <43>
     pod:
       affinity:
         podAntiAffinity:
@@ -162,7 +170,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: <43>
+    connectContainer: <44>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -171,8 +179,8 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
   tracing:
-    type: jaeger <44>
-  externalConfiguration: <45>
+    type: jaeger <45>
+  externalConfiguration: <46>
     env:
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
@@ -186,7 +194,7 @@ spec:
             key: awsSecretAccessKey
 ----
 <1> The Kafka Connect and Mirror Maker 2.0 xref:type-KafkaConnectSpec-reference[version], which will always be the same.
-<2> xref:con-common-configuration-replicas-reference[The number of replica nodes].
+<2> xref:con-common-configuration-replicas-reference[The number of replica nodes] for the workers that run tasks.
 <3> xref:type-KafkaMirrorMaker2Spec-reference[Kafka cluster alias] for Kafka Connect, which must specify the *target* Kafka cluster. The Kafka cluster is used by Kafka Connect for its internal topics.
 <4> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Specification] for the Kafka clusters being synchronized.
 <5> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Cluster alias] for the source Kafka cluster.
@@ -208,7 +216,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <20> The maximum number of tasks that the connector may create. Tasks handle the data replication and run in parallel. If the infrastructure supports the processing overhead, increasing this value can improve throughput. Kafka Connect distributes the tasks between members of the cluster. If there are more tasks than workers, workers are assigned multiple tasks. For sink connectors, aim to have one task for each topic partition consumed. For source connectors, the number of tasks that can run in parallel may also depend on the external system. The connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
 <21> Replication factor for mirrored topics created at the target cluster.
 <22> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
-<23> When xref:con-mirrormaker-acls-{context}[ACL rules synchronization] is enabled, ACLs are applied to synchronized topics. The default is `true`.
+<23> When xref:con-mirrormaker-acls-{context}[ACL rules synchronization] is enabled, ACLs are applied to synchronized topics. The default is `true`. This feature is not compatible with the User Operator. If you are using the User Operator, set this property to `false`.
 <24> Optional setting to change the frequency of checks for new topics. The default is for a check every 10 minutes.
 <25> Defines the separator used for the renaming of remote topics.
 <26> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration.
@@ -221,18 +229,18 @@ To configure topic offset synchronization, this property must also be set for th
 <32> Optional setting to synchronize consumer group offsets, which is useful for recovery in an active/passive configuration. Synchronization is not enabled by default.
 <33> If the synchronization of consumer group offsets is enabled, you can adjust the frequency of the synchronization.
 <34> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
-<35> Topic replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as regular expression patterns]. Here we request all topics.
-<36> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as regular expression patterns]. Here we request three consumer groups by name.
-You can use comma-separated lists.
+<35> Topic replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. The source connector replicates the specified topics. The checkpoint connector tracks offsets for the specified topics. Here we request three topics by name.
+<36> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. The checkpoint connector replicates the specified consumer groups. Here we request three consumer groups by name.
 <37> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <38> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <39> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <40> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <41> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<42> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<43> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
-<44> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
-<45> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
+<42> SPECIALIZED OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
+<43> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<44> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+<45> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<46> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
 You can also use _configuration provider plugins_ to xref:assembly-loading-config-with-providers-str[load configuration values from external sources].
 
 . Create or update the resource:

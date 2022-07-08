@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * Cluster Operator configuration
@@ -47,14 +46,16 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
     public static final String STRIMZI_FEATURE_GATES = "STRIMZI_FEATURE_GATES";
     public static final String STRIMZI_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_OPERATIONS_THREAD_POOL_SIZE";
+    public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
+    public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
+    public static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE";
+
+    //Used to identify which cluster operator created a Kubernetes event
+    public static final String STRIMZI_OPERATOR_NAME = "STRIMZI_OPERATOR_NAME";
 
     // Feature Flags
-    public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
-    public static final RbacScope DEFAULT_STRIMZI_RBAC_SCOPE = RbacScope.CLUSTER;
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
-    public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
     public static final String STRIMZI_NETWORK_POLICY_GENERATION = "STRIMZI_NETWORK_POLICY_GENERATION";
-    public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
 
     // Env vars for configuring images
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
@@ -63,7 +64,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
     public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
     public static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"; // Used only to produce warning if defined at startup
-    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE";
+    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE"; // Used only to produce warning if defined at startup
     public static final String STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE = "STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE";
     public static final String STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
     public static final String STRIMZI_DEFAULT_USER_OPERATOR_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
@@ -72,7 +73,6 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE";
     public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
     public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";
-    public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
 
     // Env vars configured in the Cluster operator deployment but passed to all operands
     public static final String HTTP_PROXY = "HTTP_PROXY";
@@ -80,12 +80,18 @@ public class ClusterOperatorConfig {
     public static final String NO_PROXY = "NO_PROXY";
     public static final String FIPS_MODE = "FIPS_MODE";
 
+    // Default values
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+    public static final int DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = 1024;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    public static final String DEFAULT_OPERATOR_NAME = "cluster-operator-name-unset";
     public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
-    public static final int DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE = 10;
-    public static final int DEFAULT_STRIMZI_DNS_CACHE_TTL = 30;
+    public static final int DEFAULT_OPERATIONS_THREAD_POOL_SIZE = 10;
+    public static final int DEFAULT_DNS_CACHE_TTL = 30;
+    public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
+    public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
+    public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
@@ -99,16 +105,17 @@ public class ClusterOperatorConfig {
     private final List<LocalObjectReference> imagePullSecrets;
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
-    private final RbacScope rbacScope;
     private final Labels customResourceSelector;
     private final FeatureGates featureGates;
     private final int operationsThreadPoolSize;
     private final int dnsCacheTtlSec;
+    private final boolean podSetReconciliationOnly;
+    private final int podSetControllerWorkQueueSize;
+    private final String operatorName;
 
     /**
      * Constructor
-     *
-     * @param namespaces namespace in which the operator will run and create resources
+     *  @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
@@ -119,12 +126,15 @@ public class ClusterOperatorConfig {
      * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
      * @param operatorNamespace Name of the namespace in which the operator is running
      * @param operatorNamespaceLabels Labels of the namespace in which the operator is running (used for network policies)
-     * @param rbacScope true to use Roles where possible instead of ClusterRoles
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
      * @param zkAdminSessionTimeoutMs Session timeout for the Zookeeper Admin client used in ZK scaling operations
      * @param dnsCacheTtlSec Number of seconds to cache a successful DNS name lookup
+     * @param podSetReconciliationOnly Indicates whether this Cluster Operator instance should reconcile only the
+     *                                 StrimziPodSet resources or not
+     * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
+     * @param operatorName The Pod name of the cluster operator, used to identify source of K8s events the operator creates
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -139,13 +149,15 @@ public class ClusterOperatorConfig {
             List<LocalObjectReference> imagePullSecrets,
             String operatorNamespace,
             Labels operatorNamespaceLabels,
-            RbacScope rbacScope,
             Labels customResourceSelector,
             String featureGates,
             int operationsThreadPoolSize,
             int zkAdminSessionTimeoutMs,
-            int dnsCacheTtlSec) {
-        this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
+            int dnsCacheTtlSec,
+            boolean podSetReconciliationOnly,
+            int podSetControllerWorkQueueSize,
+            String operatorName) {
+        this.namespaces = Set.copyOf(namespaces);
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
         this.connectBuildTimeoutMs = connectBuildTimeoutMs;
@@ -156,12 +168,14 @@ public class ClusterOperatorConfig {
         this.imagePullSecrets = imagePullSecrets;
         this.operatorNamespace = operatorNamespace;
         this.operatorNamespaceLabels = operatorNamespaceLabels;
-        this.rbacScope = rbacScope;
         this.customResourceSelector = customResourceSelector;
         this.featureGates = new FeatureGates(featureGates);
         this.operationsThreadPoolSize = operationsThreadPoolSize;
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
         this.dnsCacheTtlSec = dnsCacheTtlSec;
+        this.podSetReconciliationOnly = podSetReconciliationOnly;
+        this.podSetControllerWorkQueueSize = podSetControllerWorkQueueSize;
+        this.operatorName = operatorName;
     }
 
     /**
@@ -186,6 +200,10 @@ public class ClusterOperatorConfig {
             LOGGER.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
                     "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE);
         }
+        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE))    {
+            LOGGER.warn("Cruise Control TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
+                    "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE);
+        }
     }
 
     /**
@@ -201,18 +219,22 @@ public class ClusterOperatorConfig {
         long reconciliationInterval = parseReconciliationInterval(map.get(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS));
         long operationTimeout = parseTimeout(map.get(STRIMZI_OPERATION_TIMEOUT_MS), DEFAULT_OPERATION_TIMEOUT_MS);
         long connectBuildTimeout = parseTimeout(map.get(STRIMZI_CONNECT_BUILD_TIMEOUT_MS), DEFAULT_CONNECT_BUILD_TIMEOUT_MS);
-        boolean createClusterRoles = parseCreateClusterRoles(map.get(STRIMZI_CREATE_CLUSTER_ROLES));
-        boolean networkPolicyGeneration = parseNetworkPolicyGeneration(map.get(STRIMZI_NETWORK_POLICY_GENERATION));
+        boolean createClusterRoles = parseBoolean(map.get(STRIMZI_CREATE_CLUSTER_ROLES), DEFAULT_CREATE_CLUSTER_ROLES);
+        boolean networkPolicyGeneration = parseBoolean(map.get(STRIMZI_NETWORK_POLICY_GENERATION), DEFAULT_NETWORK_POLICY_GENERATION);
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(STRIMZI_IMAGE_PULL_POLICY));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(STRIMZI_IMAGE_PULL_SECRETS));
         String operatorNamespace = map.get(STRIMZI_OPERATOR_NAMESPACE);
         Labels operatorNamespaceLabels = parseLabels(map, STRIMZI_OPERATOR_NAMESPACE_LABELS);
-        RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
-        int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE);
+        int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_OPERATIONS_THREAD_POOL_SIZE);
         int zkAdminSessionTimeout = parseInt(map.get(STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS), DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS);
-        int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_STRIMZI_DNS_CACHE_TTL);
+        int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_DNS_CACHE_TTL);
+        boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
+        int podSetControllerWorkQueueSize = parseInt(map.get(STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE), DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+
+        //Use default to prevent existing installations breaking if CO pod template not modified to pass through pod name
+        String operatorName = map.getOrDefault(STRIMZI_OPERATOR_NAME, DEFAULT_OPERATOR_NAME);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -226,12 +248,14 @@ public class ClusterOperatorConfig {
                 imagePullSecrets,
                 operatorNamespace,
                 operatorNamespaceLabels,
-                rbacScope,
                 customResourceSelector,
                 featureGates,
                 operationsThreadPoolSize,
                 zkAdminSessionTimeout,
-                dnsCacheTtlSec);
+                dnsCacheTtlSec,
+                podSetReconciliationOnly,
+                podSetControllerWorkQueueSize,
+                operatorName);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -283,55 +307,14 @@ public class ClusterOperatorConfig {
         return value;
     }
 
-    private static boolean parseCreateClusterRoles(String createClusterRolesEnvVar) {
-        boolean createClusterRoles = DEFAULT_CREATE_CLUSTER_ROLES;
+    /* test */ static boolean parseBoolean(String envVar, boolean defaultValue) {
+        boolean value = defaultValue;
 
-        if (createClusterRolesEnvVar != null) {
-            createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
+        if (envVar != null) {
+            value = Boolean.parseBoolean(envVar);
         }
 
-        return createClusterRoles;
-    }
-
-    private static boolean parseNetworkPolicyGeneration(String networkPolicyGenerationEnvVar) {
-        boolean networkPolicyGeneration = DEFAULT_NETWORK_POLICY_GENERATION;
-
-        if (networkPolicyGenerationEnvVar != null) {
-            networkPolicyGeneration = Boolean.parseBoolean(networkPolicyGenerationEnvVar);
-        }
-
-        return networkPolicyGeneration;
-    }
-
-    /**
-     * enum to represent the various permission modes the cluster operator can be set to
-     *
-     * CLUSTER is the default and uses ClusterRoles to set permissions
-     * NAMESPACE allows for the use of Roles where possible instead of ClusterRoles
-     */
-    public enum RbacScope {
-        CLUSTER(),
-        NAMESPACE();
-
-        public boolean canUseClusterRoles() {
-            return this.equals(RbacScope.CLUSTER);
-        }
-    }
-
-    private static RbacScope parseRbacScope(String rbacScopeEnvVar) {
-        RbacScope rbacScope = DEFAULT_STRIMZI_RBAC_SCOPE;
-
-        if (rbacScopeEnvVar != null) {
-            try {
-                rbacScope = RbacScope.valueOf(rbacScopeEnvVar);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidConfigurationException(rbacScopeEnvVar
-                        + " is not a valid " + STRIMZI_RBAC_SCOPE + " value. " +
-                        STRIMZI_RBAC_SCOPE + " can have one of the following values: cluster, namespace.");
-            }
-        }
-
-        return rbacScope;
+        return value;
     }
 
     private static ImagePullPolicy parseImagePullPolicy(String imagePullPolicyEnvVar) {
@@ -509,13 +492,6 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return Permissions mode for the operator, whether to use Roles instead of ClusterRoles wherever possible.
-     */
-    public RbacScope getRbacScope() {
-        return rbacScope;
-    }
-
-    /**
      * @return Labels used for filtering custom resources
      */
     public Labels getCustomResourceSelector() {
@@ -540,6 +516,24 @@ public class ClusterOperatorConfig {
         return dnsCacheTtlSec;
     }
 
+    /**
+     * @return Indicates whether this Cluster Operator instance should reconcile only the StrimziPodSet resources or not
+     */
+    public boolean isPodSetReconciliationOnly() {
+        return podSetReconciliationOnly;
+    }
+
+    /**
+     * @return Returns the size of the StrimziPodSetController work queue
+     */
+    public int getPodSetControllerWorkQueueSize() {
+        return podSetControllerWorkQueueSize;
+    }
+
+    public String getOperatorName() {
+        return operatorName;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -554,11 +548,13 @@ public class ClusterOperatorConfig {
                 ",imagePullSecrets=" + imagePullSecrets +
                 ",operatorNamespace=" + operatorNamespace +
                 ",operatorNamespaceLabels=" + operatorNamespaceLabels +
-                ",rbacScope=" + rbacScope +
                 ",customResourceSelector=" + customResourceSelector +
                 ",featureGates=" + featureGates +
                 ",zkAdminSessionTimeoutMs=" + zkAdminSessionTimeoutMs +
                 ",dnsCacheTtlSec=" + dnsCacheTtlSec +
+                ",podSetReconciliationOnly=" + podSetReconciliationOnly +
+                ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
+                ",operatorName=" + operatorName +
                 ")";
     }
 }

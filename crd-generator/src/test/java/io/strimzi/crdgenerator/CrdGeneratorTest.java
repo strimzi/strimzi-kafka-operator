@@ -4,6 +4,10 @@
  */
 package io.strimzi.crdgenerator;
 
+import io.strimzi.api.annotations.ApiVersion;
+import io.strimzi.api.annotations.KubeVersion;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashSet;
@@ -11,15 +15,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.annotations.KubeVersion;
-import org.junit.jupiter.api.Test;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 
 public class CrdGeneratorTest {
     @Test

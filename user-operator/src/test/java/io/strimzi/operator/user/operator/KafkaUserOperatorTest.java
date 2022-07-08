@@ -174,7 +174,7 @@ public class KafkaUserOperatorTest {
         when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(Map.of(), false, "12"));
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "12"));
         KafkaUser user = new KafkaUserBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
@@ -828,7 +828,7 @@ public class KafkaUserOperatorTest {
 
         Promise reconcileAllCompleted = Promise.promise();
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(ResourceUtils.LABELS, false, "12")) {
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(ResourceUtils.LABELS, false, false, "12")) {
             @Override
             public Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
                 createdOrUpdated.add(resource.getMetadata().getName());
@@ -1404,5 +1404,108 @@ public class KafkaUserOperatorTest {
                 assertThat(capturedStatuses.get(0).getStatus().getConditions().get(0).getType(), is("Ready"));
                 async.flag();
             })));
+    }
+
+    // In KRaft mode, SCRAM-SHA-512 API is currently not supported. This test is used to check the mode to disable it.
+    // It should be possible to remove this after KRaft in Kafka supports SCRAM-SHA-512
+    @Test
+    public void testReconciliationWithKRaft(VertxTestContext context)    {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
+
+        when(mockSecretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        when(aclOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        KafkaUser user = ResourceUtils.createKafkaUserTls();
+
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "12"));
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+        Secret userCert = ResourceUtils.createUserSecretTls();
+        when(mockSecretOps.getAsync(anyString(), eq(clientsCa.getMetadata().getName()))).thenReturn(Future.succeededFuture(clientsCa));
+        when(mockSecretOps.getAsync(anyString(), eq(clientsCaKey.getMetadata().getName()))).thenReturn(Future.succeededFuture(clientsCaKey));
+        when(mockSecretOps.getAsync(anyString(), eq(user.getMetadata().getName()))).thenReturn(Future.succeededFuture(userCert));
+
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        Checkpoint async = context.checkpoint();
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                verify(scramOps, never()).reconcile(any(), any(), any());
+
+                async.flag();
+            })));
+    }
+
+    // In KRaft mode, SCRAM-SHA-512 API is currently not supported. This test is used to check the mode to disable it.
+    // It should be possible to remove this after KRaft in Kafka supports SCRAM-SHA-512
+    @Test
+    public void testReconcileAllWithKRaft(VertxTestContext context) {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
+
+        KafkaUser newTlsUser = ResourceUtils.createKafkaUserTls();
+        newTlsUser.getMetadata().setName("new-tls-user");
+        KafkaUser existingTlsUser = ResourceUtils.createKafkaUserTls();
+        existingTlsUser.getMetadata().setName("existing-tls-user");
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret existingTlsUserSecret = ResourceUtils.createUserSecretTls();
+        existingTlsUserSecret.getMetadata().setName("existing-tls-user");
+
+        when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.fromMap(ResourceUtils.LABELS).toMap()))))).thenReturn(
+                Future.succeededFuture(Arrays.asList(newTlsUser, existingTlsUser)));
+        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret));
+        when(aclOps.getAllUsers()).thenReturn(Future.succeededFuture(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user"))));
+        when(quotasOps.getAllUsers()).thenReturn(Future.succeededFuture(Set.of("existing-tls-user", "quota-user")));
+
+        when(mockCrdOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(newTlsUser);
+        when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUser);
+        when(mockCrdOps.getAsync(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(Future.succeededFuture(newTlsUser));
+        when(mockCrdOps.getAsync(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(Future.succeededFuture(existingTlsUser));
+        when(mockCrdOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
+        when(mockSecretOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(null);
+        when(mockSecretOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUserSecret);
+
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+        Set<String> deleted = new CopyOnWriteArraySet<>();
+
+        Checkpoint async = context.checkpoint();
+
+        Promise reconcileAllCompleted = Promise.promise();
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(ResourceUtils.LABELS, true, true, "12")) {
+            @Override
+            public Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
+                createdOrUpdated.add(resource.getMetadata().getName());
+                return Future.succeededFuture(new KafkaUserStatus());
+            }
+            @Override
+            public Future<Boolean> delete(Reconciliation reconciliation) {
+                deleted.add(reconciliation.name());
+                return Future.succeededFuture(Boolean.TRUE);
+            }
+        };
+
+        // call reconcileAll and pass in promise to the handler to run assertions on completion
+        op.reconcileAll("test", ResourceUtils.NAMESPACE, ar -> reconcileAllCompleted.complete());
+
+        reconcileAllCompleted.future().compose(v -> context.verify(() -> {
+            assertThat(createdOrUpdated, is(new HashSet(asList("new-tls-user", "existing-tls-user"))));
+            assertThat(deleted, is(new HashSet(asList("quota-user", "second-deleted-user"))));
+            verify(scramOps, never()).getAllUsers();
+            async.flag();
+        }));
     }
 }

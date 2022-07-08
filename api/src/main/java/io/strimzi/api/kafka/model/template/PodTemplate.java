@@ -164,7 +164,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     @Description("The pod's HostAliases. " +
             "HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.")
-    @KubeLink(group = "core", version = "v1", kind = "HostAlias")
+    @KubeLink(group = "core", version = "v1", kind = "hostalias")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<HostAlias> getHostAliases() {
         return hostAliases;
@@ -185,9 +185,9 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     }
 
     @Pattern(Constants.MEMORY_REGEX)
-    @DefaultValue("1Mi")
+    @DefaultValue("5Mi")
     @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
-            "Default value is `1Mi`.")
+            "Default value is `5Mi`.")
     public String getTmpDirSizeLimit() {
         return tmpDirSizeLimit;
     }

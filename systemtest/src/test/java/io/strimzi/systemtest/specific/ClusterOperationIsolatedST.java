@@ -9,14 +9,13 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -32,9 +31,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 @Tag(SPECIFIC)
 @IsolatedSuite
 public class ClusterOperationIsolatedST extends AbstractST {
-
-    private static final Logger LOGGER = LogManager.getLogger(ClusterOperationIsolatedST.class);
-
     public static final String NAMESPACE = "cluster-operations-test";
 
     @IsolatedTest
@@ -63,10 +59,10 @@ public class ClusterOperationIsolatedST extends AbstractST {
         topicNames.forEach(topicName -> resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 3, 3, 2).build()));
 
         String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
-        KafkaBasicExampleClients kafkaBasicClientResource;
+        KafkaClients kafkaBasicClientResource;
 
         for (int i = 0; i < size; i++) {
-            kafkaBasicClientResource = new KafkaBasicExampleClients.Builder()
+            kafkaBasicClientResource = new KafkaClientsBuilder()
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -77,8 +73,8 @@ public class ClusterOperationIsolatedST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResource(extensionContext, kafkaBasicClientResource.producerStrimzi().build());
-            resourceManager.createResource(extensionContext, kafkaBasicClientResource.consumerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientResource.producerStrimzi());
+            resourceManager.createResource(extensionContext, kafkaBasicClientResource.consumerStrimzi());
         }
 
         // ##############################
@@ -89,9 +85,7 @@ public class ClusterOperationIsolatedST extends AbstractST {
             NodeUtils.cordonNode(node.getMetadata().getName(), true);
         });
 
-        producerNames.forEach(producerName -> ClientUtils.waitTillContinuousClientsFinish(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
-        producerNames.forEach(producerName -> kubeClient().deleteJob(producerName));
-        consumerNames.forEach(consumerName -> kubeClient().deleteJob(consumerName));
+        producerNames.forEach(producerName -> ClientUtils.waitForClientsSuccess(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
     }
 
     @BeforeAll

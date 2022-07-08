@@ -451,6 +451,7 @@ class TopicOperator {
      * When the given {@code action} is complete it must complete its argument future,
      * which will complete the returned future
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public Future<Void> executeWithTopicLockHeld(LogContext logContext, TopicName key, Reconciliation action) {
         String lockName = key.toString();
         int timeoutMs = 30 * 1_000;
@@ -840,7 +841,7 @@ class TopicOperator {
     private Future<Void> awaitExistential(LogContext logContext, TopicName topicName, boolean checkExists) {
         String logState = "confirmed " + (checkExists ? "" : "non-") + "existence";
         AtomicReference<Future<Boolean>> ref = new AtomicReference<>(kafka.topicExists(logContext.toReconciliation(), topicName));
-        Future<Void> voidFuture = Util.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
+        return Util.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
             () -> {
                 Future<Boolean> existsFuture = ref.get();
                 if (existsFuture.isComplete()) {
@@ -855,7 +856,6 @@ class TopicOperator {
                 }
                 return false;
             });
-        return voidFuture;
     }
 
     /**

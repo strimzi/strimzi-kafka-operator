@@ -22,8 +22,6 @@ import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -49,10 +47,14 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
-    private static Vertx vertx;
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
+    private static Vertx vertx = Vertx.vertx(
+        new VertxOptions().setMetricsOptions(
+            new MicrometerMetricsOptions()
+                .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                .setEnabled(true)));
 
-    private static Map<String, String> buildEnv(String namespaces, boolean strimziPodSets) {
+    private static Map<String, String> buildEnv(String namespaces, boolean strimziPodSets, boolean podSetsOnly) {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
@@ -61,79 +63,80 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
 
-        if (strimziPodSets) {
-            env.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+UseStrimziPodSets");
+        if (!strimziPodSets) {
+            env.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-UseStrimziPodSets");
+        }
+
+        if (podSetsOnly) {
+            env.put(ClusterOperatorConfig.STRIMZI_POD_SET_RECONCILIATION_ONLY, "true");
         }
 
         return env;
     }
 
-    @BeforeAll
-    public static void before() {
-        VertxOptions options = new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true));
-        vertx = Vertx.vertx(options);
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
-
     @Test
     public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace", true, false);
+        startStop(context, "namespace", true, false, false);
     }
 
     @Test
     public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace1,namespace2", true, false);
+        startStop(context, "namespace1,namespace2", true, false, false);
     }
 
     @Test
     public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace", false, false);
+        startStop(context, "namespace", false, false, false);
     }
 
     @Test
     public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace1,namespace2", false, false);
+        startStop(context, "namespace1,namespace2", false, false, false);
     }
 
     @Test
     public void testStartStopSingleNamespaceWithPodSets(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace", false, true);
+        startStop(context, "namespace", false, true, false);
     }
 
     @Test
     public void testStartStopMultiNamespaceWithPodSets(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace1,namespace2", false, true);
+        startStop(context, "namespace1,namespace2", false, true, false);
+    }
+
+    @Test
+    public void testStartStopMultiNamespaceWithPodSetsOnly(VertxTestContext context) throws InterruptedException {
+        startStop(context, "namespace1,namespace2", false, true, true);
     }
 
     @Test
     public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) throws InterruptedException {
-        startStopAllNamespaces(context, "*", true, false);
+        startStopAllNamespaces(context, "*", true, false, false);
     }
 
     @Test
     public void testStartStopAllNamespacesOnK8s(VertxTestContext context) throws InterruptedException {
-        startStopAllNamespaces(context, "*", false, false);
+        startStopAllNamespaces(context, "*", false, false, false);
     }
 
     @Test
     public void testStartStopAllNamespacesWithPodSets(VertxTestContext context) throws InterruptedException {
-        startStopAllNamespaces(context, "*", false, true);
+        startStopAllNamespaces(context, "*", false, true, false);
+    }
+
+    @Test
+    public void testStartStopAllNamespacesWithPodSetsOnly(VertxTestContext context) throws InterruptedException {
+        startStopAllNamespaces(context, "*", false, true, true);
     }
 
     /**
      * Asserts that Cluster Operator starts and then stops a verticle in each namespace
      *
-     * @param context test context passed in for assertions
-     * @param namespaces namespaces the operator should be watching and operating on
+     * @param context       test context passed in for assertions
+     * @param namespaces    namespaces the operator should be watching and operating on
+     * @param podSetsOnly   Only PodSets should be refactored
      */
-    private void startStop(VertxTestContext context, String namespaces, boolean openShift, boolean strimziPodSets) throws InterruptedException {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift, boolean strimziPodSets, boolean podSetsOnly) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         AtomicInteger numInformers = new AtomicInteger(0);
 
@@ -197,7 +200,7 @@ public class ClusterOperatorTest {
             when(mockPods.inNamespace(namespace)).thenReturn(mockNamespacedPods);
         }
 
-        Map<String, String> env = buildEnv(namespaces, strimziPodSets);
+        Map<String, String> env = buildEnv(namespaces, strimziPodSets, podSetsOnly);
 
         CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
 
@@ -215,7 +218,7 @@ public class ClusterOperatorTest {
                     });
                 }
 
-                int maximumExpectedNumberOfWatchers = 7 * namespaceList.size();
+                int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 7 * namespaceList.size();
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
@@ -232,10 +235,11 @@ public class ClusterOperatorTest {
     /**
      * Asserts that Cluster Operator starts and then stops a verticle in every namespace using the namespace wildcard (*)
      *
-     * @param context test context passed in for assertions
-     * @param namespaces namespaces the operator should be watching and operating on
+     * @param context       test context passed in for assertions
+     * @param namespaces    namespaces the operator should be watching and operating on
+     * @param podSetsOnly   Only PodSets should be refactored
      */
-    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift, boolean strimziPodSets) throws InterruptedException {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift, boolean strimziPodSets, boolean podSetsOnly) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         AtomicInteger numInformers = new AtomicInteger(0);
 
@@ -295,7 +299,7 @@ public class ClusterOperatorTest {
         });
 
         // Run the operator
-        Map<String, String> env = buildEnv(namespaces, strimziPodSets);
+        Map<String, String> env = buildEnv(namespaces, strimziPodSets, podSetsOnly);
 
         CountDownLatch latch = new CountDownLatch(2);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
@@ -312,7 +316,7 @@ public class ClusterOperatorTest {
                     });
                 }
 
-                int maximumExpectedNumberOfWatchers = 7;
+                int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 7;
                 assertThat("Looks like there were more watchers than custom resources", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
                 int numberOfInformers = strimziPodSets ? 3 : 0;

@@ -61,6 +61,8 @@ public class MockCruiseControl {
     public static final String USER_TASK_REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID = USER_TASK_REBALANCE_NO_GOALS_VERBOSE_UTID + SEP + RESPONSE;
     public static final String REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR = REBALANCE + SEP + "error";
     public static final String REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR_RESPONSE_UTID = REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR + SEP + RESPONSE;
+    public static final String BROKERS_NOT_EXIST_ERROR = REBALANCE + SEP + "error";
+    public static final String BROKERS_NOT_EXIST_ERROR_RESPONSE_UTID = BROKERS_NOT_EXIST_ERROR + SEP + RESPONSE;
     public static final String STATE_PROPOSAL_NOT_READY = STATE + SEP + "proposal" + SEP + "not" + SEP + "ready";
     public static final String STATE_PROPOSAL_NOT_READY_RESPONSE = STATE_PROPOSAL_NOT_READY + SEP + RESPONSE;
 
@@ -69,7 +71,7 @@ public class MockCruiseControl {
 
     public static final Secret CC_SECRET = new SecretBuilder()
             .withNewMetadata()
-              .withName(CruiseControl.secretName(CLUSTER))
+              .withName(CruiseControlResources.secretName(CLUSTER))
               .withNamespace(NAMESPACE)
             .endMetadata()
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
@@ -196,10 +198,12 @@ public class MockCruiseControl {
 
     }
 
+
+
     /**
-     * Setup NotEnoughValidWindows error rebalance response.
+     * Setup NotEnoughValidWindows error rebalance/add/remove broker response.
      */
-    public static void setupCCRebalanceNotEnoughDataError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public static void setupCCRebalanceNotEnoughDataError(ClientAndServer ccServer, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Rebalance response with no goal that returns an error
         JsonBody jsonError = getJsonFromResource("CC-Rebalance-NotEnoughValidWindows-error.json");
@@ -211,10 +215,10 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.path)
                                 .withHeader(AUTH_HEADER)
                                 .withSecure(true))
-
                 .respond(
                         response()
                                 .withStatusCode(500)
@@ -224,16 +228,44 @@ public class MockCruiseControl {
     }
 
     /**
+     * Setup broker doesn't exist error for add/remove broker response.
+     */
+    public static void setupCCBrokerDoesNotExist(ClientAndServer ccServer, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+
+        // Add/remove broker response with no goal that returns an error
+        JsonBody jsonError = getJsonFromResource("CC-Broker-not-exist.json");
+
+        ccServer
+                .when(
+                        request()
+                                .withMethod("POST")
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
+                                .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true)
+                )
+                .respond(
+                        response()
+                                .withStatusCode(500)
+                                .withBody(jsonError)
+                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, BROKERS_NOT_EXIST_ERROR_RESPONSE_UTID))
+                                .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
+    }
+
+    /**
      * Setup rebalance response with no response delay (for quicker tests).
      */
-    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls) throws IOException, URISyntaxException {
-        setupCCRebalanceResponse(ccServer, pendingCalls, RESPONSE_DELAY_SEC);
+    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
+        setupCCRebalanceResponse(ccServer, pendingCalls, RESPONSE_DELAY_SEC, endpoint);
     }
 
     /**
      * Setup rebalance response.
      */
-    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, int responseDelay) throws IOException, URISyntaxException {
+    public static void setupCCRebalanceResponse(ClientAndServer ccServer, int pendingCalls, int responseDelay, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Rebalance in progress response with no goals set - non-verbose
         JsonBody pendingJson = getJsonFromResource("CC-Rebalance-no-goals-in-progress.json");
@@ -244,7 +276,8 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.path)
                                 .withHeader(AUTH_HEADER)
                                 .withSecure(true),
                         Times.exactly(pendingCalls))
@@ -265,7 +298,8 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.path)
                                 .withHeader(AUTH_HEADER)
                                 .withSecure(true),
                         Times.unlimited())
@@ -285,7 +319,8 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withQueryStringParameter(buildBrokerIdParameter(endpoint))
+                                .withPath(endpoint.path)
                                 .withHeader(AUTH_HEADER)
                                 .withSecure(true))
                 .respond(
@@ -299,7 +334,7 @@ public class MockCruiseControl {
     /**
      * Setup responses for various bad goal configurations possible on a rebalance request.
      */
-    public static void setupCCRebalanceBadGoalsError(ClientAndServer ccServer) throws IOException, URISyntaxException {
+    public static void setupCCRebalanceBadGoalsError(ClientAndServer ccServer, CruiseControlEndpoints endpoint) throws IOException, URISyntaxException {
 
         // Response if the user has set custom goals which do not include all configured hard.goals
         JsonBody jsonError = getJsonFromResource("CC-Rebalance-bad-goals-error.json");
@@ -313,7 +348,7 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withPath(endpoint.path)
                                 .withHeader(AUTH_HEADER)
                                 .withSecure(true))
                 .respond(
@@ -336,7 +371,7 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "true"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withPath(endpoint.path)
                                 .withHeader(AUTH_HEADER)
                                 .withSecure(true))
                 .respond(
@@ -525,5 +560,11 @@ public class MockCruiseControl {
                                 .withHeaders(header("User-Task-ID", "stopped"))
                                 .withDelay(TimeUnit.SECONDS, RESPONSE_DELAY_SEC));
 
+    }
+
+    private static Parameter buildBrokerIdParameter(CruiseControlEndpoints endpoint) {
+        return CruiseControlEndpoints.ADD_BROKER.equals(endpoint) || CruiseControlEndpoints.REMOVE_BROKER.equals(endpoint) ?
+                Parameter.param(CruiseControlParameters.BROKER_ID.key, "[0-9]+(,[0-9]+)*") :
+                null;
     }
 }

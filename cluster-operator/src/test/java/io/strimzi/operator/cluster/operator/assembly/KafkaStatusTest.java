@@ -4,50 +4,29 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.NodeAddress;
-import io.fabric8.kubernetes.api.model.NodeBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.NodeOperator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -65,7 +44,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -140,7 +118,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -166,12 +144,12 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getName(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(Integer.valueOf(9092)));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(9092));
             assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-service.my-namespace.svc:9092"));
             assertThat(status.getListeners().get(1).getType(), is("external"));
             assertThat(status.getListeners().get(1).getName(), is("external"));
             assertThat(status.getListeners().get(1).getAddresses().get(0).getHost(), is("my-route-address.domain.tld"));
-            assertThat(status.getListeners().get(1).getAddresses().get(0).getPort(), is(Integer.valueOf(443)));
+            assertThat(status.getListeners().get(1).getAddresses().get(0).getPort(), is(443));
             assertThat(status.getListeners().get(1).getBootstrapServers(), is("my-route-address.domain.tld:443"));
 
             assertThat(status.getConditions().size(), is(1));
@@ -191,7 +169,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -227,7 +205,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         Kafka readyKafka = new KafkaBuilder(kafka)
                 .editStatus()
@@ -288,7 +266,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -316,7 +294,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getName(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(Integer.valueOf(9092)));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(9092));
             assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-service.my-namespace.svc:9092"));
 
             assertThat(status.getConditions().size(), is(1));
@@ -337,7 +315,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         Kafka readyKafka = new KafkaBuilder(kafka)
                 .editStatus()
@@ -388,7 +366,7 @@ public class KafkaStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("plain"));
             assertThat(status.getListeners().get(0).getName(), is("plain"));
             assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-service.my-namespace.svc"));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(Integer.valueOf(9092)));
+            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(9092));
             assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-service.my-namespace.svc:9092"));
 
             assertThat(status.getConditions().size(), is(1));
@@ -403,599 +381,6 @@ public class KafkaStatusTest {
         });
     }
 
-    private List<Node> getClusterNodes()    {
-        Node node0 = new NodeBuilder()
-                .withNewMetadata()
-                    .withName("node-0")
-                .endMetadata()
-                .withNewStatus()
-                    .withAddresses(new NodeAddress("50.35.18.119", "ExternalIP"),
-                            new NodeAddress("node-0.my-kube", "InternalDNS"),
-                            new NodeAddress("10.0.0.1", "InternalIP"),
-                            new NodeAddress("nocde-0", "Hostname"))
-                .endStatus()
-                .build();
-
-        Node node1 = new NodeBuilder()
-                .withNewMetadata()
-                    .withName("node-1")
-                .endMetadata()
-                .withNewStatus()
-                    .withAddresses(new NodeAddress("55.36.78.115", "ExternalIP"),
-                            new NodeAddress("node-1.my-kube", "InternalDNS"),
-                            new NodeAddress("10.0.0.25", "InternalIP"),
-                            new NodeAddress("node-1", "Hostname"))
-                .endStatus()
-                .build();
-
-        Node node2 = new NodeBuilder()
-                .withNewMetadata()
-                    .withName("node-2")
-                .endMetadata()
-                .withNewStatus()
-                    .withAddresses(new NodeAddress("35.15.152.9", "ExternalIP"),
-                            new NodeAddress("node-2.my-kube", "InternalDNS"),
-                            new NodeAddress("10.0.0.16", "InternalIP"),
-                            new NodeAddress("node-2", "Hostname"))
-                .endStatus()
-                .build();
-
-        Node node3 = new NodeBuilder()
-                .withNewMetadata()
-                    .withName("node-3")
-                .endMetadata()
-                .withNewStatus()
-                    .withAddresses(new NodeAddress("5.124.16.8", "ExternalIP"),
-                            new NodeAddress("node-3.my-kube", "InternalDNS"),
-                            new NodeAddress("10.0.0.13", "InternalIP"),
-                            new NodeAddress("node-3", "Hostname"))
-                .endStatus()
-                .build();
-
-        List<Node> nodes = new ArrayList<>();
-        nodes.add(node0);
-        nodes.add(node1);
-        nodes.add(node2);
-        nodes.add(node3);
-
-        return nodes;
-    }
-
-    @Test
-    public void testKafkaListenerNodePortAddressInStatus(VertxTestContext context) throws ParseException {
-        Kafka kafka = new KafkaBuilder(getKafkaCrd())
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
-
-        // Mock Pods Operator
-        Pod pod0 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 0)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod1 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 1)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.25")
-                .endStatus()
-                .build();
-
-        Pod pod2 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 2)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.13")
-                .endStatus()
-                .build();
-
-        List<Pod> pods = new ArrayList<>();
-        pods.add(pod0);
-        pods.add(pod1);
-        pods.add(pod2);
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
-
-        // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
-
-        MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
-
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-
-            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
-            assertThat(addresses.size(), is(3));
-
-            List<ListenerAddress> expected = new ArrayList<>();
-            expected.add(new ListenerAddressBuilder().withHost("50.35.18.119").withPort(31234).build());
-            expected.add(new ListenerAddressBuilder().withHost("55.36.78.115").withPort(31234).build());
-            expected.add(new ListenerAddressBuilder().withHost("5.124.16.8").withPort(31234).build());
-
-            async.flag();
-        });
-    }
-
-    @Test
-    public void testKafkaListenerNodePortAddressInStatusWithOverrides(VertxTestContext context) throws ParseException {
-        GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
-                .withBroker(0)
-                .withAdvertisedHost("my-address-0")
-                .build();
-
-        GenericKafkaListenerConfigurationBroker broker1 = new GenericKafkaListenerConfigurationBrokerBuilder()
-                .withBroker(1)
-                .withAdvertisedHost("my-address-1")
-                .build();
-
-        Kafka kafka = new KafkaBuilder(getKafkaCrd())
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withBrokers(broker0, broker1)
-                                .endConfiguration()
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
-
-        // Mock Pods Operator
-        Pod pod0 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 0)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod1 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 1)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.25")
-                .endStatus()
-                .build();
-
-        Pod pod2 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 2)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.13")
-                .endStatus()
-                .build();
-
-        List<Pod> pods = new ArrayList<>();
-        pods.add(pod0);
-        pods.add(pod1);
-        pods.add(pod2);
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
-
-        // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
-
-        MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
-
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-
-            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
-            assertThat(addresses.size(), is(3));
-
-            List<ListenerAddress> expected = new ArrayList<>();
-            expected.add(new ListenerAddressBuilder().withHost("my-address-0").withPort(31234).build());
-            expected.add(new ListenerAddressBuilder().withHost("my-address-1").withPort(31234).build());
-            expected.add(new ListenerAddressBuilder().withHost("5.124.16.8").withPort(31234).build());
-
-            async.flag();
-        });
-    }
-
-    @Test
-    public void testKafkaListenerNodePortAddressWithPreferred(VertxTestContext context) throws ParseException {
-        Kafka kafka = new KafkaBuilder(getKafkaCrd())
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
-                                .endConfiguration()
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
-
-        // Mock Pods Operator
-        Pod pod0 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 0)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod1 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 1)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.25")
-                .endStatus()
-                .build();
-
-        Pod pod2 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 2)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.13")
-                .endStatus()
-                .build();
-
-        List<Pod> pods = new ArrayList<>();
-        pods.add(pod0);
-        pods.add(pod1);
-        pods.add(pod2);
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
-
-        // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
-
-        MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
-
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-
-            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
-            assertThat(addresses.size(), is(3));
-
-            List<ListenerAddress> expected = new ArrayList<>();
-            expected.add(new ListenerAddressBuilder().withHost("node-0.my-kube").withPort(31234).build());
-            expected.add(new ListenerAddressBuilder().withHost("node-1.my-kube").withPort(31234).build());
-            expected.add(new ListenerAddressBuilder().withHost("node-3.my-kube").withPort(31234).build());
-
-            async.flag();
-        });
-    }
-
-    @Test
-    public void testKafkaListenerNodePortAddressSameNode(VertxTestContext context) throws ParseException {
-        Kafka kafka = new KafkaBuilder(getKafkaCrd())
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
-
-        // Mock Pods Operator
-        Pod pod0 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 0)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod1 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 1)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        Pod pod2 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 2)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.1")
-                .endStatus()
-                .build();
-
-        List<Pod> pods = new ArrayList<>();
-        pods.add(pod0);
-        pods.add(pod1);
-        pods.add(pod2);
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
-
-        // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
-
-        MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
-
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-
-            List<ListenerAddress> addresses = status.getListeners().get(0).getAddresses();
-            assertThat(addresses.size(), is(1));
-
-            List<ListenerAddress> expected = new ArrayList<>();
-            expected.add(new ListenerAddressBuilder().withHost("50.35.18.119").withPort(31234).build());
-
-            async.flag();
-        });
-    }
-
-    @Test
-    public void testKafkaListenerNodePortAddressMissingNodes(VertxTestContext context) throws ParseException {
-        Kafka kafka = new KafkaBuilder(getKafkaCrd())
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withReplicas(1)
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
-
-        // Mock Pods Operator
-        Pod pod0 = new PodBuilder()
-                .withNewMetadata()
-                    .withName(clusterName + "-kafka-" + 0)
-                .endMetadata()
-                .withNewStatus()
-                    .withHostIP("10.0.0.5")
-                .endStatus()
-                .build();
-
-        List<Pod> pods = new ArrayList<>();
-        pods.add(pod0);
-
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
-
-        // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
-
-        MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
-
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-            assertThat(status.getListeners().size(), is(1));
-            assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getName(), is("external"));
-
-            assertThat(status.getListeners().get(0).getAddresses(), is(emptyList()));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is(nullValue()));
-
-            async.flag();
-        });
-    }
-
     @Test
     public void testInitialStatusOnNewResource() throws ParseException {
         Kafka kafka = getKafkaCrd();
@@ -1004,7 +389,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -1042,7 +427,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -1063,113 +448,8 @@ public class KafkaStatusTest {
         });
     }
 
-    @Test
-    public void testKafkaClusterIdInStatus(VertxTestContext context) throws ParseException {
-        Kafka kafka = new KafkaBuilder(getKafkaCrd()).build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-        
-        // Mock the KafkaSecretOperator
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(namespace), eq(KafkaResources.clusterCaCertificateSecretName(clusterName)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(namespace), eq(ClusterOperator.secretName(clusterName)))).thenReturn(Future.succeededFuture(secret));
-        
-        MockClusterIdStatusKafkaAssemblyOperator kao = new MockClusterIdStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
-
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-            assertThat(status.getClusterId(), is(notNullValue()));
-
-            async.flag();
-        });
-    }
-
-    @Test
-    public void testModelWarnings(VertxTestContext context) throws ParseException {
-        Kafka kafka = getKafkaCrd();
-        Kafka oldKafka = new KafkaBuilder(getKafkaCrd())
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withNewPersistentClaimStorage()
-                            .withSize("100Gi")
-                        .endPersistentClaimStorage()
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
-
-        ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
-        when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSetOperator
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
-
-        // Mock the PodOperator
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
-
-        MockModelWarningsStatusKafkaAssemblyOperator kao = new MockModelWarningsStatusKafkaAssemblyOperator(
-                vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                passwordGenerator,
-                supplier,
-                config);
-
-        Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
-                .onComplete(context.succeeding(v -> context.verify(() -> {
-                    assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-                    assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-                    KafkaStatus status = kafkaCaptor.getValue().getStatus();
-
-                    assertThat(status.getConditions().size(), is(2));
-                    assertThat(status.getConditions().get(0).getType(), is("Warning"));
-                    assertThat(status.getConditions().get(0).getReason(), is("KafkaStorage"));
-                    assertThat(status.getConditions().get(1).getType(), is("Ready"));
-
-                    async.flag();
-                })));
-    }
-
     // This allows to test the status handling when reconciliation succeeds
-    class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+    static class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
             super(vertx, pfa, certManager, passwordGenerator, supplier, config);
         }
@@ -1203,7 +483,7 @@ public class KafkaStatusTest {
     }
 
     // This allows to test the status handling when reconciliation succeeds
-    class MockFailingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+    static class MockFailingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         private final Throwable exception;
 
         public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
@@ -1228,7 +508,7 @@ public class KafkaStatusTest {
     }
 
     // This allows to test the initial status handling when new resource is created
-    class MockInitialStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
+    static class MockInitialStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
             super(vertx, pfa, certManager, passwordGenerator, supplier, config);
         }
@@ -1239,46 +519,4 @@ public class KafkaStatusTest {
                     .map((Void) null);
         }
     }
-
-    class MockNodePortStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockNodePortStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-        }
-
-        @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            reconcileState.kafkaBootstrapNodePorts.put("external-9094", 31234);
-
-            return reconcileState.getKafkaClusterDescription()
-                    .compose(state -> state.kafkaNodePortExternalListenerStatus())
-                    .map((Void) null);
-        }
-    }
-
-    class MockModelWarningsStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockModelWarningsStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-        }
-
-        @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.getKafkaClusterDescription()
-                    .compose(state -> state.kafkaModelWarnings())
-                    .map((Void) null);
-        }
-
-    }
-
-    class MockClusterIdStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockClusterIdStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-        }
-
-        @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.kafkaGetClusterId()
-                    .map((Void) null);
-        }
-    }
-
 }

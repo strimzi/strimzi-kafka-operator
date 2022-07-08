@@ -69,7 +69,7 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
     }
 
     @Description("Template for Entity Operator resources. " +
-            "The template allows users to specify how is the `Deployment` and `Pods` generated.")
+            "The template allows users to specify how a `Deployment` and `Pod` is generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public EntityOperatorTemplate getTemplate() {
         return template;

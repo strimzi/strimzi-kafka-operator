@@ -131,5 +131,5 @@ ${TLS_AUTH_CONFIGURATION}
 ${SASL_AUTH_CONFIGURATION}
 
 # Additional configuration
-client.rack=${STRIMZI_RACK_ID}
+consumer.client.rack=${STRIMZI_RACK_ID}
 EOF

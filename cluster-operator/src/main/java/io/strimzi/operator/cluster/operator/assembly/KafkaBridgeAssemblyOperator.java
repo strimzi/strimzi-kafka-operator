@@ -4,13 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
@@ -28,7 +26,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -94,7 +91,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, bridge.getServiceName(), bridge.generateService()))
             .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, bridge.getLogging(), null))
             .compose(metricsAndLogging -> configMapOperations.reconcile(reconciliation, namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
-            .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
+            .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudget()) : Future.succeededFuture())
+            .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
             .compose(i -> Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
             .compose(hash -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getName(), bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash)), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
@@ -132,13 +130,5 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return serviceAccountOperations.reconcile(reconciliation, namespace,
                 KafkaBridgeResources.serviceAccountName(bridge.getCluster()),
                 bridge.generateServiceAccount());
-    }
-
-    public static Future<ConfigMap> getLoggingCmAsync(ConfigMapOperator configMapOperations, String namespace, KafkaBridgeCluster model) {
-        if (model.getLogging() instanceof ExternalLogging) {
-            return Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) model.getLogging());
-        } else {
-            return Future.succeededFuture(null);
-        }
     }
 }

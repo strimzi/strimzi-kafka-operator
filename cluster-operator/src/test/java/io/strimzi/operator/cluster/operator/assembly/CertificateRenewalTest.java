@@ -12,24 +12,28 @@ import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.test.TestUtils;
 
 import io.vertx.core.Future;
@@ -122,6 +126,9 @@ public class CertificateRenewalTest {
     private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, Kafka kafka, Supplier<Date> dateSupplier) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        DeploymentOperator deploymentOps = supplier.deploymentOperations;
+        StrimziPodSetOperator spsOps = supplier.strimziPodSetOperator;
+        PodOperator podOps = supplier.podOperations;
 
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
             Map<String, String> requiredLabels = ((Labels) invocation.getArgument(1)).toMap();
@@ -134,8 +141,15 @@ public class CertificateRenewalTest {
         ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(deploymentOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
+
+        when(spsOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -195,8 +209,8 @@ public class CertificateRenewalTest {
     private List<Secret> initialClientsCaSecrets(CertificateAuthority certificateAuthority)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         return initialCaSecrets(certificateAuthority, "clients-ca",
-                KafkaCluster.clientsCaKeySecretName(NAME),
-                KafkaCluster.clientsCaCertSecretName(NAME));
+                KafkaResources.clientsCaKeySecretName(NAME),
+                KafkaResources.clientsCaCertificateSecretName(NAME));
     }
 
     private List<Secret> initialCaSecrets(CertificateAuthority certificateAuthority, String commonName, String caKeySecretName, String caCertSecretName)
@@ -277,7 +291,7 @@ public class CertificateRenewalTest {
         Checkpoint async = context.checkpoint();
         reconcileCa(vertx, certificateAuthority, certificateAuthority)
             .onComplete(context.failing(e -> context.verify(() -> {
-                assertThat(e, instanceOf(InvalidConfigurationException.class));
+                assertThat(e, instanceOf(InvalidResourceException.class));
                 assertThat(e.getMessage(), is("Cluster CA should not be generated, but the secrets were not found."));
                 async.flag();
             })));

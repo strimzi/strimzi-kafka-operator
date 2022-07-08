@@ -17,8 +17,10 @@ import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -32,7 +34,9 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
@@ -61,6 +65,22 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_TEAM_B_SECRET = "team-b-client-secret";
     protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
+
+    // broker oauth configuration
+    protected static final Integer CONNECT_TIMEOUT_S = 100;
+    protected static final Integer READ_TIMEOUT_S = 100;
+    protected static final String GROUPS_CLAIM = "$.groups";
+    protected static final String GROUPS_CLAIM_DELIMITER = "."; // default is `,`
+
+    protected static final Map<String, Object> COMPONENT_FIELDS_TO_VERIFY = Map.of(
+        "connectTimeout", CONNECT_TIMEOUT_S,
+        "readTimeout", READ_TIMEOUT_S
+    );
+
+    protected static final Map<String, Object> LISTENER_FIELDS_TO_VERIFY = Map.of(
+        "groupsClaimQuery", GROUPS_CLAIM,
+        "groupsClaimDelimiter", GROUPS_CLAIM_DELIMITER
+    );
 
     protected final String audienceListenerPort = "9098";
 
@@ -105,7 +125,14 @@ public class OauthAbstractST extends AbstractST {
 
         LOGGER.info("Deploying keycloak...");
 
-        KeycloakUtils.deployKeycloak(namespace);
+        // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
+        // Keycloak do not support cluster-wide namespace and thus we need it to deploy in non-OLM cluster wide namespace
+        // (f.e., our `infra-namespace`)
+        if (kubeClient().getNamespace(clusterOperator.getDeploymentNamespace()) == null) {
+            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
+        }
+
+        KeycloakUtils.deployKeycloak(clusterOperator.getDeploymentNamespace(), namespace);
 
         SecretUtils.waitForSecretReady(namespace, "credential-example-keycloak", () -> { });
         String passwordEncoded = kubeClient(namespace).getSecret(namespace, "credential-example-keycloak").getData().get("ADMIN_PASSWORD");
@@ -145,6 +172,31 @@ public class OauthAbstractST extends AbstractST {
         SecretUtils.createSecret(namespace, BRIDGE_OAUTH_SECRET, OAUTH_KEY, "kafka-bridge-secret");
         SecretUtils.createSecret(namespace, OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "kafka-audience-secret");
         SecretUtils.createSecret(namespace, OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "kafka-client-secret");
+    }
+
+    /**
+     * Checks {@link #COMPONENT_FIELDS_TO_VERIFY} oauth configuration for components logs (i.e., Kafka, KafkaConnect, KafkaBridge,
+     * KafkaMirrorMaker, KafkaMirrorMaker2).
+     *
+     * @param componentLogs specific component logs scraped from pod
+     */
+    protected final void verifyOauthConfiguration(final String componentLogs) {
+        for (Map.Entry<String, Object> configField : COMPONENT_FIELDS_TO_VERIFY.entrySet()) {
+            assertThat(componentLogs, CoreMatchers.containsString(configField.getKey() + ": " + configField.getValue()));
+        }
+        assertThat(componentLogs, CoreMatchers.containsString("Successfully logged in"));
+    }
+
+    /**
+     * Checks {@link #LISTENER_FIELDS_TO_VERIFY} oauth configuration for Kafka Oauth listener.
+     *
+     * @param kafkaLogs kafka logs to proof that configuration is propagated inside Pods
+     */
+    protected final void verifyOauthListenerConfiguration(final String kafkaLogs) {
+        for (Map.Entry<String, Object> configField : LISTENER_FIELDS_TO_VERIFY.entrySet()) {
+            assertThat(kafkaLogs, CoreMatchers.containsString(configField.getKey() + ": " + configField.getValue()));
+        }
+        assertThat(kafkaLogs, CoreMatchers.containsString("Successfully logged in"));
     }
 }
 

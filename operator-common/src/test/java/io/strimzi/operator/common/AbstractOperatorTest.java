@@ -22,8 +22,6 @@ import io.vertx.core.shareddata.Lock;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,10 +44,7 @@ class AbstractOperatorTest {
         vertx = Vertx.vertx(new VertxOptions()
                 .setBlockedThreadCheckInterval(60)
                 .setBlockedThreadCheckIntervalUnit(TimeUnit.SECONDS)
-                .setMetricsOptions(new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true)
-        ));
+        );
     }
 
     @AfterAll

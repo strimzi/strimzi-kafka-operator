@@ -4,21 +4,21 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.fabric8.kubernetes.api.model.PodCondition;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -72,7 +72,7 @@ public class KafkaConnectUtils {
     public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, String message) {
         LOGGER.info("Waiting for messages in file sink on {}", kafkaConnectPodName);
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient(namespaceName).execInPod(false, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message));
+            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message));
         LOGGER.info("Expected messages are in file sink on {}", kafkaConnectPodName);
     }
 
@@ -109,18 +109,19 @@ public class KafkaConnectUtils {
     }
 
     /**
-     * Wait for designated Kafka Connect resource condition type and reason to happen.
-     * @param conditionReason String regexp of condition reason
-     * @param conditionType String regexp of condition type
-     * @param namespace namespace name
-     * @param clusterName cluster name
+     * Wait for designated Kafka Connect pod condition to happen.
+     * @param conditionReason Regex of condition reason
+     * @param namespace Namespace name
+     * @param clusterName Cluster name
+     * @param timeoutMs Max wait time in ms
      */
-    public static void waitForKafkaConnectCondition(String conditionReason, String conditionType, String namespace, String clusterName) {
-        TestUtils.waitFor("Wait for KafkaConnect '" + conditionReason + "' condition with type '" + conditionType + "'.",
-                Constants.GLOBAL_POLL_INTERVAL, CO_OPERATION_TIMEOUT_SHORT * 2, () -> {
-                List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
-                for (Condition condition : conditions) {
-                    if (condition.getReason().matches(conditionReason) && condition.getType().matches(conditionType)) {
+    public static void waitForConnectPodCondition(String conditionReason, String namespace, String clusterName, long timeoutMs) {
+        TestUtils.waitFor("Wait for Pod '" + conditionReason + "' condition.",
+                Constants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
+                List<String> connectPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+                List<PodCondition> conditions = kubeClient().getPod(namespace, connectPods.get(0)).getStatus().getConditions();
+                for (PodCondition condition : conditions) {
+                    if (condition.getReason().matches(conditionReason)) {
                         return true;
                     }
                 }
@@ -139,34 +140,5 @@ public class KafkaConnectUtils {
                 }
                 return false;
             });
-    }
-
-    /**
-     * Send and receive messages through file sink connector (using Kafka Connect).
-     * @param connectPodName kafkaConnect pod name
-     * @param topicName topic to be used
-     * @param kafkaClientsPodName kafkaClients pod name
-     * @param namespace namespace name
-     * @param clusterName cluster name
-     */
-    public static void sendReceiveMessagesThroughConnect(String connectPodName, String topicName, String kafkaClientsPodName, String namespace, String clusterName) {
-        LOGGER.info("Send and receive messages through KafkaConnect");
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(connectPodName);
-        KafkaConnectorUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespace, 8083));
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(namespace)
-                .withClusterName(clusterName)
-                .withMessageCount(100)
-                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                .build();
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesPlain(),
-                internalKafkaClient.receiveMessagesPlain()
-        );
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 }

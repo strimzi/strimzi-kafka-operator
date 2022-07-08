@@ -4,14 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -19,7 +18,6 @@ import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -27,8 +25,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 public class PodRevisionTest {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
     private static final Pod POD = new PodBuilder()
                 .withNewMetadata()
                     .withName("my-pod")
@@ -135,7 +131,7 @@ public class PodRevisionTest {
                 .endMetadata()
                 .withNewSpec()
                     .withSelector(new LabelSelector(null, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, "my-kafka")))
-                    .withPods(Arrays.stream(pods).map(p -> MAPPER.convertValue(p, POD_TYPE)).collect(Collectors.toList()))
+                    .withPods(PodSetUtils.podsToMaps(Arrays.asList(pods)))
                 .endSpec()
                 .build();
     }

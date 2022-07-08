@@ -17,7 +17,7 @@ This procedure shows how to deploy example producer and consumer clients that us
 . Deploy a Kafka producer.
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --broker-list _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
+kubectl run kafka-producer -ti --image={DockerKafka} --rm=true --restart=Never -- bin/kafka-console-producer.sh --bootstrap-server _cluster-name_-kafka-bootstrap:9092 --topic _my-topic_
 
 . Type a message into the console where the producer is running.
 

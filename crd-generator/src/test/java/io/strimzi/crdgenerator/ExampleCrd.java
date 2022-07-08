@@ -31,19 +31,29 @@ import java.util.Map;
             plural = "examples",
             categories = {"strimzi"}),
         scope = "Namespaced",
-    versions = {
-        @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true),
-        @Crd.Spec.Version(name = "v1beta1", served = true, storage = false)
-    },
-    additionalPrinterColumns = {
-        @Crd.Spec.AdditionalPrinterColumn(
-            name = "Foo",
-            description = "The foo",
-            jsonPath = "...",
-            type = "integer")
-    }
-    ))
+        versions = {
+            @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true),
+            @Crd.Spec.Version(name = "v1beta1", served = true, storage = false)
+        },
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Foo",
+                description = "The foo",
+                jsonPath = "...",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "configYaml",
+                description = "nest: This is a nested yaml\n" +
+                        "lines:\n" +
+                        "  - 2nd\n" +
+                        "  - 3rd",
+                jsonPath = "...",
+                type = "string")
+        }
+    )
+)
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     private String ignored;

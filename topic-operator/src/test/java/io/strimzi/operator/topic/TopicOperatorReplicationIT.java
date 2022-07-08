@@ -9,22 +9,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import kafka.admin.ReassignPartitionsCommand;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -34,42 +32,44 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorReplicationIT.class);
-    protected static EmbeddedKafkaCluster kafkaCluster;
+    protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
-    public static void beforeAll() throws IOException {
-        kafkaCluster = new EmbeddedKafkaCluster(numKafkaBrokers(), kafkaClusterConfig());
+    public void beforeAll() throws Exception {
+        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
+        setup(kafkaCluster);
+        startTopicOperator(kafkaCluster);
     }
 
     @AfterAll
-    public static void afterAll() {
+    public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
+        teardown(true);
         teardownKubeCluster();
+        adminClient.close();
         kafkaCluster.stop();
     }
 
-    @BeforeEach
-    public void beforeEach() throws Exception {
-        setup(kafkaCluster);
-    }
-
     @AfterEach
-    public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
-        teardown(true);
+    void afterEach() throws InterruptedException, ExecutionException, TimeoutException {
+        // clean-up KafkaTopic resources in Kubernetes
+        clearKafkaTopics(true);
     }
 
     protected static int numKafkaBrokers() {
         return 2;
     }
 
-    protected static Properties kafkaClusterConfig() {
-        return new Properties();
+    protected static Map<String, String> kafkaClusterConfig() {
+        Map<String, String> p = new HashMap<>();
+        p.put("zookeeper.connect", "zookeeper:2181");
+        return p;
     }
 
     @Override
-    protected Map<String, String> topicOperatorConfig(EmbeddedKafkaCluster kafkaCluster) {
+    protected Map<String, String> topicOperatorConfig(StrimziKafkaCluster kafkaCluster) {
         Map<String, String> m = super.topicOperatorConfig(kafkaCluster);
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
         return m;
@@ -112,7 +112,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
         // Now change it in Kafka
         String reassignmentOutput = doReassignmentCommand(
-                "--bootstrap-server", kafkaCluster.bootstrapServers(),
+                "--bootstrap-server", kafkaCluster.getBootstrapServers(),
                 "--reassignment-json-file", file.getAbsolutePath(),
                 "--execute");
 
@@ -121,7 +121,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
         LOGGER.info("Waiting for reassignment completion");
         waitFor(() -> {
             String output = doReassignmentCommand(
-                    "--bootstrap-server", kafkaCluster.bootstrapServers(),
+                    "--bootstrap-server", kafkaCluster.getBootstrapServers(),
                     "--reassignment-json-file", file.getAbsolutePath(),
                     "--verify");
             LOGGER.info(output);

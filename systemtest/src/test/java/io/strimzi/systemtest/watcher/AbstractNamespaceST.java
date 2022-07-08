@@ -4,21 +4,23 @@
  */
 package io.strimzi.systemtest.watcher;
 
-import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -26,37 +28,25 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @IsolatedSuite
 public abstract class AbstractNamespaceST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);
 
-    static final String CO_NAMESPACE = "co-namespace-test";
     static final String SECOND_NAMESPACE = "second-namespace-test";
     static final String MAIN_NAMESPACE_CLUSTER_NAME = "my-cluster";
+    static final String SECOND_CLUSTER_NAME = MAIN_NAMESPACE_CLUSTER_NAME + "-second";
+
     private static final String TOPIC_EXAMPLES_DIR = Constants.PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml";
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", clusterName, namespace);
 
-        TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
-                    .getStatus().getConditions().get(0);
-            LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
-            return kafkaCondition.getType().equals(Ready.toString());
-        });
+        KafkaUtils.waitForKafkaReady(namespace, clusterName);
 
-        Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
-                .getStatus().getConditions().get(0);
-
-        assertThat(kafkaCondition.getType(), is(Ready.toString()));
         cluster.setNamespace(previousNamespace);
     }
 
@@ -73,15 +63,15 @@ public abstract class AbstractNamespaceST extends AbstractST {
         cluster.setNamespace(previousNamespace);
     }
 
-    void deployKafkaConnectorWithSink(ExtensionContext extensionContext, String clusterName, String namespace, String topicName, String connectLabel, String sharedKafkaClusterName) {
+    void deployKafkaConnectorWithSink(ExtensionContext extensionContext, String clusterName) {
+        final TestStorage testStorage = new TestStorage(extensionContext, SECOND_NAMESPACE);
+
         // Deploy Kafka Connector
         Map<String, Object> connectorConfig = new HashMap<>();
-        connectorConfig.put("topics", topicName);
+        connectorConfig.put("topics", TOPIC_NAME);
         connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_PATH);
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
-
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
@@ -91,24 +81,20 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .build());
         KafkaConnectorUtils.waitForConnectorReady(clusterName);
 
-        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, connectLabel).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
-
-        final String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespace)
-            .withClusterName(sharedKafkaClusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SECOND_CLUSTER_NAME))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
-        int sent = internalKafkaClient.sendMessagesPlain();
-        assertThat(sent, is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }

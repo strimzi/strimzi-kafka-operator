@@ -14,11 +14,7 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
-import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -37,6 +33,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -54,8 +51,9 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -63,6 +61,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -78,6 +77,7 @@ import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -113,7 +113,7 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Properties;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
@@ -220,9 +220,9 @@ public class ResourceUtils {
     public static ClientsCa createInitialClientsCa(Reconciliation reconciliation, String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
         return new ClientsCa(reconciliation, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"),
-                KafkaCluster.clientsCaCertSecretName(clusterName),
+                KafkaResources.clientsCaCertificateSecretName(clusterName),
                 initialClientsCaCert,
-                KafkaCluster.clientsCaKeySecretName(clusterName),
+                KafkaResources.clientsCaKeySecretName(clusterName),
                 initialClientsCaKey, 365, 30, true, null);
     }
 
@@ -264,7 +264,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.clientsCaKeySecretName(name))
+                        .withName(KafkaResources.clientsCaKeySecretName(name))
                         .withNamespace(namespace)
                         .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
@@ -276,7 +276,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.clientsCaCertSecretName(name))
+                        .withName(KafkaResources.clientsCaCertificateSecretName(name))
                         .withNamespace(namespace)
                         .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
@@ -287,15 +287,15 @@ public class ResourceUtils {
         SecretBuilder builder =
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.brokersSecretName(name))
+                        .withName(KafkaResources.kafkaSecretName(name))
                         .withNamespace(namespace)
                         .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", MockCertManager.clusterCaCert());
 
         for (int i = 0; i < kafkaReplicas; i++) {
-            builder.addToData(KafkaCluster.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))
-                    .addToData(KafkaCluster.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
+            builder.addToData(KafkaResources.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))
+                    .addToData(KafkaResources.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
         }
         secrets.add(builder.build());
 
@@ -308,22 +308,22 @@ public class ResourceUtils {
                         .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
         for (int i = 0; i < kafkaReplicas; i++) {
-            builder.addToData(KafkaCluster.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()))
-                    .addToData(KafkaCluster.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
+            builder.addToData(KafkaResources.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()))
+                    .addToData(KafkaResources.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
         }
         secrets.add(builder.build());
 
         builder = new SecretBuilder()
                         .withNewMetadata()
-                            .withName(ZookeeperCluster.nodesSecretName(name))
+                            .withName(KafkaResources.zookeeperSecretName(name))
                             .withNamespace(namespace)
                             .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
         for (int i = 0; i < zkReplicas; i++) {
-            builder.addToData(ZookeeperCluster.zookeeperPodName(name, i) + ".key", Base64.getEncoder().encodeToString("nodes-base64key".getBytes()))
-                    .addToData(ZookeeperCluster.zookeeperPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("nodes-base64crt".getBytes()));
+            builder.addToData(KafkaResources.zookeeperPodName(name, i) + ".key", Base64.getEncoder().encodeToString("nodes-base64key".getBytes()))
+                    .addToData(KafkaResources.zookeeperPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("nodes-base64crt".getBytes()));
         }
         secrets.add(builder.build());
 
@@ -348,6 +348,7 @@ public class ResourceUtils {
                 .build();
     }
 
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     MetricsConfig metricsConfig,
@@ -358,6 +359,7 @@ public class ResourceUtils {
                                     Logging kafkaLogging, Logging zkLogging,
                                     KafkaExporterSpec keSpec,
                                     CruiseControlSpec ccSpec) {
+
         Kafka result = new Kafka();
         ObjectMeta meta = new ObjectMetaBuilder()
             .withNamespace(namespace)
@@ -408,8 +410,8 @@ public class ResourceUtils {
         spec.setKafkaExporter(keSpec);
         spec.setCruiseControl(ccSpec);
         spec.setZookeeper(zk);
-
         result.setSpec(spec);
+
         return result;
     }
 
@@ -463,11 +465,13 @@ public class ResourceUtils {
                 .build();
     }
 
+    @SuppressWarnings("deprecation")
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer,
                                                           KafkaMirrorMakerConsumerSpec consumer, String include) {
         return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, include);
     }
 
+    @SuppressWarnings("deprecation")
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas,
                                                           KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer,
                                                           String include) {
@@ -578,6 +582,11 @@ public class ResourceUtils {
         return new AdminClientProvider() {
             @Override
             public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+                return createAdminClient(bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName, new Properties());
+            }
+
+            @Override
+            public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
                 Admin mock = mock(AdminClient.class);
                 DescribeClusterResult dcr;
                 try {
@@ -641,35 +650,10 @@ public class ResourceUtils {
     }
 
     public static MetricsProvider metricsProvider() {
-        return new MetricsProvider() {
-            @Override
-            public MeterRegistry meterRegistry() {
-                MeterRegistry mockRegistry = mock(MeterRegistry.class);
-                MeterRegistry.Config mockConfig = mock(MeterRegistry.Config.class);
-                Clock mockClock = mock(Clock.class);
-                when(mockConfig.clock()).thenReturn(mockClock);
-                when(mockRegistry.config()).thenReturn(mockConfig);
-
-                return mockRegistry;
-            }
-
-            @Override
-            public Counter counter(String name, String description, Tags tags) {
-                return mock(Counter.class);
-            }
-
-            @Override
-            public Timer timer(String name, String description, Tags tags) {
-                return mock(Timer.class);
-            }
-
-            @Override
-            public AtomicInteger gauge(String name, String description, Tags tags) {
-                return new AtomicInteger(0);
-            }
-        };
+        return new MicrometerMetricsProvider(new SimpleMeterRegistry());
     }
 
+    @SuppressWarnings("unchecked")
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
@@ -687,6 +671,7 @@ public class ResourceUtils {
                 mock(ClusterRoleBindingOperator.class),
                 mock(NetworkPolicyOperator.class),
                 mock(PodDisruptionBudgetOperator.class),
+                mock(PodDisruptionBudgetV1Beta1Operator.class),
                 mock(PodOperator.class),
                 mock(IngressOperator.class),
                 mock(IngressV1Beta1Operator.class),
@@ -699,13 +684,14 @@ public class ResourceUtils {
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
-                mock(CrdOperator.class),
+                mock(StrimziPodSetOperator.class),
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
                 metricsProvider(),
                 adminClientProvider(),
-                mock(ZookeeperLeaderFinder.class));
+                mock(ZookeeperLeaderFinder.class),
+                mock(KubernetesRestartEventPublisher.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -716,15 +702,13 @@ public class ResourceUtils {
         if (openShift) {
             when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
             when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
-                return new RouteBuilder()
-                        .withNewStatus()
-                        .addNewIngress()
-                        .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
-                        .endIngress()
-                        .endStatus()
-                        .build();
-            });
+            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> new RouteBuilder()
+                    .withNewStatus()
+                    .addNewIngress()
+                    .withHost(i.getArgument(0) + "." + i.getArgument(1) + ".mydomain.com")
+                    .endIngress()
+                    .endStatus()
+                    .build());
         }
 
         when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -757,33 +741,14 @@ public class ResourceUtils {
                 null,
                 null,
                 null,
-                ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
                 featureGates,
                 10,
                 10_000,
-                30);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfigRolesOnly(KafkaVersion.Lookup versions, long operationTimeoutMs) {
-        return new ClusterOperatorConfig(
-                singleton("dummy"),
-                60_000,
-                operationTimeoutMs,
-                300_000,
+                30,
                 false,
-                true,
-                versions,
-                null,
-                null,
-                null,
-                null,
-                ClusterOperatorConfig.RbacScope.NAMESPACE,
-                null,
-                "",
-                10,
-                10_000,
-                30);
+                1024,
+                "cluster-operator-name");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
@@ -795,11 +760,15 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs, "");
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), operationTimeoutMs, "");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, featureGates);
     }
 
     /**

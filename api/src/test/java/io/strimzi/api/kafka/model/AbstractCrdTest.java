@@ -17,11 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 public abstract class AbstractCrdTest<R extends CustomResource> {
 
     private final Class<R> crdClass;
-    private String kind;
 
     protected AbstractCrdTest(Class<R> crdClass) {
         this.crdClass = crdClass;
-        assertDoesNotThrow(() -> kind = crdClass.newInstance().getKind());
+        assertDoesNotThrow(() -> crdClass.getDeclaredConstructor().newInstance().getKind());
     }
 
     protected void assertDesiredResource(R actual, String expectedResource) {

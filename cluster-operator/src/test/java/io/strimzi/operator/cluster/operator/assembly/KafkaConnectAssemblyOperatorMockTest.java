@@ -7,18 +7,15 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -29,7 +26,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -44,7 +41,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -60,10 +56,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorMockTest {
 
@@ -76,10 +71,11 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private final int replicas = 3;
 
-    private KubernetesClient mockClient;
+    // Injected by Fabric8 Mock Kubernetes Server
+    private KubernetesClient client;
+    private MockKube2 mockKube;
 
     private static Vertx vertx;
-    private MockKube mockKube;
     private KafkaConnectAssemblyOperator kco;
 
     @BeforeAll
@@ -93,32 +89,31 @@ public class KafkaConnectAssemblyOperatorMockTest {
     }
 
     private void setConnectResource(KafkaConnect connectResource) {
-        mockKube = new MockKube();
-        mockClient = mockKube
-                .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, KafkaConnect::getStatus, KafkaConnect::setStatus)
-                    .withInitialInstances(Collections.singleton(connectResource))
-                .end()
-                .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class, KafkaConnector::getStatus, KafkaConnector::setStatus)
-                .end()
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaConnectCrd()
+                .withInitialKafkaConnects(connectResource)
+                .withDeploymentController()
                 .build();
+        mockKube.start();
     }
 
     @AfterEach
     public void afterEach() {
-        mockClient.close();
+        mockKube.stop();
     }
 
 
     private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_21);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
-                pfa, FeatureGates.NONE, 60_000L);
+                pfa, 60_000L);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         this.kco = new KafkaConnectAssemblyOperator(vertx, pfa, supplier, config, foo -> kafkaConnectApi);
 
@@ -128,13 +123,12 @@ public class KafkaConnectAssemblyOperatorMockTest {
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 if (!reconciliationPaused) {
-                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.policy().v1beta1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
-                    verify(mockClient, never()).resources(KafkaConnect.class);
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
                 }
                 created.complete();
             })));
@@ -193,7 +187,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
                     if (resource.get().getStatus() == null) {
                         fail();
                     }
@@ -227,7 +221,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
                 })
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    Resource<KafkaConnect> resource = Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
                     if (resource.get().getStatus() == null) {
                         fail();
                     }

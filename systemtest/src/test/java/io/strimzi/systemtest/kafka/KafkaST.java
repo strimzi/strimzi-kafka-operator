@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
@@ -35,23 +34,27 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
@@ -107,6 +110,7 @@ class KafkaST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(KafkaST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
     void testEODeletion(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -143,7 +147,6 @@ class KafkaST extends AbstractST {
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
-
         LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
         envVarUpdated.put("TEST_ENV_3", "test.env.three");
@@ -155,9 +158,9 @@ class KafkaST extends AbstractST {
         kafkaConfig.put("default.replication.factor", "1");
 
         Map<String, Object> updatedKafkaConfig = new HashMap<>();
-        updatedKafkaConfig.put("offsets.topic.replication.factor", "2");
-        updatedKafkaConfig.put("transaction.state.log.replication.factor", "2");
-        updatedKafkaConfig.put("default.replication.factor", "2");
+        updatedKafkaConfig.put("offsets.topic.replication.factor", "3");
+        updatedKafkaConfig.put("transaction.state.log.replication.factor", "3");
+        updatedKafkaConfig.put("default.replication.factor", "3");
 
         // Zookeeper Config
         Map<String, Object> zookeeperConfig = new HashMap<>();
@@ -181,7 +184,7 @@ class KafkaST extends AbstractST {
         final int updatedPeriodSeconds = 5;
         final int updatedFailureThreshold = 1;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 2)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewReadinessProbe()
@@ -206,7 +209,7 @@ class KafkaST extends AbstractST {
                     .endTemplate()
                 .endKafka()
                 .editZookeeper()
-                    .withReplicas(2)
+                    .withReplicas(3)
                     .withNewReadinessProbe()
                        .withInitialDelaySeconds(initialDelaySeconds)
                         .withTimeoutSeconds(timeoutSeconds)
@@ -284,7 +287,14 @@ class KafkaST extends AbstractST {
                     .endTlsSidecar()
                 .endEntityOperator()
                 .endSpec()
-            .build());
+            .build();
+
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().getEntityOperator().setTopicOperator(null);
+            kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+        }
+
+        resourceManager.createResource(extensionContext, kafka);
 
         final Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         final Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
@@ -296,33 +306,40 @@ class KafkaST extends AbstractST {
         checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), kafkaConfig, clusterName);
         checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarGeneral);
 
-        String kafkaConfiguration = kubeClient().getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
+            String kafkaConfiguration = kubeClient().getConfigMap(namespaceName, cmName).getData().get("server.config");
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
+        }
 
         String kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
         assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=1"));
         assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=1"));
         assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=1"));
 
-        LOGGER.info("Testing Zookeepers");
-        checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
-        checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarGeneral);
-
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Testing Zookeepers");
+            checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", initialDelaySeconds, timeoutSeconds,
+                    periodSeconds, successThreshold, failureThreshold);
+            checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
+            checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarGeneral);
+        }
 
         LOGGER.info("Checking configuration of TO and UO");
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarGeneral);
+        if (!Environment.isKRaftModeEnabled()) {
+            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", initialDelaySeconds, timeoutSeconds,
+                    periodSeconds, successThreshold, failureThreshold);
+            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarGeneral);
+
+            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
+                    periodSeconds, successThreshold, failureThreshold);
+            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarGeneral);
+        }
+
         checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarGeneral);
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarGeneral);
 
         LOGGER.info("Updating configuration of Kafka cluster");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
@@ -348,16 +365,9 @@ class KafkaST extends AbstractST {
             zookeeperClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             zookeeperClusterSpec.setConfig(updatedZookeeperConfig);
             zookeeperClusterSpec.getTemplate().getZookeeperContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+
             // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
             EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
-            entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            entityOperatorSpec.getTopicOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            entityOperatorSpec.getTopicOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            entityOperatorSpec.getTopicOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            entityOperatorSpec.getTopicOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            entityOperatorSpec.getTopicOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            entityOperatorSpec.getTopicOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            entityOperatorSpec.getTopicOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
             entityOperatorSpec.getUserOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getUserOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
             entityOperatorSpec.getUserOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
@@ -374,13 +384,25 @@ class KafkaST extends AbstractST {
             entityOperatorSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
             entityOperatorSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             entityOperatorSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-            entityOperatorSpec.getTemplate().getTopicOperatorContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             entityOperatorSpec.getTemplate().getUserOperatorContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             entityOperatorSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+            if (!Environment.isKRaftModeEnabled()) {
+                entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+                entityOperatorSpec.getTopicOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
+                entityOperatorSpec.getTopicOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+                entityOperatorSpec.getTopicOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
+                entityOperatorSpec.getTopicOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
+                entityOperatorSpec.getTopicOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
+                entityOperatorSpec.getTopicOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
+                entityOperatorSpec.getTopicOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
+                entityOperatorSpec.getTemplate().getTopicOperatorContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
+            }
         }, namespaceName);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 2, zkSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 2, kafkaSnapshot);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
+        }
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
@@ -390,35 +412,42 @@ class KafkaST extends AbstractST {
         checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), updatedKafkaConfig, clusterName);
         checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarUpdated);
 
-        kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=2"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=2"));
-        assertThat(kafkaConfiguration, containsString("default.replication.factor=2"));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
+            String kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, cmName).getData().get("server.config");
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=3"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=3"));
+            assertThat(kafkaConfiguration, containsString("default.replication.factor=3"));
+        }
 
         kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
-        assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=2"));
-        assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=2"));
-        assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=2"));
+        assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=3"));
+        assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=3"));
+        assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=3"));
 
-        LOGGER.info("Testing Zookeepers");
-        checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", updatedZookeeperConfig);
-        checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarUpdated);
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Testing Zookeepers");
+            checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+            checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", updatedZookeeperConfig);
+            checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarUpdated);
 
-        LOGGER.info("Getting entity operator to check configuration of TO and UO");
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarUpdated);
+            LOGGER.info("Getting entity operator to check configuration of TO and UO");
+            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarUpdated);
+
+            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
+                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
+            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarUpdated);
+        }
+
         checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarUpdated);
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarUpdated);
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
     void testJvmAndResources(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -555,12 +584,18 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testForTopicOperator(ExtensionContext extensionContext) throws InterruptedException {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+        );
 
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         final String cliTopicName = "topic-from-cli";
 
@@ -570,19 +605,19 @@ class KafkaST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicReady(namespaceName, topicName);
 
         assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getMetadata().getName(), is(topicName));
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0), hasItem(topicName));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItem(topicName));
 
-        KafkaCmdClient.createTopicUsingPodCli(namespaceName, clusterName, 0, cliTopicName, 1, 1);
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0), hasItems(topicName, cliTopicName));
+        KafkaCmdClient.createTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName, 1, 1);
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItems(topicName, cliTopicName));
         assertThat(cmdKubeClient(namespaceName).list(KafkaTopic.RESOURCE_KIND), hasItems(cliTopicName, topicName));
 
         //Updating first topic using pod CLI
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespaceName, clusterName, 0, topicName, 2);
+        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName, 2);
 
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, clusterName, 0, topicName),
-                hasItems("PartitionCount:2"));
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName),
+                containsString("PartitionCount: 2"));
         KafkaTopic testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, topicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -593,8 +628,8 @@ class KafkaST extends AbstractST {
 
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, clusterName, 0, cliTopicName),
-                hasItems("PartitionCount:2"));
+        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName),
+            containsString("PartitionCount: 2"));
         testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, cliTopicName), KafkaTopic.class);
         assertThat(testTopic, is(CoreMatchers.notNullValue()));
         assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
@@ -604,17 +639,18 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName(KafkaTopic.RESOURCE_KIND, cliTopicName);
 
         //Deleting another topic using pod CLI
-        KafkaCmdClient.deleteTopicUsingPodCli(namespaceName, clusterName, 0, topicName);
+        KafkaCmdClient.deleteTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
         KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName, topicName);
 
         //Checking all topics were deleted
         Thread.sleep(Constants.TIMEOUT_TEARDOWN);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
         assertThat(topics, not(hasItems(topicName)));
         assertThat(topics, not(hasItems(cliTopicName)));
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testRemoveTopicOperatorFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -664,33 +700,29 @@ class KafkaST extends AbstractST {
 
         Instant startTime = Instant.now();
 
-
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        String eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
-                .get(0).getMetadata().getName();
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(null), namespaceName);
 
-        //Waiting when EO pod will be recreated without UO
-        PodUtils.deletePodWithWait(namespaceName, eoPodName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
+        if (!Environment.isKRaftModeEnabled()) {
+            //Waiting when EO pod will be recreated without UO
+            DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+            PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
 
-        //Checking that UO was removed
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), not(containsString("user-operator")));
+            //Checking that UO was removed
+            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
+                pod.getSpec().getContainers().forEach(container -> {
+                    assertThat(container.getName(), not(containsString("user-operator")));
+                });
             });
-        });
-
-        eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
-                .get(0).getMetadata().getName();
+        } else {
+            DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
+        }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), namespaceName);
         //Waiting when EO pod will be recreated with UO
-        PodUtils.deletePodWithWait(namespaceName, eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Checking that UO was created
@@ -710,6 +742,7 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
     void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -828,24 +861,32 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
+        );
+
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
         // Creating topic without any label
         resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, "topic-without-labels", 1, 1, 1)
             .editMetadata()
                 .withLabels(null)
             .endMetadata()
-            .build());
+            .build()
+        );
 
         // Checking that resource was created
         assertThat(cmdKubeClient(namespaceName).list("kafkatopic"), hasItems("topic-without-labels"));
         // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0), not(hasItems("topic-without-labels")));
+        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems("topic-without-labels")));
 
         // Checking TO logs
         String tOPodName = cmdKubeClient(namespaceName).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
@@ -857,11 +898,12 @@ class KafkaST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName,  "topic-without-labels");
 
         //Checking all topics were deleted
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, clusterName, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -882,10 +924,11 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForPVCDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testKafkaJBODDeleteClaimsTrue(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -906,10 +949,11 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForPVCDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testKafkaJBODDeleteClaimsFalse(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -930,15 +974,15 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForPVCDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
     }
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testPersistentStorageSize(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
         final String[] diskSizes = {"70Gi", "20Gi"};
         final int kafkaRepl = 2;
         final int diskCount = 2;
@@ -949,7 +993,7 @@ class KafkaST extends AbstractST {
                         new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
                 ).build();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaRepl)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaRepl)
             .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)
@@ -960,31 +1004,28 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        List<PersistentVolumeClaim> volumes = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
+        List<PersistentVolumeClaim> volumes = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
 
         checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
 
-        String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelNamespaceTest
@@ -1039,10 +1080,8 @@ class KafkaST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final int kafkaReplicas = 3;
 
         Map<String, String> labels = new HashMap<>();
         final String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1051,49 +1090,44 @@ class KafkaST extends AbstractST {
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 1)
             .editMetadata()
                 .withLabels(labels)
             .endMetadata()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        // We detect is PodSets are used based on the STS presence and if they are, we use this flag later to skip parts of the test
-        boolean statefulSets = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)) != null;
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        if (statefulSets) {
-            LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-            StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labels);
 
-            LOGGER.info("Getting labels from stateful set resource");
-            StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LOGGER.info("Getting labels from stateful set resource");
+        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
-            LOGGER.info("Verifying default labels in the Kafka CR");
+        LOGGER.info("Verifying default labels in the Kafka CR");
 
-            assertThat("Label exists in stateful set with concrete value",
-                    labelValues[0].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[0])));
-            assertThat("Label exists in stateful set with concrete value",
-                    labelValues[1].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[1])));
-        }
+        assertThat("Label exists in stateful set with concrete value",
+                labelValues[0].equals(kafkaLabels.get(labelKeys[0])));
+        assertThat("Label exists in stateful set with concrete value",
+                labelValues[1].equals(kafkaLabels.get(labelKeys[1])));
 
         labelValues[0] = "new-name-of-the-label-1";
         labelValues[1] = "new-name-of-the-label-2";
@@ -1103,48 +1137,48 @@ class KafkaST extends AbstractST {
                 "name-of-the-label-1", labelValues[0], "name-of-the-label-2", labelValues[1], labelKeys[2], labelValues[2]);
 
         LOGGER.info("Edit kafka labels in Kafka CR");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, resource -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             resource.getMetadata().getLabels().put(labelKeys[0], labelValues[0]);
             resource.getMetadata().getLabels().put(labelKeys[1], labelValues[1]);
             resource.getMetadata().getLabels().put(labelKeys[2], labelValues[2]);
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
+
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
+        }
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
         labels.put(labelKeys[2], labelValues[2]);
 
         LOGGER.info("Waiting for kafka service labels changed {}", labels);
-        ServiceUtils.waitForServiceLabelsChange(namespaceName, KafkaResources.brokersServiceName(clusterName), labels);
+        ServiceUtils.waitForServiceLabelsChange(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), labels);
 
         LOGGER.info("Verifying kafka labels via services");
-        Service service = kubeClient(namespaceName).getService(namespaceName, KafkaResources.brokersServiceName(clusterName));
+        Service service = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
-        verifyPresentLabels(labels, service);
+        verifyPresentLabels(labels, service.getMetadata().getLabels());
 
-        LOGGER.info("Waiting for kafka config map labels changed {}", labels);
-        ConfigMapUtils.waitForConfigMapLabelsChange(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName), labels);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
+            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have new labels: {}", cmName, testStorage.getNamespaceName(), labels);
+            ConfigMapUtils.waitForConfigMapLabelsChange(testStorage.getNamespaceName(), cmName, labels);
 
-        LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
+            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, testStorage.getNamespaceName());
+            ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
-        verifyPresentLabels(labels, configMap);
-
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        if (statefulSets) {
-            LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-            StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
-
-            LOGGER.info("Verifying kafka labels via stateful set");
-            StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-
-            verifyPresentLabels(labels, statefulSet);
+            verifyPresentLabels(labels, configMap.getMetadata().getLabels());
         }
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labels);
+
+        LOGGER.info("Verifying kafka labels via stateful set");
+
+        verifyPresentLabels(labels, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
         LOGGER.info("Verifying via kafka pods");
-        labels = kubeClient(namespaceName).getPod(namespaceName, KafkaResources.kafkaPodName(clusterName, 0)).getMetadata().getLabels();
+        labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
         assertThat("Label exists in kafka pods", labelValues[0].equals(labels.get(labelKeys[0])));
         assertThat("Label exists in kafka pods", labelValues[1].equals(labels.get(labelKeys[1])));
@@ -1152,90 +1186,83 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Removing labels: {} -> {}, {} -> {}, {} -> {}", labelKeys[0], labels.get(labelKeys[0]),
             labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, resource -> {
+
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             resource.getMetadata().getLabels().remove(labelKeys[0]);
             resource.getMetadata().getLabels().remove(labelKeys[1]);
             resource.getMetadata().getLabels().remove(labelKeys[2]);
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
+
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
+        }
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         labels.remove(labelKeys[0]);
         labels.remove(labelKeys[1]);
         labels.remove(labelKeys[2]);
 
         LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
-        ServiceUtils.waitForServiceLabelsDeletion(namespaceName, KafkaResources.brokersServiceName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
+        ServiceUtils.waitForServiceLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via services");
-        service = kubeClient(namespaceName).getService(namespaceName, KafkaResources.brokersServiceName(clusterName));
+        service = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
         verifyNullLabels(labelKeys, service);
 
-        LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMapUtils.waitForConfigMapLabelsDeletion(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
+            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have labels removed: {}", cmName, testStorage.getNamespaceName(), labelKeys);
+            ConfigMapUtils.waitForConfigMapLabelsDeletion(testStorage.getNamespaceName(), cmName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        configMap = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
+            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, testStorage.getNamespaceName());
+            ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
-        verifyNullLabels(labelKeys, configMap);
-
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        if (statefulSets) {
-            LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-            String statefulSetName = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getName();
-            StatefulSetUtils.waitForStatefulSetLabelsDeletion(namespaceName, statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
-
-            StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-
-            LOGGER.info("Verifying kafka labels via stateful set");
-            verifyNullLabels(labelKeys, statefulSet);
+            verifyNullLabels(labelKeys, configMap);
         }
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+        StUtils.waitForStatefulSetOrStrimziPodSetLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labelKeys[0], labelKeys[1], labelKeys[2]);
+
+        LOGGER.info("Verifying kafka labels via stateful set");
+        verifyNullLabels(labelKeys, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
-        PodUtils.waitUntilPodLabelsDeletion(namespaceName, KafkaResources.kafkaPodName(clusterName, 0), labelKeys[0], labelKeys[1], labelKeys[2]);
+        PodUtils.waitUntilPodLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        labels = kubeClient(namespaceName).getPod(namespaceName, KafkaResources.kafkaPodName(clusterName, 0)).getMetadata().getLabels();
+        labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
         LOGGER.info("Verifying via kafka pods");
         verifyNullLabels(labelKeys, labels);
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testAppDomainLabels(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        final String kafkaClientsPodName =
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
-
-        Map<String, String> labels;
 
         LOGGER.info("---> PODS <---");
 
-        List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, clusterName).stream()
-                .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
-                .filter(pod -> !pod.getMetadata().getName().startsWith(clusterName + "-" + Constants.KAFKA_CLIENTS))
+        List<Pod> pods = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                .filter(pod -> pod.getMetadata().getName().startsWith(testStorage.getClusterName()))
                 .collect(Collectors.toList());
 
         for (Pod pod : pods) {
@@ -1245,26 +1272,20 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> STATEFUL SETS <---");
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-        if (kafkaSts != null) {
-            LOGGER.info("Getting labels from stateful set of kafka resource");
-            verifyAppLabels(kafkaSts.getMetadata().getLabels());
-        }
+        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
-        if (zooSts != null) {
-            LOGGER.info("Getting labels from stateful set of zookeeper resource");
-            verifyAppLabels(zooSts.getMetadata().getLabels());
-        }
+        LOGGER.info("Getting labels from stateful set of kafka resource");
+        verifyAppLabels(kafkaLabels);
+
+        Map<String, String> zooLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
+
+        LOGGER.info("Getting labels from stateful set of zookeeper resource");
+        verifyAppLabels(zooLabels);
 
         LOGGER.info("---> SERVICES <---");
 
-        List<Service> services = kubeClient(namespaceName).listServices(namespaceName).stream()
-                .filter(service -> service.getMetadata().getName().startsWith(clusterName))
+        List<Service> services = kubeClient(testStorage.getNamespaceName()).listServices(testStorage.getNamespaceName()).stream()
+                .filter(service -> service.getMetadata().getName().startsWith(testStorage.getClusterName()))
                 .collect(Collectors.toList());
 
         for (Service service : services) {
@@ -1274,8 +1295,8 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> SECRETS <---");
 
-        List<Secret> secrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
-                .filter(secret -> secret.getMetadata().getName().startsWith(clusterName) && secret.getType().equals("Opaque"))
+        List<Secret> secrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
+                .filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque"))
                 .collect(Collectors.toList());
 
         for (Secret secret : secrets) {
@@ -1285,17 +1306,18 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> CONFIG MAPS <---");
 
-        List<ConfigMap> configMaps = kubeClient(namespaceName).listConfigMapsInSpecificNamespace(namespaceName, clusterName);
+        List<ConfigMap> configMaps = kubeClient(testStorage.getNamespaceName()).listConfigMapsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (ConfigMap configMap : configMaps) {
             LOGGER.info("Getting labels from {} config map", configMap.getMetadata().getName());
             verifyAppLabelsForSecretsAndConfigMaps(configMap.getMetadata().getLabels());
         }
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelNamespaceTest
@@ -1326,70 +1348,67 @@ class KafkaST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1).build());
 
-        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1).build());
 
-        final String kafkaClientsPodName =
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         TestUtils.waitFor("KafkaTopic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash",
-                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(topicName));
+            () -> cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash",
+                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(testStorage.getTopicName()));
 
-        String topicDirNameInPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash",
-                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + topicName + "/p'").out();
+        String topicDirNameInPod = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash",
+                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + testStorage.getTopicName() + "/p'").out();
 
         String commandToGetDataFromTopic =
                 "cd /var/lib/kafka/data/kafka-log0/" + topicDirNameInPod + "/;cat 00000000000000000000.log";
 
-        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
-        String topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0),
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
-        LOGGER.info("Topic {} is present in kafka broker {} with no data", topicName, KafkaResources.kafkaPodName(clusterName, 0));
+        LOGGER.info("Topic {} is present in kafka broker {} with no data", testStorage.getTopicName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         assertThat("Topic contains data", topicData, emptyOrNullString());
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
 
-        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
-        topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c",
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
 
-        List<Pod> kafkaPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        List<Pod> kafkaPods = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         for (Pod kafkaPod : kafkaPods) {
             LOGGER.info("Deleting kafka pod {}", kafkaPod.getMetadata().getName());
-            kubeClient(namespaceName).deletePod(namespaceName, kafkaPod);
+            kubeClient(testStorage.getNamespaceName()).deletePod(testStorage.getNamespaceName(), kafkaPod);
         }
 
         LOGGER.info("Wait for kafka to rolling restart ...");
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 1, kafkaPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 1, kafkaPodsSnapshot);
 
-        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
-        topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c",
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
@@ -1398,15 +1417,12 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
@@ -1414,26 +1430,22 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, 1).build());
 
-        final String kafkaClientsPodName =
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
                 "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
 
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(clusterName, 0));
-        String result = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0),
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetFiles).out();
 
         // TODO / FIXME
@@ -1441,13 +1453,14 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Result: \n" + result);
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(clusterName, 0));
-        result = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0),
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetFiles).out();
 
         StringBuilder stringToMatch = new StringBuilder();
@@ -1461,6 +1474,7 @@ class KafkaST extends AbstractST {
 
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testLabelsAndAnnotationForPVC(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1485,6 +1499,11 @@ class KafkaST extends AbstractST {
                                 .withLabels(statefulSetLabels)
                             .endMetadata()
                         .endStatefulset()
+                        .withNewPodSet()
+                            .withNewMetadata()
+                                .withLabels(statefulSetLabels)
+                            .endMetadata()
+                        .endPodSet()
                         .withNewPersistentVolumeClaim()
                             .withNewMetadata()
                                 .addToLabels(pvcLabel)
@@ -1522,16 +1541,14 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        StatefulSet sts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-        if (sts != null) {
-            LOGGER.info("Check if Kubernetes labels are applied");
-            Map<String, String> actualStatefulSetLabels = sts.getMetadata().getLabels();
-            assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
-            assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));
-            LOGGER.info("Kubernetes labels are correctly set and present");
-        }
+        LOGGER.info("Check if Kubernetes labels are applied");
+
+        Map<String, String> actualStatefulSetLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
+        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));
+
+        LOGGER.info("Kubernetes labels are correctly set and present");
 
         List<PersistentVolumeClaim> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
@@ -1597,11 +1614,9 @@ class KafkaST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(CRUISE_CONTROL)
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1648,44 +1663,44 @@ class KafkaST extends AbstractST {
                         .endTemplate()
                     .endCruiseControl()
                 .endSpec()
-                .build());
-
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
-
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(namespaceName)
-                .withClusterName(clusterName)
-                .withMessageCount(MESSAGE_COUNT)
-                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                 .build();
 
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+        kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesPlain(),
-                internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext, kafka);
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
+
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     protected void checkKafkaConfiguration(String namespaceName, String podNamePrefix, Map<String, Object> config, String clusterName) {
         LOGGER.info("Checking kafka configuration");
         List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix);
 
-        Properties properties = configMap2Properties(kubeClient(namespaceName).getConfigMap(namespaceName, clusterName + "-kafka-config"));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, pods.size())) {
+            Properties properties = configMap2Properties(kubeClient(namespaceName).getConfigMap(namespaceName, cmName));
 
-        for (Map.Entry<String, Object> property : config.entrySet()) {
-            String key = property.getKey();
-            Object val = property.getValue();
+            for (Map.Entry<String, Object> property : config.entrySet()) {
+                String key = property.getKey();
+                Object val = property.getValue();
 
-            assertThat(properties.keySet().contains(key), is(true));
-            assertThat(properties.getProperty(key), is(val));
+                assertThat(properties.keySet().contains(key), is(true));
+                assertThat(properties.getProperty(key), is(val));
+            }
         }
 
         for (Pod pod: pods) {
@@ -1706,7 +1721,7 @@ class KafkaST extends AbstractST {
         int k = 0;
         for (int i = 0; i < kafkaRepl; i++) {
             for (int j = 0; j < diskCount; j++) {
-                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
+                LOGGER.info("Checking volume {} and size of testStorage {}", volumes.get(k).getMetadata().getName(),
                         volumes.get(k).getSpec().getResources().getRequests().get("storage"));
                 assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizes[i])));
                 k++;
@@ -1757,10 +1772,10 @@ class KafkaST extends AbstractST {
         }
     }
 
-    void verifyPresentLabels(Map<String, String> labels, HasMetadata resources) {
+    void verifyPresentLabels(Map<String, String> labels, Map<String, String> resourceLabels) {
         for (Map.Entry<String, String> label : labels.entrySet()) {
             assertThat("Label exists with concrete value in HasMetadata(Services, CM, STS) resources",
-                    label.getValue().equals(resources.getMetadata().getLabels().get(label.getKey())));
+                    label.getValue().equals(resourceLabels.get(label.getKey())));
         }
     }
 
@@ -1804,5 +1819,7 @@ class KafkaST extends AbstractST {
 
         kubeClient(namespaceName).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(namespaceName).delete();
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+
+        testSuiteNamespaceManager.deleteParallelNamespace(extensionContext);
     }
 }

@@ -13,6 +13,7 @@ import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     private static final String DELETE = "delete";
     private static final String REPLACE = "replace";
 
-    public static final String STATEFUL_SET = "statefulset";
     public static final String CM = "cm";
 
     String namespace = defaultNamespace();
@@ -88,12 +88,12 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public String get(String resource, String resourceName) {
-        return Exec.exec(namespacedCommand("get", resource, resourceName, "-o", "yaml")).out();
+        return Exec.exec(null, namespacedCommand("get", resource, resourceName, "-o", "yaml"), 0, Level.DEBUG).out();
     }
 
     @Override
     public String getEvents() {
-        return Exec.exec(namespacedCommand("get", "events")).out();
+        return Exec.exec(null, namespacedCommand("get", "events"), 0, Level.DEBUG).out();
     }
 
     @Override
@@ -106,7 +106,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             command.add("--validate=false");
         }
 
-        Exec.exec(null, command, 0, false, true);
+        Exec.exec(null, command, 0, Level.DEBUG, true);
 
         return (K) this;
     }
@@ -118,7 +118,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             try {
                 create(file);
             } catch (KubeClusterException.AlreadyExists e) {
-                Exec.exec(null, namespacedCommand(REPLACE, "-f", file.getAbsolutePath()), 0, false);
+                Exec.exec(null, namespacedCommand(REPLACE, "-f", file.getAbsolutePath()), 0, Level.DEBUG);
             }
 
             return (K) this;
@@ -175,7 +175,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         for (File f : files) {
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
-                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, false, false));
+                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, Level.DEBUG, false));
                 }
             } else if (f.isDirectory()) {
                 File[] children = f.listFiles();
@@ -209,7 +209,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"), 0, true);
+            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"), 0, Level.INFO);
             return (K) this;
         }
     }
@@ -218,7 +218,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K createContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"), 0, true);
+            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"), 0, Level.INFO);
             return (K) this;
         }
     }
@@ -230,7 +230,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             try {
                 createContent(yamlContent);
             } catch (KubeClusterException.AlreadyExists e) {
-                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"), 0, true);
+                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"), 0, Level.INFO);
             }
 
             return (K) this;
@@ -241,7 +241,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, true, false);
+            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, Level.INFO, false);
             return (K) this;
         }
     }
@@ -250,7 +250,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K createNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(null, namespacedCommand(CREATE, "namespace", name), 0, true);
+            Exec.exec(null, namespacedCommand(CREATE, "namespace", name), 0, Level.INFO);
         }
         return (K) this;
     }
@@ -259,7 +259,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K deleteNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(null, namespacedCommand(DELETE, "namespace", name), 0, true, false);
+            Exec.exec(null, namespacedCommand(DELETE, "namespace", name), 0, Level.INFO, false);
         }
         return (K) this;
     }
@@ -275,26 +275,26 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult execInPod(String pod, String... command) {
-        return execInPod(true, pod, command);
+        return execInPod(Level.INFO, pod, command);
     }
 
     @Override
-    public ExecResult execInPod(boolean logToOutput, String pod, String... command) {
+    public ExecResult execInPod(Level logLeve, String pod, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));
-        return Exec.exec(null, cmd, 0, logToOutput);
+        return Exec.exec(null, cmd, 0, logLeve);
     }
 
     @Override
     public ExecResult execInPodContainer(String pod, String container, String... command) {
-        return execInPodContainer(true, pod, container, command);
+        return execInPodContainer(Level.INFO, pod, container, command);
     }
 
     @Override
-    public ExecResult execInPodContainer(boolean logToOutput, String pod, String container, String... command) {
+    public ExecResult execInPodContainer(Level logLevel, String pod, String container, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "-c", container, "--");
         cmd.addAll(asList(command));
-        return Exec.exec(null, cmd, 0, logToOutput);
+        return Exec.exec(null, cmd, 0, logLevel);
     }
 
     @Override
@@ -304,25 +304,25 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult exec(List<String> command) {
-        return exec(true, true, command);
+        return exec(true, Level.INFO, command);
     }
 
     @Override
     public ExecResult exec(boolean throwError, String... command) {
-        return exec(throwError, true, asList(command));
+        return exec(throwError, Level.INFO, asList(command));
     }
 
     @Override
-    public ExecResult exec(boolean throwError, boolean logToOutput, String... command) {
-        return exec(throwError, logToOutput, asList(command));
+    public ExecResult exec(boolean throwError, Level logLevel, String... command) {
+        return exec(throwError, logLevel, asList(command));
     }
 
     @Override
-    public ExecResult exec(boolean throwError, boolean logToOutput, List<String> command) {
+    public ExecResult exec(boolean throwError, Level logLevel, List<String> command) {
         List<String> cmd = new ArrayList<>();
         cmd.add(cmd());
         cmd.addAll(command);
-        return Exec.exec(null, cmd, 0, logToOutput, throwError);
+        return Exec.exec(null, cmd, 0, logLevel, throwError);
     }
 
     @Override
@@ -331,8 +331,8 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
-    public ExecResult execInCurrentNamespace(boolean logToOutput, String... commands) {
-        return Exec.exec(null, namespacedCommand(commands), 0, logToOutput);
+    public ExecResult execInCurrentNamespace(Level logLevel, String... commands) {
+        return Exec.exec(null, namespacedCommand(commands), 0, logLevel);
     }
 
     enum ExType {

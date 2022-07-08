@@ -5,7 +5,7 @@
     <parent>
         <artifactId>strimzi</artifactId>
         <groupId>io.strimzi</groupId>
-        <version>0.28.0-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -76,10 +76,6 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-batch</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>openshift-model</artifactId>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>

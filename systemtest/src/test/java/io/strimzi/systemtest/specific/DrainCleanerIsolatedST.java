@@ -7,12 +7,15 @@ package io.strimzi.systemtest.specific;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -22,7 +25,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
@@ -45,6 +48,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(DrainCleanerIsolatedST.class);
     private static SetupDrainCleaner drainCleaner = new SetupDrainCleaner();
 
+    @Tag(ACCEPTANCE)
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
@@ -81,10 +85,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .build());
         drainCleaner.createDrainCleaner(extensionContext);
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(testStorage.getClusterName());
-        String zkName = KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName());
-
-        KafkaBasicExampleClients kafkaBasicExampleClients = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
             .withMessageCount(300)
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(Constants.DRAIN_CLEANER_NAMESPACE)
@@ -95,31 +96,40 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext,
-            kafkaBasicExampleClients.producerStrimzi().build(),
-            kafkaBasicExampleClients.consumerStrimzi().build());
+            kafkaBasicExampleClients.producerStrimzi(),
+            kafkaBasicExampleClients.consumerStrimzi());
 
         for (int i = 0; i < replicas; i++) {
             String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
             String kafkaPodName = KafkaResources.kafkaPodName(testStorage.getClusterName(), i);
 
+            Map<String, String> zkPod = null;
+            if (!Environment.isKRaftModeEnabled()) {
+                zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
+                        .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            }
             Map<String, String> kafkaPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            Map<String, String> zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
-                .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            LOGGER.info("Evicting pods: {} and {}", zkPodName, kafkaPodName);
-            kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+            if (!Environment.isKRaftModeEnabled()) {
+                LOGGER.info("Evicting pods: {}", zkPodName);
+                kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+            }
+            LOGGER.info("Evicting pods: {}", kafkaPodName);
             kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
 
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+            if (!Environment.isKRaftModeEnabled()) {
+                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+            }
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         }
 
-        ClientUtils.waitTillContinuousClientsFinish(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
     }
 
     @IsolatedTest
-    @MultiNodeClusterOnly
+    // We refer to 6 worker nodes to have always 2 nodes with same labels to properly evacuate pods from one node to another
+    @MultiNodeClusterOnly(workerNodeCount = 6)
     void testDrainCleanerWithComponentsDuringNodeDraining(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext, Constants.DRAIN_CLEANER_NAMESPACE);
 
@@ -209,10 +219,10 @@ public class DrainCleanerIsolatedST extends AbstractST {
         );
 
         String producerAdditionConfiguration = "delivery.timeout.ms=30000\nrequest.timeout.ms=30000";
-        KafkaBasicExampleClients kafkaBasicExampleClients;
+        KafkaClients kafkaBasicExampleClients;
 
         for (int i = 0; i < size; i++) {
-            kafkaBasicExampleClients = new KafkaBasicExampleClients.Builder()
+            kafkaBasicExampleClients = new KafkaClientsBuilder()
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
                 .withTopicName(topicNames.get(i))
@@ -225,8 +235,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
                 .build();
 
             resourceManager.createResource(extensionContext,
-                kafkaBasicExampleClients.producerStrimzi().build(),
-                kafkaBasicExampleClients.consumerStrimzi().build());
+                kafkaBasicExampleClients.producerStrimzi(),
+                kafkaBasicExampleClients.consumerStrimzi());
         }
 
         LOGGER.info("Starting Node drain");
@@ -247,9 +257,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         });
 
-        producerNames.forEach(producer -> ClientUtils.waitTillContinuousClientsFinish(producer, consumerNames.get(producerNames.indexOf(producer)), Constants.DRAIN_CLEANER_NAMESPACE, 300));
-        producerNames.forEach(producer -> KubeClusterResource.kubeClient().deleteJob(producer));
-        consumerNames.forEach(consumer -> KubeClusterResource.kubeClient().deleteJob(consumer));
+        producerNames.forEach(producer -> ClientUtils.waitForClientsSuccess(producer, consumerNames.get(producerNames.indexOf(producer)), Constants.DRAIN_CLEANER_NAMESPACE, 300));
     }
 
     @AfterEach
@@ -261,7 +269,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .createInstallation()

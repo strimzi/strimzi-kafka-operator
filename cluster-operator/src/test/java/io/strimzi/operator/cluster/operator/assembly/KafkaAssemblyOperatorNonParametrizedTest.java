@@ -4,7 +4,18 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -16,18 +27,18 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -35,17 +46,6 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
-import java.lang.reflect.Field;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
@@ -56,9 +56,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -124,6 +123,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        PodOperator podOps = supplier.podOperations;
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -131,8 +131,11 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -172,13 +175,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
     @Test
     public void testClusterCASecretsWithoutOwnerReference(VertxTestContext context) {
-        OwnerReference ownerReference = new OwnerReferenceBuilder()
-                        .withKind("Kafka")
-                        .withName(NAME)
-                        .withBlockOwnerDeletion(false)
-                        .withController(false)
-                        .build();
-
         CertificateAuthority caConfig = new CertificateAuthority();
         caConfig.setGenerateSecretOwnerReference(false);
 
@@ -202,8 +198,17 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .endSpec()
                 .build();
 
+        OwnerReference ownerReference = new OwnerReferenceBuilder()
+                .withKind(kafka.getKind())
+                .withApiVersion(kafka.getApiVersion())
+                .withName(kafka.getMetadata().getName())
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        PodOperator podOps = supplier.podOperations;
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -211,8 +216,11 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -246,13 +254,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
     @Test
     public void testClientsCASecretsWithoutOwnerReference(VertxTestContext context) {
-        OwnerReference ownerReference = new OwnerReferenceBuilder()
-                        .withKind("Kafka")
-                        .withName(NAME)
-                        .withBlockOwnerDeletion(false)
-                        .withController(false)
-                        .build();
-
         CertificateAuthority caConfig = new CertificateAuthority();
         caConfig.setGenerateSecretOwnerReference(false);
 
@@ -275,9 +276,18 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
-
+        
+        OwnerReference ownerReference = new OwnerReferenceBuilder()
+                .withKind(kafka.getKind())
+                .withApiVersion(kafka.getApiVersion())
+                .withName(kafka.getMetadata().getName())
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+        
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
+        PodOperator podOps = supplier.podOperations;
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -285,8 +295,11 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaCertSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaCluster.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
@@ -313,65 +326,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
-
-                    async.flag();
-                })));
-    }
-
-    /*
-     * This test covers the issue described in PR #5128 / issue #5126 where the getCruiseControlDescription returns
-     * without really waiting for the actual description. the way it is tested here is that we trigger an error when
-     * querying the metrics CM needed for the description and check that the reconciliation fails because of it which
-     * means the right outcome is returned.
-     */
-    @Test
-    public void testCruiseControlDescription(VertxTestContext context) throws NoSuchFieldException, IllegalAccessException {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                    .endZookeeper()
-                    .withNewCruiseControl()
-                        .withNewJmxPrometheusExporterMetricsConfig()
-                            .withNewValueFrom()
-                                .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-cm").withKey("my-metrics.yaml").build())
-                            .endValueFrom()
-                        .endJmxPrometheusExporterMetricsConfig()
-                    .endCruiseControl()
-                .endSpec()
-                .build();
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        ConfigMapOperator cmOps = supplier.configMapOperations;
-        when(cmOps.getAsync(eq(NAMESPACE), eq("my-metrics-cm"))).thenReturn(Future.failedFuture("Failed ConfigMap getAsync call"));
-
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 1L));
-        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
-
-        Checkpoint async = context.checkpoint();
-        KafkaAssemblyOperator.ReconciliationState reconciliationState =  op.new ReconciliationState(reconciliation, kafka);
-
-        KafkaCluster mockKafkaCluster = mock(KafkaCluster.class);
-        when(mockKafkaCluster.getStorage()).thenReturn(kafka.getSpec().getKafka().getStorage());
-        Field field = reconciliationState.getClass().getDeclaredField("kafkaCluster");
-        field.setAccessible(true);
-        field.set(reconciliationState, mockKafkaCluster);
-
-        reconciliationState.getCruiseControlDescription()
-                .onComplete(context.failing(c -> context.verify(() -> {
-                    assertThat(c.getMessage(), is("Failed ConfigMap getAsync call"));
 
                     async.flag();
                 })));
@@ -440,12 +394,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 null,
                 null,
                 null,
-                ClusterOperatorConfig.RbacScope.CLUSTER,
                 Labels.fromMap(Map.of("selectorLabel", "value")),
                 "",
                 10,
                 10_000,
-                30);
+                30,
+                false,
+                1024,
+                "cluster-operator-name");
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, config);
@@ -457,7 +413,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     // The resource labels don't match the selector labels => the reconciliation should exit right on
                     // beginning with success. It should not reconcile any resources other than getting the Kafka
                     // resource it self.
-                    verifyZeroInteractions(
+                    verifyNoInteractions(
                             supplier.stsOperations,
                             supplier.serviceOperations,
                             supplier.secretOperations,

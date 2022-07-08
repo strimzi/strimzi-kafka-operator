@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model.balancing;
 
+import java.util.List;
+
 public enum KafkaRebalanceState {
     /**
      * The resource has not been observed by the operator before.
@@ -14,7 +16,7 @@ public enum KafkaRebalanceState {
      *     <dt>NotReady</dt><dd>If the resource is invalid and a request could not be made.</dd>
      * </dl>
      */
-    New,
+    New(List.of()),
     /**
      * A proposal has been requested from Cruise Control, but is not ready yet.
      * Transitions to:
@@ -24,7 +26,7 @@ public enum KafkaRebalanceState {
      *     <dt>NotReady</dt><dd>If Cruise Control returned an error</dd>
      * </dl>
      */
-    PendingProposal,
+    PendingProposal(List.of(KafkaRebalanceAnnotation.stop)),
     /**
      * A proposal is ready and waiting for approval.
      * Transitions to:
@@ -34,7 +36,7 @@ public enum KafkaRebalanceState {
      *     <dt>ProposalReady</dt><dd>When the user sets annotation strimzi.io/rebalance=refresh and the proposal is already ready.</dd>
      * </dl>
      */
-    ProposalReady,
+    ProposalReady(List.of(KafkaRebalanceAnnotation.approve, KafkaRebalanceAnnotation.refresh)),
     /**
      * Cruise Control is doing the rebalance for an approved proposal.
      * Transitions to:
@@ -44,7 +46,7 @@ public enum KafkaRebalanceState {
      *     <dt>Ready</dt><dd>Once the rebalancing is complete.</dd>
      * </dl>
      */
-    Rebalancing,
+    Rebalancing(List.of(KafkaRebalanceAnnotation.stop)),
     /**
      * The user has stopped the actual rebalancing by setting annotation strimzi.io/rebalance=stop
      * May transition back to:
@@ -53,7 +55,7 @@ public enum KafkaRebalanceState {
      *     <dt>ProposalReady</dt><dd>If the user sets annotation strimzi.io/rebalance=refresh and the proposal is already ready.</dd>
      * </dl>
      */
-    Stopped,
+    Stopped(List.of(KafkaRebalanceAnnotation.refresh)),
     /**
      * There's been some error.
      * Transitions to:
@@ -61,15 +63,29 @@ public enum KafkaRebalanceState {
      *     <dt>New</dt><dd>If the error was caused by the resource itself that was fixed by the user.</dd>
      * </dl>
      */
-    NotReady,
+    NotReady(List.of(KafkaRebalanceAnnotation.refresh)),
     /**
      * The rebalance is complete and there is no transition from this state.
      * The resource is eligible for garbage collection after a configurable delay.
      * There is no transition from this state to a new one.
      */
-    Ready,
+    Ready(List.of(KafkaRebalanceAnnotation.refresh)),
     /**
      * The user paused reconciliations by setting annotation strimzi.io/pause-reconciliation="true".
      */
-    ReconciliationPaused
+    ReconciliationPaused(List.of());
+
+    private final List<KafkaRebalanceAnnotation> validAnnotations;
+
+    KafkaRebalanceState(List<KafkaRebalanceAnnotation> validAnnotations) {
+        this.validAnnotations = validAnnotations;
+    }
+
+    public boolean isValidateAnnotation(KafkaRebalanceAnnotation annotation) {
+        return validAnnotations.contains(annotation);
+    }
+
+    public List<KafkaRebalanceAnnotation> getValidAnnotations() {
+        return validAnnotations;
+    }
 }

@@ -79,7 +79,11 @@ If the rack ID is not specified, or if it cannot find a replica with the same ra
 .Example showing client consuming from replicas in the same availability zone
 image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
 
-Consuming messages from the closest replicas can be used also in Kafka Connect for sink connectors which are consuming messages.
+You can also configure Kafka Connect and MirrorMaker 2.0 so that connectors consume messages from the closest replicas.
+You enable rack awareness in the `KafkaConnect` and `KafkaMirrorMaker2` custom resources.
+The configuration does does not set affinity rules, but you can also configure `affinity` or `topologySpreadConstraints`.
+For more information see xref:assembly-scheduling-str[].
+
 When deploying Kafka Connect using Strimzi, you can use the `rack` section in the `KafkaConnect` custom resource to automatically configure the `client.rack` option.
 
 .Example `rack` configuration for Kafka Connect
@@ -89,12 +93,23 @@ apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
 # ...
 spec:
-  kafka:
-    # ...
-    rack:
-      topologyKey: topology.kubernetes.io/zone
-    # ...
+  # ...
+  rack:
+    topologyKey: topology.kubernetes.io/zone
+  # ...
 ----
 
-Enabling rack awareness in the `KafkaConnect` custom resource will not set any affinity rules, but you can also configure `affinity` or `topologySpreadConstraints`.
-For more information see xref:assembly-scheduling-str[].
+When deploying MirrorMaker 2 using Strimzi, you can use the `rack` section in the `KafkaMirrorMaker2` custom resource to automatically configure the `client.rack` option.
+
+.Example `rack` configuration for MirrorMaker 2.0
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+# ...
+spec:
+  # ...
+  rack:
+    topologyKey: topology.kubernetes.io/zone
+  # ...
+----

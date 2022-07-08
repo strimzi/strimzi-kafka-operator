@@ -36,6 +36,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -92,8 +93,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 // TODO Handle 409 (Conflict) indicating a rebalance in progress
                                 LOGGER.debugCr(reconciliation, "Got {} response to PUT request to {}", response.result().statusCode(), path);
                                 response.result().bodyHandler(buffer -> {
-                                    JsonObject x = buffer.toJsonObject();
-                                    result.fail(new ConnectRestException(response.result(), x.getString("message")));
+                                    result.fail(new ConnectRestException(response.result(), tryToExtractErrorMessage(reconciliation, buffer)));
                                 });
                             }
                         } else {
@@ -139,8 +139,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 // TODO Handle 409 (Conflict) indicating a rebalance in progress
                                 LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", response.result().statusCode(), path);
                                 response.result().bodyHandler(buffer -> {
-                                    JsonObject x = buffer.toJsonObject();
-                                    result.fail(new ConnectRestException(response.result(), x.getString("message")));
+                                    result.fail(new ConnectRestException(response.result(), tryToExtractErrorMessage(reconciliation, buffer)));
                                 });
                             }
                         } else {
@@ -193,9 +192,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                     });
                             } else {
                                 // TODO Handle 409 (Conflict) indicating a rebalance in progress
+                                LOGGER.debugCr(reconciliation, "Got {} response to DELETE request to {}", response.result().statusCode(), path);
                                 response.result().bodyHandler(buffer -> {
-                                    JsonObject x = buffer.toJsonObject();
-                                    result.fail(new ConnectRestException(response.result(), x.getString("message")));
+                                    result.fail(new ConnectRestException(response.result(), tryToExtractErrorMessage(reconciliation, buffer)));
                                 });
                             }
                         } else {
@@ -625,5 +624,15 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                     result.tryFail(request.cause());
                 }
             }));
+    }
+
+    /* test */ static String tryToExtractErrorMessage(Reconciliation reconciliation, Buffer buffer)    {
+        try {
+            return buffer.toJsonObject().getString("message");
+        } catch (DecodeException e) {
+            LOGGER.warnCr(reconciliation, "Failed to decode the error message from the response: " + buffer, e);
+        }
+
+        return "Unknown error message";
     }
 }

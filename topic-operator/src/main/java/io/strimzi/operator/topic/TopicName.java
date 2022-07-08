@@ -59,6 +59,7 @@ class TopicName {
      * constructed (with invalid characters removed or changed) and a disambiguating hash is appended to that
      * prefix and the concatenation of the prefix and hash is returned.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public ResourceName asKubeName() {
         ResourceName mname;
         if (ResourceName.isValidResourceName(this.name)) {

@@ -13,7 +13,14 @@ A standalone deployment can operate with any Kafka cluster.
 
 Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-user-operator.yaml` deployment file to deploy the User Operator.
-Add or set the environment variables needed to make a connection to a Kafka cluster.  
+Add or set the environment variables needed to make a connection to a Kafka cluster.
+
+The User Operator watches for `KafkaUser` resources in a single namespace.
+You specify the namespace to watch, and the connection to the Kafka cluster, in the User Operator configuration.
+A single User Operator can watch a single namespace.    
+One namespace should be watched by only one User Operator.
+If you want to use more than one User Operator, configure each of them to watch different namespaces. 
+In this way, you can use the User Operator with multiple Kafka clusters.  
 
 .Prerequisites
 
@@ -75,13 +82,23 @@ spec:
               value: "kafka-"
             - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <14>
               value: "true"
+            - name: STRIMZI_MAINTENANCE_TIME_WINDOWS <15>
+              value: '* * 8-10 * * ?;* * 14-15 * * ?'
+            - name: STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION <16>
+              value: |
+                default.api.timeout.ms=60000
+                request.timeout.ms=120000
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
 <3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
 <4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
-<5> The label selector used to identify the `KafkaUser` resources managed by the User Operator.
+<5> The label to identify the `KafkaUser` resources managed by the User Operator.
+This does not have to be the name of the Kafka cluster.
+It can be the label assigned to the `KafkaUser` resource.
+If you deploy more than one User Operator, the labels must be unique for each.
+That is, the operators cannot manage the same resources.
 <6> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
 <7> The level for printing logging messages.
@@ -99,7 +116,8 @@ The default is `30` days to initiate certificate renewal before the old certific
 When set to `false`, the User Operator will reject all resources with `simple` authorization ACL rules.
 This helps to avoid unnecessary exceptions in the Kafka cluster logs.
 The default is `true`.
-
+<15> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
+<16> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
 
 . If you are using TLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
 Otherwise, go to the next step.
@@ -124,11 +142,19 @@ The `Secret` must also contain the password (`entity-operator.password`) for acc
 [source,shell,subs=+quotes]
 kubectl create -f install/user-operator
 
-. Verify that the User Operator has been deployed successfully.
+. Check the status of the deployment:
 +
-[source,shell,subs=+quotes]
-kubectl describe deployment strimzi-user-operator
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments
+----
 +
-The User Operator is deployed when the `Replicas` entry shows `1 available`.
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                   READY  UP-TO-DATE  AVAILABLE
+strimzi-user-operator  1/1    1           1
+----
 +
-NOTE: You might experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the User Operator images have not been downloaded before.
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.

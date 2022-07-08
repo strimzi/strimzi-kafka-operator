@@ -1,0 +1,52 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='con-upgrade-paths-{context}']
+= Strimzi upgrade paths
+
+[role="_abstract"]
+Two Strimzi upgrade paths are possible.
+
+Incremental upgrade::
+Upgrading Strimzi from the previous minor version to version {ProductVersion}.
+
+Multi-version upgrade::
+Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
++
+For example, upgrading from Strimzi 0.24.0 directly to Strimzi {ProductVersion}.
++
+NOTE: A multi-version Strimzi upgrade might still support the current version of a Kafka deployment.
+
+[id='con-upgrade-paths-kafka-versions-{context}']
+== Supported Kafka versions
+
+Decide which Kafka version to upgrade to before starting the Strimzi upgrade process.
+You can review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table.
+
+* The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version").
+
+* The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
+
+You can only use a Kafka version supported by the version of Strimzi you are using.
+You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
+In some cases, you can also downgrade to a previous supported Kafka version.
+
+[id='con-upgrade-paths-earlier-versions-{context}']
+== Upgrading from a Strimzi version earlier than {ConvertAfterProductVersion}
+
+When upgrading Strimzi to {ProductVersion} from {ConvertAfterProductVersion} or earlier, you must ensure that your custom resources are using API version `{ApiVersion}`.
+You must upgrade the Custom Resource Definitions and the custom resources *before* upgrading to Strimzi {ConvertBeforeProductVersion} or newer.
+To perform the upgrade, you can use the _API conversion tool_ provided with Strimzi {LastReleaseWithCRDUpgrade}.
+For more information, see the {UpgradeGuide}.
+
+The `v1beta2` API version for all custom resources was introduced with Strimzi {ConvertAfterProductVersion}.
+For Strimzi {ConvertBeforeProductVersion} and newer, the `v1alpha1` and `v1beta1` API versions were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser`.
+
+If you are upgrading from a Strimzi version prior to version {ConvertAfterProductVersion}:
+
+. Upgrade Strimzi to {ConvertAfterProductVersion}
+. Convert the custom resources to `v1beta2`
+. Upgrade Strimzi to {ConvertBeforeProductVersion} or newer
+
+NOTE: As an alternative, you can install the custom resources from version {ConvertAfterProductVersion}, convert the resources, and then upgrade to {ConvertBeforeProductVersion} or newer.

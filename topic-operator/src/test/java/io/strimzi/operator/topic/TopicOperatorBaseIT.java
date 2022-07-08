@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -15,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
@@ -34,9 +36,9 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.TestInstance;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -67,6 +69,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorBaseIT.class);
@@ -79,6 +82,7 @@ public abstract class TopicOperatorBaseIT {
 
     public static final String NAMESPACE = "topic-operator-it";
     public static final String CLIENTID = "topic-operator-clientid-it";
+    public static final int RECONCILIATION_INTERVAL = 10_000;
 
     protected static Vertx vertx;
     protected volatile AdminClient adminClient;
@@ -136,18 +140,16 @@ public abstract class TopicOperatorBaseIT {
         }
     }
 
-    public void setup(EmbeddedKafkaCluster kafkaCluster) throws Exception {
+    public void setup(StrimziKafkaCluster kafkaCluster) throws Exception {
         LOGGER.info("Setting up test");
         cluster.cluster();
 
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers());
         adminClient = AdminClient.create(p);
 
         kubeClient = kubeClient().getClient();
         Crds.registerCustomKinds();
-        LOGGER.info("Using namespace {}", NAMESPACE);
-        startTopicOperator(kafkaCluster);
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those
@@ -159,52 +161,54 @@ public abstract class TopicOperatorBaseIT {
         LOGGER.info("Finished setting up test");
     }
 
+    protected final void clearKafkaTopics(final boolean deletionEnabled) throws TimeoutException, InterruptedException {
+        if (deletionEnabled && kubeClient != null && operation().inNamespace(NAMESPACE).list().getItems() != null) {
+            List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
+
+            // Wait for the operator to delete all the existing topics in Kafka
+            for (KafkaTopic item : items) {
+                String mdName = item.getMetadata().getName();
+                String topicName = new TopicName(item).toString();
+                // TODO FIXME !!
+                if (topicName.startsWith("__")) continue;
+
+                LOGGER.info("Deleting {} from Kube", mdName);
+                operation().inNamespace(NAMESPACE).withName(mdName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+                LOGGER.info("Awaiting deletion of {} in Kafka", mdName);
+                waitForTopicInKafka(topicName, false);
+                waitForTopicInKube(mdName, false);
+            }
+        }
+    }
+
     public void teardown(boolean deletionEnabled) throws InterruptedException, TimeoutException, ExecutionException {
         CountDownLatch latch = new CountDownLatch(1);
         try {
             LOGGER.info("Tearing down test");
 
             try {
-                if (deletionEnabled && kubeClient != null) {
-                    List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
-
-                    // Wait for the operator to delete all the existing topics in Kafka
-                    for (KafkaTopic item : items) {
-                        String mdName = item.getMetadata().getName();
-                        String topicName = new TopicName(item).toString();
-                        // TODO FIXME !!
-                        if (topicName.startsWith("__")) continue;
-
-                        LOGGER.info("Deleting {} from Kube", mdName);
-                        operation().inNamespace(NAMESPACE).withName(mdName).cascading(true).delete();
-                        LOGGER.info("Awaiting deletion of {} in Kafka", mdName);
-                        waitForTopicInKafka(topicName, false);
-                        waitForTopicInKube(mdName, false);
-                    }
-                    Thread.sleep(5_000);
-                }
+                clearKafkaTopics(deletionEnabled);
             } finally {
                 stopTopicOperator();
             }
 
-            if (!deletionEnabled && kubeClient != null) {
+            if (!deletionEnabled && kubeClient != null && operation().inNamespace(NAMESPACE).list().getItems() != null) {
                 List<KafkaTopic> items = operation().inNamespace(NAMESPACE).list().getItems();
 
                 // Wait for the operator to delete all the existing topics in Kafka
                 for (KafkaTopic item : items) {
-                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).cascading(true).delete();
+                    operation().inNamespace(NAMESPACE).withName(item.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                     waitForTopicInKube(item.getMetadata().getName(), false);
                 }
             }
         } finally {
-            adminClient.close();
             LOGGER.info("Finished tearing down test");
             latch.countDown();
         }
         latch.await(30, TimeUnit.SECONDS);
     }
 
-    protected void startTopicOperator(EmbeddedKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
+    protected void startTopicOperator(StrimziKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
 
         LOGGER.info("Starting Topic Operator");
         session = new Session(kubeClient, new Config(topicOperatorConfig(kafkaCluster)));
@@ -222,15 +226,15 @@ public abstract class TopicOperatorBaseIT {
         LOGGER.info("Started Topic Operator");
     }
 
-    protected Map<String, String> topicOperatorConfig(EmbeddedKafkaCluster kafkaCluster) {
+    protected Map<String, String> topicOperatorConfig(StrimziKafkaCluster kafkaCluster) {
         Map<String, String> m = new HashMap<>();
-        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.bootstrapServers());
-        m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.zKConnectString());
+        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers());
+        m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort());
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
         m.put(Config.CLIENT_ID.key, CLIENTID);
         m.put(Config.TC_RESOURCE_LABELS, io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
-        m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
+        m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, String.valueOf(RECONCILIATION_INTERVAL));
         return m;
     }
 

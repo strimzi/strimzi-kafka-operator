@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.28.0-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>api</artifactId>
@@ -221,7 +221,7 @@
                                 <argument>io.strimzi.crdgenerator.DocGenerator</argument>
                                 <argument>--linker</argument>
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
-                                <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/</argument>
+                                <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/</argument>
                                 <argument>modules/appendix_crds.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnect</argument>

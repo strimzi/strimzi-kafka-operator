@@ -22,7 +22,7 @@ cat <<EOF
 // DO NOT EDIT BY HAND
 [options="header"]
 |=================
-|Kafka version |Interbroker protocol version |Log message format version| ZooKeeper version
+|Kafka version |Inter-broker protocol version |Log message format version| ZooKeeper version
 EOF
 for i in "${!versions[@]}"
 do

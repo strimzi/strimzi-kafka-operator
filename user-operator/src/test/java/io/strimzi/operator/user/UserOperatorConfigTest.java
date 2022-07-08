@@ -10,9 +10,12 @@ import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -30,6 +33,7 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, "1000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, "10");
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, "false");
+        envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, "true");
         envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, "20");
 
 
@@ -52,7 +56,9 @@ public class UserOperatorConfigTest {
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
+        assertThat(config.isKraftEnabled(), is(true));
         assertThat(config.getScramPasswordLength(), is(20));
+        assertThat(config.getMaintenanceWindows(), is(nullValue()));
     }
 
     @Test
@@ -149,5 +155,46 @@ public class UserOperatorConfigTest {
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
         assertThat(config.isAclsAdminApiSupported(), is(UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED));
+    }
+
+    @Test
+    public void testFromMapKraftEnabledDefaults()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_KRAFT_ENABLED);
+
+        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThat(config.isKraftEnabled(), is(UserOperatorConfig.DEFAULT_STRIMZI_KRAFT_ENABLED));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindows()    {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+
+        envVars.put(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS, "* * 8-10 * * ?;* * 14-15 * * ?");
+
+        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThat(config.getMaintenanceWindows(), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
+    }
+
+    @Test
+    public void testParseMaintenanceTimeWindows()    {
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?;* * 14-15 * * ?"), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?"), is(List.of("* * 8-10 * * ?")));
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(null), is(nullValue()));
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(""), is(nullValue()));
+    }
+
+    @Test
+    public void testParseKafkaAdminClientConfiguration()    {
+        Properties config = UserOperatorConfig.parseKafkaAdminClientConfiguration("default.api.timeout.ms=13000\n" +
+                "request.timeout.ms=130000");
+        assertThat(config.get("default.api.timeout.ms"), is("13000"));
+        assertThat(config.get("request.timeout.ms"), is("130000"));
+    }
+
+    @Test
+    public void testParseNullKafkaAdminClientConfiguration()    {
+        Properties config = UserOperatorConfig.parseKafkaAdminClientConfiguration(null);
+        assertThat(config.isEmpty(), is(true));
     }
 }

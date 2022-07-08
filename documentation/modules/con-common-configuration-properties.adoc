@@ -1,6 +1,6 @@
 // This module is included in the following files:
 //
-// using/using.adoc
+// configuring/configuring.adoc
 
 [id='con-common-configuration-properties-{context}']
 == Common configuration properties
@@ -96,14 +96,14 @@ tls:
   trustedCertificates: []
 ----
 
-For information on configuring TLS client authentication, see xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
+For information on configuring TLS client authentication, see the xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
 
 [id='con-common-configuration-resources-{context}']
 === `resources`
 
 Configure resource _requests_ and _limits_ to control resources for Strimzi containers.
 You can specify requests and limits for `memory` and `cpu` resources.
-The requests should be enough to ensure a stable performance of Kafka.  
+The requests should be enough to ensure a stable performance of Kafka.
 
 How you configure resources in a production environment depends on a number of factors.
 For example, applications are likely to be sharing resources in your Kubernetes cluster.
@@ -115,14 +115,14 @@ For Kafka, the following aspects of a deployment can impact the resources you ne
 * The number of producers and consumers
 * The number of topics and partitions
 
-The values specified for resource requests are reserved and always available to a container.
+The values specified for resource requests are reserved and always available to the container.
 Resource limits specify the maximum resources that can be consumed by a given container.
 The amount between the request and limit is not reserved and might not be always available.
 A container can use the resources up to the limit only when they are available.
 Resource limits are temporary and can be reallocated.
 
-.Resource request and limit
-image:common-config-resources.png[Boundaries of a resource request and limit]
+.Resource requests and limits
+image:common-config-resources.png[Boundaries of a resource requests and limits]
 
 If you set limits without requests or vice versa, Kubernetes uses the same value for both.
 Setting equal requests and limits for resources guarantees quality of service, as
@@ -354,7 +354,7 @@ livenessProbe:
 # ...
 ----
 
-For more information about the `livenessProbe` and `readinessProbe` options, see xref:type-Probe-reference[Probe schema reference].
+For more information about the `livenessProbe` and `readinessProbe` options, see the xref:type-Probe-reference[Probe schema reference].
 
 [id='con-common-configuration-prometheus-{context}']
 === `metricsConfig`
@@ -441,41 +441,79 @@ To optimize their performance on different platforms and architectures, you conf
 
 You can specify the following options in your configuration:
 
-`-Xms`:: Minimum initial allocation heap size when the JVM starts.
-`-Xmx`:: Maximum heap size.
-`-XX`:: Advanced runtime options for the JVM.
-`javaSystemProperties`:: Additional system properties.
-`gcLoggingEnabled`:: xref:con-common-configuration-garbage-collection-{context}[Enables garbage collector logging].
-
-The full schema of `jvmOptions` is described in xref:type-JvmOptions-reference[`JvmOptions` schema reference].
+`-Xms`:: Minimum initial allocation heap size when the JVM starts
+`-Xmx`:: Maximum heap size
+`-XX`:: Advanced runtime options for the JVM
+`javaSystemProperties`:: Additional system properties
+`gcLoggingEnabled`:: xref:con-common-configuration-garbage-collection-{context}[Enables garbage collector logging]
 
 NOTE: The units accepted by JVM settings, such as `-Xmx` and `-Xms`, are the same units accepted by the JDK `java` binary in the corresponding image.
 Therefore, `1g` or `1G` means 1,073,741,824 bytes, and `Gi` is not a valid unit suffix.
-This is different from the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes
+This is different from the units used for xref:con-common-configuration-resources-reference[memory requests and limits], which follow the Kubernetes convention where `1G` means 1,000,000,000 bytes, and `1Gi` means 1,073,741,824 bytes.
 
 .`-Xms` and `-Xmx` options
 
-The default values used for `-Xms` and `-Xmx` depend on whether there is a xref:con-common-configuration-resources-reference[memory request] limit configured for the container.
+In addition to setting memory request and limit values for your containers, you can use the `-Xms` and `-Xmx` JVM options to set specific heap sizes for your JVM.
+Use the `-Xms` option to set an initial heap size and the `-Xmx` option to set a maximum heap size.
 
-* If there is a memory limit, the JVM's minimum and maximum memory is set to a value corresponding to the limit.
-* If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to increase as needed. This is ideal for single node environments in test and development.
+Specify heap size to have more control over the memory allocated to your JVM.
+Heap sizes should make the best use of a container's xref:con-common-configuration-resources-reference[memory limit (and request)] without exceeding it.
+Heap size and any other memory requirements need to fit within a specified memory limit.
+If you don't specify heap size in your configuration, but you configure a memory resource limit (and request), the Cluster Operator imposes default heap sizes automatically.
+The Cluster Operator sets default maximum and minimum heap values based on a percentage of the memory resource configuration.
 
-Before setting `-Xmx` explicitly, consider the following:
+The following table shows the default heap values.
 
-* Total JVM memory usage can be a lot more than the maximum heap size. Try experimenting to find a value for `-Xmx` that makes the best use of the container's memory request without exceeding it.
-* Setting an appropriate Kubernetes memory request.
-** Kubernetes might kill the container if there is pressure on memory from other pods running on the node.
-** Kubernetes might schedule the container to a node with insufficient memory.
+.Default heap settings for components
+[cols="4,2,2",options="header"]
+|===
+
+|Component
+|Percent of available memory allocated to the heap
+|Maximum limit
+
+|Kafka
+|50%
+|5 GB
+
+|ZooKeeper
+|75%
+|2 GB
+
+|Kafka Connect
+|75%
+|None
+
+|MirrorMaker 2.0
+|75%
+|None
+
+|MirrorMaker
+|75%
+|None
+
+|Cruise Control
+|75%
+|None
+
+|Kafka Bridge
+|50%
+|31 Gi
+
+|===
+
+If a memory limit (and request) is not specified, a JVM's minimum heap size is set to `128M`.
+The JVM's maximum heap size is not defined to allow the memory to increase as needed.
+This is ideal for single node environments in test and development.
+
+Setting an appropriate memory request can prevent the following:
+
+* Kubernetes killing a container if there is pressure on memory from other pods running on the node.
+* Kubernetes scheduling a container to a node with insufficient memory.
 If `-Xms` is set to `-Xmx`, the container will crash immediately; if not, the container will crash at a later time.
 
-It is _recommended_ to:
-
-* Set the memory request and the memory limit to the same value
-* Use a memory request that is at least 4.5 × the `-Xmx`
-* Consider setting `-Xms` to the same value as `-Xmx`
-
 In this example, the JVM uses 2 GiB (=2,147,483,648 bytes) for its heap.
-Its total memory usage is approximately 8GiB.
+Total JVM memory usage can be a lot more than the maximum heap size.
 
 .Example `-Xmx` and `-Xms` configuration
 [source,yaml,subs=attributes+]
@@ -490,7 +528,7 @@ jvmOptions:
 Setting the same value for initial (`-Xms`) and maximum (`-Xmx`) heap sizes avoids the JVM having to allocate memory after startup, at the cost of possibly allocating more heap than is really needed.
 
 IMPORTANT: Containers performing lots of disk I/O, such as Kafka broker containers, require available memory for use as an operating system page cache.
-On such containers, the requested memory should be significantly higher than the memory used by the JVM.
+For such containers, the requested memory should be significantly higher than the memory used by the JVM.
 
 .-XX option
 
@@ -528,6 +566,7 @@ jvmOptions:
       value: ssl
 ----
 
+For more information about the `jvmOptions`, see the xref:type-JvmOptions-reference[`JvmOptions` schema reference].
 
 [id='con-common-configuration-garbage-collection-{context}']
 === Garbage collector logging

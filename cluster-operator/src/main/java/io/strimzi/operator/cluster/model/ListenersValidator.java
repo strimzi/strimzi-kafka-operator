@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
+import io.strimzi.kafka.oauth.jsonpath.JsonPathQuery;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 
@@ -339,6 +340,7 @@ public class ListenersValidator {
      */
     private static void validateBootstrapNodePort(Set<String> errors, GenericKafkaListener listener) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && listener.getConfiguration().getBootstrap().getNodePort() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure bootstrap.nodePort because it is not NodePort based listener");
         }
@@ -405,6 +407,7 @@ public class ListenersValidator {
      */
     private static void validateBrokerNodePort(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
         if (!KafkaListenerType.NODEPORT.equals(listener.getType())
+                && !KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && broker.getNodePort() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure brokers[].nodePort because it is not NodePort based listener");
         }
@@ -495,6 +498,14 @@ public class ListenersValidator {
                 errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'");
             }
 
+            if (oAuth.getConnectTimeoutSeconds() != null && oAuth.getConnectTimeoutSeconds() <= 0) {
+                errors.add("listener " + listenerName + ": 'connectTimeoutSeconds' needs to be a positive integer (set to: " + oAuth.getConnectTimeoutSeconds() + ")");
+            }
+
+            if (oAuth.getReadTimeoutSeconds() != null && oAuth.getReadTimeoutSeconds() <= 0) {
+                errors.add("listener " + listenerName + ": 'readTimeoutSeconds' needs to be a positive integer (set to: " + oAuth.getReadTimeoutSeconds() + ")");
+            }
+
             if (oAuth.isCheckAudience() && oAuth.getClientId() == null) {
                 errors.add("listener " + listenerName + ": 'clientId' has to be configured when 'checkAudience' is 'true'");
             }
@@ -553,6 +564,15 @@ public class ListenersValidator {
 
             if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
                 errors.add("listener " + listenerName + ": 'validTokenType' can only be used when 'introspectionEndpointUri' is set");
+            }
+
+            String groupsQuery = oAuth.getGroupsClaim();
+            if (groupsQuery != null) {
+                try {
+                    JsonPathQuery.parse(groupsQuery);
+                } catch (Exception e) {
+                    errors.add("listener " + listenerName + ": 'groupsClaim' value not a valid JsonPath query - " + e.getMessage());
+                }
             }
         }
     }

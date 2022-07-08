@@ -128,7 +128,7 @@ public class StatefulSetDiff extends AbstractJsonDiff {
         if (VOLUME_SIZE.matcher(pathValue).matches()) {
             JsonNode current = lookupPath(source, pathValue);
             JsonNode desired = lookupPath(target, pathValue);
-            return StorageUtils.parseMemory(current.asText()) != StorageUtils.parseMemory(desired.asText());
+            return StorageUtils.convertToMillibytes(current.asText()) != StorageUtils.convertToMillibytes(desired.asText());
         }
         return false;
     }

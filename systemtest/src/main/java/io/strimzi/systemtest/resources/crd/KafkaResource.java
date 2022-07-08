@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.crd;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -18,16 +19,19 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaResource implements ResourceType<Kafka> {
 
@@ -74,6 +78,17 @@ public class KafkaResource implements ResourceType<Kafka> {
 
         kafkaClient().inNamespace(namespaceName).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+
+        // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
+        List<PersistentVolumeClaim> persistentVolumeClaimsList = kubeClient().listPersistentVolumeClaims(namespaceName, clusterName);
+
+        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
+            kubeClient().deletePersistentVolumeClaim(namespaceName, persistentVolumeClaim.getMetadata().getName());
+        }
+
+        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
+            PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
+        }
     }
 
     @Override

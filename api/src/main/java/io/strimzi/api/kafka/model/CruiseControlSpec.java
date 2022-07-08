@@ -7,9 +7,11 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
@@ -17,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         generateBuilderPackage = false,
@@ -33,8 +36,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
     public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,"
         + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"
-        + "metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,"
-        + "capacity.config.file, self.healing., ssl.";
+        + "metric.reporter.sampler.bootstrap.servers, capacity.config.file, self.healing., ssl., kafka.broker.failure.detection.enable, topic.config.provider.class";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled, "
         + "webserver.http.cors.origin, webserver.http.cors.exposeheaders, webserver.security.enable, webserver.ssl.enable";
 
@@ -61,6 +63,8 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
         this.image = image;
     }
 
+    @DeprecatedProperty
+    @Deprecated
     @Description("TLS sidecar configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public TlsSidecar getTlsSidecar() {

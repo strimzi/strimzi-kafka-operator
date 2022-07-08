@@ -6,8 +6,6 @@ package io.strimzi.test.k8s.cmdClient;
 
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.cluster.OpenShift;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -16,9 +14,6 @@ import java.util.Map;
  * A {@link KubeCmdClient} implementation wrapping {@code oc}.
  */
 public class Oc extends BaseCmdKubeClient<Oc> {
-
-    private static final Logger LOGGER = LogManager.getLogger(Oc.class);
-
     private static final String OC = "oc";
 
 

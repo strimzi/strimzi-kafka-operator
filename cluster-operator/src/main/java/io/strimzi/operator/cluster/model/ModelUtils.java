@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -18,10 +17,11 @@ import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.HasConfigurableMetrics;
@@ -37,7 +37,7 @@ import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
-import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -50,7 +50,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -105,26 +104,6 @@ public class ModelUtils {
     public static String defaultResourceLabels(String cluster) {
         return String.format("%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster);
-    }
-
-    /**
-     * @param sts The StatefulSet
-     * @param containerName The name of the container whoes environment variables are to be retrieved
-     * @return The environment of the Kafka container in the sts.
-     */
-    public static Map<String, String> getContainerEnv(StatefulSet sts, String containerName) {
-        for (Container container : sts.getSpec().getTemplate().getSpec().getContainers()) {
-            if (containerName.equals(container.getName())) {
-                LinkedHashMap<String, String> map = new LinkedHashMap<>(container.getEnv() == null ? 2 : container.getEnv().size());
-                if (container.getEnv() != null) {
-                    for (EnvVar envVar : container.getEnv()) {
-                        map.put(envVar.getName(), envVar.getValue());
-                    }
-                }
-                return map;
-            }
-        }
-        throw new KafkaUpgradeException("Could not find '" + containerName + "' container in StatefulSet " + sts.getMetadata().getName());
     }
 
     static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
@@ -416,7 +395,7 @@ public class ModelUtils {
                 .orElse(Collections.emptyList());
     }
 
-    public static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
+    private static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
         if (javaSystemProperties == null) {
             return null;
         }
@@ -448,14 +427,13 @@ public class ModelUtils {
     }
 
     /**
-     * Get the set of JVM options and the Java system properties and fill corresponding Strimzi environment variables
+     * Get the set of JVM options, bringing the Java system properties as well, and fill corresponding Strimzi environment variables
      * in order to pass them to the running application on the command line
      *
      * @param envVars environment variables list to put the JVM options and Java system properties
      * @param jvmOptions JVM options
-     * @param javaSystemProperties Java system properties
      */
-    public static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {
+    public static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
         StringBuilder strimziJavaOpts = new StringBuilder();
         String xms = jvmOptions != null ? jvmOptions.getXms() : null;
         if (xms != null) {
@@ -487,11 +465,119 @@ public class ModelUtils {
             envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
         }
 
+        List<SystemProperty> javaSystemProperties = jvmOptions != null ? jvmOptions.getJavaSystemProperties() : null;
         if (javaSystemProperties != null) {
             String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
             if (!propsTrim.isEmpty()) {
                 envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
             }
+        }
+    }
+
+    /**
+     * Adds the STRIMZI_JAVA_SYSTEM_PROPERTIES variable to the EnvVar list if any system properties were specified
+     * through the provided JVM options
+     *
+     * @param envVars list of the Environment Variables to add to
+     * @param jvmOptions JVM options
+     */
+    public static void jvmSystemProperties(List<EnvVar> envVars, JvmOptions jvmOptions) {
+        if (jvmOptions != null) {
+            String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
+            if (jvmSystemPropertiesString != null && !jvmSystemPropertiesString.isEmpty()) {
+                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
+            }
+        }
+    }
+
+    /**
+     * Adds the KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified
+     * through the provided JVM options
+     *
+     * @param envVars list of the Environment Variables to add to
+     * @param jvmOptions JVM options
+     */
+    public static void jvmPerformanceOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
+        StringBuilder jvmPerformanceOpts = new StringBuilder();
+
+        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
+        if (xx != null) {
+            xx.forEach((k, v) -> {
+                jvmPerformanceOpts.append(' ').append("-XX:");
+
+                if ("true".equalsIgnoreCase(v))   {
+                    jvmPerformanceOpts.append("+").append(k);
+                } else if ("false".equalsIgnoreCase(v)) {
+                    jvmPerformanceOpts.append("-").append(k);
+                } else  {
+                    jvmPerformanceOpts.append(k).append("=").append(v);
+                }
+            });
+        }
+
+        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
+        if (!jvmPerformanceOptsString.isEmpty()) {
+            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
+        }
+    }
+
+    /**
+     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified through the provided JVM options
+     * If Xmx Java Options are not set STRIMZI_DYNAMIC_HEAP_PERCENTAGE and STRIMZI_DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
+     *
+     * @param envVars list of the Environment Variables to add to
+     * @param dynamicHeapPercentage value to set for the STRIMZI_DYNAMIC_HEAP_PERCENTAGE
+     * @param dynamicHeapMaxBytes value to set for the STRIMZI_DYNAMIC_HEAP_MAX
+     * @param jvmOptions JVM options
+     * @param resources the resource requirements
+     */
+    public static void heapOptions(List<EnvVar> envVars, int dynamicHeapPercentage, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
+        if (dynamicHeapPercentage <= 0 || dynamicHeapPercentage > 100)  {
+            throw new RuntimeException("The Heap percentage " + dynamicHeapPercentage + " is invalid. It has to be >0 and <= 100.");
+        }
+
+        StringBuilder kafkaHeapOpts = new StringBuilder();
+
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
+        if (xms != null) {
+            kafkaHeapOpts.append("-Xms")
+                    .append(xms);
+        }
+
+        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
+        if (xmx != null) {
+            // Honour user provided explicit max heap
+            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
+        } else {
+            // Get the resources => if requests are set, take request. If requests are not set, try limits
+            Quantity configuredMemory = null;
+            if (resources != null)  {
+                if (resources.getRequests() != null && resources.getRequests().get("memory") != null)    {
+                    configuredMemory = resources.getRequests().get("memory");
+                } else if (resources.getLimits() != null && resources.getLimits().get("memory") != null)   {
+                    configuredMemory = resources.getLimits().get("memory");
+                }
+            }
+
+            if (configuredMemory != null) {
+                // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
+                // too much memory on the kubelet.
+
+                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
+
+                if (dynamicHeapMaxBytes > 0) {
+                    envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+                }
+            } else if (xms == null) {
+                // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
+                // leave `Xmx` undefined.
+                kafkaHeapOpts.append("-Xms").append(AbstractModel.DEFAULT_JVM_XMS);
+            }
+        }
+
+        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
+        if (!kafkaHeapOptsString.isEmpty()) {
+            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
         }
     }
 
@@ -641,5 +727,16 @@ public class ModelUtils {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Extracts the CA generation from the CA
+     *
+     * @param ca    CA from which the generation should be extracted
+     *
+     * @return      CA generation or the initial generation if no generation is set
+     */
+    public static int caCertGeneration(Ca ca) {
+        return Annotations.intAnnotation(ca.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, Ca.INIT_GENERATION);
     }
 }

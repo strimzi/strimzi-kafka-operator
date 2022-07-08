@@ -112,10 +112,6 @@ the documentation for more details.
 | `priorityClassName`                  | Cluster Operator pod's priority class name | `nil`                                               |
 | `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
 | `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
-| `zookeeper.image.registry  `         | Override default ZooKeeper image registry | `nil`                                                |
-| `zookeeper.image.repository`         | Override default ZooKeeper image repository | `nil`                                              |
-| `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
-| `zookeeper.image.tag`                | Override default ZooKeeper tag registry   | `nil`                                                |
 | `jmxtrans.image.registry`            | Override default JmxTrans image registry                   | `nil`                               |
 | `jmxtrans.image.repository`          | Override default JmxTrans image repository                 | `nil`                               |
 | `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
@@ -148,10 +144,6 @@ the documentation for more details.
 | `kafkaInit.image.repository`         | Override default Init Kafka image repository               | `nil`                               |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
 | `kafkaInit.image.tag`                | Override default Init Kafka image tag                      | `nil`                               |
-| `tlsSidecarCruiseControl.image.registry` | Override default TLS Sidecar for Cruise Control image registry | `nil`                       |
-| `tlsSidecarCruiseControl.image.repository` | Override default TLS Sidecar for Cruise Control image repository | `nil`                   |
-| `tlsSidecarCruiseControl.image.name`     | TLS Sidecar for Cruise Control image name      | `kafka`                                     |
-| `tlsSidecarCruiseControl.image.tag`      | Override default TLS Sidecar for Cruise Control image tag prefix | `nil`                     |
 | `tlsSidecarTopicOperator.image.registry` | Override default TLS Sidecar for Topic Operator image registry | `nil`                       |
 | `tlsSidecarTopicOperator.image.repository` | Override default TLS Sidecar for Topic Operator image repository | `nil`                   |
 | `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
@@ -159,7 +151,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
 | `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
-| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.21.3`                            |
+| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.21.5`                            |
 | `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
 | `kanikoExecutor.image.repository`    | Override default Kaniko Executor image repository          | `nil`                               |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
@@ -187,6 +179,7 @@ the documentation for more details.
 | `mavenBuilder.image.repository`      | Maven Builder image repository            | `nil`                                                |
 | `mavenBuilder.image.name`            | Override default Maven Builder image name                  | `maven-builder`                     |
 | `mavenBuilder.image.tag`             | Override default Maven Builder image tag                   | `nil`                               |
+| `logConfiguration`                   | Override default `log4j.properties` content                | `nil`                               |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 

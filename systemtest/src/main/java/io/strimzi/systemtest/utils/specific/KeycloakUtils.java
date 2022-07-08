@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -30,12 +31,12 @@ public class KeycloakUtils {
 
     private KeycloakUtils() {}
 
-    public static void deployKeycloak(String namespace) {
-        LOGGER.info("Prepare Keycloak in namespace: {}", namespace);
+    public static void deployKeycloak(final String deploymentNamespace, final String watchNamespace) {
+        LOGGER.info("Prepare Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
 
         // This is needed because from time to time the first try fails on Azure
         TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
-            ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace, getValidKeycloakVersion());
+            ExecResult result = Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
 
             if (!result.out().contains("All realms were successfully imported")) {
                 LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
@@ -44,12 +45,12 @@ public class KeycloakUtils {
             return  true;
         });
 
-        LOGGER.info("Keycloak in namespace {} is ready", namespace);
+        LOGGER.info("Keycloak in namespace {} is ready", deploymentNamespace);
     }
 
-    public static void deleteKeycloak(String namespace) {
-        LOGGER.info("Teardown Keycloak in namespace: {}", namespace);
-        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace, getValidKeycloakVersion());
+    public static void deleteKeycloak(final String deploymentNamespace, final String watchNamespace) {
+        LOGGER.info("Teardown Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
+        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
     }
 
     /**

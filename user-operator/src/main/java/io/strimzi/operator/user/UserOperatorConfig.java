@@ -8,7 +8,12 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Cluster Operator configuration
@@ -28,7 +33,10 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    public static final String STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     public static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
+    public static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
+    public static final String STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
@@ -36,6 +44,8 @@ public class UserOperatorConfig {
     public static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 12;
     // Defaults to true for backwards compatibility in standalone UO deployments
     public static final boolean DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED = true;
+    // Defaults to false for backwards compatibility in standalone UO deployments
+    public static final boolean DEFAULT_STRIMZI_KRAFT_ENABLED = false;
 
     private final String namespace;
     private final long reconciliationIntervalMs;
@@ -50,7 +60,10 @@ public class UserOperatorConfig {
     private final int clientsCaValidityDays;
     private final int clientsCaRenewalDays;
     private final boolean aclsAdminApiSupported;
+    private final boolean kraftEnabled;
     private final int scramPasswordLength;
+    private final List<String> maintenanceWindows;
+    private final Properties kafkaAdminClientConfiguration;
 
     /**
      * Constructor
@@ -66,9 +79,12 @@ public class UserOperatorConfig {
      * @param caNamespace Namespace with the CA secret.
      * @param secretPrefix Prefix used for the Secret names
      * @param aclsAdminApiSupported Indicates whether Kafka Admin API can be used to manage ACL rights
+     * @param kraftEnabled Indicates whether KRaft is used in the Kafka cluster
      * @param clientsCaValidityDays Number of days for which the certificate should be valid
      * @param clientsCaRenewalDays How long before the certificate expiration should the user certificate be renewed
      * @param scramPasswordLength Length used for the Scram-Sha Password
+     * @param maintenanceWindows Lit of maintenance windows
+     * @param kafkaAdminClientConfiguration Additional configuration for the Kafka Admin Client
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public UserOperatorConfig(String namespace,
@@ -82,9 +98,13 @@ public class UserOperatorConfig {
                               String caNamespace,
                               String secretPrefix,
                               boolean aclsAdminApiSupported,
+                              boolean kraftEnabled,
                               int clientsCaValidityDays,
                               int clientsCaRenewalDays,
-                              int scramPasswordLength) {
+                              int scramPasswordLength,
+                              List<String> maintenanceWindows,
+                              Properties kafkaAdminClientConfiguration
+    ) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
@@ -96,9 +116,12 @@ public class UserOperatorConfig {
         this.caNamespace = caNamespace;
         this.secretPrefix = secretPrefix;
         this.aclsAdminApiSupported = aclsAdminApiSupported;
+        this.kraftEnabled = kraftEnabled;
         this.clientsCaValidityDays = clientsCaValidityDays;
         this.clientsCaRenewalDays = clientsCaRenewalDays;
         this.scramPasswordLength = scramPasswordLength;
+        this.maintenanceWindows = maintenanceWindows;
+        this.kafkaAdminClientConfiguration = kafkaAdminClientConfiguration;
     }
 
     /**
@@ -164,14 +187,41 @@ public class UserOperatorConfig {
         }
 
         boolean aclsAdminApiSupported = getBooleanProperty(map, UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED);
+        boolean kraftEnabled = getBooleanProperty(map, UserOperatorConfig.STRIMZI_KRAFT_ENABLED, UserOperatorConfig.DEFAULT_STRIMZI_KRAFT_ENABLED);
 
         int clientsCaValidityDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
 
         int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
 
+        List<String> maintenanceWindows = parseMaintenanceTimeWindows(map.get(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS));
+
+        Properties kafkaAdminClientConfiguration = parseKafkaAdminClientConfiguration(map.get(UserOperatorConfig.STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION));
+
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, labels,
                 caCertSecretName, caKeySecretName, clusterCaCertSecretName, euoKeySecretName, caNamespace, secretPrefix,
-                aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays, scramPasswordLength);
+                aclsAdminApiSupported, kraftEnabled, clientsCaValidityDays, clientsCaRenewalDays,
+                scramPasswordLength, maintenanceWindows, kafkaAdminClientConfiguration);
+    }
+
+    /**
+     * Parse the Kafka Admin Client configuration from the environment variable
+     *
+     * @param configuration The configuration from the environment variable. Null if no configuration is set.
+     *
+     * @return  The properties object with the configuration
+     */
+    /* test */ static Properties parseKafkaAdminClientConfiguration(String configuration) {
+        Properties kafkaAdminClientConfiguration = new Properties();
+
+        if (configuration != null)   {
+            try {
+                kafkaAdminClientConfiguration.load(new StringReader(configuration));
+            } catch (IOException | IllegalArgumentException e)   {
+                throw new InvalidConfigurationException("Failed to parse " + UserOperatorConfig.STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION + " configuration", e);
+            }
+        }
+
+        return kafkaAdminClientConfiguration;
     }
 
     /**
@@ -222,6 +272,24 @@ public class UserOperatorConfig {
         } else {
             return defaultVal;
         }
+    }
+
+    /**
+     * Parses the maintenance time windows from string containing zero or more Cron expressions into a list of individual
+     * Cron expressions.
+     *
+     * @param maintenanceTimeWindows    String with semi-colon separate maintenance time windows (Cron expressions)
+     *
+     * @return  List of maintenance windows or null if there are no windows configured.
+     */
+    /* test */ static List<String> parseMaintenanceTimeWindows(String maintenanceTimeWindows) {
+        List<String> windows = null;
+
+        if (maintenanceTimeWindows != null && !maintenanceTimeWindows.isEmpty()) {
+            windows = Arrays.asList(maintenanceTimeWindows.split(";"));
+        }
+
+        return windows;
     }
 
     /**
@@ -308,6 +376,28 @@ public class UserOperatorConfig {
         return aclsAdminApiSupported;
     }
 
+    /**
+     * @return  Indicates whether KRaft is used in the Kafka cluster or not. When it is used, some APIs might need to be
+     * disabled or used differently.
+     */
+    public boolean isKraftEnabled() {
+        return kraftEnabled;
+    }
+
+    /**
+     * @return List of maintenance windows. Null if no maintenance windows were specified.
+     */
+    public List<String> getMaintenanceWindows() {
+        return maintenanceWindows;
+    }
+
+    /**
+     * @return Properties object with the user-supplied configuration for the Kafka Admin Client
+     */
+    public Properties getKafkaAdminClientConfiguration() {
+        return kafkaAdminClientConfiguration;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -321,9 +411,12 @@ public class UserOperatorConfig {
                 ",caNamespace=" + caNamespace +
                 ",secretPrefix=" + secretPrefix +
                 ",aclsAdminApiSupported=" + aclsAdminApiSupported +
+                ",kraftEnabled=" + kraftEnabled +
                 ",clientsCaValidityDays=" + clientsCaValidityDays +
                 ",clientsCaRenewalDays=" + clientsCaRenewalDays +
                 ",scramPasswordLength=" + scramPasswordLength +
+                ",maintenanceWindows=" + maintenanceWindows +
+                ",kafkaAdminClientConfiguration=" + kafkaAdminClientConfiguration +
                 ")";
     }
 }

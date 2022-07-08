@@ -4,11 +4,8 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -25,10 +22,6 @@ public class KafkaMirrorMakerTemplates {
 
     private KafkaMirrorMakerTemplates() {}
 
-    public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> kafkaMirrorMakerClient() {
-        return Crds.mirrorMakerOperation(ResourceManager.kubeClient().getClient());
-    }
-
     public static KafkaMirrorMakerBuilder kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
         KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
         return defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener);
@@ -41,7 +34,7 @@ public class KafkaMirrorMakerTemplates {
                                                                    String groupId,
                                                                    int kafkaMirrorMakerReplicas,
                                                                    boolean tlsListener) {
-        return new KafkaMirrorMakerBuilder(kafkaMirrorMaker)
+        KafkaMirrorMakerBuilder kmmb = new KafkaMirrorMakerBuilder(kafkaMirrorMaker)
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
@@ -63,10 +56,19 @@ public class KafkaMirrorMakerTemplates {
                     .addToLoggers("mirrormaker.root.logger", "DEBUG")
                 .endInlineLogging()
             .endSpec();
-    }
 
-    public static void deleteKafkaMirrorMakerWithoutWait(String resourceName) {
-        kafkaMirrorMakerClient().inNamespace(ResourceManager.kubeClient().getNamespace()).withName(resourceName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        if (!Environment.isSharedMemory()) {
+            kmmb.editSpec().withResources(new ResourceRequirementsBuilder()
+                // we use such values, because on environments where it is limited to 7Gi, we are unable to deploy
+                // Cluster Operator, two Kafka clusters and MirrorMaker/2. Such situation may result in an OOM problem.
+                // Using 1Gi is too much and on the other hand 512Mi is causing OOM problem at the start.
+                .addToLimits("memory", new Quantity("784Mi"))
+                .addToRequests("memory", new Quantity("784Mi"))
+                .build());
+        }
+
+        return kmmb;
+
     }
 
     private static KafkaMirrorMaker getKafkaMirrorMakerFromYaml(String yamlPath) {

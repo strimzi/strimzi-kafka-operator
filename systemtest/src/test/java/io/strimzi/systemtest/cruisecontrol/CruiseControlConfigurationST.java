@@ -15,6 +15,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -25,6 +27,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,6 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -68,33 +72,87 @@ public class CruiseControlConfigurationST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        double disk = 100_000;
+        String cpu = "1.222";
+        String cpuOverride0 = "2575m";
+        String cpuOverride1 = "3";
+        String inboundNetwork = "10000KiB/s";
+        String outboundNetwork = "10000KiB/s";
+        String inboundNetworkOverride0 = "20000KiB/s";
+        String inboundNetworkOverride1 = "40000KiB/s";
+        String outboundNetworkOverride1 = "400000KiB/s";
+
+        int broker0 = 0;
+        int broker1 = 1;
+        int broker2 = 2;
+
+        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
+        List<Integer> overrideList1 = List.of(broker1);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+            .editOrNewSpec()
+                .editCruiseControl()
+                    .withNewBrokerCapacity()
+                        .withCpu(cpu)
+                        .withInboundNetwork(inboundNetwork)
+                        .addNewOverride()
+                            .withBrokers(overrideList0)
+                            .withCpu(cpuOverride0)
+                            .withInboundNetwork(inboundNetworkOverride0)
+                        .endOverride()
+                        .addNewOverride()
+                            .withBrokers(overrideList1)
+                            .withCpu(cpuOverride1)
+                            .withInboundNetwork(inboundNetworkOverride1)
+                            .withOutboundNetwork(outboundNetworkOverride1)
+                        .endOverride()
+                    .endBrokerCapacity()
+                .endCruiseControl()
+            .endSpec()
+            .build());
 
         String cruiseControlPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0).getMetadata().getName();
 
         JsonObject cruiseControlCapacityFileContent =
             new JsonObject(cmdKubeClient(namespaceName).execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + Constants.CRUISE_CONTROL_CAPACITY_FILE_PATH).out());
 
-        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities"), not(nullValue()));
-
-        LOGGER.info("We got only one configuration of broker-capacities");
-        assertThat(cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").size(), is(1));
-
         LOGGER.info("Verifying cruise control configuration.");
+        JsonArray brokerCapacities =  cruiseControlCapacityFileContent.getJsonArray("brokerCapacities");
+        assertThat(brokerCapacities, not(nullValue()));
 
-        JsonObject cruiseControlFirstConfiguration = cruiseControlCapacityFileContent.getJsonArray("brokerCapacities").getJsonObject(0);
+        LOGGER.info("We have 4 entries in broker-capacities");
+        assertThat(brokerCapacities.size(), is(4));
 
-        assertThat(cruiseControlFirstConfiguration.getString("brokerId"), is("-1"));
-        assertThat(cruiseControlFirstConfiguration.getString("doc"), not(nullValue()));
-
-        JsonObject cruiseControlConfigurationOfBrokerCapacity = cruiseControlFirstConfiguration.getJsonObject("capacity");
+        JsonObject defaultBroker = brokerCapacities.getJsonObject(0);
+        assertThat(defaultBroker.getString("brokerId"), is("-1"));
+        assertThat(defaultBroker.getString("doc"), notNullValue());
 
         LOGGER.info("Verifying default cruise control capacities");
+        JsonObject defaultBrokerCapacity = defaultBroker.getJsonObject("capacity");
+        String cpuCapacity = "{num.cores=" + cpu + "}";
 
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("DISK"), is("100000.0"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("CPU"), is("100"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_IN"), is("10000.0"));
-        assertThat(cruiseControlConfigurationOfBrokerCapacity.getString("NW_OUT"), is("10000.0"));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("DISK")), is(disk));
+        assertThat(defaultBrokerCapacity.getString("CPU"), is(cpuCapacity));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetwork)));
+        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
+
+        LOGGER.info("Verifying cruise control capacity overrides");
+        JsonObject broker0Capacity = brokerCapacities.getJsonObject(1).getJsonObject("capacity");
+        JsonObject broker1Capacity = brokerCapacities.getJsonObject(2).getJsonObject("capacity");
+        JsonObject broker2Capacity = brokerCapacities.getJsonObject(3).getJsonObject("capacity");
+        cpuCapacity = "{num.cores=2.575}";
+
+        assertThat(broker0Capacity.getString("CPU"), is(cpuCapacity));
+        assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
+
+        assertThat(broker1Capacity.getString("CPU"), is(cpuCapacity));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
+
+        assertThat(broker2Capacity.getString("CPU"), is(cpuCapacity));
+        assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
+        assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
     }
 
     @ParallelNamespaceTest
@@ -123,8 +181,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName)));
 
-        LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Adding Cruise Control to the classic Kafka.");
@@ -136,12 +196,15 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that in Kafka config map there is configuration to cruise control metric reporter");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName));
 
-        LOGGER.info("Verifying that {} topics are created after CC is instantiated.", Constants.CRUISE_CONTROL_NAME);
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Verifying that {} topics are created after CC is instantiated.", Constants.CRUISE_CONTROL_NAME);
 
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        }
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -158,7 +221,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
             CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
                 .withNewBrokerCapacity()
-                    .withDisk("200M")
+                    .withOutboundNetwork("20KB/s")
                 .endBrokerCapacity()
                 .build();
 
@@ -174,7 +237,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying new configuration in the Kafka CR");
 
         assertThat(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec()
-            .getCruiseControl().getBrokerCapacity().getDisk(), is("200M"));
+            .getCruiseControl().getBrokerCapacity().getOutboundNetwork(), is("20KB/s"));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
     }
@@ -220,11 +283,11 @@ public class CruiseControlConfigurationST extends AbstractST {
 
         LOGGER.info("Verifying that all configuration in the cruise control container matching the cruise control file {} properties", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH);
         List<String> checkCCProperties = Arrays.asList(
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOWS.getValue(),
-                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOWS.getValue(),
-                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS.getValue(),
-                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS.getValue(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.PARTITION_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
+                CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getValue(),
                 "goals", "default.goals");
 
         for (String propertyName : checkCCProperties) {

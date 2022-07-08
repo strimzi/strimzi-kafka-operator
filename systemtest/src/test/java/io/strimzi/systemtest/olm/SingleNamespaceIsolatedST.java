@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.olm;
 
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -13,6 +12,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import java.util.Collections;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -81,10 +82,16 @@ public class SingleNamespaceIsolatedST extends OlmAbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        cluster.setNamespace(NAMESPACE);
-        cluster.createNamespace(NAMESPACE);
+        // delete shared ClusterOperator
+        clusterOperator.unInstall();
+        clusterOperator = clusterOperator.defaultInstallation()
+            .withNamespace(NAMESPACE)
+            .withWatchingNamespaces(NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .createInstallation()
+            // run always OLM installation
+            .runOlmInstallation();
 
-        olmResource = new OlmResource(NAMESPACE);
-        olmResource.create(extensionContext);
+        cluster.setNamespace(NAMESPACE);
     }
 }

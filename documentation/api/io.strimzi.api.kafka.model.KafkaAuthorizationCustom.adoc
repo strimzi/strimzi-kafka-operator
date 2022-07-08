@@ -52,3 +52,20 @@ The Strimzi Maven build process provides a mechanism to add custom third-party l
 NOTE: The `super.user` configuration option in the `config` property in `Kafka.spec.kafka` is ignored.
 Designate super users in the `authorization` property instead.
 For more information, see xref:type-KafkaClusterSpec-reference[Kafka broker configuration].
+
+Custom authorization can make use of group membership information extracted from the JWT token during authentication when using `oauth` authentication and configuring `groupsClaim` configuration attribute. Groups are available on the `OAuthKafkaPrincipal` object during authorize() call as follows:
+
+[source, subs="attributes+"]
+----
+    public List<AuthorizationResult> authorize(AuthorizableRequestContext requestContext, List<Action> actions) {
+
+        KafkaPrincipal principal = requestContext.principal();
+        if (principal instanceof OAuthKafkaPrincipal) {
+            OAuthKafkaPrincipal p = (OAuthKafkaPrincipal) principal;
+
+            for (String group: p.getGroups()) {
+                System.out.println("Group: " + group);
+            }
+        }
+    }
+----

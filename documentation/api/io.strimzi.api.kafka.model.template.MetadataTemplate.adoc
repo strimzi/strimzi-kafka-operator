@@ -6,7 +6,7 @@ For example:
 ----
 # ...
 template:
-  statefulset:
+  pod:
     metadata:
       labels:
         label1: value1

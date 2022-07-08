@@ -20,21 +20,24 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,7 +50,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -67,7 +69,11 @@ class UserST extends AbstractST {
     private final String userClusterName = "user-cluster-name";
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(UserST.class.getSimpleName()).stream().findFirst().get();
 
+    private final String scraperName = userClusterName + "-" + Constants.SCRAPER_NAME;
+    private String scraperPodName = "";
+
     @ParallelTest
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testUserWithNameMoreThan64Chars(ExtensionContext extensionContext) {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
         String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
@@ -114,6 +120,7 @@ class UserST extends AbstractST {
 
     @ParallelTest
     @Tag(ACCEPTANCE)
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testUpdateUser(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
@@ -160,6 +167,7 @@ class UserST extends AbstractST {
     @Tag(SCALABILITY)
     @IsolatedTest
     @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
@@ -168,6 +176,7 @@ class UserST extends AbstractST {
     @Tag(SCALABILITY)
     @IsolatedTest
     @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         int numberOfUsers = 100;
@@ -207,6 +216,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(namespace, userClusterName, "encrypted-arnost").build();
 
@@ -214,6 +224,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(namespace, userClusterName, kafkaUserName).build();
@@ -222,6 +233,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.scramShaUser(namespace, userClusterName, "scramed-arnost").build();
 
@@ -270,15 +282,15 @@ class UserST extends AbstractST {
 
         final String userName = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
-        String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --user " + userName;
-        LOGGER.debug("Command for kafka-configs.sh {}", command);
-
-        ExecResult result = cmdKubeClient(namespace).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
-        assertThat(result.out().contains("Quota configs for user-principal '" + userName + "' are"), is(true));
-        assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
-        assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
-        assertThat(result.out().contains("consumer_byte_rate=" + consRate), is(true));
-        assertThat(result.out().contains("controller_mutation_rate=" + mutRate), is(true));
+        TestUtils.waitFor("all KafkaUser " + userName + " attributes are present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                String result = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
+                return result.contains("Quota configs for user-principal '" + userName + "' are") &&
+                    result.contains("request_percentage=" + reqPerc) &&
+                    result.contains("producer_byte_rate=" + prodRate) &&
+                    result.contains("consumer_byte_rate=" + consRate) &&
+                    result.contains("controller_mutation_rate=" + mutRate);
+            });
 
         // delete user
         KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
@@ -286,28 +298,27 @@ class UserST extends AbstractST {
 
         TestUtils.waitFor("all KafkaUser " + userName + " attributes will be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                ExecResult resultAfterDelete = cmdKubeClient(namespace).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
+                String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
 
                 return
-                    !resultAfterDelete.out().contains(userName) &&
-                    !resultAfterDelete.out().contains("request_percentage") &&
-                    !resultAfterDelete.out().contains("producer_byte_rate") &&
-                    !resultAfterDelete.out().contains("consumer_byte_rate") &&
-                    !resultAfterDelete.out().contains("controller_mutation_rate");
+                    !resultAfterDelete.contains(userName) &&
+                    !resultAfterDelete.contains("request_percentage") &&
+                    !resultAfterDelete.contains("producer_byte_rate") &&
+                    !resultAfterDelete.contains("consumer_byte_rate") &&
+                    !resultAfterDelete.contains("controller_mutation_rate");
             });
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
         final String secretPrefix = "top-secret-";
         final String tlsUserName = "encrypted-leopold";
         final String scramShaUserName = "scramed-leopold";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -335,75 +346,57 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext,
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), tlsUserName).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), scramShaUserName).build()
+        );
 
-        KafkaUser tlsUser = KafkaUserTemplates.tlsUser(clusterName, tlsUserName).build();
-        KafkaUser scramShaUser =  KafkaUserTemplates.scramShaUser(clusterName, scramShaUserName).build();
-
-        resourceManager.createResource(extensionContext, tlsUser);
-        resourceManager.createResource(extensionContext, scramShaUser);
-
-        LOGGER.info("Deploying KafkaClients pod for TLS listener");
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-tls-" + Constants.KAFKA_CLIENTS, true, Constants.TLS_LISTENER_DEFAULT_NAME, secretPrefix, tlsUser).build());
-        String tlsKafkaClientsName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-tls-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        LOGGER.info("Deploying KafkaClients pod for PLAIN listener");
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, false, clusterName + "-plain-" + Constants.KAFKA_CLIENTS, true, Constants.PLAIN_LISTENER_DEFAULT_NAME, secretPrefix, scramShaUser).build());
-        String plainKafkaClientsName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-plain-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        Secret tlsSecret = kubeClient(namespaceName).getSecret(secretPrefix + tlsUserName);
-        Secret scramShaSecret = kubeClient(namespaceName).getSecret(secretPrefix + scramShaUserName);
+        Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
+        Secret scramShaSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + scramShaUserName);
 
         LOGGER.info("Checking if user secrets with secret prefixes exists");
         assertNotNull(tlsSecret);
         assertNotNull(scramShaSecret);
 
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(tlsKafkaClientsName)
-            .withNamespaceName(namespaceName)
-            .withTopicName(TOPIC_NAME)
-            .withKafkaUsername(tlsUserName)
-            .withSecurityProtocol(SecurityProtocol.SASL_SSL)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-            .withClusterName(clusterName)
+        KafkaClients clients = new KafkaClientsBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
-            .withSecretPrefix(secretPrefix)
+            .withUserName(secretPrefix + tlsUserName)
             .build();
 
         LOGGER.info("Checking if TLS user is able to send messages");
-        internalKafkaClient.assertSentAndReceivedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        internalKafkaClient = internalKafkaClient.toBuilder()
-            .withUsingPodName(plainKafkaClientsName)
-            .withSecurityProtocol(SecurityProtocol.SASL_PLAINTEXT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-            .withKafkaUsername(scramShaUserName)
+        clients = new KafkaClientsBuilder(clients)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withUserName(secretPrefix + scramShaUserName)
             .build();
 
         LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
-        internalKafkaClient.assertSentAndReceivedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
+        resourceManager.createResource(extensionContext, clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");
 
         LOGGER.info("Deleting KafkaUser:{}", tlsUserName);
-        KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(tlsUserName).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(namespaceName, tlsUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(tlsUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespaceName(), tlsUserName);
 
         LOGGER.info("Deleting KafkaUser:{}", scramShaUserName);
-        KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(scramShaUserName).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(namespaceName, scramShaUserName);
+        KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(scramShaUserName).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespaceName(), scramShaUserName);
 
         LOGGER.info("Checking if secrets are deleted");
-        SecretUtils.waitForSecretDeletion(namespaceName, tlsSecret.getMetadata().getName());
-        SecretUtils.waitForSecretDeletion(namespaceName, scramShaSecret.getMetadata().getName());
-        assertNull(kubeClient(namespaceName).getSecret(namespaceName, tlsSecret.getMetadata().getName()));
-        assertNull(kubeClient(namespaceName).getSecret(namespaceName, scramShaSecret.getMetadata().getName()));
+        SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName());
+        SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName());
+        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName()));
+        assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName()));
     }
 
     @ParallelNamespaceTest
@@ -553,6 +546,10 @@ class UserST extends AbstractST {
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(namespace, scraperName).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
     }
 }

@@ -7,10 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +33,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.common.Util;
 
 /**
  * Shared methods for working with Volume
@@ -461,7 +458,7 @@ public class VolumeUtils {
      */
     /*test*/ static String makeValidVolumeName(String originalName) {
         // SHA-1 hash is used for uniqueness
-        String digestStub = getVolumeNameHashStub(originalName);
+        String digestStub = Util.hashStub(originalName);
 
         // Special characters need to be replaced
         String newName = originalName
@@ -483,23 +480,6 @@ public class VolumeUtils {
 
         // Returned new fixed name with the hash at the end
         return newName.substring(0, i) + "-" + digestStub;
-    }
-
-    /**
-     * Gets the first 8 characters from a SHA-1 hash of a volume name
-     *
-     * @param name  Volume name
-     * @return      First 8 characters of the SHA-1 hash
-     */
-    private static String getVolumeNameHashStub(String name)   {
-        try {
-            MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            byte[] digest = sha1.digest(name.getBytes(StandardCharsets.US_ASCII));
-
-            return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to get volume name SHA-1 hash", e);
-        }
     }
 
     /**

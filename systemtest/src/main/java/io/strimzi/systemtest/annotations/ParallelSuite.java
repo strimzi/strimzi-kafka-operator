@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.annotations;
 
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.lang.annotation.Retention;
 
@@ -17,6 +15,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * be sure that you do not use shared resources, and if you use shared resources please work with synchronization
  */
 @Retention(RUNTIME)
-@Execution(ExecutionMode.CONCURRENT)
 public @interface ParallelSuite {
 }

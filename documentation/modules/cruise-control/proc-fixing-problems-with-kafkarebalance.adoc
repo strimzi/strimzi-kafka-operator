@@ -6,7 +6,7 @@
 
 = Fixing problems with a `KafkaRebalance` resource
 
-If an issue occurs when creating a `KafkaRebalance` resource or interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it. 
+If an issue occurs when creating a `KafkaRebalance` resource or interacting with Cruise Control, the error is reported in the resource status, along with details of how to fix it.
 The resource also moves to the `NotReady` state.
 
 To continue with the cluster rebalance operation, you must fix the problem in the `KafkaRebalance` resource itself or with the overall Cruise Control deployment.
@@ -15,7 +15,7 @@ Problems might include the following:
 * A misconfigured parameter in the `KafkaRebalance` resource.
 * The `strimzi.io/cluster` label for specifying the Kafka cluster in the `KafkaRebalance` resource is missing.
 * The Cruise Control server is not deployed as the `cruiseControl` property in the `Kafka` resource is missing.
-* The Cruise Control server is not reachable. 
+* The Cruise Control server is not reachable.
 
 After fixing the issue, you need to add the `refresh` annotation to the `KafkaRebalance` resource.
 During a “refresh”, a new optimization proposal is requested from the Cruise Control server.
@@ -53,6 +53,7 @@ kubectl describe kafkarebalance _rebalance-cr-name_
 
 . Wait until the status changes to `PendingProposal`, or directly to `ProposalReady`.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:con-optimization-proposals-{context}[]

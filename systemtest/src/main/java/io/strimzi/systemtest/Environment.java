@@ -6,9 +6,11 @@ package io.strimzi.systemtest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+
 /**
  * Class which holds environment variables for system tests.
  */
@@ -34,9 +38,9 @@ public class Environment {
     /**
      * Specify the system test configuration file path from an environmental variable
      */
-    private static final String CONFIG_FILE_PATH_ENVAR = "ST_CONFIG_PATH";
+    private static final String CONFIG_FILE_PATH_ENV = "ST_CONFIG_PATH";
     /**
-     * Specify secret name of private registries, with the container registry credentials to be able pull images.
+     * Specify secret name of private registries, with the container registry credentials to be able to pull images.
      */
     private static final String STRIMZI_IMAGE_PULL_SECRET_ENV = "SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET";
     /**
@@ -51,10 +55,7 @@ public class Environment {
      * Specify image tags used in system tests.
      */
     private static final String STRIMZI_TAG_ENV = "DOCKER_TAG";
-    /**
-     * Specify test-client image used in system tests.
-     */
-    private static final String TEST_CLIENT_IMAGE_ENV = "TEST_CLIENT_IMAGE";
+
     /**
      * Specify Kafka client app images used in system tests.
      */
@@ -65,6 +66,9 @@ public class Environment {
     private static final String TEST_HTTP_PRODUCER_IMAGE_ENV = "TEST_HTTP_PRODUCER_IMAGE";
     private static final String TEST_HTTP_CONSUMER_IMAGE_ENV = "TEST_HTTP_CONSUMER_IMAGE";
     private static final String TEST_CLIENTS_VERSION_ENV = "TEST_CLIENTS_VERSION";
+
+    private static final String SCRAPER_IMAGE_ENV = "SCRAPER_IMAGE";
+
     /**
      * Specify kafka bridge image used in system tests.
      */
@@ -85,10 +89,6 @@ public class Environment {
      * Log level for cluster operator.
      */
     private static final String STRIMZI_LOG_LEVEL_ENV = "STRIMZI_LOG_LEVEL";
-    /**
-     * Log level for components.
-     */
-    private static final String STRIMZI_COMPONENTS_LOG_LEVEL_ENV = "STRIMZI_COMPONENTS_LOG_LEVEL";
     /**
      * Image pull policy env var for Components images (Kafka, Bridge, ...)
      */
@@ -136,6 +136,19 @@ public class Environment {
     public static final String STRIMZI_FEATURE_GATES_ENV = "STRIMZI_FEATURE_GATES";
 
     /**
+     * CO PodSet-only reconciliation env variable <br>
+     * Only SPS will be reconciled, when this env variable will be true
+     */
+    public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
+
+    public static final String ST_FILE_PLUGIN_URL_ENV = "ST_FILE_SINK_PLUGIN_URL";
+
+    /**
+     * CO Features gates variable
+     */
+    public static final String RESOURCE_ALLOCATION_STRATEGY_ENV = "RESOURCE_ALLOCATION_STRATEGY";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
@@ -144,23 +157,23 @@ public class Environment {
     public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
-    private static final String STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT = "INFO";
     public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
     public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi-kafka-operator";
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = Constants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "community-operators";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.26.1";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
+    private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.0.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.1.1";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.1.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.2.0";
 
+    public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
     /**
      * Set values
      */
@@ -173,13 +186,10 @@ public class Environment {
     public static final String ST_KAFKA_VERSION = getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     public static final String CLIENTS_KAFKA_VERSION = getOrDefault(CLIENTS_KAFKA_VERSION_ENV, ST_CLIENTS_KAFKA_VERSION_DEFAULT);
     public static final String STRIMZI_LOG_LEVEL = getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
-    public static final String STRIMZI_COMPONENTS_LOG_LEVEL = getOrDefault(STRIMZI_COMPONENTS_LOG_LEVEL_ENV, STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT);
     public static final boolean SKIP_TEARDOWN = getOrDefault(SKIP_TEARDOWN_ENV, Boolean::parseBoolean, false);
     public static final String STRIMZI_RBAC_SCOPE = getOrDefault(STRIMZI_RBAC_SCOPE_ENV, STRIMZI_RBAC_SCOPE_DEFAULT);
     public static final String STRIMZI_FEATURE_GATES = getOrDefault(STRIMZI_FEATURE_GATES_ENV, STRIMZI_FEATURE_GATES_DEFAULT);
-    // variables for test-client image
-    private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    public static final String TEST_CLIENT_IMAGE = getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
+
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
     private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-producer:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
@@ -188,12 +198,17 @@ public class Environment {
     private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
     private static final String TEST_HTTP_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-http-producer:" + TEST_CLIENTS_VERSION;
     private static final String TEST_HTTP_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-http-consumer:" + TEST_CLIENTS_VERSION;
+
     public static final String TEST_PRODUCER_IMAGE = getOrDefault(TEST_PRODUCER_IMAGE_ENV, TEST_PRODUCER_IMAGE_DEFAULT);
     public static final String TEST_CONSUMER_IMAGE = getOrDefault(TEST_CONSUMER_IMAGE_ENV, TEST_CONSUMER_IMAGE_DEFAULT);
     public static final String TEST_STREAMS_IMAGE = getOrDefault(TEST_STREAMS_IMAGE_ENV, TEST_STREAMS_IMAGE_DEFAULT);
     public static final String TEST_ADMIN_IMAGE = getOrDefault(TEST_ADMIN_IMAGE_ENV, TEST_ADMIN_IMAGE_DEFAULT);
     public static final String TEST_HTTP_PRODUCER_IMAGE = getOrDefault(TEST_HTTP_PRODUCER_IMAGE_ENV, TEST_HTTP_PRODUCER_IMAGE_DEFAULT);
     public static final String TEST_HTTP_CONSUMER_IMAGE = getOrDefault(TEST_HTTP_CONSUMER_IMAGE_ENV, TEST_HTTP_CONSUMER_IMAGE_DEFAULT);
+
+    private static final String SCRAPER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
+    public static final String SCRAPER_IMAGE = getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
+
     // variables for kafka bridge image
     private static final String BRIDGE_IMAGE_DEFAULT = "latest-released";
     public static final String BRIDGE_IMAGE = getOrDefault(BRIDGE_IMAGE_ENV, BRIDGE_IMAGE_DEFAULT);
@@ -206,12 +221,16 @@ public class Environment {
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
+    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "");
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // ClusterOperator installation type variable
     public static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, value -> ClusterOperatorInstallType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
     public static final boolean LB_FINALIZERS = getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
+    public static final String RESOURCE_ALLOCATION_STRATEGY = getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
+
+    // Connect build related variables
+    public static final String ST_FILE_PLUGIN_URL = getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
 
     private Environment() { }
 
@@ -234,12 +253,51 @@ public class Environment {
         return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
     }
 
+    public static boolean isStrimziPodSetEnabled() {
+        // REMINDER: this will not work once StrimziPodSet will be moved to beta FG
+        return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS);
+    }
+
+    /**
+     * Determine wheter KRaft mode of Kafka cluster is enabled in ClusterOperator or not.
+     * @return true if KRaft mode is enabled, otherwise false
+     */
+    public static boolean isKRaftModeEnabled() {
+        return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS) && STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
+    }
+
+    /**
+     * Provides boolean information, if testing environment support shared memory (i.e., environment, where all
+     * components share memory). In general, we use {@link Environment#RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link Environment#RESOURCE_ALLOCATION_STRATEGY_ENV}
+     * is not specified.
+     *
+     * @return true if env {@link Environment#RESOURCE_ALLOCATION_STRATEGY_ENV} contains "SHARE_MEMORY_FOR_ALL_COMPONENTS" value, otherwise false.
+     */
+    public static boolean isSharedMemory() {
+        return RESOURCE_ALLOCATION_STRATEGY.contains(RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
+    }
+
     public static boolean useLatestReleasedBridge() {
         return Environment.BRIDGE_IMAGE.equals(Environment.BRIDGE_IMAGE_DEFAULT);
     }
 
     private static String getOrDefault(String varName, String defaultValue) {
         return getOrDefault(varName, String::toString, defaultValue);
+    }
+
+    public static String getImageOutputRegistry() {
+        if (KubeClusterResource.getInstance().isOpenShift()) {
+            return "image-registry.openshift-image-registry.svc:5000";
+        } else {
+            LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
+            Service service = kubeClient("kube-system").getService("registry");
+
+            if (service == null)    {
+                throw new RuntimeException("Internal registry service for pushing newly build images not found.");
+            } else {
+                return service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
+            }
+        }
     }
 
     private static <T> T getOrDefault(String var, Function<String, T> converter, T defaultValue) {
@@ -257,14 +315,14 @@ public class Environment {
     }
 
     private static JsonNode loadConfigurationFile() {
-        config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENVAR,
+        config = System.getenv().getOrDefault(CONFIG_FILE_PATH_ENV,
                 Paths.get(System.getProperty("user.dir"), "config.json").toAbsolutePath().toString());
         ObjectMapper mapper = new ObjectMapper();
         try {
             File jsonFile = new File(config).getAbsoluteFile();
             return mapper.readTree(jsonFile);
         } catch (IOException ex) {
-            LOGGER.info("Json configuration is not provided or cannot be processed");
+            LOGGER.debug("Json configuration is not provided or cannot be processed!");
             return mapper.createObjectNode();
         }
     }

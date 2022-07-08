@@ -1,16 +1,71 @@
+
 # CHANGELOG
+
+## 0.30.0
+
+* Remove Kafka 3.0.0 and 3.0.1
+* Add support for `simple` authorization and for the User Operator to the experimental `UseKRaft` feature gate
+  _(Note: Due to [KAFKA-13909](https://issues.apache.org/jira/browse/KAFKA-13909), broker restarts currently don't work when authorization is enabled.)_
+* Add network capacity overrides for Cruise Control capacity config
+* The `ServiceAccountPatching` feature gate moves to GA.
+  It cannot be disabled anymore and will be permanently enabled.
+* The `UseStrimziPodSets` feature gate moves to beta stage.
+  By default, StrimziPodSets are used instead of StatefulSets.
+  If needed, `UseStrimziPodSets` can be disabled in the feature gates configuration in the Cluster Operator.
+* Use better encryption and digest algorithms when creating the PKCS12 stores.
+  For existing clusters, the certificates will not be updated during upgrade but only next time the PKCS12 store is created. 
+* Add CPU capacity overrides for Cruise Control capacity config
+* Use CustomResource existing spec and status to fix Quarkus native build's serialization
+* Update JMX Exporter to version 0.17.0
+* Operator emits Kafka events to explain why it restarted a Kafka broker
+* Better configurability of the Kafka Admin client in the User Operator
+
+## 0.29.0
+
+* Add support for Apache Kafka 3.0.1, 3.1.1 and 3.2.0
+* Increase the size of the `/tmp` volumes to 5Mi to allow unpacking of compression libraries
+* Use `/healthz` endpoint for Kafka Exporter health checks
+* Renew user certificates in User Operator only during maintenance windows
+* Ensure Topic Operator using Kafka Streams state store can start up successfully 
+* Update Cruise Control to 2.5.89
+* Remove TLS sidecar from Cruise Control pod. Cruise Control is now configured to not using ZooKeeper, so the TLS sidecar is not needed anymore.
+* Allow Cruise Control topic names to be configured
+* Add support for `spec.rack.topologyKey` property in Mirror Maker 2 to enable "fetch from the closest replica" feature.
+* Support for the s390x platform
+  _(The s390x support is currently considered as experimental. We are not aware of any issues, but the s390x build doesn't at this point undergo the same level of testing as the AMD64 container images.)_
+* Update Strimzi Kafka Bridge to 0.21.5
+* Added rebalancing modes on the `KafkaRebalance` custom resource
+  * `full`: this mode runs a full rebalance moving replicas across all the brokers in the cluster. This is the default one if not specified.
+  * `add-brokers`: after scaling up the cluster, this mode is used to move replicas to the newly added brokers specified in the custom resource.
+  * `remove-brokers`: this mode is used to move replicas off the brokers that are going to be removed, before scaling down the cluster.
+* **Experimental** KRaft mode (ZooKeeper-less Kafka) which can be enabled using the `UseKRaft` feature gate.
+  **Important: Use it for development and testing only!**
+
+### Changes, deprecations and removals
+
+* Since the Cruise Control TLS sidecar has been removed, the related configuration options `.spec.cruiseControl.tlsSidecar` and `.spec.cruiseControl.template.tlsSidecar` in the Kafka custom resource are now deprecated.
 
 ## 0.28.0
 
 * Add support for Kafka 3.1.0; remove Kafka 2.8.0 and 2.8.1
-* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+* Add support for `StrimziPodSet` resources (disabled by default through the `UseStrimziPodSets` feature gate)
+* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics
+* Support custom authentication mechanisms in Kafka listeners
+* Intra-broker disk balancing using Cruise Control
+* Add connector context to the default logging configuration in Kafka Connect and Kafka Mirror Maker 2
 * Added the option `createBootstrapService` in the Kafka Spec to disable the creation of the bootstrap service for the Load Balancer Type Listener. It will save the cost of one load balancer resource, specially in the public cloud.
+* Added the `connectTimeoutSeconds` and `readTimeoutSeconds` options to OAuth authentication configuration. The default connect and read timeouts are set to 60 seconds (previously there was no timeout). Also added `groupsClaim` and `groupsClaimDelimiter` options in the listener configuration of Kafka Spec to allow extracting group information from JWT token at authentication time, and making it available to the custom authorizer. These features are enabled by the updated Strimzi Kafka OAuth library (0.10.0).
 * Add support for disabling the FIPS mode in OpenJDK
 * Fix renewing your own CA certificates [#5466](https://github.com/strimzi/strimzi-kafka-operator/issues/5466)
+* Update Strimzi Kafka Bridge to 0.21.4
+* Update Cruise Control to 2.5.82
 
 ### Changes, deprecations and removals
 
+* The Strimzi Identity Replication Policy (class `io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy`) is now deprecated and will be removed in the future.
+  Please update to Kafka's own Identity Replication Policy (class `org.apache.kafka.connect.mirror.IdentityReplicationPolicy`).
 * The `type` field in `ListenerStatus` has been deprecated and will be removed in the future.
+* The `disk` and `cpuUtilization` fields in the `spec.cruiseControl.capacity` section of the Kafka resource have been deprecated, are ignored, and will be removed in the future.
 
 ## 0.27.0
 

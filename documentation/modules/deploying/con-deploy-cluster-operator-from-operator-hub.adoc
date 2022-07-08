@@ -19,12 +19,12 @@ For example, you can deploy the `Kafka` custom resource, and the installed Clust
 Upgrades between versions might include manual steps.
 Always read the release notes before upgrading.
 
-For information on upgrades, see xref:con-upgrade-sequence-options-{context}[Cluster Operator upgrade options].
+For information on upgrades, see xref:assembly-upgrade-cluster-operator-{context}[Cluster Operator upgrade options].
 
 WARNING: Make sure you use the appropriate update channel.
 Installing Strimzi from the default _stable_ channel is generally safe.
 However, we do not recommend enabling _automatic_ OLM updates on the stable channel.
 An automatic upgrade will skip any necessary steps prior to upgrade.
 For example, to upgrade from {ConvertAfterProductVersion} or earlier
-you must first xref:assembly-upgrade-resources-{context}[update custom resources to support the `v1beta2` API version].
+you must first xref:con-upgrade-paths-earlier-versions-{context}[update custom resources to support the `v1beta2` API version].
 Use automatic upgrades only on version-specific channels.

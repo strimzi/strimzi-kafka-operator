@@ -35,7 +35,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
@@ -103,7 +103,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class KafkaConnectClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
-    private final String cluster = "foo";
+    private final String clusterName = "foo";
     private final int replicas = 2;
     private final String image = "my-image:latest";
     private final int healthDelay = 100;
@@ -128,7 +128,7 @@ public class KafkaConnectClusterTest {
             .addMapPairs(defaultConfiguration.asMap())
             .addPair("foo", "bar");
 
-    private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, cluster))
+    private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, clusterName))
             .withNewSpec()
                 .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
                 .withImage(image)
@@ -158,13 +158,13 @@ public class KafkaConnectClusterTest {
     }
 
     private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.clusterName,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
                 Labels.KUBERNETES_NAME_LABEL, KafkaConnectCluster.APPLICATION_NAME,
-                Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
+                Labels.KUBERNETES_INSTANCE_LABEL, this.clusterName,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.clusterName,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
@@ -173,7 +173,7 @@ public class KafkaConnectClusterTest {
     }
 
     private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaConnectResources.deploymentName(cluster));
+        return expectedLabels(KafkaConnectResources.deploymentName(clusterName));
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
@@ -189,7 +189,7 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testDefaultValues() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, cluster), VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, clusterName), VERSIONS);
 
         assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kc.replicas, is(KafkaConnectCluster.DEFAULT_REPLICAS));
@@ -732,6 +732,11 @@ public class KafkaConnectClusterTest {
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
+        // Check PodDisruptionBudget V1Beta1
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+
         // Check ClusterRoleBinding
         ClusterRoleBinding crb = kc.generateClusterRoleBinding();
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
@@ -1166,6 +1171,9 @@ public class KafkaConnectClusterTest {
 
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
     }
 
     @ParallelTest
@@ -1175,6 +1183,9 @@ public class KafkaConnectClusterTest {
 
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @ParallelTest
@@ -1341,7 +1352,7 @@ public class KafkaConnectClusterTest {
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
-                        hasProperty("name", equalTo(cluster + "-connect")),
+                        hasProperty("name", equalTo(clusterName + "-connect")),
                         hasProperty("securityContext", equalTo(securityContext))
                 )));
     }
@@ -1395,6 +1406,8 @@ public class KafkaConnectClusterTest {
                         new KafkaClientAuthenticationOAuthBuilder()
                                 .withClientId("my-client-id")
                                 .withTokenEndpointUri("http://my-oauth-server")
+                                .withConnectTimeoutSeconds(15)
+                                .withReadTimeoutSeconds(15)
                                 .withNewRefreshToken()
                                     .withSecretName("my-token-secret")
                                     .withKey("my-token-key")
@@ -1411,7 +1424,8 @@ public class KafkaConnectClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_OAUTH_REFRESH_TOKEN.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-token-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_OAUTH_REFRESH_TOKEN.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-token-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
-                is(String.format("%s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server")));
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server",
+                        ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, "15", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, "15")));
     }
 
     @ParallelTest
@@ -1620,51 +1634,52 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testClusterRoleBindingRack() {
         String testNamespace = "other-namespace";
+        String topologyKey = "topology-key";
 
-        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                     .editOrNewMetadata()
                         .withNamespace(testNamespace)
                     .endMetadata()
                     .editOrNewSpec()
-                        .withNewRack("my-topology-label")
+                        .withNewRack(topologyKey)
                     .endSpec()
                 .build();
 
-        KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
-        ClusterRoleBinding crb = kafkaConnectCluster.generateClusterRoleBinding();
+        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
-        assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
+        assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(clusterName, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(kafkaConnectCluster.getServiceAccountName()));
+        assertThat(crb.getSubjects().get(0).getName(), is(cluster.getServiceAccountName()));
     }
 
     @ParallelTest
     public void testNullClusterRoleBinding() {
         String testNamespace = "other-namespace";
 
-        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editOrNewMetadata()
                     .withNamespace(testNamespace)
                 .endMetadata()
                 .build();
 
-        KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
-        ClusterRoleBinding crb = kafkaConnectCluster.generateClusterRoleBinding();
+        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
     }
 
     private void checkDeployment(Deployment dep, KafkaConnect resource) {
-        assertThat(dep.getMetadata().getName(), is(KafkaConnectResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getName(), is(KafkaConnectResources.deploymentName(clusterName)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaConnectResources.deploymentName(cluster));
+        Map<String, String> expectedDeploymentLabels = expectedLabels(KafkaConnectResources.deploymentName(clusterName));
         assertThat(dep.getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
         assertThat(dep.getSpec().getReplicas(), is(replicas));
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels(), is(expectedDeploymentLabels));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().size(), is(1));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.deploymentName(this.cluster)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.deploymentName(this.clusterName)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is(kc.image));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv(), is(getExpectedEnvVars()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(healthDelay));
@@ -1681,7 +1696,7 @@ public class KafkaConnectClusterTest {
         assertThat(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_TLS), is(nullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
         checkOwnerReference(kc.createOwnerReference(), dep);
         checkRack(dep, resource);

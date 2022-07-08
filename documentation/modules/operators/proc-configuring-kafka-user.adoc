@@ -1,0 +1,181 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-user-operator.adoc
+
+[id='proc-configuring-kafka-user-{context}']
+= Configuring Kafka users
+
+[role="_abstract"]
+Use the properties of the `KafkaUser` resource to configure Kafka users.
+
+You can use `kubectl apply` to create or modify users, and `kubectl delete` to delete existing users.
+
+For example:
+
+* `kubectl apply -f _<user_config_file>_`
+* `kubectl delete KafkaUser _<user_name>_`
+
+Users represent Kafka clients.
+When you configure Kafka users, you enable the user authentication and authorization mechanisms required by clients to access Kafka.
+The mechanism used must match the equivalent `Kafka` configuration.
+For more information on using `Kafka` and `KafkaUser` resources to secure access to Kafka brokers, see xref:assembly-securing-kafka-{context}[Securing access to Kafka brokers].
+
+.Prerequisites
+
+* A running Kafka cluster xref:con-securing-kafka-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
+* A running User Operator (typically xref:assembly-kafka-entity-operator-str[deployed with the Entity Operator]).
+
+.Procedure
+
+. Configure the `KafkaUser` resource.
++
+This example specifies TLS authentication and simple authorization using ACLs.
++
+.Example Kafka user configuration
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication:
+    type: tls
+  authorization:
+    type: simple
+    acls:
+      # Example consumer Acls for topic my-topic using consumer group my-group
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Read
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+        host: "*"
+      - resource:
+          type: group
+          name: my-group
+          patternType: literal
+        operation: Read
+        host: "*"
+      # Example Producer Acls for topic my-topic
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Write
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Create
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+        host: "*"
+----
+
+. Create the `KafkaUser` resource in Kubernetes.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _<user_config_file>_
+
+. Wait for the ready status of the user to change to `True`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkausers -o wide -w -n _<namespace>_
+----
++
+.Kafka user status
+[source,shell,subs="+quotes"]
+----
+NAME       CLUSTER     AUTHENTICATION  AUTHORIZATION READY
+my-user-1  my-cluster  tls             simple        True
+my-user-2  my-cluster  tls             simple
+my-user-3  my-cluster  tls             simple        True
+----
++
+User creation is successful when the `READY` output shows `True`.
+
+. If the `READY` column stays blank, get more details on the status from the resource YAML or User Operator logs.
++
+Messages provide details on the reason for the current status.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkausers my-user-2 -o yaml
+----
++
+.Details on a user with a `NotReady` status
+[source,shell,subs="+quotes"]
+----
+# ...
+status:
+  conditions:
+  - lastTransitionTime: "2022-06-10T10:07:37.238065Z"
+    message: Simple authorization ACL rules are configured but not supported in the
+      Kafka cluster configuration.
+    reason: InvalidResourceException
+    status: "True"
+    type: NotReady
+----
++
+In this example, the reason the user is not ready is because simple authorization is not enabled in the `Kafka` configuration.
++
+.Kafka configuration for simple authorization
+[source,yaml,subs="attributes+"]
+----
+  apiVersion: {KafkaApiVersion}
+  kind: Kafka
+  metadata:
+    name: my-cluster
+  spec:
+    kafka:
+      # ...
+      authorization:
+        type: simple
+----
++
+After updating the Kafka configuration, the status shows the user is ready.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkausers my-user-2 -o wide -w -n _<namespace>_
+----
++
+.Status update of the user
+[source,shell,subs="+quotes"]
+----
+NAME       CLUSTER     AUTHENTICATION  AUTHORIZATION READY
+my-user-2  my-cluster  tls             simple        True
+----
++
+Fetching the details shows no messages.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get kafkausers my-user-2 -o yaml
+----
++
+.Details on a user with a `READY` status
+[source,shell,subs="+quotes"]
+----
+# ...
+status:
+  conditions:
+  - lastTransitionTime: "2022-06-10T10:33:40.166846Z"
+    status: "True"
+    type: Ready
+----

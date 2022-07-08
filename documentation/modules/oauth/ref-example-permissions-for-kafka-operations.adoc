@@ -44,7 +44,7 @@ If the topic hasn't been created yet, and topic auto-creation is enabled, the pe
 [source,shell]
 ----
 bin/kafka-console-producer.sh  --topic my-topic \
-  --broker-list my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties
 ----
 
 .Consume messages from a topic
@@ -81,7 +81,7 @@ Cluster:kafka-cluster
 [source,shell]
 ----
 bin/kafka-console-producer.sh  --topic my-topic \
-  --broker-list my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties --producer-property enable.idempotence=true --request-required-acks -1
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties --producer-property enable.idempotence=true --request-required-acks -1
 ----
 
 .List consumer groups

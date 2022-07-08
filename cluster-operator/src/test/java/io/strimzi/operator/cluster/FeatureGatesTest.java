@@ -18,12 +18,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class FeatureGatesTest {
-
     @ParallelTest
     public void testIndividualFeatureGates() {
         for (FeatureGates.FeatureGate gate : FeatureGates.NONE.allFeatureGates()) {
-            FeatureGates enabled = new FeatureGates("+" + gate.getName());
-            FeatureGates disabled = new FeatureGates("-" + gate.getName());
+            FeatureGates enabled;
+            FeatureGates disabled;
+
+            if ("UseKRaft".equals(gate.getName()))  {
+                enabled = new FeatureGates("+" + gate.getName() + ",+UseStrimziPodSets");
+                disabled = new FeatureGates("-" + gate.getName() + ",+UseStrimziPodSets");
+            } else {
+                enabled = new FeatureGates("+" + gate.getName());
+                disabled = new FeatureGates("-" + gate.getName());
+            }
 
             assertThat(enabled.allFeatureGates().stream().filter(g -> gate.getName().equals(g.getName())).findFirst().orElseThrow().isEnabled(), is(true));
             assertThat(disabled.allFeatureGates().stream().filter(g -> gate.getName().equals(g.getName())).findFirst().orElseThrow().isEnabled(), is(false));
@@ -54,13 +61,13 @@ public class FeatureGatesTest {
     @ParallelTest
     public void testFeatureGatesParsing() {
         assertThat(new FeatureGates("+ControlPlaneListener").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("+ServiceAccountPatching").serviceAccountPatchingEnabled(), is(true));
-        assertThat(new FeatureGates("+ControlPlaneListener,-ServiceAccountPatching").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("+ControlPlaneListener,-ServiceAccountPatching").serviceAccountPatchingEnabled(), is(false));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +ServiceAccountPatching").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +ServiceAccountPatching").serviceAccountPatchingEnabled(), is(true));
-        assertThat(new FeatureGates("+ServiceAccountPatching,-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
-        assertThat(new FeatureGates("+ServiceAccountPatching,-ControlPlaneListener").serviceAccountPatchingEnabled(), is(true));
+        assertThat(new FeatureGates("+UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
+        assertThat(new FeatureGates("+ControlPlaneListener,-UseStrimziPodSets").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("+ControlPlaneListener,-UseStrimziPodSets").useStrimziPodSetsEnabled(), is(false));
+        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +UseStrimziPodSets").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
+        assertThat(new FeatureGates("+UseStrimziPodSets,-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
+        assertThat(new FeatureGates("+UseStrimziPodSets,-ControlPlaneListener").useStrimziPodSetsEnabled(), is(true));
     }
 
     @ParallelTest
@@ -101,5 +108,16 @@ public class FeatureGatesTest {
     public void testNonExistingGate() {
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+RandomGate"));
         assertThat(e.getMessage(), containsString("Unknown feature gate RandomGate found in the configuration"));
+    }
+
+    @ParallelTest
+    public void testKraftAndPodSetsDependenciesNotFulfilled() {
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseKRaft,-UseStrimziPodSets"));
+        assertThat(e.getMessage(), containsString("The UseKRaft feature gate can be enabled only when the UseStrimziPodSets feature gate is enabled as well."));
+    }
+
+    @ParallelTest
+    public void testKraftAndPodSetsDependenciesFulfilled() {
+        assertThat(new FeatureGates("+UseKRaft,+UseStrimziPodSets").useKRaftEnabled(), is(true));
     }
 }

@@ -32,7 +32,7 @@ The API reference provides more details about the customizable fields.
 `KafkaBridge.spec`:: See xref:type-KafkaBridgeTemplate-reference[]
 `KafkaUser.spec`:: See xref:type-KafkaUserTemplate-reference[]
 
-In the following example, the `template` property is used to modify the labels in a Kafka broker's `StatefulSet`:
+In the following example, the `template` property is used to modify the labels in a Kafka broker's pod.
 
 .Example template customization
 [source,yaml,subs=attributes+]
@@ -47,7 +47,7 @@ spec:
   kafka:
     # ...
     template:
-      statefulset:
+      pod:
         metadata:
           labels:
             mylabel: myvalue

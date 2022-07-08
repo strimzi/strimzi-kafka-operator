@@ -17,13 +17,13 @@ public class FeatureGates {
     public static final FeatureGates NONE = new FeatureGates("");
 
     private static final String CONTROL_PLANE_LISTENER = "ControlPlaneListener";
-    private static final String SERVICE_ACCOUNT_PATCHING = "ServiceAccountPatching";
     private static final String USE_STRIMZI_POD_SETS = "UseStrimziPodSets";
+    private static final String USE_KRAFT = "UseKRaft";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, true);
-    private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, true);
-    private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, false);
+    private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, true);
+    private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -48,16 +48,29 @@ public class FeatureGates {
                     case CONTROL_PLANE_LISTENER:
                         setValueOnlyOnce(controlPlaneListener, value);
                         break;
-                    case SERVICE_ACCOUNT_PATCHING:
-                        setValueOnlyOnce(serviceAccountPatching, value);
-                        break;
                     case USE_STRIMZI_POD_SETS:
                         setValueOnlyOnce(useStrimziPodSets, value);
+                        break;
+                    case USE_KRAFT:
+                        setValueOnlyOnce(useKRaft, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
                 }
             }
+
+            validateInterDependencies();
+        }
+    }
+
+    /**
+     * Validates any dependencies between various feature gates. For example, the UseKRaft feature gate can be
+     * enabled only when UseStrimziPodSets is enabled as well. When the dependencies are not satisfied,
+     * InvalidConfigurationException is thrown.
+     */
+    private void validateInterDependencies()    {
+        if (useKRaftEnabled() && !useStrimziPodSetsEnabled())   {
+            throw new InvalidConfigurationException("The UseKRaft feature gate can be enabled only when the UseStrimziPodSets feature gate is enabled as well.");
         }
     }
 
@@ -84,17 +97,17 @@ public class FeatureGates {
     }
 
     /**
-     * @return  Returns true when the ServiceAccountPatching feature gate is enabled
-     */
-    public boolean serviceAccountPatchingEnabled() {
-        return serviceAccountPatching.isEnabled();
-    }
-
-    /**
      * @return  Returns true when the UseStrimziPodSets feature gate is enabled
      */
     public boolean useStrimziPodSetsEnabled() {
         return useStrimziPodSets.isEnabled();
+    }
+
+    /**
+     * @return  Returns true when the UseKRaft feature gate is enabled
+     */
+    public boolean useKRaftEnabled() {
+        return useKRaft.isEnabled();
     }
 
     /**
@@ -105,8 +118,8 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
                 controlPlaneListener,
-                serviceAccountPatching,
-                useStrimziPodSets
+                useStrimziPodSets,
+                useKRaft
         );
     }
 
@@ -114,8 +127,8 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
                 "controlPlaneListener=" + controlPlaneListener.isEnabled() + "," +
-                "ServiceAccountPatching=" + serviceAccountPatching.isEnabled() + "," +
-                "UseStrimziPodSets=" + useStrimziPodSets.isEnabled() +
+                "UseStrimziPodSets=" + useStrimziPodSets.isEnabled() + "," +
+                "UseKRaft=" + useKRaft.isEnabled() +
                 ")";
     }
 

@@ -27,11 +27,12 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
@@ -50,16 +51,14 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Base64;
 
 public class ZookeeperCluster extends AbstractModel {
-    protected static final String APPLICATION_NAME = "zookeeper";
+    public static final String APPLICATION_NAME = "zookeeper";
 
     public static final int CLIENT_PLAINTEXT_PORT = 12181; // This port is internal only, not exposed => no need for name
     public static final int CLIENT_TLS_PORT = 2181;
@@ -74,14 +73,9 @@ public class ZookeeperCluster extends AbstractModel {
     protected static final String ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT = "/opt/kafka/zookeeper-node-certs/";
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_NAME = "cluster-ca-certs";
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs/";
-    private static final String NAME_SUFFIX = "-zookeeper";
-    private static final String SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-client";
-    private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-nodes";
-    private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
     // Env vars for JMX service
     protected static final String ENV_VAR_ZOOKEEPER_JMX_ENABLED = "ZOOKEEPER_JMX_ENABLED";
-    private static final String ZOOKEEPER_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
     private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
     private static final String ENV_VAR_ZOOKEEPER_JMX_USERNAME = "ZOOKEEPER_JMX_USERNAME";
@@ -89,9 +83,8 @@ public class ZookeeperCluster extends AbstractModel {
 
     // Zookeeper configuration
     private final boolean isSnapshotCheckEnabled;
-    private String version;
-    private boolean isJmxEnabled;
-    private boolean isJmxAuthenticated;
+    private boolean isJmxEnabled = false;
+    private boolean isJmxAuthenticated = false;
 
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
@@ -114,96 +107,12 @@ public class ZookeeperCluster extends AbstractModel {
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
-    /**
-     * Private key and certificate for each ZooKeeper Pod name
-     * used as server certificates for ZooKeeper nodes
-     */
-    private Map<String, CertAndKey> nodeCerts;
-
-    public static String zookeeperClusterName(String cluster) {
-        return KafkaResources.zookeeperStatefulSetName(cluster);
-    }
-
-    public static String zookeeperMetricAndLogConfigsName(String cluster) {
-        return KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);
-    }
-
-    public static String serviceName(String cluster) {
-        return cluster + ZookeeperCluster.SERVICE_NAME_SUFFIX;
-    }
-
-    public static String headlessServiceName(String cluster) {
-        return cluster + ZookeeperCluster.HEADLESS_SERVICE_NAME_SUFFIX;
-    }
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_ZOOKEEPER_POD_LABELS);
         if (value != null) {
             DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
-    }
-
-    /**
-     * Generates the DNS name of the pod including the cluster suffix
-     * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc.cluster.local
-     *
-     * @param namespace     Namespace of the pod
-     * @param cluster       Name of the cluster
-     * @param podId         Id of the pod within the STS
-     *
-     * @return              DNS name of the pod
-     */
-    public static String podDnsName(String namespace, String cluster, int podId) {
-        return DnsNameGenerator.podDnsName(
-                namespace,
-                ZookeeperCluster.headlessServiceName(cluster),
-                ZookeeperCluster.zookeeperPodName(cluster, podId));
-    }
-
-    /**
-     * Generates the DNS name of the pod including the cluster suffix
-     * (i.e. usually with the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc.cluster.local
-     *
-     * @param namespace     Namespace of the pod
-     * @param cluster       Name of the cluster
-     * @param podName       Name of the pod
-     *
-     * @return              DNS name of the pod
-     */
-    public static String podDnsName(String namespace, String cluster, String podName) {
-        return DnsNameGenerator.podDnsName(
-                namespace,
-                ZookeeperCluster.headlessServiceName(cluster),
-                podName);
-    }
-
-    /**
-     * Generates the full DNS name of the pod without the cluster suffix
-     * (i.e. usually without the cluster.local - but can be different on different clusters)
-     * Example: my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.svc
-     *
-     * @param namespace     Namespace of the pod
-     * @param cluster       Name of the cluster
-     * @param podId         Id of the pod within the STS
-     *
-     * @return              DNS name of the pod without the cluster domain suffix
-     */
-    public static String podDnsNameWithoutSuffix(String namespace, String cluster, int podId) {
-        return DnsNameGenerator.podDnsNameWithoutClusterDomain(
-                namespace,
-                ZookeeperCluster.headlessServiceName(cluster),
-                ZookeeperCluster.zookeeperPodName(cluster, podId));
-    }
-
-    public static String zookeeperPodName(String cluster, int pod) {
-        return KafkaResources.zookeeperPodName(cluster, pod);
-    }
-
-    public static String nodesSecretName(String cluster) {
-        return cluster + ZookeeperCluster.NODES_CERTS_SUFFIX;
     }
 
     /**
@@ -214,10 +123,10 @@ public class ZookeeperCluster extends AbstractModel {
      */
     private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, APPLICATION_NAME);
-        this.name = zookeeperClusterName(cluster);
-        this.serviceName = serviceName(cluster);
-        this.headlessServiceName = headlessServiceName(cluster);
-        this.ancillaryConfigMapName = zookeeperMetricAndLogConfigsName(cluster);
+        this.name = KafkaResources.zookeeperStatefulSetName(cluster);
+        this.serviceName = KafkaResources.zookeeperServiceName(cluster);
+        this.headlessServiceName = KafkaResources.zookeeperHeadlessServiceName(cluster);
+        this.ancillaryConfigMapName = KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);
         this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
@@ -237,7 +146,7 @@ public class ZookeeperCluster extends AbstractModel {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
@@ -252,13 +161,9 @@ public class ZookeeperCluster extends AbstractModel {
         }
         zk.setReplicas(replicas);
 
-        // Get the ZK version information from either the CRD or from the default setting
-        KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-        String version = versions.supportedVersion(kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null).zookeeperVersion();
-        zk.setVersion(version);
-
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
+            KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
             image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
                     kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);
         }
@@ -274,9 +179,6 @@ public class ZookeeperCluster extends AbstractModel {
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
         zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
-        if (zookeeperClusterSpec.getJvmOptions() != null) {
-            zk.setJavaSystemProperties(zookeeperClusterSpec.getJvmOptions().getJavaSystemProperties());
-        }
 
         // Parse different types of metrics configurations
         ModelUtils.parseMetrics(zk, zookeeperClusterSpec);
@@ -317,8 +219,11 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
 
         if (zookeeperClusterSpec.getJmxOptions() != null) {
-            zk.setJmxEnabled(Boolean.TRUE);
-            AuthenticationUtils.configureZookeeperJmxOptions(zookeeperClusterSpec.getJmxOptions().getAuthentication(), zk);
+            zk.isJmxEnabled = true;
+
+            if (zookeeperClusterSpec.getJmxOptions().getAuthentication() != null)   {
+                zk.isJmxAuthenticated = zookeeperClusterSpec.getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword;
+            }
         }
 
         if (zookeeperClusterSpec.getTemplate() != null) {
@@ -333,6 +238,11 @@ public class ZookeeperCluster extends AbstractModel {
                     zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
                     zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
                 }
+            }
+
+            if (template.getPodSet() != null && template.getPodSet().getMetadata() != null) {
+                zk.templatePodSetLabels = template.getPodSet().getMetadata().getLabels();
+                zk.templatePodSetAnnotations = template.getPodSet().getMetadata().getAnnotations();
             }
 
             ModelUtils.parsePodTemplate(zk, template.getPod());
@@ -368,6 +278,10 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, DEFAULT_POD_LABELS);
 
+        // Should run at the end when everything is set
+        ZooKeeperSpecChecker specChecker = new ZooKeeperSpecChecker(zk);
+        zk.warningConditions.addAll(specChecker.run());
+
         return zk;
     }
 
@@ -376,10 +290,6 @@ public class ZookeeperCluster extends AbstractModel {
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
 
         return createService("ClusterIP", ports, templateServiceAnnotations);
-    }
-
-    public static String policyName(String cluster) {
-        return cluster + NETWORK_POLICY_KEY_SUFFIX + NAME_SUFFIX;
     }
 
     /**
@@ -408,7 +318,7 @@ public class ZookeeperCluster extends AbstractModel {
         NetworkPolicyPeer zookeeperClusterPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector2 = new LabelSelector();
         Map<String, String> expressions2 = new HashMap<>(1);
-        expressions2.put(Labels.STRIMZI_NAME_LABEL, zookeeperClusterName(cluster));
+        expressions2.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(cluster));
         labelSelector2.setMatchLabels(expressions2);
         zookeeperClusterPeer.setPodSelector(labelSelector2);
 
@@ -429,14 +339,14 @@ public class ZookeeperCluster extends AbstractModel {
         NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector = new LabelSelector();
         Map<String, String> expressions = new HashMap<>(1);
-        expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster));
+        expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster));
         labelSelector.setMatchLabels(expressions);
         kafkaClusterPeer.setPodSelector(labelSelector);
 
         NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector3 = new LabelSelector();
         Map<String, String> expressions3 = new HashMap<>(1);
-        expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
+        expressions3.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster));
         labelSelector3.setMatchLabels(expressions3);
         entityOperatorPeer.setPodSelector(labelSelector3);
 
@@ -448,20 +358,12 @@ public class ZookeeperCluster extends AbstractModel {
         clusterOperatorPeer.setPodSelector(labelSelector4);
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
-        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector5 = new LabelSelector();
-        Map<String, String> expressions5 = new HashMap<>(1);
-        expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
-        labelSelector5.setMatchLabels(expressions5);
-        cruiseControlPeer.setPodSelector(labelSelector5);
-
         // This is a hack because we have no guarantee that the CO namespace has some particular labels
         List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
         clientsPortPeers.add(kafkaClusterPeer);
         clientsPortPeers.add(zookeeperClusterPeer);
         clientsPortPeers.add(entityOperatorPeer);
         clientsPortPeers.add(clusterOperatorPeer);
-        clientsPortPeers.add(cruiseControlPeer);
         clientsIngressRule.setFrom(clientsPortPeers);
 
         rules.add(clientsIngressRule);
@@ -492,7 +394,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                 .withNewMetadata()
-                    .withName(policyName(cluster))
+                    .withName(KafkaResources.zookeeperNetworkPolicyName(cluster))
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
                     .withOwnerReferences(createOwnerReference())
@@ -545,7 +447,7 @@ public class ZookeeperCluster extends AbstractModel {
         return createPodSet(
             replicas,
             Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
-            podAnnotations,
+            (brokerId) -> podAnnotations,
             podName -> getPodSetVolumes(podName, isOpenShift),
             getMergedAffinity(),
             getInitContainers(imagePullPolicy),
@@ -555,42 +457,34 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
-     * Generates the ZooKeeper nodes certificates
+     * Generate the Secret containing the Zookeeper nodes certificates signed by the cluster CA certificate used for TLS
+     * based internal communication with Kafka. It contains both the public and private keys.
      *
-     * @param kafka The Kafka custom resource
-     * @param clusterCa The CA for cluster certificates
+     * @param clusterCa                         The CA for cluster certificates
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *
+     * @return The generated Secret with the ZooKeeper node certificates
      */
-    public void generateCertificates(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        LOGGER.debugCr(reconciliation, "Generating certificates");
+    public Secret generateCertificatesSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+        Map<String, String> secretData = new HashMap<>(replicas * 4);
+        Map<String, CertAndKey> certs;
+
         try {
-            nodeCerts = clusterCa.generateZkCerts(kafka, isMaintenanceTimeWindowsSatisfied);
+            certs = clusterCa.generateZkCerts(namespace, cluster, replicas, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+            throw new RuntimeException("Failed to prepare ZooKeeper certificates", e);
         }
-        LOGGER.debugCr(reconciliation, "End generating certificates");
-    }
 
-    /**
-     * Generate the Secret containing the Zookeeper nodes certificates signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka.
-     * It also contains the related Zookeeper nodes private keys.
-     *
-     * @param clusterCa The CA for cluster certificates
-     * @return The generated Secret.
-     */
-    public Secret generateNodesSecret(ClusterCa clusterCa) {
-
-        Map<String, String> data = new HashMap<>(replicas * 4);
         for (int i = 0; i < replicas; i++) {
-            CertAndKey cert = nodeCerts.get(ZookeeperCluster.zookeeperPodName(cluster, i));
-            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
-            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
-            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
-            data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
+            CertAndKey cert = certs.get(KafkaResources.zookeeperPodName(cluster, i));
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".key", cert.keyAsBase64String());
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".crt", cert.certAsBase64String());
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
+            secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
 
-        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data,
+        return createSecret(KafkaResources.zookeeperSecretName(cluster), secretData,
                 Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())));
     }
 
@@ -624,20 +518,18 @@ public class ZookeeperCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        if (javaSystemProperties != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
-        }
 
         if (isJmxEnabled) {
             varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_JMX_ENABLED, "true"));
             if (isJmxAuthenticated) {
-                varList.add(buildEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
-                varList.add(buildEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
+                varList.add(buildEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_USERNAME, KafkaResources.zookeeperJmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
+                varList.add(buildEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_PASSWORD, KafkaResources.zookeeperJmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
             }
         }
 
-        heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
-        jvmPerformanceOptions(varList);
+        ModelUtils.heapOptions(varList, 75, 2L * 1024L * 1024L * 1024L, getJvmOptions(), getResources());
+        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
+        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers
@@ -688,7 +580,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
-        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZookeeperCluster.nodesSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
         return volumeList;
@@ -766,6 +658,15 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
+     * Generates the PodDisruptionBudgetV1Beta1.
+     *
+     * @return The PodDisruptionBudgetV1Beta1.
+     */
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
+        return createPodDisruptionBudgetV1Beta1();
+    }
+
+    /**
      * Generates the PodDisruptionBudget for operator managed pods.
      *
      * @return The PodDisruptionBudget.
@@ -774,36 +675,34 @@ public class ZookeeperCluster extends AbstractModel {
         return createCustomControllerPodDisruptionBudget();
     }
 
+    /**
+     * Generates the PodDisruptionBudget V1Beta1 for operator managed pods.
+     *
+     * @return The PodDisruptionBudget v1beta1.
+     */
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generateCustomControllerPodDisruptionBudgetV1Beta1() {
+        return createCustomControllerPodDisruptionBudgetV1Beta1();
+    }
+
     @Override
     protected String getDefaultLogConfigFileName() {
         return "zookeeperDefaultLoggingProperties";
     }
 
     /**
-     * Get the name of the zookeeper service account given the name of the {@code zookeeperResourceName}.
-     * @param zookeeperResourceName The resource name.
-     * @return The service account name.
+     * Sets the image used for ZooKeeper. This method is called from outside the ZooKeeper model. It overrides the
+     * method from the super class to make it public.
+     *
+     * @param image Image which should be used by ZooKeeper cluster
      */
-    public static String containerServiceAccountName(String zookeeperResourceName) {
-        return zookeeperClusterName(zookeeperResourceName);
-    }
-
-    @Override
-    protected String getServiceAccountName() {
-        return containerServiceAccountName(cluster);
-    }
-
     @Override
     public void setImage(String image) {
         super.setImage(image);
     }
 
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getVersion() {
-        return this.version;
+    @Override
+    public String getServiceAccountName() {
+        return KafkaResources.zookeeperStatefulSetName(cluster);
     }
 
     /**
@@ -819,39 +718,29 @@ public class ZookeeperCluster extends AbstractModel {
         return zkConfigMap;
     }
 
-    public void setJmxEnabled(boolean jmxEnabled) {
-        isJmxEnabled = jmxEnabled;
-    }
-
-    public boolean isJmxAuthenticated() {
-        return isJmxAuthenticated;
-    }
-
-    public void setJmxAuthenticated(boolean jmxAuthenticated) {
-        isJmxAuthenticated = jmxAuthenticated;
-    }
-
-    /**
-     * @param cluster The name of the cluster.
-     * @return The name of the jmx Secret.
-     */
-    public static String jmxSecretName(String cluster) {
-        return cluster + ZookeeperCluster.ZOOKEEPER_JMX_SECRET_SUFFIX;
-    }
-
     /**
      * Generate the Secret containing the username and password to secure the jmx port on the zookeeper nodes
      *
+     * @param currentSecret The existing Secret with the current JMX credentials. Null if no secret exists yet.
+     *
      * @return The generated Secret
      */
-    public Secret generateJmxSecret() {
-        Map<String, String> data = new HashMap<>(2);
-        String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
-        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-        for (String key : keys) {
-            data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
-        }
+    public Secret generateJmxSecret(Secret currentSecret) {
+        if (isJmxAuthenticated) {
+            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+            Map<String, String> data = new HashMap<>(2);
 
-        return createJmxSecret(ZookeeperCluster.jmxSecretName(cluster), data);
+            if (currentSecret != null && currentSecret.getData() != null)  {
+                data.put(SECRET_JMX_USERNAME_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_USERNAME_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
+                data.put(SECRET_JMX_PASSWORD_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_PASSWORD_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
+            } else {
+                data.put(SECRET_JMX_USERNAME_KEY, Util.encodeToBase64(passwordGenerator.generate()));
+                data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
+            }
+
+            return createJmxSecret(KafkaResources.zookeeperJmxSecretName(cluster), data);
+        } else {
+            return null;
+        }
     }
 }

@@ -27,7 +27,7 @@ The custom resource is created, but it is ignored.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate _KIND-OF-CUSTOM-RESOURCE_ _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation="true"
+kubectl annotate _<kind_of_custom_resource>_ _<name_of_custom_resource>_ strimzi.io/pause-reconciliation="true"
 ----
 +
 For example, for the `KafkaConnect` custom resource:
@@ -41,7 +41,7 @@ kubectl annotate KafkaConnect my-connect strimzi.io/pause-reconciliation="true"
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl describe _KIND-OF-CUSTOM-RESOURCE_ _NAME-OF-CUSTOM-RESOURCE_
+kubectl describe _<kind_of_custom_resource>_ _<name_of_custom_resource>_
 ----
 +
 The `type` condition changes to `ReconciliationPaused` at the `lastTransitionTime`.
@@ -70,6 +70,7 @@ status:
 
 * To resume reconciliation, you can set the annotation to `false`, or remove the annotation.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:assembly-customizing-kubernetes-resources-str[Customizing Kubernetes resources]

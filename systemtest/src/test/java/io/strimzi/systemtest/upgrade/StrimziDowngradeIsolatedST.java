@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
-import io.vertx.core.json.JsonObject;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -20,7 +20,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -32,23 +31,24 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 @Tag(UPGRADE)
 @IsolatedSuite
+@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeIsolatedST.class);
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
-    @MethodSource("loadJsonDowngradeData")
+    @MethodSource("io.strimzi.systemtest.upgrade.UpgradeDowngradeData#loadYamlDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testDowngradeStrimziVersion(String from, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
-        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
-        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
+    void testDowngradeStrimziVersion(String from, String to, UpgradeDowngradeData parameters, ExtensionContext extensionContext) throws Exception {
+        assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvFlakyVariable()));
+        assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));
 
         LOGGER.debug("Running downgrade test from version {} to {}", from, to);
         performDowngrade(parameters, extensionContext);
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
+    private void performDowngrade(UpgradeDowngradeData downgradeData, ExtensionContext extensionContext) throws IOException {
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
@@ -57,30 +57,30 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), INFRA_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, downgradeData.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(testParameters, INFRA_NAMESPACE, extensionContext);
+        changeClusterOperator(downgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
-        checkAllImages(testParameters.getJsonObject("imagesAfterOperatorDowngrade"));
+        checkAllImages(downgradeData);
         // Verify upgrade
-        verifyProcedure(testParameters, producerName, consumerName, INFRA_NAMESPACE);
+        verifyProcedure(downgradeData, producerName, consumerName, clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(INFRA_NAMESPACE);
+        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
     }
 
     @AfterEach
     void afterEach() {
-        deleteInstalledYamls(coDir, INFRA_NAMESPACE);
+        deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
         cluster.deleteNamespaces();
     }
 

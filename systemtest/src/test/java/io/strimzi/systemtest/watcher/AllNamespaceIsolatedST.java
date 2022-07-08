@@ -7,7 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
@@ -15,16 +15,19 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,18 +57,19 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceIsolatedST.class);
     private static final String THIRD_NAMESPACE = "third-namespace-test";
-    private static final String SECOND_CLUSTER_NAME = MAIN_NAMESPACE_CLUSTER_NAME + "-second";
+    private String scraperPodName;
 
     /**
      * Test the case where the TO is configured to watch a different namespace that it is deployed in
      */
     @IsolatedTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(THIRD_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(MAIN_NAMESPACE_CLUSTER_NAME));
         assertThat(topics, not(hasItems(TOPIC_NAME)));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, SECOND_NAMESPACE).build());
@@ -99,18 +103,16 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO(ExtensionContext extensionContext) {
         String kafkaConnectName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
-        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         // Deploy Kafka Connect in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, kafkaConnectName, SECOND_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(kafkaConnectName, SECOND_NAMESPACE, SECOND_CLUSTER_NAME, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .build());
         // Deploy Kafka Connector
-        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND, SECOND_CLUSTER_NAME);
+        deployKafkaConnectorWithSink(extensionContext, kafkaConnectName);
 
         cluster.setNamespace(previousNamespace);
     }
@@ -126,6 +128,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
     @IsolatedTest
     void testUserInDifferentNamespace(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext, SECOND_NAMESPACE);
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
 
         KafkaUser user = KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build();
@@ -150,28 +153,18 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
             }
         }
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS, user).build());
-
-        final String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(defaultKafkaClientsPodName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(TOPIC_NAME)
-            .withNamespaceName(THIRD_NAMESPACE)
-            .withClusterName(MAIN_NAMESPACE_CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(MAIN_NAMESPACE_CLUSTER_NAME))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(THIRD_NAMESPACE)
+            .withUserName(USER_NAME)
             .build();
 
-        LOGGER.info("Checking produced and consumed messages to pod:{}", defaultKafkaClientsPodName);
-
-        int sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(MESSAGE_COUNT));
-
-        int received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME));
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), THIRD_NAMESPACE, MESSAGE_COUNT);
 
         cluster.setNamespace(startingNamespace);
     }
@@ -189,16 +182,18 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
 
+        final String scraperName = MAIN_NAMESPACE_CLUSTER_NAME + "-" + Constants.SCRAPER_NAME;
+
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(Constants.INFRA_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), SECOND_NAMESPACE, THIRD_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
         String previousNamespace = cluster.setNamespace(THIRD_NAMESPACE);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(MAIN_NAMESPACE_CLUSTER_NAME, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -209,11 +204,15 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
-            .build());
+            .build(),
+            ScraperTemplates.scraperPod(THIRD_NAMESPACE, scraperName).build()
+        );
+
+        scraperPodName = kubeClient().listPodsByPrefixInName(THIRD_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
         cluster.setNamespace(SECOND_NAMESPACE);
         // Deploy Kafka in other namespace than CO
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SECOND_CLUSTER_NAME, 1).build());
 
         cluster.setNamespace(previousNamespace);
     }

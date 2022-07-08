@@ -26,11 +26,12 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIXES);
         FORBIDDEN_PREFIX_EXCEPTIONS = AbstractConfiguration.splitPrefixesToList(ZookeeperClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS);
 
-        Map<String, String> config = new HashMap<>(4);
+        Map<String, String> config = new HashMap<>(5);
         config.put("tickTime", "2000");
         config.put("initLimit", "5");
         config.put("syncLimit", "2");
         config.put("autopurge.purgeInterval", "1");
+        config.put("admin.enableServer", "false");
         DEFAULTS = Collections.unmodifiableMap(config);
     }
 

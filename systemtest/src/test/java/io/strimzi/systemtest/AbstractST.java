@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
@@ -51,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -84,10 +86,6 @@ public abstract class AbstractST implements TestSeparator {
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
-    // {thread-safe} this lock ensures that no race-condition happen in @BeforeAll part
-    private static final Object BEFORE_ALL_LOCK = new Object();
-    // {thread-safe} this lock ensures that no race-condition happen in @AfterALl part in deletion of namespaces
-    private static final Object AFTER_ALL_LOCK = new Object();
     // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
     private static final Object LOCK = new Object();
 
@@ -95,7 +93,7 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithClusterNames = new HashMap<>();
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
-    protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
+    protected static Map<String, String> mapWithScraperNames = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
 
     // we need to shared this number across all test suites
@@ -172,7 +170,6 @@ public abstract class AbstractST implements TestSeparator {
 
     public Map<String, String> getImagesFromConfig(String namespaceName) {
         Map<String, String> images = new HashMap<>();
-        LOGGER.info(ResourceManager.getCoDeploymentName());
         for (Container c : kubeClient(namespaceName).getDeployment(namespaceName, ResourceManager.getCoDeploymentName()).getSpec().getTemplate().getSpec().getContainers()) {
             for (EnvVar envVar : c.getEnv()) {
                 images.put(envVar.getName(), envVar.getValue());
@@ -528,6 +525,18 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
 
+    private void afterEachMustExecute(ExtensionContext extensionContext) {
+        if (cluster.cluster().isClusterUp()) {
+            if (StUtils.isParallelTest(extensionContext) ||
+                StUtils.isParallelNamespaceTest(extensionContext)) {
+                parallelSuiteController.notifyParallelTestToAllowExecution(extensionContext);
+                parallelSuiteController.removeParallelTest(extensionContext);
+            }
+        } else {
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
+        }
+    }
+
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
@@ -535,31 +544,38 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    private final void afterAllMustExecute(ExtensionContext extensionContext)  {
-        if (StUtils.isParallelSuite(extensionContext)) {
-            parallelSuiteController.removeParallelSuite(extensionContext);
-        }
+    private void afterAllMustExecute(ExtensionContext extensionContext)  {
+        if (cluster.cluster().isClusterUp()) {
+            clusterOperator = SetupClusterOperator.getInstanceHolder();
 
-        if (StUtils.isIsolatedSuite(extensionContext)) {
-            parallelSuiteController.unLockIsolatedSuite();
-        }
-        // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
-        // we need to rollback to default configuration, which most of the suites use.
-        // ----
-        // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
-        // additional check that configuration is in default
-        if (clusterOperator != null &&
-            !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator) &&
-            !ExecutionListener.isNextSuiteIsolated(extensionContext) &&
-            !ExecutionListener.isLastSuite(extensionContext)) {
-            // install configuration differs from default one we are gonna roll-back
-            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
-            LOGGER.debug("Current Cluster Operator configuration:\n" + clusterOperator.toString());
-            LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
-            LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
-            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            clusterOperator = clusterOperator.rollbackToDefaultConfiguration();
+            if (StUtils.isParallelSuite(extensionContext)) {
+                parallelSuiteController.notifyParallelSuiteToAllowExecution(extensionContext);
+                parallelSuiteController.removeParallelSuite(extensionContext);
+            }
+
+            if (StUtils.isIsolatedSuite(extensionContext)) {
+                parallelSuiteController.unLockIsolatedSuite();
+            }
+            // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
+            // we need to rollback to default configuration, which most of the suites use.
+            // ----
+            // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
+            // additional check that configuration is in default
+            if (clusterOperator != null &&
+                !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator) &&
+                !ExecutionListener.isNextSuiteIsolated(extensionContext) &&
+                !ExecutionListener.isLastSuite(extensionContext)) {
+                // install configuration differs from default one we are gonna roll-back
+                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+                LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
+                LOGGER.debug("Current Cluster Operator configuration:\n" + clusterOperator.toString());
+                LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
+                LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
+                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+                clusterOperator.rollbackToDefaultConfiguration();
+            }
+        } else {
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -587,43 +603,58 @@ public abstract class AbstractST implements TestSeparator {
             }
 
             LOGGER.info("Not first test we are gonna generate cluster name");
-            String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+
+            String clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
             mapWithClusterNames.put(testName, clusterName);
             mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
             mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
-            mapWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
+            mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
 
-            LOGGER.debug("CLUSTER_NAMES_MAP: \n{}", mapWithClusterNames);
-            LOGGER.debug("USERS_NAME_MAP: \n{}", mapWithTestUsers);
-            LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
-            LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
+            LOGGER.trace("CLUSTER_NAMES_MAP: {}", mapWithClusterNames);
+            LOGGER.trace("USERS_NAME_MAP: {}", mapWithTestUsers);
+            LOGGER.trace("TOPIC_NAMES_MAP: {}", mapWithTestTopics);
+            LOGGER.trace("THIS IS CLIENTS MAP: {}", mapWithScraperNames);
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
         }
     }
 
-    private final void beforeAllMustExecute(ExtensionContext extensionContext) {
-        try {
-            clusterOperator = SetupClusterOperator.getInstanceHolder();
-        } finally {
-            // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
-            synchronized (BEFORE_ALL_LOCK) {
-                // (optional) create additional namespace/namespaces for test suites if needed
-                testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
+    private void beforeEachMustExecute(ExtensionContext extensionContext) {
+        if (cluster.cluster().isClusterUp()) {
+            if (StUtils.isParallelNamespaceTest(extensionContext) ||
+                StUtils.isParallelTest(extensionContext)) {
+                parallelSuiteController.addParallelTest(extensionContext);
+                parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(extensionContext);
+            }
+        } else {
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
+        }
+    }
 
-                if (StUtils.isParallelSuite(extensionContext)) {
-                    parallelSuiteController.addParallelSuite(extensionContext);
+    private void beforeAllMustExecute(ExtensionContext extensionContext) {
+        if (cluster.cluster().isClusterUp()) {
+            if (StUtils.isParallelSuite(extensionContext)) {
+                parallelSuiteController.addParallelSuite(extensionContext);
+                parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
+            }
+            try {
+                // (optional) create additional namespace/namespaces for test suites if needed
+                // in case `Terminating` issue with namespace we have to execute finally block
+                testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
+            } finally {
+                if (StUtils.isIsolatedSuite(extensionContext)) {
+                    cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                    // wait for parallel suites are done
+                    parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
+                    // wait for isolated suites
+                    parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
+                } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
+                    cluster.setNamespace(Constants.INFRA_NAMESPACE);
                 }
+                clusterOperator = SetupClusterOperator.getInstanceHolder();
             }
-            if (StUtils.isIsolatedSuite(extensionContext)) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
-                // wait for parallel suites are done
-                parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
-                // wait for isolated suites
-                parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
-            } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
-            }
+        } else {
+            throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
 
@@ -641,14 +672,15 @@ public abstract class AbstractST implements TestSeparator {
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - Before Each] - Setup test case environment", StUtils.removePackageName(this.getClass().getName()));
+        beforeEachMustExecute(extensionContext);
         beforeEachMayOverride(extensionContext);
     }
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - Before All] - Setup test suite environment", StUtils.removePackageName(this.getClass().getName()));
         beforeAllMayOverride(extensionContext);
         beforeAllMustExecute(extensionContext);
     }
@@ -656,14 +688,22 @@ public abstract class AbstractST implements TestSeparator {
     @AfterEach
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [AFTER EACH] has been called", this.getClass().getName());
-        afterEachMayOverride(extensionContext);
+        LOGGER.debug("[{} - After Each] - Clean up after test", StUtils.removePackageName(this.getClass().getName()));
+        // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
+        // results in `Timeout after 480000 ms waiting for Namespace namespace-136 removal` it throws WaitException and
+        // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
+        // it will always execute the second method.
+        try {
+            afterEachMayOverride(extensionContext);
+        } finally {
+            afterEachMustExecute(extensionContext);
+        }
     }
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - After All] - Clean up after test suite", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride(extensionContext);
         afterAllMustExecute(extensionContext);
     }

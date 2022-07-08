@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -22,10 +21,11 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -40,7 +40,6 @@ import io.strimzi.test.annotations.ParallelTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -57,7 +56,6 @@ import static org.hamcrest.Matchers.hasProperty;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @ParallelSuite
 public class ZookeeperPodSetTest {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER = "my-cluster";
@@ -87,11 +85,17 @@ public class ZookeeperPodSetTest {
     public void testDefaultPodDisruptionBudget()   {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         PodDisruptionBudget pdb = zc.generateCustomControllerPodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generateCustomControllerPodDisruptionBudgetV1Beta1();
 
-        assertThat(pdb.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(pdb.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
+
+        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
     }
 
     @ParallelTest
@@ -117,12 +121,19 @@ public class ZookeeperPodSetTest {
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         PodDisruptionBudget pdb = zc.generateCustomControllerPodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generateCustomControllerPodDisruptionBudgetV1Beta1();
 
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(1));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
+
+        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(1));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
     }
 
     @ParallelTest
@@ -130,7 +141,7 @@ public class ZookeeperPodSetTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, Map.of());
 
-        assertThat(ps.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(zc.getLabelsWithStrimziName(zc.getName(), null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new PersistentClaimStorageBuilder().withSize("100Gi").withDeleteClaim(false).build())));
         assertThat(ps.getMetadata().getOwnerReferences().size(), is(1));
@@ -139,7 +150,7 @@ public class ZookeeperPodSetTest {
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(zc.getLabelsWithStrimziNameAndPodName(zc.getName(), pod.getMetadata().getName(), null).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(zc.getName()).toMap().entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().size(), is(1));
@@ -151,7 +162,7 @@ public class ZookeeperPodSetTest {
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
             assertThat(pod.getSpec().getVolumes().stream()
                     .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-                    .findFirst().orElse(null).getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+                    .findFirst().orElse(null).getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
             assertThat(pod.getSpec().getContainers().size(), is(1));
             assertThat(pod.getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(5));
@@ -181,8 +192,8 @@ public class ZookeeperPodSetTest {
     @ParallelTest
     public void testCustomizedPodSet()   {
         // Prepare various template values
-        Map<String, String> stsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> stsAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnos = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnnos = TestUtils.map("a3", "v3", "a4", "v4");
@@ -284,12 +295,12 @@ public class ZookeeperPodSetTest {
                         .withLivenessProbe(livenessProbe)
                         .withConfig(Map.of("foo", "bar"))
                         .withNewTemplate()
-                            .withNewStatefulset()
+                            .withNewPodSet()
                                 .withNewMetadata()
-                                    .withLabels(stsLabels)
-                                    .withAnnotations(stsAnnos)
+                                    .withLabels(spsLabels)
+                                    .withAnnotations(spsAnnos)
                                 .endMetadata()
-                            .endStatefulset()
+                            .endPodSet()
                             .withNewPod()
                                 .withNewMetadata()
                                     .withLabels(podLabels)
@@ -320,14 +331,14 @@ public class ZookeeperPodSetTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, Map.of("special", "annotation"));
 
-        assertThat(ps.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
-        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(stsLabels.entrySet()), is(true));
-        assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(stsAnnos.entrySet()), is(true));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
+        assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(spsAnnos.entrySet()), is(true));
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(podAnnos.entrySet()), is(true));
@@ -406,7 +417,7 @@ public class ZookeeperPodSetTest {
         StrimziPodSet ps = zc.generatePodSet(3, true, null, secrets, Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -436,7 +447,7 @@ public class ZookeeperPodSetTest {
         StrimziPodSet ps = zc.generatePodSet(3, true, null, List.of(secret1), Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(1));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(false));
@@ -452,7 +463,7 @@ public class ZookeeperPodSetTest {
         StrimziPodSet ps = zc.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         }
@@ -461,7 +472,7 @@ public class ZookeeperPodSetTest {
         ps = zc.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         }

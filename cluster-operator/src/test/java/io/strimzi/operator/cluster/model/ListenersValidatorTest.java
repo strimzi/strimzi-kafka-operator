@@ -330,12 +330,30 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
+                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
+    }
+
+    @ParallelTest
+    public void testLoadBalancerListenerWithNodePort() {
+        String name = "lb";
+
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withNewConfiguration()
+                .withNewBootstrap()
+                .withNodePort(32189)
+                .endBootstrap()
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+
+        ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners);
     }
 
     @ParallelTest
@@ -841,5 +859,55 @@ public class ListenersValidatorTest {
         exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners2));
         assertThat(exception.getMessage(), allOf(
                 not(containsString("listener listener1: 'customClaimCheck' value not a valid JsonPath filter query - Failed to parse query: \"invalid\" at position: 0"))));
+    }
+
+    @ParallelTest
+    public void testValidateTimeoutsOauth() {
+        KafkaListenerAuthenticationOAuthBuilder authBuilder = new KafkaListenerAuthenticationOAuthBuilder()
+                .withConnectTimeoutSeconds(0);
+
+        GenericKafkaListenerBuilder listenerBuilder = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withAuth(authBuilder.build());
+
+
+        List<GenericKafkaListener> listeners = asList(listenerBuilder.withAuth(authBuilder.build()).build());
+
+        Exception exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: 'connectTimeoutSeconds' needs to be a positive integer (set to: 0)")));
+
+        // set valid connectTimeoutSeconds
+        authBuilder.withConnectTimeoutSeconds(1);
+
+        List<GenericKafkaListener> listeners2 = asList(listenerBuilder.withAuth(authBuilder.build()).build());
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners2));
+        assertThat(exception.getMessage(), allOf(
+                not(containsString("listener listener1: 'connectTimeoutSeconds' needs to be a positive integer"))));
+
+        //
+        // Repeat for readTimeoutSeconds
+        //
+        authBuilder.withConnectTimeoutSeconds(null)
+                .withReadTimeoutSeconds(0);
+
+        List<GenericKafkaListener> listeners3 = asList(listenerBuilder.withAuth(authBuilder.build()).build());
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners3));
+        assertThat(exception.getMessage(), allOf(
+                containsString("listener listener1: 'readTimeoutSeconds' needs to be a positive integer (set to: 0)")));
+
+        // set valid readTimeoutSeconds
+        authBuilder.withReadTimeoutSeconds(1);
+
+        List<GenericKafkaListener> listeners4 = asList(listenerBuilder.withAuth(authBuilder.build()).build());
+
+        exception = assertThrows(InvalidResourceException.class, () -> ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, listeners4));
+        assertThat(exception.getMessage(), allOf(
+                not(containsString("listener listener1: 'readTimeoutSeconds' needs to be a positive integer"))));
+
     }
 }

@@ -5,8 +5,10 @@
 package io.strimzi.systemtest.utils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -146,6 +148,39 @@ public class RollingUpdateUtils {
                 } else {
                     throw new RuntimeException(pods.toString() + " pods are rolling!");
                 }
+            }
+        );
+    }
+
+    public static Map<String, String> waitForComponentScaleUpOrDown(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> pods) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            waitForComponentAndPodsReady(namespaceName, selector, expectedPods);
+            return PodUtils.podSnapshot(namespaceName, selector);
+        } else {
+            return waitTillComponentHasRolledAndPodsReady(namespaceName, selector, expectedPods, pods);
+        }
+    }
+
+    public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> kafkaPods, Map<String, String> zkPods) {
+        int[] i = {0};
+
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+
+        TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                boolean kafkaRolled = componentHasRolled(namespaceName, kafkaSelector, kafkaPods);
+                boolean zkRolled = componentHasRolled(namespaceName, zkSelector, zkPods);
+
+                if (!kafkaRolled && !zkRolled) {
+                    LOGGER.info("Kafka and ZK pods didn't roll. Remaining seconds for stability: {}", Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                } else {
+                    if (kafkaRolled) {
+                        throw new RuntimeException(kafkaPods.toString() + " pods are rolling!");
+                    }
+                    throw new RuntimeException(zkPods.toString() + " pods are rolling!");
+                }
+                return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
             }
         );
     }

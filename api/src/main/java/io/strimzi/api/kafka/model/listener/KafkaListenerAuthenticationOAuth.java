@@ -49,6 +49,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String userNameClaim;
     private String fallbackUserNameClaim;
     private String fallbackUserNamePrefix;
+    private String groupsClaim;
+    private String groupsClaimDelimiter;
     private String userInfoEndpointUri;
     private boolean checkAccessTokenType = true;
     private String validTokenType;
@@ -61,6 +63,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String tokenEndpointUri;
     private boolean enableOauthBearer = true;
     private String customClaimCheck;
+    private Integer connectTimeoutSeconds;
+    private Integer readTimeoutSeconds;
     private String clientScope = null;
     private String clientAudience = null;
 
@@ -134,6 +138,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCustomClaimCheck(String customClaimCheck) {
         this.customClaimCheck = customClaimCheck;
+    }
+
+    @Description("The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getConnectTimeoutSeconds() {
+        return connectTimeoutSeconds;
+    }
+
+    public void setConnectTimeoutSeconds(Integer connectTimeoutSeconds) {
+        this.connectTimeoutSeconds = connectTimeoutSeconds;
+    }
+
+    @Description("The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getReadTimeoutSeconds() {
+        return readTimeoutSeconds;
+    }
+
+    public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
+        this.readTimeoutSeconds = readTimeoutSeconds;
     }
 
     @Description("The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")
@@ -247,6 +271,24 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setFallbackUserNamePrefix(String fallbackUserNamePrefix) {
         this.fallbackUserNamePrefix = fallbackUserNamePrefix;
+    }
+
+    @Description("JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.")
+    public String getGroupsClaim() {
+        return groupsClaim;
+    }
+
+    public void setGroupsClaim(String groupsClaim) {
+        this.groupsClaim = groupsClaim;
+    }
+
+    @Description("A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma).")
+    public String getGroupsClaimDelimiter() {
+        return groupsClaimDelimiter;
+    }
+
+    public void setGroupsClaimDelimiter(String groupsClaimDelimiter) {
+        this.groupsClaimDelimiter = groupsClaimDelimiter;
     }
 
     @Description("Configure whether the access token type check is performed or not. This should be set to `false` " +

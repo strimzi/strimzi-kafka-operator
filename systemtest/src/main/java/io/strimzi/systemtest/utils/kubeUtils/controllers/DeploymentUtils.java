@@ -133,17 +133,24 @@ public class DeploymentUtils {
      * @return The snapshot of the Deployment after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillDepHasRolled(String namespaceName, String name, int expectedPods, Map<String, String> snapshot) {
-        LOGGER.info("Waiting for Deployment {} rolling update", name);
-        TestUtils.waitFor("Deployment " + name + " rolling update in namespace:" + namespaceName,
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(expectedPods), () -> depHasRolled(namespaceName, name, snapshot));
-        waitForDeploymentReady(namespaceName, name);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, name).getSpec().getSelector(), expectedPods, true);
+        Map<String, String> newDepSnapshot = waitTillDepHasRolled(namespaceName, name, snapshot);
+        waitForDeploymentAndPodsReady(namespaceName, name, expectedPods);
+
         LOGGER.info("Deployment {} rolling update finished", name);
-        return depSnapshot(namespaceName, name);
+        return newDepSnapshot;
     }
 
     public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
         return waitTillDepHasRolled(kubeClient().getNamespace(), name, expectedPods, snapshot);
+    }
+
+    public static Map<String, String> waitTillDepHasRolled(String namespaceName, String deploymentName, Map<String, String> snapshot) {
+        LOGGER.info("Waiting for Deployment {} rolling update", deploymentName);
+        TestUtils.waitFor("Deployment " + deploymentName + " rolling update in namespace:" + namespaceName,
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()),
+                () -> depHasRolled(namespaceName, deploymentName, snapshot));
+
+        return depSnapshot(namespaceName, deploymentName);
     }
 
     /**

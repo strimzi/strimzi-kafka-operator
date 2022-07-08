@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -15,9 +16,8 @@ import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -52,7 +53,6 @@ public class MultipleListenersST extends AbstractST {
     private Object lock = new Object();
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(MultipleListenersST.class.getSimpleName()).stream().findFirst().get();
-
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
 
@@ -109,7 +109,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), clusterName);
     }
@@ -120,7 +120,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -141,7 +141,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -159,8 +159,7 @@ public class MultipleListenersST extends AbstractST {
         runListenersTest(extensionContext, multipleDifferentListeners, clusterName);
     }
 
-    private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) throws Exception {
-
+    private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
         LOGGER.info("This is listeners {}, which will verified.", listeners);
 
         // exercise phase
@@ -183,6 +182,8 @@ public class MultipleListenersST extends AbstractST {
             resourceManager.createResource(extensionContext, kafkaUserInstance);
 
             for (GenericKafkaListener listener : listeners) {
+                final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+                final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
                 resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespace).build());
@@ -228,58 +229,30 @@ public class MultipleListenersST extends AbstractST {
                         );
                     }
                 } else {
-                    String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
                     // using internal clients
+                    KafkaClients kafkaClients = new KafkaClientsBuilder()
+                        .withTopicName(topicName)
+                        .withMessageCount(MESSAGE_COUNT)
+                        .withProducerName(producerName)
+                        .withConsumerName(consumerName)
+                        .withUserName(kafkaUsername)
+                        .withNamespaceName(namespace)
+                        .withBootstrapAddress(KafkaResources.bootstrapServiceName(clusterName) + ":" + listener.getPort())
+                        .build();
+
                     if (isTlsEnabled) {
-                        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls",
-                            listener.getName(), kafkaUserInstance)
-                            .editMetadata()
-                                .withNamespace(namespace)
-                            .endMetadata().build());
-
-                        final String kafkaClientsTlsPodName =
-                            ResourceManager.kubeClient().listPodsByPrefixInName(namespace, kafkaClientsName + "-tls").get(0).getMetadata().getName();
-
-                        InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
-                            .withUsingPodName(kafkaClientsTlsPodName)
-                            .withListenerName(listener.getName())
-                            .withTopicName(topicName)
-                            .withNamespaceName(namespace)
-                            .withClusterName(clusterName)
-                            .withKafkaUsername(kafkaUsername)
-                            .withMessageCount(MESSAGE_COUNT)
-                            .build();
-
-                        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsTlsPodName);
-
                         // verify phase
-                        ClientUtils.waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(extensionContext, internalTlsKafkaClient);
+                        resourceManager.createResource(extensionContext,
+                            kafkaClients.producerTlsStrimzi(clusterName),
+                            kafkaClients.consumerTlsStrimzi(clusterName)
+                        );
                     } else {
-                        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName + "-plain")
-                            .editMetadata()
-                                .withNamespace(namespace)
-                            .endMetadata()
-                            .build());
-                        final String kafkaClientsPlainPodName =
-                            ResourceManager.kubeClient().listPodsByPrefixInName(namespace, kafkaClientsName + "-plain").get(0).getMetadata().getName();
-
-                        InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
-                            .withUsingPodName(kafkaClientsPlainPodName)
-                            .withListenerName(listener.getName())
-                            .withTopicName(topicName)
-                            .withNamespaceName(namespace)
-                            .withClusterName(clusterName)
-                            .withMessageCount(MESSAGE_COUNT)
-                            .build();
-
-                        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPlainPodName);
-
-                        // verify phase
-                        internalPlainKafkaClient.checkProducedAndConsumedMessages(
-                            internalPlainKafkaClient.sendMessagesPlain(),
-                            internalPlainKafkaClient.receiveMessagesPlain()
+                        resourceManager.createResource(extensionContext,
+                            kafkaClients.producerStrimzi(),
+                            kafkaClients.consumerStrimzi()
                         );
                     }
+                    ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, MESSAGE_COUNT);
                 }
             }
         }

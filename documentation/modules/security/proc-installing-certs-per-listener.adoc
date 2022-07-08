@@ -87,6 +87,7 @@ The Cluster Operator starts a rolling update of the Kafka cluster, which updates
 +
 NOTE: A rolling update is also started if you update a Kafka listener certificate in a `Secret` that is already used by a TLS or external listener.
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:ref-alternative-subjects-certs-for-listeners-{context}[Alternative subjects in server certificates for Kafka listeners]

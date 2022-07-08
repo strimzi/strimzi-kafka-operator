@@ -19,6 +19,8 @@ import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -179,38 +181,58 @@ public class KafkaUtils {
 
         int[] count = {0};
 
-        zkPods[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
         kafkaPods[0] = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
+        }
         eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
-            Map<String, String> kafkaSnaptop = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+            Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
             Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-            boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
-            boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);
+            boolean kafkaSameAsLast = kafkaSnapshot.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
-            if (!zkSameAsLast) {
-                LOGGER.warn("ZK Cluster not stable");
-            }
+
             if (!kafkaSameAsLast) {
                 LOGGER.warn("Kafka Cluster not stable");
             }
             if (!eoSameAsLast) {
                 LOGGER.warn("EO not stable");
             }
-            if (zkSameAsLast && kafkaSameAsLast && eoSameAsLast) {
-                int c = count[0]++;
-                LOGGER.debug("All stable after {} polls", c);
-                if (c > 60) {
-                    LOGGER.info("Kafka cluster is stable after {} polls.", c);
-                    return true;
+
+            if (!Environment.isKRaftModeEnabled()) {
+                Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
+
+                boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
+
+                if (!zkSameAsLast) {
+                    LOGGER.warn("ZK Cluster not stable");
                 }
-                return false;
+                if (zkSameAsLast && eoSameAsLast && kafkaSameAsLast) {
+                    int c = count[0]++;
+                    LOGGER.debug("All stable after {} polls", c);
+                    if (c > 60) {
+                        LOGGER.info("Kafka cluster is stable after {} polls.", c);
+                        return true;
+                    }
+                    return false;
+                }
+                zkPods[0] = zkSnapshot;
+            } else {
+                if (kafkaSameAsLast && eoSameAsLast) {
+                    int c = count[0]++;
+                    LOGGER.debug("All stable after {} polls", c);
+                    if (c > 60) {
+                        LOGGER.info("Kafka cluster is stable after {} polls.", c);
+                        return true;
+                    }
+                    return false;
+                }
             }
-            zkPods[0] = zkSnapshot;
-            kafkaPods[0] = kafkaSnaptop;
+            kafkaPods[0] = kafkaSnapshot;
             eoPods[0] = eoSnapshot;
+
             count[0] = 0;
             return false;
         });
@@ -276,15 +298,16 @@ public class KafkaUtils {
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String scraperPodName, String bootstrapServer, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
 
         List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
+        int[] brokerId = {0};
 
         for (Pod pod : kafkaPods) {
 
             TestUtils.waitFor("Wait until dyn.configuration is changed", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
-                    String result = cmdKubeClient(namespaceName).execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+                    String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
 
                     LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
 

@@ -74,10 +74,10 @@ public interface KubeCluster {
                     cluster = kc;
                     break;
                 } else {
-                    logger.warn("Cluster {} is not running!", kc);
+                    logger.debug("Cluster {} is not running!", kc);
                 }
             } else {
-                logger.warn("Cluster {} is not installed!", kc);
+                logger.debug("Cluster {} is not installed!", kc);
             }
         }
         if (cluster == null) {

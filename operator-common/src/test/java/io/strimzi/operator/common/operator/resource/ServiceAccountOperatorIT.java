@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
     @Override
     protected AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> operator() {
-        return new ServiceAccountOperator(vertx, client, true);
+        return new ServiceAccountOperator(vertx, client);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
     @Override
     public void testCreateModifyDelete(VertxTestContext context)    {
         Checkpoint async = context.checkpoint();
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, client, true);
+        ServiceAccountOperator op = new ServiceAccountOperator(vertx, client);
 
         ServiceAccount newResource = getOriginal();
         ServiceAccount modResource = getModified();

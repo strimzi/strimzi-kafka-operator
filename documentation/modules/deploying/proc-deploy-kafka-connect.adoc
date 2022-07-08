@@ -31,12 +31,25 @@ Use the `examples/connect/kafka-connect.yaml` file to deploy Kafka Connect.
 ----
 kubectl apply -f examples/connect/kafka-connect.yaml
 ----
-. Verify that Kafka Connect was successfully deployed:
+
+. Check the status of the deployment:
 +
-[source,shell,subs="attributes+"]
+[source,shell,subs="+quotes"]
 ----
-kubectl get deployments
+kubectl get deployments -n _<my_cluster_operator_namespace>_
 ----
++
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                        READY  UP-TO-DATE  AVAILABLE
+my-connect-cluster-connect  1/1    1           1
+----
++
+`my-connect-cluster` is the name of the Kafka Connect cluster.
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.
 
 [role="_additional-resources"]
 .Additional resources

@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.balancing;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -17,12 +18,11 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * Representation of the Cruise Control broker capacity settings. Since the Kafka brokers
- * in Strimzi are homogeneous, the capacity values for each resource will be
- * used for every broker.
+ * Representation of the Cruise Control broker capacity settings.
  */
 @Buildable(
         editableEnabled = false,
@@ -30,7 +30,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"disk", "cpuUtilization", "inboundNetwork", "outboundNetwork"})
+@JsonPropertyOrder({"disk", "cpuUtilization", "cpu", "inboundNetwork", "outboundNetwork", "overrides"})
 @EqualsAndHashCode
 public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
@@ -38,10 +38,14 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     private String disk;
     private Integer cpuUtilization;
+    private String cpu;
     private String inboundNetwork;
     private String outboundNetwork;
+    private List<BrokerCapacityOverride> overrides;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
+    @DeprecatedProperty(description = "The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
     @Description("Broker capacity for disk in bytes. " +
@@ -55,6 +59,8 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
         this.disk = disk;
     }
 
+    @Deprecated
+    @DeprecatedProperty(description = "The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future")
     @Minimum(0)
     @Maximum(100)
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -65,6 +71,19 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     public void setCpuUtilization(Integer cpuUtilization) {
         this.cpuUtilization = cpuUtilization;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Pattern("^[0-9]+([.][0-9]{0,3}|[m]?)$")
+    @Description("Broker capacity for CPU resource in cores or millicores. " +
+            "For example, 1, 1.500, 1500m. " +
+            "For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu")
+    public String getCpu() {
+        return cpu;
+    }
+
+    public void setCpu(String cpu) {
+        this.cpu = cpu;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -91,6 +110,17 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     public void setOutboundNetwork(String outboundNetwork) {
         this.outboundNetwork = outboundNetwork;
+    }
+
+    @JsonInclude(content = JsonInclude.Include.NON_NULL, value = JsonInclude.Include.NON_EMPTY)
+    @Description("Overrides for individual brokers. " +
+            "The `overrides` property lets you specify a different capacity configuration for different brokers.")
+    public List<BrokerCapacityOverride> getOverrides() {
+        return overrides;
+    }
+
+    public void setOverrides(List<BrokerCapacityOverride> overrides) {
+        this.overrides = overrides;
     }
 
     @Override

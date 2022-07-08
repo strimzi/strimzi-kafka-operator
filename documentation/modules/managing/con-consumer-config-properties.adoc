@@ -1,6 +1,6 @@
 // This module is included in the following files:
 //
-// assembly-client-config.adoc
+// assembly-tuning-config.adoc
 
 [id='con-consumer-config-properties-{context}']
 = Kafka consumer configuration tuning
@@ -223,7 +223,7 @@ If a consumer group or standalone consumer is inactive and commits no offsets du
 ----
 # ...
 heartbeat.interval.ms=3000 <1>
-session.timeout.ms=10000 <2>
+session.timeout.ms=45000 <2>
 auto.offset.reset=earliest <3>
 # ...
 ----

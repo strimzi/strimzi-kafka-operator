@@ -93,7 +93,7 @@ public class MirrorMakerAgent {
      */
     private Runnable readinessPoller() {
         return new Runnable() {
-            private MBeanServerConnection beanConn = ManagementFactory.getPlatformMBeanServer();
+            private final MBeanServerConnection beanConn = ManagementFactory.getPlatformMBeanServer();
 
             @Override
             public void run() {
@@ -145,8 +145,8 @@ public class MirrorMakerAgent {
                     LOGGER.error("Failed to query JMX metrics", e);
                 }   finally {
                     LOGGER.trace("Total producer connections {}", connectionCount);
-                    return connectionCount > 0;
                 }
+                return connectionCount > 0;
             }
 
             /**
@@ -170,8 +170,8 @@ public class MirrorMakerAgent {
                     LOGGER.error("Failed to query JMX metrics", e);
                 }   finally {
                     LOGGER.trace("Total consumer connections {}", connectionCount);
-                    return connectionCount > 0;
                 }
+                return connectionCount > 0;
             }
         };
     }
@@ -181,17 +181,11 @@ public class MirrorMakerAgent {
      *
      * @param file  File which should be created
      *
-     * @throws IOException
+     * @throws IOException if the file can't be created
      */
     private void touch(File file) throws IOException {
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(file);
+        try (FileOutputStream ignored = new FileOutputStream(file)) {
             file.deleteOnExit();
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 

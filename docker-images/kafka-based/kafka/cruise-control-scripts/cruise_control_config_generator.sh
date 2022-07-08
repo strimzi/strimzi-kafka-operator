@@ -21,10 +21,6 @@ ln -sf /dev/stdout $CC_ACCESS_LOG
 # Write the config file
 cat <<EOF
 bootstrap.servers=$STRIMZI_KAFKA_BOOTSTRAP_SERVERS
-zookeeper.connect=localhost:2181
-partition.metric.sample.store.topic=strimzi.cruisecontrol.partitionmetricsamples
-broker.metric.sample.store.topic=strimzi.cruisecontrol.modeltrainingsamples
-metric.reporter.topic=strimzi.cruisecontrol.metrics
 capacity.config.file=$CC_CAPACITY_FILE
 cluster.configs.file=$CC_CLUSTER_CONFIG_FILE
 webserver.accesslog.path=$CC_ACCESS_LOG
@@ -41,5 +37,6 @@ ssl.keystore.password=$CERTS_STORE_PASSWORD
 ssl.truststore.type=PKCS12
 ssl.truststore.location=/tmp/cruise-control/replication.truststore.p12
 ssl.truststore.password=$CERTS_STORE_PASSWORD
+kafka.broker.failure.detection.enable=true
 ${CRUISE_CONTROL_CONFIGURATION}
 EOF

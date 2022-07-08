@@ -15,6 +15,13 @@ Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-topic-operator.yaml` deployment file to deploy the Topic Operator.
 Add or set the environment variables needed to make a connection to a Kafka cluster.
 
+The Topic Operator watches for `KafkaTopic` resources in a single namespace.
+You specify the namespace to watch, and the connection to the Kafka cluster, in the Topic Operator configuration.
+A single Topic Operator can watch a single namespace. 
+One namespace should be watched by only one Topic Operator.
+If you want to use more than one Topic Operator, configure each of them to watch different namespaces.
+In this way, you can use Topic Operators with multiple Kafka clusters.  
+
 .Prerequisites
 
 * You are running a Kafka cluster for the Topic Operator to connect to.
@@ -87,7 +94,11 @@ spec:
 <1> The Kubernetes namespace for the Topic Operator to watch for `KafkaTopic` resources. Specify the namespace of the Kafka cluster.
 <2> The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
-<3> The label selector to identify the `KafkaTopic` resources managed by the Topic Operator.
+<3> The label to identify the `KafkaTopic` resources managed by the Topic Operator.
+This does not have to be the name of the Kafka cluster.
+It can be the label assigned to the `KafkaTopic` resource.
+If you deploy more than one Topic Operator, the labels must be unique for each.
+That is, the operators cannot manage the same resources.
 <4> The host and port pair of the address to connect to the ZooKeeper cluster.
 This must be the same ZooKeeper cluster that your Kafka cluster is using.
 <5> The ZooKeeper session timeout, in milliseconds.
@@ -148,11 +159,19 @@ env:
 [source,shell,subs=+quotes]
 kubectl create -f install/topic-operator
 
-. Verify that the Topic Operator has been deployed successfully.
+. Check the status of the deployment:
 +
-[source,shell,subs=+quotes]
-kubectl describe deployment strimzi-topic-operator
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments
+----
 +
-The Topic Operator is deployed when the `Replicas` entry shows `1 available`.
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                    READY  UP-TO-DATE  AVAILABLE
+strimzi-topic-operator  1/1    1           1
+----
 +
-NOTE: You may experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the Topic Operator images have not been downloaded before.
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.

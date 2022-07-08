@@ -1,10 +1,11 @@
 // This assembly is included in:
 //
-// using/using.adoc
+// configuring/configuring.adoc
 
 [id="management-tasks-{context}"]
 = Managing Strimzi
 
+[role="_abstract"]
 This chapter covers tasks to maintain a deployment of Strimzi.
 
 //using kubectl commands and status
@@ -27,12 +28,6 @@ include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]
 
 //Setting static broker limits
 include::modules/proc-setting-broker-limits.adoc[leveloffset=+1]
-
-//tuning for clients
-include::assembly-tuning-config.adoc[leveloffset=+1]
-
-//Uninstall the product
-include::modules/proc-uninstalling.adoc[leveloffset=+1]
 
 //faqs for cluster operator
 include::modules/con-cluster-operator-faqs.adoc[leveloffset=+1]

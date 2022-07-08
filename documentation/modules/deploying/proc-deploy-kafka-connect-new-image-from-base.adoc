@@ -100,6 +100,7 @@ or
 +
 * In the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_KAFKA_CONNECT_IMAGES` variable to point to the new container image, and then reinstall the Cluster Operator.
 
+[role="_additional-resources"]
 .Additional resources
 
 * link:{BookURLUsing}#con-common-configuration-images-reference[Container image configuration and the `KafkaConnect.spec.image property`^]

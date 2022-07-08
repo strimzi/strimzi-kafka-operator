@@ -37,30 +37,31 @@ public class ResourceUtils {
     public static final String CA_KEY_NAME = NAME + "-key";
     public static final String PASSWORD = "my-password";
 
-    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, String scramShaPassworldLength) {
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
         envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
         envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
-        if (!scramShaPassworldLength.equals("12")) {
-            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPassworldLength);
+        envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, Boolean.toString(useKRaft));
+        if (!scramShaPasswordLength.equals("12")) {
+            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
         }
 
         return UserOperatorConfig.fromMap(envVars);
     }
 
     public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels) {
-        return createUserOperatorConfig(labels, true, "12");
+        return createUserOperatorConfig(labels, true, false, "12");
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {
-        return createUserOperatorConfig(Map.of(), true, "12");
+        return createUserOperatorConfig(Map.of(), true, false, "12");
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {
-        return createUserOperatorConfig(Map.of(), true, scramShaPasswordLength);
+        return createUserOperatorConfig(Map.of(), true, false, scramShaPasswordLength);
     }
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {

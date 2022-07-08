@@ -17,9 +17,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -38,9 +36,7 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatefulSetOperator.class.getName());
     protected final PodOperator podOperations;
-    private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;
-    protected final SecretOperator secretOperations;
 
     /**
      * Constructor
@@ -49,7 +45,7 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
      * @param operationTimeoutMs The timeout.
      */
     public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client), new PvcOperator(vertx, client));
+        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client));
     }
 
     /**
@@ -57,15 +53,11 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
      * @param client The Kubernetes client.
      * @param operationTimeoutMs The timeout.
      * @param podOperator The pod operator.
-     * @param pvcOperator The PVC operator.
      */
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs,
-                               PodOperator podOperator, PvcOperator pvcOperator) {
+    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator) {
         super(vertx, client, "StatefulSet");
-        this.secretOperations = new SecretOperator(vertx, client);
         this.podOperations = podOperator;
         this.operationTimeoutMs = operationTimeoutMs;
-        this.pvcOperations = pvcOperator;
     }
 
     @Override
@@ -180,10 +172,11 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
     }
 
     /**
-     * Returns a future that completes when all the pods [0..replicas-1] in the given statefulSet are ready.
+     * Returns a future that completes when all the pods [0...replicas-1] in the given statefulSet are ready.
      */
     protected Future<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
         final int replicas = desired.getSpec().getReplicas();
+        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
         List<Future> waitPodResult = new ArrayList<>(replicas);
         for (int i = 0; i < replicas; i++) {
             String podName = getPodName(desired, i);
@@ -224,13 +217,13 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
     /**
      * Sometimes, patching the resource is not enough. For example when the persistent volume claim templates are modified.
      * In such case we need to delete the STS with cascading=false and recreate it.
-     * A rolling update should done finished after the STS is recreated.
+     * A rolling update should be finished after the STS is recreated.
      *
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
      * @param current Current StatefulSet
      * @param desired Desired StatefulSet
-     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
+     * @param cascading Defines whether the deletion should be cascading or not (e.g. whether the STS deletion should delete pods etc.)
      *
      * @return Future with result of the reconciliation
      */
@@ -239,11 +232,10 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
             Promise<ReconcileResult<StatefulSet>> promise = Promise.promise();
 
             long pollingIntervalMs = 1_000;
-            long timeoutMs = operationTimeoutMs;
 
             operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
-            Future<Void> deletedFut = waitFor(reconciliation, namespace, name, "deleted", pollingIntervalMs, timeoutMs, (ignore1, ignore2) -> {
+            Future<Void> deletedFut = waitFor(reconciliation, namespace, name, "deleted", pollingIntervalMs, operationTimeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
                 LOGGER.traceCr(reconciliation, "Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
                 return sts == null;

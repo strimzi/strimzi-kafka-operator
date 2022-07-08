@@ -7,10 +7,8 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -24,16 +22,12 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
-
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -57,88 +51,6 @@ public class AbstractModelTest {
         protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
             return null;
         }
-    }
-
-    private static JvmOptions jvmOptions(String xmx, String xms) {
-        JvmOptions result = new JvmOptions();
-        result.setXms(xms);
-        result.setXmx(xmx);
-        return result;
-    }
-
-    @ParallelTest
-    public void testJvmMemoryOptionsExplicit() {
-        Map<String, String> env = getStringStringMap("4", "4",
-                0.5, 4_000_000_000L, null);
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4 -Xmx4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
-    }
-
-    private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax, ResourceRequirements resources) {
-        Kafka resource = new KafkaBuilder()
-                .withNewMetadata()
-                .endMetadata()
-                .build();
-        AbstractModel am = new Model(resource);
-
-        am.setLabels(Labels.forStrimziCluster("foo"));
-        am.setJvmOptions(jvmOptions(xmx, xms));
-        am.setResources(resources);
-        List<EnvVar> envVars = new ArrayList<>(1);
-        am.heapOptions(envVars, dynamicFraction, dynamicMax);
-        return envVars.stream().collect(Collectors.toMap(e -> e.getName(), e -> e.getValue()));
-    }
-
-    @ParallelTest
-    public void testJvmMemoryOptionsXmsOnly() {
-        Map<String, String> env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L, null);
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void testJvmMemoryOptionsXmxOnly() {
-        Map<String, String> env = getStringStringMap("4", null,
-                0.5, 5_000_000_000L, null);
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xmx4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
-    }
-
-
-    @ParallelTest
-    public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
-        Map<String, String> env = getStringStringMap(null, null,
-                0.5, 5_000_000_000L, null);
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + AbstractModel.DEFAULT_JVM_XMS));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
-    }
-
-    private ResourceRequirements getResourceRequest() {
-        return new ResourceRequirementsBuilder()
-                .addToRequests("memory", new Quantity("16000000000")).build();
-    }
-
-    @ParallelTest
-    public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
-        Map<String, String> env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L, getResourceRequest());
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.5"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
-    }
-
-    @ParallelTest
-    public void testJvmMemoryOptionsMemoryRequest() {
-        Map<String, String> env = getStringStringMap(null, null,
-                0.7, 10_000_000_000L, getResourceRequest());
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.7"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
     }
 
     @ParallelTest
@@ -169,7 +81,7 @@ public class AbstractModelTest {
         am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(opts);
         List<EnvVar> envVars = new ArrayList<>(1);
-        am.jvmPerformanceOptions(envVars);
+        ModelUtils.jvmPerformanceOptions(envVars, am.getJvmOptions());
 
         if (!envVars.isEmpty()) {
             return envVars.get(0).getValue();

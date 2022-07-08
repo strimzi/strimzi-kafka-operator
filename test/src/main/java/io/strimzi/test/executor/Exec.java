@@ -7,6 +7,7 @@ package io.strimzi.test.executor;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -112,9 +113,9 @@ public class Exec {
      * @param command arguments for command
      * @return execution results
      */
-    public static ExecResult exec(boolean logToOutput, String... command) {
+    public static ExecResult exec(Level level, String... command) {
         List<String> commands = new ArrayList<>(Arrays.asList(command));
-        return exec(null, commands, 0, logToOutput);
+        return exec(null, commands, 0, level);
     }
 
     /**
@@ -124,7 +125,7 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(List<String> command) {
-        return exec(null, command, 0, false);
+        return exec(null, command, 0, Level.DEBUG);
     }
 
     /**
@@ -134,51 +135,62 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(String input, List<String> command) {
-        return exec(input, command, 0, false);
+        return exec(input, command, 0, Level.DEBUG);
     }
 
     /**
      * Method executes external command
      * @param command arguments for command
      * @param timeout timeout for execution
-     * @param logToOutput log output or not
+     * @param logLevel log output level
      * @return execution results
      */
-    public static ExecResult exec(String input, List<String> command, int timeout, boolean logToOutput) {
-        return exec(input, command, timeout, logToOutput, true);
+    public static ExecResult exec(String input, List<String> command, int timeout, Level logLevel) {
+        return exec(input, command, timeout, logLevel, true);
     }
 
     /**
      * Method executes external command
      * @param command arguments for command
      * @param timeout timeout for execution
-     * @param logToOutput log output or not
+     * @param logLevel log output level
      * @param throwErrors look for errors in output and throws exception if true
      * @return execution results
      */
-    public static ExecResult exec(String input, List<String> command, int timeout, boolean logToOutput, boolean throwErrors) {
+    public static ExecResult exec(String input, List<String> command, int timeout, Level logLevel, boolean throwErrors) {
         int ret = 1;
         ExecResult execResult;
         try {
             Exec executor = new Exec();
             ret = executor.execute(input, command, timeout);
             synchronized (LOCK) {
-                if (logToOutput || ret != 0) {
-                    String log = ret != 0 ? "Failed to exec command" : "Command";
-                    LOGGER.info("{}: {}", log, String.join(" ", command));
-                    if (input != null && !input.contains("CustomResourceDefinition")) {
-                        LOGGER.info("Input: {}", input.trim());
-                    }
-                    LOGGER.info("RETURN code: {}", ret);
+                String log = ret != 0 ? "Failed to exec command" : "Command";
+                logData(logLevel, String.format("%s: %s", log, String.join(" ", command)));
+                if (input != null && !input.contains("CustomResourceDefinition")) {
+                    logData(logLevel, String.format("Input: %s", input.trim()));
+                }
+                logData(logLevel, String.format("Return code: %s", ret));
+                if (ret != 0) {
                     if (!executor.out().isEmpty()) {
-                        LOGGER.info("======STDOUT START=======");
-                        LOGGER.info("{}", cutExecutorLog(executor.out().trim()));
-                        LOGGER.info("======STDOUT END======");
+                        logData(logLevel, "======STDOUT START=======");
+                        logData(logLevel, String.format("%s", cutExecutorLog(executor.out().trim())));
+                        logData(logLevel, "======STDOUT END======");
                     }
                     if (!executor.err().isEmpty()) {
-                        LOGGER.info("======STDERR START=======");
-                        LOGGER.info("{}", cutExecutorLog(executor.err().trim()));
-                        LOGGER.info("======STDERR END======");
+                        logData(logLevel, "======STDERR START=======");
+                        logData(logLevel, String.format("%s", cutExecutorLog(executor.err().trim())));
+                        logData(logLevel, "======STDERR END======");
+                    } else {
+                        if (!executor.out().isEmpty()) {
+                            logData(Level.TRACE, "======STDOUT START=======");
+                            logData(Level.TRACE, String.format("%s", cutExecutorLog(executor.out().trim())));
+                            logData(Level.TRACE, "======STDOUT END======");
+                        }
+                        if (!executor.err().isEmpty()) {
+                            logData(Level.TRACE, "======STDERR START=======");
+                            logData(Level.TRACE, String.format("%s", cutExecutorLog(executor.err().trim())));
+                            logData(Level.TRACE, "======STDERR END======");
+                        }
                     }
                 }
             }
@@ -397,6 +409,20 @@ public class Exec {
                     scanner.close();
                 }
             }, runnable -> new Thread(runnable).start());
+        }
+    }
+
+    private static void logData(Level level, String log) {
+        if (level.equals(Level.INFO)) {
+            LOGGER.info(log);
+        } else if (level.equals(Level.DEBUG)) {
+            LOGGER.debug(log);
+        } else if (level.equals(Level.TRACE)) {
+            LOGGER.trace(log);
+        } else if (level.equals(Level.WARN)) {
+            LOGGER.warn(log);
+        } else if (level.equals(Level.ERROR)) {
+            LOGGER.error(log);
         }
     }
 }

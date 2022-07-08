@@ -5,14 +5,12 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Namespaced;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
@@ -26,10 +24,6 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
@@ -54,6 +48,31 @@ import static java.util.Collections.unmodifiableList;
                 name = "Cluster",
                 description = "The name of the Kafka cluster this resource rebalances",
                 jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "PendingProposal",
+                description = "A proposal has been requested from Cruise Control",
+                jsonPath = ".status.conditions[?(@.type==\"PendingProposal\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "ProposalReady",
+                description = "A proposal is ready and waiting for approval",
+                jsonPath = ".status.conditions[?(@.type==\"ProposalReady\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Rebalancing",
+                description = "Cruise Control is doing the rebalance",
+                jsonPath = ".status.conditions[?(@.type==\"Rebalancing\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The rebalance is complete",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "NotReady",
+                description = "There is an error on the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"NotReady\")].status",
                 type = "string")
         }
     )
@@ -62,7 +81,7 @@ import static java.util.Collections.unmodifiableList;
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
+        refs = {@BuildableReference(CustomResource.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
@@ -78,7 +97,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     public static final String V1BETA2 = Constants.V1BETA2;
     public static final String V1ALPHA1 = Constants.V1ALPHA1;
     public static final String CONSUMED_VERSION = V1BETA2;
-    public static final List<String> VERSIONS = unmodifiableList(asList(V1BETA2, V1ALPHA1));
+    public static final List<String> VERSIONS = List.of(V1BETA2, V1ALPHA1);
     public static final String RESOURCE_KIND = "KafkaRebalance";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
@@ -86,61 +105,34 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     public static final String RESOURCE_SINGULAR = "kafkarebalance";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String SHORT_NAME = "kr";
-    public static final List<String> RESOURCE_SHORTNAMES = singletonList(SHORT_NAME);
+    public static final List<String> RESOURCE_SHORTNAMES = List.of(SHORT_NAME);
 
+    private final Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    // Added to avoid duplication during Json serialization
     private String apiVersion;
-    private String kind = RESOURCE_KIND;
-    private ObjectMeta metadata;
-    private KafkaRebalanceSpec spec;
-    private KafkaRebalanceStatus status;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+    private String kind;
 
-    @JsonProperty("kind")
-    @Override
-    public String getKind() {
-        return RESOURCE_KIND;
+    public KafkaRebalance() {
+        super();
     }
 
-    @Override
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    @Override
-    public void setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
-    }
-
-    @Override
-    public ObjectMeta getMetadata() {
-        return metadata;
-    }
-
-    @Override
-    public void setMetadata(ObjectMeta metadata) {
-        this.metadata = metadata;
+    public KafkaRebalance(KafkaRebalanceSpec spec, KafkaRebalanceStatus status) {
+        super();
+        this.spec = spec;
+        this.status = status;
     }
 
     @Override
     @Description("The specification of the Kafka rebalance.")
     public KafkaRebalanceSpec getSpec() {
-        return spec;
+        return super.getSpec();
     }
-
-    @Override
-    public void setSpec(KafkaRebalanceSpec spec) {
-        this.spec = spec;
-    }
-
+    
     @Override
     @Description("The status of the Kafka rebalance.")
     public KafkaRebalanceStatus getStatus() {
-        return status;
-    }
-
-    @Override
-    public void setStatus(KafkaRebalanceStatus status) {
-        this.status = status;
+        return super.getStatus();
     }
 
     @Override

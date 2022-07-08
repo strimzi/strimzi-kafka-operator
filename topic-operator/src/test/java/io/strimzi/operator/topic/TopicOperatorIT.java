@@ -4,12 +4,10 @@
  */
 package io.strimzi.operator.topic;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -24,17 +22,16 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.InvalidRequestException;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptyMap;
@@ -46,39 +43,42 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorIT extends TopicOperatorBaseIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
-    protected static EmbeddedKafkaCluster kafkaCluster;
+    protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
-    public static void beforeAll() throws IOException {
-        kafkaCluster = new EmbeddedKafkaCluster(numKafkaBrokers(), kafkaClusterConfig());
+    public void beforeAll() throws Exception {
+        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
+        setup(kafkaCluster);
+
+        LOGGER.info("Using namespace {}", NAMESPACE);
+        startTopicOperator(kafkaCluster);
     }
 
     @AfterAll
-    public static void afterAll() {
+    public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
+        teardown(true);
         teardownKubeCluster();
+        adminClient.close();
         kafkaCluster.stop();
     }
 
-    @BeforeEach
-    public void beforeEach() throws Exception {
-        setup(kafkaCluster);
-    }
-
     @AfterEach
-    public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
-        teardown(true);
+    void afterEach() throws InterruptedException, ExecutionException, TimeoutException {
+        // clean-up KafkaTopic resources in Kubernetes
+        clearKafkaTopics(true);
     }
 
     protected static int numKafkaBrokers() {
         return 1;
     }
 
-    protected static Properties kafkaClusterConfig() {
-        Properties p = new Properties();
-        p.setProperty(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
+    protected static Map<String, String> kafkaClusterConfig() {
+        Map<String, String> p = new HashMap<>();
+        p.put(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
+        p.put("zookeeper.connect", "zookeeper:2181");
         return p;
     }
 
@@ -136,7 +136,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
-        Thread.sleep(30_000);
+        Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
         assertStatusNotReady(topicName, PartitionDecreaseException.class,
                 "Number of partitions cannot be decreased");
     }
@@ -155,7 +155,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
-        Thread.sleep(30_000);
+        Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
         assertStatusNotReady(topicName, InvalidRequestException.class,
                 expectedMessage);
     }

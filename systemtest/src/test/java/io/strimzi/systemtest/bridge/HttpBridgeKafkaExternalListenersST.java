@@ -19,24 +19,23 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -52,10 +51,9 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(BRIDGE)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
+@KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
 @ParallelSuite
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
-
-    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeKafkaExternalListenersST.class.getSimpleName()).stream().findFirst().get();
@@ -149,7 +147,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+        BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withProducerName(clusterName + "-" + producerName)
             .withConsumerName(clusterName + "-" + consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))
@@ -181,10 +179,6 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
                 .build());
         }
 
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName).build());
-
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
                 .editMetadata()
@@ -202,11 +196,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, namespace, BRIDGE_EXTERNAL_SERVICE);
         ServiceResource.createServiceResource(extensionContext, service, namespace);
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -216,26 +206,24 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers();
 
-        final KafkaBasicExampleClients externalKafkaProducer = new KafkaBasicExampleClients.Builder()
+        final KafkaClients externalKafkaProducer = new KafkaClientsBuilder()
             .withProducerName(kafkaProducerExternalName)
             .withBootstrapAddress(externalBootstrapServers)
             .withNamespaceName(namespace)
             .withTopicName(topicName)
             .withMessageCount(100)
+            .withUserName(weirdUserName)
             .build();
 
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName, weirdUserName).build());
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName));
         } else {
             // scram-sha producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaStrimzi(clusterName, weirdUserName).build());
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaTlsStrimzi(clusterName));
         }
 
         ClientUtils.waitForClientSuccess(kafkaProducerExternalName, namespace, MESSAGE_COUNT);
-
-        // delete kafka producer job
-        JobUtils.deleteJobWithWait(namespace, kafkaProducerExternalName);
 
         ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, namespace, MESSAGE_COUNT);
     }

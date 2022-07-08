@@ -7,8 +7,8 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -28,7 +27,7 @@ import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.mockkube.MockKube;
+import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
@@ -58,10 +56,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
@@ -74,7 +71,9 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
     private final int replicas = 3;
 
-    private KubernetesClient mockClient;
+    // Injected by Fabric8 Mock Kubernetes Server
+    private KubernetesClient client;
+    private MockKube2 mockKube;
 
     private static Vertx vertx;
     private KafkaMirrorMaker2AssemblyOperator kco;
@@ -90,35 +89,31 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     }
 
     private void setMirrorMaker2Resource(KafkaMirrorMaker2 mirrorMaker2Resource) {
-        if (mockClient != null) {
-            mockClient.close();
-        }
-        MockKube mockKube = new MockKube();
-        mockClient = mockKube
-                .withCustomResourceDefinition(Crds.kafkaMirrorMaker2(), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2::getStatus, KafkaMirrorMaker2::setStatus)
-                    .withInitialInstances(Collections.singleton(mirrorMaker2Resource))
-                .end()
+        // Configure the Kubernetes Mock
+        mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaMirrorMaker2Crd()
+                .withInitialKafkaMirrorMaker2s(mirrorMaker2Resource)
+                .withDeploymentController()
                 .build();
+        mockKube.start();
     }
 
     @AfterEach
     public void afterEach() {
-        if (mockClient != null) {
-            mockClient.close();
-        }
+        mockKube.stop();
     }
 
 
     private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(),
-                pfa, FeatureGates.NONE, 60_000L);
+                pfa, 60_000L);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         kco = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa,
@@ -132,13 +127,12 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
                 if (!reconciliationPaused) {
-                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.policy().v1beta1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.configMaps().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.services().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(client.policy().v1beta1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
-                    assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
-                    verify(mockClient, never()).resources(KafkaMirrorMaker2.class);
+                    assertThat(client.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
                 }
 
                 created.complete();
@@ -195,7 +189,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
                 }))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    Resource<KafkaMirrorMaker2> resource = Crds.kafkaMirrorMaker2Operation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
+                    Resource<KafkaMirrorMaker2> resource = Crds.kafkaMirrorMaker2Operation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
 
                     if (resource.get().getStatus() == null) {
                         fail();

@@ -6,48 +6,151 @@
 
 = Optimization proposals overview
 
-An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers. 
-Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:capacity-configuration[capacity limits on broker resources].
+[role="_abstract"]
+You use the `KafkaRebalance` resource to generate and apply the changes suggested in optimization proposals.  
+An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers.
 
-An optimization proposal is contained in the `Status.Optimization Result` property of a `KafkaRebalance` custom resource. 
-The information provided is a summary of the full optimization proposal. 
-Use the summary to decide whether to:
+Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:property-cruise-control-broker-capacity-reference[capacity limits on broker resources].
 
-* Approve the optimization proposal. This instructs Cruise Control to apply the proposal to the Kafka cluster and start a cluster rebalance operation.
+All optimization proposals are _estimates_ of the impact of a proposed rebalance.
+You can approve or reject a proposal.
+You cannot approve a cluster rebalance without first generating the optimization proposal.
 
-* Reject the optimization proposal. You can change the optimization goals and then generate another proposal.
+You can run optimization proposals in one of the following rebalancing modes:
 
-All optimization proposals are _dry runs_: you cannot approve a cluster rebalance without first generating an optimization proposal. 
-There is no limit to the number of optimization proposals that can be generated.
+* `full`
+* `add-brokers`
+* `remove-brokers`
 
-[discrete]
-== Cached optimization proposal
+[id='con-optimization-proposals-modes-{context}']
+== Rebalancing modes
 
-Cruise Control maintains a _cached optimization proposal_ based on the configured default optimization goals.
-Generated from the workload model, the cached optimization proposal is updated every 15 minutes to reflect the current state of the Kafka cluster.
-If you generate an optimization proposal using the default optimization goals, Cruise Control returns the most recent cached proposal.
+You specify a rebalancing mode using the `spec.mode` property of the `KafkaRebalance` custom resource.
 
-To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
-Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
+`full`:: The `full` mode runs a full rebalance by moving replicas across all the brokers in the cluster.
+This is the default mode if the `spec.mode` property is not defined in the `KafkaRebalance` custom resource.
+
+`add-brokers`:: The `add-brokers` mode is used after scaling up a Kafka cluster by adding one or more brokers.
+Normally, after scaling up a Kafka cluster, new brokers are used to host only the partitions of newly created topics.
+If no new topics are created, the newly added brokers are not used and the existing brokers remain under the same load.
+By using the `add-brokers` mode immediately after adding brokers to the cluster, the rebalancing operation moves replicas from existing brokers to the newly added brokers.
+You specify the new brokers as a list using the `spec.brokers` property of the `KafkaRebalance` custom resource.
+
+`remove-brokers`:: The `remove-brokers` mode is used before scaling down a Kafka cluster by removing one or more brokers.
+If you scale down a Kafka cluster, brokers are shut down even if they host replicas.
+This can lead to under-replicated partitions and possibly result in some partitions being under their minimum ISR (in-sync replicas).
+To avoid this potential problem, the `remove-brokers` mode moves replicas off the brokers that are going to be removed.
+When these brokers are not hosting replicas anymore, you can safely run the scaling down operation.
+You specify the brokers you're removing as a list in the `spec.brokers` property in the `KafkaRebalance` custom resource.
+
+In general, use the `full` rebalance mode to rebalance a Kafka cluster by spreading the load across brokers.
+Use the `add-brokers` and `remove-brokers` modes only if you want to scale your cluster up or down and rebalance the replicas accordingly.
+
+The procedure to run a rebalance is actually the same across the three different modes.
+The only difference is with specifying a mode through the `spec.mode` property and, if needed, listing brokers that have been added or will be removed through the `spec.brokers` property.
+
 
 [[contents-optimization-proposals]]
-[discrete]
-== Contents of optimization proposals
+== The results of an optimization proposal
 
-An optimization proposal consists of two main sections:
+When an optimization proposal is generated, a summary and broker load is returned.
 
-* The _summary_ is stored in the `status` of the `KafkaRebalance` resource.
-* The _broker load_ is stored in a ConfigMap that contains data as a JSON string.
+Summary:: The summary is contained in the `KafkaRebalance` resource. The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
+A summary of a successfully generated optimization proposal is contained in the `Status.OptimizationResult` property of the `KafkaRebalance` resource.
+The information provided is a summary of the full optimization proposal.
+Broker load:: The broker load is stored in a ConfigMap that contains data as a JSON string. The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
 
-The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
-The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
+== Approving or rejecting an optimization proposal
 
-[discrete]
-=== Summary
+An optimization proposal summary shows the proposed scope of changes.
 
-The following table explains the properties contained in the optimization proposal's summary section:
+You can use the name of the `KafkaRebalance` resource to return a summary from the command line.
 
-.Properties contained in an optimization proposal
+.Returning an optimization proposal summary
+[source,shell,subs=+quotes]
+----
+kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_ -n _<namespace>_
+----
+
+You can also use the `jq` command line JSON parser tool.
+
+.Returning an optimization proposal summary using jq
+[source,shell,subs=+quotes]
+----
+`kubectl get kafkarebalance -o json | jq _<jq_query>_`.
+----
+
+Use the summary to decide whether to approve or reject an optimization proposal.
+
+Approving an optimization proposal:: You approve the optimization proposal by setting the `strimzi.io/rebalance` annotation of the `KafkaRebalance` resource to `approve`.
+Cruise Control applies the proposal to the Kafka cluster and starts a cluster rebalance operation.
+Rejecting an optimization proposal:: If you choose not to approve an optimization proposal,
+you can xref:proc-generating-optimization-proposals-str[change the optimization goals] or xref:rebalance_tuning_options[update any of the rebalance performance tuning options], and then generate another proposal.
+You can use the `strimzi.io/refresh` annotation to generate a new optimization proposal for a `KafkaRebalance` resource.
+
+Use optimization proposals to assess the movements required for a rebalance.
+For example, a summary describes inter-broker and intra-broker movements.
+Inter-broker rebalancing moves data between separate brokers.
+Intra-broker rebalancing moves data between disks on the same broker when you are using a JBOD storage configuration.
+Such information can be useful even if you don't go ahead and approve the proposal.
+
+You might reject an optimization proposal, or delay its approval, because of the additional load on a Kafka cluster when rebalancing.
+
+In the following example, the proposal suggests the rebalancing of data between separate brokers.
+The rebalance involves the movement of 55 partition replicas, totaling 12MB of data, across the brokers.
+Though the inter-broker movement of partition replicas has a high impact on performance, the total amount of data is not large.
+If the total data was much larger, you could reject the proposal, or time when to approve the rebalance to limit the impact on the performance of the Kafka cluster.
+
+Rebalance performance tuning options can help reduce the impact of data movement.
+If you can extend the rebalance period, you can divide the rebalance into smaller batches.
+Fewer data movements at a single time reduces the load on the cluster.
+
+.Example optimization proposal summary
+[source,yaml]
+----
+Name:         my-rebalance
+Namespace:    myproject
+Labels:       strimzi.io/cluster=my-cluster
+Annotations:  API Version:  kafka.strimzi.io/v1alpha1
+Kind:         KafkaRebalance
+Metadata:
+# ...
+Status:
+  Conditions:
+    Last Transition Time:  2022-04-05T14:36:11.900Z
+    Status:                ProposalReady
+    Type:                  State
+  Observed Generation:     1
+  Optimization Result:
+    Data To Move MB:  0
+    Excluded Brokers For Leadership:
+    Excluded Brokers For Replica Move:
+    Excluded Topics:
+    Intra Broker Data To Move MB:         12
+    Monitored Partitions Percentage:      100
+    Num Intra Broker Replica Movements:   0
+    Num Leader Movements:                 24
+    Num Replica Movements:                55
+    On Demand Balancedness Score After:   82.91290759174306
+    On Demand Balancedness Score Before:  78.01176356230222
+    Recent Windows:                       5
+  Session Id:                             a4f833bd-2055-4213-bfdd-ad21f95bf184
+----
+
+The proposal will also move 24 partition leaders to different brokers.
+This requires a change to the ZooKeeper configuration, which has a low impact on performance.
+
+The balancedness scores are measurements of the overall balance of the Kafka cluster before and after the optimization proposal is approved.
+A balancedness score is based on optimization goals.
+If all goals are satisfied, the score is 100.
+The score is reduced for each goal that will not be met.
+Compare the balancedness scores to see whether the Kafka cluster is less balanced than it could be following a rebalance.
+
+== Optimization proposal summary properties
+
+The following table explains the properties contained in the optimization proposal's summary section.
+
+.Properties contained in an optimization proposal summary
 [cols="35,65",options="header",stripes="none",separator=¦]
 |===
 
@@ -92,7 +195,7 @@ m¦monitoredPartitionsPercentage
 ¦The percentage of partitions in the Kafka cluster covered by the optimization proposal. Affected by the number of `excludedTopics`.
 
 m¦excludedTopics
-¦If you specified a regular expression in the `spec.excludedTopicsRegex` property in the `KafkaRebalance` resource, all topic names matching that expression are listed here. 
+¦If you specified a regular expression in the `spec.excludedTopicsRegex` property in the `KafkaRebalance` resource, all topic names matching that expression are listed here.
 These topics are excluded from the calculation of partition replica/leader movements in the optimization proposal.
 
 m¦numLeaderMovements
@@ -105,9 +208,7 @@ m¦excludedBrokersForReplicaMove
 
 |===
 
-
-[discrete]
-=== Broker load
+== Broker load properties
 
 The broker load is stored in a ConfigMap (with the same name as the KafkaRebalance custom resource) as a JSON formatted string. This JSON string consists of a JSON object with keys for each broker IDs linking to a number of metrics for each broker.
 Each metric consist of three values.
@@ -115,11 +216,20 @@ The first is the metric value before the optimization proposal is applied, the s
 
 NOTE: The ConfigMap appears when the KafkaRebalance resource is in the `ProposalReady` state and remains after the rebalance is complete.
 
-To extract the JSON string from the ConfigMap you could use the following command, which uses the jq command line JSON parser tool:
+You can use the name of the ConfigMap to view its data from the command line.
 
+.Returning ConfigMap data
 [source,shell,subs=+quotes]
 ----
-kubectl get configmap _MY-REBALANCE_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
+kubectl describe configmaps _<my_rebalance_configmap_name>_ -n _<namespace>_
+----
+
+You can also use the `jq` command line JSON parser tool to extract the JSON string from the ConfigMap.
+
+.Extracting the JSON string from the ConfigMap using jq
+[source,shell,subs=+quotes]
+----
+kubectl get configmaps _<my_rebalance_configmap_name>_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
 ----
 
 The following table explains the properties contained in the optimization proposal's broker load ConfigMap:
@@ -149,10 +259,18 @@ m| potentialMaxNetworkOutRate  | The hypothetical maximum network output rate th
 
 |======================================================================================================
 
+== Cached optimization proposal
+
+Cruise Control maintains a _cached optimization proposal_ based on the configured default optimization goals.
+Generated from the workload model, the cached optimization proposal is updated every 15 minutes to reflect the current state of the Kafka cluster.
+If you generate an optimization proposal using the default optimization goals, Cruise Control returns the most recent cached proposal.
+
+To change the cached optimization proposal refresh interval, edit the `proposal.expiration.ms` setting in the Cruise Control deployment configuration.
+Consider a shorter interval for fast changing clusters, although this increases the load on the Cruise Control server.
+
+[role="_additional-resources"]
 .Additional resources
 
-* xref:con-optimization-goals-{context}[] 
-
-* xref:proc-generating-optimization-proposals-{context}[] 
-
+* xref:con-optimization-goals-{context}[]
+* xref:proc-generating-optimization-proposals-{context}[]
 * xref:proc-approving-optimization-proposal-{context}[]

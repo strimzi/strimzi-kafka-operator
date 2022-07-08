@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class PersistentVolumeClaimUtils {
@@ -66,12 +67,24 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
     }
 
-    public static void waitForPVCDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
+    public static void waitForPersistentVolumeClaimDeletion(String namespaceName, String pvcName) {
+        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+            if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
+                LOGGER.warn("PVC {} is not deleted yet! Triggering force delete by cmd client!", pvcName);
+                cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
         int numberOfPVCWhichShouldBeDeleted = jbodStorage.getVolumes().stream().filter(
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();
 
-        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
+        TestUtils.waitFor("Wait for JBOD storage deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
             List<String> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())

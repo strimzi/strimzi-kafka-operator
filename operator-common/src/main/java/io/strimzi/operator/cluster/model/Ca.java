@@ -29,16 +29,17 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -46,6 +47,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
@@ -65,6 +68,10 @@ import static java.util.Collections.singletonMap;
 public abstract class Ca {
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
+
+    private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile(
+            "^ca-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}Z.crt$"
+    );
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
@@ -100,6 +107,7 @@ public abstract class Ca {
 
     private final PasswordGenerator passwordGenerator;
     protected final Reconciliation reconciliation;
+    private Clock clock;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -203,6 +211,11 @@ public abstract class Ca {
         this.generateCa = generateCa;
         this.policy = policy == null ? CertificateExpirationPolicy.RENEW_CERTIFICATE : policy;
         this.renewalType = RenewalType.NOOP;
+        this.clock = Clock.systemUTC();
+    }
+
+    /* test */ protected void setClock(Clock clock) {
+        this.clock = clock;
     }
 
     private static void delete(Reconciliation reconciliation, File file) {
@@ -500,12 +513,12 @@ public abstract class Ca {
      * @param namespace The namespace containing the cluster.
      * @param clusterName The name of the cluster.
      * @param labels The labels of the {@code Secrets} created.
-     * @param additonalLabels The additional labels of the {@code Secrets} created.
-     * @param additonalAnnotations The additional annotations of the {@code Secrets} created.
+     * @param additionalLabels The additional labels of the {@code Secrets} created.
+     * @param additionalAnnotations The additional annotations of the {@code Secrets} created.
      * @param ownerRef The owner of the {@code Secrets} created.
      * @param maintenanceWindowSatisfied Flag indicating whether we are in the maintenance window
      */
-    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels, Map<String, String> additonalLabels, Map<String, String> additonalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
+    public void createRenewOrReplace(String namespace, String clusterName, Map<String, String> labels, Map<String, String> additionalLabels, Map<String, String> additionalAnnotations, OwnerReference ownerRef, boolean maintenanceWindowSatisfied) {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
@@ -550,7 +563,7 @@ public abstract class Ca {
                         addCertCaToTrustStore(CA_CRT, certData);
                     }
             }
-            this.caCertsRemoved = removeExpiredCerts(certData) > 0;
+            this.caCertsRemoved = removeCerts(certData, this::removeExpiredCert) > 0;
         }
         SecretCertProvider secretCertProvider = new SecretCertProvider();
 
@@ -580,8 +593,8 @@ public abstract class Ca {
             keyAnnotations.put(ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
         }
 
-        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels, additonalLabels),
-                Util.mergeLabelsOrAnnotations(certAnnotations, additonalAnnotations), ownerRef);
+        caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels, additionalLabels),
+                Util.mergeLabelsOrAnnotations(certAnnotations, additionalAnnotations), ownerRef);
 
         caKeySecret = secretCertProvider.createSecret(namespace, caKeySecretName, keyData, labels,
                 keyAnnotations, ownerRef);
@@ -787,32 +800,64 @@ public abstract class Ca {
         return INIT_GENERATION;
     }
 
-    private int removeExpiredCerts(Map<String, String> newData) {
+    /**
+     * Remove old certificates that are stored in the CA Secret matching the "ca-YYYY-MM-DDTHH-MM-SSZ.crt" naming pattern.
+     * NOTE: mostly used when a CA certificate is renewed by replacing the key
+     */
+    public void maybeDeleteOldCerts() {
+        // the operator doesn't have to touch Secret provided by the user with his own custom CA certificate
+        if (this.generateCa) {
+            this.caCertsRemoved = removeCerts(this.caCertSecret.getData(), entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches()) > 0;
+            if (this.caCertsRemoved) {
+                LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
+            }
+        }
+    }
+
+    /**
+     * Predicate used to remove expired certificates that are stored in the CA Secret
+     *
+     * @param entry entry in the CA Secret data section to check
+     * @return if the certificate is expired and has to be removed
+     */
+    private boolean removeExpiredCert(Map.Entry<String, String> entry) {
+        boolean remove = false;
+        String certName = entry.getKey();
+        String certText = entry.getValue();
+        try {
+            X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
+            Instant expiryDate = cert.getNotAfter().toInstant();
+            remove = expiryDate.isBefore(clock.instant());
+            if (remove) {
+                LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
+                        certName.replace(".", "\\."), expiryDate);
+            }
+        } catch (CertificateException e) {
+            // doesn't remove stores and related password
+            if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
+                remove = true;
+                LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
+                        certName.replace(".", "\\."));
+            }
+        }
+        return remove;
+    }
+
+    /**
+     * Remove certificates from the CA related Secret and store which match the provided predicate
+     *
+     * @param newData data section of the CA Secret containing certificates
+     * @param predicate predicate to match for removing a certificate
+     * @return the number of removed certificates
+     */
+    private int removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate) {
         Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
         List<String> removed = new ArrayList<>();
         while (iter.hasNext()) {
             Map.Entry<String, String> entry = iter.next();
-            String certName = entry.getKey();
-            String certText = entry.getValue();
-            boolean remove = false;
-            try {
-                X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
-                Instant expiryDate = cert.getNotAfter().toInstant();
-                remove = expiryDate.isBefore(Instant.now());
-                if (remove) {
-                    LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
-                            certName.replace(".", "\\."), expiryDate);
-                }
-            } catch (CertificateException e) {
-
-                // doesn't remove stores and related password
-                if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
-                    remove = true;
-                    LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
-                            certName.replace(".", "\\."));
-                }
-            }
+            boolean remove = predicate.test(entry);
             if (remove) {
+                String certName = entry.getKey();
                 LOGGER.debugCr(reconciliation, "Removing data.{} from Secret",
                         certName.replace(".", "\\."));
                 iter.remove();
@@ -841,21 +886,10 @@ public abstract class Ca {
     }
 
     public boolean certNeedsRenewal(X509Certificate cert)  {
-        Date notAfter = cert.getNotAfter();
-        LOGGER.traceCr(reconciliation, "Certificate {} expires on {}", cert.getSubjectDN(), notAfter);
-        long msTillExpired = notAfter.getTime() - System.currentTimeMillis();
-        return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
-    }
-
-    /**
-     * This is a no-static version of the `cert` method so that it can be mocked.
-     *
-     * @param secret    Secret with a certificates
-     * @param key   Key under which the certificate is stored
-     * @return  Decoced X509 certificate
-     */
-    public X509Certificate getAsX509Certificate(Secret secret, String key)  {
-        return cert(secret, key);
+        Instant notAfter = cert.getNotAfter().toInstant();
+        Instant renewalPeriodBegin = notAfter.minus(renewalDays, ChronoUnit.DAYS);
+        LOGGER.traceCr(reconciliation, "Certificate {} expires on {} renewal period begins on {}", cert.getSubjectDN(), notAfter, renewalPeriodBegin);
+        return this.clock.instant().isAfter(renewalPeriodBegin);
     }
 
     public static X509Certificate cert(Secret secret, String key)  {

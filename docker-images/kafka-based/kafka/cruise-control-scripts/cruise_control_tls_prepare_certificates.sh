@@ -10,7 +10,7 @@ source ../kafka/tls_utils.sh
 echo "Preparing truststore for Cruise Control"
 STORE=/tmp/cruise-control/replication.truststore.p12
 rm -f "$STORE"
-for CRT in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
+for CRT in /etc/cruise-control/cluster-ca-certs/*.crt; do
   ALIAS=$(basename "$CRT" .crt)
   echo "Adding $CRT to truststore $STORE with alias $ALIAS"
   create_truststore "$STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
@@ -21,7 +21,7 @@ echo "Preparing keystore for Cruise Control"
 STORE=/tmp/cruise-control/cruise-control.keystore.p12
 rm -f "$STORE"
 create_keystore_without_ca_file "$STORE" "$CERTS_STORE_PASSWORD" \
-    /etc/tls-sidecar/cc-certs/cruise-control.crt \
-    /etc/tls-sidecar/cc-certs/cruise-control.key \
+    /etc/cruise-control/cc-certs/cruise-control.crt \
+    /etc/cruise-control/cc-certs/cruise-control.key \
     cruise-control
 echo "Preparing keystore for Cruise Control is complete"

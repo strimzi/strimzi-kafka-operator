@@ -6,7 +6,7 @@
 = Performing a rolling update using a Pod annotation
 
 This procedure describes how to manually trigger a rolling update of an existing Kafka cluster or ZooKeeper cluster using a Kubernetes `Pod` annotation.
-When multiple pods from the same `StatefulSet` are annotated, consecutive rolling updates are performed within the same reconciliation run.
+When multiple pods are annotated, consecutive rolling updates are performed within the same reconciliation run.
 
 .Prerequisites
 

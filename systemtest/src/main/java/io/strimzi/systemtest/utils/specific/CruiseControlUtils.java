@@ -10,11 +10,13 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -51,19 +53,23 @@ public class CruiseControlUtils {
         HTTPS
     }
 
+    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
+        return callApi(namespaceName, method, endpoint, scheme, withCredentials, "");
+    }
+
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
+    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials, String endpointSuffix) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
         String args = " -k ";
 
         if (withCredentials) {
-            args = " --cacert /etc/tls-sidecar/cc-certs/cruise-control.crt"
+            args = " --cacert /etc/cruise-control/cc-certs/cruise-control.crt"
                 + " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
         }
 
-        return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
-            "curl -X" + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
+        return cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+            "curl -X " + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString() + endpointSuffix).out();
     }
 
     @SuppressWarnings("Regexp")
@@ -71,7 +77,7 @@ public class CruiseControlUtils {
     public static String callApi(String namespaceName, SupportedHttpMethods method, String endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
 
-        return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
     }
 
@@ -141,12 +147,18 @@ public class CruiseControlUtils {
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName,
-            KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config").getBytes(StandardCharsets.UTF_8));
+        String cmName;
+        if (Environment.isStrimziPodSetEnabled())   {
+            cmName = KafkaResources.kafkaPodName(clusterName, 0);
+        } else {
+            cmName = KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName);
+        }
+
+        InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName, cmName)
+                .getData().get("server.config").getBytes(StandardCharsets.UTF_8));
 
         Properties configurationOfKafka = new Properties();
         configurationOfKafka.load(configurationFileStream);
-        LOGGER.info("Verifying that in {} is not present configuration related to metrics reporter", KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
 
         Properties cruiseControlProperties = new Properties();
 
@@ -169,5 +181,16 @@ public class CruiseControlUtils {
                     "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
                     "com.linkedin.cruisecontrol.exception.NotEnoughValidWindowsException: ");
             });
+    }
+
+    /**
+     * Returns user defined network capacity value without KiB/s suffix.
+     *
+     * @param userCapacity User defined network capacity with KiB/s suffix.
+     *
+     * @return User defined network capacity without KiB/s as a Double.
+     */
+    public static Double removeNetworkCapacityKibSuffix(String userCapacity) {
+        return Double.valueOf(userCapacity.substring(0, userCapacity.length() - 5));
     }
 }

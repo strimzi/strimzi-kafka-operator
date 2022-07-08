@@ -43,7 +43,7 @@ check_kube_conn() {
 }
 
 get_kafka_setup() {
-  local kafka_yaml=$(kubectl -n $NAMESPACE get kafka $CLUSTER -o yaml ||true)
+  local kafka_yaml && kafka_yaml=$(kubectl -n "$NAMESPACE" get kafka "$CLUSTER" -o yaml ||true)
   KAFKA_BROKERS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.replicas" -)
   STORAGE_TYPE=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.type" -)
   JBOD_DISKS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.volumes | length" -)
@@ -60,7 +60,7 @@ coord_partition() {
   if [[ -n $id && -n $part ]]; then
     echo 'public void run(String id, int part) { System.out.println(abs(id.hashCode()) % part); }    
       private int abs(int n) { return (n == Integer.MIN_VALUE) ? 0 : Math.abs(n); } 
-      run("'$id'", '$part');' \
+      run("'"$id"'", '"$part"');' \
       | jshell -
   fi
 }
@@ -71,16 +71,16 @@ find_segments() {
   if [[ -z $broker || -z $log_dir ]]; then
     error "Missing parameters"
   fi
-  local seg_files=$(kubectl -n $NAMESPACE exec $CLUSTER-kafka-$broker -- \
-    find $log_dir -printf "%f\n" 2>/dev/null | grep ".log")
-  echo $seg_files
+  local seg_files && seg_files=$(kubectl -n "$NAMESPACE" exec "$CLUSTER"-kafka-"$broker" -- \
+    find "$log_dir" -printf "%f\n" 2>/dev/null | grep ".log")
+  echo "$seg_files"
 }
 
 dump_segments() {
   local seg_files="$1"
   if [[ -z $seg_files || $(echo "$seg_files" | sed '/^\s*$/d' | wc -l) -eq 0 ]]; then
     echo "No segment found"
-  fi 
+  fi
   local flags="--deep-iteration"
   case "$topic" in
     "$CO_TOPIC")
@@ -94,15 +94,15 @@ dump_segments() {
       ;;
   esac
   flags="$flags --files"
-  for seg_file in $(echo $seg_files); do
+  for seg_file in $seg_files; do
     if [[ -n $SEGMENT && $SEGMENT != "${seg_file%.log}" ]]; then
       continue
     fi
-    echo $seg_file
+    echo "$seg_file"
     if [[ $DRY_RUN == false ]]; then
-      mkdir -p $out_dir
-      kubectl -n $NAMESPACE exec $CLUSTER-kafka-$i -- \
-        ./bin/kafka-dump-log.sh $flags $log_dir/$seg_file > $out_dir/$seg_file
+      mkdir -p "$out_dir"
+      kubectl -n "$NAMESPACE" exec "$CLUSTER"-kafka-"$i" -- \
+        bash -c "./bin/kafka-dump-log.sh $flags $log_dir/$seg_file" > "$out_dir/$seg_file"
     fi
   done
 }
@@ -125,8 +125,8 @@ dump_partition() {
     out_dir="$OUT_PATH/$topic/kafka-$broker-disk-$disk-$topic-$partition"
   fi
   # segment dump
-  local seg_files=$(find_segments $broker $log_dir)
-  echo $disk_label
+  local seg_files && seg_files=$(find_segments "$broker" "$log_dir")
+  echo "$disk_label"
   dump_segments "$seg_files"
 }
 
@@ -137,13 +137,13 @@ partition() {
   check_kube_conn
   get_kafka_setup  
   # dump topic partition across the cluster (including replicas)
-  for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
     if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $(($JBOD_DISKS-1))); do
-        dump_partition $TOPIC $PARTITION $i $j
+      for j in $(seq 0 $((JBOD_DISKS-1))); do
+        dump_partition "$TOPIC" "$PARTITION" "$i" "$j"
       done
     else 
-      dump_partition $TOPIC $PARTITION $i
+      dump_partition "$TOPIC" "$PARTITION" "$i"
     fi
   done
 }
@@ -155,15 +155,15 @@ cg_offsets() {
   check_kube_conn
   get_kafka_setup
   # dump CG offsets coordinating partition across the cluster (including replicas)
-  local partition=$(coord_partition "$GROUP_ID" "$TOT_PART")
+  local partition && partition=$(coord_partition "$GROUP_ID" "$TOT_PART")
   echo "$GROUP_ID coordinating partition: $partition"
-  for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
     if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $(($JBOD_DISKS-1))); do
-        dump_partition $CO_TOPIC $partition $i $j
+      for j in $(seq 0 $((JBOD_DISKS-1))); do
+        dump_partition "$CO_TOPIC" "$partition" "$i" "$j"
       done
     else
-      dump_partition $CO_TOPIC $partition $i
+      dump_partition "$CO_TOPIC" "$partition" "$i"
     fi
   done
 }
@@ -175,15 +175,15 @@ txn_state() {
   check_kube_conn
   get_kafka_setup    
   # dump TX state coordinating partition across the cluster (including replicas)
-  local partition=$(coord_partition "$TXN_ID" "$TOT_PART")
+  local partition && partition=$(coord_partition "$TXN_ID" "$TOT_PART")
   echo "$TXN_ID coordinating partition: $partition"
-  for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
     if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $(($JBOD_DISKS-1))); do
-        dump_partition $TS_TOPIC $partition $i $j
+      for j in $(seq 0 $((JBOD_DISKS-1))); do
+        dump_partition "$TS_TOPIC" "$partition" "$i" "$j"
       done
     else
-      dump_partition $TS_TOPIC $partition $i
+      dump_partition "$TS_TOPIC" "$partition" "$i"
     fi
   done
 }
@@ -196,13 +196,13 @@ cluster_meta() {
   get_kafka_setup
   # dump cluster metadata partition across the cluster (including replicas)
   local partition="0"
-  for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
     if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $(($JBOD_DISKS-1))); do
-        dump_partition $CM_TOPIC $partition $i $j
+      for j in $(seq 0 $((JBOD_DISKS-1))); do
+        dump_partition "$CM_TOPIC" "$partition" "$i" "$j"
       done
     else
-      dump_partition $CM_TOPIC $partition $i
+      dump_partition "$CM_TOPIC" "$partition" "$i"
     fi
   done
 }
@@ -242,39 +242,38 @@ Usage: $0 [command] [params]
     --out-path      Output path (default: $OUT_PATH)
     --dry-run       Run without dumping (default: $DRY_RUN)
 "
-readonly PARAMS="${@}"
-readonly PARRAY=($PARAMS)
-i=0; for param in $PARAMS; do
-  i=$(($i+1))
+readonly PARAMS=("$@")
+i=0; for param in "${PARAMS[@]}"; do
+  i=$((i+1))
   case $param in
     --namespace)
-      readonly NAMESPACE=${PARRAY[i]} && export NAMESPACE
+      readonly NAMESPACE=${PARAMS[i]} && export NAMESPACE
       ;;
     --cluster)
-      readonly CLUSTER=${PARRAY[i]} && export CLUSTER
+      readonly CLUSTER=${PARAMS[i]} && export CLUSTER
       ;;
     --topic)
-      readonly TOPIC=${PARRAY[i]} && export TOPIC
+      readonly TOPIC=${PARAMS[i]} && export TOPIC
       ;;
     --partition)
-      readonly PARTITION=${PARRAY[i]} && export PARTITION
-      check_number $PARTITION
+      readonly PARTITION=${PARAMS[i]} && export PARTITION
+      check_number "$PARTITION"
       ;;
     --segment)
-      readonly SEGMENT=${PARRAY[i]} && export SEGMENT
+      readonly SEGMENT=${PARAMS[i]} && export SEGMENT
       ;;
     --group-id)
-      readonly GROUP_ID=${PARRAY[i]} && export GROUP_ID
+      readonly GROUP_ID=${PARAMS[i]} && export GROUP_ID
       ;;
     --txn-id)
-      readonly TXN_ID=${PARRAY[i]} && export TXN_ID
+      readonly TXN_ID=${PARAMS[i]} && export TXN_ID
       ;;
     --tot-part)
-      readonly TOT_PART=${PARRAY[i]} && export TOT_PART
-      check_number $TOT_PART
+      readonly TOT_PART=${PARAMS[i]} && export TOT_PART
+      check_number "$TOT_PART"
       ;;
     --out-path)
-      readonly OUT_PATH=${PARRAY[i]} && export OUT_PATH
+      readonly OUT_PATH=${PARAMS[i]} && export OUT_PATH
       ;;
     --dry-run)
       readonly DRY_RUN=true && export DRY_RUN

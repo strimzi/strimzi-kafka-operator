@@ -5,6 +5,7 @@
 [id='assembly-tuning-config-{context}']
 = Tuning Kafka configuration
 
+[role="_abstract"]
 Use configuration properties to optimize the performance of Kafka brokers, producers and consumers.
 
 A minimum set of configuration properties is required,
@@ -16,7 +17,16 @@ then make incremental changes and further comparisons of metrics until you have 
 
 For more information about Apache Kafka configuration properties, see the {kafkaDoc}.
 
+== Tools that help with tuning
+
+The following tools help with Kafka tuning:
+
+* xref:cruise-control-concepts-str[Cruise Control] generates optimization proposals that you can use to assess and implement a cluster rebalance
+* xref:proc-setting-broker-limits-str[Kafka Static Quota plugin] sets limits on brokers
+* xref:type-Rack-reference[Rack configuration] spreads broker partitions across racks and allows consumers to fetch data from the nearest replica
+
 //Tips to optimize the performance of brokers, and producer and consumer clients
+include::modules/con-managed-broker-config-properties.adoc[leveloffset=+1]
 include::modules/con-broker-config-properties.adoc[leveloffset=+1]
 include::modules/con-producer-config-properties.adoc[leveloffset=+1]
 include::modules/con-consumer-config-properties.adoc[leveloffset=+1]

@@ -24,6 +24,7 @@ public interface Constants {
 
     long TIMEOUT_TEARDOWN = Duration.ofSeconds(10).toMillis();
     long GLOBAL_TIMEOUT = Duration.ofMinutes(5).toMillis();
+    long GLOBAL_TIMEOUT_SHORT = Duration.ofMinutes(2).toMillis();
     long GLOBAL_CMD_CLIENT_TIMEOUT = Duration.ofMinutes(5).toMillis();
     long GLOBAL_STATUS_TIMEOUT = Duration.ofMinutes(3).toMillis();
     long GLOBAL_POLL_INTERVAL = Duration.ofSeconds(1).toMillis();
@@ -60,6 +61,19 @@ public interface Constants {
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
     int GLOBAL_RECONCILIATION_COUNT = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_COUNT);
 
+    long THROTTLING_EXCEPTION_TIMEOUT = Duration.ofMinutes(10).toMillis();
+
+    // sometimes each call `curl -X GET http://localhost:8083/connectors` could take in maximum 13s, and we do 50 calls; meaning (13s * 50)/60 ~= 11m
+    long KAFKA_CONNECTOR_STABILITY_TIMEOUT = Duration.ofMinutes(12).toMillis();
+
+    /**
+     * Scraper pod labels
+     */
+    String SCRAPER_LABEL_KEY = "user-test-app";
+    String SCRAPER_LABEL_VALUE = "scraper";
+
+    String SCRAPER_NAME = "scraper";
+
     /**
      * Constants for Kafka clients labels
      */
@@ -69,7 +83,6 @@ public interface Constants {
     String KAFKA_ADMIN_CLIENT_LABEL_VALUE = "kafka-clients";
     String KAFKA_BRIDGE_CLIENTS_LABEL_VALUE = "kafka-clients";
 
-    String KAFKA_CLIENTS = "kafka-clients";
     String STRIMZI_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
@@ -108,7 +121,7 @@ public interface Constants {
     String STATEFUL_SET = "StatefulSet";
     String POD = "Pod";
     String NETWORK_POLICY = "NetworkPolicy";
-    String JOB = "job";
+    String JOB = "Job";
     String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
 
     /**
@@ -137,7 +150,7 @@ public interface Constants {
     String PATH_TO_KAFKA_CONNECT_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/connect/kafka-connect.yaml";
     String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-connect-metrics.yaml";
     String PATH_TO_KAFKA_BRIDGE_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/bridge/kafka-bridge.yaml";
-    String PATH_TO_KAFKA_REBALANCE_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-rebalance.yaml";
+    String PATH_TO_KAFKA_REBALANCE_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-rebalance-full.yaml";
     String PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/cruise-control/kafka-cruise-control.yaml";
     String PATH_TO_KAFKA_EPHEMERAL_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/kafka/kafka-ephemeral.yaml";
     String PATH_TO_KAFKA_PERSISTENT_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/kafka/kafka-persistent.yaml";
@@ -147,6 +160,13 @@ public interface Constants {
     String PATH_TO_KAFKA_MIRROR_MAKER_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/mirror-maker/kafka-mirror-maker.yaml";
     String PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/mirror-maker/kafka-mirror-maker-2.yaml";
     String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
+
+    /**
+     * Feature gate related constants
+     */
+    String USE_STRIMZI_POD_SET = "+UseStrimziPodSets";
+    String USE_STRIMZI_STATEFULSETS = "-UseStrimziPodSets";
+    String USE_KRAFT_MODE = "+UseKRaft";
 
     /**
      * Default value which allows execution of tests with any tags
@@ -177,6 +197,11 @@ public interface Constants {
      * Tag for smoke tests
      */
     String SMOKE = "smoke";
+
+    /**
+     * Tag for sanity tests
+     */
+    String SANITY = "sanity";
 
     /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
@@ -298,6 +323,8 @@ public interface Constants {
      */
     String OLM = "olm";
 
+    String ISOLATED_TEST = "isolatedtest";
+    String PARALLEL_TEST = "paralleltest";
     /**
      * Tag for tests which executing in parallel namespaces
      */
@@ -312,6 +339,9 @@ public interface Constants {
      */
     String ISOLATED = "Isolated";
     String ST = "ST";
+
+    String TEST_CASE_NAME_LABEL = "test.case";
+    String TEST_SUITE_NAME_LABEL = "test.suite";
 
     /**
      * Cruise Control related parameters
@@ -344,7 +374,6 @@ public interface Constants {
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
     String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
-    String PARALLEL_CLASS_COUNT = "PARALLEL_CLASS_COUNT";
 
     /**
      * Auxiliary variable for cluster operator deployment
@@ -354,20 +383,14 @@ public interface Constants {
     String CLUSTER_KEY = "CLUSTER_NAME";
     String TOPIC_KEY = "TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
-    String KAFKA_CLIENTS_KEY = "KAFKA_CLIENTS_NAME";
+    String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";
     String CONSUMER_KEY = "CONSUMER_NAME";
-    String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
+    String ADMIN_KEY = "ADMIN_NAME";
+    String USER_NAME_KEY = "USER_NAME";
+    String SCRAPER_POD_KEY = "SCRAPER_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
     String KAFKA_SELECTOR = "KAFKA_SELECTOR";
     String ZOOKEEPER_SELECTOR = "ZOOKEEPER_SELECTOR";
-
-    /**
-     * Resource constants for Cluster Operator. In case we execute more than 5 test cases in parallel we at least these configuration
-     * (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
-     */
-    String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "1000m";
-    String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "2048Mi";
-    String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "200m";
-    String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "1024Mi";
+    String ENTITY_OPERATOR_NAME = "ENTITY_OPERATOR_NAME";
 }

@@ -49,7 +49,7 @@ The operations supported by the Kafka Connect REST API are described in the {Apa
 .Switching from using the Kafka Connect API to using KafkaConnectors
 
 You can switch from using the Kafka Connect API to using KafkaConnectors to manage your connectors.
-To make the switch, do the following in the the order shown:
+To make the switch, do the following in the order shown:
 
 . Deploy `KafkaConnector` resources with the configuration to create your connector instances.
 . Enable KafkaConnectors in your Kafka Connect configuration by setting the `strimzi.io/use-connector-resources` annotation to `true`.

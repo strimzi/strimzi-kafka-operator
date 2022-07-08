@@ -109,6 +109,8 @@ m¦OTEL_SERVICE_NAME
 m¦OTEL_EXPORTER_JAEGER_ENDPOINT
 ¦Yes
 ¦The Jaeger gRPC endpoint to connect to.
+[role="_additional-resources"]
+.Additional resources
 
 m¦OTEL_TRACES_EXPORTER
 ¦No

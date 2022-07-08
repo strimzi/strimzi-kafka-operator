@@ -41,7 +41,7 @@ public class Rack implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("A key that matches labels assigned to the Kubernetes cluster nodes. " +
-            "The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.")
+            "The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0.")
     @Example("topology.kubernetes.io/zone")
     @JsonProperty(required = true)
     public String getTopologyKey() {

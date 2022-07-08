@@ -43,7 +43,7 @@ public class NodeUtils {
     public static void drainNode(String nodeName) {
         List<String> cmd = new ArrayList<>();
 
-        if (KubeClusterResource.getInstance().isNotKubernetes()) {
+        if (KubeClusterResource.getInstance().isOpenShift()) {
             cmd.add("adm");
         }
 
@@ -59,7 +59,7 @@ public class NodeUtils {
         LOGGER.info("Set {} schedule {}", node, schedule);
         List<String> cmd = new ArrayList<>();
 
-        if (KubeClusterResource.getInstance().isNotKubernetes()) {
+        if (KubeClusterResource.getInstance().isOpenShift()) {
             cmd.add("adm");
         }
 

@@ -14,16 +14,16 @@ import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
 import io.strimzi.kafka.oauth.server.ServerConfig;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
@@ -32,6 +32,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -41,9 +44,36 @@ import java.util.stream.Collectors;
  * generate the configuration file, it is using the PrintWriter.
  */
 public class KafkaBrokerConfigurationBuilder {
+    private final static String CONTROL_PLANE_LISTENER_NAME = "CONTROLPLANE-9090";
+    private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
+
+    // Names of environment variables placeholders replaced only in the running container
+    //       => needed both for shared and per-broker configuration
+    private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${CERTS_STORE_PASSWORD}";
+    private final static String PLACEHOLDER_RACK_ID = "${STRIMZI_RACK_ID}";
+    private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET = "${STRIMZI_%s_OAUTH_CLIENT_SECRET}";
+
+    // Names of environment variables placeholders replaced only in the running container
+    //       => needed only for shared configuration in StatefulSets
+    private final static String PLACEHOLDER_BROKER_ID = "${STRIMZI_BROKER_ID}";
+    private final static String PLACEHOLDER_ADVERTISED_HOSTNAME = "${STRIMZI_%s_ADVERTISED_HOSTNAME}";
+    private final static String PLACEHOLDER_ADVERTISED_PORT = "${STRIMZI_%s_ADVERTISED_PORT}";
+
+    // Additional replaceables are used in the configuration file for node port addresses. These are used for both
+    // per-broker and shared configurations. Listed here for reference only, they are constructed in the
+    // KafkaAssemblyOperator class on the fly based on the user configuration.
+    // * ${STRIMZI_NODEPORT_DEFAULT_ADDRESS}
+    // * ${STRIMZI_NODEPORT_EXTERNALIP_ADDRESS}
+    // * ${STRIMZI_NODEPORT_EXTERNALDNS_ADDRESS}
+    // * ${STRIMZI_NODEPORT_INTERNALIP_ADDRESS}
+    // * ${STRIMZI_NODEPORT_INTERNALDNS_ADDRESS}
+    // * ${STRIMZI_NODEPORT_HOSTNAME_ADDRESS}
+
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
+
+    private String brokerId = PLACEHOLDER_BROKER_ID;
 
     /**
      * Broker configuration template constructor
@@ -56,17 +86,30 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Adds the broker ID template. The actual broker ID will be replaced in the container from the
-     * {@code STRIMZI_BROKER_ID} environment variable.
+     * Adds the broker ID template. This is used for the shared configuration which used the placeholder environment
+     * variable {@code STRIMZI_BROKER_ID}which replaced with the actual broker ID only in the broker container.
      *
      * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withBrokerId()   {
+        return withBrokerId(PLACEHOLDER_BROKER_ID);
+    }
+
+    /**
+     * Adds the broker ID used in this broker configuration. This is used for the per-broker configuration which
+     * contains directly the broker ID instead of a placeholder.
+     *
+     * @param desiredBrokerId   ID of the broker for which the configuration is generated
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withBrokerId(String desiredBrokerId)   {
+        brokerId = desiredBrokerId;
         printSectionHeader("Broker ID");
-        writer.println("broker.id=${STRIMZI_BROKER_ID}");
+        writer.println("broker.id=" + brokerId);
         // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set
         // We set it here in the configuration explicitly to avoid never ending rolling updates
-        writer.println("node.id=${STRIMZI_BROKER_ID}");
+        writer.println("node.id=" + brokerId);
 
         writer.println();
 
@@ -89,7 +132,11 @@ public class KafkaBrokerConfigurationBuilder {
                                                              String replicationFactor, String minInSyncReplicas)   {
         if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
-            writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics");
+            String metricsTopicName = Optional.ofNullable(cruiseControl.getConfig())
+                    .map(config -> config.get(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue()))
+                    .map(Object::toString)
+                    .orElse(CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
+            writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricsTopicName);
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
             // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
             // to the pods behind the bootstrap one when they are not ready during startup.
@@ -97,10 +144,10 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL");
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12");
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}");
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=" + PLACEHOLDER_CERT_STORE_PASSWORD);
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12");
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}");
+            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=" + PLACEHOLDER_CERT_STORE_PASSWORD);
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true");
             if (numPartitions != null) {
                 writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + numPartitions);
@@ -127,7 +174,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withRackId(Rack rack)   {
         if (rack != null) {
             printSectionHeader("Rack ID");
-            writer.println("broker.rack=${STRIMZI_RACK_ID}");
+            writer.println("broker.rack=" + PLACEHOLDER_RACK_ID);
             writer.println();
         }
 
@@ -143,14 +190,14 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withZookeeper(String clusterName)  {
         printSectionHeader("Zookeeper");
-        writer.println(String.format("zookeeper.connect=%s:%d", ZookeeperCluster.serviceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
+        writer.println(String.format("zookeeper.connect=%s:%d", KafkaResources.zookeeperServiceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
         writer.println("zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty");
         writer.println("zookeeper.ssl.client.enable=true");
         writer.println("zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("zookeeper.ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
         writer.println("zookeeper.ssl.keystore.type=PKCS12");
         writer.println("zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+        writer.println("zookeeper.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
         writer.println("zookeeper.ssl.truststore.type=PKCS12");
         writer.println();
 
@@ -158,7 +205,35 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Configures the listeners based on the listeners enabled by the users in the Kafka CR.
+     * Adds the KRaft configuration for ZooKeeper-less Kafka. This includes the roles of the broker, the controller
+     * listener name and the list of all controllers for quorum voting.
+     *
+     * @param clusterName   Name of the cluster (important for the advertised hostnames)
+     * @param namespace     Namespace (important for generating the advertised hostname)
+     * @param replicas      Number of replicas to configure the KRaft quorum
+     *
+     * @return Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withKRaft(String clusterName, String namespace, int replicas)   {
+        printSectionHeader("KRaft configuration");
+        writer.println("process.roles=broker,controller");
+        writer.println("controller.listener.names=" + CONTROL_PLANE_LISTENER_NAME);
+
+        List<String> quorum = new ArrayList<>(replicas);
+        for (int i = 0; i < replicas; i++)  {
+            quorum.add(i + "@" + DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), KafkaResources.kafkaStatefulSetName(clusterName) + "-" + i) + ":9090");
+        }
+
+        writer.println("controller.quorum.voters=" + String.join(",", quorum));
+
+        writer.println();
+
+        return this;
+    }
+
+    /**
+     * Configures the listeners based on the listeners enabled by the users in the Kafka CR. This is used to generate
+     * the shared configuration which uses placeholders instead of the actual advertised addresses.
      *
      * @param clusterName                   Name of the cluster (important for the advertised hostnames)
      * @param namespace                     Namespace (important for generating the advertised hostname)
@@ -169,28 +244,69 @@ public class KafkaBrokerConfigurationBuilder {
      * @return  Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners, boolean controlPlaneListenerActive)  {
+        return withListeners(clusterName,
+                namespace,
+                kafkaListeners,
+                () -> KafkaResources.kafkaStatefulSetName(clusterName) + "-" + brokerId,
+                (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_HOSTNAME, listenerId),
+                (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_PORT, listenerId),
+                controlPlaneListenerActive, false);
+    }
+
+    /**
+     * Configures the listeners based on the listeners enabled by the users in the Kafka CR. This method is used to
+     * generate the per-broker configuration which uses actual broker IDs and addresses instead of just placeholders.
+     *
+     * @param clusterName                   Name of the cluster (important for the advertised hostnames)
+     * @param namespace                     Namespace (important for generating the advertised hostname)
+     * @param kafkaListeners                The listeners configuration from the Kafka CR
+     * @param podNameProvider               Lambda method which provides the name of the pod for which this configuration
+     *                                      is used. This is needed to configure the replication and control plane listeners.
+     * @param advertisedHostnameProvider    Lambda method which provides the advertised hostname for given listener and
+     *                                      broker. This is used to configure the user-configurable listeners.
+     * @param advertisedPortProvider        Lambda method which provides the advertised port for given listener and broker.
+     *                                      This is used to configure the user-configurable listeners.
+     * @param controlPlaneListenerActive    Activates the control plane listener (the listener is always configured,
+     *                                      but this flag tells Kafka to use it for control plane communication)
+     * @param useKRaft                      Use KRaft mode in the configuration
+     *
+     * @return  Returns the builder instance
+     */
+    public KafkaBrokerConfigurationBuilder withListeners(
+            String clusterName, String namespace,
+            List<GenericKafkaListener> kafkaListeners,
+            Supplier<String> podNameProvider,
+            Function<String, String> advertisedHostnameProvider,
+            Function<String, String> advertisedPortProvider,
+            boolean controlPlaneListenerActive,
+            boolean useKRaft
+    )  {
         List<String> listeners = new ArrayList<>();
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
 
         // Control Plane listener
-        listeners.add("CONTROLPLANE-9090://0.0.0.0:9090");
-        advertisedListeners.add(String.format("CONTROLPLANE-9090://%s:9090",
-                // Pod name constructed to be templatable for each individual ordinal
-                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
-                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
-        ));
-        securityProtocol.add("CONTROLPLANE-9090:SSL");
+        listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
+        if (!useKRaft) {
+            advertisedListeners.add(String.format("%s://%s:9090",
+                    CONTROL_PLANE_LISTENER_NAME,
+                    // Pod name constructed to be templatable for each individual ordinal
+                    DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
+                            podNameProvider.get())
+            ));
+        }
+        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
         configureControlPlaneListener();
 
         // Replication listener
-        listeners.add("REPLICATION-9091://0.0.0.0:9091");
-        advertisedListeners.add(String.format("REPLICATION-9091://%s:9091",
+        listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
+        advertisedListeners.add(String.format("%s://%s:9091",
+                REPLICATION_LISTENER_NAME,
                 // Pod name constructed to be templatable for each individual ordinal
                 DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
-                        KafkaResources.kafkaStatefulSetName(clusterName) + "-${STRIMZI_BROKER_ID}")
+                        podNameProvider.get())
         ));
-        securityProtocol.add("REPLICATION-9091:SSL");
+        securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
         configureReplicationListener();
 
         for (GenericKafkaListener listener : kafkaListeners) {
@@ -201,7 +317,7 @@ public class KafkaBrokerConfigurationBuilder {
             printSectionHeader("Listener configuration: " + listenerName);
 
             listeners.add(listenerName + "://0.0.0.0:" + port);
-            advertisedListeners.add(String.format("%s://${STRIMZI_%s_ADVERTISED_HOSTNAME}:${STRIMZI_%s_ADVERTISED_PORT}", listenerName, envVarListenerName, envVarListenerName));
+            advertisedListeners.add(String.format("%s://%s:%s", listenerName, advertisedHostnameProvider.apply(envVarListenerName), advertisedPortProvider.apply(envVarListenerName)));
             configureAuthentication(listenerName, securityProtocol, listener.isTls(), listener.getAuth());
             configureListener(listenerName, listener.getConfiguration());
 
@@ -224,11 +340,11 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
 
-        if (controlPlaneListenerActive) {
-            writer.println("control.plane.listener.name=CONTROLPLANE-9090");
+        if (controlPlaneListenerActive && !useKRaft) {
+            writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
-        writer.println("inter.broker.listener.name=REPLICATION-9091");
+        writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
         writer.println("sasl.enabled.mechanisms=");
         writer.println("ssl.secure.random.implementation=SHA1PRNG");
         writer.println("ssl.endpoint.identification.algorithm=HTTPS");
@@ -252,14 +368,16 @@ public class KafkaBrokerConfigurationBuilder {
      * rather static, it always uses TLS with TLS client auth.
      */
     private void configureControlPlaneListener() {
+        final String controlPlaneListenerName = CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
+
         printSectionHeader("Control Plane listener");
-        writer.println("listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
-        writer.println("listener.name.controlplane-9090.ssl.keystore.type=PKCS12");
-        writer.println("listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("listener.name.controlplane-9090.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
-        writer.println("listener.name.controlplane-9090.ssl.truststore.type=PKCS12");
-        writer.println("listener.name.controlplane-9090.ssl.client.auth=required");
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.keystore.type=PKCS12");
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.truststore.type=PKCS12");
+        writer.println("listener.name." + controlPlaneListenerName + ".ssl.client.auth=required");
         writer.println();
     }
 
@@ -268,14 +386,16 @@ public class KafkaBrokerConfigurationBuilder {
      * rather static, it always uses TLS with TLS client auth.
      */
     private void configureReplicationListener() {
+        final String replicationListenerName = REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
+
         printSectionHeader("Replication listener");
-        writer.println("listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("listener.name.replication-9091.ssl.keystore.password=${CERTS_STORE_PASSWORD}");
-        writer.println("listener.name.replication-9091.ssl.keystore.type=PKCS12");
-        writer.println("listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("listener.name.replication-9091.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
-        writer.println("listener.name.replication-9091.ssl.truststore.type=PKCS12");
-        writer.println("listener.name.replication-9091.ssl.client.auth=required");
+        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.type=PKCS12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.type=PKCS12");
+        writer.println("listener.name." + replicationListenerName + ".ssl.client.auth=required");
         writer.println();
     }
 
@@ -314,7 +434,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(String.format("listener.name.%s.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12", listenerNameInProperty));
         }
 
-        writer.println(String.format("listener.name.%s.ssl.keystore.password=${CERTS_STORE_PASSWORD}", listenerNameInProperty));
+        writer.println(String.format("listener.name.%s.ssl.keystore.password=%s", listenerNameInProperty, PLACEHOLDER_CERT_STORE_PASSWORD));
         writer.println(String.format("listener.name.%s.ssl.keystore.type=PKCS12", listenerNameInProperty));
 
         writer.println();
@@ -341,12 +461,12 @@ public class KafkaBrokerConfigurationBuilder {
             options.addAll(getOAuthOptions(oauth));
 
             if (oauth.getClientSecret() != null)    {
-                options.add("oauth.client.secret=\"${STRIMZI_" + listenerNameInEnvVar + "_OAUTH_CLIENT_SECRET}\"");
+                options.add(String.format("oauth.client.secret=\"" + PLACEHOLDER_OAUTH_CLIENT_SECRET + "\"", listenerNameInEnvVar));
             }
 
             if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
                 options.add(String.format("oauth.ssl.truststore.location=\"/tmp/kafka/oauth-%s.truststore.p12\"", listenerNameInProperty));
-                options.add("oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\"");
+                options.add("oauth.ssl.truststore.password=\"" + PLACEHOLDER_CERT_STORE_PASSWORD + "\"");
                 options.add("oauth.ssl.truststore.type=\"PKCS12\"");
             }
 
@@ -384,7 +504,7 @@ public class KafkaBrokerConfigurationBuilder {
 
             writer.println(String.format("listener.name.%s.ssl.client.auth=required", listenerNameInProperty));
             writer.println(String.format("listener.name.%s.ssl.truststore.location=/tmp/kafka/clients.truststore.p12", listenerNameInProperty));
-            writer.println(String.format("listener.name.%s.ssl.truststore.password=${CERTS_STORE_PASSWORD}", listenerNameInProperty));
+            writer.println(String.format("listener.name.%s.ssl.truststore.password=%s", listenerNameInProperty, PLACEHOLDER_CERT_STORE_PASSWORD));
             writer.println(String.format("listener.name.%s.ssl.truststore.type=PKCS12", listenerNameInProperty));
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationCustom) {
@@ -442,6 +562,8 @@ public class KafkaBrokerConfigurationBuilder {
         addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
         addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
         addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
+        addOption(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
+        addOption(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
         addOption(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
@@ -450,6 +572,12 @@ public class KafkaBrokerConfigurationBuilder {
             addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
         }
 
+        if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, String.valueOf(oauth.getConnectTimeoutSeconds()));
+        }
+        if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
+        }
         return options;
     }
 
@@ -474,10 +602,11 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName   The name of the cluster (used to configure the replication super users)
      * @param authorization The authorization configuration from the Kafka CR
+     * @param useKRaft      Use KRaft mode in the configuration
      *
      * @return  Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization)  {
+    public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization, boolean useKRaft)  {
         if (authorization != null) {
             List<String> superUsers = new ArrayList<>();
 
@@ -491,7 +620,7 @@ public class KafkaBrokerConfigurationBuilder {
             superUsers.add(String.format("User:CN=%s,O=io.strimzi", "cluster-operator"));
 
             printSectionHeader("Authorization");
-            configureAuthorization(clusterName, superUsers, authorization);
+            configureAuthorization(clusterName, superUsers, authorization, useKRaft);
             writer.println("super.users=" + String.join(";", superUsers));
             writer.println();
         }
@@ -505,11 +634,18 @@ public class KafkaBrokerConfigurationBuilder {
      * @param clusterName Name of the cluster
      * @param superUsers Super users list who have all the rights on the cluster
      * @param authorization The authorization configuration from the Kafka CR
+     * @param useKRaft      Use KRaft mode in the configuration
      */
-    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization) {
+    private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization, boolean useKRaft) {
         if (KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
             KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
-            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
+
+            if (useKRaft) {
+                writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
+                writer.println("early.start.listeners=" + String.join(",", List.of(CONTROL_PLANE_LISTENER_NAME, REPLICATION_LISTENER_NAME)));
+            } else {
+                writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
+            }
 
             // User configured super users
             if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
@@ -538,11 +674,13 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
             addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", keycloakAuthz.getGrantsRefreshPeriodSeconds());
             addOption(writer, "strimzi.authorization.grants.refresh.pool.size", keycloakAuthz.getGrantsRefreshPoolSize());
+            addOption(writer, "strimzi.authorization.connect.timeout.seconds", keycloakAuthz.getConnectTimeoutSeconds());
+            addOption(writer, "strimzi.authorization.read.timeout.seconds", keycloakAuthz.getReadTimeoutSeconds());
             writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {
                 writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
-                writer.println("strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}");
+                writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
                 writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
                 writer.println("strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG");
                 String endpointIdentificationAlgorithm = keycloakAuthz.isDisableTlsHostnameVerification() ? "" : "HTTPS";
@@ -592,7 +730,7 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withLogDirs(List<VolumeMount> mounts)  {
         // We take all the data mount points and add the broker specific path
         String logDirs = mounts.stream()
-                .map(volumeMount -> volumeMount.getMountPath() + "/kafka-log${STRIMZI_BROKER_ID}").collect(Collectors.joining(","));
+                .map(volumeMount -> volumeMount.getMountPath() + "/kafka-log" + brokerId).collect(Collectors.joining(","));
 
         printSectionHeader("Kafka message logs configuration");
         writer.println("log.dirs=" + logDirs);

@@ -15,7 +15,7 @@ You can install Strimzi on Kubernetes {KubernetesVersion} in three ways.
 |Description
 
 |xref:deploy-tasks_str[Installation artifacts (YAML files)]
-a|Download the release artifacts from {ReleaseDownload}.
+a|Download the release artifacts from the {ReleaseDownload}.
 
 Download the `strimzi-_<version>_.zip` or `strimzi-_<version>_.tar.gz` archive file.
 The archive file contains installation artifacts and example configuration files.

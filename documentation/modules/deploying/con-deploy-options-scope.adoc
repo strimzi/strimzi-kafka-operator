@@ -31,3 +31,14 @@ Strimzi supports additional deployment options to monitor your deployment.
 * Extract metrics and monitor Kafka components by xref:assembly-metrics-setup-str[deploying Prometheus and Grafana with your Kafka cluster].
 * Extract additional metrics, particularly related to monitoring consumer lag, by xref:proc-metrics-kafka-deploy-options-{context}[deploying Kafka Exporter with your Kafka cluster].
 * Track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^].
+
+== CPU and memory resource limits and requests
+
+By default, the Strimzi Cluster Operator does not specify requests and limits for CPU and memory resources for any operands it deploys.
+
+Having sufficient resources is important for applications like Kafka to be stable and deliver good performance.
+
+The right amount of resources you should use depends on the specific requirements and use-cases.
+
+You should consider configuring the CPU and memory resources.
+You can set resource requests and limits for each container in the link:{BookURLUsing}#con-common-configuration-resources-reference[Strimzi custom resources].
