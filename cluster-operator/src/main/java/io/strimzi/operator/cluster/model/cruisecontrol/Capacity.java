@@ -125,7 +125,7 @@ import java.util.TreeMap;
  */
 public class Capacity {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Capacity.class.getName());
-    protected final Reconciliation reconciliation;
+    private final Reconciliation reconciliation;
     private final TreeMap<Integer, BrokerCapacity> capacityEntries;
 
     public static final String CAPACITIES_KEY = "brokerCapacities";
