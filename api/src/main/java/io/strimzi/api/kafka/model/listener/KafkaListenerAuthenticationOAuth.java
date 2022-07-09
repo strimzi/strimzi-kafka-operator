@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.listener;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Constants;
@@ -13,7 +14,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
@@ -194,7 +194,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
             "The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. " +
             "Defaults to 300 seconds.")
     @Minimum(1)
-    @DefaultValue("300")
+    @JsonProperty(defaultValue = "300")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getJwksRefreshSeconds() {
         return jwksRefreshSeconds;
@@ -206,7 +206,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.")
     @Minimum(0)
-    @DefaultValue("1")
+    @JsonProperty(defaultValue = "1")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getJwksMinRefreshPauseSeconds() {
         return jwksMinRefreshPauseSeconds;
@@ -220,7 +220,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
             "The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. " +
             "Defaults to 360 seconds.")
     @Minimum(1)
-    @DefaultValue("360")
+    @JsonProperty(defaultValue = "360")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getJwksExpirySeconds() {
         return jwksExpirySeconds;

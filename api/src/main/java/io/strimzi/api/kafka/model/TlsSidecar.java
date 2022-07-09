@@ -5,10 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashMap;
@@ -37,7 +37,7 @@ public class TlsSidecar extends Sidecar {
 
     @Description("The log level for the TLS sidecar. " +
             "Default value is `notice`.")
-    @DefaultValue("notice")
+    @JsonProperty(defaultValue = "notice")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public TlsSidecarLogLevel getLogLevel() {
         return logLevel;

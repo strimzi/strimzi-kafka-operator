@@ -16,7 +16,6 @@ import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 @DescriptionFile
@@ -55,7 +54,7 @@ public class KafkaBridgeSpec extends Spec {
 
     @Description("The number of pods in the `Deployment`.")
     @Minimum(0)
-    @DefaultValue("1")
+    @JsonProperty(defaultValue = "1")
     public int getReplicas() {
         return replicas;
     }

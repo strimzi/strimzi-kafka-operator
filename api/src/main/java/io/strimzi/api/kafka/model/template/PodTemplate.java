@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.HostAlias;
@@ -20,7 +21,6 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -97,7 +97,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
             "You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. " +
             "Defaults to 30 seconds.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-    @DefaultValue("30")
+    @JsonProperty(defaultValue = "30")
     @Minimum(0)
     public int getTerminationGracePeriodSeconds() {
         return terminationGracePeriodSeconds;
@@ -185,7 +185,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     }
 
     @Pattern(Constants.MEMORY_REGEX)
-    @DefaultValue("5Mi")
+    @JsonProperty(defaultValue = "5Mi")
     @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
             "Default value is `5Mi`.")
     public String getTmpDirSizeLimit() {

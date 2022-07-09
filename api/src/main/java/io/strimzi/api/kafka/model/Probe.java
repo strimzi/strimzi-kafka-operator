@@ -5,10 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -45,7 +45,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
 
     @Description("The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.")
     @Minimum(0)
-    @DefaultValue("15")
+    @JsonProperty(defaultValue = "15")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getInitialDelaySeconds() {
         return initialDelaySeconds;
@@ -57,7 +57,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
 
     @Description("The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.")
     @Minimum(1)
-    @DefaultValue("5")
+    @JsonProperty(defaultValue = "5")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public int getTimeoutSeconds() {
         return timeoutSeconds;
@@ -69,7 +69,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
 
     @Description("How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.")
     @Minimum(1)
-    @DefaultValue("10")
+    @JsonProperty(defaultValue = "10")
     public Integer getPeriodSeconds() {
         return periodSeconds;
     }
@@ -80,7 +80,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
 
     @Description("Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.")
     @Minimum(1)
-    @DefaultValue("1")
+    @JsonProperty(defaultValue = "1")
     public Integer getSuccessThreshold() {
         return successThreshold;
     }
@@ -91,7 +91,7 @@ public class Probe implements UnknownPropertyPreserving, Serializable {
 
     @Description("Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.")
     @Minimum(1)
-    @DefaultValue("3")
+    @JsonProperty(defaultValue = "3")
     public Integer getFailureThreshold() {
         return failureThreshold;
     }

@@ -5,12 +5,12 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.util.List;
@@ -114,7 +114,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     @Description("The time between two consecutive grants refresh runs in seconds. The default value is 60.")
     @Minimum(0)
-    @DefaultValue("60")
+    @JsonProperty(defaultValue = "60")
     public Integer getGrantsRefreshPeriodSeconds() {
         return grantsRefreshPeriodSeconds;
     }
@@ -126,7 +126,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     @Description("The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism," +
             " so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.")
     @Minimum(1)
-    @DefaultValue("5")
+    @JsonProperty(defaultValue = "5")
     public Integer getGrantsRefreshPoolSize() {
         return grantsRefreshPoolSize;
     }
@@ -149,7 +149,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     @Description("The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.")
     @Minimum(1)
-    @DefaultValue("60")
+    @JsonProperty(defaultValue = "60")
     public Integer getConnectTimeoutSeconds() {
         return connectTimeoutSeconds;
     }
@@ -160,7 +160,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     @Description("The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.")
     @Minimum(1)
-    @DefaultValue("60")
+    @JsonProperty(defaultValue = "60")
     public Integer getReadTimeoutSeconds() {
         return readTimeoutSeconds;
     }

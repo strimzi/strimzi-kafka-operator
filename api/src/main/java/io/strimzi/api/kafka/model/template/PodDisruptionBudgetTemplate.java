@@ -5,6 +5,7 @@
 package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
@@ -12,7 +13,6 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -52,7 +52,7 @@ public class PodDisruptionBudgetTemplate implements Serializable, UnknownPropert
             "Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. " +
             "Defaults to 1.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DefaultValue("1")
+    @JsonProperty(defaultValue = "1")
     @Minimum(0)
     public int getMaxUnavailable() {
         return maxUnavailable;
