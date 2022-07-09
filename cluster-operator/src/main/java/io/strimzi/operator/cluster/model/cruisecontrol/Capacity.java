@@ -125,7 +125,7 @@ import java.util.TreeMap;
  */
 public class Capacity {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Capacity.class.getName());
-
+    protected final Reconciliation reconciliation;
     private final TreeMap<Integer, BrokerCapacity> capacityEntries;
 
     public static final String CAPACITIES_KEY = "brokerCapacities";
@@ -165,10 +165,11 @@ public class Capacity {
     }
 
     public Capacity(Reconciliation reconciliation, KafkaSpec spec, Storage storage) {
+        this.reconciliation = reconciliation;
         this.capacityEntries = new TreeMap<>();
         this.storage = storage;
 
-        processCapacityEntries(reconciliation, spec);
+        processCapacityEntries(spec);
     }
 
     private static Integer getResourceRequirement(ResourceRequirements resources, ResourceRequirementType requirementType) {
@@ -193,10 +194,10 @@ public class Capacity {
         return null;
     }
 
-    public static CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
+    public CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
         if (cpuBasedOnRequirements != null) {
             if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
-                LOGGER.warnOp("Ignoring CPU capacity override settings since they are automatically set to resource limits");
+                LOGGER.warnCr(reconciliation, "Ignoring CPU capacity override settings since they are automatically set to resource limits");
             }
             return new CpuCapacity(cpuBasedOnRequirements);
         } else if (override != null && override.getCpu() != null) {
@@ -307,7 +308,7 @@ public class Capacity {
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
     }
 
-    private void processCapacityEntries(Reconciliation reconciliation, KafkaSpec spec) {
+    private void processCapacityEntries(KafkaSpec spec) {
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity = spec.getCruiseControl().getBrokerCapacity();
         String cpuBasedOnRequirements = getCpuBasedOnRequirements(spec.getKafka().getResources());
         int replicas = spec.getKafka().getReplicas();
@@ -342,7 +343,7 @@ public class Capacity {
             // Override broker entries
             if (overrides != null) {
                 if (overrides.isEmpty()) {
-                    LOGGER.warnOp("Ignoring empty overrides list");
+                    LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
                 } else {
                     for (BrokerCapacityOverride override : overrides) {
                         List<Integer> ids = override.getBrokers();
@@ -351,7 +352,7 @@ public class Capacity {
                         outboundNetwork = processOutboundNetwork(brokerCapacity, override);
                         for (int id : ids) {
                             if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
-                                LOGGER.warnOp("Ignoring broker capacity override with illegal broker id -1.");
+                                LOGGER.warnCr(reconciliation, "Ignoring broker capacity override with illegal broker id -1.");
                             } else {
                                 if (capacityEntries.containsKey(id)) {
                                     if (overrideIds.add(id)) {
@@ -360,7 +361,7 @@ public class Capacity {
                                         brokerCapacityEntry.setInboundNetwork(inboundNetwork);
                                         brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
                                     } else {
-                                        LOGGER.warnOp("Duplicate broker id %d found in overrides, using first occurrence.", id);
+                                        LOGGER.warnCr(reconciliation, "Duplicate broker id %d found in overrides, using first occurrence.", id);
                                     }
                                 } else {
                                     BrokerCapacity brokerCapacityEntry = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
