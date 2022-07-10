@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -50,7 +49,7 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
             "Currently the only supported type is `allow`. " +
             "ACL rules with type `allow` are used to allow user to execute the specified operations. " +
             "Default value is `allow`.")
-    @DefaultValue("allow")
+    @JsonProperty(defaultValue = "allow")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public AclRuleType getType() {
         return type;
@@ -71,7 +70,7 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
     }
 
     @Description("The host from which the action described in the ACL rule is allowed or denied.")
-    @DefaultValue("*")
+    @JsonProperty(defaultValue = "*")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getHost() {
         return host;

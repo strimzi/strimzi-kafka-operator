@@ -5,12 +5,12 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
@@ -46,7 +46,7 @@ public class KafkaBridgeHttpConfig implements UnknownPropertyPreserving, Seriali
     }
 
     @Description("The port which is the server listening on.")
-    @DefaultValue("8080")
+    @JsonProperty(defaultValue = "8080")
     @Minimum(1023)
     public int getPort() {
         return port;

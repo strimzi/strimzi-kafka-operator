@@ -5,10 +5,10 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 /**
@@ -41,7 +41,7 @@ public class AclRuleTopicResource extends AclRuleResource {
             "With `literal` pattern type, the resource field will be used as a definition of a full topic name. " +
             "With `prefix` pattern type, the resource name will be used only as a prefix. " +
             "Default value is `literal`.")
-    @DefaultValue("literal")
+    @JsonProperty(defaultValue = "literal")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public AclResourcePatternType getPatternType() {
         return patternType;

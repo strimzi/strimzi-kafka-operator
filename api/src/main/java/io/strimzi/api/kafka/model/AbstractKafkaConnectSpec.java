@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 @Buildable(
@@ -48,7 +47,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     private Rack rack;
 
     @Description("The number of pods in the Kafka Connect group.")
-    @DefaultValue("3")
+    @JsonProperty(defaultValue = "3")
     public Integer getReplicas() {
         return replicas;
     }

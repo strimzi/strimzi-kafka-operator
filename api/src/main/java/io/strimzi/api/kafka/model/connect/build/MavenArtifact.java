@@ -5,11 +5,11 @@
 package io.strimzi.api.kafka.model.connect.build;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
-import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
 
 /**
@@ -66,7 +66,7 @@ public class MavenArtifact extends Artifact {
     }
 
     @Description("Maven repository to download the artifact from. Applicable to the `maven` artifact type only.")
-    @DefaultValue("https://repo1.maven.org/maven2/")
+    @JsonProperty(defaultValue = "https://repo1.maven.org/maven2/")
     public String getRepository() {
         return repository;
     }
