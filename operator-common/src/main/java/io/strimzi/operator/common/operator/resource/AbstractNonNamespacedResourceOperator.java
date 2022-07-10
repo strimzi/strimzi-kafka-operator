@@ -37,12 +37,12 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList<T>, R extends Resource<T>> {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNonNamespacedResourceOperator.class);
 
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/status)$");
 
-    protected final ReconciliationLogger log = ReconciliationLogger.create(getClass());
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
@@ -98,19 +98,19 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 T current = operation().withName(name).get();
                 if (desired != null) {
                     if (current == null) {
-                        log.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
+                        LOGGER.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
                         internalCreate(reconciliation, name, desired).onComplete(future);
                     } else {
-                        log.debugCr(reconciliation, "{} {} already exists, patching it", resourceKind, name);
+                        LOGGER.debugCr(reconciliation, "{} {} already exists, patching it", resourceKind, name);
                         internalPatch(reconciliation, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
-                        log.debugCr(reconciliation, "{} {} exist, deleting it", resourceKind, name);
+                        LOGGER.debugCr(reconciliation, "{} {} exist, deleting it", resourceKind, name);
                         internalDelete(reconciliation, name).onComplete(future);
                     } else {
-                        log.debugCr(reconciliation, "{} {} does not exist, noop", resourceKind, name);
+                        LOGGER.debugCr(reconciliation, "{} {} does not exist, noop", resourceKind, name);
                         future.complete(ReconcileResult.noop(null));
                     }
                 }
@@ -146,7 +146,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             "observe deletion of " + resourceKind + " " + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
-                    log.debugCr(reconciliation, "{} {} has been deleted", resourceKind, name);
+                    LOGGER.debugCr(reconciliation, "{} {} has been deleted", resourceKind, name);
                     return ReconcileResult.deleted();
                 } else {
                     return null;
@@ -154,7 +154,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             },
             resource -> {
                 if (resource == null) {
-                    log.debugCr(reconciliation, "{} {} has been already deleted in pre-check", resourceKind, name);
+                    LOGGER.debugCr(reconciliation, "{} {} has been already deleted in pre-check", resourceKind, name);
                     return ReconcileResult.deleted();
                 } else {
                     return null;
@@ -213,15 +213,15 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
                 T result = operation().withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).patch(desired);
-                log.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
+                LOGGER.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
                 return Future.succeededFuture(wasChanged(current, result) ?
                         ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
-                log.debugCr(reconciliation, "Caught exception while patching {} {}", resourceKind, name, e);
+                LOGGER.debugCr(reconciliation, "Caught exception while patching {} {}", resourceKind, name, e);
                 return Future.failedFuture(e);
             }
         } else {
-            log.debugCr(reconciliation, "{} {} did not changed and doesn't need patching", resourceKind, name);
+            LOGGER.debugCr(reconciliation, "{} {} did not changed and doesn't need patching", resourceKind, name);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
     }
@@ -244,10 +244,10 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().withName(name).create(desired));
-            log.debugCr(reconciliation, "{} {} has been created", resourceKind, name);
+            LOGGER.debugCr(reconciliation, "{} {} has been created", resourceKind, name);
             return Future.succeededFuture(result);
         } catch (Exception e) {
-            log.debugCr(reconciliation, "Caught exception while creating {} {}", resourceKind, name, e);
+            LOGGER.debugCr(reconciliation, "Caught exception while creating {} {}", resourceKind, name, e);
             return Future.failedFuture(e);
         }
     }
