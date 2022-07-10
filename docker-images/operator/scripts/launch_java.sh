@@ -41,6 +41,9 @@ JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 # Deny illegal access option is supported only on Java 9 and higher
 JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
 
+# Exit when we run out of heap memory
+JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError"
+
 # Default memory options used when the user didn't configured any of these options, we set the defaults
 if [[ ! -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
   JAVA_OPTS="${JAVA_OPTS} -XX:MinRAMPercentage=10 -XX:MaxRAMPercentage=20 -XX:InitialRAMPercentage=10"
