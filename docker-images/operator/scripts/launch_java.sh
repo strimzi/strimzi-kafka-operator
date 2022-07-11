@@ -32,12 +32,11 @@ calc_max_memory() {
 
 check_cgroups_v2() {
   local mem_file="$1"
-  local num_pattern='^[0-9]+([.][0-9]+)?$'
 
   local calc_cgroups_mem=false
   if [[ -r "${mem_file}" ]]; then
     value=$(cat "${mem_file}")
-    if [[ $value =~ $num_pattern ]]; then
+    if [[ $value != "max" ]]; then
       calc_cgroups_mem=true
     fi
   fi
