@@ -7,7 +7,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.29.0
+defaultImageTag: 0.30.0
 
 image:
   registry: ""
@@ -41,15 +41,9 @@ priorityClassName: ""
 podSecurityContext: {}
 securityContext: {}
 
-# Docker images that operator uses to provision various components of Strimzi.  To use your own registry prefix the
+# Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
 # repository name with your registry URL.
-# Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
-zookeeper:
-  image:
-    registry: ""
-    repository: ""
-    name: kafka
-    tagPrefix: ""
+# Ex) repository: registry.xyzcorp.com/strimzi/kafka
 kafka:
   image:
     registry: ""
@@ -97,7 +91,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.21.5
+    tag: 0.21.6
 kafkaExporter:
   image:
     registry: ""

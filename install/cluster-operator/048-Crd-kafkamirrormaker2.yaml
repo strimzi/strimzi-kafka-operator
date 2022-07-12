@@ -446,7 +446,7 @@ spec:
                   topologyKey:
                     type: string
                     example: topology.kubernetes.io/zone
-                    description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
+                    description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0."
                 required:
                 - topologyKey
                 description: Configuration of the node label which will be used as the `client.rack` consumer configuration.
