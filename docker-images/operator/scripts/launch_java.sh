@@ -30,20 +30,6 @@ calc_max_memory() {
   calc_maximum_size_opt "${mem_limit}" "20"
 }
 
-check_cgroups_v2() {
-  local mem_file="$1"
-
-  local calc_cgroups_mem=false
-  if [[ -r "${mem_file}" ]]; then
-    value=$(cat "${mem_file}")
-    if [[ $value != "max" ]]; then
-      calc_cgroups_mem=true
-    fi
-  fi
-
-  echo $calc_cgroups_mem
-}
-
 export MALLOC_ARENA_MAX=2
 
 # Make sure that we use /dev/urandom
@@ -58,16 +44,25 @@ JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
 # Exit when we run out of heap memory
 JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError"
 
-calc_cgroups_mem=$(check_cgroups_v2 "${mem_file_cgroups_v2}")
+DEFAULT_MEMORY_OPTIONS="-XX:MinRAMPercentage=10 -XX:MaxRAMPercentage=20 -XX:InitialRAMPercentage=10"
 
 # Default memory options used when the user didn't configured any of these options, we set the defaults
-if [[ $calc_cgroups_mem = false && "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
-  JAVA_OPTS="${JAVA_OPTS} -XX:MinRAMPercentage=10 -XX:MaxRAMPercentage=20 -XX:InitialRAMPercentage=10"
-elif [[ $calc_cgroups_mem = true && "$JAVA_OPTS" != *"Xmx"* ]]; then
+if [[ ! -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
+  JAVA_OPTS="${JAVA_OPTS} ${DEFAULT_MEMORY_OPTIONS}"
+elif [[ -r "${mem_file_cgroups_v2}" && "$JAVA_OPTS" != *"Xmx"* ]]; then
   # This workaround for cgroups v2 must be removed once java version used by the operator is updated.
   # https://developers.redhat.com/articles/2022/04/19/java-17-whats-new-openjdks-container-awareness#
-  # Calculate -Xmx java option
-  JAVA_OPTS="${JAVA_OPTS} $(calc_max_memory)"
+
+  # Check whether /sys/fs/cgroup/memory.max contains 'max' or a number
+  value=$(cat "${mem_file_cgroups_v2}")
+
+  if [[ $value != "max" ]]; then
+    # Calculate -Xmx java option
+    JAVA_OPTS="${JAVA_OPTS} $(calc_max_memory)"
+  else
+    # Because /sys/fs/cgroup/memory.max contains 'max', pick defaults
+    JAVA_OPTS="${JAVA_OPTS} ${DEFAULT_MEMORY_OPTIONS}"
+  fi
 fi
 
 # Disable FIPS if needed
