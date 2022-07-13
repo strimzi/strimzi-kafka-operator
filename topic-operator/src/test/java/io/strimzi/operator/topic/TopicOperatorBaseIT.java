@@ -106,6 +106,9 @@ public abstract class TopicOperatorBaseIT {
         } catch (NoClusterException e) {
             assumeTrue(false, e.getMessage());
         }
+        if (kubeClient().getClient().namespaces().withName(NAMESPACE).get() != null) {
+            cmdKubeClient().deleteNamespace(NAMESPACE);
+        }
         cmdKubeClient().createNamespace(NAMESPACE);
         oldNamespace = cluster.setNamespace(NAMESPACE);
         LOGGER.info("#### Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
@@ -282,7 +285,7 @@ public abstract class TopicOperatorBaseIT {
                                     "True".equals(condition.getStatus()))) {
                         return true;
                     } else {
-                        LOGGER.info(conditions);
+                        LOGGER.info("{}: {}", kafkaTopic, conditions);
                     }
                 }
             } else {

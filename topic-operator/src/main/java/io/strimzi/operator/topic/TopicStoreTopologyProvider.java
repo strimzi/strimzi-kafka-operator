@@ -87,7 +87,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
      * In the case of invalid store update result is not-null.
      * Dispatcher applies the result to a waiting callback CompletionStage.
      */
-    private static class TopicCommandTransformer implements Processor<String, TopicCommand, Void, Void> {
+    public static class TopicCommandTransformer implements Processor<String, TopicCommand, Void, Void> {
         private final String topicStoreName;
         private final ForeachAction<? super String, ? super Integer> dispatcher;
 
@@ -104,7 +104,12 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
         @Override
         @SuppressWarnings("unchecked")
         public void init(ProcessorContext context) {
-            store = (KeyValueStore<String, Topic>) context.getStateStore(topicStoreName);
+            withStore((KeyValueStore<String, Topic>) context.getStateStore(topicStoreName));
+        }
+
+        public TopicCommandTransformer withStore(KeyValueStore<String, Topic> store) {
+            this.store = store;
+            return this;
         }
 
         @Override

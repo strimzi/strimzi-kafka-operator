@@ -6,9 +6,10 @@ package io.strimzi.operator.topic;
 
 import io.apicurio.registry.utils.kafka.AsyncProducer;
 import io.apicurio.registry.utils.kafka.ProducerActions;
-import io.apicurio.registry.utils.streams.diservice.AsyncBiFunctionService;
 import io.apicurio.registry.utils.streams.ext.ForeachActionDispatcher;
-import io.apicurio.registry.utils.streams.ext.LoggingStateRestoreListener;
+import io.strimzi.operator.topic.stores.SelfManagedPersistentStore;
+import io.strimzi.operator.topic.stores.SelfManagedPersistentStore.SelfManagedKeyValueStore;
+import io.vertx.core.Future;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
@@ -16,8 +17,6 @@ import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.Topology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutionException;
 
 import static java.lang.Integer.parseInt;
 
@@ -46,7 +45,7 @@ public class KafkaStreamsTopicStoreService {
     public CompletionStage<TopicStore> start(Config config, Properties kafkaProperties) {
         String storeTopic = config.get(Config.STORE_TOPIC);
         String storeName = config.get(Config.STORE_NAME);
-
+        LOGGER.info("XXX {}", kafkaProperties);
         // check if entry topic has the right configuration
         Admin admin = Admin.create(kafkaProperties);
         LOGGER.info("Starting ...");
@@ -60,8 +59,8 @@ public class KafkaStreamsTopicStoreService {
                         return createNewStoreTopic(storeTopic, admin, c);
                     }
                 })
-                .thenCompose(v -> createKafkaStreams(config, kafkaProperties, storeTopic, storeName))
-                .thenApply(serviceImpl -> createKafkaTopicStore(config, kafkaProperties, storeTopic, serviceImpl))
+//                .thenCompose(v -> createKafkaStreams(config, kafkaProperties, storeTopic, storeName))
+                .thenApply(i -> createKafkaTopicStore(config, kafkaProperties, storeTopic))
                 .whenCompleteAsync((v, t) -> {
                     // use another thread to stop, if needed
                     try {
@@ -77,8 +76,8 @@ public class KafkaStreamsTopicStoreService {
                 });
     }
 
-    private TopicStore createKafkaTopicStore(Config config, Properties kafkaProperties, String storeTopic, AsyncBiFunctionService.WithSerdes<String, String, Integer> serviceImpl) {
-        LOGGER.info("Creating topic store ...");
+    private TopicStore createKafkaTopicStore(Config config, Properties kafkaProperties, String storeTopic) {
+        LOGGER.info("Creating topic store ... {}", kafkaProperties);
         ProducerActions<String, TopicCommand> producer = new AsyncProducer<>(
                 kafkaProperties,
             Serdes.String().serializer(),
@@ -86,50 +85,59 @@ public class KafkaStreamsTopicStoreService {
         );
         closeables.add(producer);
 
-        StoreAndServiceFactory factory = new LocalStoreAndServiceFactory();
-        StoreAndServiceFactory.StoreContext sc = factory.create(config, kafkaProperties, streams, serviceImpl, closeables);
-
-        this.store = new KafkaStreamsTopicStore(sc.getStore(), storeTopic, producer, sc.getService());
-        return this.store;
-    }
-
-    private CompletableFuture<AsyncBiFunctionService.WithSerdes<String, String, Integer>> createKafkaStreams(Config config, Properties kafkaProperties, String storeTopic, String storeName) {
-        LOGGER.info("Creating Kafka Streams, store name: {}", storeName);
         long timeoutMillis = config.get(Config.STALE_RESULT_TIMEOUT_MS);
         ForeachActionDispatcher<String, Integer> dispatcher = new ForeachActionDispatcher<>();
         WaitForResultService serviceImpl = new WaitForResultService(timeoutMillis, dispatcher);
+
         closeables.add(serviceImpl);
-
-        AtomicBoolean done = new AtomicBoolean(false); // no need for dup complete
-        CompletableFuture<AsyncBiFunctionService.WithSerdes<String, String, Integer>> cf = new CompletableFuture<>();
-        KafkaStreams.StateListener listener = (newState, oldState) -> {
-            if (newState == KafkaStreams.State.RUNNING && !done.getAndSet(true)) {
-                cf.completeAsync(() -> serviceImpl); // complete in a different thread
-            }
-            if (newState == KafkaStreams.State.ERROR) {
-                cf.completeExceptionally(new IllegalStateException("KafkaStreams error"));
-            }
-        };
-
-        // provide some Kafka Streams defaults
-        Properties streamsProperties = new Properties();
-        streamsProperties.putAll(kafkaProperties);
-        Object rf = kafkaProperties.get(StreamsConfig.REPLICATION_FACTOR_CONFIG);
-        if (rf == null) {
-            // this will pickup default broker settings
-            streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "-1");
+//        StoreAndServiceFactory factory = new LocalStoreAndServiceFactory();
+//        StoreAndServiceFactory.StoreContext sc = factory.create(config, kafkaProperties, streams, serviceImpl, closeables);
+        SelfManagedPersistentStore selfManagedPersistentStore = new SelfManagedPersistentStore(storeTopic, "__self-managed",  kafkaProperties, dispatcher);
+        Future<SelfManagedKeyValueStore> underlyingStore = selfManagedPersistentStore.start();
+        try {
+            this.store = new KafkaStreamsTopicStore(underlyingStore.toCompletionStage().toCompletableFuture().get(), storeTopic, producer, serviceImpl);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
-
-        Topology topology = new TopicStoreTopologyProvider(storeTopic, storeName, streamsProperties, dispatcher).get();
-
-        streams = new KafkaStreams(topology, streamsProperties);
-        streams.setStateListener(listener);
-        streams.setGlobalStateRestoreListener(new LoggingStateRestoreListener());
-        closeables.add(streams);
-        streams.start();
-
-        return cf;
+        return this.store;
     }
+
+//    private CompletableFuture<AsyncBiFunctionService.WithSerdes<String, String, Integer>> createKafkaStreams(Config config, Properties kafkaProperties, String storeTopic, String storeName) {
+//        LOGGER.info("Creating Kafka Streams, store name: {}", storeName);
+
+//
+//        AtomicBoolean done = new AtomicBoolean(false); // no need for dup complete
+//        CompletableFuture<AsyncBiFunctionService.WithSerdes<String, String, Integer>> cf = new CompletableFuture<>();
+//        KafkaStreams.StateListener listener = (newState, oldState) -> {
+//            if (newState == KafkaStreams.State.RUNNING && !done.getAndSet(true)) {
+//                cf.completeAsync(() -> serviceImpl); // complete in a different thread
+//            }
+//            if (newState == KafkaStreams.State.ERROR) {
+//                cf.completeExceptionally(new IllegalStateException("KafkaStreams error"));
+//            }
+//        };
+//
+//        // provide some Kafka Streams defaults
+//        Properties streamsProperties = new Properties();
+//        streamsProperties.putAll(kafkaProperties);
+//        Object rf = kafkaProperties.get(StreamsConfig.REPLICATION_FACTOR_CONFIG);
+//        if (rf == null) {
+//            // this will pickup default broker settings
+//            streamsProperties.put(StreamsConfig.REPLICATION_FACTOR_CONFIG, "-1");
+//        }
+//
+//        Topology topology = new TopicStoreTopologyProvider(storeTopic, storeName, streamsProperties, dispatcher).get();
+//
+//        streams = new KafkaStreams(topology, streamsProperties);
+//        streams.setStateListener(listener);
+//        streams.setGlobalStateRestoreListener(new LoggingStateRestoreListener());
+//        closeables.add(streams);
+//        streams.start();
+
+//        cf.complete(serviceImpl);
+//
+//        return cf;
+//    }
 
     private CompletionStage<Void> createNewStoreTopic(String storeTopic, Admin admin, Context c) {
         LOGGER.info("Creating new store topic: {}", storeTopic);
