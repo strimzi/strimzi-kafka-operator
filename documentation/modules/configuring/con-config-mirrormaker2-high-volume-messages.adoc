@@ -6,7 +6,7 @@
 = Handling high volumes of messages
 
 [role="_abstract"]
-If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration configuration to help manage throughput and issues with latency. 
+If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration to help manage throughput and issues with latency. 
 Operations like tracking web activity can generate a high volume of messages. 
 But even a source cluster with moderate throughput can produce a high volume of messages if it has a lot of existing data. 
 
