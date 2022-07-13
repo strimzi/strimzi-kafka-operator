@@ -1,6 +1,9 @@
 
 # CHANGELOG
 
+## 0.31.0
+
+
 ## 0.30.0
 
 * Remove Kafka 3.0.0 and 3.0.1
