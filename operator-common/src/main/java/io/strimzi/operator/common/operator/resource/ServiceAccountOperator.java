@@ -34,6 +34,10 @@ public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesC
             desired.setSecrets(current.getSecrets());
         }
 
+        if (desired.getImagePullSecrets() == null || desired.getImagePullSecrets().isEmpty())    {
+            desired.setImagePullSecrets(current.getImagePullSecrets());
+        }
+
         return super.internalPatch(reconciliation, namespace, name, current, desired);
     }
 }
