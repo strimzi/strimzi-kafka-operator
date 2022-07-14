@@ -6,26 +6,56 @@
 = Handling high volumes of messages
 
 [role="_abstract"]
-If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration to support it.
+If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration to help manage throughput and issues with latency. 
+Operations like tracking web activity can generate a high volume of messages. 
+But even a source cluster with moderate throughput can produce a high volume of messages if it has a lot of existing data. 
 
-The flush pipeline for data replication is *source topic -> (Kafka Connect) source message queue -> producer buffer -> target topic*.
-An offset flush timeout period (`offset.flush.timeout.ms`) is the time to wait for the producer buffer (`producer.buffer.memory`) to flush and offset data to be committed.
-Try to avoid a situation where a large producer buffer and an insufficient offset flush timeout period causes a _failed to flush_ or _failed to commit offsets_ type of error.
+MirrorMaker 2.0 fetches data from the source cluster and hands it to the Kafka Connect runtime producers so that it's replicated to the target cluster.
 
-This type of error means that there are too many messages in the producer buffer, so they can't all be flushed before the offset flush timeout is reached.
+To control the streaming of high volumes of data, you can tune the configuration of the Kafka Connect runtime producers for optimal throughput.
 
-If you are getting this type of error, try the following configuration changes:
+In certain circumstances, you might want to increase the size of the message batches sent in a single produce request.
+You increase the batch size using the `batch.size` producer configuration.
+A larger batch size reduces the number of outstanding messages ready to be sent and the size of the backlog in the message queue
+Messages being sent to the same partition are batched together.
+A produce request is sent to the target cluster when the batch size is reached.
+By increasing the batch size, produce requests are delayed and more messages are added to the batch and sent to brokers at the same time.  
+This can improve throughput when you have just a few topic partitions that handle large numbers of messages.  
 
-* Decreasing the default value in bytes of the `producer.buffer.memory`
+Consider the number and size of the records that the producer handles for a suitable producer batch size. 
+
+Use `linger.ms` to add a wait time in milliseconds to delay produce requests when producer load decreases. 
+The delay means that more records can be added to batches if they are under the maximum batch size.  
+
+Configure the `batch.size` and `linger.ms` values at the source connector level (`producer.override.*`), as they relate to the specific producer that sends topic messages to the target Kafka cluster.
+
+The data replication pipeline to the target Kafka cluster is as follows:
+
+.Data replication pipeline
+*source topic -> (Kafka Connect tasks) source message queue -> producer buffer -> target topic*.
+
+The producer sends messages in its buffer to topics in the target Kafka cluster.
+While this is happening, Kafka Connect tasks continue to poll topics in the source Kafka cluster to add messages to the source message queue.
+
+The size of the producer buffer for the source connector is set using the `producer.override.buffer.memory` property.
+Tasks wait for a specified timeout period (`offset.flush.timeout.ms`) before the buffer is flushed. 
+This should be enough time for the sent messages to be acknowledged by the brokers and offset data committed. 
+The source task does not wait for the producer to empty the message queue before committing offsets, except during shutdown.
+
+If the producer is unable to keep up with the throughput of messages in the source message queue, buffering is blocked until there is space available in the buffer within a time period bounded by `max.block.ms`.
+Any unacknowledged messages still in the buffer are sent during this period.
+New messages are not added to the buffer until these messages are acknowledged and flushed.
+
+You can try the following configuration changes to keep the underlying source message queue of outstanding messages at a manageable size:
+
 * Increasing the default value in milliseconds of the `offset.flush.timeout.ms`
+* Ensuring that there are enough xref:con-common-configuration-resources-reference[CPU and memory resources]
+* Increasing the number of tasks that run in parallel by doing the following:
+** xref:con-mirrormaker-tasks-max-{context}[Increasing the number of tasks] using the `tasksMax` property
+** Increasing the number of worker nodes that run tasks using the `replicas` property
 
-The changes should help to keep the underlying Kafka Connect queue of outstanding messages at a manageable size.
-You might need to adjust the values to have the desired effect.
-
-If these configuration changes don't resolve the error, you can try increasing the number of tasks that run in parallel by doing the following.
-
-* xref:con-mirrormaker-tasks-max-{context}[Increasing the number of tasks] using the `tasksMax` property
-* Increasing the number of nodes for the workers that run tasks using the `replicas` property
+Consider the number of tasks that can run in parallel according to the available CPU and memory resources and number of worker nodes. 
+You might need to keep adjusting the configuration values until they have the desired effect.
 
 .Example MirrorMaker 2.0 configuration for handling high volumes of messages
 [source,yaml,subs="+quotes,attributes"]
@@ -36,7 +66,7 @@ metadata:
   name: my-mirror-maker2
 spec:
   version: {DefaultKafkaVersion}
-  replicas: 5
+  replicas: 1
   connectCluster: "my-cluster-target"
   clusters:
   - alias: "my-cluster-source"
@@ -44,13 +74,23 @@ spec:
   - alias: "my-cluster-target"
     config:
       offset.flush.timeout.ms: 10000
-      producer.buffer.memory: 8388608
     bootstrapServers: my-cluster-target-kafka-bootstrap:9092
   mirrors:
   - sourceCluster: "my-cluster-source"
     targetCluster: "my-cluster-target"
     sourceConnector:
-      tasksMax: 10
+      tasksMax: 2
+      config:
+        producer.override.batch.size: 327680
+        producer.override.linger.ms: 100
+    # ...
+  resources: 
+    requests:
+      cpu: "1"
+      memory: Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi      
 ----
 
 == Checking the message flow
