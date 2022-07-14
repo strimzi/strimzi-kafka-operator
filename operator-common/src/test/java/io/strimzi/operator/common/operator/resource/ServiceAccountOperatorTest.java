@@ -5,6 +5,8 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -128,12 +130,18 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
                 new ObjectReferenceBuilder().withName("secretName2").build()
         );
 
+        List<LocalObjectReference> imagePullSecrets = List.of(
+                new LocalObjectReferenceBuilder().withName("pullSecretName1").build(),
+                new LocalObjectReferenceBuilder().withName("pullSecretName2").build()
+        );
+
         ServiceAccount current = new ServiceAccountBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(RESOURCE_NAME)
                 .endMetadata()
                 .withSecrets(secrets)
+                .withImagePullSecrets(imagePullSecrets)
                 .build();
 
         ServiceAccount desired = new ServiceAccountBuilder()
@@ -170,6 +178,8 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
                     assertThat(saCaptor.getValue(), is(notNullValue()));
                     assertThat(saCaptor.getValue().getSecrets().size(), is(2));
                     assertThat(saCaptor.getValue().getSecrets(), is(secrets));
+                    assertThat(saCaptor.getValue().getImagePullSecrets().size(), is(2));
+                    assertThat(saCaptor.getValue().getImagePullSecrets(), is(imagePullSecrets));
                     assertThat(saCaptor.getValue().getMetadata().getLabels().get("lKey"), is("lValue"));
                     assertThat(saCaptor.getValue().getMetadata().getAnnotations().get("aKey"), is("aValue"));
 
