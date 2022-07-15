@@ -259,6 +259,7 @@ public class ResourceManager {
                 type.delete(resource);
                 assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
                         String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
+                LOGGER.warn("{} was deleted!", resource.getKind());
             } catch (Exception e)   {
                 LOGGER.error("Failed to delete {} {} in namespace {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace(), e);
             }
@@ -280,9 +281,11 @@ public class ResourceManager {
         assertNotNull(type);
         boolean[] resourceReady = new boolean[1];
 
+        LOGGER.warn("We will wait {} for {} to be {}", ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()), resource.getKind(), condition.getConditionName());
         TestUtils.waitFor("Resource condition: " + condition.getConditionName() + " is fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
             Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
+                LOGGER.warn("Resource {} is still waiting for {}", resource.getKind(), condition.getConditionName());
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
                 resourceReady[0] =  condition.getPredicate().test(res);
                 if (!resourceReady[0]) {
