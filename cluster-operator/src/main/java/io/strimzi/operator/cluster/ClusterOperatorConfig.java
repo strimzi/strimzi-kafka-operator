@@ -411,6 +411,24 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Retrieve kubernetes-client backwards compatibility configuration.
+     *
+     * @param env true to get the environment rather than system configuration
+     *
+     * @return backwards compatibility configuration
+     */
+    public static String[] getKubeClientBackwardsCompatibilityConfig(boolean env) {
+        String[] config = {
+            env ? "KUBERNETES_BACKWARDSCOMPATIBILITYINTERCEPTOR_DISABLE"
+                    : "kubernetes.backwardsCompatibilityInterceptor.disable",
+                System.getenv().getOrDefault(
+                        "KUBERNETES_BACKWARDSCOMPATIBILITYINTERCEPTOR_DISABLE",
+                        "false")
+        };
+        return config;
+    }
+
+    /**
      * @return  namespaces in which the operator runs and creates resources
      */
     public Set<String> getNamespaces() {

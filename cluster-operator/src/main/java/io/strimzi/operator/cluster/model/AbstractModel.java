@@ -165,7 +165,11 @@ public abstract class AbstractModel {
      */
     protected static final List<EnvVar> STATIC_ENV_VARS;
     static {
-        List<EnvVar> envVars = new ArrayList<>(3);
+        List<EnvVar> envVars = new ArrayList<>(4);
+
+        // setting kubernetes-client backwards compatibility
+        String[] backCompConfig = ClusterOperatorConfig.getKubeClientBackwardsCompatibilityConfig(true);
+        envVars.add(buildEnvVar(backCompConfig[0], backCompConfig[1]));
 
         if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null)    {
             envVars.add(buildEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
@@ -183,11 +187,7 @@ public abstract class AbstractModel {
             envVars.add(buildEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
         }
 
-        if (envVars.size() > 0) {
-            STATIC_ENV_VARS = Collections.unmodifiableList(envVars);
-        } else {
-            STATIC_ENV_VARS = Collections.emptyList();
-        }
+        STATIC_ENV_VARS = Collections.unmodifiableList(envVars);
     }
 
     protected final Reconciliation reconciliation;

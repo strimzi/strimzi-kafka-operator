@@ -67,6 +67,10 @@ public class ClusterOperatorConfigTest {
         assertThat(config.isCreateClusterRoles(), is(false));
         assertThat(config.isNetworkPolicyGeneration(), is(true));
         assertThat(config.isPodSetReconciliationOnly(), is(false));
+        assertThat(ClusterOperatorConfig.getKubeClientBackwardsCompatibilityConfig(true),
+                is(new String[]{"KUBERNETES_BACKWARDSCOMPATIBILITYINTERCEPTOR_DISABLE", "false"}));
+        assertThat(ClusterOperatorConfig.getKubeClientBackwardsCompatibilityConfig(false),
+                is(new String[]{"kubernetes.backwardsCompatibilityInterceptor.disable", "false"}));
     }
 
     @Test

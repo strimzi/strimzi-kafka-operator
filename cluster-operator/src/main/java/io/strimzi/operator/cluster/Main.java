@@ -76,7 +76,11 @@ public class Main {
         // Verticle.stop() methods are not executed if you don't call Vertx.close()
         // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
-        
+
+        // setting kubernetes-client backwards compatibility
+        String[] backCompConfig = ClusterOperatorConfig.getKubeClientBackwardsCompatibilityConfig(false);
+        System.getProperties().setProperty(backCompConfig[0], backCompConfig[1]);
+
         KubernetesClient client = new DefaultKubernetesClient();
 
         maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
