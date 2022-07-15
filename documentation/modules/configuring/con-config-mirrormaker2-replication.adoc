@@ -93,7 +93,7 @@ Using the target cluster as the location of the `offset-syncs` topic allows you 
 
 == Synchronizing consumer group offsets
 
-The `__consumer_offsets` topic stores information on committed offsets, for each consumer group.
+The `__consumer_offsets` topic stores information on committed offsets for each consumer group.
 Offset synchronization periodically transfers the consumer offsets for the consumer groups of a source cluster into the consumer offsets topic of a target cluster.
 
 Offset synchronization is particularly useful in an _active/passive_ configuration.
@@ -105,7 +105,8 @@ Synchronization is disabled by default.
 When using the `IdentityReplicationPolicy` in the source connector, it also has to be configured in the checkpoint connector configuration.
 This ensures that the mirrored consumer offsets will be applied for the correct topics.
 
-The consumer offsets are only synchronized for consumer groups that are not active in the target cluster.
+Consumer offsets are only synchronized for consumer groups that are not active in the target cluster.
+If the consumer groups are in the target cluster, the synchronization cannot be performed and an `UNKNOWN_MEMBER_ID` error is returned. 
 
 If enabled, the synchronization of offsets from the source cluster is made periodically.
 You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
