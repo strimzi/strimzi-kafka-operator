@@ -112,7 +112,7 @@
         <jayway-jsonpath.version>2.6.0</jayway-jsonpath.version>
         <slf4j.version>1.7.36</slf4j.version>
         <quartz.version>2.3.2</quartz.version>
-        <jaeger.version>1.6.0</jaeger.version>
+        <jaeger.version>1.8.1</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
         <strimzi-oauth.version>0.10.0</strimzi-oauth.version>
