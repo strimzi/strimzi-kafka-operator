@@ -12,6 +12,7 @@
 
     <properties>
         <skipTests>true</skipTests>
+        <failsafe.forkCount>0</failsafe.forkCount>
     </properties>
 
     <dependencies>

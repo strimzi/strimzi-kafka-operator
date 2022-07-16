@@ -73,6 +73,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <failsafe.forkCount>1</failsafe.forkCount>
         <maven.compiler.version>3.8.1</maven.compiler.version>
         <maven.surefire.version>3.0.0-M5</maven.surefire.version>
         <maven.failsafe.version>3.0.0-M5</maven.failsafe.version>
@@ -975,7 +976,12 @@
                                 <include>**/*ST.java</include>
                             </includes>
                             <trimStackTrace>false</trimStackTrace>
-                            <forkCount>1</forkCount>
+                            <!--
+                              Fork count is configured through a system property:
+                                * ITs run with forked VM because of class path for Apache Kafka
+                                * STs run without forking the VM for better log output in CI pipelines
+                                -->
+                            <forkCount>${failsafe.forkCount}</forkCount>
                             <!-- This is workaround for https://issues.apache.org/jira/browse/SUREFIRE-1809 -->
                             <useModulePath>false</useModulePath>
                             <statelessTestsetReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
