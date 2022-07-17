@@ -58,6 +58,7 @@ public class TopicName {
      * then it is used as the returned resource name, otherwise a "best effort" prefix is
      * constructed (with invalid characters removed or changed) and a disambiguating hash is appended to that
      * prefix and the concatenation of the prefix and hash is returned.
+     * @return valid Kubernetes resource name for topic
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     public ResourceName asKubeName() {

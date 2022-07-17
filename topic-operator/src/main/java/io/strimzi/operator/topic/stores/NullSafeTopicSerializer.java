@@ -11,7 +11,6 @@ import org.apache.kafka.common.serialization.Serializer;
 /**
  * Passes through nulls safely to allow for tombstone records (that is, deletion)
  */
-@SuppressWarnings("resource")
 public class NullSafeTopicSerializer implements Serializer<Topic> {
 
     private final Serializer<Topic> wrappedSerializer;
@@ -19,6 +18,7 @@ public class NullSafeTopicSerializer implements Serializer<Topic> {
     public NullSafeTopicSerializer() {
         wrappedSerializer = new TopicSerde().serializer();
     }
+
     @Override
     public byte[] serialize(String topic, Topic data) {
         if (data == null) {
