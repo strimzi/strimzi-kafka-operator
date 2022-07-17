@@ -78,6 +78,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
+            <version>4.3.2</version>
         </dependency>
         <dependency>
             <groupId>io.apicurio</groupId>
@@ -142,6 +143,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
+            <version>4.3.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>

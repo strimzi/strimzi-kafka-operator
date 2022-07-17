@@ -5,6 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.operator.topic.stores.TopicStore;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

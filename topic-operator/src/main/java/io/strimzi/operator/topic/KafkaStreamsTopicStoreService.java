@@ -7,9 +7,9 @@ package io.strimzi.operator.topic;
 import io.apicurio.registry.utils.kafka.AsyncProducer;
 import io.apicurio.registry.utils.kafka.ProducerActions;
 import io.apicurio.registry.utils.streams.ext.ForeachActionDispatcher;
-import io.strimzi.operator.topic.stores.SelfManagedPersistentStore;
-import io.strimzi.operator.topic.stores.SelfManagedPersistentStore.SelfManagedKeyValueStore;
-import io.vertx.core.Future;
+import io.strimzi.operator.topic.stores.KafkaPersistentStore;
+import io.strimzi.operator.topic.stores.KafkaPersistentKeyValueStore;
+import io.strimzi.operator.topic.stores.TopicStore;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.KafkaFuture;
@@ -27,7 +27,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
 import static java.lang.Integer.parseInt;
 
@@ -45,7 +44,6 @@ public class KafkaStreamsTopicStoreService {
     public CompletionStage<TopicStore> start(Config config, Properties kafkaProperties) {
         String storeTopic = config.get(Config.STORE_TOPIC);
         String storeName = config.get(Config.STORE_NAME);
-        LOGGER.info("XXX {}", kafkaProperties);
         // check if entry topic has the right configuration
         Admin admin = Admin.create(kafkaProperties);
         LOGGER.info("Starting ...");
@@ -89,16 +87,15 @@ public class KafkaStreamsTopicStoreService {
         ForeachActionDispatcher<String, Integer> dispatcher = new ForeachActionDispatcher<>();
         WaitForResultService serviceImpl = new WaitForResultService(timeoutMillis, dispatcher);
 
-        closeables.add(serviceImpl);
+
 //        StoreAndServiceFactory factory = new LocalStoreAndServiceFactory();
 //        StoreAndServiceFactory.StoreContext sc = factory.create(config, kafkaProperties, streams, serviceImpl, closeables);
-        SelfManagedPersistentStore selfManagedPersistentStore = new SelfManagedPersistentStore(storeTopic, "__self-managed",  kafkaProperties, dispatcher);
-        Future<SelfManagedKeyValueStore> underlyingStore = selfManagedPersistentStore.start();
-        try {
-            this.store = new KafkaStreamsTopicStore(underlyingStore.toCompletionStage().toCompletableFuture().get(), storeTopic, producer, serviceImpl);
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+        KafkaPersistentStore kafkaPersistentStore = new KafkaPersistentStore(storeTopic, "__topic_operator_state",  kafkaProperties, dispatcher);
+        KafkaPersistentKeyValueStore underlyingStore = kafkaPersistentStore.start();
+        closeables.add(kafkaPersistentStore);
+        closeables.add(serviceImpl);
+        this.store = new KafkaStreamsTopicStore(underlyingStore, storeTopic, producer, serviceImpl);
+
         return this.store;
     }
 

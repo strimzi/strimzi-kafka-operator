@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.topic.stores.TopicStore;
+import io.strimzi.operator.topic.stores.exceptions.EntityExistsException;
+import io.strimzi.operator.topic.stores.exceptions.NoSuchEntityExistsException;
 import io.vertx.core.Future;
 import io.vertx.junit5.VertxTestContext;
 
@@ -39,7 +42,7 @@ public class MockTopicStore implements TopicStore {
         if (response.succeeded()) {
             Topic old = topics.put(topic.getTopicName(), topic);
             if (old != null) {
-                return Future.failedFuture(new TopicStore.EntityExistsException());
+                return Future.failedFuture(new EntityExistsException());
             }
         }
         return response;
@@ -51,7 +54,7 @@ public class MockTopicStore implements TopicStore {
         if (old != null) {
             return Future.succeededFuture();
         } else {
-            return Future.failedFuture(new TopicStore.NoSuchEntityExistsException());
+            return Future.failedFuture(new NoSuchEntityExistsException());
         }
     }
 
@@ -61,7 +64,7 @@ public class MockTopicStore implements TopicStore {
         if (response.succeeded()) {
             Topic topic = topics.remove(topicName);
             if (topic == null) {
-                return Future.failedFuture(new TopicStore.NoSuchEntityExistsException());
+                return Future.failedFuture(new NoSuchEntityExistsException());
             }
         }
         return response;

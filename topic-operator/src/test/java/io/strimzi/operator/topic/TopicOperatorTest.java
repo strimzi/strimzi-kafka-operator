@@ -16,6 +16,8 @@ import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.topic.stores.exceptions.EntityExistsException;
+import io.strimzi.operator.topic.stores.exceptions.NoSuchEntityExistsException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -311,7 +313,7 @@ public class TopicOperatorTest {
      */
     @Test
     public void testOnKafkaTopicAdded_EntityExistsException(VertxTestContext context) throws InterruptedException {
-        TopicStore.EntityExistsException storeException = new TopicStore.EntityExistsException();
+        EntityExistsException storeException = new EntityExistsException();
         resourceAdded(context,
                         null,
                 null,
@@ -1101,7 +1103,7 @@ public class TopicOperatorTest {
     @Test
     public void testOnKafkaTopicRemoved_NoSuchEntityExistsException(VertxTestContext context) {
         Exception deleteTopicException = null;
-        Exception storeException = new TopicStore.NoSuchEntityExistsException();
+        Exception storeException = new NoSuchEntityExistsException();
         resourceRemoved(context, null, deleteTopicException, storeException);
     }
 
@@ -1173,7 +1175,7 @@ public class TopicOperatorTest {
     @Test
     public void testOnTopicDeleted_NoSuchEntityExistsException(VertxTestContext context) {
         Exception k8sException = null;
-        Exception storeException = new TopicStore.NoSuchEntityExistsException();
+        Exception storeException = new NoSuchEntityExistsException();
         topicDeleted(context, storeException, k8sException);
     }
 

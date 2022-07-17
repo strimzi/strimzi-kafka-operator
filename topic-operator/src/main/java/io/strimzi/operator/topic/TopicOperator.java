@@ -24,6 +24,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.topic.stores.TopicStore;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;

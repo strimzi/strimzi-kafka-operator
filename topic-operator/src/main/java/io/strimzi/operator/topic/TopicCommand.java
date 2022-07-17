@@ -91,4 +91,15 @@ public class TopicCommand {
     public int getVersion() {
         return version;
     }
+
+    @Override
+    public String toString() {
+        return "TopicCommand{" +
+                "uuid='" + uuid + '\'' +
+                ", type=" + type +
+                ", topic=" + topic +
+                ", name=" + name +
+                ", version=" + version +
+                '}';
+    }
 }

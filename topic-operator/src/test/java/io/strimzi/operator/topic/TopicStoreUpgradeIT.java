@@ -11,6 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import io.apicurio.registry.utils.ConcurrentUtil;
+import io.strimzi.operator.topic.stores.TopicStore;
 import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.AsyncResult;

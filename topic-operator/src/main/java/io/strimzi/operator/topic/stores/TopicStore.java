@@ -2,32 +2,19 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.topic;
+package io.strimzi.operator.topic.stores;
 
+import io.strimzi.operator.topic.Topic;
+import io.strimzi.operator.topic.TopicName;
+import io.strimzi.operator.topic.stores.exceptions.EntityExistsException;
+import io.strimzi.operator.topic.stores.exceptions.NoSuchEntityExistsException;
 import io.vertx.core.Future;
 
 /**
  * Represents a persistent data store where the operator can store its copy of the
  * topic state that won't be modified by either K8S or Kafka.
  */
-interface TopicStore {
-
-    public static class EntityExistsException extends Exception {
-
-    }
-
-    public static class NoSuchEntityExistsException extends Exception {
-
-    }
-
-    /**
-     * Throw this when TopicStore's state is invalid.
-     * e.g. in the case of KafkaStreamsTopicStore we throw this when
-     * waiting on a async result takes too long -- see Config#STALE_RESULT_TIMEOUT_MS
-     */
-    public static class InvalidStateException extends Exception {
-
-    }
+public interface TopicStore {
 
     /**
      * Asynchronously get the topic with the given name

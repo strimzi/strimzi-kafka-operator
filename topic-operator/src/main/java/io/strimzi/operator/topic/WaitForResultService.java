@@ -6,6 +6,7 @@ package io.strimzi.operator.topic;
 
 import io.apicurio.registry.utils.streams.diservice.AsyncBiFunctionService;
 import io.apicurio.registry.utils.streams.ext.ForeachActionDispatcher;
+import io.strimzi.operator.topic.stores.exceptions.InvalidStateException;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 
@@ -46,7 +47,7 @@ public class WaitForResultService implements AsyncBiFunctionService.WithSerdes<S
         while (iterator.hasNext()) {
             ResultCF rcf = iterator.next().getValue();
             if (now - rcf.ts > timeoutMillis) {
-                rcf.complete(KafkaStreamsTopicStore.toIndex(TopicStore.InvalidStateException.class));
+                rcf.complete(KafkaStreamsTopicStore.toIndex(InvalidStateException.class));
                 iterator.remove();
             }
         }

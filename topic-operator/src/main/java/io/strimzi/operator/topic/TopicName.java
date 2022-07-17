@@ -15,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
 /**
  * Typesafe representation of the name of a topic.
  */
-class TopicName {
+public class TopicName {
     private final String name;
 
     public TopicName(String name) {

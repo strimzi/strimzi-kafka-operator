@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.topic.stores.TopicStore;
+import io.strimzi.operator.topic.stores.exceptions.EntityExistsException;
+import io.strimzi.operator.topic.stores.exceptions.NoSuchEntityExistsException;
 import io.strimzi.operator.topic.zk.AclBuilder;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AsyncResult;

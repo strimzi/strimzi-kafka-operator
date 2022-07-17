@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.topic.stores.TopicStore;
+import io.strimzi.operator.topic.stores.exceptions.EntityExistsException;
+import io.strimzi.operator.topic.stores.exceptions.NoSuchEntityExistsException;
 import io.vertx.core.Promise;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -56,7 +59,7 @@ public abstract class TopicStoreTestBase {
             // try to create it again: assert an error
             .compose(v -> store.create(topic))
             .onComplete(context.failing(e -> context.verify(() -> {
-                assertThat(e, instanceOf(TopicStore.EntityExistsException.class));
+                assertThat(e, instanceOf(EntityExistsException.class));
                 failedCreateCompleted.complete();
             })));
 
@@ -93,7 +96,7 @@ public abstract class TopicStoreTestBase {
             // delete it again: assert an error
             .compose(v -> store.delete(updatedTopic.getTopicName()))
             .onComplete(context.failing(e -> context.verify(() -> {
-                assertThat(e, instanceOf(TopicStore.NoSuchEntityExistsException.class));
+                assertThat(e, instanceOf(NoSuchEntityExistsException.class));
                 async.flag();
             })));
     }

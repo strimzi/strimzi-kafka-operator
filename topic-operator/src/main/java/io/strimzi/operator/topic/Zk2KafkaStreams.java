@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import io.strimzi.operator.topic.stores.TopicStore;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;

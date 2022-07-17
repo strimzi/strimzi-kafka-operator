@@ -5,6 +5,10 @@
 package io.strimzi.operator.topic;
 
 import io.apicurio.registry.utils.kafka.ProducerActions;
+import io.strimzi.operator.topic.stores.TopicStore;
+import io.strimzi.operator.topic.stores.exceptions.EntityExistsException;
+import io.strimzi.operator.topic.stores.exceptions.InvalidStateException;
+import io.strimzi.operator.topic.stores.exceptions.NoSuchEntityExistsException;
 import io.vertx.core.Future;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
@@ -12,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.util.concurrent.CompletionStage;
-import java.util.function.BiFunction;
 
 /**
  * TopicStore based on Kafka Streams and
@@ -26,13 +29,13 @@ public class KafkaStreamsTopicStore implements TopicStore {
     private final String storeTopic;
     private final ProducerActions<String, TopicCommand> producer;
 
-    private final BiFunction<String, String, CompletionStage<Integer>> resultService;
+    private final WaitForResultService resultService;
 
     public KafkaStreamsTopicStore(
             ReadOnlyKeyValueStore<String, Topic> topicStore,
             String storeTopic,
             ProducerActions<String, TopicCommand> producer,
-            BiFunction<String, String, CompletionStage<Integer>> resultService) {
+            WaitForResultService resultService) {
         this.topicStore = topicStore;
         this.storeTopic = storeTopic;
         this.producer = producer;
@@ -45,24 +48,24 @@ public class KafkaStreamsTopicStore implements TopicStore {
         }
         switch (index) {
             case 1:
-                return new TopicStore.EntityExistsException();
+                return new EntityExistsException();
             case 2:
-                return new TopicStore.NoSuchEntityExistsException();
+                return new NoSuchEntityExistsException();
             case 3:
-                return new TopicStore.InvalidStateException();
+                return new InvalidStateException();
             default:
                 throw new IllegalStateException("Invalid index: " + index);
         }
     }
 
     public static Integer toIndex(Class<? extends Throwable> ct) {
-        if (ct.equals(TopicStore.EntityExistsException.class)) {
+        if (ct.equals(EntityExistsException.class)) {
             return 1;
         }
-        if (ct.equals(TopicStore.NoSuchEntityExistsException.class)) {
+        if (ct.equals(NoSuchEntityExistsException.class)) {
             return 2;
         }
-        if (ct.equals(TopicStore.InvalidStateException.class)) {
+        if (ct.equals(InvalidStateException.class)) {
             return 3;
         }
         throw new IllegalStateException("Unexpected value: " + ct);
