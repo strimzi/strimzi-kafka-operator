@@ -25,7 +25,6 @@ import org.apache.kafka.streams.processor.api.Record;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import javax.swing.plaf.basic.BasicTreeUI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
