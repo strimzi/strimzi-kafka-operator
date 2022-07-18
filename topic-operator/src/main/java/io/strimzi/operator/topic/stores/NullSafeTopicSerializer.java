@@ -22,7 +22,7 @@ public class NullSafeTopicSerializer implements Serializer<Topic> {
     @Override
     public byte[] serialize(String topic, Topic data) {
         if (data == null) {
-            return null;
+            return new byte[0];
         }
         return wrappedSerializer.serialize(topic, data);
     }

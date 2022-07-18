@@ -19,7 +19,7 @@ class NullSafeTopicSerializerTest {
     @Test
     void serialize() {
         Serializer<Topic> serializer = new NullSafeTopicSerializer();
-        assertNull(serializer.serialize("topic", null), "Serializer should return null when passed a null");
+        assertArrayEquals(new byte[0], serializer.serialize("topic", null), "Serializer should return null when passed a null");
 
         Topic topic = new Topic.Builder("topic2", 3, (short) 3, Map.of("compression.type", "ztd")).build();
         byte[] expected = new TopicSerde().serialize("topic", topic);

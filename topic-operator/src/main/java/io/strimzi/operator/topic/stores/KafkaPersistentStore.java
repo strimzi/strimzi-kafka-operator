@@ -25,6 +25,7 @@ import org.apache.kafka.streams.processor.api.Record;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.swing.plaf.basic.BasicTreeUI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -83,7 +84,7 @@ public class KafkaPersistentStore implements AutoCloseable {
                 persistenceTopic,
                 baseClientProperties.entrySet()
                                     .stream()
-                                    .filter(es -> es.getKey() != "application.id") //Remove the streams config bit to avoid warnings in logs
+                                    .filter(es -> !"application.id".equals(es.getKey())) //Remove the streams config bit to avoid warnings in logs
                                     .collect(Collectors.toUnmodifiableMap(es -> es.getKey().toString(), Map.Entry::getValue)),
                 Admin::create,
                 KafkaPersistentStore::createCommandConsumer,
@@ -97,7 +98,12 @@ public class KafkaPersistentStore implements AutoCloseable {
         createStoreTopicIfNeeded(admin, persistenceTopic);
         KafkaPersistentKeyValueStore keyValueStore = new KafkaPersistentKeyValueStore(persistenceTopic, admin, persistenceConsumerCreator, persistenceProducerCreator, baseClientProperties);
         LOG.info("Beginning command topic poll");
-        executor.submit(commandConsumingLoop(keyValueStore));
+        try {
+            //Make SpotBugs happy
+            executor.submit(commandConsumingLoop(keyValueStore));
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
         return keyValueStore;
     }
 

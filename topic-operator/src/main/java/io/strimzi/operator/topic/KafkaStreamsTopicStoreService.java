@@ -37,13 +37,11 @@ public class KafkaStreamsTopicStoreService {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamsTopicStoreService.class);
 
     private final List<AutoCloseable> closeables = new ArrayList<>();
-
     /* test */ KafkaStreams streams;
     /* test */ TopicStore store;
 
     public CompletionStage<TopicStore> start(Config config, Properties kafkaProperties) {
         String storeTopic = config.get(Config.STORE_TOPIC);
-        String storeName = config.get(Config.STORE_NAME);
         // check if entry topic has the right configuration
         Admin admin = Admin.create(kafkaProperties);
         LOGGER.info("Starting ...");
