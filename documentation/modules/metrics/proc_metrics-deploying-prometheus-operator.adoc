@@ -36,4 +36,5 @@ NOTE: If using OpenShift, specify a release of the link:https://github.com/opens
 . Deploy the Prometheus Operator:
 +
 [source,shell,subs="+attributes"]
-kubectl apply -f prometheus-operator-deployment.yaml
+kubectl create -f prometheus-operator-deployment.yaml
+
