@@ -1,0 +1,111 @@
+// Module included in the following assemblies:
+//
+// assembly-config-mirrormaker2.adoc
+
+[id='con-mirrormaker-producers-consumers-{context}']
+= Connector producer and consumer configuration
+
+[role="_abstract"]
+MirrorMaker 2.0 connectors use internal producers and consumers.
+If needed, you can configure these producers and consumers to override the default settings. 
+
+For example, you can increase the `batch.size` for the source producer that sends topics to the target Kafka cluster to better accommodate large volumes of messages.
+
+IMPORTANT: Producer and consumer configuration options depend on the MirrorMaker 2.0 implementation, and may be subject to change.  
+
+The following tables describe the producers and consumers for each of the connectors and where you can add configuration. 
+
+.Source connector producers and consumers
+[cols="1,1a,3m",options="header"]
+|===
+
+|Type
+|Description
+|Configuration
+
+|Producer
+|Sends topic messages to the target Kafka cluster. Consider tuning the configuration of this producer when it is handling large volumes of data. 
+|mirrors.sourceConnector.config: producer.override.*
+
+|Producer
+|Writes to the `offset-syncs` topic, which maps the source and target offsets for replicated topic partitions. 
+|mirrors.sourceConnector.config: producer.*
+
+|Consumer
+|Retrieves topic messages from the source Kafka cluster.
+|mirrors.sourceConnector.config: consumer.* 
+|===
+
+.Checkpoint connector producers and consumers
+[cols="1,1a,3m",options="header"]
+|===
+
+|Type
+|Description
+|Configuration
+
+|Producer
+|Emits consumer offset checkpoints.
+|mirrors.checkpointConnector.config: producer.override.* 
+
+|Consumer
+|Loads the `offset-syncs` topic.
+|mirrors.checkpointConnector.config: consumer.*
+
+|===
+
+NOTE: You can set `offset-syncs.topic.location` to `target` to use the target Kafka cluster as the location of the `offset-syncs` topic. 
+
+.Heartbeat connector producer
+[cols="1,1a,3m",options="header"]
+|===
+
+|Type
+|Description
+|Configuration
+
+|Producer
+|Emits heartbeats.
+|mirrors.heartbeatConnector.config: producer.override.*
+
+|===
+
+The following example shows how you configure the producers and consumers. 
+
+.Example configuration for connector producers and consumers
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  version: {DefaultKafkaVersion}
+  # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      tasksMax: 5
+      config:
+        producer.override.batch.size: 327680
+        producer.override.linger.ms: 100
+        producer.request.timeout.ms: 30000
+        consumer.fetch.max.bytes: 52428800
+        # ...
+    checkpointConnector:
+      config:
+        producer.override.request.timeout.ms: 30000
+        consumer.max.poll.interval.ms: 300000
+        # ...
+    heartbeatConnector:
+      config:
+        producer.override.request.timeout.ms: 30000
+        # ...      
+----
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:type-KafkaMirrorMaker2ConnectorSpec-reference[]
+* xref:type-KafkaMirrorMaker2MirrorSpec-reference[]

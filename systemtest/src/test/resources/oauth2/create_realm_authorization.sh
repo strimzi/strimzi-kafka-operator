@@ -362,6 +362,25 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
             ]
           },
           {
+            "name": "kafka-cluster:cluster2,Group:b_*",
+            "type": "Group",
+            "ownerManagedAccess": false,
+            "displayName": "Consumer groups on cluster cluster2 that start with b_",
+            "attributes": {},
+            "uris": [],
+            "scopes": [
+              {
+                "name": "Describe"
+              },
+              {
+                "name": "Delete"
+              },
+              {
+                "name": "Read"
+              }
+            ]
+          },
+          {
             "name": "kafka-cluster:cluster2,Cluster:*",
             "type": "Cluster",
             "ownerManagedAccess": false,
@@ -377,6 +396,9 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
               },
               {
                 "name": "ClusterAction"
+              },
+              {
+                "name": "IdempotentWrite"
               }
             ]
           },
@@ -447,7 +469,21 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
             "type" : "Cluster",
             "ownerManagedAccess" : false,
             "attributes" : { },
-            "uris" : [ ]
+            "uris" : [ ],
+            "scopes": [
+              {
+                "name": "DescribeConfigs"
+              },
+              {
+                "name": "AlterConfigs"
+              },
+              {
+                "name": "ClusterAction"
+              },
+              {
+                "name": "IdempotentWrite"
+              }
+            ]
           }
         ],
         "policies": [
@@ -517,12 +553,34 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
             }
           },
           {
+             "name": "Dev Team A can do IdempotentWrites on cluster cluster2",
+             "config": {
+                 "applyPolicies": "[\"Dev Team A\"]",
+                 "resources": "[\"kafka-cluster:cluster2,Cluster:*\"]",
+                 "scopes": "[\"IdempotentWrite\"]"
+             },
+             "decisionStrategy": "UNANIMOUS",
+             "logic": "POSITIVE",
+             "type": "scope"
+          },
+          {
             "name": "Dev Team B owns topics that start with b- on cluster cluster2",
             "type": "resource",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
               "resources": "[\"Topic:b-*\"]",
+              "applyPolicies": "[\"Dev Team B\"]"
+            }
+          },
+          {
+            "name": "Dev Team B can do IdempotentWrites on cluster cluster2",
+            "type": "scope",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "resources": "[\"kafka-cluster:cluster2,Cluster:*\"]",
+              "scopes": "[\"IdempotentWrite\"]",
               "applyPolicies": "[\"Dev Team B\"]"
             }
           },
@@ -614,7 +672,47 @@ RESULT=$(curl -v --insecure "https://$URL/auth/admin/realms" \
               "resources" : "[\"Cluster:*\"]",
               "applyPolicies" : "[\"ClusterManager Group\"]"
             }
-          }
+          },
+          {
+            "name": "Team A Client",
+            "type": "client",
+            "logic": "POSITIVE",
+            "decisionStrategy": "UNANIMOUS",
+            "config": {
+              "clients": "[\"team-a-client\"]"
+            }
+         },
+         {
+           "name": "Team A Client has IdempotentWrite permission on cluster",
+           "type": "scope",
+           "logic": "POSITIVE",
+           "decisionStrategy": "UNANIMOUS",
+           "config": {
+             "resources": "[\"Cluster:*\"]",
+             "scopes": "[\"IdempotentWrite\"]",
+             "applyPolicies": "[\"Team A Client\"]"
+           }
+         },
+         {
+           "name": "Team B Client",
+           "type": "client",
+           "logic": "POSITIVE",
+           "decisionStrategy": "UNANIMOUS",
+           "config": {
+             "clients": "[\"team-b-client\"]"
+           }
+         },
+         {
+           "name": "Team B Client has IdempotentWrite permission on cluster",
+           "type": "scope",
+           "logic": "POSITIVE",
+           "decisionStrategy": "UNANIMOUS",
+           "config": {
+             "resources": "[\"Cluster:*\"]",
+             "scopes": "[\"IdempotentWrite\"]",
+             "applyPolicies": "[\"Team B Client\"]"
+           }
+         }
         ],
         "scopes": [
           {
