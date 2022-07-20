@@ -636,7 +636,7 @@ spec:
                       topologyKey:
                         type: string
                         example: topology.kubernetes.io/zone
-                        description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
+                        description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0."
                     required:
                     - topologyKey
                     description: Configuration of the `broker.rack` broker config.
@@ -3702,7 +3702,7 @@ spec:
                                 description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                             description: Metadata applied to the resource.
                         description: Template for the Entity Operator service account.
-                    description: Template for Entity Operator resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
+                    description: Template for Entity Operator resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
                 description: Configuration of the Entity Operator.
               clusterCa:
                 type: object
@@ -4646,6 +4646,10 @@ spec:
                         minimum: 0
                         maximum: 100
                         description: Broker capacity for CPU resource utilization as a percentage (0 - 100).
+                      cpu:
+                        type: string
+                        pattern: "^[0-9]+([.][0-9]{0,3}|[m]?)$"
+                        description: "Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu."
                       inboundNetwork:
                         type: string
                         pattern: "^[0-9]+([KMG]i?)?B/s$"
@@ -4654,6 +4658,31 @@ spec:
                         type: string
                         pattern: "^[0-9]+([KMG]i?)?B/s$"
                         description: "Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s."
+                      overrides:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            brokers:
+                              type: array
+                              items:
+                                type: integer
+                              description: List of Kafka brokers (broker identifiers).
+                            cpu:
+                              type: string
+                              pattern: "^[0-9]+([.][0-9]{0,3}|[m]?)$"
+                              description: "Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu."
+                            inboundNetwork:
+                              type: string
+                              pattern: "^[0-9]+([KMG]i?)?B/s$"
+                              description: "Broker capacity for inbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s."
+                            outboundNetwork:
+                              type: string
+                              pattern: "^[0-9]+([KMG]i?)?B/s$"
+                              description: "Broker capacity for outbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s."
+                          required:
+                          - brokers
+                        description: Overrides for individual brokers. The `overrides` property lets you specify a different capacity configuration for different brokers.
                     description: The Cruise Control `brokerCapacity` configuration.
                   config:
                     x-kubernetes-preserve-unknown-fields: true
