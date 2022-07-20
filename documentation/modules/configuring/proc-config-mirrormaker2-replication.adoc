@@ -55,6 +55,10 @@ By default, all topics and consumer groups are replicated if you do not set the 
 You can also replicate all topics and consumer groups by using `".*"` as a regular expression.
 However, try to specify only the topics and consumer groups you need to avoid causing any unnecessary extra load on the cluster.
 
+.Handling high volumes of messages
+You can tune the configuration to handle high volumes of messages.
+For more information, see xref:con-high-volume-config-properties-{context}[].
+
 .Prerequisites
 
 * Strimzi is running

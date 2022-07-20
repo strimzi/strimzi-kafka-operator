@@ -25,6 +25,10 @@ You can use ConfigMaps and Secrets to configure certain elements of a connector.
 You can then reference the configuration values in HTTP REST commands, which keeps the configuration separate and more secure, if needed.
 This method applies especially to confidential data, such as usernames, passwords, or certificates.
 
+.Handling high volumes of messages
+You can tune the configuration to handle high volumes of messages.
+For more information, see xref:con-high-volume-config-properties-{context}[].
+
 .Prerequisites
 
 * A Kubernetes cluster
