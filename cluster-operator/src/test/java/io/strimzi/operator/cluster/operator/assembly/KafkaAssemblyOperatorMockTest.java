@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
@@ -121,7 +123,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         private final int kafkaReplicas;
         private final Storage kafkaStorage;
-        private ResourceRequirements resources;
+        private final ResourceRequirements resources;
 
         public Params(int zkReplicas,
                       SingleVolumeStorage zkStorage,
@@ -184,7 +186,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .build()
         };
 
-        List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
+        List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList<>();
 
         for (int replicaCount : replicas) {
             for (int storage : storageOptions) {
@@ -350,7 +352,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> async.flag()));
     }
@@ -502,7 +504,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(patchedPersistenceKafka);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), patchedPersistenceKafka);
 
                 LOGGER.info("Updating with changed storage class");
             })))
@@ -586,7 +588,7 @@ public class KafkaAssemblyOperatorMockTest {
                 } else {
                     context.failNow(new Exception("If storage is not ephemeral or persistent something has gone wrong"));
                 }
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), updatedStorageKafka);
 
                 LOGGER.info("Updating with changed storage type");
             })))
@@ -677,7 +679,7 @@ public class KafkaAssemblyOperatorMockTest {
                         .withStorageClass("foo")
                         .withDeleteClaim(!originalKafkaDeleteClaim.get())
                         .endPersistentClaimStorage().endKafka().endSpec().build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(updatedStorageKafka);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), updatedStorageKafka);
                 LOGGER.info("Updating with changed delete claim");
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
@@ -725,7 +727,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledDownCluster);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), scaledDownCluster);
 
                 LOGGER.info("Scaling down to {} Kafka pods", scaleDownTo);
             })))
@@ -774,7 +776,7 @@ public class KafkaAssemblyOperatorMockTest {
                             .endKafka()
                         .endSpec()
                         .build();
-                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(scaledUpKafka);
+                kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(PatchContext.of(PatchType.JSON), scaledUpKafka);
 
                 LOGGER.info("Scaling up to {} Kafka pods", scaleUpTo);
             })))
