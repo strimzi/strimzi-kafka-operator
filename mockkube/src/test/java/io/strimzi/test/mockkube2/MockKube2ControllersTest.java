@@ -195,24 +195,14 @@ public class MockKube2ControllersTest {
         }
 
         // Scale-up
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(5, false);
-        TestUtils.waitFor("Wait for stateful set to scale to 5 replicas", 100L, 10_000L,
-                () -> {
-                    StatefulSet s = client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
-                    return s != null && s.getStatus() != null && s.getStatus().getReadyReplicas() == 5;
-                });
+        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(5, true);
 
         pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
         assertThat(pods.size(), is(5));
         assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1", "my-sts-2", "my-sts-3", "my-sts-4"));
 
         // Scale-down
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(2, false);
-        TestUtils.waitFor("Wait for stateful set to scale to 2 replicas", 100L, 10_000L,
-                () -> {
-                    StatefulSet s = client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
-                    return s != null && s.getStatus() != null && s.getStatus().getReadyReplicas() == 2;
-                });
+        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(2, true);
 
         pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
         assertThat(pods.size(), is(2));
