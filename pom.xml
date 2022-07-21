@@ -89,10 +89,10 @@
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
-        <sundrio.version>0.90.4</sundrio.version>
-        <fabric8.kubernetes-client.version>5.12.2</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>5.12.2</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>5.12.2</fabric8.kubernetes-model.version>
+        <sundrio.version>0.91.1</sundrio.version>
+        <fabric8.kubernetes-client.version>6.0.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.0.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.0.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <vertx.version>4.2.4</vertx.version>
         <vertx-junit5.version>4.2.4</vertx-junit5.version>
@@ -242,6 +242,12 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client</artifactId>
                 <version>${fabric8.kubernetes-client.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-api</artifactId>
+                <version>${fabric8.kubernetes-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -312,6 +318,12 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>openshift-client</artifactId>
                 <version>${fabric8.openshift-client.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>openshift-client-api</artifactId>
+                <version>${fabric8.kubernetes-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -1041,6 +1053,8 @@
                         <configuration>
                             <failOnWarning>true</failOnWarning>
                             <ignoredUnusedDeclaredDependencies>
+                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>io.fabric8:openshift-client</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-clients</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-streams</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.scala-lang:scala-library</ignoredUnusedDeclaredDependency>

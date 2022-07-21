@@ -4,12 +4,12 @@
  */
 package io.strimzi.api.kafka;
 
-import io.fabric8.kubernetes.client.CustomResourceList;
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 
 /**
- * A {@code CustomResourceList<KafkaMirrorMaker>} required for using Fabric8 CRD support.
+ * A {@code DefaultKubernetesResourceList<KafkaMirrorMaker>} required for using Fabric8 CRD support.
  */
-public class KafkaMirrorMakerList extends CustomResourceList<KafkaMirrorMaker> {
+public class KafkaMirrorMakerList extends DefaultKubernetesResourceList<KafkaMirrorMaker> {
     private static final long serialVersionUID = 1L;
 }

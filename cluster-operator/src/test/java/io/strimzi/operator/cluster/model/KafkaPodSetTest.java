@@ -337,7 +337,7 @@ public class KafkaPodSetTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                    .addNewDrop("ALL")
+                    .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 

@@ -58,7 +58,7 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
     protected BuildConfig modifiedResource() {
         return new BuildConfigBuilder(resource())
                 .editSpec()
-                    .withNewServiceAccount("service-account")
+                    .withServiceAccount("service-account")
                 .endSpec()
                 .build();
     }

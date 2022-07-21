@@ -4,10 +4,10 @@
  */
 package io.strimzi.test.mockkube2;
 
+import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -75,7 +75,7 @@ public class MockKube2 {
                 .load(crdPath)
                 .get();
 
-        client.apiextensions().v1().customResourceDefinitions().create(kafkaCrd);
+        client.apiextensions().v1().customResourceDefinitions().resource(kafkaCrd).create();
     }
 
     /**
@@ -288,9 +288,9 @@ public class MockKube2 {
          */
         @SafeVarargs
         @SuppressWarnings({ "rawtypes" })
-        private <T extends CustomResource, L extends CustomResourceList<T>> void initializeResources(MixedOperation<T, L, Resource<T>> op, T... resources)   {
+        private <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> void initializeResources(MixedOperation<T, L, Resource<T>> op, T... resources)   {
             for (T resource : resources)  {
-                op.inNamespace(resource.getMetadata().getNamespace()).create(resource);
+                op.inNamespace(resource.getMetadata().getNamespace()).resource(resource).create();
             }
         }
 

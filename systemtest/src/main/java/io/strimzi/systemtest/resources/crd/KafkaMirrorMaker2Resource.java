@@ -28,7 +28,7 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
     }
     @Override
     public void create(KafkaMirrorMaker2 resource) {
-        kafkaMirrorMaker2Client().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+        kafkaMirrorMaker2Client().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
     }
     @Override
     public void delete(KafkaMirrorMaker2 resource) {
@@ -42,10 +42,6 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Client() {
         return Crds.kafkaMirrorMaker2Operation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static void replaceKafkaMirrorMaker2Resource(String resourceName, Consumer<KafkaMirrorMaker2> editor) {
-        ResourceManager.replaceCrdResource(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, resourceName, editor);
     }
 
     public static void replaceKafkaMirrorMaker2ResourceInSpecificNamespace(String resourceName, Consumer<KafkaMirrorMaker2> editor, String namespaceName) {

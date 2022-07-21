@@ -3353,7 +3353,7 @@ public class KafkaClusterTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                    .addNewDrop("ALL")
+                    .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 
@@ -3391,7 +3391,7 @@ public class KafkaClusterTest {
                 .withAllowPrivilegeEscalation(false)
                 .withRunAsNonRoot(true)
                 .withNewCapabilities()
-                    .addNewDrop("ALL")
+                    .addToDrop("ALL")
                 .endCapabilities()
                 .build();
 

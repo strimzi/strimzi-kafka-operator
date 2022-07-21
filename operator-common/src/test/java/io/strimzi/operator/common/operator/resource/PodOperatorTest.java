@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 import static org.mockito.Mockito.when;
 
 public class PodOperatorTest extends
-        AbstractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource<Pod>> {
+        AbstractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource> {
     @Override
     protected Class clientType() {
         return KubernetesClient.class;

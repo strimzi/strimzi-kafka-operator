@@ -38,7 +38,7 @@ public class BuildConfigOperator extends AbstractResourceOperator<OpenShiftClien
     protected Future<ReconcileResult<BuildConfig>> internalPatch(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
         desired.getSpec().setTriggers(current.getSpec().getTriggers());
         // Cascading needs to be set to false to make sure the Builds are not deleted during reconciliation
-        return super.internalPatch(reconciliation, namespace, name, current, desired, false);
+        return super.internalPatch(reconciliation, namespace, name, current, desired);
     }
 
     /**

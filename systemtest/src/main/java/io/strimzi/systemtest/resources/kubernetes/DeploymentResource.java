@@ -6,7 +6,6 @@ package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -41,10 +40,9 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
 
     public static void replaceDeployment(String deploymentName, Consumer<Deployment> editor, String namespaceName) {
-        Resource<Deployment> currentDepResource = ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).withName(deploymentName);
-        Deployment currentDep = currentDepResource.get();
-        editor.accept(currentDep);
-        currentDepResource.replace(currentDep);
+        Deployment toBeReplaced = ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).withName(deploymentName).get();
+        editor.accept(toBeReplaced);
+        ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).resource(toBeReplaced).replace();
     }
 
     public static Deployment getDeploymentFromYaml(String yamlPath) {

@@ -30,7 +30,7 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
     }
     @Override
     public void create(KafkaConnect resource) {
-        kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).createOrReplace(resource);
+        kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
     }
     @Override
     public void delete(KafkaConnect resource)    {

@@ -5,9 +5,18 @@
 package io.strimzi.operator.common.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.MissingNode;
+import io.fabric8.kubernetes.client.utils.Serialization;
 
 public abstract class AbstractJsonDiff {
+    // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
+    @SuppressWarnings("deprecation") // Suppress deprecated warning of SerializationFeature.WRITE_EMPTY_JSON_ARRAYS which currently does not have proper alternative
+    protected static final ObjectMapper PATCH_MAPPER = Serialization.jsonMapper().copy()
+            .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true)
+            .configure(SerializationFeature.WRITE_EMPTY_JSON_ARRAYS, false);
+
     protected static JsonNode lookupPath(JsonNode source, String path) {
         JsonNode s = source;
         for (String component : path.substring(1).split("/")) {

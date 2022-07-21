@@ -31,7 +31,7 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
 
     @Override
     public void create(KafkaConnector resource) {
-        kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).createOrReplace(resource);
+        kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
     }
     @Override
     public void delete(KafkaConnector resource) {
@@ -45,10 +45,6 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorClient() {
         return Crds.kafkaConnectorOperation(ResourceManager.kubeClient().getClient());
-    }
-
-    public static void replaceKafkaConnectorResource(String resourceName, Consumer<KafkaConnector> editor) {
-        ResourceManager.replaceCrdResource(KafkaConnector.class, KafkaConnectorList.class, resourceName, editor);
     }
 
     public static void replaceKafkaConnectorResourceInSpecificNamespace(String resourceName, Consumer<KafkaConnector> editor, String namespaceName) {

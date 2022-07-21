@@ -209,7 +209,7 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
             // When volume claim templates change, we need to delete the STS and re-create it
             return internalReplace(reconciliation, namespace, name, current, desired, false);
         } else {
-            return super.internalPatch(reconciliation, namespace, name, current, desired, false);
+            return super.internalPatch(reconciliation, namespace, name, current, desired);
         }
 
     }
@@ -243,7 +243,7 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
 
             deletedFut.onComplete(res -> {
                 if (res.succeeded())    {
-                    StatefulSet result = operation().inNamespace(namespace).withName(name).create(desired);
+                    StatefulSet result = operation().inNamespace(namespace).resource(desired).create();
                     LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been replaced", resourceKind, name, namespace);
                     promise.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
                 } else {

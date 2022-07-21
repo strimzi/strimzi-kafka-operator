@@ -546,10 +546,10 @@ public class ModelUtilsTest {
     public void testCONetworkPolicyPeerNamespaceSelectorDifferentNSNoLabels()  {
         NetworkPolicyPeer peer = new NetworkPolicyPeer();
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", null);
-        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nullValue()));
+        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(Map.of()));
 
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", Labels.fromMap(emptyMap()));
-        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nullValue()));
+        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(Map.of()));
     }
 
     @ParallelTest

@@ -24,6 +24,7 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -100,10 +101,11 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     public void testUpdateStatusAsync(VertxTestContext context) throws IOException {
         Kafka resource = resource();
         Resource mockResource = mock(resourceType());
-        when(mockResource.replaceStatus(any())).thenReturn(resource);
+        when(mockResource.replaceStatus()).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(resource.getMetadata().getName()))).thenReturn(mockResource);
+        when(mockNameable.resource(eq(resource))).thenReturn(mockResource);
 
         MixedOperation mockCms = mock(MixedOperation.class);
         when(mockCms.inNamespace(matches(resource.getMetadata().getNamespace()))).thenReturn(mockNameable);

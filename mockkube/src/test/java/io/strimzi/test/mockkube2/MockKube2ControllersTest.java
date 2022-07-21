@@ -26,9 +26,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
@@ -62,7 +64,7 @@ public class MockKube2ControllersTest {
     public void testServiceController() {
         final String serviceName = "my-service";
 
-        client.services().inNamespace(NAMESPACE).create(new ServiceBuilder()
+        Service svc = new ServiceBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(serviceName)
@@ -71,7 +73,9 @@ public class MockKube2ControllersTest {
                     .withSelector(Map.of("app", "my-app"))
                     .withPorts(new ServicePortBuilder().withProtocol("TCP").withPort(80).withTargetPort(new IntOrString(8080)).build())
                 .endSpec()
-                .build());
+                .build();
+
+        client.services().inNamespace(NAMESPACE).resource(svc).create();
 
         TestUtils.waitFor("Wait for service to be created", 100L, 10_000L, () -> client.services().inNamespace(NAMESPACE).withName(serviceName).get() != null);
 
@@ -90,7 +94,7 @@ public class MockKube2ControllersTest {
     public void testDeploymentController() {
         final String deploymentName = "my-deployment";
 
-        client.apps().deployments().inNamespace(NAMESPACE).create(new DeploymentBuilder()
+        Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(deploymentName)
@@ -104,7 +108,9 @@ public class MockKube2ControllersTest {
                         .endSpec()
                     .endTemplate()
                 .endSpec()
-                .build());
+                .build();
+
+        client.apps().deployments().inNamespace(NAMESPACE).resource(dep).create();
 
         TestUtils.waitFor("Wait for deployment to have status", 100L, 10_000L, () -> client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get() != null && client.apps().deployments().inNamespace(NAMESPACE).withName(deploymentName).get().getStatus() != null);
 
@@ -120,7 +126,7 @@ public class MockKube2ControllersTest {
     public void testPodController() {
         final String podName = "my-pod";
 
-        client.pods().inNamespace(NAMESPACE).create(new PodBuilder()
+        Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(podName)
@@ -128,7 +134,9 @@ public class MockKube2ControllersTest {
                 .withNewSpec()
                     .withContainers(new ContainerBuilder().withName("nginx").withImage("nginx:1.14.2").build())
                 .endSpec()
-                .build());
+                .build();
+
+        client.pods().inNamespace(NAMESPACE).resource(pod).create();
 
         TestUtils.waitFor("Wait for pod to have status", 100L, 10_000L, () -> client.pods().inNamespace(NAMESPACE).withName(podName).get() != null && client.pods().inNamespace(NAMESPACE).withName(podName).get().getStatus() != null);
 
@@ -145,7 +153,7 @@ public class MockKube2ControllersTest {
     public void testStatefulSetController() {
         final String statefulSetName = "my-sts";
 
-        client.apps().statefulSets().inNamespace(NAMESPACE).create(new StatefulSetBuilder()
+        StatefulSet sts = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
                     .withName(statefulSetName)
@@ -162,12 +170,14 @@ public class MockKube2ControllersTest {
                         .endSpec()
                     .endTemplate()
                 .endSpec()
-                .build());
+                .build();
+
+        client.apps().statefulSets().inNamespace(NAMESPACE).resource(sts).create();
 
         // Creation
         TestUtils.waitFor("Wait for stateful set to have status", 100L, 10_000L, () -> client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get() != null && client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get().getStatus() != null);
 
-        StatefulSet createdSts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
+        StatefulSet createdSts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).waitUntilReady(120_000, TimeUnit.MILLISECONDS);
         assertThat(createdSts, is(notNullValue()));
         assertThat(createdSts.getStatus(), is(notNullValue()));
         assertThat(createdSts.getStatus().getReplicas(), is(3));
@@ -176,7 +186,7 @@ public class MockKube2ControllersTest {
 
         List<Pod> pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
         assertThat(pods.size(), is(3));
-        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), is(List.of("my-sts-0", "my-sts-1", "my-sts-2")));
+        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1", "my-sts-2"));
         for (Pod pod : pods)    {
             assertThat(pod.getMetadata().getName(), startsWith(statefulSetName + "-"));
             assertThat(pod.getSpec().getContainers().size(), is(1));
@@ -189,13 +199,17 @@ public class MockKube2ControllersTest {
 
         pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
         assertThat(pods.size(), is(5));
-        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), is(List.of("my-sts-0", "my-sts-1", "my-sts-2", "my-sts-3", "my-sts-4")));
+        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1", "my-sts-2", "my-sts-3", "my-sts-4"));
 
         // Scale-down
         client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(2, true);
 
         pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
         assertThat(pods.size(), is(2));
-        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), is(List.of("my-sts-0", "my-sts-1")));
+        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1"));
+
+        // Delete
+        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).delete();
+        TestUtils.waitFor("Wait for stateful set to be deleted", 100L, 10_000L, () -> client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get() == null);
     }
 }

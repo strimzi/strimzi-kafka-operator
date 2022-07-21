@@ -121,7 +121,7 @@ public class ResourceSupport {
      * in response to some Kubenetes even on the watched resource(s).
      */
     <T, U> Future<U> selfClosingWatch(Reconciliation reconciliation,
-                                      Watchable<Watcher<T>> watchable,
+                                      Watchable<T> watchable,
                                       Gettable<T> gettable,
                                       long operationTimeoutMs,
                                       String watchFnDescription,

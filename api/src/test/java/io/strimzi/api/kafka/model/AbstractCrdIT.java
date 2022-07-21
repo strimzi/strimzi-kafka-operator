@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.interfaces.TestSeparator;
@@ -29,7 +29,7 @@ public abstract class AbstractCrdIT implements TestSeparator {
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
 
     protected void assumeKube1_16Plus() {
-        VersionInfo version = new DefaultKubernetesClient().getVersion();
+        VersionInfo version = new KubernetesClientBuilder().build().getKubernetesVersion();
         assumeTrue("1".equals(version.getMajor())
                 && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 16);
     }

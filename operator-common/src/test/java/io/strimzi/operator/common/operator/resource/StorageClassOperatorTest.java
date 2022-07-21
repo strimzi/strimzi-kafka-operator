@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.StorageAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.V1StorageAPIGroupDSL;
 import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonMap;
@@ -22,9 +23,11 @@ public class StorageClassOperatorTest extends AbstractNonNamespacedResourceOpera
 
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
+        V1StorageAPIGroupDSL mockV1Storage = mock(V1StorageAPIGroupDSL.class);
         StorageAPIGroupDSL mockStorage = mock(StorageAPIGroupDSL.class);
         when(mockClient.storage()).thenReturn(mockStorage);
-        when(mockStorage.storageClasses()).thenReturn(op);
+        when(mockV1Storage.storageClasses()).thenReturn(op);
+        when(mockStorage.v1()).thenReturn(mockV1Storage);
     }
 
     @Override

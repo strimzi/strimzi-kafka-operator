@@ -39,7 +39,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     protected Role resource() {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("somegroup")
-                .addNewVerb("someverb")
+                .addToVerbs("someverb")
                 .build();
 
         return new RoleBuilder()
@@ -56,7 +56,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     protected Role modifiedResource() {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("somegroup2")
-                .addNewVerb("someverb2")
+                .addToVerbs("someverb2")
                 .build();
 
         return new RoleBuilder(resource())
