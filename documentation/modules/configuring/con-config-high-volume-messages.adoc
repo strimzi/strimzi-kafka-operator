@@ -10,21 +10,27 @@ Operations like tracking web activity can generate a high volume of messages.
 But even a data source with moderate throughput can produce a high volume of messages if it has a lot of existing data. 
 If your Strimzi deployment needs to handle a high volume of messages, you can use configuration options to optimize for throughput and latency. 
 
-Producer and consumer configuration helps to control the size and frequency of requests to Kafka brokers. 
+Producer and consumer configuration can help control the size and frequency of requests to Kafka brokers. 
 For more information on the configuration options, see the following:
 
 * xref:con-producer-config-properties-throughput-{context}[] 
 * xref:con-consumer-config-properties-throughput-{context}[]  
 
-You can also use the same configuration options with the Kafka Connect runtime producers and consumers used by Kafka Connect and MirrorMaker 2.0 source connectors.
-Consumers are used by source connectors to retrieve data from an external data system for Kafka Connect or from a source Kafka cluster for MirrorMaker 2.0.
-Producers are used by source connectors to send messages to a target Kafka cluster.
+You can also use the same configuration options with the producers and consumers used by Kafka Connect runtime and MirrorMaker 2.0 source connectors and sink connectors.
+
+Source connectors:: 
+* Consumers retrieve messages from a source Kafka cluster for MirrorMaker 2.0. As Kafka Connect fetches data from an external data system, consumers are not usually required for source connectors.  
+* Producers send messages to a target Kafka cluster for Kafka Connect and MirrorMaker 2.0.
+
+Sink connectors:: 
+* Consumers retrieve data from a source Kafka cluster for Kafka Connect.
+* Producers push data to an external data system for Kafka Connect.
 
 For consumers, you might increase the amount of data fetched in a single fetch request to reduce latency.
 You increase the fetch request size using the `fetch.max.bytes` and `max.partition.fetch.bytes` properties.
 You can also set a maximum limit on the number of messages returned from the consumer buffer using the `max.poll.records` property.
 
-Configure the `fetch.max.bytes`, `max.partition.fetch.bytes`, and `max.poll.records` values at the source connector level (`consumer.*`), as they relate to the specific consumer that fetches messages from the source.
+For MirrorMaker 2.0, configure the `fetch.max.bytes`, `max.partition.fetch.bytes`, and `max.poll.records` values at the source connector level (`consumer.*`), as they relate to the specific consumer that fetches messages from the source.
 
 For producers, you might increase the size of the message batches sent in a single produce request.
 You increase the batch size using the `batch.size` property.
@@ -120,9 +126,6 @@ spec:
   config:
     producer.override.batch.size: 327680
     producer.override.linger.ms: 100
-    consumer.fetch.max.bytes: 52428800
-    consumer.max.partition.fetch.bytes: 1048576
-    consumer.max.poll.records: 500
     # ...  
 ----
 
