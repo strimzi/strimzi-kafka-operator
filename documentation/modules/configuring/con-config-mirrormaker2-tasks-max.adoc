@@ -23,6 +23,7 @@ The heartbeat connector always uses a single task.
 The number of tasks that are started for the source and checkpoint connectors is the lower value between the maximum number of possible tasks and the value for `tasksMax`.
 For the source connector, the maximum number of tasks possible is one for each partition being replicated from the source cluster.
 For the checkpoint connector, the maximum number of tasks possible is one for each consumer group being replicated from the source cluster.
+When setting a maximum number of tasks, consider the number of partitions and the hardware resources that support the process.
 
 If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput and latency.
 For example, adding more tasks reduces the time taken to poll the source cluster when there is a high number of partitions or consumer groups.  
