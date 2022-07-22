@@ -7,7 +7,6 @@
 
 [role="_abstract"]
 Operations like tracking web activity can generate a high volume of messages. 
-But even a data source with moderate throughput can produce a high volume of messages if it has a lot of existing data. 
 If your Strimzi deployment needs to handle a high volume of messages, you can use configuration options to optimize for throughput and latency. 
 
 Producer and consumer configuration can help control the size and frequency of requests to Kafka brokers. 
@@ -47,14 +46,14 @@ The delay means that more records can be added to batches if they are under the 
 
 Configure the `batch.size` and `linger.ms` values at the source connector level (`producer.override.*`), as they relate to the specific producer that sends messages to the target Kafka cluster.
 
-For Kafka Connect, the data replication pipeline to the target Kafka cluster is as follows:
+For Kafka Connect, the data streaming pipeline to the target Kafka cluster is as follows:
 
-.Data replication pipeline for Kafka Connect
+.Data streaming pipeline for Kafka Connect
 *external data source -> (Kafka Connect tasks) source message queue -> producer buffer -> target topic* 
 
-For MirrorMaker 2.0, the data replication pipeline to the target Kafka cluster is as follows:
+For MirrorMaker 2.0, the data mirroring pipeline to the target Kafka cluster is as follows:
 
-.Data replication pipeline for MirrorMaker 2.0
+.Data mirroring pipeline for MirrorMaker 2.0
 *source topic -> (Kafka Connect tasks) source message queue -> producer buffer -> target topic*
 
 The producer sends messages in its buffer to topics in the target Kafka cluster.
