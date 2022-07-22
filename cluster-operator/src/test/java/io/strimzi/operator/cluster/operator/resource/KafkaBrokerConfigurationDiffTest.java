@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class KafkaBrokerConfigurationDiffTest {
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final String KAFKA_VERSION = "3.2.0";
+    private static final String KAFKA_VERSION = "3.2.1";
     KafkaVersion kafkaVersion = VERSIONS.supportedVersion(KAFKA_VERSION);
     private int brokerId = 0;
 
