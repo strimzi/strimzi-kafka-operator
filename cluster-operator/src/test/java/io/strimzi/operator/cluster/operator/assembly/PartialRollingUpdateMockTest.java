@@ -42,9 +42,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -60,10 +58,10 @@ public class PartialRollingUpdateMockTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     private static Vertx vertx;
-    private Kafka cluster;
     private KafkaAssemblyOperator kco;
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
 
@@ -78,8 +76,8 @@ public class PartialRollingUpdateMockTest {
     }
 
     @BeforeEach
-    public void beforeEach(VertxTestContext context) throws InterruptedException, ExecutionException, TimeoutException {
-        this.cluster = new KafkaBuilder()
+    public void beforeEach(VertxTestContext context) throws InterruptedException {
+        Kafka cluster = new KafkaBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
                 .build())

@@ -72,6 +72,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private final int replicas = 3;
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
 

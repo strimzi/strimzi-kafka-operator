@@ -112,6 +112,7 @@ public class ConnectorMockTest {
 
     private Vertx vertx;
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private Watch connectWatch;

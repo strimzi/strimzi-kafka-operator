@@ -60,6 +60,7 @@ public class KafkaConnectorIT {
     private static Vertx vertx;
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private ConnectCluster connectCluster;
@@ -85,7 +86,7 @@ public class KafkaConnectorIT {
     }
 
     @BeforeEach
-    public void beforeEach() throws IOException, InterruptedException {
+    public void beforeEach() throws InterruptedException {
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaConnectorCrd()
@@ -128,7 +129,7 @@ public class KafkaConnectorIT {
         config.put(TestingConnector.TOPIC_NAME, "my-topic");
 
         KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
-        Crds.kafkaConnectorOperation(client).inNamespace(namespace).create(connector);
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider();
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
@@ -157,8 +158,8 @@ public class KafkaConnectorIT {
                 config.put(TestingConnector.START_TIME_MS, 1_000);
                 Crds.kafkaConnectorOperation(client)
                         .inNamespace(namespace)
-                        .withName(connectorName)
-                        .patch(createKafkaConnector(namespace, connectorName, config));
+                        .resource(createKafkaConnector(namespace, connectorName, config))
+                        .patch();
                 return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                         "localhost", connectClient, true, connectorName, connector);
             })
@@ -191,6 +192,7 @@ public class KafkaConnectorIT {
                     .build();
     }
 
+    @SuppressWarnings({ "rawtypes" })
     private void assertConnectorIsRunning(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
         context.verify(() -> {
             KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();

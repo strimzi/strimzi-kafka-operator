@@ -65,6 +65,7 @@ public class JbodStorageMockTest {
     private static Vertx vertx;
     private Kafka kafka;
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private KafkaAssemblyOperator operator;

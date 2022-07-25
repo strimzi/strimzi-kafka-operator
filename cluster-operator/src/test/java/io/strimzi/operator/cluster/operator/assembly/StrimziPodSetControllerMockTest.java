@@ -59,6 +59,7 @@ public class StrimziPodSetControllerMockTest {
     private static final Map<String, String> OTHER_LABELS = Map.of("selector", "not-matching");
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private Vertx vertx;
@@ -82,8 +83,8 @@ public class StrimziPodSetControllerMockTest {
         podSetOperator = new StrimziPodSetOperator(vertx, client, 10_000L);
         podOperator = new PodOperator(vertx, client);
 
-        kafkaOp().inNamespace(NAMESPACE).create(kafka(KAFKA_NAME, MATCHING_LABELS));
-        kafkaOp().inNamespace(NAMESPACE).create(kafka(OTHER_KAFKA_NAME, OTHER_LABELS));
+        kafkaOp().inNamespace(NAMESPACE).resource(kafka(KAFKA_NAME, MATCHING_LABELS)).create();
+        kafkaOp().inNamespace(NAMESPACE).resource(kafka(OTHER_KAFKA_NAME, OTHER_LABELS)).create();
 
         startController();
     }
@@ -217,7 +218,7 @@ public class StrimziPodSetControllerMockTest {
 
         try {
             Pod pod = pod(podName, KAFKA_NAME, podSetName);
-            podSetOp().inNamespace(NAMESPACE).create(podSet(podSetName, KAFKA_NAME, pod));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod)).create();
 
             // Check that pod is created
             TestUtils.waitFor(
@@ -289,7 +290,7 @@ public class StrimziPodSetControllerMockTest {
 
         try {
             Pod pod1 = pod(pod1Name, KAFKA_NAME, podSetName);
-            podSetOp().inNamespace(NAMESPACE).create(podSet(podSetName, KAFKA_NAME, pod1));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod1)).create();
 
             // Wait until the pod is ready
             TestUtils.waitFor(
@@ -314,7 +315,7 @@ public class StrimziPodSetControllerMockTest {
 
             // Scale-up the pod-set
             Pod pod2 = pod(pod2Name, KAFKA_NAME, podSetName);
-            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1, pod2));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod1, pod2)).replace();
 
             // Wait until the new pod is ready
             TestUtils.waitFor(
@@ -338,7 +339,7 @@ public class StrimziPodSetControllerMockTest {
                     () -> context.failNow("Pod stats do not match"));
 
             // Scale-down the pod-set
-            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, pod1));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod1)).replace();
 
             // Wait until the pod is deleted
             TestUtils.waitFor(
@@ -381,7 +382,7 @@ public class StrimziPodSetControllerMockTest {
 
         try {
             Pod originalPod = pod(podName, KAFKA_NAME, podSetName);
-            podSetOp().inNamespace(NAMESPACE).create(podSet(podSetName, KAFKA_NAME, originalPod));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, originalPod)).create();
 
             // Wait until the pod is ready
             TestUtils.waitFor(
@@ -412,7 +413,7 @@ public class StrimziPodSetControllerMockTest {
             Pod updatedPod = pod(podName, KAFKA_NAME, podSetName);
             updatedPod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, "new-revision");
             updatedPod.getSpec().setTerminationGracePeriodSeconds(1L);
-            podSetOp().inNamespace(NAMESPACE).withName(podSetName).patch(podSet(podSetName, KAFKA_NAME, updatedPod));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, updatedPod)).replace();
 
             // Check status of the PodSet
             TestUtils.waitFor(
@@ -451,7 +452,7 @@ public class StrimziPodSetControllerMockTest {
 
         try {
             Pod pod = pod(podName, KAFKA_NAME, podSetName);
-            client.pods().inNamespace(NAMESPACE).create(pod);
+            client.pods().inNamespace(NAMESPACE).resource(pod).create();
 
             // Wait until the pod is ready
             TestUtils.waitFor(
@@ -461,7 +462,7 @@ public class StrimziPodSetControllerMockTest {
                     () -> client.pods().inNamespace(NAMESPACE).withName(podName).isReady(),
                     () -> context.failNow("Test timed out waiting for pod readiness!"));
 
-            podSetOp().inNamespace(NAMESPACE).create(podSet(podSetName, KAFKA_NAME, pod));
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod)).create();
 
             // Check status of the PodSet
             TestUtils.waitFor(
@@ -505,14 +506,14 @@ public class StrimziPodSetControllerMockTest {
             // Create the pod set which should be reconciled
             Pod pod = pod(podName, KAFKA_NAME, podSetName);
             Pod preExistingPod = pod(preExistingPodName, KAFKA_NAME, podSetName);
-            client.pods().inNamespace(NAMESPACE).create(preExistingPod);
-            podSetOp().inNamespace(NAMESPACE).create(podSet(podSetName, KAFKA_NAME, pod));
+            client.pods().inNamespace(NAMESPACE).resource(preExistingPod).create();
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod)).create();
 
             // Create the pod set which should be ignored
             Pod otherPod = pod(otherPodName, OTHER_KAFKA_NAME, otherPodSetName);
             Pod otherPreExistingPod = pod(otherPreExistingPodName, OTHER_KAFKA_NAME, otherPodSetName);
-            client.pods().inNamespace(NAMESPACE).create(otherPreExistingPod);
-            podSetOp().inNamespace(NAMESPACE).create(podSet(otherPodSetName, OTHER_KAFKA_NAME, otherPod));
+            client.pods().inNamespace(NAMESPACE).resource(otherPreExistingPod).create();
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(otherPodSetName, OTHER_KAFKA_NAME, otherPod)).create();
 
             // Check that the pre-existing pod for matching pod set is deleted
             TestUtils.waitFor(
