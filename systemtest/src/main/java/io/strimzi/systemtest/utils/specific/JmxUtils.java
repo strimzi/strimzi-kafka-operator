@@ -85,12 +85,11 @@ public class JmxUtils {
 
     public static String collectJmxTransMetricsWithWait(String namespace, String metricName, String jmxTransName) {
         String jmxTransPodName  = kubeClient(namespace).listPodsByPrefixInName(jmxTransName).get(0).getMetadata().getName();
-
         String[] result = {""};
 
         TestUtils.waitFor("JmxTrans metric will be present: " + metricName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                result[0] = kubeClient().logs(jmxTransPodName);
+                result[0] = kubeClient().logsInSpecificNamespace(namespace, jmxTransPodName);
                 return result[0].contains("Result");
             }
         );
