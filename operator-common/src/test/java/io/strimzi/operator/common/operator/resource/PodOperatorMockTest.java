@@ -31,8 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class PodOperatorMockTest {
     public static final String RESOURCE_NAME = "my-resource";
     public static final String NAMESPACE = "test";
-    protected static Vertx vertx;
-    private static Pod pod = new PodBuilder()
+    private final static Pod POD = new PodBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
                 .withName(RESOURCE_NAME)
@@ -42,7 +41,10 @@ public class PodOperatorMockTest {
             .endSpec()
             .build();
 
+    protected static Vertx vertx;
+
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
 
     @BeforeAll
@@ -64,7 +66,7 @@ public class PodOperatorMockTest {
         context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY), is(emptyList())));
 
         Checkpoint async = context.checkpoint(1);
-        pr.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, pod).onComplete(createResult -> {
+        pr.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, POD).onComplete(createResult -> {
             context.verify(() -> assertThat(createResult.succeeded(), is(true)));
             context.verify(() -> assertThat(pr.list(NAMESPACE, Labels.EMPTY).stream()
                         .map(p -> p.getMetadata().getName())

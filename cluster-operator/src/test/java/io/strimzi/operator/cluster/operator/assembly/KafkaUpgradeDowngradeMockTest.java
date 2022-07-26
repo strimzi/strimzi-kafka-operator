@@ -51,8 +51,8 @@ public class KafkaUpgradeDowngradeMockTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
-    private static Kafka basicKafka = new KafkaBuilder()
+    private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+    private static final Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
@@ -85,6 +85,7 @@ public class KafkaUpgradeDowngradeMockTest {
 
     private static Vertx vertx;
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private KafkaAssemblyOperator operator;
@@ -109,7 +110,7 @@ public class KafkaUpgradeDowngradeMockTest {
         mockKube.stop();
     }
 
-    private Future<Void> initialize(VertxTestContext context, Kafka initialKafka)   {
+    private Future<Void> initialize(Kafka initialKafka)   {
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaCrd()
@@ -123,13 +124,13 @@ public class KafkaUpgradeDowngradeMockTest {
         mockKube.start();
 
         ResourceOperatorSupplier supplier =  new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, 2_000);
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), PFA, 2_000);
 
         // This currently uses StatefulSets because of https://github.com/strimzi/strimzi-kafka-operator/issues/6946
         // This should move to StrimziPodSets after we move to Fabric8 6.0.0
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
 
-        operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
+        operator = new KafkaAssemblyOperator(vertx, PFA, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
 
         LOGGER.info("Reconciling initially -> create");
@@ -137,7 +138,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     private Kafka kafkaWithVersions(String kafkaVersion, String messageFormatVersion, String protocolVersion)   {
-        return new KafkaBuilder(basicKafka)
+        return new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
                         .withVersion(kafkaVersion)
@@ -150,7 +151,7 @@ public class KafkaUpgradeDowngradeMockTest {
     }
 
     private Kafka kafkaWithVersions(String kafkaVersion)   {
-        return new KafkaBuilder(basicKafka)
+        return new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
                         .withVersion(kafkaVersion)
@@ -189,7 +190,7 @@ public class KafkaUpgradeDowngradeMockTest {
         Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(context, initialKafka)
+        initialize(initialKafka)
                 .onComplete(context.succeeding(v -> {
                     context.verify(() -> {
                         assertVersionsInStatefulSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
@@ -230,7 +231,7 @@ public class KafkaUpgradeDowngradeMockTest {
                 KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(context, initialKafka)
+        initialize(initialKafka)
                 .onComplete(context.succeeding(v -> {
                     context.verify(() -> {
                         assertVersionsInStatefulSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
@@ -274,7 +275,7 @@ public class KafkaUpgradeDowngradeMockTest {
                 KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(context, initialKafka)
+        initialize(initialKafka)
                 .onComplete(context.succeeding(v -> {
                     context.verify(() -> {
                         assertVersionsInStatefulSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
@@ -306,10 +307,10 @@ public class KafkaUpgradeDowngradeMockTest {
     public void testUpgradeWithoutAnyVersions(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION);
 
-        Kafka updatedKafka = new KafkaBuilder(basicKafka).build();
+        Kafka updatedKafka = new KafkaBuilder(KAFKA).build();
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(context, initialKafka)
+        initialize(initialKafka)
                 .onComplete(context.succeeding(v -> {
                     context.verify(() -> {
                         assertVersionsInStatefulSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
@@ -353,7 +354,7 @@ public class KafkaUpgradeDowngradeMockTest {
                 KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
 
         Checkpoint reconciliation = context.checkpoint();
-        initialize(context, initialKafka)
+        initialize(initialKafka)
                 .onComplete(context.succeeding(v -> {
                     context.verify(() -> {
                         assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
