@@ -13,21 +13,17 @@ import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.api.model.events.v1.EventList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -36,7 +32,6 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -45,31 +40,22 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
-import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
-import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.assembly.CaReconciler;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaListenersReconciler;
 import io.strimzi.operator.cluster.operator.assembly.KafkaReconciler;
+import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
@@ -85,8 +71,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.stubbing.Answer;
 
 import java.util.Date;
 import java.util.List;
@@ -94,8 +78,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -105,34 +87,22 @@ import static io.strimzi.operator.cluster.ResourceUtils.createInitialCaKeySecret
 import static io.strimzi.operator.cluster.ResourceUtils.dummyClusterOperatorConfig;
 import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaCertSecretName;
 import static io.strimzi.operator.cluster.model.AbstractModel.clusterCaKeySecretName;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE;
-import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS;
-import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_REMOVED;
 import static io.strimzi.operator.cluster.model.RestartReason.CA_CERT_RENEWED;
 import static io.strimzi.operator.cluster.model.RestartReason.CLIENT_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CLUSTER_CA_CERT_KEY_REPLACED;
 import static io.strimzi.operator.cluster.model.RestartReason.CONFIG_CHANGE_REQUIRES_RESTART;
-import static io.strimzi.operator.cluster.model.RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE;
 import static io.strimzi.operator.cluster.model.RestartReason.FILE_SYSTEM_RESIZE_NEEDED;
 import static io.strimzi.operator.cluster.model.RestartReason.KAFKA_CERTIFICATES_CHANGED;
-import static io.strimzi.operator.cluster.model.RestartReason.JBOD_VOLUMES_CHANGED;
 import static io.strimzi.operator.cluster.model.RestartReason.MANUAL_ROLLING_UPDATE;
-import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_REVISION;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_STUCK;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_UNRESPONSIVE;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
@@ -162,14 +132,13 @@ public class KubernetesRestartEventsMockTest {
     private ResourceOperatorSupplier supplier;
     private Reconciliation reconciliation;
     private MockKube2 mockKube;
+    private StrimziPodSetController podSetController;
 
     // Injected by Fabric8 Mock Kubernetes Server
     @SuppressWarnings("unused")
     private KubernetesClient client;
 
-    // Have to use statefulsets for all mock kube tests due to a bug in the mock server that prevents the
-    // strimzi pod sets ever coming ready: https://github.com/fabric8io/kubernetes-client/issues/4139
-    private final ClusterOperatorConfig useStsForNowConf = dummyClusterOperatorConfig("-UseStrimziPodSets");
+    private final ClusterOperatorConfig useStrimziPodSetsConfig = dummyClusterOperatorConfig();
 
     private KafkaStatus ks;
     private final Supplier<Date> ds = Date::new;
@@ -181,7 +150,6 @@ public class KubernetesRestartEventsMockTest {
                 .withKafkaCrd()
                 .withInitialKafkas(KAFKA)
                 .withStrimziPodSetCrd()
-                .withStatefulSetController()
                 .withPodController()
                 .withServiceController()
                 .withDeploymentController()
@@ -197,8 +165,11 @@ public class KubernetesRestartEventsMockTest {
                 PFA,
                 60_000);
 
+        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.strimziPodSetOperator, supplier.podOperations, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+        podSetController.start();
+
         // Initial reconciliation to create cluster
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, useStsForNowConf);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, useStrimziPodSetsConfig);
         kao.reconcile(new Reconciliation("initial", "kafka", NAMESPACE, CLUSTER_NAME)).toCompletionStage().toCompletableFuture().get();
 
         reconciliation = new Reconciliation("test", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
@@ -207,19 +178,8 @@ public class KubernetesRestartEventsMockTest {
 
     @AfterEach
     void teardown() {
+        podSetController.stop();
         mockKube.stop();
-    }
-
-    @Test
-    void testEventEmittedWhenPodInStatefulSetHasOldGeneration(Vertx vertx, VertxTestContext context) {
-        KafkaReconciler reconciler = defaultReconciler(vertx);
-
-        // Grab STS generation
-        StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
-        int statefulSetGen = StatefulSetOperator.getStsGeneration(kafkaSet);
-
-        patchKafkaPodWithAnnotation(ANNO_STRIMZI_IO_GENERATION, String.valueOf(statefulSetGen - 1));
-        reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(POD_HAS_OLD_GENERATION, context));
     }
 
     @Test
@@ -242,13 +202,13 @@ public class KubernetesRestartEventsMockTest {
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStsForNowConf,
+                useStrimziPodSetsConfig,
                 supplier,
                 PFA,
                 vertx
         );
 
-        lowerVolumes.reconcile(ks, ds).onComplete(verifyEventPublished(JBOD_VOLUMES_CHANGED, context));
+        lowerVolumes.reconcile(ks, ds).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
     }
 
     @Test
@@ -283,7 +243,7 @@ public class KubernetesRestartEventsMockTest {
                 oldGenClusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStsForNowConf,
+                useStrimziPodSetsConfig,
                 supplier,
                 PFA,
                 vertx);
@@ -307,7 +267,7 @@ public class KubernetesRestartEventsMockTest {
                 ca,
                 clientsCa,
                 VERSION_CHANGE,
-                useStsForNowConf,
+                useStrimziPodSetsConfig,
                 supplier,
                 PFA,
                 vertx);
@@ -331,7 +291,7 @@ public class KubernetesRestartEventsMockTest {
                 ca,
                 clientsCa,
                 VERSION_CHANGE,
-                useStsForNowConf,
+                useStrimziPodSetsConfig,
                 supplier,
                 PFA,
                 vertx);
@@ -353,7 +313,7 @@ public class KubernetesRestartEventsMockTest {
         // Bump ca cert generation to make it look newer than pod knows of
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStsForNowConf, supplier, vertx, mockCertManager, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
         reconciler.reconcile(ds).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -371,7 +331,7 @@ public class KubernetesRestartEventsMockTest {
         // Bump ca cert generation to make it look newer than pod knows of
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100001");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStsForNowConf, supplier, vertx, mockCertManager, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
         reconciler.reconcile(ds).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -388,7 +348,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStsForNowConf,
+                useStrimziPodSetsConfig,
                 supplierWithModifiedAdmin,
                 PFA,
                 vertx);
@@ -397,11 +357,11 @@ public class KubernetesRestartEventsMockTest {
     }
 
     @Test
-    void testEventEmittedWhenCustomListenerCaCertChanged(Vertx vertx, VertxTestContext context) {
+    void testEventEmittedWhenPodRevisionChanged(Vertx vertx, VertxTestContext context) {
         // Change custom listener cert thumbprint annotation to cause reconciliation requiring restart
-        patchKafkaPodWithAnnotation(ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, "1234");
+        patchKafkaPodWithAnnotation(PodRevision.STRIMZI_REVISION_ANNOTATION, "doesnotmatchthepodset");
 
-        defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(CUSTOM_LISTENER_CA_CERT_CHANGE, context));
+        defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
     }
 
     @Test
@@ -412,15 +372,16 @@ public class KubernetesRestartEventsMockTest {
     }
 
     @Test
-    void testEventEmittedWhenStatefulSetAnnotatedForManualRollingUpdate(Vertx vertx, VertxTestContext context) {
-        StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
-        StatefulSet patchedSet = new StatefulSetBuilder(kafkaSet)
-                .editMetadata()
-                    .addToAnnotations(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                .endMetadata()
-                .build();
-
-        stsOps().resource(patchedSet).replace();
+    void testEventEmittedWhenStrimziPodSetAnnotatedForManualRollingUpdate(Vertx vertx, VertxTestContext context) {
+        supplier.strimziPodSetOperator
+                .client()
+                .inNamespace(NAMESPACE)
+                .withName(CLUSTER_NAME + "-kafka")
+                .edit(sps -> new StrimziPodSetBuilder(sps)
+                        .editMetadata()
+                            .addToAnnotations(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                        .endMetadata()
+                        .build());
 
         defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
     }
@@ -439,7 +400,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStsForNowConf,
+                useStrimziPodSetsConfig,
                 supplierWithModifiedAdmin,
                 PFA,
                 vertx);
@@ -456,7 +417,7 @@ public class KubernetesRestartEventsMockTest {
                     // Need to do this as the mock pod controller will otherwise override the Status below
                     .addToAnnotations(MockPodController.ANNO_DO_NOT_SET_READY, "True")
                     // Needs to be old gen / old revision for pod stuck to trigger
-                    .addToAnnotations(ANNO_STRIMZI_IO_GENERATION, "-1")
+                    .addToAnnotations(PodRevision.STRIMZI_REVISION_ANNOTATION, "doesnotmatchthepodset")
                 .endMetadata()
                 // Make pod unschedulable
                 .editOrNewStatus()
@@ -487,92 +448,9 @@ public class KubernetesRestartEventsMockTest {
                 createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, changedCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, changedCa, clientsCa, VERSION_CHANGE, useStrimziPodSetsConfig, supplier, PFA, vertx);
         reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
-    }
-
-    // This test uses mocks and an overridden reconcile() method instead of Mock Kube due to a bug in the mock server.
-    // It prevents the strimzi pod sets ever coming ready: https://github.com/fabric8io/kubernetes-client/issues/4139
-    @Test
-    void testEventEmittedWhenPodInPodSetHasOldRevision(Vertx vertx, VertxTestContext context) {
-        ResourceOperatorSupplier mockSupplier = ResourceUtils.supplierWithMocks(false);
-
-        SecretOperator secretOps = mockSupplier.secretOperations;
-        ServiceOperator serviceOps = mockSupplier.serviceOperations;
-        PodOperator podOps = mockSupplier.podOperations;
-        StrimziPodSetOperator strimziPodSetOps = mockSupplier.strimziPodSetOperator;
-        KubernetesRestartEventPublisher eventPublisher = mockSupplier.restartEventsPublisher;
-
-        Secret secret = new Secret();
-        when(secretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-
-        when(podOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-        when(podOps.restart(any(), any(), anyLong())).thenReturn(Future.succeededFuture());
-        when(podOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-
-        when(serviceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(serviceOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
-
-        when(strimziPodSetOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(null));
-
-        // Grab the pod created by the SPS, so when it filters on name when checking revisions, it finds what it's expecting
-        AtomicReference<Pod> kafkaPodRef = new AtomicReference<>();
-        when(strimziPodSetOps.reconcile(any(), anyString(), anyString(), any(StrimziPodSet.class)))
-                .thenAnswer((Answer<Future<ReconcileResult<StrimziPodSet>>>) invocation -> {
-                    StrimziPodSet sps = invocation.getArgument(invocation.getArguments().length - 1, StrimziPodSet.class);
-                    kafkaPodRef.set(PodSetUtils.mapToPod(sps.getSpec().getPods().get(0)));
-                    return Future.succeededFuture(ReconcileResult.noop(sps));
-                });
-
-        //Update the copy of the first pod to have a revision annotation that doesn't match
-        when(podOps.get(any(), anyString())).thenAnswer(inv -> new PodBuilder(kafkaPodRef.get())
-                .editOrNewMetadata()
-                        .addToAnnotations(PodRevision.STRIMZI_REVISION_ANNOTATION, "x")
-                .endMetadata()
-                .build()
-        );
-
-        // As event dispatching is happening in a background thread, we need to capture when it's actually happened, otherwise
-        // the test finishes before the background thread completes
-        AtomicBoolean eventDispatched = new AtomicBoolean(false);
-        doAnswer(invocation -> {
-            eventDispatched.set(true);
-            return null;
-        }).when(eventPublisher).publishRestartEvents(any(), any());
-
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, dummyClusterOperatorConfig(), mockSupplier, PFA, vertx) {
-
-            @Override
-            public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier) {
-                //Run subset of reconciliation to avoid mocking the world in the absence of MockKube
-                return listeners().onComplete(i -> podSet()).onComplete(i -> rollingUpdate());
-            }
-
-            // Override this method to return a mock to be used on a package private field in the reconciler to prevent
-            // an NPE in the podSet() method
-            @Override
-            protected KafkaListenersReconciler listenerReconciler() {
-                KafkaListenersReconciler mock = mock(KafkaListenersReconciler.class);
-                when(mock.reconcile()).thenReturn(Future.succeededFuture(new KafkaListenersReconciler.ReconciliationResult()));
-                return mock;
-            }
-        };
-
-        ArgumentCaptor<Pod> podCaptor = ArgumentCaptor.forClass(Pod.class);
-        ArgumentCaptor<RestartReasons> reasonsCaptor = ArgumentCaptor.forClass(RestartReasons.class);
-
-        reconciler.reconcile(ks, ds).onComplete(context.succeeding(i -> context.verify(() -> {
-            TestUtils.waitFor("Event publication in worker thread", 500, 10000, eventDispatched::get);
-
-            verify(eventPublisher, times(1)).publishRestartEvents(podCaptor.capture(), reasonsCaptor.capture());
-
-            assertThat(podCaptor.getValue().getMetadata().getName(), is(kafkaPodRef.get().getMetadata().getName()));
-            assertThat(reasonsCaptor.getValue(), is(RestartReasons.of(POD_HAS_OLD_REVISION)));
-            context.completeNow();
-        })));
     }
 
     private <T> Handler<AsyncResult<T>> verifyEventPublished(RestartReason expectedReason, VertxTestContext context) {
@@ -595,7 +473,7 @@ public class KubernetesRestartEventsMockTest {
     }
 
     private KafkaReconciler defaultReconciler(Vertx vertx) {
-        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStsForNowConf, supplier, PFA, vertx);
+        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStrimziPodSetsConfig, supplier, PFA, vertx);
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
@@ -643,10 +521,6 @@ public class KubernetesRestartEventsMockTest {
 
     private NonNamespaceOperation<PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> pvcOps() {
         return client.persistentVolumeClaims().inNamespace(NAMESPACE);
-    }
-
-    private NonNamespaceOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> stsOps() {
-        return client.apps().statefulSets().inNamespace(NAMESPACE);
     }
 
     private List<Event> listRestartEvents() {
