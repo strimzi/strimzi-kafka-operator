@@ -14,15 +14,14 @@ For more information on the configuration options, see the following:
 * xref:con-producer-config-properties-throughput-{context}[] 
 * xref:con-consumer-config-properties-throughput-{context}[]  
 
-You can also use the same configuration options with the producers and consumers used by Kafka Connect runtime and MirrorMaker 2.0 source connectors and sink connectors.
+You can also use the same configuration options with the producers and consumers used by the Kafka Connect runtime source connectors (including MirrorMaker 2.0) and sink connectors.
 
 Source connectors:: 
-* Consumers retrieve messages from a source Kafka cluster for MirrorMaker 2.0. As Kafka Connect fetches data from an external data system, consumers are not usually required for source connectors.  
-* Producers send messages to a target Kafka cluster for Kafka Connect and MirrorMaker 2.0.
+* Producers from the Kafka Connect runtime send messages to the Kafka cluster.
+* For MirrorMaker 2.0, since the source system is Kafka, consumers retrieve messages from a source Kafka cluster. 
 
 Sink connectors:: 
-* Consumers retrieve data from a source Kafka cluster for Kafka Connect.
-* Producers push data to an external data system for Kafka Connect.
+* Consumers from the Kafka Connect runtime retrieve messages from the Kafka cluster.
 
 For consumers, you might increase the amount of data fetched in a single fetch request to reduce latency.
 You increase the fetch request size using the `fetch.max.bytes` and `max.partition.fetch.bytes` properties.
