@@ -205,14 +205,7 @@ public class SetupClusterOperator {
         if (Environment.isOlmInstall()) {
             runOlmInstallation();
         } else if (Environment.isHelmInstall()) {
-            LOGGER.info("Install ClusterOperator via Helm");
-            helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
-            if (isClusterOperatorNamespaceNotCreated()) {
-                cluster.setNamespace(namespaceInstallTo);
-                cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
-            }
-            helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+            helmInstallation();
         } else {
             bundleInstallation();
         }
@@ -243,23 +236,20 @@ public class SetupClusterOperator {
         return this;
     }
 
+    private void helmInstallation() {
+        LOGGER.info("Install ClusterOperator via Helm");
+        helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
+        createCONamespaceIfNeeded();
+        helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+    }
 
     private void bundleInstallation() {
         LOGGER.info("Install ClusterOperator via Yaml bundle");
         // check if namespace is already created
-        if (isClusterOperatorNamespaceNotCreated()) {
-            cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
-        } else {
-            LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
-        }
+        createCONamespaceIfNeeded();
         prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
         applyBindings();
 
-        // copy image-pull secret
-        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-            StUtils.copyImagePullSecret(namespaceInstallTo);
-        }
         // 060-Deployment
         ResourceManager.setCoDeploymentName(clusterOperatorName);
         ResourceManager.getInstance().createResource(extensionContext,
@@ -284,31 +274,38 @@ public class SetupClusterOperator {
             if (!Environment.isNamespaceRbacScope()) {
                 bindingsNamespaces = bindingsNamespaces.contains(Constants.INFRA_NAMESPACE) ? Collections.singletonList(cluster.getDefaultOlmNamespace()) : bindingsNamespaces;
                 namespaceInstallTo = cluster.getDefaultOlmNamespace();
-                if (isClusterOperatorNamespaceNotCreated()) {
-                    cluster.setNamespace(namespaceInstallTo);
-                    // if OLM is cluster-wide we do not re-create default OLM namespace because it will also delete
-                    // the global OperatorGroup resource. Thus we remove such namespace from the collection avoiding failing tests.
-                    if (bindingsNamespaces.contains(namespaceInstallTo)) {
-                        bindingsNamespaces = new ArrayList<>(bindingsNamespaces).stream()
-                            .filter(n -> !n.equals(namespaceInstallTo))
-                            .collect(Collectors.toList());
-                    }
-                    cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-                    extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
+
+                // if OLM is cluster-wide we do not re-create default OLM namespace because it will also delete
+                // the global OperatorGroup resource. Thus we remove such namespace from the collection avoiding failing tests.
+                if (bindingsNamespaces.contains(namespaceInstallTo)) {
+                    bindingsNamespaces = new ArrayList<>(bindingsNamespaces).stream()
+                        .filter(n -> !n.equals(namespaceInstallTo))
+                        .collect(Collectors.toList());
                 }
+
+                createCONamespaceIfNeeded();
                 createClusterRoleBindings();
                 olmResource = new OlmResource(namespaceInstallTo);
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             }
             // single-namespace olm co-operator
         } else {
-            if (isClusterOperatorNamespaceNotCreated()) {
-                cluster.setNamespace(namespaceInstallTo);
-                cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
-            }
+            createCONamespaceIfNeeded();
             olmResource = new OlmResource(namespaceInstallTo);
             olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+        }
+    }
+
+    public void createCONamespaceIfNeeded() {
+        if (isClusterOperatorNamespaceNotCreated()) {
+            cluster.setNamespace(namespaceInstallTo);
+            cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
+            if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                StUtils.copyImagePullSecret(namespaceInstallTo);
+            }
+        } else {
+            LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
         }
     }
 
