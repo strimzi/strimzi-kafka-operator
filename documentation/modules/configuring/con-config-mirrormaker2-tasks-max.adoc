@@ -8,7 +8,7 @@
 [role="_abstract"]
 Connectors create the tasks that are responsible for moving data in and out of Kafka.
 Each connector comprises one or more tasks that are distributed across a group of worker pods that run the tasks.
-Increasing the number of tasks can help with performance issues when replicating a large number of partitions or synchronizing the offsets of a large number of consumer groups. 
+Increasing the number of tasks can help with performance issues when replicating a large number of partitions or synchronizing the offsets of a large number of consumer groups.   
 
 Tasks run in parallel.
 Workers are assigned one or more tasks.
@@ -65,6 +65,11 @@ spec:
       tasksMax: 10
   # ...
 ----
+
+By default, MirrorMaker 2.0 checks for new consumer groups every 10 minutes. 
+You can adjust the `refresh.groups.interval.seconds` configuration to change the frequency.
+Take care when adjusting lower.
+More frequent checks can have a negative impact on performance.   
 
 == Checking connector task operations
 
