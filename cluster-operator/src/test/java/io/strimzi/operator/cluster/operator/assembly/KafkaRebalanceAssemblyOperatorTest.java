@@ -98,6 +98,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
     private static ClientAndServer ccServer;
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
 
@@ -435,7 +436,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     // after a while, apply the "stop" annotation to the resource in the PendingProposal state
                     annotate(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
                 }
-                return;
             }
         });
 
@@ -1098,7 +1098,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                             .withName(kr.getMetadata().getName())
                             .delete();
                 }
-                return;
             }
         });
 
@@ -1182,7 +1181,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     // after a while, apply the "stop" annotation to the resource in the Rebalancing state
                     annotate(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.stop);
                 }
-                return;
             }
         });
 
@@ -1549,7 +1547,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 4. The KafkaRebalance resource moves to the 'NotReady' state
      */
     @Test
-    public void testIntraBrokerDiskBalanceWithoutJbodConfig(VertxTestContext context) throws IOException, URISyntaxException {
+    public void testIntraBrokerDiskBalanceWithoutJbodConfig(VertxTestContext context) {
         KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withRebalanceDisk(true)
                 .build();

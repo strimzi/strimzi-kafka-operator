@@ -55,6 +55,7 @@ public class TopicOperatorMockIT {
     private static final String NAMESPACE = "my-namespace";
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private Session session;
@@ -175,12 +176,12 @@ public class TopicOperatorMockIT {
     }
 
     private void createInKube(KafkaTopic topic) {
-        Crds.topicOperation(client).create(topic);
+        Crds.topicOperation(client).resource(topic).create();
     }
 
     private void updateInKube(KafkaTopic topic) {
         LOGGER.info("Updating topic {} in kube", topic.getMetadata().getName());
-        Crds.topicOperation(client).withName(topic.getMetadata().getName()).patch(topic);
+        Crds.topicOperation(client).resource(topic).replace();
     }
 
     @Test

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
@@ -18,9 +17,6 @@ import io.vertx.junit5.VertxTestContext;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -66,15 +62,12 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
         ServiceAccount newResource = getOriginal();
         ServiceAccount modResource = getModified();
 
-        List<ObjectReference> secrets = new ArrayList<>();
-
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
                 .onComplete(context.succeeding(rrCreated -> {
                     ServiceAccount created = op.get(namespace, resourceName);
 
                     context.verify(() -> assertThat(created, Matchers.is(notNullValue())));
                     assertResources(context, newResource, created);
-                    secrets.addAll(created.getSecrets());
                 }))
                 .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
                 .onComplete(context.succeeding(rrModified -> {
@@ -82,7 +75,6 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
 
                     context.verify(() -> assertThat(modified, Matchers.is(notNullValue())));
                     assertResources(context, modResource, modified);
-                    context.verify(() -> assertThat(modified.getSecrets(), is(secrets)));
                 }))
                 .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
                 .onComplete(context.succeeding(rrDeleted -> {

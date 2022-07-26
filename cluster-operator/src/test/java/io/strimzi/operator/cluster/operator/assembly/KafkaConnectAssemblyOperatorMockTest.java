@@ -72,6 +72,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
     private final int replicas = 3;
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
 
@@ -117,7 +118,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         this.kco = new KafkaConnectAssemblyOperator(vertx, pfa, supplier, config, foo -> kafkaConnectApi);
 
-        Promise created = Promise.promise();
+        Promise<Void> created = Promise.promise();
 
         LOGGER.info("Reconciling initially -> create");
         kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -153,7 +154,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, false)
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
@@ -181,7 +182,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, true)
-                .onComplete(context.succeeding())
+                .onComplete(context.succeedingThenComplete())
                 .compose(v -> {
                     LOGGER.info("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));

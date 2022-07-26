@@ -50,7 +50,7 @@ You can specify optimization goals in the following configuration:
 * *Main goals* -- `Kafka.spec.cruiseControl.config.goals`
 * *Hard goals* -- `Kafka.spec.cruiseControl.config.hard.goals`
 * *Default goals* -- `Kafka.spec.cruiseControl.config.default.goals`
-* *User-defined goals* -- `KafkaRebalance.spec.goals`
+* *User-provided goals* -- `KafkaRebalance.spec.goals`
 
 [NOTE]
 ====

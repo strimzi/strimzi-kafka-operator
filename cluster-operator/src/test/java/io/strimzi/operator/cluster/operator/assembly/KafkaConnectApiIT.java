@@ -118,12 +118,12 @@ public class KafkaConnectApiIT {
                     .put("topic", "my-topic");
                 return client.createOrUpdatePutRequest(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test", o);
             })
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
             .compose(created -> {
 
                 Promise<Map<String, Object>> promise = Promise.promise();
 
-                Handler<Long> handler = new Handler<Long>() {
+                Handler<Long> handler = new Handler<>() {
                     @Override
                     public void handle(Long timerId) {
                         client.status(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test").onComplete(result -> {
@@ -173,16 +173,16 @@ public class KafkaConnectApiIT {
             .recover(error -> Future.succeededFuture())
 
             .compose(ignored -> client.pause("localhost", port, "test"))
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
 
             .compose(ignored -> client.resume("localhost", port, "test"))
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
 
             .compose(ignored -> client.restart("localhost", port, "test"))
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
 
             .compose(ignored -> client.restartTask("localhost", port, "test", 0))
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
 
             .compose(ignored -> {
                 JsonObject o = new JsonObject()
@@ -217,7 +217,7 @@ public class KafkaConnectApiIT {
             .onComplete(context.succeeding(connectorNames -> context.verify(() ->
                     assertThat(connectorNames, is(singletonList("test"))))))
             .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
-            .onComplete(context.succeeding())
+            .onComplete(context.succeedingThenComplete())
             .compose(deletedConnector -> client.list("localhost", port))
             .onComplete(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
             .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "never-existed"))
@@ -230,7 +230,7 @@ public class KafkaConnectApiIT {
     }
 
     @IsolatedTest
-    public void testChangeLoggers(VertxTestContext context) throws InterruptedException {
+    public void testChangeLoggers(VertxTestContext context) {
         String desired = "log4j.rootLogger=TRACE, CONSOLE\n" +
                 "log4j.logger.org.apache.zookeeper=WARN\n" +
                 "log4j.logger.org.I0Itec.zkclient=INFO\n" +
