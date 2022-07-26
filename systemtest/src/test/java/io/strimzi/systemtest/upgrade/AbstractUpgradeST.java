@@ -79,7 +79,7 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected final String topicName = "my-topic";
     protected final String userName = "my-user";
-    protected final int upgradeTopicCount = 40;
+    protected final int upgradeTopicCount = 10;
     // ExpectedTopicCount contains additionally consumer-offset topic, my-topic and continuous-topic
     protected final int expectedTopicCount = upgradeTopicCount + 3;
     protected File kafkaYaml;
