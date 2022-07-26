@@ -63,8 +63,9 @@ public class JmxIsolatedST extends AbstractST {
         final String kafkaJmxSecretName = clusterName + "-kafka-jmx";
         final String jmxTransName = clusterName + "-kafka-jmx-trans";
 
-        final String jmxTransMetricTypeName = "BrokerTopicMetrics";
-        final String jmxTransMetricName = "BytesOutPerSec";
+        final String jmxTransMetricTypeName = "KafkaServer";
+        final String jmxTransMetricName = "BrokerState";
+        final String expectedJmxTransValue = "value=3";
 
         Map<String, String> jmxSecretLabels = Collections.singletonMap("my-label", "my-value");
         Map<String, String> jmxSecretAnnotations = Collections.singletonMap("my-annotation", "some-value");
@@ -77,7 +78,7 @@ public class JmxIsolatedST extends AbstractST {
                             .withOutputType("com.googlecode.jmxtrans.model.output.StdOutWriter")
                             .build())
                     .withKafkaQueries(new JmxTransQueryTemplateBuilder()
-                            .withTargetMBean("kafka.server:type=ReplicaManager,name=PartitionCount")
+                            .withTargetMBean("kafka.server:type=" + jmxTransMetricTypeName + ",name=" + jmxTransMetricName)
                             .withAttributes("Value")
                             .withOutputs("standardOut")
                             .build())
@@ -120,17 +121,9 @@ public class JmxIsolatedST extends AbstractST {
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
 
-
-        // Check Jmx Trans log result
-        int allTopicCount = 0;
-
-        for (KafkaTopic kafkaTopic : KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list().getItems()) {
-            allTopicCount += kafkaTopic.getSpec().getPartitions();
-        }
-
-        String jmxTransPodName = kubeClient().listPodsByPrefixInName(jmxTransName).get(0).getMetadata().getName();
-        String jmxTransResult = kubeClient().logs(jmxTransPodName);
-        assertThat("Result from Kafka JmxTrans doesn't contain correct number of partitions" + jmxTransResult, jmxTransResult, containsString("value=" + allTopicCount));
+        String jmxTransResult = JmxUtils.collectJmxTransMetricsWithWait(namespaceName, jmxTransMetricName, jmxTransName);
+        // Note: Broker State = 3: Running as Broker
+        assertThat("Result from Kafka JmxTrans doesn't contain correct metric" + jmxTransMetricName +  ", result: " + jmxTransResult, jmxTransResult, containsString(expectedJmxTransValue));
 
         if (!Environment.isKRaftModeEnabled()) {
             Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
