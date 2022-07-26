@@ -37,7 +37,7 @@ public class JmxUtils {
     }
 
     private static String getResultOfJMXTermExec(String podName, String serviceName) {
-        String[] cmd = new String[]{
+        String[] cmd = new String[] {
             "java",
             "-jar",
             "/tmp/jmxterm.jar",
@@ -49,7 +49,7 @@ public class JmxUtils {
     }
 
     public static void downloadJmxTermToPod(String namespace, String podName) {
-        String[] cmd = new String[]{
+        String[] cmd = new String[] {
             "curl",
             "-L",
             "https://github.com/jiaqi/jmxterm/releases/download/v1.0.2/jmxterm-1.0.2-uber.jar",
