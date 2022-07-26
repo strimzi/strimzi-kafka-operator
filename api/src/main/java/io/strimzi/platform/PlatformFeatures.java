@@ -4,14 +4,17 @@
  */
 package io.strimzi.platform;
 
+/**
+ * Interface which describes the Kubernetes platform on which we run
+ */
 public interface PlatformFeatures {
     /**
-     * @return Returns the Kubernetes version on which the operator is running.
+     * @return Returns the Kubernetes version on which Strimzi is running.
      */
     KubernetesVersion getKubernetesVersion();
 
     /**
-     * @return Returns true if the cluster was identified as OpenShift and false otherwise.
+     * @return Returns true if the cluster Strimzi is running on was identified as OpenShift and false otherwise.
      */
     boolean isOpenshift();
 }

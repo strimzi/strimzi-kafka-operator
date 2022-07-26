@@ -5,7 +5,7 @@
 package io.strimzi.platform;
 
 /**
- * Represents Kubernetes version which CO runs on
+ * Represents Kubernetes version which Strimzi runs on
  */
 public class KubernetesVersion implements Comparable<KubernetesVersion> {
     private int major;
@@ -30,6 +30,12 @@ public class KubernetesVersion implements Comparable<KubernetesVersion> {
     public static final int MINIMAL_SUPPORTED_MAJOR = MINIMAL_SUPPORTED_VERSION.major;
     public static final int MINIMAL_SUPPORTED_MINOR = MINIMAL_SUPPORTED_VERSION.minor;
 
+    /**
+     * Constructs the Kubernetes version from major and minor version
+     *
+     * @param major     Major Kubernetes version
+     * @param minor     Minor Kubernetes version
+     */
     public KubernetesVersion(int major, int minor) {
         this.major = major;
         this.minor = minor;

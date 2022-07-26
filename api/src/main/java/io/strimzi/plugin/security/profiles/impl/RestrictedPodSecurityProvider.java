@@ -8,7 +8,19 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.strimzi.plugin.security.profiles.ContainerSecurityProviderContext;
 
+/**
+ * An implementation of the PodSecurityProvider which implements the restricted Kubernetes security profile
+ */
 public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
+    /**
+     * Internal method which generates the restricted container security context. If any user-supplied pod security
+     * context is set, it will be used. If not, then a context matching the restricted Kubernetes profile will be
+     * provided.
+     *
+     * @param context   Context for providing the container security context
+     *
+     * @return  Returns the generated security context
+     */
     private SecurityContext createRestrictedContainerSecurityContext(ContainerSecurityProviderContext context)    {
         if (context == null)    {
             return null;
@@ -89,6 +101,8 @@ public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
                 && context.userSuppliedSecurityContext() != null)    {
             return context.userSuppliedSecurityContext();
         } else {
+            // Kaniko does not support running under the restricted Kubernetes profile (needs to run as root and needs some capabilities to build containers)
+            //    => if Kafka Connect Build is used, we throw an exception to not deploy it.
             throw new UnsupportedOperationException("Kafka Connect Build using the Kaniko builder is not available under the restricted security profile");
         }
     }
