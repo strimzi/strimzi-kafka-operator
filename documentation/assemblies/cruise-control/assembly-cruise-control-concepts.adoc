@@ -33,7 +33,7 @@ They can be set aside if it means that all hard goals are met.
 Main goals are used in optimization proposals by default.  
 * *Default goals* are the same as the main goals by default. 
 You can specify your own set of default goals.  
-* *User-defined* goals are a subset of default goals that are configured for generating a specific optimization proposal. 
+* *User-provided goals* are a subset of default goals that are configured for generating a specific optimization proposal. 
 --
 
 Optimization proposals::  Optimization proposals comprise the goals you want to achieve from a rebalance. 
