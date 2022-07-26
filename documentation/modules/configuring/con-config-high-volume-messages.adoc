@@ -6,7 +6,6 @@
 = Handling high volumes of messages
 
 [role="_abstract"]
-Operations like tracking web activity can generate a high volume of messages. 
 If your Strimzi deployment needs to handle a high volume of messages, you can use configuration options to optimize for throughput and latency. 
 
 Producer and consumer configuration can help control the size and frequency of requests to Kafka brokers. 
@@ -46,15 +45,20 @@ The delay means that more records can be added to batches if they are under the 
 
 Configure the `batch.size` and `linger.ms` values at the source connector level (`producer.override.*`), as they relate to the specific producer that sends messages to the target Kafka cluster.
 
-For Kafka Connect, the data streaming pipeline to the target Kafka cluster is as follows:
+For Kafka Connect source connectors, the data streaming pipeline to the target Kafka cluster is as follows:
 
-.Data streaming pipeline for Kafka Connect
-*external data source -> (Kafka Connect tasks) source message queue -> producer buffer -> target topic* 
+.Data streaming pipeline for Kafka Connect source connector
+*external data source -> (Kafka Connect tasks) source message queue -> producer buffer -> target Kafka topic* 
+
+For Kafka Connect sink connectors, the data streaming pipeline to the target external data source is as follows:
+
+.Data streaming pipeline for Kafka Connect sink connector
+*source Kafka topic -> (Kafka Connect tasks) sink message queue -> consumer buffer -> external data source*
 
 For MirrorMaker 2.0, the data mirroring pipeline to the target Kafka cluster is as follows:
 
 .Data mirroring pipeline for MirrorMaker 2.0
-*source topic -> (Kafka Connect tasks) source message queue -> producer buffer -> target topic*
+*source Kafka topic -> (Kafka Connect tasks) source message queue -> producer buffer -> target Kafka topic*
 
 The producer sends messages in its buffer to topics in the target Kafka cluster.
 While this is happening, Kafka Connect tasks continue to poll the data source to add messages to the source message queue.
@@ -108,9 +112,9 @@ spec:
   # ...
 ----
 
-Consumer and producer configuration is added for the source connector, which is managed using the `KafkaConnector` custom resource. 
+Producer configuration is added for the source connector, which is managed using the `KafkaConnector` custom resource. 
 
-.Example KafkaConnector configuration for handling high volumes of messages
+.Example source connector configuration for handling high volumes of messages
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaConnectorApiVersion}
@@ -128,9 +132,30 @@ spec:
     # ...  
 ----
 
+Consumer configuration is added for the sink connector. 
+
+.Example sink connector configuration for handling high volumes of messages
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-sink-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  class: org.apache.kafka.connect.file.FileStreamSinkConnector
+  tasksMax: 2
+  config:
+    consumer.fetch.max.bytes: 52428800
+    consumer.max.partition.fetch.bytes: 1048576
+    consumer.max.poll.records: 500
+    # ...  
+----
+
 If you are using the Kafka Connect API instead of the `KafkaConnector` custom resource to manage your connectors, you can add the connector configuration as a JSON object. 
 
-.Example curl request to add connector configuration for handling high volumes of messages
+.Example curl request to add source connector configuration for handling high volumes of messages
 [source,curl,subs=attributes+]
 ----
 curl -X POST \
@@ -146,9 +171,6 @@ curl -X POST \
       "type": "source"
       "producer.override.batch.size": 327680
       "producer.override.linger.ms": 100
-      "consumer.fetch.max.bytes": 52428800
-      "consumer.max.partition.fetch.bytes": 1048576
-      "consumer.max.poll.records": 500
     }
 }'
 ----
