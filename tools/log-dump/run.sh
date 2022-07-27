@@ -77,11 +77,15 @@ find_segments() {
 }
 
 dump_segments() {
-  local seg_files="$1"
+  local topic="$1"
+  local seg_files="$2"
   if [[ -z $seg_files || $(echo "$seg_files" | sed '/^\s*$/d' | wc -l) -eq 0 ]]; then
     echo "No segment found"
   fi
   local flags="--deep-iteration"
+  if [[ $DATA == true ]]; then
+    flags="$flags --print-data-log"
+  fi
   case "$topic" in
     "$CO_TOPIC")
       flags="$flags --offsets-decoder"
@@ -127,7 +131,7 @@ dump_partition() {
   # segment dump
   local seg_files && seg_files=$(find_segments "$broker" "$log_dir")
   echo "$disk_label"
-  dump_segments "$seg_files"
+  dump_segments "$topic" "$seg_files"
 }
 
 partition() {
