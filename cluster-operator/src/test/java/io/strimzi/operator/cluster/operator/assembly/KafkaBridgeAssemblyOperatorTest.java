@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
-import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;

@@ -30,7 +30,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
-import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -83,6 +82,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
@@ -91,6 +91,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -130,8 +131,6 @@ public abstract class AbstractModel {
     protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
     protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
-
-    private static final Long DEFAULT_FS_GROUPID = 0L;
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.json";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
@@ -255,6 +254,11 @@ public abstract class AbstractModel {
     protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
     private Affinity userAffinity;
     private List<Toleration> tolerations;
+
+    /**
+     * PodSecurityProvider
+     */
+    protected PodSecurityProvider securityProvider = PodSecurityProviderFactory.getProvider();
 
     /**
      * Template configuration
@@ -1083,19 +1087,7 @@ public abstract class AbstractModel {
             List<Container> initContainers,
             List<Container> containers,
             List<LocalObjectReference> imagePullSecrets,
-            boolean isOpenShift) {
-
-        PodSecurityContext securityContext = templateSecurityContext;
-
-        // if a persistent volume claim is requested and the running cluster is a Kubernetes one (non-openshift) and we
-        // have no user configured PodSecurityContext we set the podSecurityContext.
-        // This is to give each pod write permissions under a specific group so that if a pod changes users it does not have permission issues.
-        if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
-            securityContext = new PodSecurityContextBuilder()
-                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
-                    .build();
-        }
-
+            PodSecurityContext podSecurityContext) {
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1126,7 +1118,7 @@ public abstract class AbstractModel {
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                            .withSecurityContext(securityContext)
+                            .withSecurityContext(podSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
                             .withHostAliases(templatePodHostAliases)
@@ -1153,7 +1145,7 @@ public abstract class AbstractModel {
      * @param initContainers            List of init containers which should be used in the pods
      * @param containers                List of containers which should be used in the pods
      * @param imagePullSecrets          List of image pull secrets with container registry credentials
-     * @param isOpenShift               Flag to specify whether we are on OpenShift or not
+     * @param podSecurityContext        PodSecurityContext which should be used for the pod
      *
      * @return                          Generated StrimziPodSet with all pods
      */
@@ -1166,7 +1158,8 @@ public abstract class AbstractModel {
             List<Container> initContainers,
             List<Container> containers,
             List<LocalObjectReference> imagePullSecrets,
-            boolean isOpenShift)  {
+            PodSecurityContext podSecurityContext
+    )  {
         List<Map<String, Object>> pods = new ArrayList<>(replicas);
 
         for (int i = 0; i < replicas; i++)  {
@@ -1180,7 +1173,7 @@ public abstract class AbstractModel {
                     initContainers,
                     containers,
                     imagePullSecrets,
-                    isOpenShift);
+                    podSecurityContext);
 
             pods.add(PodSetUtils.podToMap(pod));
         }
@@ -1204,15 +1197,15 @@ public abstract class AbstractModel {
      * Generates a stateful Pod. Unlike regular pods or pod templates, it uses some additional fields to configure
      * things such as subdomain etc. which are normally generated by StatefulSets.
      *
-     * @param strimziPodSetName Name of the StrimziPodSet which will control this pod. This is used for labeling
-     * @param podName           Name of the pod
-     * @param podAnnotations    Map with annotation which should be set on the Pods
-     * @param volumes           Function which returns a list of volumes which should be used by the Pod and its containers
-     * @param affinity          Affinity rules for the pods
-     * @param initContainers    List of init containers which should be used in the pods
-     * @param containers        List of containers which should be used in the pods
-     * @param imagePullSecrets  List of image pull secrets with container registry credentials
-     * @param isOpenShift       Flag to specify whether we are on OpenShift or not
+     * @param strimziPodSetName     Name of the StrimziPodSet which will control this pod. This is used for labeling
+     * @param podName               Name of the pod
+     * @param podAnnotations        Map with annotation which should be set on the Pods
+     * @param volumes               Function which returns a list of volumes which should be used by the Pod and its containers
+     * @param affinity              Affinity rules for the pods
+     * @param initContainers        List of init containers which should be used in the pods
+     * @param containers            List of containers which should be used in the pods
+     * @param imagePullSecrets      List of image pull secrets with container registry credentials
+     * @param podSecurityContext    PodSecurityContext which should be used for the pod
      *
      * @return                  Generated pod for a use within StrimziPodSet
      */
@@ -1225,19 +1218,8 @@ public abstract class AbstractModel {
             List<Container> initContainers,
             List<Container> containers,
             List<LocalObjectReference> imagePullSecrets,
-            boolean isOpenShift) {
-
-        PodSecurityContext securityContext = templateSecurityContext;
-
-        // if a persistent volume claim is requested and the running cluster is a Kubernetes one (non-openshift) and we
-        // have no user configured PodSecurityContext we set the podSecurityContext.
-        // This is to give each pod write permissions under a specific group so that if a pod changes users it does not have permission issues.
-        if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
-            securityContext = new PodSecurityContextBuilder()
-                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
-                    .build();
-        }
-
+            PodSecurityContext podSecurityContext
+    ) {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(podName)
@@ -1258,7 +1240,7 @@ public abstract class AbstractModel {
                     .withTolerations(getTolerations())
                     .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                     .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                    .withSecurityContext(securityContext)
+                    .withSecurityContext(podSecurityContext)
                     .withPriorityClassName(templatePodPriorityClassName)
                     .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
                     .withHostAliases(templatePodHostAliases)
@@ -1279,19 +1261,8 @@ public abstract class AbstractModel {
             List<Container> initContainers,
             List<Container> containers,
             List<LocalObjectReference> imagePullSecrets,
-            boolean isOpenShift) {
-
-        PodSecurityContext securityContext = templateSecurityContext;
-
-        // if a persistent volume claim is requested and the running cluster is a Kubernetes one (non-openshift) and we
-        // have no user configured PodSecurityContext we set the podSecurityContext.
-        // This is to give each pod write permissions under a specific group so that if a pod changes users it does not have permission issues.
-        if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
-            securityContext = new PodSecurityContextBuilder()
-                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
-                    .build();
-        }
-
+            PodSecurityContext podSecurityContext
+    ) {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1311,7 +1282,7 @@ public abstract class AbstractModel {
                     .withTolerations(getTolerations())
                     .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                     .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                    .withSecurityContext(securityContext)
+                    .withSecurityContext(podSecurityContext)
                     .withPriorityClassName(templatePodPriorityClassName)
                     .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
                 .endSpec()
@@ -1328,8 +1299,9 @@ public abstract class AbstractModel {
             List<Container> initContainers,
             List<Container> containers,
             List<Volume> volumes,
-            List<LocalObjectReference> imagePullSecrets) {
-
+            List<LocalObjectReference> imagePullSecrets,
+            PodSecurityContext podSecurityContext
+    ) {
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(name)
@@ -1357,7 +1329,7 @@ public abstract class AbstractModel {
                             .withTolerations(getTolerations())
                             .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
                             .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                            .withSecurityContext(templateSecurityContext)
+                            .withSecurityContext(podSecurityContext)
                             .withPriorityClassName(templatePodPriorityClassName)
                             .withSchedulerName(templatePodSchedulerName)
                             .withHostAliases(templatePodHostAliases)

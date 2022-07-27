@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;

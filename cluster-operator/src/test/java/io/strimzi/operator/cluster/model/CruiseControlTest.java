@@ -50,6 +50,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.BrokerCapacity;
@@ -58,6 +59,8 @@ import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -789,6 +792,20 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
+    }
+
+    @ParallelTest
+    public void testRestrictedSecurityContext() {
+        CruiseControl cc = createCruiseControl(createKafka(cruiseControlSpec));
+        cc.securityProvider = new RestrictedPodSecurityProvider();
+        cc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Deployment dep = cc.generateDeployment(true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
     @ParallelTest

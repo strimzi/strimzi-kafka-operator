@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -113,6 +114,9 @@ public class Main {
                 config.getOperationTimeoutMs(),
                 config.getOperatorName()
         );
+
+        // Initialize the PodSecurityProvider factory to provide the user configured provider
+        PodSecurityProviderFactory.initialize(config.getPodSecurityProviderClass(), pfa);
 
         KafkaAssemblyOperator kafkaClusterOperations = null;
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;

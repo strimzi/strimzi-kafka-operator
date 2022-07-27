@@ -25,7 +25,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -401,7 +401,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 30,
                 false,
                 1024,
-                "cluster-operator-name");
+                "cluster-operator-name",
+                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS);
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, config);

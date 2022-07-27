@@ -33,6 +33,8 @@ import io.strimzi.api.kafka.model.connect.build.ImageStreamOutput;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -258,7 +260,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 null,
                 getContainers(imagePullPolicy),
                 imagePullSecrets,
-                isOpenShift
+                securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext))
         );
     }
 
@@ -351,7 +353,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 .withArgs(args)
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(build.getResources())
-                .withSecurityContext(templateBuildContainerSecurityContext)
+                .withSecurityContext(securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateBuildContainerSecurityContext)))
                 .withEnv(getBuildContainerEnvVars())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .build();

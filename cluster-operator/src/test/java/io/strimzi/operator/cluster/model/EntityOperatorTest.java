@@ -39,10 +39,13 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -482,6 +485,20 @@ public class EntityOperatorTest {
 
         Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testRestrictedSecurityContext() {
+        EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, true);
+        eo.securityProvider = new RestrictedPodSecurityProvider();
+        eo.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        Deployment dep = eo.generateDeployment(true, null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
     /**

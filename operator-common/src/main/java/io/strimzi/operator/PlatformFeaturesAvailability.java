@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.operator.common.Util;
+import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.platform.PlatformFeatures;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -20,7 +22,7 @@ import java.util.Map;
 /**
  * Gives a info about certain features availability regarding to kubernetes version
  */
-public class PlatformFeaturesAvailability {
+public class PlatformFeaturesAvailability implements PlatformFeatures {
     private static final Logger LOGGER = LogManager.getLogger(PlatformFeaturesAvailability.class.getName());
 
     private boolean routes = false;
@@ -173,17 +175,19 @@ public class PlatformFeaturesAvailability {
      * @param isOpenShift           Set all OpenShift APIs to true
      * @param kubernetesVersion     Set the Kubernetes version
      */
-    /* test */public PlatformFeaturesAvailability(boolean isOpenShift, KubernetesVersion kubernetesVersion) {
+    public PlatformFeaturesAvailability(boolean isOpenShift, KubernetesVersion kubernetesVersion) {
         this.kubernetesVersion = kubernetesVersion;
         this.routes = isOpenShift;
         this.images = isOpenShift;
         this.builds = isOpenShift;
     }
 
+    @Override
     public boolean isOpenshift() {
         return this.hasRoutes();
     }
 
+    @Override
     public KubernetesVersion getKubernetesVersion() {
         return this.kubernetesVersion;
     }
