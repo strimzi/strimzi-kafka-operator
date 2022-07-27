@@ -55,6 +55,8 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -462,7 +464,8 @@ public class KafkaConnectCluster extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 getVolumes(isOpenShift),
-                imagePullSecrets);
+                imagePullSecrets,
+                securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
     }
 
     @Override
@@ -481,7 +484,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(templateContainerSecurityContext)
+                .withSecurityContext(securityProvider.kafkaConnectContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build();
 
         containers.add(container);
@@ -515,7 +518,7 @@ public class KafkaConnectCluster extends AbstractModel {
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                    .withSecurityContext(templateInitContainerSecurityContext)
+                    .withSecurityContext(securityProvider.kafkaConnectInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
                     .build();
 
             if (getResources() != null) {

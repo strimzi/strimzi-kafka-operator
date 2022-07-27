@@ -2,13 +2,12 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator;
+package io.strimzi.platform;
 
 /**
- * Represents Kubernetes version which CO runs on
+ * Represents Kubernetes version which Strimzi runs on
  */
 public class KubernetesVersion implements Comparable<KubernetesVersion> {
-
     private int major;
     private int minor;
 
@@ -24,11 +23,19 @@ public class KubernetesVersion implements Comparable<KubernetesVersion> {
     public static final KubernetesVersion V1_21 = new KubernetesVersion(1, 21);
     public static final KubernetesVersion V1_22 = new KubernetesVersion(1, 22);
     public static final KubernetesVersion V1_23 = new KubernetesVersion(1, 23);
+    public static final KubernetesVersion V1_24 = new KubernetesVersion(1, 24);
+    public static final KubernetesVersion V1_25 = new KubernetesVersion(1, 25);
 
     public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_16;
     public static final int MINIMAL_SUPPORTED_MAJOR = MINIMAL_SUPPORTED_VERSION.major;
     public static final int MINIMAL_SUPPORTED_MINOR = MINIMAL_SUPPORTED_VERSION.minor;
 
+    /**
+     * Constructs the Kubernetes version from major and minor version
+     *
+     * @param major     Major Kubernetes version
+     * @param minor     Minor Kubernetes version
+     */
     public KubernetesVersion(int major, int minor) {
         this.major = major;
         this.minor = minor;

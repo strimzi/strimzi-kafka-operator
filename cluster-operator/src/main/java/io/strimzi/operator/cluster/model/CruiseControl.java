@@ -42,6 +42,8 @@ import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -360,7 +362,8 @@ public class CruiseControl extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 getVolumes(isOpenShift),
-                imagePullSecrets);
+                imagePullSecrets,
+                securityProvider.cruiseControlPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
     }
 
     @Override
@@ -384,7 +387,7 @@ public class CruiseControl extends AbstractModel {
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(templateCruiseControlContainerSecurityContext)
+                .withSecurityContext(securityProvider.cruiseControlContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateCruiseControlContainerSecurityContext)))
                 .build();
 
         return Collections.singletonList(container);
