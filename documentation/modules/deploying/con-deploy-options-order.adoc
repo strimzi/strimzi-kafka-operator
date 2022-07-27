@@ -5,6 +5,7 @@
 [id='deploy-options-order-{context}']
 = Order of deployment
 
+[role="_abstract"]
 The required order of deployment to a Kubernetes cluster is as follows:
 
 . Deploy the Cluster Operator to manage your Kafka cluster

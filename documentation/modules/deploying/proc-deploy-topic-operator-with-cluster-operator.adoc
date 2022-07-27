@@ -45,9 +45,9 @@ spec:
 . Configure the Topic Operator `spec` using the properties described in link:{BookURLUsing}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
 +
 Use an empty object (`{}`) if you want all properties to use their default values.
+
 . Create or update the resource:
 +
-Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _<kafka_configuration_file>_
 

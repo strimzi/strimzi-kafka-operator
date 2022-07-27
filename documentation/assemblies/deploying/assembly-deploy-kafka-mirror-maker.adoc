@@ -4,7 +4,7 @@
 // getting-started.adoc
 
 [id='kafka-mirror-maker-{context}']
-= Deploy Kafka MirrorMaker
+= Deploying Kafka MirrorMaker
 
 The Cluster Operator deploys one or more Kafka MirrorMaker replicas to replicate data between Kafka clusters.
 This process is called mirroring to avoid confusion with the Kafka partitions replication concept.

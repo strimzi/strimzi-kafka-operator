@@ -19,7 +19,7 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 
 . Edit the Strimzi installation files to use the namespace the Cluster Operator is going to be installed into.
 +
-For example, in this procedure the Cluster Operator is installed into the namespace `_<my_cluster_operator_namespace>_`.
+For example, in this procedure the Cluster Operator is installed into the namespace `my-cluster-operator-namespace`.
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 
@@ -48,21 +48,19 @@ spec:
 . Create `ClusterRoleBindings` that grant cluster-wide access for all namespaces to the Cluster Operator.
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount _<my_cluster_operator_namespace>_:strimzi-cluster-operator
-kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount _<my_cluster_operator_namespace>_:strimzi-cluster-operator
-+
-Replace `_<my_cluster_operator_namespace>_` with the namespace you want to install the Cluster Operator into.
+kubectl create clusterrolebinding strimzi-cluster-operator-namespaced --clusterrole=strimzi-cluster-operator-namespaced --serviceaccount my-cluster-operator-namespace:strimzi-cluster-operator
+kubectl create clusterrolebinding strimzi-cluster-operator-entity-operator-delegation --clusterrole=strimzi-entity-operator --serviceaccount my-cluster-operator-namespace:strimzi-cluster-operator
 
 . Deploy the Cluster Operator to your Kubernetes cluster.
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl create -f install/cluster-operator -n _<my_cluster_operator_namespace>_
+kubectl create -f install/cluster-operator -n my-cluster-operator-namespace
 
 . Check the status of the deployment:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get deployments -n _<my_cluster_operator_namespace>_
+kubectl get deployments -n my-cluster-operator-namespace
 ----
 +
 .Output shows the deployment name and readiness

@@ -4,7 +4,7 @@
 // assembly-getting-started.adoc
 
 [id='kafka-connect-{context}']
-= Deploy Kafka Connect
+= Deploying Kafka Connect
 
 link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and external systems.
 

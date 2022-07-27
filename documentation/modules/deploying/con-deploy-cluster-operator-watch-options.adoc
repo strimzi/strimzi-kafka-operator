@@ -4,17 +4,19 @@
 
 [id='con-cluster-operator-watch-options-{context}']
 
-= Watch options for a Cluster Operator deployment
+= Specifying the namespaces the Cluster Operator watches
 
-When the Cluster Operator is running, it starts to _watch_ for updates of Kafka resources.
+[role="_abstract"]
+The Cluster Operator watches for updates in the namespaces where the Kafka resources are deployed. 
+When you deploy the Cluster Operator, you specify which namespaces to watch.
+You can specify the following namespaces:
 
-You can choose to deploy the Cluster Operator to watch Kafka resources from:
+* xref:deploying-cluster-operator-{context}[A single namespace] (the same namespace containing the Cluster Operator)
+* xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[Multiple namespaces]
+* xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces]
 
-* A single namespace (the same namespace containing the Cluster Operator)
-* Multiple namespaces
-* All namespaces
-
-NOTE: Strimzi provides example YAML files to make the deployment process easier.
+NOTE: The Cluster Operator can watch one, multiple, or all namespaces in a Kubernetes cluster.
+The Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in a single namespace. For more information, see link:{BookURLUsing}#con-operators-namespaces-str[Watching namespaces with Strimzi operators^].
 
 The Cluster Operator watches for changes to the following resources:
 

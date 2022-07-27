@@ -1,0 +1,48 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks.adoc
+
+[id='con-deploy-paths-{context}']
+= Deployment options
+
+[role="_abstract"]
+You can set up a basic deployment with a single Kafka cluster.
+You might use this configuration for development or testing. 
+Or you can use Strimzi to manage a number of Kafka clusters in a production environment. 
+
+The first step for any deployment of Strimzi is to install the Cluster Operator using the `install/cluster-operator` files.
+
+A single command applies all the installation files in the `cluster-operator` folder: `kubectl apply -f ./install/cluster-operator`.
+
+The command sets up everything you need to be able to create and manage a Kafka deployment, including the following:
+
+* Cluster Operator
+* Strimzi CRDs
+* Role bindings
+* Service accounts
+
+== Deployment path for development 
+
+If you want a basic development setup where the Cluster Operator manages a single Kafka cluster in the same namespace, you can use the following steps:
+
+. xref:downloads-{context}[Download the release artifacts] 
+. Create a Kubernetes namespace in which to deploy the Cluster Operator
+. xref:deploying-cluster-operator-{context}[Deploy the Cluster Operator to watch a single namespace]
+.. Update the `install/cluster-operator` files to use the namespace created for the Cluster Operator 
+.. Install the Cluster Operator to watch the namespace
+. xref:deploying-kafka-cluster-{context}[Create an ephemeral Kafka cluster in the same namespace as the Cluster Operator]
+
+== Deployment path for production
+
+If you want a production setup where the Cluster Operator manages Kafka clusters in different namespaces, you can use the following steps:
+
+. xref:downloads-{context}[Download the release artifacts]
+. Create a Kubernetes namespace in which to deploy the Cluster Operator
+. Deploy the Cluster Operator to xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[watch multiple namespaces] or xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[all namespaces]
+.. Update the `install/cluster-operator` files to use the namespace created for the Cluster Operator
+.. Update the Cluster Operator deployment file (`060-Deployment-strimzi-cluster-operator.yaml`) to specify the namespaces to watch
+.. Install the Cluster Operator to watch the namespaces
+. xref:deploying-kafka-cluster-{context}[Create a persistent Kafka cluster in each namespace]
+
+
+

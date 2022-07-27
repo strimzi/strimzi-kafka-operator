@@ -42,6 +42,7 @@ spec:
 . Configure the User Operator `spec` using the properties described in link:{BookURLUsing}#type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference^].
 +
 Use an empty object (`{}`) if you want all properties to use their default values.
+
 . Create or update the resource:
 [source,shell,subs=+quotes]
 kubectl apply -f _<kafka_configuration_file>_
