@@ -36,9 +36,6 @@ include::../../modules/configuring/con-config-mirrormaker2-producers-consumers.a
 //Increasing the number of tasks
 include::../../modules/configuring/con-config-mirrormaker2-tasks-max.adoc[leveloffset=+1]
 
-//handling high volumes of messages
-include::../../modules/configuring/con-config-mirrormaker2-high-volume-messages.adoc[leveloffset=+1]
-
 //Handling of ACLs in replication
 include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset=+1]
 
