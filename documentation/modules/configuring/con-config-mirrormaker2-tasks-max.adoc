@@ -8,6 +8,7 @@
 [role="_abstract"]
 Connectors create the tasks that are responsible for moving data in and out of Kafka.
 Each connector comprises one or more tasks that are distributed across a group of worker pods that run the tasks.
+Increasing the number of tasks can help with performance issues when replicating a large number of partitions or synchronizing the offsets of a large number of consumer groups.   
 
 Tasks run in parallel.
 Workers are assigned one or more tasks.
@@ -16,9 +17,20 @@ If there are more tasks than workers, workers handle multiple tasks.
 
 You can specify the maximum number of connector tasks in your MirrorMaker configuration using the `tasksMax` property.
 Without specifying a maximum number of tasks, the default setting is a single task.
-If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput.
 
-.tasksMax configuration for a MirrorMaker connector
+The heartbeat connector always uses a single task.
+
+The number of tasks that are started for the source and checkpoint connectors is the lower value between the maximum number of possible tasks and the value for `tasksMax`.
+For the source connector, the maximum number of tasks possible is one for each partition being replicated from the source cluster.
+For the checkpoint connector, the maximum number of tasks possible is one for each consumer group being replicated from the source cluster.
+When setting a maximum number of tasks, consider the number of partitions and the hardware resources that support the process.
+
+If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput and latency.
+For example, adding more tasks reduces the time taken to poll the source cluster when there is a high number of partitions or consumer groups.  
+
+Increasing the number of tasks for the checkpoint connector is useful when you have a large number of partitions.
+
+.Increasing the number of tasks for the source connector
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -35,8 +47,40 @@ spec:
   # ...
 ----
 
-For the source connector, the maximum number of tasks possible is one for each partition being replicated from the source cluster.
-For the checkpoint connector, the maximum number of tasks possible is one for each group being replicated from the source cluster.
-The number of tasks that are started for these connectors is the lower value between the maximum number of possible tasks and the value for `tasksMax`.
+Increasing the number of tasks for the checkpoint connector is useful when you have a large number of consumer groups.
 
-The heartbeat connector always uses a single task.
+.Increasing the number of tasks for the checkpoint connector
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    checkpointConnector:
+      tasksMax: 10
+  # ...
+----
+
+By default, MirrorMaker 2.0 checks for new consumer groups every 10 minutes. 
+You can adjust the `refresh.groups.interval.seconds` configuration to change the frequency.
+Take care when adjusting lower.
+More frequent checks can have a negative impact on performance.   
+
+== Checking connector task operations
+
+If you are using Prometheus and Grafana to monitor your deployment, you can check MirrorMaker 2.0 performance.
+The example MirrorMaker 2.0 Grafana dashboard provided with Strimzi shows the following metrics related to tasks and latency.
+
+* The number of tasks
+* Replication latency
+* Offset synchronization latency
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards^]
