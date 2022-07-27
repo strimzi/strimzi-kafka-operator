@@ -58,8 +58,8 @@ public class ConnectCluster {
                 try {
                     ConnectDistributed connectDistributed = new ConnectDistributed();
                     Connect connect = connectDistributed.startConnect(workerProps);
-                    l.countDown();
                     connectInstances.add(connect);
+                    l.countDown();
                     connect.awaitStop();
                 } catch (ConnectException e)    {
                     startupException.set(e);
