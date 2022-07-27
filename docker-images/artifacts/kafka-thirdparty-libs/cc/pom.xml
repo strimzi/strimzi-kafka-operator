@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <cruise-control.version>2.5.95</cruise-control.version>
+        <cruise-control.version>2.5.97</cruise-control.version>
     </properties>
 
     <repositories>

@@ -5,49 +5,35 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.certs.CertManager;
-import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.ClientsCa;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.KafkaVersionChange;
-import io.strimzi.operator.cluster.model.RestartReason;
-import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
-import io.strimzi.operator.common.operator.resource.RouteOperator;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,41 +41,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorCustomCertMockTest {
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
-    private final MockCertManager certManager = new MockCertManager();
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
-    private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private final String namespace = "testns";
-    private final String clusterName = "testkafka";
-    protected static Vertx vertx;
+    private static final String NAMESPACE = "testns";
+    private static final String CLUSTER_NAME = "testkafka";
 
-    private Kafka kafka;
-    private KafkaAssemblyOperator operator;
+    private static Vertx vertx;
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
-
-    private final List<Function<Pod, RestartReasons>> functionArgumentCaptor = new ArrayList<>();
+    private StrimziPodSetController podSetController;
+    private ResourceOperatorSupplier supplier;
+    private KafkaAssemblyOperator operator;
 
     @BeforeAll
     public static void before() {
@@ -97,44 +67,33 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
     }
 
     @BeforeEach
-    public void setup() {
-        kafka = createKafka();
+    public void setup() throws InterruptedException {
+        Kafka kafka = createKafka();
 
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaCrd()
                 .withInitialKafkas(kafka)
                 .withStrimziPodSetCrd()
+                .withDeploymentController()
                 .withPodController()
-                .withStatefulSetController()
+                .withServiceController()
                 .build();
         mockKube.start();
 
-        client.secrets().inNamespace(namespace).create(getTlsSecret());
-        client.secrets().inNamespace(namespace).create(getExternalSecret());
-        Secret secret = new SecretBuilder()
-            .withNewMetadata()
-                .withNamespace(namespace)
-                .withName("testkafka-cluster-operator-certs")
-            .endMetadata()
-            .addToData("foo", "bar")
-            .build();
-        client.secrets().inNamespace(namespace).create(secret);
-        PlatformFeaturesAvailability platformFeaturesAvailability = new PlatformFeaturesAvailability(false, kubernetesVersion);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, platformFeaturesAvailability, 10000, "op");
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        supplier = supplier(client, pfa);
 
-        operator = new MockKafkaAssemblyOperator(
-                vertx,
-                platformFeaturesAvailability,
-                certManager,
-                passwordGenerator,
-                supplier,
-                config
-        );
+        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.strimziPodSetOperator, supplier.podOperations, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+        podSetController.start();
+
+        operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
     }
 
     @AfterEach
     public void afterEach() {
+        podSetController.stop();
         mockKube.stop();
     }
 
@@ -143,12 +102,21 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
         vertx.close();
     }
 
-    public Kafka createKafka() {
+    private ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient, PlatformFeaturesAvailability pfa) {
+        return new ResourceOperatorSupplier(vertx,
+                bootstrapClient,
+                ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
+                ResourceUtils.metricsProvider(),
+                pfa,
+                60_000L);
+    }
+
+    private Kafka createKafka() {
         return new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(clusterName)
-                    .withNamespace(namespace)
-                    .withGeneration(2L)
+                    .withName(CLUSTER_NAME)
+                    .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -161,19 +129,6 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                                     .withNewConfiguration()
                                         .withNewBrokerCertChainAndKey()
                                             .withSecretName("my-tls-secret")
-                                            .withCertificate("tls.crt")
-                                            .withKey("tls.key")
-                                        .endBrokerCertChainAndKey()
-                                    .endConfiguration()
-                                    .build(),
-                                new GenericKafkaListenerBuilder()
-                                    .withName("external")
-                                    .withPort(9094)
-                                    .withType(KafkaListenerType.NODEPORT)
-                                    .withTls(true)
-                                    .withNewConfiguration()
-                                        .withNewBrokerCertChainAndKey()
-                                            .withSecretName("my-external-secret")
                                             .withCertificate("tls.crt")
                                             .withKey("tls.key")
                                         .endBrokerCertChainAndKey()
@@ -191,7 +146,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 .build();
     }
 
-    public Secret getTlsSecret() {
+    private Secret getSecret() {
         return new SecretBuilder()
                 .withNewMetadata()
                     .withName("my-tls-secret")
@@ -201,237 +156,65 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 .build();
     }
 
-    public String getTlsThumbprint()    {
-        return "{external=fc4c92a1, tls=d33fd102}";
+    public String getThumbprint()    {
+        return "{tls=d33fd102}";
     }
 
-    public Secret getExternalSecret() {
+    private Secret getUpdatedSecret() {
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName("my-external-secret")
+                    .withName("my-tls-secret")
                 .endMetadata()
                 .addToData("tls.crt", "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQxVENDQXIyZ0F3SUJBZ0lVUWUrQUdacXdDK0Z0ZFBiMjUyQU1ERjlaOFk0d0RRWUpLb1pJaHZjTkFRRUwKQlFBd1ZERUxNQWtHQTFVRUJoTUNRMW94RHpBTkJnTlZCQWNUQmxCeVlXZDFaVEViTUJrR0ExVUVDaE1TU21GcgpkV0lnVTJOb2IyeDZMQ0JKYm1NdU1SY3dGUVlEVlFRREV3NUpiblJsY20xbFpHbGhkR1ZEUVRBZUZ3MHhPVEV5Ck16RXhPVEl4TURCYUZ3MHlNREV4TWprd016SXhNREJhTUU0eEN6QUpCZ05WQkFZVEFrTmFNUTh3RFFZRFZRUUgKRXdaUWNtRm5kV1V4R3pBWkJnTlZCQW9URWtwaGEzVmlJRk5qYUc5c2Vpd2dTVzVqTGpFUk1BOEdBMVVFQXhNSQpSWGgwWlhKdVlXd3dnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDVkZDK2d1b1c2CjdmWEQ2ZC81Y2FyOHMzcktMeFRjSlgzT0Z4Ykl3K3NUNnZLOHg1cVBSVjlDS2h5ZHJzWGVhNnRQWDdhRUJETVQKL1lGd08xQWdBS0szTUwwQXFTZFZ6RktBQnIydnh3U1M5RHFKSW9zb1ovS2ZkdGZ0dHB1SnRCcWZ3eWd0QjYxWQpxU24xVnduTUFTbDdCUHluc2ZXTW40RkpqQlg4eDBKQ1lIbGhDOXVsczk5bFRSZVlRNjNHUjJNU0pqbFVpYmh1Ck83RjdZa2NmbTZKMkRrK0RzVXdiT3NoOCtHUFBGK2ZqbkU5aDJkRDVKUVdxUjc0Y2dqNnVMdE1rZ1lqWU11L2UKeTZYTkJZUkF3c1hOeU9sL1VnRW1XOVBmb3lYRTNRVnRSYVFQamg5N3RYNjlNYURNSXZML2ZFeU9NclhGWUNTYwplN0szMEpFbW9uci9BZ01CQUFHamdhUXdnYUV3RGdZRFZSMFBBUUgvQkFRREFnV2dNQjBHQTFVZEpRUVdNQlFHCkNDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjREFqQU1CZ05WSFJNQkFmOEVBakFBTUIwR0ExVWREZ1FXQkJUdnJlc1cKL3l5eTlxMFRrb1lYME9sMUVlSzhiVEFmQmdOVkhTTUVHREFXZ0JUcEJ2VWdOanAvWEx4bmNmSTlnQUtCV2NSWQpPVEFpQmdOVkhSRUVHekFaZ2hjcUxqRTVNaTR4TmpndU5qUXVNVFF6TG01cGNDNXBiekFOQmdrcWhraUc5dzBCCkFRc0ZBQU9DQVFFQUgvNG1TUmtSWEZORXJwTVFkS0tPeHFjVFNrd0dNRzM1UlR4ajNjeXR2OEtNYW9VWUQvTUsKcTR5MjJLOS90OU1ybjQ2L3BNVi9aY29lZkFJQ3VRSEdnSDVHN3gxaEN4T3RKK1dCMy9oM25ZOXhnbUJwcTU5MApJZlo1NDczVnQ5RldrR3NGNU5FZnNPWkVMNE9BL3BqaStUKzFCNENWOGs1NGQ3blJkSWpMZkNSbGlVTm13WEZCCkJqeTBIOEpGZ216TFpROTNKRzRhRi9hM1RwMDhvY0xxbjZzTHkzN0pFbkJQSVBnL1ZqS3hJeGNvbUVzbFdVL28KdHZoRVNLc3V3TFcxUnkycmNJNHoyeXl5ZnIyMlFpRzdBRk5RUFdHUGlhM3FuRkYxbmxxWXI4V3VjR3Vnanp5NAphM0h0RmFnMkxwbWoxZFB6cUI4anJGZHhKY0hBVHd3UTV3PT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQotLS0tLUJFR0lOIENFUlRJRklDQVRFLS0tLS0KTUlJRGtUQ0NBbm1nQXdJQkFnSVVNU0Z6WEdCYnNtdVcxY3VaYU9CeUsyK01LK1V3RFFZSktvWklodmNOQVFFTApCUUF3VERFTE1Ba0dBMVVFQmhNQ1Exb3hEekFOQmdOVkJBY1RCbEJ5WVdkMVpURWJNQmtHQTFVRUNoTVNTbUZyCmRXSWdVMk5vYjJ4NkxDQkpibU11TVE4d0RRWURWUVFERXdaU2IyOTBRMEV3SGhjTk1Ua3hNak14TVRreU1UQXcKV2hjTk1qQXhNVEk1TURNeU1UQXdXakJVTVFzd0NRWURWUVFHRXdKRFdqRVBNQTBHQTFVRUJ4TUdVSEpoWjNWbApNUnN3R1FZRFZRUUtFeEpLWVd0MVlpQlRZMmh2Ykhvc0lFbHVZeTR4RnpBVkJnTlZCQU1URGtsdWRHVnliV1ZrCmFXRjBaVU5CTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUF2dW15TnFBaXp2VEIKQ0xRa3FiVDBEajI0R1ZwcVJsb0RSTGdRc0xzMFhHMCtPZVMrc0UyU2ZLTkhJeC9BK1pzUEFoTm04L1BlL01UKwpHNFBzYzgydHNpNitTZWJlYjBENExuOVI3UXVlWFpKTXlxaXhSWFlzcEZBMHA5bXhwc1NpZ0NnTFl3Y3NCVElkCm12U055VllzV2hUUHpuMXM4VUJ2SlVoenBCKzBLM1d6WkhYMEVJYVh3ZmtsM1Fob3JQZDdyQ0RUVXAzQlNwdWUKSXRENG1VcCtNV3NvSDZzRzUrazBIeUNISzVEUS9qN2xSb1Y2dGhsSkdJdkxXbmhodFRLNjVOQThsQk92Wkd6UQpQMVBaMUwreEZRUXZyZDJKMUltczZicmM4NytqM0JEZ0VxZ1YvSjJGYmtEL3JQSHVFTDRSVndqS3l2YU1Tc2crCkthU3FjQ3VJR1FJREFRQUJvMk13WVRBT0JnTlZIUThCQWY4RUJBTUNBZ1F3RHdZRFZSMFRBUUgvQkFVd0F3RUIKL3pBZEJnTlZIUTRFRmdRVTZRYjFJRFk2ZjF5OFozSHlQWUFDZ1ZuRVdEa3dId1lEVlIwakJCZ3dGb0FVSzZhZApWaHk5bmtBR1JGbXorU3MyQkNvVUhua3dEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBTHRKRjJTY3NkVUNzT2VKCmU0N2grbG5UNHRJU2s3WVVNQk02Rlc1bFhPU05PRXhrVEs5THBOd1hpeGFQVWlLZFo1RWhURE1KUDZuNkJZaVMKV01wRU9aNmVQY3p5bVZ5cHN3KzhZUXJ6U3ByMG1UL1l3L2pTQzRwTXNXL1dBNWYwWWpGMTVidGR2U01kekd5UAp5MjlEL1B5Vy9jQnRiNlhyZGtsKzRmZUY2a1Z6bWZwWDhsSklVRmhqK0ppZmNrRWdJTkhYTHZ1SjFXWWFUbkxpClZTWi9FVUQxK0pabzZaOElFMmRsd21OQXhQc0pCSnNiUFF0eUQ4SEg1clJtWW5LaXN5Q1dvU0xIUjJRZlA4SzYKOGFNMVpxTEkvWWxmditPMzlQQnZ4eEFTZldta2VzbHp1anBUYnZTV1hRNHk1dFEvRWhvSlFjQnVsOUhWc2xiRgpKSkhTRWtnPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlEYURDQ0FsQ2dBd0lCQWdJVWM1Sm1sYlEwQjJDcWcxWDV6MGs1emdyU0lVc3dEUVlKS29aSWh2Y05BUUVMCkJRQXdUREVMTUFrR0ExVUVCaE1DUTFveER6QU5CZ05WQkFjVEJsQnlZV2QxWlRFYk1Ca0dBMVVFQ2hNU1NtRnIKZFdJZ1UyTm9iMng2TENCSmJtTXVNUTh3RFFZRFZRUURFd1pTYjI5MFEwRXdIaGNOTVRreE1qTXhNVGt5TVRBdwpXaGNOTWpReE1qSTVNVGt5TVRBd1dqQk1NUXN3Q1FZRFZRUUdFd0pEV2pFUE1BMEdBMVVFQnhNR1VISmhaM1ZsCk1Sc3dHUVlEVlFRS0V4SktZV3QxWWlCVFkyaHZiSG9zSUVsdVl5NHhEekFOQmdOVkJBTVRCbEp2YjNSRFFUQ0MKQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFNVDdlMDUvdmoyVm5IMFl0QXRMeGlQSgpaYkoyTzZRb25ldFRiNnltT0xaU0p2d0Uyd1RUQnlXNmxXWHZaVWsvNlNwRDQ5ODZ4eXM0RUs0bkc3WWUwOGx6Cjl4OVlZSUFhU0ptcEpmcjF2SkZBNnhCQWVZTDFqNEQ0T1kyUk80Qnp2Tmtobml3SmRVQXpzZCtVQzJzTW41SE4KZ2hTQTlzejNlTjVrcXAzNzNkdFBETWgyUVRZZnMvTFgySVhuSEEzeWhRRDZlZktxTEpZR2ZYTFZTdWNhNmYrawpUTkVBVmpDQ0E1bEl5OFJ1L25LTlZVQXlvTE5CSzI2R0prRTBuNU1qMzArRVhpdFE3YlN2SEUzdm1zRFFPTnl5CkF1K0dEbEl6WWtYOXpNUjRnYnNKNDQxK3dUWE5yVWtKRmVtb1B4c3dhcEFLc3FSTlljK3dXVUJPR21ZV2xHOEMKQXdFQUFhTkNNRUF3RGdZRFZSMFBBUUgvQkFRREFnRUdNQThHQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwTwpCQllFRkN1bW5WWWN2WjVBQmtSWnMva3JOZ1FxRkI1NU1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQXhqbEMrCm5lYnNndzlZSUs3NndzTWpFZ01BNlIySzVub25nVllKZWJHZXpnejBNaW5md0IxbjVnd2xGSkRZZHJvSUhmSmQKV3pxakpCdnhqUTlxUURoYzcyaGJkK3NlelNnUFZNR29Hb2l1cmJLY3VDa3lBalZMK1M4eFNHSkY5Ti81bEtwUQpqTklMZnBtSzlxMWZlam4zYzJmcFk0eE1aRnRUWk9qZVN6SGhLdTZ2VnVLZGZYYWRuQllWOTJPWXhUeXFJVk9CCmNPMm9EUDlvQmZjWlY4N0ZTSG9zY0dUOXRnd1F5R09zbEk3YmlObTFnRmZRL1VzcEhKRVltcy8za2NKRC9vOFkKS0lKeUFPUDNwYngzc0FhTWYrVHVaUkN6WGV5SFVUUzM1a3VoYjdvdEFTYmh1amlEaHRTeHFwL05CT3lBL2tmeApuQXN6SUdEMVdXYnBOSjMrCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K")
                 .addToData("tls.key", "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2Z0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktnd2dnU2tBZ0VBQW9JQkFRQ1ZGQytndW9XNjdmWEQKNmQvNWNhcjhzM3JLTHhUY0pYM09GeGJJdytzVDZ2Szh4NXFQUlY5Q0toeWRyc1hlYTZ0UFg3YUVCRE1UL1lGdwpPMUFnQUtLM01MMEFxU2RWekZLQUJyMnZ4d1NTOURxSklvc29aL0tmZHRmdHRwdUp0QnFmd3lndEI2MVlxU24xClZ3bk1BU2w3QlB5bnNmV01uNEZKakJYOHgwSkNZSGxoQzl1bHM5OWxUUmVZUTYzR1IyTVNKamxVaWJodU83RjcKWWtjZm02SjJEaytEc1V3Yk9zaDgrR1BQRitmam5FOWgyZEQ1SlFXcVI3NGNnajZ1THRNa2dZallNdS9leTZYTgpCWVJBd3NYTnlPbC9VZ0VtVzlQZm95WEUzUVZ0UmFRUGpoOTd0WDY5TWFETUl2TC9mRXlPTXJYRllDU2NlN0szCjBKRW1vbnIvQWdNQkFBRUNnZ0VBTzVhNkF2RUxpMUNhc0JqSDRobEJVNGthUjc3U0E3MG9zRHdpYTFXRW5ZMkkKUVZVM3ZwVG9JclphZ2R6ZVVxMk82RWRGMlRja2c1VU5MQ05KUDhHQlNPQStiQWt4SStac0E2aXVJWmpYaHpZQQpQOWlDN3orOWgyZ2xuMnNpZU1SNDcrcytIK0cxdEg3SnVydHp1d3VyM1BSOVdUcVZBQVN4MVFnZHNkQ2o5NHVrClJzdGsrSGhjM2thT1U0UHM1cWFWbWJZdFB6ZlVibjhoK0xZOWNpZGxQanhiaWZCMTdiK0FaSW9mS2FTb1hEVG4KRks4Wmk1V056cklFdm1TQVZJT00vMHhPbUpnTXdIWUdvUW9PbWJ1TGl0VEFOemQwTmFUVFcyTDV0dlZYa1psOApGZlRrOFRGZ2p2RUpSdExEdklHd3VlS1I1ZE51cGpWSUQ1ek55c0NLSVFLQmdRREFRWVhQclVtd0xheXBhQU5aCmNuY21sL1NNbmowRklwcTJId3Ayb05JRTU1ZlBzZ04yK2tpQklPNXVxYkFGa2U5aGJldTVqS3FLT1hRVFFya3UKa04ybmZvRGJNYklVS29vZXowZyt3REdHeWhJOThzS1REdTZmZTd2Z1FSR3d5ZzIvMUhlRlZVbFMzSHRGbm9aWQpMbnBubXUwcmxoSXg2R2MzaE9PZ1VQN2Jvd0tCZ1FER2dkYUpCVGtuRDVDcjJpYzZ4c2d1WnV6RTd5bzUrZ05uCjREcjc2NXNRc3hNVGhIbjJJMXNpMldBeFl0RmVROGxHMCs3ai9vYjZOUHRaWWg1eXBud2RsbHFiRXVtNUxzYVoKTFZnY09hMGsxeEhxVSt3VUxJWm9hcmlxWXhYUHMvcEU4ZHoralQ3Wld4WmI0aGJ1WmRrU2lJWWVWTzlpaGhKagpKbDZGdTRFWTlRS0JnUUN2S2tPL3J4UUhaK1g3eDEvZDNGUEJId3ZhSHNaYjZtWnBicWk2NHRYWFVDYmFQa2UzCjNGdTVBd2NhWHBLWTBKajQvUXliMXhUK3NWQVh5R0F1bENEUDNZdUxxcUNralFtZy9wekZSNWtZUlA0UDRTSDAKbU5ORERacGt2UVJnUGdmKzhwY2ZMVkNNSllSUEx4c2FOdWFoaE45NEtkaFVEbm9VZEloc1piOSszd0tCZ0d3cApBTGttQkc4WkZ3M2NUdlhDcS81RWpJdjllTGVnVjB5NUs4cHFKTktqa0NoWlRZN2swdHFaTU1XWC8xWnFmdmc5CnIvUEFrdEV3SHlnancwMWJFMU9Yd2dTdStIU3pYUGpIY1RQbjVVU21meGQ3NUsxVldXTDVpMmNqbUJYVkRlK1YKRFlJUmVnWTZrR00rUEpwbkdqRHovSWY0WlhyOGJIWmp5S3I3Y0tzbEFvR0JBTG1TbS8ydkptd21VTzJSQjZEQwpjb1ZrTEZLNkROUmhQaGw4c3NOdDRBWnA4YUJtVzloZC9TditWOHhoNzl6OGhPUlF5cjZoNDVVRjlySXhJb1kyCll3MllidkkyYzRiZlZEQWpGY3U3UEZ3MzVoOFJPRytrMStoNDZQUkhKY1F2dzJxSnN2NnhKOVZLaEdzcEQxdUgKeUVHOEQxRGtVM1FVOElTN01ybUR6Mk9YCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K")
                 .build();
     }
 
-    public Pod getPod(StatefulSet sts) {
-        return new PodBuilder()
-                .withNewMetadataLike(sts.getSpec().getTemplate().getMetadata())
-                    .withName(KafkaResources.kafkaStatefulSetName(clusterName) + "-0")
-                .endMetadata()
-                .withNewSpecLike(sts.getSpec().getTemplate().getSpec())
-                .endSpec()
-                .build();
+    private String getUpdatedThumbprint()    {
+        return "{tls=fc4c92a1}";
     }
 
     @Test
-    public void testPodToRestartIsEmptyWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
+    public void testPodPodsRollWhenCustomCertificatesChange(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
-                assertThat(functionArgumentCaptor, hasSize(1));
-                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), Matchers.is(RestartReasons.empty()));
-                async.flag();
-            })));
-    }
+        // Create the initial version of the custom listener certificate secret
+        client.secrets().inNamespace(NAMESPACE).resource(getSecret()).create();
 
-    @Test
-    public void testPodToRestartNonemptyWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
+        // The first loop should create the pods with the initial new hash stub
+        operator.reconcile(new Reconciliation("test-trigger-1", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Verify the initial hash stub of the custom listener cert
+                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+                    sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getThumbprint())));
+                    });
 
-                assertThat(functionArgumentCaptor, hasSize(1));
-                Function<Pod, RestartReasons> isPodToRestart = functionArgumentCaptor.get(0);
+                    for (int i = 0; i < 3; i++) {
+                        Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
+                        context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getThumbprint())));
+                    }
+                })))
+                .compose(i -> {
+                    // Update the custom listener certificate secret
+                    client.secrets().inNamespace(NAMESPACE).resource(getUpdatedSecret()).replace();
+                    return Future.succeededFuture();
+                })
+                // The second loop should update the pods to have the new hash stub from the updated secret => which means they were rolled
+                .compose(i -> operator.reconcile(new Reconciliation("test-trigger-2", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Verify the updated hash stub of the custom listener cert
+                    StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+                    sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                        context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getUpdatedThumbprint())));
+                    });
 
-                Pod pod = getPod(reconcileSts);
-                assertThat("There are no changes in broker config, the restart should not be needed",
-                        isPodToRestart.apply(pod),  Matchers.is(RestartReasons.empty()));
+                    for (int i = 0; i < 3; i++) {
+                        Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
+                        context.verify(() -> assertThat(pod.getMetadata().getAnnotations(), hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getUpdatedThumbprint())));
+                    }
 
-                pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
-                        Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
-                assertThat("Tls listener thumbprint annotation changed, pod should need restart",
-                        isPodToRestart.apply(pod),
-                        equalTo(RestartReasons.of(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE)));
-
-                async.flag();
-            })));
-    }
-
-    @Test
-    public void testPodToRestartTrueWhenCustomCertExternalListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
-
-                assertThat(functionArgumentCaptor, hasSize(1));
-                Function<Pod, RestartReasons> isPodToRestart = functionArgumentCaptor.get(0);
-
-                Pod pod = getPod(reconcileSts);
-
-                assertThat("There are no changes in broker config, the restart should not be needed",
-                        isPodToRestart.apply(pod),  Matchers.is(RestartReasons.empty()));
-
-                pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
-                        Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
-
-                assertThat(isPodToRestart.apply(pod),
-                        equalTo(RestartReasons.of(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE)));
-
-                async.flag();
-            })));
-    }
-
-    @Test
-    public void testPodToRestartIsEmptyAndNoCustomCertAnnotationsWhenNoCustomCertificates(VertxTestContext context) {
-        kafka = new KafkaBuilder(createKafka())
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                    .withName("tls")
-                                    .withPort(9093)
-                                    .withType(KafkaListenerType.INTERNAL)
-                                    .withTls(true)
-                                    .build(),
-                                new GenericKafkaListenerBuilder()
-                                    .withName("external")
-                                    .withPort(9094)
-                                    .withType(KafkaListenerType.NODEPORT)
-                                    .withTls(true)
-                                    .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-        Crds.kafkaOperation(client).inNamespace(namespace).withName(clusterName).patch(kafka);
-
-
-        Checkpoint async = context.checkpoint();
-        operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(functionArgumentCaptor, hasSize(1));
-
-                StatefulSet reconcileSts = client.apps().statefulSets().inNamespace(namespace).withName(KafkaResources.kafkaStatefulSetName(clusterName)).get();
-                assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
-                        not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS)));
-
-                List<Function<Pod, RestartReasons>> capturedFunctions = functionArgumentCaptor;
-                assertThat(capturedFunctions, hasSize(1));
-                Function<Pod, RestartReasons> isPodToRestart = capturedFunctions.get(0);
-                assertThat(isPodToRestart.apply(getPod(reconcileSts)),  Matchers.is(RestartReasons.empty()));
-
-                async.flag();
-            })));
-    }
-
-    /**
-     * Override KafkaReconciler to only run reconciliation steps that concern the Ingress resources feature
-     */
-    class MockKafkaReconciler extends KafkaReconciler   {
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
-        }
-
-        @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
-            return listeners()
-                    .compose(i -> statefulSet())
-                    .compose(i -> podSet())
-                    .compose(i -> rollingUpdate());
-        }
-
-        @Override
-        protected KafkaListenersReconciler listenerReconciler()   {
-            return new MockKafkaListenersReconciler(reconciliation, kafka, pfa, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
-        }
-
-        @Override
-        protected Future<Void> maybeRollKafka(
-                int replicas,
-                Function<Pod, RestartReasons> podNeedsRestart,
-                Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
-                Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
-                boolean allowReconfiguration
-        ) {
-            functionArgumentCaptor.add(podNeedsRestart);
-            return Future.succeededFuture();
-        }
-    }
-
-    /**
-     * Override KafkaListenersReconciler to only run reconciliation steps that concern the Ingress resources feature
-     */
-    static class MockKafkaListenersReconciler extends KafkaListenersReconciler {
-        public MockKafkaListenersReconciler(
-                Reconciliation reconciliation,
-                KafkaCluster kafka,
-                PlatformFeaturesAvailability pfa,
-                SecretOperator secretOperator,
-                ServiceOperator serviceOperator,
-                RouteOperator routeOperator,
-                IngressOperator ingressOperator,
-                IngressV1Beta1Operator ingressV1Beta1Operator) {
-            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
-        }
-
-        @Override
-        public Future<ReconciliationResult> reconcile()  {
-            return customListenerCertificates()
-                    .compose(i -> Future.succeededFuture(result));
-        }
-    }
-
-    /**
-     * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
-     */
-    class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
-        }
-
-        @Override
-        ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
-            return new ReconciliationState(reconciliation, kafkaAssembly) {
-                @Override
-                KafkaReconciler kafkaReconciler(Storage oldStorage, int currentReplicas)   {
-                    return new MockKafkaReconciler(
-                            reconciliation,
-                            vertx,
-                            config,
-                            supplier,
-                            pfa,
-                            kafkaAssembly,
-                            new KafkaVersionChange(
-                                    VERSIONS.defaultVersion(),
-                                    VERSIONS.defaultVersion(),
-                                    VERSIONS.defaultVersion().protocolVersion(),
-                                    VERSIONS.defaultVersion().messageVersion()
-                            ),
-                            oldStorage,
-                            currentReplicas,
-                            clusterCa,
-                            clientsCa
-                    );
-                }
-            };
-        }
-
-        @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.reconcileCas(this::dateSupplier)
-                    .compose(state -> state.reconcileKafka(this::dateSupplier))
-                    .map((Void) null);
-        }
+                    async.flag();
+                })));
     }
 }

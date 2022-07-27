@@ -393,7 +393,7 @@ Kafka can accommodate larger batches at a reduced throughput, assuming adequate 
 
 Large message sizes are handled in four ways:
 
-. xref:optimizing_throughput_and_latency[Producer-side message compression] writes compressed messages to the log.
+. xref:con-producer-config-properties-throughput-{context}[Producer-side message compression] writes compressed messages to the log.
 . Reference-based messaging sends only a reference to data stored in some other system in the message’s value.
 . Inline messaging splits messages into chunks that use the same key, which are then combined on output using a stream-processor like Kafka Streams.
 . Broker and producer/consumer client application configuration built to handle larger message sizes.

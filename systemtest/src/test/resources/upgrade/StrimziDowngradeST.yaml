@@ -25,18 +25,17 @@
 # --- Structure ---
   
 - fromVersion: HEAD
-  toVersion: 0.29.0
+  toVersion: 0.30.0
   fromExamples: HEAD
-  toExamples: strimzi-0.29.0
+  toExamples: strimzi-0.30.0
   urlFrom: HEAD
-  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.29.0/strimzi-0.29.0.zip
+  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.30.0/strimzi-0.30.0.zip
   additionalTopics: 2
-  oldestKafka: 3.0.0
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.29.0-kafka-3.2.0
-    kafka: strimzi/kafka:0.29.0-kafka-3.2.0
-    topicOperator: strimzi/operator:0.29.0
-    userOperator: strimzi/operator:0.29.0
+    zookeeper: strimzi/kafka:0.30.0-kafka-3.2.0
+    kafka: strimzi/kafka:0.30.0-kafka-3.2.0
+    topicOperator: strimzi/operator:0.30.0
+    userOperator: strimzi/operator:0.30.0
   deployKafkaVersion: 3.2.0
   client:
     continuousClientsMessages: 500
@@ -47,3 +46,23 @@
     reason: Test is working on all environment used by QE.
   featureGatesBefore: "+UseStrimziPodSets"
   featureGatesAfter: "-UseStrimziPodSets"
+- fromVersion: HEAD
+  toVersion: 0.30.0
+  fromExamples: HEAD
+  toExamples: strimzi-0.30.0
+  urlFrom: HEAD
+  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.30.0/strimzi-0.30.0.zip
+  additionalTopics: 2
+  imagesAfterOperations:
+    zookeeper: strimzi/kafka:0.30.0-kafka-3.2.0
+    kafka: strimzi/kafka:0.30.0-kafka-3.2.0
+    topicOperator: strimzi/operator:0.30.0
+    userOperator: strimzi/operator:0.30.0
+  deployKafkaVersion: 3.2.0
+  client:
+    continuousClientsMessages: 500
+  environmentInfo:
+    maxK8sVersion: latest
+    status: stable
+    flakyEnvVariable: none
+    reason: Test is working on all environment used by QE.

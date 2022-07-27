@@ -51,7 +51,7 @@ kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,
 kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,reason=PodForceRestartOnError -o yaml
 ----
 +
-.Example showng detailed events output
+.Example showing detailed events output
 [source,yaml]
 ----
 apiVersion: v1

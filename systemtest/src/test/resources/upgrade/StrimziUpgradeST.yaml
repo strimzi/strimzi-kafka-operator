@@ -45,10 +45,10 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: ""
   featureGatesAfter: "-ControlPlaneListener"
-- fromVersion: 0.29.0
-  fromExamples: strimzi-0.29.0
-  oldestKafka: 3.0.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.29.0/strimzi-0.29.0.zip
+- fromVersion: 0.30.0
+  fromExamples: strimzi-0.30.0
+  oldestKafka: 3.1.0
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.30.0/strimzi-0.30.0.zip
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.2.0
@@ -64,10 +64,10 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: ""
   featureGatesAfter: ""
-- fromVersion: 0.29.0
-  fromExamples: strimzi-0.29.0
-  oldestKafka: 3.0.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.29.0/strimzi-0.29.0.zip
+- fromVersion: 0.30.0
+  fromExamples: strimzi-0.30.0
+  oldestKafka: 3.1.0
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.30.0/strimzi-0.30.0.zip
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.2.0

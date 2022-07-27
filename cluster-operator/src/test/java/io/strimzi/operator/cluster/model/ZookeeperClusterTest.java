@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.MetricsAndLogging;
@@ -59,6 +60,8 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -1280,6 +1283,21 @@ public class ZookeeperClusterTest {
                         hasProperty("name", equalTo(ZookeeperCluster.ZOOKEEPER_NAME)),
                         hasProperty("securityContext", equalTo(securityContext))
                 )));
+    }
+
+    @ParallelTest
+    public void testRestrictedContainerSecurityContext() {
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
+        zc.securityProvider = new RestrictedPodSecurityProvider();
+        zc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        StatefulSet sts = zc.generateStatefulSet(false, null, null);
+
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
     }
 
     @ParallelTest

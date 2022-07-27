@@ -49,6 +49,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
     public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
     public static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE";
+    public static final String STRIMZI_POD_SECURITY_PROVIDER_CLASS = "STRIMZI_POD_SECURITY_PROVIDER_CLASS";
 
     //Used to identify which cluster operator created a Kubernetes event
     public static final String STRIMZI_OPERATOR_NAME = "STRIMZI_OPERATOR_NAME";
@@ -92,6 +93,13 @@ public class ClusterOperatorConfig {
     public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
     public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
     public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
+    public static final String DEFAULT_POD_SECURITY_PROVIDER_CLASS = "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider";
+
+    // PodSecurityPolicy shortcut keywords and the corresponding class names
+    public static final String POD_SECURITY_PROVIDER_BASELINE_SHORTCUT = "baseline";
+    public static final String POD_SECURITY_PROVIDER_BASELINE_CLASS = "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider";
+    public static final String POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT = "restricted";
+    public static final String POD_SECURITY_PROVIDER_RESTRICTED_CLASS = "io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider";
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
@@ -112,29 +120,32 @@ public class ClusterOperatorConfig {
     private final boolean podSetReconciliationOnly;
     private final int podSetControllerWorkQueueSize;
     private final String operatorName;
+    private final String podSecurityProviderClass;
 
     /**
      * Constructor
-     *  @param namespaces namespace in which the operator will run and create resources
-     * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
-     * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
-     * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
-     * @param createClusterRoles true to create the ClusterRoles
-     * @param networkPolicyGeneration true to generate Network Policies
-     * @param versions The configured Kafka versions
-     * @param imagePullPolicy Image pull policy configured by the user
-     * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
-     * @param operatorNamespace Name of the namespace in which the operator is running
-     * @param operatorNamespaceLabels Labels of the namespace in which the operator is running (used for network policies)
-     * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
-     * @param featureGates Configuration string with feature gates settings
-     * @param operationsThreadPoolSize The size of the thread pool used for various operations
-     * @param zkAdminSessionTimeoutMs Session timeout for the Zookeeper Admin client used in ZK scaling operations
-     * @param dnsCacheTtlSec Number of seconds to cache a successful DNS name lookup
-     * @param podSetReconciliationOnly Indicates whether this Cluster Operator instance should reconcile only the
-     *                                 StrimziPodSet resources or not
+     *
+     * @param namespaces                    namespace in which the operator will run and create resources
+     * @param reconciliationIntervalMs      specify every how many milliseconds the reconciliation runs
+     * @param operationTimeoutMs            timeout for internal operations specified in milliseconds
+     * @param connectBuildTimeoutMs         timeout used to wait for a Kafka Connect builds to finish
+     * @param createClusterRoles            true to create the ClusterRoles
+     * @param networkPolicyGeneration       true to generate Network Policies
+     * @param versions                      The configured Kafka versions
+     * @param imagePullPolicy               Image pull policy configured by the user
+     * @param imagePullSecrets              Set of secrets for pulling container images from secured repositories
+     * @param operatorNamespace             Name of the namespace in which the operator is running
+     * @param operatorNamespaceLabels       Labels of the namespace in which the operator is running (used for network policies)
+     * @param customResourceSelector        Labels used to filter the custom resources seen by the cluster operator
+     * @param featureGates                  Configuration string with feature gates settings
+     * @param operationsThreadPoolSize      The size of the thread pool used for various operations
+     * @param zkAdminSessionTimeoutMs       Session timeout for the Zookeeper Admin client used in ZK scaling operations
+     * @param dnsCacheTtlSec                Number of seconds to cache a successful DNS name lookup
+     * @param podSetReconciliationOnly      Indicates whether this Cluster Operator instance should reconcile only the
+     *                                      StrimziPodSet resources or not
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      * @param operatorName The Pod name of the cluster operator, used to identify source of K8s events the operator creates
+     * @param podSecurityProviderClass      The PodSecurityProvider class which the operator should use
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -156,7 +167,9 @@ public class ClusterOperatorConfig {
             int dnsCacheTtlSec,
             boolean podSetReconciliationOnly,
             int podSetControllerWorkQueueSize,
-            String operatorName) {
+            String operatorName,
+            String podSecurityProviderClass
+    ) {
         this.namespaces = Set.copyOf(namespaces);
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -176,6 +189,7 @@ public class ClusterOperatorConfig {
         this.podSetReconciliationOnly = podSetReconciliationOnly;
         this.podSetControllerWorkQueueSize = podSetControllerWorkQueueSize;
         this.operatorName = operatorName;
+        this.podSecurityProviderClass = podSecurityProviderClass;
     }
 
     /**
@@ -232,6 +246,7 @@ public class ClusterOperatorConfig {
         int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_DNS_CACHE_TTL);
         boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
         int podSetControllerWorkQueueSize = parseInt(map.get(STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE), DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+        String podSecurityProviderClass = parsePodSecurityProviderClass(map.get(STRIMZI_POD_SECURITY_PROVIDER_CLASS));
 
         //Use default to prevent existing installations breaking if CO pod template not modified to pass through pod name
         String operatorName = map.getOrDefault(STRIMZI_OPERATOR_NAME, DEFAULT_OPERATOR_NAME);
@@ -255,7 +270,8 @@ public class ClusterOperatorConfig {
                 dnsCacheTtlSec,
                 podSetReconciliationOnly,
                 podSetControllerWorkQueueSize,
-                operatorName);
+                operatorName,
+                podSecurityProviderClass);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -411,6 +427,25 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * Parse the configuration of the Pod Security Provider class which should be used to configure the Pod and
+     * Container Security Contexts
+     *
+     * @param envVar The value of the environment variable configuring the Pod Security Provider
+     * @return The full name of the class which should be used as the Pod security Provider
+     */
+    /* test */ static String parsePodSecurityProviderClass(String envVar) {
+        String value = envVar != null ? envVar : DEFAULT_POD_SECURITY_PROVIDER_CLASS;
+
+        if (POD_SECURITY_PROVIDER_BASELINE_SHORTCUT.equals(value.toLowerCase(Locale.ENGLISH)))  {
+            return POD_SECURITY_PROVIDER_BASELINE_CLASS;
+        } else if (POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT.equals(value.toLowerCase(Locale.ENGLISH)))  {
+            return POD_SECURITY_PROVIDER_RESTRICTED_CLASS;
+        } else {
+            return value;
+        }
+    }
+
+    /**
      * @return  namespaces in which the operator runs and creates resources
      */
     public Set<String> getNamespaces() {
@@ -530,8 +565,16 @@ public class ClusterOperatorConfig {
         return podSetControllerWorkQueueSize;
     }
 
+
     public String getOperatorName() {
         return operatorName;
+    }
+
+    /**
+     * @return Returns the Pdo Security Provider class
+     */
+    public String getPodSecurityProviderClass() {
+        return podSecurityProviderClass;
     }
 
     @Override
@@ -555,6 +598,7 @@ public class ClusterOperatorConfig {
                 ",podSetReconciliationOnly=" + podSetReconciliationOnly +
                 ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
                 ",operatorName=" + operatorName +
+                ",podSecurityProviderClass=" + podSecurityProviderClass +
                 ")";
     }
 }

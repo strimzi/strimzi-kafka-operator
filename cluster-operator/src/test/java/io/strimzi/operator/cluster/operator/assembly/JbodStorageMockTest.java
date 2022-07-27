@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
-import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -65,6 +65,7 @@ public class JbodStorageMockTest {
     private static Vertx vertx;
     private Kafka kafka;
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
     private KafkaAssemblyOperator operator;

@@ -748,7 +748,8 @@ public class ResourceUtils {
                 30,
                 false,
                 1024,
-                "cluster-operator-name");
+                "cluster-operator-name",
+                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {

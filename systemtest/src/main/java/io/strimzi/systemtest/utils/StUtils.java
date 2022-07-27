@@ -353,7 +353,7 @@ public class StUtils {
             imagePulPolicyEnvVar.put("name", "STRIMZI_IMAGE_PULL_POLICY");
             imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
 
-            if (!strimziFeatureGatesValue.isEmpty()) {
+            if (strimziFeatureGatesValue != null && !strimziFeatureGatesValue.isEmpty()) {
                 ObjectNode strimziFeatureGates =  new ObjectMapper().createObjectNode();
                 strimziFeatureGates.put("name", "STRIMZI_FEATURE_GATES");
                 strimziFeatureGates.put("value", strimziFeatureGatesValue);

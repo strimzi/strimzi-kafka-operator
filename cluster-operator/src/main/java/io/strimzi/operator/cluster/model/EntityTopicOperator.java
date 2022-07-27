@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 
@@ -167,7 +168,7 @@ public class EntityTopicOperator extends AbstractModel {
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(templateContainerSecurityContext)
+                .withSecurityContext(securityProvider.entityTopicOperatorContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build());
     }
 

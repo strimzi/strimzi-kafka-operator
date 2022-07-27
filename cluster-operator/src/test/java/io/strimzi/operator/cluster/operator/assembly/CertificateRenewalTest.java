@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.KubernetesVersion;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ResourceUtils;

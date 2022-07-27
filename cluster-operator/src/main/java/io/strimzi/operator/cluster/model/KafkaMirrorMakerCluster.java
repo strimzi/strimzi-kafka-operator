@@ -26,6 +26,8 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -246,13 +248,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        /** producer auth*/
+        /* producer auth*/
         if (producer.getTls() != null) {
             VolumeUtils.createSecretVolumeMount(volumeMountList, producer.getTls().getTrustedCertificates(), TLS_CERTS_VOLUME_MOUNT_PRODUCER);
         }
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs");
 
-        /** consumer auth*/
+        /* consumer auth*/
         if (consumer.getTls() != null) {
             VolumeUtils.createSecretVolumeMount(volumeMountList, consumer.getTls().getTrustedCertificates(), TLS_CERTS_VOLUME_MOUNT_CONSUMER);
         }
@@ -270,7 +272,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
                 getVolumes(isOpenShift),
-                imagePullSecrets);
+                imagePullSecrets,
+                securityProvider.kafkaMirrorMakerPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
     }
 
     @Override
@@ -296,7 +299,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(templateContainerSecurityContext)
+                .withSecurityContext(securityProvider.kafkaMirrorMakerContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build();
 
         containers.add(container);
@@ -355,10 +358,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
         ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 
-        /** consumer */
+        /* consumer */
         addConsumerEnvVars(varList);
 
-        /** producer */
+        /* producer */
         addProducerEnvVars(varList);
 
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_LIVENESS_PERIOD,

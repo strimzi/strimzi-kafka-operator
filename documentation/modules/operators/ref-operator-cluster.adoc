@@ -214,6 +214,9 @@ This mode is useful to ensure that your Pods will be recreated if needed, but no
 `STRIMZI_FEATURE_GATES`:: Optional.
 Enables or disables features and functionality controlled by xref:ref-operator-cluster-feature-gates-{context}[feature gates].
 
+`STRIMZI_POD_SECURITY_PROVIDER_CLASS`:: Optional.
+Configures the pluggable `PodSecurityProvider` class which can be used to provide the security context configuration for Pods and containers.
+
 == Logging configuration by ConfigMap
 
 The Cluster Operator's logging is configured by the `strimzi-cluster-operator` `ConfigMap`.

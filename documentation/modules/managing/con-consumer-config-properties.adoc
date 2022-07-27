@@ -75,7 +75,8 @@ Conversely, if a consumer is consuming messages from multiple partitions, the or
 
 If you want a strict ordering of messages from one topic, use one partition per consumer.
 
-== Optimizing throughput and latency
+[id='con-consumer-config-properties-throughput-{context}']
+== Optimizing consumers for throughput and latency
 
 Control the number of messages returned when your client application calls `KafkaConsumer.poll()`.
 

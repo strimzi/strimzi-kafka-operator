@@ -13,7 +13,12 @@ MirrorMaker 2.0 uses:
 * Target cluster configuration to output data to the target cluster
 
 MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
-A MirrorMaker 2.0 `MirrorSourceConnector` replicates topics from a source cluster to a target cluster.
+
+MirrorMaker 2.0 uses the following connectors:
+
+`MirrorSourceConnector`:: The source connector replicates topics from a source cluster to a target cluster.
+`MirrorCheckpointConnector`:: The checkpoint connector periodically tracks offsets. If enabled, it also synchronizes consumer group offsets between the source and target cluster.
+`MirrorHeartbeatConnector`:: The heartbeat connector periodically checks connectivity between the source and target cluster.
 
 The process of _mirroring_ data from one cluster to another cluster is asynchronous.
 The recommended pattern is for messages to be produced locally alongside the source Kafka cluster, then consumed remotely close to the target Kafka cluster.
@@ -76,15 +81,14 @@ MirrorMaker 2.0 monitors source topics and propagates any configuration changes 
 Only MirrorMaker 2.0 can write to remote topics.
 
 == Offset tracking
-MirrorMaker 2.0 tracks offsets for consumer groups using _internal topics_.
+MirrorMaker 2.0 tracks offsets for consumer groups using internal topics.
 
 * The `offset-syncs` topic maps the source and target offsets for replicated topic partitions from record metadata
 * The `checkpoints` topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group
 
+`MirrorCheckpointConnector` emits _checkpoints_ for offset tracking.
 Offsets for the `checkpoints` topic are tracked at predetermined intervals through configuration.
 Both topics enable replication to be fully restored from the correct offset position on failover.
-
-MirrorMaker 2.0 uses its `MirrorCheckpointConnector` to emit _checkpoints_ for offset tracking.
 
 The location of the `offset-syncs` topic is the `source` cluster by default.
 You can use the `offset-syncs.topic.location` connector configuration to change this to the `target` cluster.
@@ -118,13 +122,11 @@ Because the synchronization is time-based, any switchover by consumers to a pass
 
 == Connectivity checks
 
-A _heartbeat_ internal topic checks connectivity between clusters.
+`MirrorHeartbeatConnector` emits _heartbeats_ to check connectivity between clusters.
 
-The _heartbeat_ topic is replicated from the source cluster.
-
-Target clusters use the topic to check:
+An internal `heartbeat` topic is replicated from the source cluster.
+Target clusters use the `heartbeat` topic to check the following:
 
 * The connector managing connectivity between clusters is running
 * The source cluster is available
 
-MirrorMaker 2.0 uses its `MirrorHeartbeatConnector` to emit _heartbeats_ that perform these checks.

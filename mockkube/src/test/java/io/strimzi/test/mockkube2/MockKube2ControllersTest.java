@@ -40,6 +40,7 @@ public class MockKube2ControllersTest {
     private final static String NAMESPACE = "my-namespace";
 
     // Injected by Fabric8 Mock Kubernetes Server
+    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
 

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator;
+package io.strimzi.platform;
 
 import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;

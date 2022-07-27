@@ -93,7 +93,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |logging              1.2+<.<a|Logging configuration for Kafka. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|template             1.2+<.<a|Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
+|template             1.2+<.<a|Template for Kafka cluster resources. The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
 |====
 
@@ -1088,7 +1088,7 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
 |logging         1.2+<.<a|Logging configuration for ZooKeeper. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|template        1.2+<.<a|Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated.
+|template        1.2+<.<a|Template for ZooKeeper cluster resources. The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated.
 |xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 |====
 
