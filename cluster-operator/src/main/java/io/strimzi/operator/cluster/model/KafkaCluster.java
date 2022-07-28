@@ -1308,7 +1308,7 @@ public class KafkaCluster extends AbstractModel {
         }
     }
 
-    private List<ContainerPort> getContainerPortList() {
+    /* test */ List<ContainerPort> getContainerPortList() {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
         ports.add(createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, "TCP"));
         ports.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
@@ -1350,7 +1350,7 @@ public class KafkaCluster extends AbstractModel {
      *
      * @return                          List of non-data volumes used by the ZooKeeper pods
      */
-    private List<Volume> getNonDataVolumes(boolean isOpenShift, boolean perBrokerConfiguration, String podName) {
+    /* test */ List<Volume> getNonDataVolumes(boolean isOpenShift, boolean perBrokerConfiguration, String podName) {
         List<Volume> volumeList = new ArrayList<>();
 
         if (rack != null || isExposedWithNodePort()) {

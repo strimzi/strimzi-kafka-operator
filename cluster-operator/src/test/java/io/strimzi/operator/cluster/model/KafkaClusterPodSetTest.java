@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -22,7 +23,6 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -33,13 +33,17 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.hamcrest.Matchers;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,7 +67,7 @@ import static org.hamcrest.Matchers.hasProperty;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @ParallelSuite
-public class KafkaPodSetTest {
+public class KafkaClusterPodSetTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER = "my-cluster";
@@ -95,53 +99,7 @@ public class KafkaPodSetTest {
                 .endKafka()
             .endSpec()
             .build();
-
-    @ParallelTest
-    public void testDefaultPodDisruptionBudget()   {
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        PodDisruptionBudget pdb = kc.generateCustomControllerPodDisruptionBudget();      
-        assertThat(pdb.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
-        assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
-        assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
-
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generateCustomControllerPodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
-        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
-        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
-    }
-
-    @ParallelTest
-    public void testCustomizedPodDisruptionBudget()   {
-        Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> pdbAnnos = TestUtils.map("a1", "v1", "a2", "v2");
-
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withNewTemplate()
-                            .withNewPodDisruptionBudget()
-                                .withNewMetadata()
-                                    .withAnnotations(pdbAnnos)
-                                    .withLabels(pdbLabels)
-                                .endMetadata()
-                                .withMaxUnavailable(2)
-                            .endPodDisruptionBudget()
-                        .endTemplate()
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        PodDisruptionBudget pdb = kc.generateCustomControllerPodDisruptionBudget();
-
-        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
-        assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(1));
-        assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
-    }
+    private static final KafkaCluster KC = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
 
     @ParallelTest
     public void testPodSet()   {
@@ -170,7 +128,7 @@ public class KafkaPodSetTest {
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
             assertThat(pod.getSpec().getVolumes().stream()
                     .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-                    .findFirst().orElse(null).getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
+                    .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
             assertThat(pod.getSpec().getContainers().size(), is(1));
             assertThat(pod.getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(5));
@@ -255,7 +213,7 @@ public class KafkaPodSetTest {
         for (ConfigMap cm : cms)    {
             assertThat(cm.getData().size(), is(3));
             assertThat(cm.getMetadata().getName(), startsWith("my-cluster-kafka-"));
-            kc.getSelectorLabels().toMap().entrySet().forEach(label -> assertThat(cm.getMetadata().getLabels(), hasEntry(label.getKey(), label.getValue())));
+            kc.getSelectorLabels().toMap().forEach((key, value) -> assertThat(cm.getMetadata().getLabels(), hasEntry(key, value)));
             assertThat(cm.getData().get("log4j.properties"), is(notNullValue()));
             assertThat(cm.getData().get("server.config"), is(notNullValue()));
             assertThat(cm.getData().get("listeners.config"), is("PLAIN_9092"));
@@ -425,7 +383,7 @@ public class KafkaPodSetTest {
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(123L));
             assertThat(pod.getSpec().getVolumes().stream()
                     .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-                    .findFirst().orElse(null).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+                    .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -474,6 +432,36 @@ public class KafkaPodSetTest {
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/opt/kafka/custom-config/"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(6).getName(), is("ready-files"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(6).getMountPath(), is("/var/opt/kafka"));
+        }
+    }
+
+    @ParallelTest
+    public void testImagePullSecrets() {
+        // CR configuration has priority -> CO configuration is ignored if both are set
+        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
+        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewTemplate()
+                            .withNewPod()
+                                .withImagePullSecrets(secret1, secret2)
+                            .endPod()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> new HashMap<>());
+
+        // We need to loop through the pods to make sure they have the right values
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
+            assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
+            assertThat(pod.getSpec().getImagePullSecrets().contains(secret2), is(true));
         }
     }
 
@@ -529,11 +517,20 @@ public class KafkaPodSetTest {
     }
 
     @ParallelTest
-    public void testImagePullPolicy() {
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
+    public void testDefaultImagePullSecrets() {
+        StrimziPodSet ps = KC.generatePodSet(3, true, null, null, brokerId -> new HashMap<>());
 
+        // We need to loop through the pods to make sure they have the right values
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getImagePullSecrets().size(), is(0));
+        }
+    }
+
+    @ParallelTest
+    public void testImagePullPolicy() {
         // Test ALWAYS policy
-        StrimziPodSet ps = kc.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, brokerId -> new HashMap<>());
+        StrimziPodSet ps = KC.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
@@ -542,12 +539,124 @@ public class KafkaPodSetTest {
         }
 
         // Test IFNOTPRESENT policy
-        ps = kc.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, brokerId -> new HashMap<>());
+        ps = KC.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
         pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+        }
+    }
+
+    @ParallelTest
+    public void testGenerateStatefulSetWithSetSizeLimit() {
+        String sizeLimit = "1Gi";
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewEphemeralStorage().withSizeLimit(sizeLimit).endEphemeralStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Test generated SPS
+        StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
+        }
+    }
+
+    @ParallelTest
+    public void testGenerateStatefulSetWithEmptySizeLimit() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Test generated SPS
+        StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(Matchers.nullValue()));
+        }
+    }
+
+    @ParallelTest
+    public void testEphemeralStorage()    {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withNewEphemeralStorage().endEphemeralStorage()
+                    .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Test generated SPS
+        StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getVolumes().stream().filter(v -> "data".equals(v.getName())).findFirst().orElseThrow().getEmptyDir(), is(notNullValue()));
+        }
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+        assertThat(pvcs.size(), is(0));
+    }
+
+    @ParallelTest
+    public void testRestrictedSecurityContext() {
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
+        kc.securityProvider = new RestrictedPodSecurityProvider();
+        kc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+
+        // Test generated SPS
+        StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
+
+            assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
+            assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
+            assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
+            assertThat(pod.getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
+        }
+    }
+
+    @ParallelTest
+    public void testCustomLabelsFromCR() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                    .addToLabels("foo", "bar")
+                .endMetadata()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Test generated SPS
+        StrimziPodSet sps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
+        assertThat(sps.getMetadata().getLabels().get("foo"), is("bar"));
+
+        List<Pod> pods = PodSetUtils.mapsToPods(sps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getMetadata().getLabels().get("foo"), is("bar"));
+        }
+    }
+
+    @ParallelTest
+    public void testDefaultSecurityContext() {
+        StrimziPodSet sps = KC.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
+
+        List<Pod> pods = PodSetUtils.mapsToPods(sps.getSpec().getPods());
+        for (Pod pod : pods) {
+            assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
+            assertThat(pod.getSpec().getContainers().get(0).getSecurityContext(), is(nullValue()));
         }
     }
 }
