@@ -9,59 +9,46 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
-import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.MetricsConfig;
+import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -80,81 +67,123 @@ import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @ParallelSuite
 public class ZookeeperClusterTest {
-
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private final String namespace = "test";
-    private final String cluster = "foo";
-    private final int replicas = 3;
-    private final String image = "image";
-    private final int healthDelay = 120;
-    private final int healthTimeout = 30;
-    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
-    private final String metricsCMName = "metrics-cm";
-    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
-    private final Map<String, Object> configurationJson = emptyMap();
-    private final InlineLogging kafkaLogConfigJson = new InlineLogging();
-    private final InlineLogging zooLogConfigJson = new InlineLogging();
-    {
-        kafkaLogConfigJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
-        zooLogConfigJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+    private static final String NAMESPACE = "test";
+    private static final String CLUSTER = "foo";
+    private static final int REPLICAS = 3;
+    private static final Kafka KAFKA = new KafkaBuilder()
+            .withNewMetadata()
+                .withName(CLUSTER)
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withNewSpec()
+                .withNewZookeeper()
+                    .withReplicas(REPLICAS)
+                    .withNewPersistentClaimStorage()
+                        .withSize("100Gi")
+                    .endPersistentClaimStorage()
+                    .withConfig(Map.of("foo", "bar"))
+                .endZookeeper()
+                .withNewKafka()
+                    .withReplicas(REPLICAS)
+                    .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .build())
+                    .withNewJbodStorage()
+                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build())
+                    .endJbodStorage()
+                .endKafka()
+            .endSpec()
+            .build();
+    private final static ZookeeperCluster ZC = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
+
+    //////////
+    // Utility methods
+    //////////
+
+    private Map<String, String> expectedSelectorLabels()    {
+        return Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
+                Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER),
+                Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
     }
 
-    private final Map<String, Object> zooConfigurationJson = singletonMap("foo", "bar");
+    private void checkHeadlessService(Service headless) {
+        assertThat(headless.getMetadata().getName(), is(KafkaResources.zookeeperHeadlessServiceName(CLUSTER)));
+        assertThat(headless.getSpec().getType(), is("ClusterIP"));
+        assertThat(headless.getSpec().getClusterIP(), is("None"));
+        assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(headless.getSpec().getPorts().size(), is(3));
+        assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
+        assertThat(headless.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLUSTERING_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(ZookeeperCluster.CLUSTERING_PORT));
+        assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(ZookeeperCluster.LEADER_ELECTION_PORT));
+        assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
+    }
 
-    private final Kafka ka = ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson, null, null, kafkaLogConfigJson, zooLogConfigJson, null, null);
+    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
+    }
 
-    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
+    private Secret generateCertificatesSecret() {
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
+        clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER, emptyMap(), emptyMap(), emptyMap(), null, true);
+
+        return ZC.generateCertificatesSecret(clusterCa, true);
+    }
+
+    //////////
+    // Tests
+    //////////
 
     @ParallelTest
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(metricsCM, null));
-        checkMetricsConfigMap(metricsCm);
-        checkOwnerReference(zc.createOwnerReference(), metricsCm);
-    }
+        ConfigMap metricsCm = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm("{\"animal\":\"wombat\"}", "zoo-metrics-config", "zoo-metrics-config.yml");
 
-    private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(TestUtils.toJsonString(this.metricsCm)));
-    }
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withNewJmxPrometheusExporterMetricsConfig()
+                            .withNewValueFrom()
+                                .withNewConfigMapKeyRef("zoo-metrics-config.yml", "zoo-metrics-config", false)
+                            .endValueFrom()
+                        .endJmxPrometheusExporterMetricsConfig()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
-    private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
-    }
-
-    private Map<String, String> expectedLabels()    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-            "my-user-label", "cromulent",
-            Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(cluster),
-            Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
-            Labels.KUBERNETES_NAME_LABEL, ZookeeperCluster.APPLICATION_NAME,
-            Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-            Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
-            Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
+        ConfigMap brokerCm = zc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCm, null));
+        checkOwnerReference(zc.createOwnerReference(), brokerCm);
+        assertThat(brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is("{\"animal\":\"wombat\"}"));
     }
 
     @ParallelTest
     public void testGenerateService() {
-        Service svc = zc.generateService();
+        Service svc = ZC.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
@@ -166,12 +195,12 @@ public class ZookeeperClusterTest {
         assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
         assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
-        checkOwnerReference(zc.createOwnerReference(), svc);
+        checkOwnerReference(ZC.createOwnerReference(), svc);
     }
 
     @ParallelTest
     public void testGenerateServiceWithoutMetrics() {
-        Kafka kafka = new KafkaBuilder(ka)
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withMetricsConfig(null)
@@ -195,31 +224,14 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGenerateHeadlessService() {
-        Service headless = zc.generateHeadlessService();
+        Service headless = ZC.generateHeadlessService();
         checkHeadlessService(headless);
-        checkOwnerReference(zc.createOwnerReference(), headless);
-    }
-
-    private void checkHeadlessService(Service headless) {
-        assertThat(headless.getMetadata().getName(), is(KafkaResources.zookeeperHeadlessServiceName(cluster)));
-        assertThat(headless.getSpec().getType(), is("ClusterIP"));
-        assertThat(headless.getSpec().getClusterIP(), is("None"));
-        assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(headless.getSpec().getPorts().size(), is(3));
-        assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
-        assertThat(headless.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLUSTERING_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(ZookeeperCluster.CLUSTERING_PORT));
-        assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(ZookeeperCluster.LEADER_ELECTION_PORT));
-        assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
+        checkOwnerReference(ZC.createOwnerReference(), headless);
     }
 
     @ParallelTest
     public void testGenerateHeadlessServiceWithJmxMetrics() {
-        Kafka kafka = new KafkaBuilder(ka)
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withJmxOptions(new KafkaJmxOptionsBuilder().build())
@@ -229,7 +241,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         Service headless = zc.generateHeadlessService();
 
-        assertThat(headless.getMetadata().getName(), is(KafkaResources.zookeeperHeadlessServiceName(cluster)));
+        assertThat(headless.getMetadata().getName(), is(KafkaResources.zookeeperHeadlessServiceName(CLUSTER)));
         assertThat(headless.getSpec().getType(), is("ClusterIP"));
         assertThat(headless.getSpec().getClusterIP(), is("None"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
@@ -254,8 +266,8 @@ public class ZookeeperClusterTest {
     public void testCreateClusterWithZookeeperJmxEnabled() {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                    .withName(cluster)
-                    .withNamespace(namespace)
+                    .withName(CLUSTER)
+                    .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -299,7 +311,7 @@ public class ZookeeperClusterTest {
         customAnnotations.put("anno1", "value3");
         customAnnotations.put("anno2", "value4");
 
-        Kafka kafka = new KafkaBuilder(ka)
+        Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withJmxOptions(new KafkaJmxOptionsBuilder()
@@ -330,42 +342,13 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateStatefulSet() {
-        // We expect a single statefulSet ...
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        checkStatefulSet(sts);
-        checkOwnerReference(zc.createOwnerReference(), sts);
-    }
-
-    @ParallelTest
-    public void testGenerateStatefulSetWithPodManagementPolicy() {
-        Kafka editZooAssembly = new KafkaBuilder(ka)
-                        .editSpec()
-                            .editZookeeper()
-                                .withNewTemplate()
-                                    .withNewStatefulset()
-                                        .withPodManagementPolicy(PodManagementPolicy.ORDERED_READY)
-                                    .endStatefulset()
-                                .endTemplate()
-                            .endZookeeper()
-                        .endSpec().build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editZooAssembly, VERSIONS);
-        StatefulSet sts = zc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
-    }
-
-    @ParallelTest
     public void testInvalidVersion() {
         assertThrows(InvalidResourceException.class, () -> {
-            Kafka ka = new KafkaBuilder(this.ka)
+            Kafka ka = new KafkaBuilder(KAFKA)
                     .editSpec()
                         .editKafka()
-                            .withImage(null)
                             .withVersion("10000.0.0")
                         .endKafka()
-                        .editZookeeper()
-                            .withImage(null)
-                        .endZookeeper()
                     .endSpec()
                     .build();
 
@@ -373,65 +356,16 @@ public class ZookeeperClusterTest {
         });
     }
 
-    private void checkStatefulSet(StatefulSet sts) {
-        assertThat(sts.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(cluster)));
-        // ... in the same namespace ...
-        assertThat(sts.getMetadata().getNamespace(), is(namespace));
-        // ... with these labels
-        assertThat(sts.getMetadata().getLabels(), is(expectedLabels()));
-        assertThat(sts.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
-
-        assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("default-scheduler"));
-
-        List<Container> containers = sts.getSpec().getTemplate().getSpec().getContainers();
-
-        assertThat(containers.size(), is(1));
-
-        // checks on the main Zookeeper container
-        assertThat(sts.getSpec().getReplicas(), is(replicas));
-        assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
-        assertThat(containers.get(0).getImage(), is(image + "-zk"));
-        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(healthTimeout));
-        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(healthDelay));
-        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(10));
-        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(4));
-        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(33));
-        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(healthTimeout));
-        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(healthDelay));
-        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(10));
-        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(4));
-        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(33));
-        OrderedProperties expectedConfig = new OrderedProperties().addMapPairs(ZookeeperConfiguration.DEFAULTS).addPair("foo", "bar");
-        OrderedProperties actual = new OrderedProperties()
-                .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
-        assertThat(actual, is(expectedConfig));
-        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
-        assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-        assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-        assertThat(containers.get(0).getVolumeMounts().get(0).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-        assertThat(containers.get(0).getVolumeMounts().get(0).getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-        assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is(ZookeeperCluster.ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME));
-        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(ZookeeperCluster.ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT));
-        assertThat(containers.get(0).getVolumeMounts().get(4).getName(), is(ZookeeperCluster.ZOOKEEPER_CLUSTER_CA_VOLUME_NAME));
-        assertThat(containers.get(0).getVolumeMounts().get(4).getMountPath(), is(ZookeeperCluster.ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
-            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
-    }
-
-    // TODO test volume claim templates
-
     @ParallelTest
     public void testPodNames() {
-
-        for (int i = 0; i < replicas; i++) {
-            assertThat(zc.getPodName(i), is(KafkaResources.zookeeperPodName(cluster, i)));
+        for (int i = 0; i < REPLICAS; i++) {
+            assertThat(ZC.getPodName(i), is(KafkaResources.zookeeperPodName(CLUSTER, i)));
         }
     }
 
     @ParallelTest
     public void testPvcNames() {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewPersistentClaimStorage().withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
@@ -442,34 +376,22 @@ public class ZookeeperClusterTest {
 
         PersistentVolumeClaim pvc = zc.getPersistentVolumeClaimTemplates().get(0);
 
-        for (int i = 0; i < replicas; i++) {
-            assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.zookeeperPodName(cluster, i),
-                    is(ZookeeperCluster.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(cluster, i)));
+        for (int i = 0; i < REPLICAS; i++) {
+            assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.zookeeperPodName(CLUSTER, i),
+                    is(ZookeeperCluster.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(CLUSTER, i)));
         }
     }
 
     @ParallelTest
     public void withAffinity() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, versions), this.getClass().getSimpleName() + ".withAffinity");
-        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        resourceTester.assertDesiredResource(".yaml", AbstractModel::getMergedAffinity);
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, versions), this.getClass().getSimpleName() + ".withTolerations");
-        resourceTester.assertDesiredResource("-STS.yaml", zc -> zc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
-    }
-
-    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
-    private Secret generateCertificatesSecret() {
-        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, null, null);
-        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
-
-        return zc.generateCertificatesSecret(clusterCa, true);
+        resourceTester.assertDesiredResource(".yaml", AbstractModel::getTolerations);
     }
 
     @ParallelTest
@@ -492,21 +414,10 @@ public class ZookeeperClusterTest {
                 asList(2, "*.foo-zookeeper-client.test.svc.cluster.local"),
                 asList(2, "*.foo-zookeeper-nodes.test.svc"),
                 asList(2, "*.foo-zookeeper-nodes.test.svc.cluster.local"))));
-
     }
 
     @ParallelTest
     public void testTemplate() {
-        Map<String, String> ssLabels = TestUtils.map("l1", "v1", "l2", "v2",
-                Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
-                Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
-        Map<String, String> expectedStsLabels = new HashMap<>(ssLabels);
-        expectedStsLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> ssAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
-
-        Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
-
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
@@ -519,52 +430,10 @@ public class ZookeeperClusterTest {
         Map<String, String> saLabels = TestUtils.map("l11", "v11", "l12", "v12");
         Map<String, String> saAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
 
-        HostAlias hostAlias1 = new HostAliasBuilder()
-                .withHostnames("my-host-1", "my-host-2")
-                .withIp("192.168.1.86")
-                .build();
-        HostAlias hostAlias2 = new HostAliasBuilder()
-                .withHostnames("my-host-3")
-                .withIp("192.168.1.87")
-                .build();
-
-        TopologySpreadConstraint tsc1 = new TopologySpreadConstraintBuilder()
-                .withTopologyKey("kubernetes.io/zone")
-                .withMaxSkew(1)
-                .withWhenUnsatisfiable("DoNotSchedule")
-                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
-                .build();
-
-        TopologySpreadConstraint tsc2 = new TopologySpreadConstraintBuilder()
-                .withTopologyKey("kubernetes.io/hostname")
-                .withMaxSkew(2)
-                .withWhenUnsatisfiable("ScheduleAnyway")
-                .withLabelSelector(new LabelSelectorBuilder().withMatchLabels(singletonMap("label", "value")).build())
-                .build();
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewTemplate()
-                            .withNewStatefulset()
-                                .withNewMetadata()
-                                    .withLabels(ssLabels)
-                                    .withAnnotations(ssAnnotations)
-                                .endMetadata()
-                            .endStatefulset()
-                            .withNewPod()
-                                .withNewMetadata()
-                                    .withLabels(podLabels)
-                                    .withAnnotations(podAnnotations)
-                                .endMetadata()
-                                .withPriorityClassName("top-priority")
-                                .withSchedulerName("my-scheduler")
-                                .withHostAliases(hostAlias1, hostAlias2)
-                                .withTopologySpreadConstraints(tsc1, tsc2)
-                                .withEnableServiceLinks(false)
-                                .withTmpDirSizeLimit("10Mi")
-                            .endPod()
                             .withNewClientService()
                                 .withNewMetadata()
                                     .withLabels(svcLabels)
@@ -599,23 +468,6 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        // Check StatefulSet
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getMetadata().getLabels().entrySet().containsAll(expectedStsLabels.entrySet()), is(true));
-        assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnnotations.entrySet()), is(true));
-        assertThat(sts.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
-
-        // Check Pods
-        assertThat(sts.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
-        assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnnotations.entrySet()), is(true));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
-        assertThat(sts.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
-        assertThat(sts.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
-            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
-
         // Check Service
         Service svc = zc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
@@ -647,154 +499,8 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testGracePeriod() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .editSpec()
-                    .editZookeeper()
-                        .withNewTemplate()
-                            .withNewPod()
-                                .withTerminationGracePeriodSeconds(123)
-                            .endPod()
-                        .endTemplate()
-                    .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
-    }
-
-    @ParallelTest
-    public void testDefaultGracePeriod() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
-    }
-
-    @ParallelTest
-    public void testImagePullSecrets() {
-        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
-        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .editSpec()
-                    .editZookeeper()
-                        .withNewTemplate()
-                            .withNewPod()
-                                .withImagePullSecrets(secret1, secret2)
-                            .endPod()
-                        .endTemplate()
-                    .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
-    }
-
-    @ParallelTest
-    public void testImagePullSecretsFromCO() {
-        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
-        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
-
-        List<LocalObjectReference> secrets = new ArrayList<>(2);
-        secrets.add(secret1);
-        secrets.add(secret2);
-
-        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap());
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, secrets);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
-    }
-
-    @ParallelTest
-    public void testImagePullSecretsFromBoth() {
-        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
-        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
-
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .editSpec()
-                    .editZookeeper()
-                        .withNewTemplate()
-                            .withNewPod()
-                                .withImagePullSecrets(secret2)
-                            .endPod()
-                        .endTemplate()
-                    .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, singletonList(secret1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
-    }
-
-    @ParallelTest
-    public void testDefaultImagePullSecrets() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void testSecurityContext() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .editSpec()
-                    .editZookeeper()
-                        .withNewTemplate()
-                            .withNewPod()
-                                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
-                            .endPod()
-                        .endTemplate()
-                    .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
-    }
-
-    @ParallelTest
-    public void testDefaultSecurityContext() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
-    }
-
-    @ParallelTest
     public void testPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewTemplate()
@@ -816,8 +522,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testDefaultPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
@@ -827,23 +532,33 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testImagePullPolicy() {
-        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap());
+        Kafka kafkaAssembly = KAFKA;
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
+        Container cont = zc.getContainers(ImagePullPolicy.ALWAYS).get(0);
+        assertThat(cont.getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        sts = zc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+        cont = zc.getContainers(ImagePullPolicy.IFNOTPRESENT).get(0);
+        assertThat(cont.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
     @ParallelTest
     public void testNetworkPolicyNewKubernetesVersions() {
-        Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap());
-        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withNewJmxPrometheusExporterMetricsConfig()
+                            .withNewValueFrom()
+                                .withNewConfigMapKeyRef("zoo-metrics-config.yml", "zoo-metrics-config", false)
+                            .endValueFrom()
+                        .endJmxPrometheusExporterMetricsConfig()
+                    .endZookeeper()
+                    .editKafka()
+                        .withNewRack().withTopologyKey("rack-key").endRack()
+                    .endKafka()
+                .endSpec()
+                .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Other namespace
@@ -897,13 +612,13 @@ public class ZookeeperClusterTest {
         assertThat(metricsRule.getFrom().size(), is(0));
 
         // Check Network Policies => The same namespace
-        np = zc.generateNetworkPolicy(namespace, null);
+        np = zc.generateNetworkPolicy(NAMESPACE, null);
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => The same namespace with namespace labels
-        np = zc.generateNetworkPolicy(namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        np = zc.generateNetworkPolicy(NAMESPACE, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
@@ -919,18 +634,14 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithClaimDeletion() {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editZookeeper()
-                .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorage()
-                .endZookeeper()
+                    .editZookeeper()
+                        .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(true).withSize("100Gi").endPersistentClaimStorage()
+                    .endZookeeper()
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
-
-        // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
-                is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
@@ -948,18 +659,14 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editZookeeper()
-                .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
-                .endZookeeper()
+                    .editZookeeper()
+                        .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
+                    .endZookeeper()
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
-
-        // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
-                is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
@@ -977,26 +684,22 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editZookeeper()
-                .withNewPersistentClaimStorage()
-                    .withStorageClass("gp2-ssd")
-                    .withDeleteClaim(false)
-                    .withSize("100Gi")
-                    .withOverrides(new PersistentClaimStorageOverrideBuilder()
-                            .withBroker(1)
-                            .withStorageClass("gp2-ssd-az1")
-                            .build())
-                .endPersistentClaimStorage()
-                .endZookeeper()
+                    .editZookeeper()
+                        .withNewPersistentClaimStorage()
+                            .withStorageClass("gp2-ssd")
+                            .withDeleteClaim(false)
+                            .withSize("100Gi")
+                            .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                                    .withBroker(1)
+                                    .withStorageClass("gp2-ssd-az1")
+                                    .build())
+                        .endPersistentClaimStorage()
+                    .endZookeeper()
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
-
-        // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
-                is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
 
         // Check PVCs
         List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
@@ -1022,7 +725,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsWithTemplate() {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewTemplate()
@@ -1058,28 +761,7 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsEphemeral()    {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
-                .editSpec()
-                .editZookeeper()
-                .withNewEphemeralStorage().endEphemeralStorage()
-                .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
-
-        // Check Storage annotation on STS
-        assertThat(zc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
-                is(ModelUtils.encodeStorageToJson(ka.getSpec().getZookeeper().getStorage())));
-
-        // Check PVCs
-        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
-
-        assertThat(pvcs.size(), is(0));
-    }
-
-    @ParallelTest
-    public void testGenerateSTSWithPersistentVolumeEphemeral()    {
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewEphemeralStorage().endEphemeralStorage()
@@ -1088,24 +770,10 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
-        StatefulSet sts = zc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
-    }
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
 
-    @ParallelTest
-    public void testGenerateSTSWithPersistentVolumeEphemeralWithSizeLimit()    {
-        String sizeLimit = "1Gi";
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
-                .editSpec()
-                    .editZookeeper()
-                        .withNewEphemeralStorage().withSizeLimit(sizeLimit).endEphemeralStorage()
-                    .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
-
-        StatefulSet sts = zc.generateStatefulSet(false, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
+        assertThat(pvcs.size(), is(0));
     }
 
     @ParallelTest
@@ -1115,24 +783,24 @@ public class ZookeeperClusterTest {
 
         // Test Storage changes and how the are reverted
 
-        Kafka ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        Kafka ka = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editZookeeper()
-                .withStorage(ephemeral)
-                .endZookeeper()
+                    .editZookeeper()
+                        .withStorage(ephemeral)
+                    .endZookeeper()
                 .endSpec()
                 .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS, persistent, replicas);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS, persistent, REPLICAS);
         assertThat(zc.getStorage(), is(persistent));
 
-        ka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+        ka = new KafkaBuilder(KAFKA)
                 .editSpec()
-                .editZookeeper()
-                .withStorage(persistent)
-                .endZookeeper()
+                    .editZookeeper()
+                        .withStorage(persistent)
+                    .endZookeeper()
                 .endSpec()
                 .build();
-        zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS, ephemeral, replicas);
+        zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS, ephemeral, REPLICAS);
 
         // Storage is reverted
         assertThat(zc.getStorage(), is(ephemeral));
@@ -1149,21 +817,19 @@ public class ZookeeperClusterTest {
                     .withSize("100Gi")
                     .build();
 
-            Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                    healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, zooConfigurationJson))
+            Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                     .editSpec()
-                    .editZookeeper()
-                        .withStorage(new PersistentClaimStorageBuilder().build())
+                        .editZookeeper()
+                            .withStorage(new PersistentClaimStorageBuilder().build())
                         .endZookeeper()
                     .endSpec()
                     .build();
-            ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, oldStorage, replicas);
+            ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, oldStorage, REPLICAS);
         });
     }
 
     @ParallelTest
     public void testZookeeperContainerEnvVars() {
-
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
         String testEnvOneValue = "test.env.one";
@@ -1182,8 +848,7 @@ public class ZookeeperClusterTest {
         ContainerTemplate zookeeperContainer = new ContainerTemplate();
         zookeeperContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewTemplate()
@@ -1226,8 +891,7 @@ public class ZookeeperClusterTest {
         ContainerTemplate zookeeperContainer = new ContainerTemplate();
         zookeeperContainer.setEnv(testEnvs);
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewTemplate()
@@ -1251,7 +915,6 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testZookeeperContainerSecurityContext() {
-
         SecurityContext securityContext = new SecurityContextBuilder()
                 .withPrivileged(false)
                 .withReadOnlyRootFilesystem(false)
@@ -1262,8 +925,7 @@ public class ZookeeperClusterTest {
                 .endCapabilities()
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap()))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withNewTemplate()
@@ -1276,9 +938,8 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = zc.generateStatefulSet(false, null, null);
 
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
+        assertThat(zc.getContainers(null),
                 hasItem(allOf(
                         hasProperty("name", equalTo(ZookeeperCluster.ZOOKEEPER_NAME)),
                         hasProperty("securityContext", equalTo(securityContext))
@@ -1286,30 +947,14 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testRestrictedContainerSecurityContext() {
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
-        zc.securityProvider = new RestrictedPodSecurityProvider();
-        zc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
-
-        StatefulSet sts = zc.generateStatefulSet(false, null, null);
-
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getAllowPrivilegeEscalation(), is(false));
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getRunAsNonRoot(), is(true));
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getSeccompProfile().getType(), is("RuntimeDefault"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext().getCapabilities().getDrop(), is(List.of("ALL")));
-    }
-
-    @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
-                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("my-metrics-configuration").withKey("config.yaml").build())
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder().withName("zoo-metrics-config").withKey("zoo-metrics-config.yml").build())
                 .endValueFrom()
                 .build();
 
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout))
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
                         .withMetricsConfig(metrics)
@@ -1325,10 +970,115 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout), VERSIONS);
+        assertThat(ZC.isMetricsEnabled(), is(false));
+        assertThat(ZC.getMetricsConfigInCm(), is(nullValue()));
+    }
 
-        assertThat(zc.isMetricsEnabled(), is(false));
-        assertThat(zc.getMetricsConfigInCm(), is(nullValue()));
+    @ParallelTest
+    public void testCustomImage() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withImage("my-image:my-tag")
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Check container
+        Container cont = zc.getContainers(null).get(0);
+        assertThat(cont.getImage(), is("my-image:my-tag"));
+    }
+
+    @ParallelTest
+    public void testHealthChecks() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withLivenessProbe(new ProbeBuilder()
+                                .withInitialDelaySeconds(1)
+                                .withPeriodSeconds(2)
+                                .withTimeoutSeconds(3)
+                                .withSuccessThreshold(4)
+                                .withFailureThreshold(5)
+                                .build())
+                        .withReadinessProbe(new ProbeBuilder()
+                                .withInitialDelaySeconds(6)
+                                .withPeriodSeconds(7)
+                                .withTimeoutSeconds(8)
+                                .withSuccessThreshold(9)
+                                .withFailureThreshold(10)
+                                .build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Check container
+        Container cont = zc.getContainers(null).get(0);
+        assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(1));
+        assertThat(cont.getLivenessProbe().getPeriodSeconds(), is(2));
+        assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(3));
+        assertThat(cont.getLivenessProbe().getSuccessThreshold(), is(4));
+        assertThat(cont.getLivenessProbe().getFailureThreshold(), is(5));
+        assertThat(cont.getReadinessProbe().getInitialDelaySeconds(), is(6));
+        assertThat(cont.getReadinessProbe().getPeriodSeconds(), is(7));
+        assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(8));
+        assertThat(cont.getReadinessProbe().getSuccessThreshold(), is(9));
+        assertThat(cont.getReadinessProbe().getFailureThreshold(), is(10));
+    }
+
+    @ParallelTest
+    public void testDefaultCustomControllerPodDisruptionBudget()   {
+        PodDisruptionBudget pdb = ZC.generateCustomControllerPodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = ZC.generateCustomControllerPodDisruptionBudgetV1Beta1();
+
+        assertThat(pdb.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
+        assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(ZC.getSelectorLabels().toMap()));
+
+        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(ZC.getSelectorLabels().toMap()));
+    }
+
+    @ParallelTest
+    public void testCustomizedCustomControllerPodDisruptionBudget()   {
+        Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> pdbAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withNewTemplate()
+                            .withNewPodDisruptionBudget()
+                                .withNewMetadata()
+                                    .withAnnotations(pdbAnnos)
+                                    .withLabels(pdbLabels)
+                                .endMetadata()
+                                .withMaxUnavailable(2)
+                            .endPodDisruptionBudget()
+                        .endTemplate()
+                    .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        PodDisruptionBudget pdb = zc.generateCustomControllerPodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generateCustomControllerPodDisruptionBudgetV1Beta1();
+
+        assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
+        assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(1));
+        assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
+
+        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(1));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
     }
 }
