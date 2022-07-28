@@ -69,8 +69,6 @@ spec:
 
 . Create and deploy an ephemeral or persistent cluster.
 +
-For development or testing, you might prefer to use an ephemeral cluster. You can use a persistent cluster in any situation.
-+
 --
 * To create and deploy an ephemeral cluster:
 +
