@@ -11,7 +11,7 @@ We advise use of OAuth 2.0 over an encrypted interface through configuration of 
 Plain listeners are not recommended.
 
 If the authorization server is using certificates signed by the trusted CA and matching the OAuth 2.0 server hostname, TLS connection works using the default settings.
-Otherwise, you may need to configure the truststore with prober certificates or disable the certificate hostname validation.
+Otherwise, you may need to configure the truststore with proper certificates or disable the certificate hostname validation.
 
 When configuring the Kafka broker you have two options for the mechanism used to validate the access token during OAuth 2.0 authentication of the newly connected Kafka client:
 
