@@ -4,7 +4,7 @@
 // deploying/assembly-deploy-tasks.adoc
 
 [id='kafka-bridge-{context}']
-= Deploy Kafka Bridge
+= Deploying Kafka Bridge
 
 The Cluster Operator deploys one or more Kafka bridge replicas to send data between Kafka clusters and clients via HTTP API.
 

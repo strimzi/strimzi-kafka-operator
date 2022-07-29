@@ -17,7 +17,7 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 
 . Edit the Strimzi installation files to use the namespace the Cluster Operator is going to be installed into.
 +
-For example, in this procedure the Cluster Operator is installed into the namespace `_<my_cluster_operator_namespace>_`.
+For example, in this procedure the Cluster Operator is installed into the namespace `my-cluster-operator-namespace`.
 +
 include::snip-cluster-operator-namespace-sed.adoc[]
 
@@ -56,13 +56,13 @@ kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-opera
 . Deploy the Cluster Operator:
 +
 [source,shell,subs="+quotes,attributes+"]
-kubectl create -f install/cluster-operator -n _<my_cluster_operator_namespace>_
+kubectl create -f install/cluster-operator -n my-cluster-operator-namespace
 
 . Check the status of the deployment:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get deployments -n _<my_cluster_operator_namespace>_
+kubectl get deployments -n my-cluster-operator-namespace
 ----
 +
 .Output shows the deployment name and readiness

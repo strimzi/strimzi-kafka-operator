@@ -3,7 +3,7 @@
 // deploying/assembly-deploy-create-cluster.adoc
 
 [id="deploy-standalone-operators_{context}"]
-= Alternative standalone deployment options for Strimzi Operators
+= Alternative standalone deployment options for Strimzi operators
 
 [role="_abstract"]
 You can perform a standalone deployment of the Topic Operator and User Operator.

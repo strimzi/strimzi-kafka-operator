@@ -1,0 +1,35 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks.adoc
+
+[id='con-deploy-paths-{context}']
+= Basic deployment path 
+
+[role="_abstract"]
+You can set up a deployment where Strimzi manages a single Kafka cluster in the same namespace.
+You might use this configuration for development or testing. 
+Or you can use Strimzi in a production environment to manage a number of Kafka clusters in different namespaces. 
+
+The first step for any deployment of Strimzi is to install the Cluster Operator using the `install/cluster-operator` files.
+
+A single command applies all the installation files in the `cluster-operator` folder: `kubectl apply -f ./install/cluster-operator`.
+
+The command sets up everything you need to be able to create and manage a Kafka deployment, including the following:
+
+* Cluster Operator (`Deployment`, `ConfigMap`)
+* Strimzi CRDs (`CustomResourceDefinition`)
+* RBAC resources (`ClusterRole`, `ClusterRoleBinding`, `RoleBinding`)
+* Service account (`ServiceAccount`)
+
+The basic deployment path is as follows:
+
+. xref:downloads-{context}[Download the release artifacts] 
+. Create a Kubernetes namespace in which to deploy the Cluster Operator
+. xref:cluster-operator-{context}[Deploy the Cluster Operator]
+.. Update the `install/cluster-operator` files to use the namespace created for the Cluster Operator 
+.. Install the Cluster Operator to watch one, multiple, or all namespaces
+. xref:kafka-cluster-{context}[Create a Kafka cluster]
+
+After which, you can deploy other Kafka components and set up monitoring of your deployment. 
+
+

@@ -10,8 +10,7 @@ This procedure shows how to deploy a Kafka cluster to your Kubernetes cluster us
 
 The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
 
-Strimzi provides xref:deploy-examples-{context}[example configuration files].
-For a Kafka deployment, the following examples are provided:
+Strimzi provides the following xref:deploy-examples-{context}[example files] you can use to create a Kafka cluster:
 
 `kafka-persistent.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
 `kafka-jbod.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).
@@ -68,20 +67,19 @@ spec:
 
 .Procedure
 
-. Create and deploy an _ephemeral_ or _persistent_ cluster.
+. Create and deploy an ephemeral or persistent cluster.
 +
-For development or testing, you might prefer to use an ephemeral cluster.
-You can use a persistent cluster in any situation.
-
-** To create and deploy an _ephemeral_ cluster:
+--
+* To create and deploy an ephemeral cluster:
 +
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-ephemeral.yaml
 
-** To create and deploy a _persistent_ cluster:
+* To create and deploy a persistent cluster:
 +
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-persistent.yaml
+--
 
 . Check the status of the deployment:
 +
