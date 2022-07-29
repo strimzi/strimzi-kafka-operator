@@ -16,10 +16,10 @@ A single command applies all the installation files in the `cluster-operator` fo
 
 The command sets up everything you need to be able to create and manage a Kafka deployment, including the following:
 
-* Cluster Operator
-* Strimzi CRDs
-* RBAC resources
-* Service account
+* Cluster Operator (`Deployment`, `ConfigMap`)
+* Strimzi CRDs (`CustomResourceDefinition`)
+* RBAC resources (`ClusterRole`, `ClusterRoleBinding`, `RoleBinding`)
+* Service account (`ServiceAccount`)
 
 The basic deployment path is as follows:
 
