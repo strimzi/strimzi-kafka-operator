@@ -439,7 +439,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         } else if (t instanceof NoRouteToHostException || t instanceof ConnectException) {
             // Netty throws a AnnotatedNoRouteToHostException (inherits from NoRouteToHostException) and  when it cannot resolve the host
             // Vert.x throws a AnnotatedConnectException (inherits from ConnectException) when the request times out
-            // so we catch and raise a CruiseControlRestException instead since
+            // so we catch and raise a CruiseControlRetriableConnectException instead since
             result.fail(new CruiseControlRetriableConnectException(t.getMessage()));
         }  else {
             result.fail(t);
