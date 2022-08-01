@@ -97,8 +97,8 @@ public class KafkaRebalanceStateMachineTest {
      * @param currentStatusSessionID The user task ID attached to the current KafkaRebalance resource. Can be null.
      * @param userAnnotation An annotation to be applied after the reconcile has started, for example "approve" or "stop".
      * @param rebalanceSpec A custom rebalance specification. If null a blank spec will be used.
+     * @param reason Reason for the condition
      * @return A KafkaRebalance instance configured with the supplied parameters.
-     * @return Reason for the condition
      */
     private KafkaRebalance createKafkaRebalance(KafkaRebalanceState currentState,
                                                 String currentStatusSessionID,
