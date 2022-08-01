@@ -29,12 +29,13 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApi;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRetriableConnectException;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -59,7 +60,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Optional;
@@ -1533,7 +1533,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }
                 // the resource moved from 'New' to 'NotReady' (mocked Cruise Control not reachable)
                 assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME,
-                        KafkaRebalanceState.NotReady, ConnectException.class,
+                        KafkaRebalanceState.NotReady, CruiseControlRetriableConnectException.class,
                         "Connection refused");
                 checkpoint.flag();
             }));
