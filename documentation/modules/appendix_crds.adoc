@@ -1768,7 +1768,7 @@ include::../api/io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticat
 [id='type-PasswordSecretSource-{context}']
 ### `PasswordSecretSource` schema reference
 
-Used in: xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`]
+Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaClientAuthenticationPlain-{context}[`KafkaClientAuthenticationPlain`], xref:type-KafkaClientAuthenticationScramSha256-{context}[`KafkaClientAuthenticationScramSha256`], xref:type-KafkaClientAuthenticationScramSha512-{context}[`KafkaClientAuthenticationScramSha512`]
 
 
 [options="header"]
@@ -1866,6 +1866,8 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |boolean
 |maxTokenExpirySeconds           1.2+<.<a|Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
 |integer
+|passwordSecret                  1.2+<.<a|Reference to the `Secret` which holds the password.
+|xref:type-PasswordSecretSource-{context}[`PasswordSecretSource`]
 |readTimeoutSeconds              1.2+<.<a|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
 |integer
 |refreshToken                    1.2+<.<a|Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
@@ -1877,6 +1879,8 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |tokenEndpointUri                1.2+<.<a|Authorization server token endpoint URI.
 |string
 |type                            1.2+<.<a|Must be `oauth`.
+|string
+|username                        1.2+<.<a|Username used for the authentication.
 |string
 |====
 

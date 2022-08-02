@@ -166,6 +166,13 @@
         </repository>
     </distributionManagement>
 
+    <repositories>
+        <repository>
+            <id>oauth-pre</id>
+            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+        </repository>
+    </repositories>
+
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>

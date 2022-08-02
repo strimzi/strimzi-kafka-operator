@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.GenericSecretSource;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
@@ -31,12 +32,14 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     public static final String TYPE_OAUTH = "oauth";
 
     private String clientId;
+    private String username;
     private String scope;
     private String audience;
     private String tokenEndpointUri;
     private Integer connectTimeoutSeconds;
     private Integer readTimeoutSeconds;
     private GenericSecretSource clientSecret;
+    private PasswordSecretSource passwordSecret;
     private GenericSecretSource accessToken;
     private GenericSecretSource refreshToken;
     private List<CertSecretSource> tlsTrustedCertificates;
@@ -196,5 +199,23 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
+    }
+
+    @Description("Reference to the `Secret` which holds the password.")
+    public PasswordSecretSource getPasswordSecret() {
+        return passwordSecret;
+    }
+
+    public void setPasswordSecret(PasswordSecretSource passwordSecret) {
+        this.passwordSecret = passwordSecret;
+    }
+
+    @Description("Username used for the authentication.")
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }
