@@ -56,8 +56,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
-import io.strimzi.operator.cluster.model.ClientsCa;
-import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -281,16 +279,6 @@ public class KafkaAssemblyOperatorTest {
             }
         }
         return result;
-    }
-
-    /**
-     * Find the first secret in the given secrets with the given name.
-     * @param secrets The secrets to search.
-     * @param sname The secret name.
-     * @return The secret with that name.
-     */
-    public static Secret findSecretWithName(List<Secret> secrets, String sname) {
-        return ResourceUtils.findResourceWithName(secrets, sname);
     }
 
     public static void setFields(Params params) {
@@ -1264,12 +1252,10 @@ public class KafkaAssemblyOperatorTest {
 
         setFields(params);
 
-        // create CM, Service, headless service, statefulset
+        // create CRs
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         var mockKafkaOps = supplier.kafkaOperator;
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
         String kafkaNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
@@ -1283,46 +1269,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
-
-        // providing certificates Secrets for existing clusters
-        List<Secret> fooSecrets = ResourceUtils.createKafkaInitialSecrets(kafkaNamespace, "foo");
-        //ClusterCa fooCerts = ResourceUtils.createInitialClusterCa("foo", ModelUtils.findSecretWithName(fooSecrets, AbstractModel.clusterCaCertSecretName("foo")));
-        List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas(kafkaNamespace, "bar",
-                bar.getSpec().getKafka().getReplicas(),
-                bar.getSpec().getZookeeper().getReplicas());
-        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa(Reconciliation.DUMMY_RECONCILIATION,
-                "bar",
-                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")), findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
-        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa(Reconciliation.DUMMY_RECONCILIATION,
-                "bar",
-                findSecretWithName(barSecrets, KafkaResources.clientsCaCertificateSecretName("bar")), findSecretWithName(barSecrets, KafkaResources.clientsCaKeySecretName("bar")));
-
-        // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
-        when(mockStsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
-                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null, null))
-        );
-
-        when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
-                .thenReturn(
-                        fooSecrets.get(0));
-        when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
-
-        // providing the list StatefulSets for already "existing" Kafka clusters
-        Labels barLabels = Labels.forStrimziCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
-        when(mockStsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
-                List.of(barCluster.generateStatefulSet(openShift, null, null, null))
-        );
-        when(mockSecretOps.list(eq(kafkaNamespace), eq(barLabels))).thenAnswer(
-            invocation -> new ArrayList<>(asList(
-                    barClientsCa.caKeySecret(),
-                    barClientsCa.caCertSecret(),
-                    barCluster.generateCertificatesSecret(barClusterCa, barClientsCa, Set.of(), Map.of(), true),
-                    barClusterCa.caCertSecret()))
-        );
-        when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
-        when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
@@ -1355,12 +1301,10 @@ public class KafkaAssemblyOperatorTest {
     public void testReconcileAllNamespaces(Params params, VertxTestContext context) {
         setFields(params);
 
-        // create CM, Service, headless service, statefulset
+        // create CRs
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         var mockKafkaOps = supplier.kafkaOperator;
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
 
         Kafka foo = getKafkaAssembly("foo");
         foo.getMetadata().setNamespace("namespace1");
@@ -1375,37 +1319,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
-
-        // providing certificates Secrets for existing clusters
-        List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas("namespace2", "bar",
-                bar.getSpec().getKafka().getReplicas(),
-                bar.getSpec().getZookeeper().getReplicas());
-        ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa(Reconciliation.DUMMY_RECONCILIATION,
-                "bar",
-                findSecretWithName(barSecrets, AbstractModel.clusterCaCertSecretName("bar")), findSecretWithName(barSecrets, AbstractModel.clusterCaKeySecretName("bar")));
-        ClientsCa barClientsCa = ResourceUtils.createInitialClientsCa(Reconciliation.DUMMY_RECONCILIATION,
-                "bar",
-                findSecretWithName(barSecrets, KafkaResources.clientsCaCertificateSecretName("bar")), findSecretWithName(barSecrets, KafkaResources.clientsCaKeySecretName("bar")));
-
-        // providing the list of ALL StatefulSets for all the Kafka clusters
-        Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
-        when(mockStsOps.list(eq("*"), eq(newLabels))).thenReturn(
-                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null, null))
-        );
-
-        // providing the list StatefulSets for already "existing" Kafka clusters
-        Labels barLabels = Labels.forStrimziCluster("bar");
-        KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
-        when(mockStsOps.list(eq("*"), eq(barLabels))).thenReturn(
-                List.of(barCluster.generateStatefulSet(openShift, null, null, null))
-        );
-        when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
-            invocation -> new ArrayList<>(asList(
-                    barClientsCa.caKeySecret(),
-                    barClientsCa.caCertSecret(),
-                    barCluster.generateCertificatesSecret(barClusterCa, barClientsCa, Set.of(), Map.of(), true),
-                    barClusterCa.caCertSecret()))
-        );
 
         Checkpoint fooAsync = context.checkpoint();
         Checkpoint barAsync = context.checkpoint();
