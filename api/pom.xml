@@ -123,6 +123,7 @@
                             <goal>compile</goal>
                         </goals>
                         <configuration>
+                            <useIncrementalCompilation>false</useIncrementalCompilation>
                             <compilerArgs combine.self="override">
                                 <arg>-Xlint:unchecked,deprecation</arg>
                             </compilerArgs>
