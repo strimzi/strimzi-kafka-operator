@@ -15,11 +15,19 @@ spec:
         name: strimzi-topic-operator
     spec:
       serviceAccountName: strimzi-topic-operator
+      volumes:
+        - name: strimzi-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 5Mi
       containers:
         - name: strimzi-topic-operator
           image: quay.io/strimzi/operator:latest
           args:
-          - /opt/strimzi/bin/topic_operator_run.sh
+            - /opt/strimzi/bin/topic_operator_run.sh
+          volumeMounts:
+            - name: strimzi-tmp
+              mountPath: /tmp
           env:
             - name: STRIMZI_RESOURCE_LABELS
               value: "strimzi.io/cluster=my-cluster"
@@ -55,10 +63,10 @@ spec:
             periodSeconds: 30
           resources:
             limits:
-              memory: 96Mi
-              cpu: 100m
+              memory: 256Mi
+              cpu: 500m
             requests:
-              memory: 96Mi
+              memory: 256Mi
               cpu: 100m
   strategy:
     type: Recreate
