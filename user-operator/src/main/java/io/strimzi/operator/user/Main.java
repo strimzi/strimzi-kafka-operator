@@ -6,8 +6,11 @@ package io.strimzi.operator.user;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.Version;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -48,7 +51,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        LOGGER.info("UserOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        final String strimziVersion = Main.class.getPackage().getImplementationVersion();
+        LOGGER.info("UserOperator {} is starting", strimziVersion);
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         //Setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
@@ -58,7 +62,10 @@ public class Main {
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
 
-        KubernetesClient client = new KubernetesClientBuilder().build();
+        final String userAgent = "fabric8-kubernetes-client/" + Version.clientVersion() 
+            + " strimzi-operator-user/" + strimziVersion;
+        final Config kubernetesClientConfig = new ConfigBuilder().withUserAgent(userAgent).build();
+        KubernetesClient client = new KubernetesClientBuilder().withConfig(kubernetesClientConfig).build();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 
         run(vertx, client, adminClientProvider, config).onComplete(ar -> {

@@ -4,8 +4,10 @@
  */
 package io.strimzi.operator.topic;
 
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.Version;
 import io.strimzi.api.kafka.Crds;
 import io.vertx.core.Vertx;
 
@@ -40,7 +42,11 @@ public class Main {
     }
 
     private void deploy(Config config) {
-        KubernetesClient kubeClient = new KubernetesClientBuilder().build();
+        final String strimziVersion = Main.class.getPackage().getImplementationVersion();
+        final String userAgent = "fabric8-kubernetes-client/" + Version.clientVersion() 
+        + " strimzi-operator-topic/" + strimziVersion;
+        final io.fabric8.kubernetes.client.Config kubernetesClientConfig = new ConfigBuilder().withUserAgent(userAgent).build();
+        KubernetesClient kubeClient = new KubernetesClientBuilder().withConfig(kubernetesClientConfig).build();
         Crds.registerCustomKinds();
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()

@@ -4,8 +4,11 @@
  */
 package io.strimzi.kafka.init;
 
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.Version;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,10 +18,14 @@ public class Main {
 
     public static void main(String[] args) {
 
-        LOGGER.info("Init-kafka {} is starting", Main.class.getPackage().getImplementationVersion());
+        final String strimziVersion = Main.class.getPackage().getImplementationVersion();
+        LOGGER.info("Init-kafka {} is starting", strimziVersion);
         InitWriterConfig config = InitWriterConfig.fromMap(System.getenv());
 
-        KubernetesClient client = new KubernetesClientBuilder().build();
+        final String userAgent = "fabric8-kubernetes-client/" + Version.clientVersion() 
+                                + " strimzi-init-kafka/" + strimziVersion;
+        final Config kubernetesClientConfig = new ConfigBuilder().withUserAgent(userAgent).build();
+        KubernetesClient client = new KubernetesClientBuilder().withConfig(kubernetesClientConfig).build();
 
         LOGGER.info("Init-kafka started with config: {}", config);
 
