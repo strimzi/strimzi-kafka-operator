@@ -2,7 +2,8 @@
 set -e
 
 # Clean-up /tmp directory from files which might have remained from previous container restart
-rm -rfv /tmp/*
+# We ignore any errors which might be caused by files injected by different agents which we do not have the rights to delete
+rm -rfv /tmp/* || true
 
 if [ -f /opt/user-operator/custom-config/log4j2.properties ];
 then
