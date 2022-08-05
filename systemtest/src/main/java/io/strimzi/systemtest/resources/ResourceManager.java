@@ -246,6 +246,11 @@ public class ResourceManager {
     @SafeVarargs
     public final <T extends HasMetadata> void deleteResource(T... resources) {
         for (T resource : resources) {
+            try {
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                continue;
+            }
             ResourceType<T> type = findResourceType(resource);
             if (type == null) {
                 LOGGER.warn("Can't find resource type, please delete it manually");
