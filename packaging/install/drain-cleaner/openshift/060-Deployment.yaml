@@ -18,7 +18,7 @@ spec:
       serviceAccountName: strimzi-drain-cleaner
       containers:
         - name: strimzi-drain-cleaner
-          image: quay.io/strimzi/drain-cleaner:0.3.0
+          image: quay.io/strimzi/drain-cleaner:0.3.1
           ports:
             - containerPort: 8080
               name: http

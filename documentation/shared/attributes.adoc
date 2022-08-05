@@ -115,7 +115,7 @@
 :DockerOrg: quay.io/strimzi
 :DockerTag: {ProductVersion}
 :BridgeDockerTag: {BridgeVersion}
-:DrainCleanerDockerTag: 0.3.0
+:DrainCleanerDockerTag: 0.3.1
 :DockerRepository: https://quay.io/organization/strimzi[Container Registry^]
 :DockerZookeeper: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaImageCurrent: quay.io/strimzi/kafka:{DockerTag}-kafka-{KafkaVersionHigher}
