@@ -7,6 +7,7 @@ package io.strimzi.operator.topic;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
+import io.strimzi.operator.common.VertxShutdownHook;
 import io.vertx.core.Vertx;
 
 import java.util.HashMap;
@@ -49,6 +50,7 @@ public class Main {
                         .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
+        Runtime.getRuntime().addShutdownHook(new Thread(new VertxShutdownHook(vertx)));
 
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {

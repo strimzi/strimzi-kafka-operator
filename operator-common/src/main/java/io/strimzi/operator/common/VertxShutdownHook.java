@@ -2,23 +2,28 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster;
+package io.strimzi.operator.common;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.vertx.core.Vertx;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
+/**
+ * This shutdown hook ensure that {@code Vertx.close()} is called on a clean shutdown,
+ * which in turn calls the stop method of all running Verticles.
+ *
+ * This is not need when using the Vertx Launcher.
+ */
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-public class ShutdownHook implements Runnable {
-    private static final Logger LOGGER = LogManager.getLogger(ShutdownHook.class.getName());
+public class VertxShutdownHook implements Runnable {
+    private static final Logger LOGGER = LogManager.getLogger(VertxShutdownHook.class);
     
     private Vertx vertx;
     
-    public ShutdownHook(Vertx vertx) {
+    public VertxShutdownHook(Vertx vertx) {
         this.vertx = vertx;
     }
     
@@ -41,7 +46,6 @@ public class ShutdownHook implements Runnable {
                 throw new IllegalStateException(e);
             }
         }
-
         LOGGER.info("Shutdown complete");
     }
 }

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster;
+package io.strimzi.operator.common;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
-public class ShutdownHookTest {
+public class VertxShutdownHookTest {
     @Test
     public void testTerminationRunnable() throws InterruptedException {
         int nVerticles = 10;
@@ -36,7 +36,7 @@ public class ShutdownHookTest {
         latch.await(20, TimeUnit.SECONDS);
         assertThat("Verticles were not deployed", vertx.deploymentIDs(), hasSize(nVerticles));
         
-        ShutdownHook hook = new ShutdownHook(vertx);
+        VertxShutdownHook hook = new VertxShutdownHook(vertx);
         hook.run();
         
         assertThat("Verticles were not closed", vertx.deploymentIDs(), empty());

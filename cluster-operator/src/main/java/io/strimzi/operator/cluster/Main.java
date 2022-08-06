@@ -24,6 +24,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.VertxShutdownHook;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 
@@ -85,10 +86,7 @@ public class Main {
                 .setJvmMetricsEnabled(true)
                 .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-
-        // Verticle.stop() methods are not executed if you don't call Vertx.close()
-        // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
-        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
+        Runtime.getRuntime().addShutdownHook(new Thread(new VertxShutdownHook(vertx)));
 
         // Setup Micrometer Metrics provider
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();
