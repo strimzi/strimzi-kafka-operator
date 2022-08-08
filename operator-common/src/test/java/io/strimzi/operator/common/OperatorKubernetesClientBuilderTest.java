@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 public class OperatorKubernetesClientBuilderTest {
     
     @Test
-    void testBuild(){
+    void testBuild() {
         OperatorKubernetesClientBuilder builder = new OperatorKubernetesClientBuilder("test-component", "1.0");
         KubernetesClient client = builder.build();
         assertNotNull(client, "A KubernetesClient should be returned");
