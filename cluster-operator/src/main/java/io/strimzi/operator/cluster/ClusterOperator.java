@@ -10,19 +10,20 @@ import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.http.HttpServer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -46,8 +44,6 @@ public class ClusterOperator extends AbstractVerticle {
 
     private static final String NAME_SUFFIX = "-cluster-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
-
-    private static final int HEALTH_SERVER_PORT = 8080;
 
     private final KubernetesClient client;
     private final String namespace;
@@ -129,7 +125,8 @@ public class ClusterOperator extends AbstractVerticle {
                             reconcileAll("timer");
                         }
                     });
-                    return startHealthServer().map((Void) null);
+
+                    return Future.succeededFuture((Void) null);
                 })
                 .onComplete(start);
     }
@@ -167,35 +164,6 @@ public class ClusterOperator extends AbstractVerticle {
             kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
             kafkaRebalanceAssemblyOperator.reconcileAll(trigger, namespace, ignore);
         }
-    }
-
-    /**
-     * Start an HTTP health server
-     */
-    private Future<HttpServer> startHealthServer() {
-        Promise<HttpServer> result = Promise.promise();
-        this.vertx.createHttpServer()
-                .requestHandler(request -> {
-
-                    if (request.path().equals("/healthy")) {
-                        request.response().setStatusCode(200).end();
-                    } else if (request.path().equals("/ready")) {
-                        request.response().setStatusCode(200).end();
-                    } else if (request.path().equals("/metrics")) {
-                        PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) resourceOperatorSupplier.metricsProvider.meterRegistry();
-                        request.response().setStatusCode(200)
-                                .end(metrics.scrape());
-                    }
-                })
-                .listen(HEALTH_SERVER_PORT, ar -> {
-                    if (ar.succeeded()) {
-                        LOGGER.info("ClusterOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
-                    } else {
-                        LOGGER.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
-                    }
-                    result.handle(ar);
-                });
-        return result.future();
     }
 
     public static String secretName(String cluster) {
