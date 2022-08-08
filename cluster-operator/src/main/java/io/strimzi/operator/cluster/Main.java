@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -19,6 +20,8 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOp
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -41,14 +44,21 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * The main class used to start the Strimzi Cluster Operator
+ */
 @SuppressFBWarnings("DM_EXIT")
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
+
+    private static final int HEALTH_SERVER_PORT = 8080;
 
     static {
         try {
@@ -61,6 +71,7 @@ public class Main {
     public static void main(String[] args) {
         final String strimziVersion = Main.class.getPackage().getImplementationVersion();
         LOGGER.info("ClusterOperator {} is starting", strimziVersion);
+        Util.printEnvInfo(); // Prints configured environment variables
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
 
@@ -78,39 +89,65 @@ public class Main {
         // Verticle.stop() methods are not executed if you don't call Vertx.close()
         // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
-        
+
+        // Setup Micrometer Metrics provider
+        MetricsProvider metricsProvider = new MicrometerMetricsProvider();
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
-        maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
-            if (crs.succeeded())    {
-                PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
-                    if (pfa.succeeded()) {
-                        LOGGER.info("Environment facts gathered: {}", pfa.result());
-
-                        run(vertx, client, pfa.result(), config).onComplete(ar -> {
-                            if (ar.failed()) {
-                                LOGGER.error("Unable to start operator for 1 or more namespace", ar.cause());
-                                System.exit(1);
-                            }
-                        });
-                    } else {
-                        LOGGER.error("Failed to gather environment facts", pfa.cause());
+        maybeCreateClusterRoles(vertx, config, client)
+                .compose(i -> startHealthServer(vertx, metricsProvider))
+                .compose(i -> createPlatformFeaturesAvailability(vertx, client))
+                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config))
+                .onComplete(res -> {
+                    if (res.failed())   {
+                        LOGGER.error("Unable to start operator for 1 or more namespace", res.cause());
                         System.exit(1);
                     }
                 });
-            } else  {
-                LOGGER.error("Failed to create Cluster Roles", crs.cause());
-                System.exit(1);
-            }
-        });
     }
 
-    static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
-        Util.printEnvInfo();
+    /**
+     * Helper method used to get the PlatformFeaturesAvailability instance with the information about the Kubernetes
+     * cluster we run on.
+     *
+     * @param vertx     Vertx instance
+     * @param client    Kubernetes client instance
+     *
+     * @return  Future with the created PlatformFeaturesAvailability object
+     */
+    private static Future<PlatformFeaturesAvailability> createPlatformFeaturesAvailability(Vertx vertx, KubernetesClient client)    {
+        Promise<PlatformFeaturesAvailability> promise = Promise.promise();
 
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
+            if (pfa.succeeded()) {
+                LOGGER.info("Environment facts gathered: {}", pfa.result());
+                promise.complete(pfa.result());
+            } else {
+                LOGGER.error("Failed to gather environment facts", pfa.cause());
+                promise.fail(pfa.cause());
+            }
+        });
+
+        return promise.future();
+    }
+
+    /**
+     * Deploys the ClusterOperator verticles responsible for the actual Cluster Operator functionality. One verticle is
+     * started for each namespace the operator watched. In case of watching the whole cluster, only one verticle is started.
+     *
+     * @param vertx             Vertx instance
+     * @param client            Kubernetes client instance
+     * @param metricsProvider   Metrics provider instance
+     * @param pfa               PlatformFeaturesAvailability instance describing the Kubernetes cluster
+     * @param config            Cluster Operator configuration
+     *
+     * @return  Future which completes when all Cluster Operator verticles are started and running
+     */
+    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
                 vertx,
                 client,
+                metricsProvider,
                 pfa,
                 config.getOperationTimeoutMs(),
                 config.getOperatorName()
@@ -176,6 +213,16 @@ public class Main {
         return CompositeFuture.join(futures);
     }
 
+    /**
+     * If enabled in the configuration, it creates the cluster roles used by the operator
+     *
+     * @param vertx             Vertx instance
+     * @param config            Cluster Operator configuration
+     * @param client            Kubernetes client instance
+     *
+     * @return  Future which completes when the Cluster Roles are created
+     *                  (or - if their creation is not enabled - it just completes without doing anything).
+     */
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             @SuppressWarnings({ "rawtypes" })
@@ -220,5 +267,40 @@ public class Main {
         } else {
             return Future.succeededFuture();
         }
+    }
+
+    /**
+     * Start an HTTP health and metrics server
+     *
+     * @param vertx             Vertx instance
+     * @param metricsProvider   Metrics Provider to get the metrics from
+     *
+     * @return Future which completes when the health and metrics webserver is started
+     */
+    private static Future<HttpServer> startHealthServer(Vertx vertx, MetricsProvider metricsProvider) {
+        Promise<HttpServer> result = Promise.promise();
+
+        vertx.createHttpServer()
+                .requestHandler(request -> {
+                    if (request.path().equals("/healthy")) {
+                        request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/ready")) {
+                        request.response().setStatusCode(200).end();
+                    } else if (request.path().equals("/metrics")) {
+                        PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) metricsProvider.meterRegistry();
+                        request.response().setStatusCode(200)
+                                .end(metrics.scrape());
+                    }
+                })
+                .listen(HEALTH_SERVER_PORT, ar -> {
+                    if (ar.succeeded()) {
+                        LOGGER.info("Health and metrics server is ready on port {})", HEALTH_SERVER_PORT);
+                    } else {
+                        LOGGER.error("Failed to start health and metrics webserver on port {}", HEALTH_SERVER_PORT, ar.cause());
+                    }
+                    result.handle(ar);
+                });
+
+        return result.future();
     }
 }
