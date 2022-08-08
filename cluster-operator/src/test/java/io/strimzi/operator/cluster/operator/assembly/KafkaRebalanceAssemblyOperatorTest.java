@@ -1278,7 +1278,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 false,
                 1024,
                 "cluster-operator-name",
-                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS);
+                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config);
 

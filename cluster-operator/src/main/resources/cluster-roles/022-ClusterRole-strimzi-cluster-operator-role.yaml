@@ -1,0 +1,31 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-cluster-operator-leader-election
+  labels:
+    app: strimzi
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      # The cluster operator needs to access and manage leases for leader election
+      # The "create" verb cannot be used with "resourceNames"
+      - leases
+    verbs:
+      - create
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      # The cluster operator needs to access and manage leases for leader election
+      - leases
+    resourceNames:
+      # The default RBAC files give the operator only access to the Lease resource names strimzi-cluster-operator
+      # If you want to use another resource name or resource namespace, you have to configure the RBAC resources accordingly
+      - strimzi-cluster-operator
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - patch
+      - update

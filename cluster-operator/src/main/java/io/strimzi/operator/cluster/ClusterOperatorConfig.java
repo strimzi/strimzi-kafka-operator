@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.strimzi.operator.cluster.leaderelection.LeaderElectionManagerConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.NoImageException;
@@ -50,6 +51,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
     public static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE";
     public static final String STRIMZI_POD_SECURITY_PROVIDER_CLASS = "STRIMZI_POD_SECURITY_PROVIDER_CLASS";
+    public static final String STRIMZI_LEADER_ELECTION_ENABLED = "STRIMZI_LEADER_ELECTION_ENABLED";
 
     //Used to identify which cluster operator created a Kubernetes event
     public static final String STRIMZI_OPERATOR_NAME = "STRIMZI_OPERATOR_NAME";
@@ -94,6 +96,7 @@ public class ClusterOperatorConfig {
     public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
     public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
     public static final String DEFAULT_POD_SECURITY_PROVIDER_CLASS = "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider";
+    public static final boolean DEFAULT_LEADER_ELECTION_ENABLED = false;
 
     // PodSecurityPolicy shortcut keywords and the corresponding class names
     public static final String POD_SECURITY_PROVIDER_BASELINE_SHORTCUT = "baseline";
@@ -121,6 +124,7 @@ public class ClusterOperatorConfig {
     private final int podSetControllerWorkQueueSize;
     private final String operatorName;
     private final String podSecurityProviderClass;
+    private final LeaderElectionManagerConfig leaderElectionConfig;
 
     /**
      * Constructor
@@ -144,8 +148,9 @@ public class ClusterOperatorConfig {
      * @param podSetReconciliationOnly      Indicates whether this Cluster Operator instance should reconcile only the
      *                                      StrimziPodSet resources or not
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
-     * @param operatorName The Pod name of the cluster operator, used to identify source of K8s events the operator creates
+     * @param operatorName                  The Pod name of the cluster operator, used to identify source of K8s events the operator creates
      * @param podSecurityProviderClass      The PodSecurityProvider class which the operator should use
+     * @param leaderElectionConfig          Configuration of the Cluster Operator leader election
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -168,7 +173,8 @@ public class ClusterOperatorConfig {
             boolean podSetReconciliationOnly,
             int podSetControllerWorkQueueSize,
             String operatorName,
-            String podSecurityProviderClass
+            String podSecurityProviderClass,
+            LeaderElectionManagerConfig leaderElectionConfig
     ) {
         this.namespaces = Set.copyOf(namespaces);
         this.reconciliationIntervalMs = reconciliationIntervalMs;
@@ -190,6 +196,7 @@ public class ClusterOperatorConfig {
         this.podSetControllerWorkQueueSize = podSetControllerWorkQueueSize;
         this.operatorName = operatorName;
         this.podSecurityProviderClass = podSecurityProviderClass;
+        this.leaderElectionConfig = leaderElectionConfig;
     }
 
     /**
@@ -247,6 +254,7 @@ public class ClusterOperatorConfig {
         boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
         int podSetControllerWorkQueueSize = parseInt(map.get(STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE), DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         String podSecurityProviderClass = parsePodSecurityProviderClass(map.get(STRIMZI_POD_SECURITY_PROVIDER_CLASS));
+        LeaderElectionManagerConfig leaderElectionConfig = parseLeaderElectionConfig(map);
 
         //Use default to prevent existing installations breaking if CO pod template not modified to pass through pod name
         String operatorName = map.getOrDefault(STRIMZI_OPERATOR_NAME, DEFAULT_OPERATOR_NAME);
@@ -271,7 +279,8 @@ public class ClusterOperatorConfig {
                 podSetReconciliationOnly,
                 podSetControllerWorkQueueSize,
                 operatorName,
-                podSecurityProviderClass);
+                podSecurityProviderClass,
+                leaderElectionConfig);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -445,6 +454,16 @@ public class ClusterOperatorConfig {
         }
     }
 
+    private static LeaderElectionManagerConfig parseLeaderElectionConfig(Map<String, String> envVars)   {
+        boolean enabled = parseBoolean(envVars.get(STRIMZI_LEADER_ELECTION_ENABLED), DEFAULT_LEADER_ELECTION_ENABLED);
+
+        if (enabled)    {
+            return LeaderElectionManagerConfig.fromMap(envVars);
+        } else {
+            return null;
+        }
+    }
+
     /**
      * @return  namespaces in which the operator runs and creates resources
      */
@@ -571,10 +590,17 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return Returns the Pdo Security Provider class
+     * @return Returns the Pod Security Provider class
      */
     public String getPodSecurityProviderClass() {
         return podSecurityProviderClass;
+    }
+
+    /**
+     * @return Returns the Leader Election Manager configuration
+     */
+    public LeaderElectionManagerConfig getLeaderElectionConfig() {
+        return leaderElectionConfig;
     }
 
     @Override
@@ -599,6 +625,7 @@ public class ClusterOperatorConfig {
                 ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
                 ",operatorName=" + operatorName +
                 ",podSecurityProviderClass=" + podSecurityProviderClass +
+                ",leaderElectionConfig=" + leaderElectionConfig +
                 ")";
     }
 }

@@ -165,8 +165,11 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
         int scaleTo = 4;
 
-        deployCOInNamespace(extensionContext, FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);
-        deployCOInNamespace(extensionContext, SECOND_CO_NAME, DEFAULT_NAMESPACE, SECOND_CO_SELECTOR_ENV, false);
+        deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, FIRST_CO_SELECTOR_ENV, true);
+        deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
+
+        cluster.createNamespace(DEFAULT_NAMESPACE);
+        cluster.setNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_SELECTOR, FIRST_CO_NAME);
 

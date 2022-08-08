@@ -11,12 +11,13 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
@@ -27,6 +28,16 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.micrometer.MicrometerMetricsOptions;
+import io.vertx.micrometer.VertxPrometheusOptions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -39,17 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.http.HttpServer;
-import io.vertx.micrometer.MicrometerMetricsOptions;
-import io.vertx.micrometer.VertxPrometheusOptions;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * The main class used to start the Strimzi Cluster Operator
@@ -94,6 +94,7 @@ public class Main {
 
         maybeCreateClusterRoles(vertx, config, client)
                 .compose(i -> startHealthServer(vertx, metricsProvider))
+                .compose(i -> leaderElection(client, config))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
                 .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config))
                 .onComplete(res -> {
@@ -208,6 +209,47 @@ public class Main {
                 });
         }
         return CompositeFuture.join(futures);
+    }
+
+    /**
+     * Utility method which waits until this instance of the operator is elected as a leader:
+     *   - When it is not a leader, it will just wait
+     *   - Once it is elected a leader, it will continue and start the ClusterOperator verticles
+     *   - If it is removed as a leader, it will loop the operator container to start from the beginning
+     *
+     * When the leader election is disabled, it just completes the future without waiting for anything.
+     *
+     * @param client    Kubernetes client
+     * @param config    Cluster Operator configuration
+     */
+    private static Future<Void> leaderElection(KubernetesClient client, ClusterOperatorConfig config)    {
+        Promise<Void> leader = Promise.promise();
+
+        if (config.getLeaderElectionConfig() != null) {
+            LeaderElectionManager leaderElection = new LeaderElectionManager(
+                    client, config.getLeaderElectionConfig(),
+                    () -> {
+                        // New leader => complete the future
+                        LOGGER.info("I'm the new leader");
+                        leader.complete();
+                    },
+                    () -> {
+                        // Not a leader anymore
+                        LOGGER.info("Stopped being a leader => exiting");
+                        System.exit(0);
+                    },
+                    s -> {
+                        // Do nothing
+                    });
+
+            LOGGER.info("Waiting to become a leader");
+            leaderElection.start();
+        } else {
+            LOGGER.info("Leader election is not enabled");
+            leader.complete();
+        }
+
+        return leader.future();
     }
 
     /**
