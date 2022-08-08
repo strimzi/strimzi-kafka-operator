@@ -126,7 +126,6 @@ public class ClusterOperator extends AbstractVerticle {
                         }
                     });
 
-                    //start.complete();
                     return Future.succeededFuture((Void) null);
                 })
                 .onComplete(start);
