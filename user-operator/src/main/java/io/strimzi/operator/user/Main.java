@@ -15,7 +15,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxShutdownHook;
+import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
@@ -59,7 +59,7 @@ public class Main {
                         .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-        Runtime.getRuntime().addShutdownHook(new Thread(new VertxShutdownHook(vertx)));
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
 
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", strimziVersion).build();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();

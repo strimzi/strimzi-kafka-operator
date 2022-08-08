@@ -24,7 +24,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.VertxShutdownHook;
+import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 
@@ -86,7 +86,7 @@ public class Main {
                 .setJvmMetricsEnabled(true)
                 .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-        Runtime.getRuntime().addShutdownHook(new Thread(new VertxShutdownHook(vertx)));
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
 
         // Setup Micrometer Metrics provider
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();

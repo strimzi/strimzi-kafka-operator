@@ -16,16 +16,23 @@ import java.util.concurrent.TimeUnit;
  * This shutdown hook ensure that {@code Vertx.close()} is called on a clean shutdown,
  * which in turn calls the stop method of all running Verticles.
  *
- * This is not need when using the Vertx Launcher.
+ * We add a fixed timeout because Vertx has none for stopping running Verticles.
  */
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-public class VertxShutdownHook implements Runnable {
-    private static final Logger LOGGER = LogManager.getLogger(VertxShutdownHook.class);
+public class ShutdownHook implements Runnable {
+    private static final Logger LOGGER = LogManager.getLogger(ShutdownHook.class);
     
     private Vertx vertx;
-    
-    public VertxShutdownHook(Vertx vertx) {
+    private long timeoutMs;
+
+    public ShutdownHook(Vertx vertx) {
         this.vertx = vertx;
+        this.timeoutMs = 120_000;
+    }
+    
+    public ShutdownHook(Vertx vertx, long timeoutMs) {
+        this.vertx = vertx;
+        this.timeoutMs = timeoutMs;
     }
     
     @Override
@@ -35,18 +42,18 @@ public class VertxShutdownHook implements Runnable {
         if (vertx != null) {
             vertx.close(ar -> {
                 if (!ar.succeeded()) {
-                    LOGGER.error("Failure in stopping Vertx", ar.cause());
+                    LOGGER.error("Vertx close failed", ar.cause());
                 }
                 latch.countDown();
             });
             try {
-                if (!latch.await(2, TimeUnit.MINUTES)) {
-                    LOGGER.error("Timed out waiting to undeploy all Verticles");
+                if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+                    LOGGER.error("Timed out waiting for shutdown to complete");
                 }
             } catch (InterruptedException e) {
-                throw new IllegalStateException(e);
+                LOGGER.error("Shutdown thread interrupted");
             }
         }
-        LOGGER.info("Shutdown complete");
+        LOGGER.info("Shutdown completed");
     }
 }
