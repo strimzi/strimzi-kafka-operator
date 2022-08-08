@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -19,6 +18,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -59,7 +59,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        LOGGER.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        final String strimziVersion = Main.class.getPackage().getImplementationVersion();
+        LOGGER.info("ClusterOperator {} is starting", strimziVersion);
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
 
@@ -78,7 +79,7 @@ public class Main {
         // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
         
-        KubernetesClient client = new KubernetesClientBuilder().build();
+        KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
         maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
             if (crs.succeeded())    {

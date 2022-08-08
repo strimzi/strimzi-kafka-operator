@@ -6,17 +6,14 @@ package io.strimzi.operator.user;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.Version;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -62,10 +59,7 @@ public class Main {
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
 
-        final String userAgent = "fabric8-kubernetes-client/" + Version.clientVersion() 
-            + " strimzi-operator-user/" + strimziVersion;
-        final Config kubernetesClientConfig = new ConfigBuilder().withUserAgent(userAgent).build();
-        KubernetesClient client = new KubernetesClientBuilder().withConfig(kubernetesClientConfig).build();
+        KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", strimziVersion).build();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
 
         run(vertx, client, adminClientProvider, config).onComplete(ar -> {
