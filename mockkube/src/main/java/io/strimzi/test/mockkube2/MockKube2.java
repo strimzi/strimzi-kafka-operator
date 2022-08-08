@@ -170,6 +170,16 @@ public class MockKube2 {
         }
 
         /**
+         * Registers the KafkaUser CRD
+         *
+         * @return  MockKube builder instance
+         */
+        public MockKube2Builder withKafkaUserCrd()  {
+            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaUser", KafkaRebalance.class, TestUtils.CRD_KAFKA_USER);
+            return this;
+        }
+
+        /**
          * Registers the KafkaConnect CRD
          *
          * @return  MockKube builder instance
@@ -254,7 +264,6 @@ public class MockKube2 {
             initializeResources(Crds.kafkaMirrorMaker2Operation(client), resources);
             return this;
         }
-
 
         /**
          * Set the mock web server's logging level as needed, defaults to INFO

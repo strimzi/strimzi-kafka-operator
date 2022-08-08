@@ -39,14 +39,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         L extends KubernetesResourceList<T>, R extends Resource<T>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNonNamespacedResourceOperator.class);
 
-    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
-            "^(/metadata/managedFields" +
-                    "|/metadata/creationTimestamp" +
-                    "|/metadata/resourceVersion" +
-                    "|/metadata/generation" +
-                    "|/metadata/uid" +
-                    "|/status)$");
-
     protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
@@ -174,7 +166,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
      */
     protected Pattern ignorablePaths() {
-        return IGNORABLE_PATHS;
+        return ResourceDiff.DEFAULT_IGNORABLE_PATHS;
     }
 
     /**

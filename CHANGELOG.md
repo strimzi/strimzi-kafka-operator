@@ -3,6 +3,7 @@
 ## 0.33.0
 
 * Support for automatically restarting failed Connect or Mirror Maker 2 connectors
+* Redesign of Strimzi User Operator to improve its scalability
 
 ## 0.32.0
 

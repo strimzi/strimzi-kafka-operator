@@ -33,6 +33,7 @@ public abstract class MetricsHolder {
     private final Map<String, Counter> reconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> failedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> successfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<String, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Timer> reconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
     /**
@@ -145,6 +146,19 @@ public abstract class MetricsHolder {
     public Timer reconciliationsTimer(String namespace) {
         return getTimer(namespace, kind, METRICS_PREFIX + "reconciliations.duration", metricsProvider, selectorLabels, reconciliationsTimerMap,
                 "The time the reconciliation takes to complete");
+    }
+
+    /**
+     * Counter metric for number of reconciliations which did not happen because they did not get the lock (which means
+     * that other reconciliation for the same resource was in progress).
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     *
+     * @return  Metrics counter
+     */
+    public Counter lockedReconciliationsCounter(String namespace) {
+        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.locked", metricsProvider, selectorLabels, lockedReconciliationsCounterMap,
+                "Number of reconciliations skipped because another reconciliation for the same resource was still running");
     }
 
     ////////////////////

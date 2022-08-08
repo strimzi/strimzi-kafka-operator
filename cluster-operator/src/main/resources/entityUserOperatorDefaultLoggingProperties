@@ -9,3 +9,7 @@ rootLogger.level = INFO
 rootLogger.appenderRefs = stdout
 rootLogger.appenderRef.console.ref = STDOUT
 rootLogger.additivity = false
+
+# Keeps separate level for Jetty
+logger.jetty.name = org.eclipse.jetty.server
+logger.jetty.level = INFO

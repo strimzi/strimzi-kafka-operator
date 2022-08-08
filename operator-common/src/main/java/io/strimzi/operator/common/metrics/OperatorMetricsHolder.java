@@ -4,18 +4,14 @@
  */
 package io.strimzi.operator.common.metrics;
 
-import io.micrometer.core.instrument.Counter;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.Labels;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A metrics holder for operators.
  */
 public class OperatorMetricsHolder extends MetricsHolder {
-    private final Map<String, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+
 
     /**
      * Constructs the operator metrics holder
@@ -26,19 +22,6 @@ public class OperatorMetricsHolder extends MetricsHolder {
      */
     public OperatorMetricsHolder(String kind, Labels selectorLabels, MetricsProvider metricsProvider) {
         super(kind, selectorLabels, metricsProvider);
-    }
-
-    /**
-     * Counter metric for number of reconciliations which did not happen because they did not get the lock (which means
-     * that other reconciliation for the same resource was in progress).
-     *
-     * @param namespace     Namespace of the resources being reconciled
-     *
-     * @return  Metrics counter
-     */
-    public Counter lockedReconciliationsCounter(String namespace) {
-        return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.locked", metricsProvider, selectorLabels, lockedReconciliationsCounterMap,
-                "Number of reconciliations skipped because another reconciliation for the same resource was still running");
     }
 
     /**

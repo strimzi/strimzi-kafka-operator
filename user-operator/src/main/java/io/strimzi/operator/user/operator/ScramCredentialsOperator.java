@@ -6,25 +6,29 @@ package io.strimzi.operator.user.operator;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.user.UserOperatorConfig;
+import io.strimzi.operator.user.operator.batching.ScramShaCredentialsBatchReconciler;
+import io.strimzi.operator.user.operator.cache.ScramShaCredentialsCache;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AlterUserScramCredentialsResult;
-import org.apache.kafka.clients.admin.DescribeUserScramCredentialsResult;
 import org.apache.kafka.clients.admin.ScramCredentialInfo;
 import org.apache.kafka.clients.admin.ScramMechanism;
+import org.apache.kafka.clients.admin.UserScramCredentialAlteration;
 import org.apache.kafka.clients.admin.UserScramCredentialDeletion;
 import org.apache.kafka.clients.admin.UserScramCredentialUpsertion;
-import org.apache.kafka.common.errors.ResourceNotFoundException;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 
+/**
+ * ScramCredentialsOperator is responsible for managing the SCRAM-SHA credentials in Apache Kafka.
+ */
 public class ScramCredentialsOperator extends AbstractAdminApiOperator<String, List<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ScramCredentialsOperator.class.getName());
     private final static int ITERATIONS = 4096;
@@ -33,61 +37,113 @@ public class ScramCredentialsOperator extends AbstractAdminApiOperator<String, L
     // This salt uses the same algorithm as Kafka
     private final static byte[] SALT =  (new BigInteger(130, new SecureRandom())).toString(36).getBytes(StandardCharsets.UTF_8);
 
+    private final ScramShaCredentialsBatchReconciler patchReconciler;
+    private final ScramShaCredentialsCache cache;
+
     /**
      * Constructor
      *
-     * @param vertx Vertx instance
-     * @param adminClient Kafka Admin client instance
+     * @param adminClient   Kafka Admin client instance
+     * @param config        User operator configuration
      */
-    public ScramCredentialsOperator(Vertx vertx, Admin adminClient) {
-        super(vertx, adminClient);
+    public ScramCredentialsOperator(Admin adminClient, UserOperatorConfig config) {
+        // Create cache for querying the SCRAM-SHA Credentials locally
+        this.cache = new ScramShaCredentialsCache(adminClient, config.getCacheRefresh());
+
+        // Create micro-batching reconciler for updating the SCRAM-SHA credentials
+        this.patchReconciler = new ScramShaCredentialsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
+
+        if (!config.isKraftEnabled()) {
+            // Start the cache and reconcilers => we start them only outside of KRaft where SCRAM-SHA is not supported
+            this.cache.start();
+            this.patchReconciler.start();
+        }
     }
 
+    /**
+     * Reconciles SCRAM-SHA credentials for given user
+     *
+     * @param reconciliation    The reconciliation
+     * @param username          Username of the reconciled user
+     * @param desired           The desired password
+     *
+     * @return the Future with reconcile result
+     */
     @Override
-    public Future<ReconcileResult<String>> reconcile(Reconciliation reconciliation, String username, String desired) {
-        if (desired != null)    {
-            UserScramCredentialUpsertion upsertion = new UserScramCredentialUpsertion(username, new ScramCredentialInfo(SCRAM_MECHANISM, ITERATIONS), desired.getBytes(StandardCharsets.UTF_8), SALT);
-            LOGGER.debugCr(reconciliation, "Upserting SCRAM credentials for user {}", username);
-            AlterUserScramCredentialsResult result = adminClient.alterUserScramCredentials(List.of(upsertion));
+    public CompletionStage<ReconcileResult<String>> reconcile(Reconciliation reconciliation, String username, String desired) {
+        boolean exists = userExists(username);
 
-            return Util.kafkaFutureToVertxFuture(reconciliation, vertx, result.all()).map(ReconcileResult.patched(desired));
+        if (desired == null && !exists) {
+            // Username is not found in cache so the credentials should not exist => we can ignore it.
+            return CompletableFuture.completedFuture(ReconcileResult.noop(null));
         } else {
-            Promise<ReconcileResult<String>> deletePromise = Promise.promise();
+            // Username either does not exist yet and should be created or does not exist and should be deleted
+            UserScramCredentialAlteration alteration;
 
-            UserScramCredentialDeletion deletion = new UserScramCredentialDeletion(username, SCRAM_MECHANISM);
-            LOGGER.debugCr(reconciliation, "Deleting SCRAM credentials for user {}", username);
-            AlterUserScramCredentialsResult result = adminClient.alterUserScramCredentials(List.of(deletion));
+            if (desired != null) {
+                LOGGER.debugCr(reconciliation, "Upserting SCRAM-SHA credentials for user {}", username);
+                alteration = new UserScramCredentialUpsertion(username, new ScramCredentialInfo(SCRAM_MECHANISM, ITERATIONS), desired.getBytes(StandardCharsets.UTF_8), SALT);
+            } else {
+                LOGGER.debugCr(reconciliation, "Deleting SCRAM-SHA credentials for user {}", username);
+                alteration = new UserScramCredentialDeletion(username, SCRAM_MECHANISM);
+            }
 
-            result.all().whenComplete((ignore, error) -> {
-                vertx.runOnContext(ignore2 -> {
-                    if (error != null) {
-                        if (error instanceof ResourceNotFoundException) {
-                            // Resource was not found => return success
-                            LOGGER.debugCr(reconciliation, "Previously deleted SCRAM credentials for user {}", username);
-                            deletePromise.complete(ReconcileResult.noop(null));
-                        } else {
-                            LOGGER.warnCr(reconciliation, "Failed to delete SCRAM credentials for user {}", username);
-                            deletePromise.fail(error);
-                        }
+            CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> future = new CompletableFuture<>();
+
+            try {
+                patchReconciler.enqueue(new ReconcileRequest<>(reconciliation, username, alteration, future));
+            } catch (InterruptedException e) {
+                LOGGER.warnCr(reconciliation, "Failed to enqueue ScramShaCredentialsAlteration", e);
+                future.completeExceptionally(e);
+            }
+
+            return future.handleAsync((r, e) -> {
+                if (e != null) {
+                    if (desired != null) {
+                        LOGGER.warnCr(reconciliation, "Failed to upsert SCRAM-SHA credentials of user {}", username, e);
                     } else {
-                        LOGGER.debugCr(reconciliation, "Deleted SCRAM credentials for user {}", username);
-                        deletePromise.complete(ReconcileResult.deleted());
+                        LOGGER.warnCr(reconciliation, "Failed to delete SCRAM-SHA credentials of user {}", username, e);
                     }
-                });
-            });
 
-            return deletePromise.future();
+                    throw new CompletionException(e);
+                } else {
+                    if (desired != null) {
+                        LOGGER.debugCr(reconciliation, "Updated SCRAM credentials for user {}", username);
+                        cache.put(username, true); // Update the cache
+                        return ReconcileResult.patched(desired);
+                    } else {
+                        if (r instanceof ReconcileResult.Noop) {
+                            LOGGER.debugCr(reconciliation, "SCRAM credentials for user {} did not exist anymore", username);
+                            cache.remove(username); // Update the cache
+                            return ReconcileResult.noop(null);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "Deleted SCRAM credentials for user {}", username);
+                            cache.remove(username); // Update the cache
+                            return ReconcileResult.deleted();
+                        }
+                    }
+                }
+            });
         }
+    }
+
+    /**
+     * Utility methods which checks if the user already has some SCRAM-SHA credentials
+     *
+     * @param username  Name of the user
+     *
+     * @return  True if the user already has some credentials. False otherwise.
+     */
+    private boolean userExists(String username) {
+        return Boolean.TRUE.equals(cache.get(username));
     }
 
     /**
      * @return List with all usernames which have some scram credentials set
      */
     @Override
-    public Future<List<String>> getAllUsers() {
+    public CompletionStage<List<String>> getAllUsers() {
         LOGGER.debugOp("Listing all users with SCRAM credentials");
-
-        DescribeUserScramCredentialsResult creds = adminClient.describeUserScramCredentials();
-        return Util.kafkaFutureToVertxFuture(vertx, creds.users());
+        return CompletableFuture.completedFuture(Collections.list(cache.keys()));
     }
 }

@@ -66,25 +66,29 @@ spec:
               value: "strimzi.io/cluster=my-cluster"
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <6>
               value: "120000"
-            - name: STRIMZI_LOG_LEVEL <7>
+            - name: STRIMZI_WORK_QUEUE_SIZE <7>
+              value: 10000
+            - name: STRIMZI_CONTROLLER_THREAD_POOL_SIZE <8>
+              value: 10
+            - name: STRIMZI_LOG_LEVEL <9>
               value: INFO
-            - name: STRIMZI_GC_LOG_ENABLED <8>
+            - name: STRIMZI_GC_LOG_ENABLED <10>
               value: "true"
-            - name: STRIMZI_CA_VALIDITY <9>
+            - name: STRIMZI_CA_VALIDITY <11>
               value: "365"
-            - name: STRIMZI_CA_RENEWAL <10>
+            - name: STRIMZI_CA_RENEWAL <12>
               value: "30"
-            - name: STRIMZI_JAVA_OPTS <11>
+            - name: STRIMZI_JAVA_OPTS <13>
               value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <12>
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <14>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
-            - name: STRIMZI_SECRET_PREFIX <13>
+            - name: STRIMZI_SECRET_PREFIX <15>
               value: "kafka-"
-            - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <14>
+            - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <16>
               value: "true"
-            - name: STRIMZI_MAINTENANCE_TIME_WINDOWS <15>
+            - name: STRIMZI_MAINTENANCE_TIME_WINDOWS <17>
               value: '* * 8-10 * * ?;* * 14-15 * * ?'
-            - name: STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION <16>
+            - name: STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION <18>
               value: |
                 default.api.timeout.ms=120000
                 request.timeout.ms=60000
@@ -101,23 +105,29 @@ If you deploy more than one User Operator, the labels must be unique for each.
 That is, the operators cannot manage the same resources.
 <6> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
-<7> The level for printing logging messages.
+<7> The size of the controller event queue.
+The size of the queue should be at least as big as the maximal amount of users you expect the User Operator to operate.
+The default is `1024`.
+<8> The size of the worker pool for reconciling the users.
+Bigger pool might require more resources, but it will also handle more `KafkaUser` resources
+The default is `50`.
+<9> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
-<8> Enables garbage collection (GC) logging.
+<10> Enables garbage collection (GC) logging.
 The default is `true`.
-<9> The validity period for the Certificate Authority.
+<11> The validity period for the Certificate Authority.
 The default is `365` days.
-<10> The renewal period for the Certificate Authority. The renewal period is measured backwards from the expiry date of the current certificate.
+<12> The renewal period for the Certificate Authority. The renewal period is measured backwards from the expiry date of the current certificate.
 The default is `30` days to initiate certificate renewal before the old certificates expire.
-<11> (Optional) The Java options used by the JVM running the User Operator
-<12> (Optional) The debugging (`-D`) options set for the User Operator
-<13> (Optional) Prefix for the names of Kubernetes secrets created by the User Operator.
-<14> (Optional) Indicates whether the Kafka cluster supports management of authorization ACL rules using the Kafka Admin API.
+<13> (Optional) The Java options used by the JVM running the User Operator
+<14> (Optional) The debugging (`-D`) options set for the User Operator
+<15> (Optional) Prefix for the names of Kubernetes secrets created by the User Operator.
+<16> (Optional) Indicates whether the Kafka cluster supports management of authorization ACL rules using the Kafka Admin API.
 When set to `false`, the User Operator will reject all resources with `simple` authorization ACL rules.
 This helps to avoid unnecessary exceptions in the Kafka cluster logs.
 The default is `true`.
-<15> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
-<16> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
+<17> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
+<18> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
 
 . If you are using mTLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
 Otherwise, go to the next step.

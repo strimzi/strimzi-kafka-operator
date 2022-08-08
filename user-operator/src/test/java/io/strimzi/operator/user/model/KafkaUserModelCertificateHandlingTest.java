@@ -180,7 +180,7 @@ public class KafkaUserModelCertificateHandlingTest {
         assertThat(model.reuseCertificateCalled, is(1));
     }
 
-    class MockKafkaUserModel extends KafkaUserModel {
+    static class MockKafkaUserModel extends KafkaUserModel {
         public int reuseCertificateCalled = 0;
         public int generateNewCertificateCalled = 0;
 
