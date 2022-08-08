@@ -122,7 +122,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
             .build();
         client.secrets().inNamespace(namespace).resource(secret).create();
         PlatformFeaturesAvailability platformFeaturesAvailability = new PlatformFeaturesAvailability(false, kubernetesVersion);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, platformFeaturesAvailability, 10000, "op");
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, ResourceUtils.metricsProvider(), platformFeaturesAvailability, 10000, "op");
 
         operator = new MockKafkaAssemblyOperator(
                 vertx,

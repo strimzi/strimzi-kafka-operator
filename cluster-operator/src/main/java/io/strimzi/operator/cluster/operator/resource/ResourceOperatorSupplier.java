@@ -25,7 +25,6 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -90,7 +89,7 @@ public class ResourceOperatorSupplier {
     public final ZookeeperLeaderFinder zookeeperLeaderFinder;
     public final KubernetesRestartEventPublisher restartEventsPublisher;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, long operationTimeoutMs, String operatorName) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, long operationTimeoutMs, String operatorName) {
         this(vertx,
                 client,
                 new ZookeeperLeaderFinder(vertx,
@@ -98,7 +97,7 @@ public class ResourceOperatorSupplier {
                         () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
-                new MicrometerMetricsProvider(),
+                metricsProvider,
                 pfa,
                 operationTimeoutMs,
                 KubernetesRestartEventPublisher.createPublisher(client, operatorName, pfa.hasEventsApiV1())
