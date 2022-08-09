@@ -38,7 +38,7 @@ public class ShutdownHookTest {
         long execTimeMs = (System.nanoTime() - start) / 1_000_000;
 
         assertThat(String.format(
-                "Shutdown took %d ms, which exceeded the configured timeout of %d ms by more than 10%%", execTimeMs, timeoutMs),
+                "Shutdown took %d ms, which exceeds the configured timeout of %d ms", execTimeMs, timeoutMs),
                 (long) (timeoutMs * 1.1), greaterThan(execTimeMs));
     }
 

@@ -37,20 +37,22 @@ public class ShutdownHook implements Runnable {
 
     @Override
     public void run() {
-        LOGGER.info("Shutting down");
-        CountDownLatch latch = new CountDownLatch(1);
-        vertx.close(ar -> {
-            if (!ar.succeeded()) {
-                LOGGER.error("Vertx close failed", ar.cause());
+        LOGGER.info("Shutdown started");
+        if (vertx.deploymentIDs().size() > 0) {
+            CountDownLatch latch = new CountDownLatch(1);
+            vertx.close(ar -> {
+                if (!ar.succeeded()) {
+                    LOGGER.error("Vertx close failed", ar.cause());
+                }
+                latch.countDown();
+            });
+            try {
+                if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+                    LOGGER.error("Timed out while waiting for Vertx close");
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error("Interrupted while waiting for Vertx close");
             }
-            latch.countDown();
-        });
-        try {
-            if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
-                LOGGER.error("Timed out waiting for shutdown to complete");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.error("Shutdown thread interrupted");
         }
         LOGGER.info("Shutdown completed");
     }

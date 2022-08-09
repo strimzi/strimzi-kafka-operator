@@ -82,58 +82,63 @@ public class StrimziPodSetController implements Runnable {
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
     public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, StrimziPodSetOperator strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
-        this.podOperator = podOperator;
-        this.strimziPodSetOperator = strimziPodSetOperator;
-        this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
-        this.watchedNamespace = watchedNamespace;
-        this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
+        try {
+            this.podOperator = podOperator;
+            this.strimziPodSetOperator = strimziPodSetOperator;
+            this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
+            this.watchedNamespace = watchedNamespace;
+            this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
 
-        // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
-        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
-        this.kafkaLister = new Lister<>(kafkaInformer.getIndexer());
+            // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
+            this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
+            this.kafkaLister = new Lister<>(kafkaInformer.getIndexer());
 
-        // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
-        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace);
-        this.strimziPodSetLister = new Lister<>(strimziPodSetInformer.getIndexer());
-        this.strimziPodSetInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
-            @Override
-            public void onAdd(StrimziPodSet podSet) {
-                enqueueStrimziPodSet(podSet, "ADDED");
-            }
+            // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
+            this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace);
+            this.strimziPodSetLister = new Lister<>(strimziPodSetInformer.getIndexer());
+            this.strimziPodSetInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
+                @Override
+                public void onAdd(StrimziPodSet podSet) {
+                    enqueueStrimziPodSet(podSet, "ADDED");
+                }
 
-            @Override
-            public void onUpdate(StrimziPodSet oldPodSet, StrimziPodSet newPodSet) {
-                enqueueStrimziPodSet(newPodSet, "MODIFIED");
-            }
+                @Override
+                public void onUpdate(StrimziPodSet oldPodSet, StrimziPodSet newPodSet) {
+                    enqueueStrimziPodSet(newPodSet, "MODIFIED");
+                }
 
-            @Override
-            public void onDelete(StrimziPodSet podSet, boolean deletedFinalStateUnknown) {
-                LOGGER.debugOp("StrimziPodSet {} in namespace {} was {}", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace(), "DELETED");
-                // Nothing to do => garbage collection should take care of things
-            }
-        }, 10 * 60 * 1000);
+                @Override
+                public void onDelete(StrimziPodSet podSet, boolean deletedFinalStateUnknown) {
+                    LOGGER.debugOp("StrimziPodSet {} in namespace {} was {}", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace(), "DELETED");
+                    // Nothing to do => garbage collection should take care of things
+                }
+            }, 10 * 60 * 1000);
 
-        // Pod informer and lister is used to get events about pods and get pods quickly
-        this.podInformer = podOperator.informer(watchedNamespace, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka"));
-        this.podLister = new Lister<>(podInformer.getIndexer());
-        this.podInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
-            @Override
-            public void onAdd(Pod pod) {
-                enqueuePod(pod, "ADDED");
-            }
+            // Pod informer and lister is used to get events about pods and get pods quickly
+            this.podInformer = podOperator.informer(watchedNamespace, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka"));
+            this.podLister = new Lister<>(podInformer.getIndexer());
+            this.podInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
+                @Override
+                public void onAdd(Pod pod) {
+                    enqueuePod(pod, "ADDED");
+                }
 
-            @Override
-            public void onUpdate(Pod oldPod, Pod newPod) {
-                enqueuePod(newPod, "MODIFIED");
-            }
+                @Override
+                public void onUpdate(Pod oldPod, Pod newPod) {
+                    enqueuePod(newPod, "MODIFIED");
+                }
 
-            @Override
-            public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
-                enqueuePod(pod, "DELETED");
-            }
-        }, 10 * 60 * 1000);
+                @Override
+                public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
+                    enqueuePod(pod, "DELETED");
+                }
+            }, 10 * 60 * 1000);
 
-        controllerThread = new Thread(this, "StrimziPodSetController");
+            controllerThread = new Thread(this, "StrimziPodSetController");
+        } catch (Throwable e) {
+            LOGGER.errorOp("StrimziPodSetController initialization failed", e);
+            throw e;
+        }
     }
 
     /**

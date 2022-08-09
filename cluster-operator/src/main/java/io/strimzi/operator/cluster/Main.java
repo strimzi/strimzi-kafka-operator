@@ -203,7 +203,6 @@ public class Main {
                         }
                     } else {
                         LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
-                        System.exit(1);
                     }
                     prom.handle(res);
                 });
