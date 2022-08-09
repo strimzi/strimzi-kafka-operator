@@ -32,7 +32,7 @@ public class OperatorKubernetesClientBuilder {
     /**
      * Builds the KubernetesClient.
      *
-     * @return String with new password
+     * @return the Kubernetes Client
      */
     public KubernetesClient build() {
         final String userAgent = String.format("%s/%s", componentName, version);
