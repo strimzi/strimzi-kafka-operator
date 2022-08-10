@@ -92,31 +92,27 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
-        if (config.featureGates().useStrimziPodSetsEnabled()) {
-            strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations, config.getPodSetControllerWorkQueueSize());
-            strimziPodSetController.start();
-        }
-
         @SuppressWarnings({ "rawtypes" })
-        List<Future> watchFutures = new ArrayList<>(8);
+        List<Future> startFutures = new ArrayList<>(8);
+        startFutures.add(maybeStartStrimziPodSetController());
 
         if (!config.isPodSetReconciliationOnly()) {
             List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
                     kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
                     kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
             for (AbstractOperator<?, ?, ?, ?> operator : operators) {
-                watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
+                startFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
                     LOGGER.info("Opened watch for {} operator", operator.kind());
                     watchByKind.put(operator.kind(), w);
                     return Future.succeededFuture();
                 }));
             }
 
-            watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
-            watchFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
+            startFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
+            startFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
         }
 
-        CompositeFuture.join(watchFutures)
+        CompositeFuture.join(startFutures)
                 .compose(f -> {
                     LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                     this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
@@ -131,6 +127,23 @@ public class ClusterOperator extends AbstractVerticle {
                 .onComplete(start);
     }
 
+    public Future<Void> maybeStartStrimziPodSetController() {
+        Promise<Void> handler = Promise.promise();
+        vertx.executeBlocking(future -> {
+            try {
+                if (config.featureGates().useStrimziPodSetsEnabled()) {
+                    strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator,
+                            resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations, config.getPodSetControllerWorkQueueSize());
+                    strimziPodSetController.start();
+                }
+                future.complete();
+            } catch (Throwable e) {
+                LOGGER.error("StrimziPodSetController start failed");
+                future.fail(e);
+            }
+        }, handler);
+        return handler.future();
+    }
 
     @Override
     public void stop(Promise<Void> stop) {
