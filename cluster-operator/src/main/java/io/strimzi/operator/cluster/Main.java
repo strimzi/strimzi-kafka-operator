@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
@@ -20,6 +19,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -69,7 +69,8 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        LOGGER.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
+        final String strimziVersion = Main.class.getPackage().getImplementationVersion();
+        LOGGER.info("ClusterOperator {} is starting", strimziVersion);
         Util.printEnvInfo(); // Prints configured environment variables
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
@@ -91,8 +92,7 @@ public class Main {
 
         // Setup Micrometer Metrics provider
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();
-
-        KubernetesClient client = new KubernetesClientBuilder().build();
+        KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
         maybeCreateClusterRoles(vertx, config, client)
                 .compose(i -> startHealthServer(vertx, metricsProvider))
