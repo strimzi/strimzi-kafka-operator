@@ -25,3 +25,4 @@ The Kafka client exchanges either:
 
 * Client ID and Secret
 * Client ID, refresh token, and (optionally) a Secret
+* Username and password, with Client ID and (optionally) a Secret

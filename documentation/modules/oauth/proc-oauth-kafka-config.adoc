@@ -53,6 +53,7 @@ For OAuth 2.0 authentication, you can use:
 * Client ID and secret
 * Client ID and refresh token
 * Access token
+* Username and password
 * TLS
 --
 +

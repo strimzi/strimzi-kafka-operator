@@ -97,6 +97,11 @@ If the `password` is set as the access token, the `username` must be set to the 
 You can specify username extraction options in your listener using the `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, and `userInfoEndpointUri` properties.
 The username extraction process also depends on your authorization server; in particular, how it maps client IDs to account names.
 
+[NOTE]
+====
+OAuth over PLAIN does not support `password grant` mechanism. You can only 'proxy' through SASL PLAIN mechanism the `client credentials` (clientId + secret) or the access token as described above.
+====
+
 [role="_additional-resources"]
 .Additional resources
 
