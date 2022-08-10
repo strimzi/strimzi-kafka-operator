@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -24,7 +25,6 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
@@ -38,8 +38,8 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
-import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -62,13 +62,12 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
 import java.nio.charset.StandardCharsets;
-
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Base64;
 
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
@@ -209,9 +208,11 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.setConfiguration(config);
         }
 
-        if (kafkaConnect.getTracing() != null)   {
-            config.setConfigOption("consumer.interceptor.classes", TracingUtils.consumerInterceptor(kafkaConnect.getTracing()));
-            config.setConfigOption("producer.interceptor.classes", TracingUtils.producerInterceptor(kafkaConnect.getTracing()));
+        Tracing tracingConfig = kafkaConnect.getTracing();
+        if (tracingConfig != null)   {
+            TracingUtils.GetterSetter gs = new TracingUtils.AbstractConfigurationGetterSetter(config);
+            TracingUtils.addConsumerInterceptorClassName(tracingConfig, gs, "consumer.interceptor.classes");
+            TracingUtils.addProducerInterceptorClassName(tracingConfig, gs, "producer.interceptor.classes");
         }
 
         if (kafkaConnect.getImage() == null) {

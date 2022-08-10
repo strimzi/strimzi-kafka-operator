@@ -4,13 +4,16 @@
  */
 package io.strimzi.operator.cluster.tracing;
 
-import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.operator.cluster.model.AbstractConfiguration;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Handle any tracing abstraction
@@ -38,39 +41,87 @@ public class TracingUtils {
         return handle;
     }
 
-    public static String consumerInterceptor(Tracing tracing) {
-        return getTracingHandle(tracing).consumerInterceptor();
+    private static void addConfigOption(GetterSetter config, String key, String value) {
+        Object previous = config.apply(key);
+        if (previous != null) {
+            config.accept(key, previous + "," + value);
+        } else {
+            config.accept(key, value);
+        }
     }
 
-    public static String producerInterceptor(Tracing tracing) {
-        return getTracingHandle(tracing).producerInterceptor();
+    public interface GetterSetter extends Function<String, Object>, BiConsumer<String, Object> {
+    }
+
+    public static class AbstractConfigurationGetterSetter implements GetterSetter {
+        private final AbstractConfiguration configuration;
+
+        public AbstractConfigurationGetterSetter(AbstractConfiguration configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
+        public void accept(String key, Object value) {
+            configuration.setConfigOption(key, value.toString());
+        }
+
+        @Override
+        public String apply(String key) {
+            return configuration.getConfigOption(key);
+        }
+    }
+
+    public static class MapGetterSetter implements GetterSetter {
+        private final Map<String, Object> configuration;
+
+        public MapGetterSetter(Map<String, Object> configuration) {
+            this.configuration = configuration;
+        }
+
+        @Override
+        public void accept(String key, Object value) {
+            configuration.put(key, value);
+        }
+
+        @Override
+        public String apply(String key) {
+            return (String) configuration.get(key);
+        }
+    }
+
+    public static void addConsumerInterceptorClassName(Tracing tracing, GetterSetter config, String key) {
+        addConfigOption(config, key, getTracingHandle(tracing).consumerInterceptorClassName());
+    }
+
+    public static void addProducerInterceptorClassName(Tracing tracing, GetterSetter config, String key) {
+        addConfigOption(config, key, getTracingHandle(tracing).producerInterceptorClassName());
     }
 
     interface TracingHandle {
-        String consumerInterceptor();
-        String producerInterceptor();
+        String consumerInterceptorClassName();
+        String producerInterceptorClassName();
     }
 
     static class OpenTracingHandle implements TracingHandle {
         @Override
-        public String consumerInterceptor() {
+        public String consumerInterceptorClassName() {
             return "io.opentracing.contrib.kafka.TracingConsumerInterceptor";
         }
 
         @Override
-        public String producerInterceptor() {
+        public String producerInterceptorClassName() {
             return "io.opentracing.contrib.kafka.TracingProducerInterceptor";
         }
     }
 
     static class OTelTracingHandle implements TracingHandle {
         @Override
-        public String consumerInterceptor() {
+        public String consumerInterceptorClassName() {
             return "io.opentelemetry.instrumentation.kafkaclients.TracingConsumerInterceptor";
         }
 
         @Override
-        public String producerInterceptor() {
+        public String producerInterceptorClassName() {
             return "io.opentelemetry.instrumentation.kafkaclients.TracingProducerInterceptor";
         }
     }

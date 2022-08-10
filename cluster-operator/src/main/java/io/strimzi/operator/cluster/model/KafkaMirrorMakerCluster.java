@@ -312,7 +312,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(reconciliation, consumer.getConfig().entrySet());
 
         if (tracing != null) {
-            config.setConfigOption("interceptor.classes", TracingUtils.consumerInterceptor(tracing));
+            TracingUtils.GetterSetter gs = new TracingUtils.AbstractConfigurationGetterSetter(config);
+            TracingUtils.addConsumerInterceptorClassName(tracing, gs, "interceptor.classes");
         }
 
         return config;
@@ -322,7 +323,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(reconciliation, producer.getConfig().entrySet());
 
         if (tracing != null) {
-            config.setConfigOption("interceptor.classes", TracingUtils.producerInterceptor(tracing));
+            TracingUtils.GetterSetter gs = new TracingUtils.AbstractConfigurationGetterSetter(config);
+            TracingUtils.addProducerInterceptorClassName(tracing, gs, "interceptor.classes");
         }
 
         return config;
