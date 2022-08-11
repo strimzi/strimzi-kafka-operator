@@ -1704,6 +1704,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withJwksExpirySeconds(160)
                 .withJwksRefreshSeconds(50)
                 .withJwksMinRefreshPauseSeconds(5)
+                .withJwksIgnoreKeyUse()
                 .withEnableECDSA(true)
                 .withUserNameClaim("preferred_username")
                 .withFallbackUserNameClaim("client_id")
@@ -1722,6 +1723,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withClientAudience("kafka")
                 .withClientScope("messaging")
                 .withEnableMetrics(true)
+                .withFailFast(false)
                 .build();
 
         List<String> expectedOptions = new ArrayList<>(5);
@@ -1736,6 +1738,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50));
         expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, 160));
         expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, 5));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, true));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, "http://userinfo-endpoint"));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username"));
@@ -1748,6 +1751,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, 30));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, 60));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FAIL_FAST, false));
 
         // enablePlain and tokenEndpointUri are handled separately from getOAuthOptions
         List<String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);

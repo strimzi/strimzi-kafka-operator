@@ -553,6 +553,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
             addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
         }
+        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, oauth.getJwksIgnoreKeyUse());
         addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
@@ -576,6 +577,7 @@ public class KafkaBrokerConfigurationBuilder {
         }
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
 
         return options;
     }

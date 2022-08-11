@@ -45,6 +45,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer jwksRefreshSeconds;
     private Integer jwksMinRefreshPauseSeconds;
     private Integer jwksExpirySeconds;
+    private boolean jwksIgnoreKeyUse = false;
     private String introspectionEndpointUri;
     private String userNameClaim;
     private String fallbackUserNameClaim;
@@ -68,6 +69,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String clientScope = null;
     private String clientAudience = null;
     private boolean enableMetrics = false;
+    private boolean failFast = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -229,6 +231,16 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setJwksExpirySeconds(Integer jwksExpirySeconds) {
         this.jwksExpirySeconds = jwksExpirySeconds;
+    }
+
+    @Description("Enable or disable whether the 'use' attribute of `key` declarations in JWKS endpoint response should be ignored. Default value is false.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean getJwksIgnoreKeyUse() {
+        return jwksIgnoreKeyUse;
+    }
+
+    public void setJwksIgnoreKeyUse(boolean jwksIgnoreKeyUse) {
+        this.jwksIgnoreKeyUse = jwksIgnoreKeyUse;
     }
 
     @Description("URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.")
@@ -425,5 +437,15 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
+    }
+
+    @Description("Enable or disable if potentially recoverable runtime errors during startup should result in Kafka Broker process termination. Default value is true.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean getFailFast() {
+        return failFast;
+    }
+
+    public void setFailFast(boolean failFast) {
+        this.failFast = failFast;
     }
 }
