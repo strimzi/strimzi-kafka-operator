@@ -6,6 +6,12 @@
 * Add support for Kafka 3.2.1
 * Pluggable Pod Security Profiles with built-in support for _restricted_ Kubernetes Security Profile
 
+### Deprecations and removals
+
+* Strimzi 0.31.0 (and any possible patch releases) is the last Strimzi version with support for Kubernetes 1.16, 1.17 and 1.18.
+  From Strimzi 0.32.0 on, we will support only Kubernetes 1.19 and newer.
+  The supported Kubernetes versions will be re-evaluated again in Q1/2023.
+
 ## 0.30.0
 
 * Remove Kafka 3.0.0 and 3.0.1
