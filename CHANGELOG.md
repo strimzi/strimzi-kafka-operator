@@ -4,6 +4,7 @@
 ## 0.31.0
 
 * Add support for Kafka 3.2.1
+* Update Kaniko builder to 1.9.0 and Maven builder to 1.14
 * Pluggable Pod Security Profiles with built-in support for _restricted_ Kubernetes Security Profile
 
 ### Deprecations and removals

@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/openjdk-11:1.13
+FROM registry.access.redhat.com/ubi8/openjdk-11:1.14
 
 USER root
 
