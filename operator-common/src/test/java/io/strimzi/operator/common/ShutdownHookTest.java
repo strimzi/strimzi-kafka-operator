@@ -15,7 +15,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
@@ -62,7 +61,6 @@ public class ShutdownHookTest {
         ShutdownHook hook = new ShutdownHook(vertx);
         hook.run();
 
-        assertThat("Verticles were not stopped", vertx.deploymentIDs(), empty());
         for (MyVerticle verticle : verticles) {
             assertThat("Verticle stop was not executed", verticle.getCounter(), is(1));
         }
