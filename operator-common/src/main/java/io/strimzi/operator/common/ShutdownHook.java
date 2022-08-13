@@ -4,19 +4,15 @@
  */
 package io.strimzi.operator.common;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.vertx.core.Promise;
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.Deployment;
-import io.vertx.core.impl.VertxImpl;
 import static java.util.Objects.requireNonNull;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Shutdown hook that retrieves and stops all deployed verticles without invoking Vertx.close.
@@ -26,7 +22,6 @@ import java.util.concurrent.TimeUnit;
  * We have a deadlock when invoking System.exit from an event-loop thread which triggers a shutdown hook invoking Vertx.close.
  * There is no issue when invoking System.exit from a non event-loop thread.
  */
-@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class ShutdownHook implements Runnable {
     private static final Logger LOGGER = LogManager.getLogger(ShutdownHook.class);
 
@@ -45,47 +40,41 @@ public class ShutdownHook implements Runnable {
     @Override
     public void run() {
         LOGGER.info("Shutdown started");
-        vertx.deploymentIDs()
-                .stream()
-                .map(id -> ((VertxImpl) vertx).getDeployment(id))
-                .forEach(deployment -> stopVerticles(deployment));
+        Set<String> ids = vertx.deploymentIDs();
+        if (ids.size() > 0) {
+            ExecutorService executor = Executors.newFixedThreadPool(ids.size());
+            ids.forEach(id -> {
+                try {
+                    executor.submit(undeploy(id));
+                } catch (Throwable t) {
+                    LOGGER.error("Error while shutting down", t);
+                }
+            });
+            stopExecutor(executor, timeoutMs);
+        }
         LOGGER.info("Shutdown completed");
     }
 
-    private void stopVerticles(Deployment deployment) {
-        Set<Verticle> verticles = deployment.getVerticles();
-        ExecutorService executor = Executors.newFixedThreadPool(verticles.size());
-        verticles.forEach(verticle -> {
-            try {
-                executor.submit(stopVerticle(verticle));
-            } catch (Throwable t) {
-                LOGGER.error("Error while waiting for verticle stop");
-            }
-        });
-        stopExecutor(executor, timeoutMs);
-    }
-
-    private Runnable stopVerticle(Verticle verticle) {
+    private Runnable undeploy(String id) {
         return () -> {
+            CountDownLatch latch = new CountDownLatch(1);
+            vertx.undeploy(id).onComplete(ar -> latch.countDown());
             try {
-                verticle.stop(Promise.promise());
-            } catch (Throwable t) {
-                LOGGER.error("Failed to stop verticle", t);
-                t.printStackTrace();
+                latch.await();
+            } catch (InterruptedException e) {
             }
         };
     }
 
-    private static boolean stopExecutor(ExecutorService executor, long timeoutMs) {
+    private void stopExecutor(ExecutorService executor, long timeoutMs) {
         try {
             executor.shutdown();
             executor.awaitTermination(timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            LOGGER.error("Error while shutting down", e);
         } finally {
-            if (executor.isTerminated()) {
-                return true;
-            } else {
+            if (!executor.isTerminated()) {
                 executor.shutdownNow();
-                return false;
             }
         }
     }
