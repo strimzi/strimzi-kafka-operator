@@ -252,13 +252,13 @@ env:
         fieldPath: metadata.name
 ----
 
-`STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS`:: Optional, default `15` seconds.
+`STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS`:: Optional, default 15000 ms.
 Configures the duration for which the acquired lease is valid.
 
-`STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS`:: Optional, default `10` seconds.
+`STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS`:: Optional, default 10000 ms.
 Configures the duration for which should the leader retry to maintain the leadership
 
-`STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default `2` seconds.
+`STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default 2000 ms.
 Configures how often does the leader update the lease lock
 
 == Logging configuration by ConfigMap

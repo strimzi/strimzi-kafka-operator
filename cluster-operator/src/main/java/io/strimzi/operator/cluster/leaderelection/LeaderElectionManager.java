@@ -55,7 +55,6 @@ public class LeaderElectionManager implements Runnable  {
      */
     @Override
     public void run() {
-        // TODO: Do we need handle interrupted here any exit?
         client.leaderElector()
                 .withConfig(
                         new LeaderElectionConfigBuilder()
