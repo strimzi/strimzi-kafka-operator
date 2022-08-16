@@ -1,4 +1,7 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+
+LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
+
 ARG JAVA_VERSION=11
 ARG TARGETPLATFORM
 

@@ -1,5 +1,7 @@
 FROM registry.access.redhat.com/ubi8/openjdk-11:1.14
 
+LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
+
 USER root
 
 # Add strimzi user with UID 1001
