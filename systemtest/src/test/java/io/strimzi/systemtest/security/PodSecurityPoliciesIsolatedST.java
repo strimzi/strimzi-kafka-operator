@@ -128,10 +128,10 @@ public class PodSecurityPoliciesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(ts.getClusterName(), ts.getTargetClusterName(), ts.getClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
 
         final List<Pod> kafkaClusterAndKafkaMirrorMakerPods = PodUtils.getKafkaClusterPods(ts);
-        // add KafkaBridge Pod
+        // add KafkaMirrorMaker Pod
         kafkaClusterAndKafkaMirrorMakerPods.addAll(kubeClient().listPods(ts.getNamespaceName(), ts.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
 
-        // 1. check the generated structure of SecurityContext of Kafka and KafkaBridge Pods
+        // 1. check the generated structure of SecurityContext of Kafka and KafkaMirrorMaker Pods
         // verifies that (i.) Pods and (ii.) Containers has proper generated SC
         verifyPodAndContainerSecurityContext(kafkaClusterAndKafkaMirrorMakerPods);
 
@@ -169,10 +169,10 @@ public class PodSecurityPoliciesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(ts.getClusterName(), ts.getTargetClusterName(), ts.getClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
 
         final List<Pod> kafkaClusterAndKafkaMirrorMakerPods = PodUtils.getKafkaClusterPods(ts);
-        // add KafkaBridge Pod
+        // add KafkaMirrorMaker2 Pod
         kafkaClusterAndKafkaMirrorMakerPods.addAll(kubeClient().listPods(ts.getNamespaceName(), ts.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
 
-        // 1. check the generated structure of SecurityContext of Kafka and KafkaBridge Pods
+        // 1. check the generated structure of SecurityContext of Kafka and KafkaMirrorMaker2 Pods
         // verifies that (i.) Pods and (ii.) Containers has proper generated SC
         verifyPodAndContainerSecurityContext(kafkaClusterAndKafkaMirrorMakerPods);
 
