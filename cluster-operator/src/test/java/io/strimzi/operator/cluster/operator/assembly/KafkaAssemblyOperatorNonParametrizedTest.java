@@ -402,7 +402,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 false,
                 1024,
                 "cluster-operator-name",
-                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS);
+                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, config);

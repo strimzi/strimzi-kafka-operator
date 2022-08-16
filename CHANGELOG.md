@@ -6,6 +6,7 @@
 * Add support for Kafka 3.2.1
 * Update Kaniko builder to 1.9.0 and Maven builder to 1.14
 * Pluggable Pod Security Profiles with built-in support for _restricted_ Kubernetes Security Profile
+* Add support for leader election and running multiple operator replicas (1 active leader replicas and one or more stand-by replicas)
 
 ### Deprecations and removals
 

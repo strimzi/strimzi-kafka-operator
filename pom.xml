@@ -311,6 +311,11 @@
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-model-coordination</artifactId>
+                <version>${fabric8.kubernetes-model.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
                 <artifactId>openshift-model</artifactId>
                 <version>${fabric8.kubernetes-model.version}</version>
             </dependency>

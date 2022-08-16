@@ -195,7 +195,7 @@ The DNS domain name is added to the Kafka broker certificates used for hostname 
 If you are using a different DNS domain name suffix in your cluster, change the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable from the default to the one you are using in order to establish a connection with the Kafka brokers.
 
 `STRIMZI_CONNECT_BUILD_TIMEOUT_MS`:: Optional, default 300000 ms.
-The timeout for building new Kafka Connect images with additional connectots, in milliseconds.
+The timeout for building new Kafka Connect images with additional connectors, in milliseconds.
 This value should be increased when using Strimzi to build container images containing many connectors or using a slow container registry.
 
 `STRIMZI_NETWORK_POLICY_GENERATION` :: Optional, default `true`.
@@ -216,6 +216,50 @@ Enables or disables features and functionality controlled by xref:ref-operator-c
 
 `STRIMZI_POD_SECURITY_PROVIDER_CLASS`:: Optional.
 Configures the pluggable `PodSecurityProvider` class which can be used to provide the security context configuration for Pods and containers.
+
+[[STRIMZI_LEADER_ELECTION_ENABLED]]
+`STRIMZI_LEADER_ELECTION_ENABLED`:: Optional, default `false`.
+Enables or disables the leader election which allows to run additional operator instances as a hot-stand-by.
+Disabled by default.
+
+`STRIMZI_LEADER_ELECTION_LEASE_NAME`:: Required when leader election is enabled.
+The name of the Kubernetes Lease resource which is used for the leader election.
+
+`STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE`:: Required when leader election is enabled.
+The namespace where the Kubernetes Lease resource used for the leader election will be created.
+You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the namespace where the operator is deployed.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+`STRIMZI_LEADER_ELECTION_IDENTITY`:: Required when leader election is enabled.
+Configures the identity of given operator instance used during the leader election.
+Should be unique for each operator instance
+You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the name of the operator pod.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_LEADER_ELECTION_IDENTITY
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+----
+
+`STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS`:: Optional, default 15000 ms.
+Configures the duration for which the acquired lease is valid.
+
+`STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS`:: Optional, default 10000 ms.
+Configures the duration for which should the leader retry to maintain the leadership
+
+`STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default 2000 ms.
+Configures how often does the leader update the lease lock
 
 == Logging configuration by ConfigMap
 
@@ -270,6 +314,24 @@ if the operator is not running, or if a notification is not received for any rea
 
 In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.
 You can set the time interval for the periodic reconciliations using the xref:STRIMZI_FULL_RECONCILIATION_INTERVAL_MS[] variable.
+
+== Running multiple operator replicas
+
+With the xref:STRIMZI_LEADER_ELECTION_ENABLED[leader election] enabled in the Cluster Operator configuration, you can run multiple parallel replicas of the operator.
+One of them will be elected as a leader and will actively operate the deployed operands.
+The other replicas will be running in a stand-by mode.
+When the leader stops or crashes, one of the stand-by replicas will be elected as a new leader and will start operating the deployed resources.
+
+Running the operator with multiple replicas is not required.
+When using only single replica, the single replica will be always the leader replica.
+And when the single replica is stopped or crashed, Kubernetes will automatically start a new replica.
+
+But in some situations it might be an advantage to have the stand-by replicas already scheduled and running.
+For example during large scale disruptions such as crash of multiple worker nodes or of a whole availability zone.
+
+NOTE::
+The default installation files contain the RBAC permissions to use the Kubernetes `Lease` resource with name `strimzi-cluster-operator` in the same namespace where the Cluster Operator runs.
+If you decide to use other `Lease` name or a different namespace, you have to update the `ClusterRole` and `RoleBinding` files accordingly.
 
 == Provisioning Role-Based Access Control (RBAC)
 
@@ -346,6 +408,14 @@ The second includes the permissions needed for cluster-scoped resources.
 .`ClusterRole` with cluster-scoped resources for the Cluster Operator
 ----
 include::../install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
+----
+
+The `strimzi-cluster-operator-leader-election` `ClusterRole` represents the permissions needed for the leader election.
+
+[source,yaml,options="nowrap"]
+.`ClusterRole` with leader election permissions
+----
+include::../install/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml[]
 ----
 
 The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
