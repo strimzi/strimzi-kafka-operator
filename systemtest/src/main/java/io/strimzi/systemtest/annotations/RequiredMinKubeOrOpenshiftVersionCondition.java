@@ -33,7 +33,7 @@ public class RequiredMinKubeOrOpenshiftVersionCondition implements ExecutionCond
         } else {
             LOGGER.info("{} is @RequiredMinKubeOrOpenshiftVersion with type of cluster: {} and version {}, but the running on cluster with {}: Ignoring {}",
                 extensionContext.getDisplayName(),
-                isOcp ? "OCP" : "KUBE",
+                cluster.cluster().getClass().toString(),
                 isOcp ? ocpBasedKubeVersion : kubeVersion,
                 cluster.client().clusterKubernetesVersion(),
                 extensionContext.getDisplayName()

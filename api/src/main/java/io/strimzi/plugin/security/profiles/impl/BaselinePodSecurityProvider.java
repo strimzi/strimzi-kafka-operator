@@ -19,7 +19,7 @@ import io.strimzi.plugin.security.profiles.PodSecurityProviderContext;
 public class BaselinePodSecurityProvider implements PodSecurityProvider {
     protected static final Long DEFAULT_FS_GROUP_ID = 0L;
 
-    protected boolean isOpenShift;
+    protected boolean isOpenShift = false;
 
     @Override
     public void configure(PlatformFeatures platformFeatures) {
