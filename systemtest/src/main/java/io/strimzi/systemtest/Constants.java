@@ -381,7 +381,9 @@ public interface Constants {
     String WATCH_ALL_NAMESPACES = "*";
 
     String CLUSTER_KEY = "CLUSTER_NAME";
+    String TARGET_CLUSTER_KEY = "TARGET_CLUSTER_NAME";
     String TOPIC_KEY = "TOPIC_NAME";
+    String TARGET_TOPIC_KEY = "TARGET_TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
     String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";

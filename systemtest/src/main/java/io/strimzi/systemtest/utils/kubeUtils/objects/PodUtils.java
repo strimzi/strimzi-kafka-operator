@@ -8,8 +8,10 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -345,5 +347,24 @@ public class PodUtils {
             kubeClient(namespaceName).getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().orElseThrow().getReady()
         );
         LOGGER.info("Pod {} container {} is ready", podName, containerName);
+    }
+
+    /**
+     * Retrieves a list of Kafka cluster Pods based on TestStorage cluster name attribute {@code testStorage.getClusterName()}.
+     *
+     * @param testStorage   TestStorage of specific test case
+     * @return              Returns a list of Kafka cluster Pods (i.e.., Kafka, ZooKeeper, EO).
+     */
+    public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
+        List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespaceName())
+            .listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        // zk pods
+        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
+            .listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName())));
+        // eo pod
+        kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
+            .listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())));
+
+        return kafkaClusterPods;
     }
 }
