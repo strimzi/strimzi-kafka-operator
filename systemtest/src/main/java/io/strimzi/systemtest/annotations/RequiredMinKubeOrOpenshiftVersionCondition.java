@@ -31,8 +31,7 @@ public class RequiredMinKubeOrOpenshiftVersionCondition implements ExecutionCond
             Double.parseDouble(cluster.client().clusterKubernetesVersion()) >= kubeVersion) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
-            LOGGER.info("{} is @RequiredMinKubeOrOpenshiftVersion with type of cluster: {} and version {}, but the running on cluster with {}: Ignoring {}",
-                extensionContext.getDisplayName(),
+            LOGGER.info("@RequiredMinKubeOrOpenshiftVersion with type of cluster: {} and version {}, but the running on cluster with {}: Ignoring {}",
                 cluster.cluster().getClass().toString(),
                 isOcp ? ocpBasedKubeVersion : kubeVersion,
                 cluster.client().clusterKubernetesVersion(),

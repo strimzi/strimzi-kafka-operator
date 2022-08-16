@@ -43,26 +43,26 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *
- * PodSecurityPoliciesST provides tests for Pod Security policies. In short, Pod security profiles are a mechanism used
+ * PodSecurityProfilesIsolatedST provides tests for Pod Security profiles. In short, Pod security profiles are a mechanism used
  * in Pods or containers, which may prohibit some set of operations (e.g., running only as a non-root user, allowing
  * only some Volume types etc.).
  *
  * Reason why is this test suite has to run in complete isolation (i.e., {@link IsolatedSuite})
  * is that we need to modify Cluster Operator configuration, specifically env {@code STRIMZI_POD_SECURITY_PROVIDER_CLASS} to restricted.
  *
- * Test cases are design to verify common behaviour of Pod Security policies. Specifically, (i.) we check if containers such
+ * Test cases are design to verify common behaviour of Pod Security profiles. Specifically, (i.) we check if containers such
  * as Kafka, ZooKeeper, EntityOperator, KafkaBridge has properly set .securityContext (ii.) then we check if these
  * resources working and are stable with exchanging messages.
  */
 @Tag(REGRESSION)
 @IsolatedSuite
-public class PodSecurityPoliciesIsolatedST extends AbstractST {
+public class PodSecurityProfilesIsolatedST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(PodSecurityPoliciesIsolatedST.class);
+    private static final Logger LOGGER = LogManager.getLogger(PodSecurityProfilesIsolatedST.class);
 
     @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
-    // Pod Security Policies works from 1.23 Kubernetes version or OCP 4.11
+    // Pod Security profiles works from 1.23 Kubernetes version or OCP 4.11
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testKafkaWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext);
