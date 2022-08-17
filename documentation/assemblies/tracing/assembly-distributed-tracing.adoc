@@ -19,8 +19,8 @@ Support for tracing is built in to the following components:
 * MirrorMaker 2.0
 * Strimzi Kafka Bridge
 
-Strimzi uses OpenTracing and Jaeger Tracing projects to implement tracing support
-It is enabled by setting the `.spec.tracing.type` property to `jaeger` in the component configuration.
+Strimzi uses the OpenTracing and Jaeger Tracing projects to implement tracing.
+Tracing is enabled by setting the `.spec.tracing.type` property to `jaeger` in the component configuration.
 
 [NOTE]
 ====
