@@ -1,5 +1,7 @@
 FROM strimzi/base:latest
 
+LABEL org.opencontainers.image.source='https://github.com/strimzi/strimzi-kafka-operator'
+
 ENV JMXTRANS_HOME /usr/share/jmxtrans
 ENV PATH $JMXTRANS_HOME/bin:$PATH
 ENV JAR_FILE $JMXTRANS_HOME/lib/jmxtrans.jar
