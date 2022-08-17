@@ -1877,6 +1877,8 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 [id='type-JaegerTracing-{context}']
 ### `JaegerTracing` schema reference
 
+*The type `JaegerTracing` has been deprecated.*
+
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 

@@ -421,9 +421,12 @@ public class DocGenerator {
                 }
                 out.append(".*").append(NL);
 
-                out.append("Please use ");
-                typeLink(crd, out, replacementClss);
-                out.append(" instead.").append(NL);
+                if (replacementClss != void.class) {
+                    out.append("Please use ");
+                    typeLink(crd, out, replacementClss);
+                    out.append(" instead.").append(NL);
+                }
+
                 out.append(NL);
             }
         }
