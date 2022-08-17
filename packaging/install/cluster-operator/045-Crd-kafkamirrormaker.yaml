@@ -511,7 +511,7 @@ spec:
                     type: string
                     enum:
                     - jaeger
-                    description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
+                    description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing. The Jaeger tracing is deprecated.
                 required:
                 - type
                 description: The configuration of tracing in Kafka MirrorMaker.

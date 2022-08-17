@@ -32,7 +32,8 @@ public abstract class Tracing implements UnknownPropertyPreserving, Serializable
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the tracing used. " +
-            "Currently the only supported type is `jaeger` for Jaeger tracing")
+            "Currently the only supported type is `jaeger` for Jaeger tracing. " +
+            "The Jaeger tracing is deprecated")
     public abstract String getType();
 
     @Override

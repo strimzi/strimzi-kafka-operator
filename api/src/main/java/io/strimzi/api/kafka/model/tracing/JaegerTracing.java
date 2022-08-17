@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.tracing;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
@@ -21,6 +22,8 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type"})
 @EqualsAndHashCode
+@Deprecated
+@DeprecatedType(replacedWithType = void.class)
 public class JaegerTracing extends Tracing {
     private static final long serialVersionUID = 1L;
 

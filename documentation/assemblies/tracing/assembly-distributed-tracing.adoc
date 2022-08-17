@@ -19,6 +19,13 @@ Support for tracing is built in to the following components:
 * MirrorMaker 2.0
 * Strimzi Kafka Bridge
 
+[NOTE]
+====
+The `type: jaeger` tracing support based on Jaeger clients and OpenTracing API is deprecated.
+Because the Jaeger clients are retired and the OpenTracing project is archived, we cannot guarantee their support for future Kafka versions.
+In the future, we plan to replace it with a new tracing feature based on the OpenTelemetry project.
+====
+
 You enable and configure tracing for these components using template configuration properties in their custom resources.
 
 To enable tracing in Kafka producers, consumers, and Kafka Streams API applications, you _instrument_ application code using the link:https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka Client Instrumentation^] library (included with Strimzi). When instrumented, clients generate trace data; for example, when producing messages or writing offsets to the log.

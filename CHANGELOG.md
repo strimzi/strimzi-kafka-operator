@@ -13,6 +13,9 @@
 * Strimzi 0.31.0 (and any possible patch releases) is the last Strimzi version with support for Kubernetes 1.16, 1.17 and 1.18.
   From Strimzi 0.32.0 on, we will support only Kubernetes 1.19 and newer.
   The supported Kubernetes versions will be re-evaluated again in Q1/2023.
+* The `type: jaeger` tracing support based on Jaeger clients and OpenTracing API is now deprecated.
+  Because the Jaeger clients are retired and the OpenTracing project is archived, we cannot guarantee their support for future Kafka versions.
+  In the future, we plan to replace it with a new tracing feature based on the OpenTelemetry project.
 
 ## 0.30.0
 
