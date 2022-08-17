@@ -319,6 +319,11 @@ public interface Constants {
     String ROLLING_UPDATE = "rollingupdate";
 
     /**
+     * Tag for tests, for Pod Security profiles set to restricted
+     */
+    String POD_SECURITY_PROFILES_RESTRICTED = "podsecurityprofiles";
+
+    /**
      * Tag for tests where OLM is used for deploying CO
      */
     String OLM = "olm";

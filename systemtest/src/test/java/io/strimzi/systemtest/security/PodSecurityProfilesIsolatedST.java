@@ -6,6 +6,7 @@ package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -35,8 +36,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.POD_SECURITY_PROFILES_RESTRICTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -55,6 +58,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * resources working and are stable with exchanging messages.
  */
 @Tag(REGRESSION)
+@Tag(POD_SECURITY_PROFILES_RESTRICTED)
 @IsolatedSuite
 public class PodSecurityProfilesIsolatedST extends AbstractST {
 
@@ -66,6 +70,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testKafkaWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext);
+        addRestrictedPodSecurityProfileToNamespace(ts.getNamespaceName());
 
         // if Kafka Pods deploys it means that it works...
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(ts.getClusterName(), 3).build());
@@ -104,6 +109,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testKafkaWithMirrorMakerRestrictedSecurityProfile(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext);
+        addRestrictedPodSecurityProfileToNamespace(ts.getNamespaceName());
 
         // if Kafka and KafkaMirrorMaker Pods deploys it means that it works...
         resourceManager.createResource(extensionContext,
@@ -145,6 +151,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testKafkaWithMirrorMaker2RestrictedSecurityProfile(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext);
+        addRestrictedPodSecurityProfileToNamespace(ts.getNamespaceName());
 
         // if Kafka and KafkaMirrorMaker Pods deploys it means that it works...
         resourceManager.createResource(extensionContext,
@@ -248,5 +255,13 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         );
 
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+    }
+
+    private void addRestrictedPodSecurityProfileToNamespace(final String namespaceName) {
+        final Namespace namespace = kubeClient().getNamespace(namespaceName);
+        final Map<String, String> namespaceLabels = namespace.getMetadata().getLabels();
+        namespaceLabels.put("pod-security.kubernetes.io/enforce", "restricted");
+        namespace.getMetadata().setLabels(namespaceLabels);
+        kubeClient().createNamespace(namespace);
     }
 }

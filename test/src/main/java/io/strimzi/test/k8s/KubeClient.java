@@ -91,6 +91,10 @@ public class KubeClient {
         client.namespaces().resource(ns).createOrReplace();
     }
 
+    public void createNamespace(final Namespace namespace) {
+        client.namespaces().resource(namespace).createOrReplace();
+    }
+
     public void deleteNamespace(String name) {
         client.namespaces().withName(name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
