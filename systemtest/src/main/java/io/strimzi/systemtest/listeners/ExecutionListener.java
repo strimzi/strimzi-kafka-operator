@@ -117,7 +117,11 @@ public class ExecutionListener implements TestExecutionListener {
 
         for (TestIdentifier testIdentifier : testCases) {
             for (TestTag testTag : testIdentifier.getTags()) {
-                if (testTag.getName().equals(Constants.PARALLEL_TEST) || testTag.getName().equals(Constants.ISOLATED_TEST)) {
+                if (testTag.getName().equals(Constants.PARALLEL_TEST) || testTag.getName().equals(Constants.ISOLATED_TEST) ||
+                    // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
+                    testTag.getName().equals(Constants.DYNAMIC_CONFIGURATION) ||
+                    // Tracing, because we deploy Jaeger operator inside additinal namespace
+                    testTag.getName().equals(Constants.TRACING)) {
                     return true;
                 }
             }
