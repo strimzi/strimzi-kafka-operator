@@ -28,7 +28,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @ExtendWith(VertxExtension.class)
-public class MainIntegrationTest {
+public class MainIT {
     private static Vertx vertx;
     private KubernetesClient client;
 

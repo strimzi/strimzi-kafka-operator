@@ -55,7 +55,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
-public class KafkaConnectorIntegrationTest {
+public class KafkaConnectorIT {
     private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
 

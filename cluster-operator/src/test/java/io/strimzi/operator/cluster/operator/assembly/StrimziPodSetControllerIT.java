@@ -58,8 +58,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class StrimziPodSetControllerIntegrationTest {
-    private static final Logger LOGGER = LogManager.getLogger(StrimziPodSetControllerIntegrationTest.class);
+public class StrimziPodSetControllerIT {
+    private static final Logger LOGGER = LogManager.getLogger(StrimziPodSetControllerIT.class);
     private static final String NAMESPACE = "strimzi-pod-set-controller-test";
     private static final String KAFKA_NAME = "foo";
     private static final Map<String, String> MATCHING_LABELS = Map.of("selector", "matching");
