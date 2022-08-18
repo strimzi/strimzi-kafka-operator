@@ -155,4 +155,16 @@ public class StatusUtils {
 
         return Collections.emptySet();
     }
+
+    /**
+     * Adds additional conditions to te status (this expects)
+     *
+     * @param status                            The Status instance where additonal conditions should be added
+     * @param unknownAndDeprecatedConditions    The Set with the new conditions
+     */
+    public static void addConditionsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
+        if (status != null)  {
+            status.addConditions(unknownAndDeprecatedConditions);
+        }
+    }
 }

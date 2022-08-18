@@ -226,7 +226,7 @@ public abstract class AbstractOperator<
                             if (res.succeeded()) {
                                 S status = res.result();
 
-                                addWarningsToStatus(status, unknownAndDeprecatedConditions);
+                                StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
                                 updateStatus(reconciliation, status).onComplete(statusResult -> {
                                     if (statusResult.succeeded()) {
                                         createOrUpdate.complete();
@@ -238,7 +238,7 @@ public abstract class AbstractOperator<
                                 if (res.cause() instanceof ReconciliationException) {
                                     ReconciliationException e = (ReconciliationException) res.cause();
                                     Status status = e.getStatus();
-                                    addWarningsToStatus(status, unknownAndDeprecatedConditions);
+                                    StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
 
                                     LOGGER.errorCr(reconciliation, "createOrUpdate failed", e.getCause());
 
@@ -279,12 +279,6 @@ public abstract class AbstractOperator<
         });
 
         return result.future();
-    }
-
-    protected void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
-        if (status != null)  {
-            status.addConditions(unknownAndDeprecatedConditions);
-        }
     }
 
     /**
