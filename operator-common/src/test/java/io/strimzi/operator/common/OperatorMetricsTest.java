@@ -14,7 +14,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.Spec;
-import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -38,7 +37,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static java.util.Collections.emptySet;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -76,11 +74,6 @@ public class OperatorMetricsTest {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
-            }
-
-            @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                return emptySet();
             }
 
             @Override
@@ -143,12 +136,6 @@ public class OperatorMetricsTest {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
-            }
-
-            @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                // Do nothing
-                return emptySet();
             }
 
             @Override
@@ -216,11 +203,6 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                return new HashSet<>();
-            }
-
-            @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return null;
             }
@@ -268,12 +250,6 @@ public class OperatorMetricsTest {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new UnableToAcquireLockException());
-            }
-
-            @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                // Do nothing
-                return emptySet();
             }
 
             @Override
@@ -329,12 +305,6 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                // Do nothing
-                return emptySet();
-            }
-
-            @Override
             protected Future<Boolean> delete(Reconciliation reconciliation) {
                 return Future.succeededFuture(Boolean.TRUE);
             }
@@ -360,13 +330,11 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThrows(MeterNotFoundException.class, () -> {
-                        registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
-                                .tag("kind", "TestResource")
-                                .tag("name", "my-resource")
-                                .tag("resource-namespace", "my-namespace")
-                                .gauge();
-                    });
+                    assertThrows(MeterNotFoundException.class, () -> registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "TestResource")
+                            .tag("name", "my-resource")
+                            .tag("resource-namespace", "my-namespace")
+                            .gauge());
 
                     async.flag();
                 })));
@@ -535,58 +503,14 @@ public class OperatorMetricsTest {
 
             @Override
             public CustomResource get(String namespace, String name) {
-                @Group("strimzi")
-                @Version("v1")
-                class Foo extends MyResource {
-                    @Override
-                    public ObjectMeta getMetadata() {
-                        ObjectMeta md = new ObjectMeta();
-                        if (selectorLabels != null) {
-                            md.setLabels(selectorLabels.toMap());
-                        }
-                        return md;
-                    }
-
-                    @Override
-                    public void setMetadata(ObjectMeta objectMeta) {
-
-                    }
-
-                    @Override
-                    public String getKind() {
-                        return "TestResource";
-                    }
-
-                    @Override
-                    public String getApiVersion() {
-                        return "v1";
-                    }
-
-                    @Override
-                    public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Object spec) {
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Object status) {
-
-                    }
+                Foo foo = new Foo();
+                ObjectMeta md = new ObjectMeta();
+                if (selectorLabels != null) {
+                    md.setLabels(selectorLabels.toMap());
                 }
-                return new Foo();
+                foo.setMetadata(md);
+
+                return foo;
             }
         };
     }
@@ -613,110 +537,22 @@ public class OperatorMetricsTest {
 
             @Override
             public CustomResource get(String namespace, String name) {
-                @Group("strimzi")
-                @Version("v1")
-                class Foo extends MyResource {
-                    @Override
-                    public ObjectMeta getMetadata() {
-                        ObjectMeta md = new ObjectMeta();
-                        md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
-                        return md;
-                    }
+                Foo foo = new Foo();
+                ObjectMeta md = new ObjectMeta();
+                md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
+                foo.setMetadata(md);
 
-                    @Override
-                    public void setMetadata(ObjectMeta objectMeta) {
-
-                    }
-
-                    @Override
-                    public String getKind() {
-                        return "TestResource";
-                    }
-
-                    @Override
-                    public String getApiVersion() {
-                        return "v1";
-                    }
-
-                    @Override
-                    public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Object spec) {
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Object status) {
-
-                    }
-                }
-                return new Foo();
+                return foo;
             }
 
             @Override
             public Future getAsync(String namespace, String name) {
-                @Group("strimzi")
-                @Version("v1")
-                class Foo extends MyResource {
-                    @Override
-                    public ObjectMeta getMetadata() {
-                        ObjectMeta md = new ObjectMeta();
-                        md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
-                        return md;
-                    }
+                Foo foo = new Foo();
+                ObjectMeta md = new ObjectMeta();
+                md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
+                foo.setMetadata(md);
 
-                    @Override
-                    public void setMetadata(ObjectMeta objectMeta) {
-
-                    }
-
-                    @Override
-                    public String getKind() {
-                        return "TestResource";
-                    }
-
-                    @Override
-                    public String getApiVersion() {
-                        return "v1";
-                    }
-
-                    @Override
-                    public void setApiVersion(String s) {
-
-                    }
-
-                    @Override
-                    public Spec getSpec() {
-                        return new Spec() { };
-                    }
-
-                    @Override
-                    public void setSpec(Object spec) {
-                    }
-
-                    @Override
-                    public Status getStatus() {
-                        return null;
-                    }
-
-                    @Override
-                    public void setStatus(Object status) {
-
-                    }
-                }
-                return Future.succeededFuture(new Foo());
+                return Future.succeededFuture(foo);
             }
         };
     }
@@ -739,12 +575,6 @@ public class OperatorMetricsTest {
         }
 
         @Override
-        public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-            // Do nothing
-            return emptySet();
-        }
-
-        @Override
         Future<Void> updateStatus(Reconciliation reconciliation, Status desiredStatus) {
             return Future.succeededFuture();
         }
@@ -762,6 +592,56 @@ public class OperatorMetricsTest {
         // Helper method used to set resources for each reconciliation
         public void setResources(Set<NamespaceAndName> resources) {
             this.resources = resources;
+        }
+    }
+
+    @Group("strimzi")
+    @Version("v1")
+    public static class Foo extends MyResource {
+        private ObjectMeta md;
+
+        @Override
+        public ObjectMeta getMetadata() {
+            return md;
+        }
+
+        @Override
+        public void setMetadata(ObjectMeta objectMeta) {
+            md = objectMeta;
+        }
+
+        @Override
+        public String getKind() {
+            return "TestResource";
+        }
+
+        @Override
+        public String getApiVersion() {
+            return "v1";
+        }
+
+        @Override
+        public void setApiVersion(String s) {
+
+        }
+
+        @Override
+        public Spec getSpec() {
+            return new Spec() { };
+        }
+
+        @Override
+        public void setSpec(Object spec) {
+        }
+
+        @Override
+        public Status getStatus() {
+            return null;
+        }
+
+        @Override
+        public void setStatus(Object status) {
+
         }
     }
 }
