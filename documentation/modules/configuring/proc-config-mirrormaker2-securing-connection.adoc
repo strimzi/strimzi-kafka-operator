@@ -25,7 +25,8 @@ Before starting this procedure, take a look at the link:{BookURLDeploying}#deplo
 They include examples for securing a deployment of MirrorMaker 2.0 using TLS or SCRAM-SHA-512 authentication.
 The examples specify internal listeners for connecting within a Kubernetes cluster.
 
-The examples also show the ACLs needed by MirrorMaker 2.0 to allow operations on the source and target Kafka clusters.
+The examples provide the configuration for full authorization, including all the ACLs needed by MirrorMaker 2.0 to allow operations on the source and target Kafka clusters.
+
 
 .Prerequisites
 
