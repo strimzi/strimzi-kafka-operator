@@ -319,6 +319,11 @@ public interface Constants {
     String ROLLING_UPDATE = "rollingupdate";
 
     /**
+     * Tag for tests, for Pod Security profiles set to restricted
+     */
+    String POD_SECURITY_PROFILES_RESTRICTED = "podsecurityprofiles";
+
+    /**
      * Tag for tests where OLM is used for deploying CO
      */
     String OLM = "olm";
@@ -381,7 +386,9 @@ public interface Constants {
     String WATCH_ALL_NAMESPACES = "*";
 
     String CLUSTER_KEY = "CLUSTER_NAME";
+    String TARGET_CLUSTER_KEY = "TARGET_CLUSTER_NAME";
     String TOPIC_KEY = "TOPIC_NAME";
+    String TARGET_TOPIC_KEY = "TARGET_TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
     String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";

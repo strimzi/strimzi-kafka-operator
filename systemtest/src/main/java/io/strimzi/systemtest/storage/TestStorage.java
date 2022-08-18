@@ -33,7 +33,9 @@ final public class TestStorage {
     private ExtensionContext extensionContext;
     private String namespaceName;
     private String clusterName;
+    private String targetClusterName;
     private String topicName;
+    private String targetTopicName;
     private String streamsTopicTargetName;
     private String scraperName;
     private String producerName;
@@ -52,7 +54,9 @@ final public class TestStorage {
         this.extensionContext = extensionContext;
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
+        this.targetClusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE))) + "-target";
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        this.targetTopicName = topicName + "-target";
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.scraperName = clusterName + "-" + Constants.SCRAPER_NAME;
         this.producerName = clusterName + "-" + PRODUCER;
@@ -65,7 +69,9 @@ final public class TestStorage {
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TARGET_CLUSTER_KEY, this.targetClusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TOPIC_KEY, this.topicName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TARGET_TOPIC_KEY, this.targetTopicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.STREAM_TOPIC_KEY, this.streamsTopicTargetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.SCRAPER_KEY, this.scraperName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PRODUCER_KEY, this.producerName);
@@ -93,8 +99,16 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString();
     }
 
+    public String getTargetClusterName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TARGET_CLUSTER_KEY).toString();
+    }
+
     public String getTopicName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString();
+    }
+
+    public String getTargetTopicName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TARGET_TOPIC_KEY).toString();
     }
 
     public String getScraperName() {
