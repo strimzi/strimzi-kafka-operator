@@ -58,8 +58,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class StrimziPodSetControllerIT {
-    private static final Logger LOGGER = LogManager.getLogger(StrimziPodSetControllerIT.class);
+public class StrimziPodSetControllerIntegrationTest {
+    private static final Logger LOGGER = LogManager.getLogger(StrimziPodSetControllerIntegrationTest.class);
     private static final String NAMESPACE = "strimzi-pod-set-controller-test";
     private static final String KAFKA_NAME = "foo";
     private static final Map<String, String> MATCHING_LABELS = Map.of("selector", "matching");
@@ -82,7 +82,7 @@ public class StrimziPodSetControllerIT {
         cluster = KubeClusterResource.getInstance();
         cluster.setNamespace(NAMESPACE);
 
-        assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
+        assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Namespace {} is already created, going to delete it", NAMESPACE);

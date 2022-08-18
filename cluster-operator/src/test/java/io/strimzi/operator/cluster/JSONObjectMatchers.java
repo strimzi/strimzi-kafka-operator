@@ -14,7 +14,7 @@ import java.util.Arrays;
 public class JSONObjectMatchers {
 
     public static Matcher<JsonObject> hasSize(int size) {
-        return new TypeSafeDiagnosingMatcher<JsonObject>() {
+        return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
             protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
@@ -36,7 +36,7 @@ public class JSONObjectMatchers {
         };
     }
     public static Matcher<JsonObject> hasKey(String key) {
-        return new TypeSafeDiagnosingMatcher<JsonObject>() {
+        return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
             protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
@@ -56,7 +56,7 @@ public class JSONObjectMatchers {
     }
 
     public static Matcher<JsonObject> hasKeys(String... keys) {
-        return new TypeSafeDiagnosingMatcher<JsonObject>() {
+        return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
             protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {
@@ -81,7 +81,7 @@ public class JSONObjectMatchers {
     }
 
     public static Matcher<JsonObject> hasEntry(String key, String value) {
-        return new TypeSafeDiagnosingMatcher<JsonObject>() {
+        return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
             protected boolean matchesSafely(JsonObject actual, Description mismatchDescription) {

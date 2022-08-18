@@ -51,8 +51,8 @@ public class KafkaAvailabilityTest {
 
     static class KSB {
         private Throwable listTopicsResult;
-        private Map<String, Throwable> describeTopicsResult = new HashMap<>(1);
-        private Map<ConfigResource, Throwable> describeConfigsResult = new HashMap<>(1);
+        private final Map<String, Throwable> describeTopicsResult = new HashMap<>(1);
+        private final Map<ConfigResource, Throwable> describeConfigsResult = new HashMap<>(1);
 
         class TSB {
             class PSB {
@@ -83,10 +83,10 @@ public class KafkaAvailabilityTest {
                 }
                 TSB endPartition() {
                     if (this.leader != null) {
-                        if (!IntStream.of(this.replicaOn).anyMatch(x -> x == this.leader)) {
+                        if (IntStream.of(this.replicaOn).noneMatch(x -> x == this.leader)) {
                             throw new RuntimeException("Leader must be one of the replicas");
                         }
-                        if (!IntStream.of(this.isr).anyMatch(x -> x == this.leader)) {
+                        if (IntStream.of(this.isr).noneMatch(x -> x == this.leader)) {
                             throw new RuntimeException("ISR must include the leader");
                         }
                     }
@@ -98,8 +98,8 @@ public class KafkaAvailabilityTest {
             }
             private final String name;
             private final boolean internal;
-            private Map<String, String> configs = new HashMap<>();
-            private Map<Integer, PSB> partitions = new HashMap<>();
+            private final Map<String, String> configs = new HashMap<>();
+            private final Map<Integer, PSB> partitions = new HashMap<>();
 
             public TSB(String name, boolean internal) {
                 this.name = name;
@@ -111,7 +111,7 @@ public class KafkaAvailabilityTest {
                 return this;
             }
             PSB addNewPartition(int partition) {
-                return partitions.computeIfAbsent(partition, p -> new PSB(p));
+                return partitions.computeIfAbsent(partition, PSB::new);
             }
 
 
@@ -122,21 +122,14 @@ public class KafkaAvailabilityTest {
 
         class BSB {
 
-            private int id;
-
             public BSB(int id) {
-                this.id = id;
                 KSB.this.nodes.put(id, new Node(id, "localhost", 1234 + id));
-            }
-
-            KSB endBroker() {
-                return KSB.this;
             }
         }
 
-        private Map<String, TSB> topics = new HashMap<>();
-        private Map<Integer, BSB> brokers = new HashMap<>();
-        private Map<Integer, Node> nodes = new HashMap<>();
+        private final Map<String, TSB> topics = new HashMap<>();
+        private final Map<Integer, BSB> brokers = new HashMap<>();
+        private final Map<Integer, Node> nodes = new HashMap<>();
 
         TSB addNewTopic(String name, boolean internal) {
             return topics.computeIfAbsent(name, n -> new TSB(n, internal));
@@ -144,22 +137,22 @@ public class KafkaAvailabilityTest {
 
         KSB addBroker(int... ids) {
             for (int id : ids) {
-                brokers.computeIfAbsent(id, i -> new BSB(i));
+                brokers.computeIfAbsent(id, BSB::new);
             }
             return this;
         }
 
         static <T> KafkaFuture<T> failedFuture(Throwable t) {
-            KafkaFutureImpl kafkaFuture = new KafkaFutureImpl();
+            KafkaFutureImpl<T> kafkaFuture = new KafkaFutureImpl<>();
             kafkaFuture.completeExceptionally(t);
             return kafkaFuture;
         }
 
         ListTopicsResult mockListTopics() {
             ListTopicsResult ltr = mock(ListTopicsResult.class);
-            when(ltr.names()).thenAnswer(invocation -> {
-                return listTopicsResult != null ? failedFuture(listTopicsResult) : KafkaFuture.completedFuture(new HashSet<>(topics.keySet()));
-            });
+            when(ltr.names()).thenAnswer(invocation ->
+                listTopicsResult != null ? failedFuture(listTopicsResult) : KafkaFuture.completedFuture(new HashSet<>(topics.keySet()))
+            );
             when(ltr.listings()).thenThrow(notImplemented());
             when(ltr.namesToListings()).thenThrow(notImplemented());
             return ltr;
@@ -201,17 +194,16 @@ public class KafkaAvailabilityTest {
                     when(dtr.allTopicNames()).thenReturn(failedFuture(throwable));
                 } else {
                     Map<String, TopicDescription> tds = topics.entrySet().stream().collect(Collectors.toMap(
-                        e -> e.getKey(),
+                            Map.Entry::getKey,
                         e -> {
                             TSB tsb = e.getValue();
                             return new TopicDescription(tsb.name, tsb.internal,
-                                    tsb.partitions.entrySet().stream().map(e1 -> {
-                                        TSB.PSB psb = e1.getValue();
-                                        return new TopicPartitionInfo(psb.id,
+                                    tsb.partitions.values().stream().map(psb ->
+                                        new TopicPartitionInfo(psb.id,
                                                 psb.leader != null ? node(psb.leader) : Node.noNode(),
-                                                Arrays.stream(psb.replicaOn).boxed().map(broker -> node(broker)).collect(Collectors.toList()),
-                                                Arrays.stream(psb.isr).boxed().map(broker -> node(broker)).collect(Collectors.toList()));
-                                    }).collect(Collectors.toList()));
+                                                Arrays.stream(psb.replicaOn).boxed().map(this::node).collect(Collectors.toList()),
+                                                Arrays.stream(psb.isr).boxed().map(this::node).collect(Collectors.toList()))
+                                    ).collect(Collectors.toList()));
                         }
                     ));
                     when(dtr.allTopicNames()).thenReturn(KafkaFuture.completedFuture(tds));

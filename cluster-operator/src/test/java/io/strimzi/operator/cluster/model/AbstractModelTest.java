@@ -37,7 +37,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class AbstractModelTest {
 
     // Implement AbstractModel to test the abstract class
-    private class Model extends AbstractModel   {
+    private static class Model extends AbstractModel   {
         public Model(HasMetadata resource) {
             super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, "model-app");
         }

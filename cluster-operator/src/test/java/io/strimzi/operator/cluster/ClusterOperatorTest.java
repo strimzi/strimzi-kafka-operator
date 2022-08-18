@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
-    private static Vertx vertx = Vertx.vertx(
+    private static final Vertx vertx = Vertx.vertx(
         new VertxOptions().setMetricsOptions(
             new MicrometerMetricsOptions()
                 .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))

@@ -86,7 +86,7 @@ public class StatefulSetRollingUpdateTest {
 
     @Test
     public void testNeedsRollingUpdateWhenLabelsRemoved() {
-        Map<String, String> labels = new HashMap(desiredSts.getMetadata().getLabels());
+        Map<String, String> labels = new HashMap<>(desiredSts.getMetadata().getLabels());
         labels.put("foo", "bar");
         currectSts.getMetadata().setLabels(labels);
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));

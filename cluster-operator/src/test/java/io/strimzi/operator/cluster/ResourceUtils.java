@@ -114,7 +114,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -636,16 +635,10 @@ public class ResourceUtils {
     }
 
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
-        return new ZookeeperScalerProvider() {
-            @Override
-            public ZookeeperScaler createZookeeperScaler(
-                    Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
-                    Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret,
-                    long operationTimeoutMs, int zkAdminSessionTimoutMs) {
-                ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
-                when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
-                return mockZooScaler;
-            }
+        return (reconciliation, vertx, zookeeperConnectionString, zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs, zkAdminSessionTimoutMs) -> {
+            ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
+            when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
+            return mockZooScaler;
         };
     }
 

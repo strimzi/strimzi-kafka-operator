@@ -24,7 +24,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiMockTest {
     private static Vertx vertx;
-    private BackOff backOff = new BackOff(1L, 2, 3);
+    private final BackOff backOff = new BackOff(1L, 2, 3);
 
     @BeforeAll
     public static void before() {
@@ -89,7 +89,7 @@ public class KafkaConnectApiMockTest {
             .onComplete(context.failing(res -> async.flag()));
     }
 
-    class MockKafkaConnectApi extends KafkaConnectApiImpl   {
+    static class MockKafkaConnectApi extends KafkaConnectApiImpl   {
         private final Queue<Future<Map<String, Object>>> statusResults;
 
         public MockKafkaConnectApi(Vertx vertx, Queue<Future<Map<String, Object>>> statusResults) {

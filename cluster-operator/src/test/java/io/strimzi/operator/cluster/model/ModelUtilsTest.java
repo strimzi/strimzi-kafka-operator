@@ -204,9 +204,9 @@ public class ModelUtilsTest {
         assertThat(model.templateImagePullSecrets.contains(secret1), is(true));
         assertThat(model.templateImagePullSecrets.contains(secret2), is(true));
         assertThat(model.templateSecurityContext, is(notNullValue()));
-        assertThat(model.templateSecurityContext.getFsGroup(), is(Long.valueOf(123)));
-        assertThat(model.templateSecurityContext.getRunAsGroup(), is(Long.valueOf(456)));
-        assertThat(model.templateSecurityContext.getRunAsUser(), is(Long.valueOf(789)));
+        assertThat(model.templateSecurityContext.getFsGroup(), is(123L));
+        assertThat(model.templateSecurityContext.getRunAsGroup(), is(456L));
+        assertThat(model.templateSecurityContext.getRunAsUser(), is(789L));
         assertThat(model.getUserAffinity(), is(affinity));
         assertThat(model.getTolerations(), is(tolerations));
     }
@@ -362,7 +362,7 @@ public class ModelUtilsTest {
         assertThat(model.templateHeadlessServiceIpFamilyPolicy, is(nullValue()));
     }
 
-    private class Model extends AbstractModel   {
+    private static class Model extends AbstractModel   {
         public Model(Reconciliation reconciliation, HasMetadata resource) {
             super(reconciliation, resource, "model-app");
         }

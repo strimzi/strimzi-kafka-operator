@@ -143,7 +143,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -228,7 +228,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -307,7 +307,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));

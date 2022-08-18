@@ -243,9 +243,9 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.ENV_VARS);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_POLICY, "Sometimes");
 
-        assertThrows(InvalidConfigurationException.class, () -> {
-            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
-        });
+        assertThrows(InvalidConfigurationException.class, () ->
+            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup())
+        );
     }
 
     @Test
@@ -265,9 +265,9 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.ENV_VARS);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "secret1, secret2 , secret_3 ");
 
-        assertThrows(InvalidConfigurationException.class, () -> {
-            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
-        });
+        assertThrows(InvalidConfigurationException.class, () ->
+            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup())
+        );
     }
 
     @Test
@@ -275,9 +275,9 @@ public class ClusterOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.ENV_VARS);
         envVars.put(ClusterOperatorConfig.STRIMZI_IMAGE_PULL_SECRETS, "Secret");
 
-        assertThrows(InvalidConfigurationException.class, () -> {
-            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
-        });
+        assertThrows(InvalidConfigurationException.class, () ->
+            ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup())
+        );
     }
 
     @Test

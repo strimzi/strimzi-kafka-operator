@@ -32,10 +32,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @ExtendWith(VertxExtension.class)
-public class TolerationsIT {
+public class TolerationsIntegrationTest {
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private String namespace = "kafka-it-2";
+    private final String namespace = "kafka-it-2";
 
     @BeforeEach
     public void beforeEach() {
