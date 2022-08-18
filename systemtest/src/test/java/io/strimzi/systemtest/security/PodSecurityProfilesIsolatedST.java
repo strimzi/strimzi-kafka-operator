@@ -262,6 +262,6 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         final Map<String, String> namespaceLabels = namespace.getMetadata().getLabels();
         namespaceLabels.put("pod-security.kubernetes.io/enforce", "restricted");
         namespace.getMetadata().setLabels(namespaceLabels);
-        kubeClient().createNamespace(namespace);
+        kubeClient().createOrReplaceNamespace(namespace);
     }
 }

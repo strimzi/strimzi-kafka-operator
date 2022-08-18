@@ -91,7 +91,7 @@ public class KubeClient {
         client.namespaces().resource(ns).createOrReplace();
     }
 
-    public void createNamespace(final Namespace namespace) {
+    public void createOrReplaceNamespace(final Namespace namespace) {
         client.namespaces().resource(namespace).createOrReplace();
     }
 
