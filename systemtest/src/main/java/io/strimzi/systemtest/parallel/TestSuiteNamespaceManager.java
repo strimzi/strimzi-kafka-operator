@@ -6,6 +6,7 @@ package io.strimzi.systemtest.parallel;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -91,7 +92,7 @@ public class TestSuiteNamespaceManager {
 
     /**
      * Dynamic generation of all auxiliary @code{mapOfAdditionalNamespaces} for @ParallelSuites using method
-     * {@link #retrieveAllSystemTestsNames(ST_TESTS_PATH)}. Execution is decomposed in three steps:
+     * {@link #retrieveAllSystemTestsNames(File)}}. Execution is decomposed in three steps:
      *  1. Scan all test directory
      *  2. Post-processing of test suite names adding '-' between all capitals.
      *  3. Adding auxiliary namespaces to the map @code{mapOfAdditionalNamespaces}
@@ -133,10 +134,16 @@ public class TestSuiteNamespaceManager {
                 if (namespaceName.equals(Constants.INFRA_NAMESPACE)) {
                     continue;
                 }
-                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuite), namespaceName);
-                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceName));
-                if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                    StUtils.copyImagePullSecret(namespaceName);
+
+                if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
+                    KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuite), namespaceName);
+                    NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceName));
+                    if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                        StUtils.copyImagePullSecret(namespaceName);
+                    }
+                } else {
+                    LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
+                        "contains @ParallelTest or @IsolatedTest.", namespaceName, requiredClassName);
                 }
             }
         }

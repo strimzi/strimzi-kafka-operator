@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.annotations;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceAccessMode;
 import org.junit.jupiter.api.parallel.ResourceLock;
@@ -13,6 +14,7 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static io.strimzi.systemtest.Constants.ISOLATED_TEST;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /***
@@ -24,6 +26,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Inherited
 @ResourceLock(mode = ResourceAccessMode.READ_WRITE, value = "global")
+@Tag(ISOLATED_TEST)
 @Test
 public @interface IsolatedTest {
     String value() default "";

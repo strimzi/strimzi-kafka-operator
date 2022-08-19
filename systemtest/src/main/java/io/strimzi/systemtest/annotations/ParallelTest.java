@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.annotations;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -14,6 +15,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import static io.strimzi.systemtest.Constants.PARALLEL_TEST;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /***
@@ -25,6 +27,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Execution(ExecutionMode.CONCURRENT)
 @ResourceLock(mode = ResourceAccessMode.READ, value = "global")
+@Tag(PARALLEL_TEST)
 @Test
 public @interface ParallelTest {
 }

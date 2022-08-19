@@ -10,6 +10,7 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.engine.TestTag;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
@@ -17,12 +18,14 @@ import org.junit.platform.launcher.TestPlan;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ExecutionListener implements TestExecutionListener {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionListener.class);
 
     private static List<String> testSuitesNamesToExecute;
+    /* read only */ private static TestPlan testPlan;
 
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public void testPlanExecutionStarted(TestPlan plan) {
@@ -31,8 +34,9 @@ public class ExecutionListener implements TestExecutionListener {
         LOGGER.info("                        Test run started");
         LOGGER.info("=======================================================================");
         LOGGER.info("=======================================================================");
-        printSelectedTestClasses(plan);
-        testSuitesNamesToExecute = new ArrayList<>(plan.getChildren(plan.getRoots().toArray(new TestIdentifier[0])[0])).stream()
+        testPlan = plan;
+        printSelectedTestClasses(testPlan);
+        testSuitesNamesToExecute = new ArrayList<>(testPlan.getChildren(testPlan.getRoots().toArray(new TestIdentifier[0])[0])).stream()
             .map(testIdentifier -> testIdentifier.getDisplayName()).collect(Collectors.toList());
     }
 
@@ -95,6 +99,31 @@ public class ExecutionListener implements TestExecutionListener {
             final String followingTestSuiteName = testSuitesNamesToExecute.get(followingTestSuite);
             if (followingTestSuiteName.endsWith(Constants.ST) && testSuitesNamesToExecute.get(followingTestSuite).contains(Constants.ISOLATED)) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if test suite has test case, which is labeled as {@link io.strimzi.systemtest.annotations.ParallelTest} or
+     * {@link io.strimzi.systemtest.annotations.IsolatedTest}. We check such condition only if we run {@link io.strimzi.systemtest.annotations.ParallelSuite}
+     * and thus we create additional namespace only if test suite contains these type of test cases.
+     *
+     * @param extensionContext  ExtensionContext of the test case
+     * @return                  true if test suite contains Parallel or Isolated test case. Otherwise, false.
+     */
+    public static boolean hasSuiteParallelOrIsolatedTest(final ExtensionContext extensionContext) {
+        Set<TestIdentifier> testCases = testPlan.getChildren(extensionContext.getUniqueId());
+
+        for (TestIdentifier testIdentifier : testCases) {
+            for (TestTag testTag : testIdentifier.getTags()) {
+                if (testTag.getName().equals(Constants.PARALLEL_TEST) || testTag.getName().equals(Constants.ISOLATED_TEST) ||
+                    // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
+                    testTag.getName().equals(Constants.DYNAMIC_CONFIGURATION) ||
+                    // Tracing, because we deploy Jaeger operator inside additinal namespace
+                    testTag.getName().equals(Constants.TRACING)) {
+                    return true;
+                }
             }
         }
         return false;
