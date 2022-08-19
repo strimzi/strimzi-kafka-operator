@@ -152,6 +152,7 @@
 :InstallationAppendix:
 :Metrics:
 :Downloading:
+:Section:
 
 //EXCLUSIVE TO STRIMZI
 :sectlinks:
