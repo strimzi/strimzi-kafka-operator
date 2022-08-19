@@ -6,9 +6,15 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.ResourceVisitor;
+import io.strimzi.operator.common.model.ValidationVisitor;
 import io.vertx.core.AsyncResult;
 
 import java.time.ZoneOffset;
@@ -16,11 +22,15 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class StatusUtils {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatusUtils.class);
+
     /**
      * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
-     * 
+     *
      * @return the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
      */
     public static String iso8601Now() {
@@ -84,18 +94,15 @@ public class StatusUtils {
                 .build();
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
+    public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
         setStatusConditionAndObservedGeneration(resource, status, result.cause());
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
+    public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
         setStatusConditionAndObservedGeneration(resource, status, error == null ? "Ready" : "NotReady", "True", error);
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus, Throwable error) {
+    public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus, Throwable error) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
@@ -103,26 +110,11 @@ public class StatusUtils {
         status.setConditions(Collections.singletonList(readyCondition));
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, Throwable error) {
+    public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, Throwable error) {
         setStatusConditionAndObservedGeneration(resource, status, type, "True", error);
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus) {
-        if (resource.getMetadata().getGeneration() != null)    {
-            status.setObservedGeneration(resource.getMetadata().getGeneration());
-        }
-        Condition condition = StatusUtils.buildCondition(type, conditionStatus, null);
-        status.setConditions(Collections.singletonList(condition));
-    }
-
-    @SuppressWarnings({ "rawtypes" })
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
-        setStatusConditionAndObservedGeneration(resource, status, type, "True");
-    }
-
-    public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Condition condition) {
+    public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Condition condition) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
         }
@@ -135,5 +127,44 @@ public class StatusUtils {
                 .withType("ReconciliationPaused")
                 .withStatus("True")
                 .build();
+    }
+
+    /**
+     * Validate the Custom Resource. This should log at the WARN level (rather than throwing) if the resource can safely
+     * be reconciled (e.g. it merely using deprecated API).
+     *
+     * @param <T>               Custom Resource type
+     * @param <P>               Custom Resource spec type
+     * @param <S>               Custom Resource status type
+     *
+     * @param reconciliation    The reconciliation
+     * @param resource          The custom resource
+     *
+     * @throws InvalidResourceException if the resource cannot be safely reconciled.
+     *
+     * @return set of conditions
+     */
+    public static <T extends CustomResource<P, S>, P extends Spec, S extends Status> Set<Condition> validate(Reconciliation reconciliation, T resource) {
+        if (resource != null) {
+            Set<Condition> warningConditions = new LinkedHashSet<>(0); // LinkedHashSet is used to maintain ordering
+
+            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
+
+            return warningConditions;
+        }
+
+        return Collections.emptySet();
+    }
+
+    /**
+     * Adds additional conditions to te status (this expects)
+     *
+     * @param status        The Status instance where additonal conditions should be added
+     * @param conditions    The Set with the new conditions
+     */
+    public static void addConditionsToStatus(Status status, Set<Condition> conditions)   {
+        if (status != null)  {
+            status.addConditions(conditions);
+        }
     }
 }

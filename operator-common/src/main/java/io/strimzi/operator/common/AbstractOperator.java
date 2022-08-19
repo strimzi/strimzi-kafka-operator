@@ -22,8 +22,6 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.model.ResourceVisitor;
-import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -36,8 +34,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -57,7 +53,7 @@ import static io.strimzi.operator.common.Util.async;
  * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
  *
- * <li>add support for operator-side {@linkplain #validate(Reconciliation, CustomResource) validation}.
+ * <li>add support for operator-side {@linkplain StatusUtils#validate(Reconciliation, CustomResource)} validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
  *ą
  * </ul>
@@ -184,7 +180,7 @@ public abstract class AbstractOperator<
                 Promise<Void> createOrUpdate = Promise.promise();
                 if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
                     S status = createStatus();
-                    Set<Condition> conditions = validate(reconciliation, cr);
+                    Set<Condition> conditions = StatusUtils.validate(reconciliation, cr);
                     conditions.add(StatusUtils.getPausedCondition());
                     status.setConditions(new ArrayList<>(conditions));
                     status.setObservedGeneration(cr.getStatus() != null ? cr.getStatus().getObservedGeneration() : 0);
@@ -221,7 +217,7 @@ public abstract class AbstractOperator<
                     return createOrUpdate.future();
                 }
 
-                Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, cr);
+                Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, cr);
 
                 LOGGER.infoCr(reconciliation, "{} {} will be checked for creation or modification", kind, name);
 
@@ -230,7 +226,7 @@ public abstract class AbstractOperator<
                             if (res.succeeded()) {
                                 S status = res.result();
 
-                                addWarningsToStatus(status, unknownAndDeprecatedConditions);
+                                StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
                                 updateStatus(reconciliation, status).onComplete(statusResult -> {
                                     if (statusResult.succeeded()) {
                                         createOrUpdate.complete();
@@ -242,7 +238,7 @@ public abstract class AbstractOperator<
                                 if (res.cause() instanceof ReconciliationException) {
                                     ReconciliationException e = (ReconciliationException) res.cause();
                                     Status status = e.getStatus();
-                                    addWarningsToStatus(status, unknownAndDeprecatedConditions);
+                                    StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
 
                                     LOGGER.errorCr(reconciliation, "createOrUpdate failed", e.getCause());
 
@@ -283,12 +279,6 @@ public abstract class AbstractOperator<
         });
 
         return result.future();
-    }
-
-    protected void addWarningsToStatus(Status status, Set<Condition> unknownAndDeprecatedConditions)   {
-        if (status != null)  {
-            status.addConditions(unknownAndDeprecatedConditions);
-        }
     }
 
     /**
@@ -439,27 +429,6 @@ public abstract class AbstractOperator<
         lock.release();
         LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
         return Future.succeededFuture();
-    }
-
-    /**
-     * Validate the Custom Resource.
-     * This should log at the WARN level (rather than throwing)
-     * if the resource can safely be reconciled (e.g. it merely using deprecated API).
-     * @param reconciliation The reconciliation
-     * @param resource The custom resource
-     * @throws InvalidResourceException if the resource cannot be safely reconciled.
-     * @return set of conditions
-     */
-    /*test*/ public Set<Condition> validate(Reconciliation reconciliation, T resource) {
-        if (resource != null) {
-            Set<Condition> warningConditions = new LinkedHashSet<>(0);
-
-            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
-
-            return warningConditions;
-        }
-
-        return Collections.emptySet();
     }
 
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
