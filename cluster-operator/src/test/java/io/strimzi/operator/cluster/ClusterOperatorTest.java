@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
-    private static Vertx vertx = Vertx.vertx(
+    private static final Vertx VERTX = Vertx.vertx(
         new VertxOptions().setMetricsOptions(
             new MicrometerMetricsOptions()
                 .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
@@ -204,12 +204,12 @@ public class ClusterOperatorTest {
 
         CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
 
-        Main.deployClusterOperatorVerticles(vertx, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
+        Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
                     ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(namespaceList.size()));
-                for (String deploymentId: vertx.deploymentIDs()) {
-                    vertx.undeploy(deploymentId, asyncResult -> {
+                assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(namespaceList.size()));
+                for (String deploymentId: VERTX.deploymentIDs()) {
+                    VERTX.undeploy(deploymentId, asyncResult -> {
                         if (asyncResult.failed()) {
                             LOGGER.error("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());
@@ -302,12 +302,12 @@ public class ClusterOperatorTest {
         Map<String, String> env = buildEnv(namespaces, strimziPodSets, podSetsOnly);
 
         CountDownLatch latch = new CountDownLatch(2);
-        Main.deployClusterOperatorVerticles(vertx, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
+        Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
                 ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat("A verticle per namespace", vertx.deploymentIDs(), hasSize(1));
-                for (String deploymentId: vertx.deploymentIDs()) {
-                    vertx.undeploy(deploymentId, asyncResult -> {
+                assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(1));
+                for (String deploymentId: VERTX.deploymentIDs()) {
+                    VERTX.undeploy(deploymentId, asyncResult -> {
                         if (asyncResult.failed()) {
                             LOGGER.error("Failed to undeploy {}", deploymentId);
                             context.failNow(asyncResult.cause());

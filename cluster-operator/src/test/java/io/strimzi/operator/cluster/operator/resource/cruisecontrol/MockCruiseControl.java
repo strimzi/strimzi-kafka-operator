@@ -128,7 +128,7 @@ public class MockCruiseControl {
         Optional<String> json = Files.lines(Paths.get(jsonURI), UTF_8)
                 .reduce((x, y) -> x + y);
 
-        if (!json.isPresent()) {
+        if (json.isEmpty()) {
             throw new IOException("File " + resource + " from resources was empty");
         }
 

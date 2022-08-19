@@ -37,9 +37,7 @@ public class KafkaVersionTest {
         assertThat(KafkaVersion.compareDottedIVVersions("2.7-IV1", kv.protocolVersion()), lessThan(0));
         assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.protocolVersion()), greaterThan(0));
 
-        assertThrows(NumberFormatException.class, () -> {
-            KafkaVersion.compareDottedIVVersions("wrong", kv.protocolVersion());
-        });
+        assertThrows(NumberFormatException.class, () -> KafkaVersion.compareDottedIVVersions("wrong", kv.protocolVersion()));
     }
 
     @ParallelTest

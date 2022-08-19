@@ -26,7 +26,7 @@ public class CustomMatchers {
      * @return a custom Matcher which iterates through entries and delegates matching to hasEntry
      */
     public static Matcher<Map<String, String>> hasEntries(Map<String, String> entries) {
-        return new TypeSafeDiagnosingMatcher<Map<String, String>>() {
+        return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
             public void describeTo(final Description description) {

@@ -82,7 +82,7 @@ public class StrimziPodSetControllerIT {
         cluster = KubeClusterResource.getInstance();
         cluster.setNamespace(NAMESPACE);
 
-        assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
+        assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Namespace {} is already created, going to delete it", NAMESPACE);

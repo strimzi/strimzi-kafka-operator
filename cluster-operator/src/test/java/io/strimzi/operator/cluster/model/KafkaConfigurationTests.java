@@ -99,9 +99,9 @@ public class KafkaConfigurationTests {
 
     @ParallelTest
     public void unsupportedVersion() {
-        RuntimeException exc = Assertions.assertThrows(RuntimeException.class, () -> {
-            KafkaConfiguration.readConfigModel(KafkaVersionTestUtils.getKafkaVersionLookup().version("2.6.0"));
-        });
+        RuntimeException exc = Assertions.assertThrows(RuntimeException.class, () ->
+            KafkaConfiguration.readConfigModel(KafkaVersionTestUtils.getKafkaVersionLookup().version("2.6.0"))
+        );
 
         assertThat(exc.getMessage(), containsString("Configuration model /kafka-2.6.0-config-model.json was not found"));
     }

@@ -84,7 +84,7 @@ public class JbodStorageMockTest {
     }
 
     @BeforeEach
-    private void init() {
+    public void init() {
         this.volumes = new ArrayList<>(2);
 
         volumes.add(new PersistentClaimStorageBuilder()
@@ -135,21 +135,21 @@ public class JbodStorageMockTest {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
-                new ResourceOperatorSupplier(this.vertx, this.client,
-                        ResourceUtils.zookeeperLeaderFinder(this.vertx, this.client),
+                new ResourceOperatorSupplier(JbodStorageMockTest.vertx, this.client,
+                        ResourceUtils.zookeeperLeaderFinder(JbodStorageMockTest.vertx, this.client),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                         ResourceUtils.metricsProvider(), pfa, 60_000L);
 
         podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.strimziPodSetOperator, ros.podOperations, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         podSetController.start();
 
-        this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
+        this.operator = new KafkaAssemblyOperator(JbodStorageMockTest.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
     }
 
     @AfterEach
-    private void afterEach() {
+    public void afterEach() {
         podSetController.stop();
         mockKube.stop();
     }
@@ -162,20 +162,19 @@ public class JbodStorageMockTest {
                 List<PersistentVolumeClaim> pvcs = getPvcs(NAMESPACE, NAME);
 
                 for (int i = 0; i < this.kafka.getSpec().getKafka().getReplicas(); i++) {
-                    int podId = i;
                     for (SingleVolumeStorage volume : this.volumes) {
                         if (volume instanceof PersistentClaimStorage) {
 
-                            String expectedPvcName = VolumeUtils.createVolumePrefix(volume.getId(), true) + "-" + KafkaResources.kafkaPodName(NAME, podId);
+                            String expectedPvcName = VolumeUtils.createVolumePrefix(volume.getId(), true) + "-" + KafkaResources.kafkaPodName(NAME, i);
                             List<PersistentVolumeClaim> matchingPvcs = pvcs.stream()
                                     .filter(pvc -> pvc.getMetadata().getName().equals(expectedPvcName))
                                     .collect(Collectors.toList());
-                            assertThat("Exactly one pvc should have the name " + expectedPvcName + " in :\n" + pvcs.toString(),
+                            assertThat("Exactly one pvc should have the name " + expectedPvcName + " in :\n" + pvcs,
                                     matchingPvcs, Matchers.hasSize(1));
 
                             PersistentVolumeClaim pvc = matchingPvcs.get(0);
                             boolean isDeleteClaim = ((PersistentClaimStorage) volume).isDeleteClaim();
-                            assertThat("deleteClaim value did not match for volume : " + volume.toString(),
+                            assertThat("deleteClaim value did not match for volume : " + volume,
                                     Annotations.booleanAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM,
                                             false),
                                     is(isDeleteClaim));
@@ -311,11 +310,10 @@ public class JbodStorageMockTest {
     private Set<String> expectedPvcs(Kafka kafka) {
         Set<String> expectedPvcs = new HashSet<>();
         for (int i = 0; i < kafka.getSpec().getKafka().getReplicas(); i++) {
-            int podId = i;
             for (SingleVolumeStorage volume : ((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes()) {
                 if (volume instanceof PersistentClaimStorage) {
                     expectedPvcs.add(AbstractModel.VOLUME_NAME + "-" + volume.getId() + "-"
-                            + KafkaResources.kafkaPodName(NAME, podId));
+                            + KafkaResources.kafkaPodName(NAME, i));
                 }
             }
         }

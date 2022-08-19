@@ -43,18 +43,18 @@ public class MainIT {
     }
 
     @BeforeEach
-    private void createClient() {
+    public void createClient() {
         client = new KubernetesClientBuilder().build();
     }
 
     @AfterEach
-    private void closeClient() {
+    public void closeClient() {
         client.close();
     }
 
     @Test
     public void testCreateClusterRolesCreatesClusterRoles(VertxTestContext context) {
-        assertDoesNotThrow(() -> KubeCluster.bootstrap());
+        assertDoesNotThrow(KubeCluster::bootstrap);
         Map<String, String> envVars = new HashMap<>(6);
         envVars.put(ClusterOperatorConfig.STRIMZI_CREATE_CLUSTER_ROLES, "TRUE");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());

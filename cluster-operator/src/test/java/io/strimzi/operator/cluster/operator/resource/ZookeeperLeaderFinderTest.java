@@ -128,9 +128,7 @@ public class ZookeeperLeaderFinderTest {
 
         public void stop() {
             CountDownLatch countDownLatch = new CountDownLatch(1);
-            netServer.close(closeResult -> {
-                countDownLatch.countDown();
-            });
+            netServer.close(closeResult -> countDownLatch.countDown());
             try {
                 countDownLatch.await(10, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
@@ -141,10 +139,10 @@ public class ZookeeperLeaderFinderTest {
         public Future<Integer> start() {
             Promise<Integer> promise = Promise.promise();
 
-            netServer.exceptionHandler(ex -> LOGGER.error(ex))
+            netServer.exceptionHandler(LOGGER::error)
                 .connectHandler(socket -> {
                     LOGGER.debug("ZK {}: client connection to {}, from {}", id, socket.localAddress(), socket.remoteAddress());
-                    socket.exceptionHandler(ex -> LOGGER.error(ex));
+                    socket.exceptionHandler(LOGGER::error);
                     StringBuffer sb = new StringBuffer();
                     socket.handler(buf -> {
                         sb.append(buf.toString());

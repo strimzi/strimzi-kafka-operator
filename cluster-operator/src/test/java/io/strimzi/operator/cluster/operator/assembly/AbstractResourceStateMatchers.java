@@ -94,7 +94,7 @@ public class AbstractResourceStateMatchers {
         };
     }
 
-    public static Matcher<Condition> hasStateInCondition(KafkaRebalanceState state, Class reason, String message) {
+    public static Matcher<Condition> hasStateInCondition(KafkaRebalanceState state, Class<?> reason, String message) {
         return new TypeSafeDiagnosingMatcher<>() {
 
             @Override

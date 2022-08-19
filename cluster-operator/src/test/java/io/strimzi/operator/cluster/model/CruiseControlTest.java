@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
@@ -212,7 +211,7 @@ public class CruiseControlTest {
     }
 
     @ParallelTest
-    public void testBrokerCapacities() throws JsonProcessingException {
+    public void testBrokerCapacities() {
         // Test user defined capacities
         String userDefinedCpuCapacity = "2575m";
 

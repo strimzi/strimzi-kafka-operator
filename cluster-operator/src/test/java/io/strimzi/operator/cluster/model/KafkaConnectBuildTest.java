@@ -96,9 +96,9 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
-        });
+        assertThrows(InvalidResourceException.class, () ->
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS)
+        );
     }
 
     @ParallelTest
@@ -120,9 +120,9 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
-        });
+        assertThrows(InvalidResourceException.class, () ->
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS)
+        );
     }
 
     @ParallelTest
@@ -145,9 +145,9 @@ public class KafkaConnectBuildTest {
                 .endSpec()
                 .build();
 
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
-        });
+        assertThrows(InvalidResourceException.class, () ->
+            KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS)
+        );
     }
 
     @ParallelTest

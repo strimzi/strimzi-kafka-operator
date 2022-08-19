@@ -215,9 +215,9 @@ public class CaRenewalTest {
     }
 
     public static class MockedCa extends Ca {
+        private final AtomicInteger invocationCount = new AtomicInteger(0);
         private boolean isCertRenewed;
         private boolean isCertExpiring;
-        private final AtomicInteger invocationCount = new AtomicInteger(0);
 
         public MockedCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, String caCertSecretName, Secret caCertSecret, String caKeySecretName, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
             super(reconciliation, certManager, passwordGenerator, commonName, caCertSecretName, caCertSecret, caKeySecretName, caKeySecret, validityDays, renewalDays, generateCa, policy);

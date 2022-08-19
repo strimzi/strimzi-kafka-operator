@@ -1610,7 +1610,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
         });
     }
 
-    private void assertState(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceState state, Class reason, String message) {
+    private void assertState(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceState state, Class<?> reason, String message) {
         context.verify(() -> {
             KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
 

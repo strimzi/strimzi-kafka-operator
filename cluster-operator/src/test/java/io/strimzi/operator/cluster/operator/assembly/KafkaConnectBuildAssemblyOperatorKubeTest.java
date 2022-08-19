@@ -57,6 +57,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
@@ -240,7 +241,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(2));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -365,7 +366,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(1));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 async.flag();
             })));
@@ -522,7 +523,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(2));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -685,7 +686,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                     // Verify builder Pod
                     List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                     assertThat(capturedBuilderPods, hasSize(2));
-                    assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                    assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                     // Verify status
                     List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -857,7 +858,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(1));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(0));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(0));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -1033,7 +1034,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(3));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -1211,7 +1212,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(3));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -1486,7 +1487,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 // Verify builder Pod
                 List<Pod> capturedBuilderPods = builderPodCaptor.getAllValues();
                 assertThat(capturedBuilderPods, hasSize(3));
-                assertThat(capturedBuilderPods.stream().filter(pod -> pod != null).collect(Collectors.toList()), hasSize(1));
+                assertThat(capturedBuilderPods.stream().filter(Objects::nonNull).collect(Collectors.toList()), hasSize(1));
 
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();

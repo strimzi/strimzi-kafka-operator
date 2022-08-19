@@ -98,18 +98,16 @@ public class CruiseControlClientTest {
     public void testCCRebalanceNotEnoughValidWindowsException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REBALANCE,
-                result -> {
-                    assertThat(result.isNotEnoughDataForProposal(), is(true));
-                });
+                result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
+        );
     }
 
     @Test
     public void testCCRebalanceProposalNotReady(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REBALANCE,
-                result -> {
-                    assertThat(result.isProposalStillCalculating(), is(true));
-                });
+                result ->  assertThat(result.isProposalStillCalculating(), is(true))
+        );
     }
 
     @Test
@@ -159,9 +157,8 @@ public class CruiseControlClientTest {
                 .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.ADD_BROKER,
-                result -> {
-                    assertThat(result.isNotEnoughDataForProposal(), is(true));
-                });
+                result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
+        );
     }
 
     @Test
@@ -170,9 +167,8 @@ public class CruiseControlClientTest {
                 .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.ADD_BROKER,
-                result -> {
-                    assertThat(result.isProposalStillCalculating(), is(true));
-                });
+                result -> assertThat(result.isProposalStillCalculating(), is(true))
+        );
     }
 
     @Test
@@ -218,9 +214,8 @@ public class CruiseControlClientTest {
                 .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceNotEnoughValidWindowsException(vertx, context, options, CruiseControlEndpoints.REMOVE_BROKER,
-                result -> {
-                    assertThat(result.isNotEnoughDataForProposal(), is(true));
-                });
+                result -> assertThat(result.isNotEnoughDataForProposal(), is(true))
+        );
     }
 
     @Test
@@ -229,9 +224,8 @@ public class CruiseControlClientTest {
                 .withBrokers(List.of(3))
                 .build();
         this.ccRebalanceProposalNotReady(vertx, context, 1, options, CruiseControlEndpoints.REMOVE_BROKER,
-                result -> {
-                    assertThat(result.isProposalStillCalculating(), is(true));
-                });
+                result -> assertThat(result.isProposalStillCalculating(), is(true))
+        );
     }
 
     @Test
