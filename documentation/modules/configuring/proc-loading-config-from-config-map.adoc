@@ -3,7 +3,7 @@
 // configuring/assembly-external-config.adoc
 
 [id='proc-loading-config-from-config-map-{context}']
-= Loading configuration values from a config map
+= Loading configuration values from a ConfigMap
 
 [role="_abstract"]
 This procedure shows how to use the Kubernetes Configuration Provider plugin.
@@ -36,7 +36,7 @@ data:
 
 . Specify the Kubernetes Configuration Provider in the Kafka Connect configuration.
 +
-The specification shown here can support loading values from secrets and config maps.
+The specification shown here can support loading values from secrets and ConfigMaps.
 +
 .Example Kafka Connect configuration to enable the Kubernetes Configuration Provider
 [source,yaml,subs="attributes+"]

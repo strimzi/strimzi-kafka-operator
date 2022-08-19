@@ -16,6 +16,8 @@ This guide describes how to configure and manage a Strimzi deployment.
 
 //Overview on config  process
 include::../../modules/overview/con-configuration-points-overview.adoc[leveloffset=+1]
+//Overview on configmaps
+include::../../modules/overview/con-configuration-points-configmaps.adoc[leveloffset=+1]
 //Overview on config  of listeners
 include::../../modules/overview/con-configuration-points-listeners.adoc[leveloffset=+1]
 //formatting conventions used in guide
