@@ -49,3 +49,5 @@ The dashboards are populated with a representative set of metrics for monitoring
 |`strimzi-kafka-exporter.json`
 
 |===
+
+NOTE: When metrics are not available to the Kafka Exporter, because there is no traffic in the cluster yet, the Kafka Exporter Grafana dashboard will show `N/A` for numeric fields and `No data to show` for graphs.

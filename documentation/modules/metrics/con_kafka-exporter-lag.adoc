@@ -13,6 +13,8 @@ Kafka Exporter extracts additional metrics data from Kafka brokers related to of
 The metrics data is used, for example, to help identify slow consumers.
 Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
 
+A Grafana dashboard for Kafka Exporter is one of a number of xref:ref-metrics-dashboards-{context}[example Grafana dashboards] provided by Strimzi.
+
 IMPORTANT: Kafka Exporter provides only additional metrics related to consumer lag and consumer offsets.
 For regular Kafka metrics, you have to configure the Prometheus metrics in xref:proc-metrics-kafka-deploy-options-{context}[Kafka brokers].
 
