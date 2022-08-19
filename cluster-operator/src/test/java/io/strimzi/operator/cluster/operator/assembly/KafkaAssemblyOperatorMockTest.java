@@ -5,9 +5,8 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
 import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
@@ -24,13 +23,16 @@ import io.strimzi.api.kafka.model.status.StrimziPodSetStatus;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.*;
+import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -45,13 +47,18 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Set;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,7 +70,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -117,39 +123,39 @@ public class KafkaAssemblyOperatorMockTest {
      */
 
     @BeforeEach
-    private void init() {
+    public void init() {
 
-        cluster =new KafkaBuilder()
-                .withNewMetadata()
-                    .withName(CLUSTER_NAME)
-                    .withNamespace(NAMESPACE)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withConfig(new HashMap<>())
-                        .withReplicas(3)
-                        .withListeners(new GenericKafkaListenerBuilder()
-                            .withName("tls")
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .build())
+        cluster = new KafkaBuilder()
+                 .withNewMetadata()
+                     .withName(CLUSTER_NAME)
+                     .withNamespace(NAMESPACE)
+                 .endMetadata()
+                 .withNewSpec()
+                     .withNewKafka()
+                         .withConfig(new HashMap<>())
+                         .withReplicas(3)
+                         .withListeners(new GenericKafkaListenerBuilder()
+                             .withName("tls")
+                             .withPort(9092)
+                             .withType(KafkaListenerType.INTERNAL)
+                             .withTls(true)
+                             .build())
+                         .withNewPersistentClaimStorage()
+                         .withSize("123")
+                         .withStorageClass("foo")
+                         .withDeleteClaim(true)
+                         .endPersistentClaimStorage()
+                     .endKafka()
+                     .withNewZookeeper()
+                         .withReplicas(3)
                         .withNewPersistentClaimStorage()
-                        .withSize("123")
-                        .withStorageClass("foo")
-                        .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                    .endKafka()
-                    .withNewZookeeper()
-                        .withReplicas(3)
-                       .withNewPersistentClaimStorage()
-                        .withSize("123")
-                        .withStorageClass("foo")
-                        .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                        .endZookeeper()
-                .endSpec()
-                .build();
+                         .withSize("123")
+                         .withStorageClass("foo")
+                         .withDeleteClaim(true)
+                         .endPersistentClaimStorage()
+                         .endZookeeper()
+                 .endSpec()
+                 .build();
 
         // Configure replicas and storage
         this.kafkaReplicas = cluster.getSpec().getKafka().getReplicas();
@@ -162,7 +168,6 @@ public class KafkaAssemblyOperatorMockTest {
                 .withStrimziPodSetCrd()
                 .withDeploymentController()
                 .withPodController()
-                .withStatefulSetController()
                 .withServiceController()
                 .build();
         mockKube.start();
@@ -196,16 +201,12 @@ public class KafkaAssemblyOperatorMockTest {
                 assertThat(sps, is(notNullValue()));
 
                 sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                    // has been removed in StrimziPodSets
-                    //assertThat(pod.getMetadata().getAnnotations(), hasEntry(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                 });
 
-                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
+                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-zookeeper").get();
                 zkSps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
-                    // has been removed in StrimziPodSets
-                    System.out.println(pod.getMetadata().getAnnotations() + "lolo");
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                 });
 
@@ -222,6 +223,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     @AfterEach
     public void afterEach() {
+        podSetController.stop();
         mockKube.stop();
     }
 
@@ -312,16 +314,12 @@ public class KafkaAssemblyOperatorMockTest {
 
     @Test
     public void testReconcileReplacesDeletedZookeeperPodSet(VertxTestContext context) {
-        init();
-
         String podSetName = CLUSTER_NAME + "-zookeeper";
         initialReconcileThenDeletePodSetsThenReconcile(context, podSetName);
     }
 
     @Test
     public void testReconcileReplacesDeletedKafkaPodSet(VertxTestContext context) {
-        init();
-
         String podSetName = CLUSTER_NAME + "-kafka";
         initialReconcileThenDeletePodSetsThenReconcile(context, podSetName);
     }
@@ -330,7 +328,7 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).delete();
+                supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
                 assertThat("Expected sts " + podSetName + " should not exist",
                         supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).get(), is(nullValue()));
 
@@ -346,14 +344,14 @@ public class KafkaAssemblyOperatorMockTest {
 
     @Test
     public void testReconcileUpdatesKafkaPersistentVolumes(VertxTestContext context) {
-        assumeTrue(cluster.getSpec().getKafka().getStorage() instanceof PersistentClaimStorage, "Parameterized Test only runs for Params with Kafka Persistent storage");
+        assumeTrue(kafkaStorage instanceof PersistentClaimStorage, "Parameterized Test only runs for Params with Kafka Persistent storage");
 
         String originalStorageClass = Storage.storageClass(kafkaStorage);
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertStorageClass(context, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), originalStorageClass);
+                assertThat(originalStorageClass, is("foo"));
 
                 // Try to update the storage class
                 String changedClass = originalStorageClass + "2";
@@ -375,7 +373,7 @@ public class KafkaAssemblyOperatorMockTest {
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the storage class was not changed
-                assertStorageClass(context, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), originalStorageClass);
+                assertThat(((PersistentClaimStorage) kafkaStorage).getStorageClass(), is(originalStorageClass));
                 async.flag();
             })));
     }
@@ -385,25 +383,11 @@ public class KafkaAssemblyOperatorMockTest {
                 .inNamespace(namespace).withName(name);
     }
 
-    private void assertStorageClass(VertxTestContext context, String statefulSetName, String expectedClass) {
-        StatefulSet statefulSet = client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
-        context.verify(() -> {
-            assertThat(statefulSet, is(notNullValue()));
-            // Check the storage class is initially "foo"
-            List<PersistentVolumeClaim> volumeClaimTemplates = statefulSet.getSpec().getVolumeClaimTemplates();
-            assertThat(volumeClaimTemplates, hasSize(1));
-            assertThat(volumeClaimTemplates.get(0).getSpec().getStorageClassName(), is(expectedClass));
-        });
-    }
-
 // Doubt in this method. Particularly stuck on how to get the Volumes and the init container using the PodSet
 
 
     @Test
-    public void
-    testReconcileUpdatesKafkaStorageType(VertxTestContext context) {
-        AtomicReference<List<PersistentVolumeClaim>> originalPVCs = new AtomicReference<>();
-
+    public void testReconcileUpdatesKafkaStorageType(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -412,7 +396,7 @@ public class KafkaAssemblyOperatorMockTest {
                 // or
                 // persistent -> ephemeral
                 Kafka updatedStorageKafka = null;
-                System.out.println(cluster.getSpec().getKafka().getStorage().getClass()+"lo");
+                System.out.println(cluster.getSpec().getKafka().getStorage().getClass());
                 if (cluster.getSpec().getKafka().getStorage() instanceof EphemeralStorage) {
                     updatedStorageKafka = new KafkaBuilder(cluster)
                             .editSpec()
@@ -442,33 +426,40 @@ public class KafkaAssemblyOperatorMockTest {
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check the Volumes and PVCs were not changed
-//                assertPVCs(context, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
-                assertVolumes(context, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+                assertPVCs(context, CLUSTER_NAME + "-kafka");
+                assertVolumes(context, CLUSTER_NAME + "-kafka");
                 async.flag();
             })));
     }
 
 
-//    private void assertPVCs(VertxTestContext context, String statefulSetName, List<PersistentVolumeClaim> originalPVCs) {
-//        context.verify(() -> {
-//            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(statefulSetName).get();
-//            assertThat(sps, is(notNullValue()));
-//            // We need to loop through the pods to make sure they have the right values
-//
-//            }
-//        });
-//    }
-
-    private void assertVolumes(VertxTestContext context, String statefulSetName) {
+    private void assertPVCs(VertxTestContext context, String podSetName) {
         context.verify(() -> {
-            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(statefulSetName).get();
+            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).get();
+            assertThat(sps, is(notNullValue()));
+            List<PersistentVolumeClaimVolumeSource> persistentVolumeClaim = new ArrayList<>();
+            // We need to loop through the pods to make sure they have the right values
+            sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
+                pod.getSpec().getVolumes().forEach(volume -> {
+                    if (volume.getPersistentVolumeClaim() != null) {
+                        persistentVolumeClaim.add(volume.getPersistentVolumeClaim());
+                    }
+                });
+            });
+            assertThat(persistentVolumeClaim.size(), is(3));
+        });
+    }
+
+
+    private void assertVolumes(VertxTestContext context, String podSetName) {
+        context.verify(() -> {
+            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).get();
             assertThat(sps, is(notNullValue()));
             sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                 List<Volume> volumes = pod.getSpec().getVolumes();
                 assertThat(volumes.size(), is(7));
                 assertThat(volumes.size(), is(7));
             });
-
         });
     }
 
@@ -480,12 +471,12 @@ public class KafkaAssemblyOperatorMockTest {
         Map<String, String> kafkaLabels = new HashMap<>();
         kafkaLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
         kafkaLabels.put(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME);
-        kafkaLabels.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
+        kafkaLabels.put(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-kafka");
 
         Map<String, String> zkLabels = new HashMap<>();
         zkLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
         zkLabels.put(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER_NAME);
-        zkLabels.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME));
+        zkLabels.put(Labels.STRIMZI_NAME_LABEL, CLUSTER_NAME + "-zookeeper");
 
         AtomicReference<Set<String>> kafkaPvcs = new AtomicReference<>();
         AtomicReference<Set<String>> zkPvcs = new AtomicReference<>();
