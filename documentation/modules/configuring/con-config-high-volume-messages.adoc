@@ -131,6 +131,9 @@ spec:
     # ...  
 ----
 
+NOTE: `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as example connectors. 
+For information on deploying them as `KafkaConnector` resources, see link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying example KafkaConnector resources^]. 
+
 Consumer configuration is added for the sink connector. 
 
 .Example sink connector configuration for handling high volumes of messages

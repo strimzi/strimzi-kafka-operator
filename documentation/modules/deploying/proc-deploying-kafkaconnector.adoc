@@ -6,26 +6,20 @@
 = Deploying example KafkaConnector resources
 
 [role="_abstract"]
-Use KafkaConnectors with Kafka Connect to stream data to and from a Kafka cluster.
-
+The `KafkaConnector` resource offers a Kubernetes-native approach to management of connectors by the Cluster Operator. 
 Strimzi provides xref:deploy-examples-{context}[example configuration files].
-In this procedure, we use the following example file:
-
-* `examples/connect/source-connector.yaml`.
-
-The file is used to create the following connector instances:
+In this procedure, we use the `examples/connect/source-connector.yaml` file to create the following connector instances as `KafkaConnector` resources:
 
 * A `FileStreamSourceConnector` instance that reads each line from the Kafka license file (the source) and writes the data as messages to a single Kafka topic.
 * A `FileStreamSinkConnector` instance that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
 
-Up until Apache Kafka 3.1.0, the example connector plugins were included with Apache Kafka.
-Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be added to the plugin path as any other connector.
-See xref:using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with connector plugins] for more details.
-You can also use the `examples/connect/kafka-connect-build.yaml` example file.
+Alternatively, you can use the `examples/connect/kafka-connect-build.yaml` file to build a new Kafka Connect image with the file connectors. 
+
+Up until Apache Kafka 3.1.0, the example file connector plugins were included with Apache Kafka. Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be added to the plugin path as any other connector. See xref:using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with connector plugins] for more details.
 
 [NOTE]
 ====
-In a production environment, you prepare container images containing your desired Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
+In a production environment, you prepare container images with the required Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
 
 The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as examples. Running these connectors in containers as described here is unlikely to be suitable for production use cases.
 ====
