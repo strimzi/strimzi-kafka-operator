@@ -8,6 +8,7 @@
 * Pluggable Pod Security Profiles with built-in support for _restricted_ Kubernetes Security Profile
 * Add support for leader election and running multiple operator replicas (1 active leader replicas and one or more stand-by replicas)
 * Update Strimzi Kafka Bridge to 0.22.0
+* Add support for IPv6 addresses being used in Strimzi issued certificates
 
 ### Deprecations and removals
 

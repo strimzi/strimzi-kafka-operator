@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -431,5 +432,57 @@ public class OpenSslCertManagerTest {
         caKey.delete();
         newCert.delete();
         newStore.delete();
+    }
+
+    @Test
+    public void testIPv6SANs() throws Exception {
+        Subject caSubject = new Subject.Builder().withCommonName("MyRootCa").withOrganizationName("MyOrganization").build();
+
+        // First generate the CA
+        File caKey = File.createTempFile("ca-", ".key");
+        File caCert = File.createTempFile("ca-", ".crt");
+        File caStore = File.createTempFile("ca-", ".p12");
+
+        ssl.generateSelfSignedCert(caKey, caCert, caSubject, 365);
+        ssl.addCertToTrustStore(caCert, "ca", caStore, "123456");
+
+        // generate a server cert with the SANs
+        File serverKey = File.createTempFile("client-", ".key");
+        File serverCsr = File.createTempFile("client-", ".serverCsr");
+        File serverCert = File.createTempFile("client-", ".crt");
+
+        Subject clientSubject = new Subject.Builder()
+                .withCommonName("MyCommonName")
+                .withOrganizationName("MyOrganization")
+                .addIpAddress("AC74::001c")
+                .addIpAddress("fc01::8d1c")
+                .addIpAddress("::fc01:8d1c")
+                .addIpAddress("fc01:8d1c::")
+                .addIpAddress("1762:0000:0000:00:0000:0B03:0001:AF18")
+                .addIpAddress("1974:0:0:0:0:B03:1:AF74")
+                .build();
+
+        ssl.generateCsr(serverKey, serverCsr, clientSubject);
+        ssl.generateCert(serverCsr, caKey, caCert, serverCert, clientSubject, 365);
+
+        // Test the SANS
+        X509Certificate x509Certificate2 = loadCertificate(serverCert);
+        Collection<String> desiredAltNames = clientSubject.subjectAltNames().values();
+        Collection<List<?>> altNames = x509Certificate2.getSubjectAlternativeNames();
+        Collection<String> currentAltNames = altNames.stream()
+                .filter(name -> name.get(1) instanceof String)
+                .map(item -> (String) item.get(1))
+                .collect(Collectors.toList());
+
+        assertThat(desiredAltNames.containsAll(currentAltNames), is(true));
+        assertThat(currentAltNames.containsAll(desiredAltNames), is(true));
+
+        // Delete the SANs
+        serverKey.delete();
+        serverCert.delete();
+        serverCsr.delete();
+        caKey.delete();
+        caCert.delete();
+        caStore.delete();
     }
 }

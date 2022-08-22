@@ -15,7 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class SubjectTests {
+public class SubjectTest {
     @Test
     public void testSubjectOpensslDn()   {
         Subject.Builder subject = new Subject.Builder()
@@ -75,6 +75,20 @@ public class SubjectTests {
         new Subject.Builder().addDnsName("*.example.com");
         assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("foo.*.example.come"));
         assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("54t8g#'/.l"));
+    }
 
+    @Test
+    public void testIPV6()   {
+        Subject subject = new Subject.Builder()
+                .withCommonName("joe")
+                .addIpAddress("fc01::8d1c")
+                .addIpAddress("1762:0000:0000:00:0000:0B03:0001:AF18")
+                .addIpAddress("1974:0:0:0:0:B03:1:AF74")
+                .build();
+        assertEquals(Map.of(
+                        "IP.0", "fc01:0:0:0:0:0:0:8d1c",
+                        "IP.1", "1974:0:0:0:0:b03:1:af74",
+                        "IP.2", "1762:0:0:0:0:b03:1:af18"),
+                subject.subjectAltNames());
     }
 }
