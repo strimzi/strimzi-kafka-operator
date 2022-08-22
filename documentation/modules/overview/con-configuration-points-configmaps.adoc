@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Use `ConfigMap` resources to add configuration to your Strimzi deployment.
-ConfigMaps store key-value pairs and can be a more secure means of storing configuration data, particularly confidential data like passwords.  
+ConfigMaps use key-value pairs to store non-confidential data.  
 Configuration data added to ConfigMaps is maintained in one place and can be reused amongst components.
 
 ConfigMaps can store configuration data related to the following:
