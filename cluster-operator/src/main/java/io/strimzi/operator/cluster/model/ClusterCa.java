@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
@@ -18,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
+import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -34,8 +34,6 @@ public class ClusterCa extends Ca {
 
     private Secret brokersSecret;
     private Secret zkNodesSecret;
-
-    private final Pattern ipv4Address = Pattern.compile("[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}");
 
     public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
         this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
@@ -200,20 +198,20 @@ public class ClusterCa extends Ca {
 
             if (externalBootstrapAddresses != null)   {
                 for (String dnsName : externalBootstrapAddresses) {
-                    if (!ipv4Address.matcher(dnsName).matches()) {
-                        subject.addDnsName(dnsName);
-                    } else {
+                    if (IpAndDnsValidation.isValidIpAddress(dnsName))   {
                         subject.addIpAddress(dnsName);
+                    } else {
+                        subject.addDnsName(dnsName);
                     }
                 }
             }
 
             if (externalAddresses.get(i) != null)   {
                 for (String dnsName : externalAddresses.get(i)) {
-                    if (!ipv4Address.matcher(dnsName).matches()) {
-                        subject.addDnsName(dnsName);
-                    } else {
+                    if (IpAndDnsValidation.isValidIpAddress(dnsName))   {
                         subject.addIpAddress(dnsName);
+                    } else {
+                        subject.addDnsName(dnsName);
                     }
                 }
             }
