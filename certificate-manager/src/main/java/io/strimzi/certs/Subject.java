@@ -36,7 +36,7 @@ public class Subject {
             return this;
         }
         public Builder addDnsName(String dnsName) {
-            if (!IpAndDnsValidation.isValidDnsName(dnsName)) {
+            if (!IpAndDnsValidation.isValidDnsNameOrWildcard(dnsName)) {
                 throw new IllegalArgumentException("Invalid DNS name: " + dnsName);
             }
             if (dnsNames == null) {

@@ -13,15 +13,22 @@ public class IpAndDnsValidationTest {
     @Test
     public void testIPv6()   {
         assertThat(IpAndDnsValidation.isValidIpv6Address("::1"), is(true));
+        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01::"), is(true));
         assertThat(IpAndDnsValidation.isValidIpv6Address("fc01::8d1c"), is(true));
         assertThat(IpAndDnsValidation.isValidIpv6Address("::fc01:8d1c"), is(true));
         assertThat(IpAndDnsValidation.isValidIpv6Address("fc01:8d1c::"), is(true));
         assertThat(IpAndDnsValidation.isValidIpv6Address("1762:0:0:0:0:B03:1:AF18"), is(true));
 
-        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01::8j1c"), is(false));
-        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01::176j::8j1c"), is(false));
+        assertThat(IpAndDnsValidation.isValidIpv6Address("::"), is(false));
+        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01::8j1c"), is(false)); // j is not allowed character
+        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01::176d::8d1c"), is(false)); // Too many ::
+        assertThat(IpAndDnsValidation.isValidIpv6Address("1762:0:0:0:0:B03::0:1:AF18"), is(false)); // Too many segements
+        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01c::8d1c"), is(false)); // Segment with too many characters
+        assertThat(IpAndDnsValidation.isValidIpv6Address("fc01:::8d1c"), is(false)); // Triple :
         assertThat(IpAndDnsValidation.isValidIpv6Address("176J:0:0:0:0:B03:1:AF18"), is(false));
-        assertThat(IpAndDnsValidation.isValidIpv6Address("1762:0:0:0:0:1:B03:1:AF18"), is(false));
+        assertThat(IpAndDnsValidation.isValidIpv6Address("1762:0:0:0:0:1:B03:1:AF18"), is(false)); // Too many segments
+        assertThat(IpAndDnsValidation.isValidIpv6Address("1762:0:0:0:0:B03:1:2AF18"), is(false)); // Segment with too many characters
+        assertThat(IpAndDnsValidation.isValidIpv6Address("1762:0:0:0:0:53B03:1:AF18"), is(false)); // Segment with too many characters
     }
 
     @Test
@@ -30,16 +37,18 @@ public class IpAndDnsValidationTest {
         assertThat(IpAndDnsValidation.isValidIpv4Address("123.123.123.123"), is(true));
 
         assertThat(IpAndDnsValidation.isValidIpv4Address("127.0.0.0.1"), is(false));
+        assertThat(IpAndDnsValidation.isValidIpv4Address("127.0.1"), is(false));
         assertThat(IpAndDnsValidation.isValidIpv4Address("321.321.321.321"), is(false));
         assertThat(IpAndDnsValidation.isValidIpv4Address("some.domain.name"), is(false));
     }
 
     @Test
     public void testDnsNames()   {
-        assertThat(IpAndDnsValidation.isValidDnsName("example"), is(true));
-        assertThat(IpAndDnsValidation.isValidDnsName("example.com"), is(true));
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("example"), is(true));
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("example.com"), is(true));
 
-        assertThat(IpAndDnsValidation.isValidDnsName("example:com"), is(false));
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("example:com"), is(false));
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("veryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongexample.com"), is(false));
     }
 
     @Test
@@ -56,6 +65,7 @@ public class IpAndDnsValidationTest {
 
         assertThat(IpAndDnsValidation.normalizeIpv6Address("1762:0000:0000:0000:0000:0B03:0001:AF18"), is("1762:0:0:0:0:b03:1:af18"));
         assertThat(IpAndDnsValidation.normalizeIpv6Address("0000:0000:0000:1762:0000:0B03:0001:AF18"), is("0:0:0:1762:0:b03:1:af18"));
+        assertThat(IpAndDnsValidation.normalizeIpv6Address("0000:0000:0000:1762:0000:0B03::0001:AF18"), is("0:0:0:1762:0:b03:1:af18"));
         assertThat(IpAndDnsValidation.normalizeIpv6Address("1762:0000:0000:0000:0000:0B03:0001:00"), is("1762:0:0:0:0:b03:1:0"));
     }
 }
