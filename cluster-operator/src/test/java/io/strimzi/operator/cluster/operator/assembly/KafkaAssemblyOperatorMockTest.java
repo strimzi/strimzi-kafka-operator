@@ -45,7 +45,6 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.kafka.common.protocol.types.Field;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +54,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -85,7 +87,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
 
-    private static final int kafkaReplicas = 3;
+    private static final int KAFKA_REPLICAS = 3;
     private Storage kafkaStorage;
 
     // Injected by Fabric8 Mock Kubernetes Server
@@ -130,7 +132,7 @@ public class KafkaAssemblyOperatorMockTest {
                  .withNewSpec()
                      .withNewKafka()
                          .withConfig(new HashMap<>())
-                         .withReplicas(kafkaReplicas)
+                         .withReplicas(KAFKA_REPLICAS)
                          .withListeners(new GenericKafkaListenerBuilder()
                                           .withName("tls")
                                           .withPort(9092)
@@ -409,8 +411,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private void assertPVCs(VertxTestContext context, String podSetName, int originalSize) {
         context.verify(() -> {
-            StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(podSetName).get();
-            assertThat(sps, is(notNullValue()));
+            assertThat(kafkaStorage.getType(), is("persistent-claim"));
             List<PersistentVolumeClaim> pvc = client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems();
             assertThat(pvc.size(), is(originalSize));
         });
@@ -493,9 +494,9 @@ public class KafkaAssemblyOperatorMockTest {
     /** Create a cluster from a Kafka Cluster CM */
     @Test
     public void testReconcileKafkaScaleDown(VertxTestContext context) {
-        assumeTrue(kafkaReplicas > 1, "Skipping scale down test because there's only 1 broker");
+        assumeTrue(KAFKA_REPLICAS > 1, "Skipping scale down test because there's only 1 broker");
 
-        int scaleDownTo = kafkaReplicas - 1;
+        int scaleDownTo = KAFKA_REPLICAS - 1;
         // final ordinal will be deleted
         String deletedPod = KafkaResources.kafkaPodName(CLUSTER_NAME, scaleDownTo);
 
@@ -545,8 +546,8 @@ public class KafkaAssemblyOperatorMockTest {
         AtomicInteger brokersInternalCertsCount = new AtomicInteger();
 
         Checkpoint async = context.checkpoint();
-        int scaleUpTo = kafkaReplicas + 1;
-        String newPod = KafkaResources.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
+        int scaleUpTo = KAFKA_REPLICAS + 1;
+        String newPod = KafkaResources.kafkaPodName(CLUSTER_NAME, KAFKA_REPLICAS);
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
