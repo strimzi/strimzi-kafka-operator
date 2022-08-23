@@ -63,6 +63,7 @@ public class IpAndDnsValidationTest {
         assertThat(IpAndDnsValidation.normalizeIpv6Address("fc01::"), is("fc01:0:0:0:0:0:0:0"));
         assertThat(IpAndDnsValidation.normalizeIpv6Address("::1"), is("0:0:0:0:0:0:0:1"));
 
+        assertThat(IpAndDnsValidation.normalizeIpv6Address("1762:0000:000:00:0:0B03:0001:AF18"), is("1762:0:0:0:0:b03:1:af18"));
         assertThat(IpAndDnsValidation.normalizeIpv6Address("1762:0000:0000:0000:0000:0B03:0001:AF18"), is("1762:0:0:0:0:b03:1:af18"));
         assertThat(IpAndDnsValidation.normalizeIpv6Address("0000:0000:0000:1762:0000:0B03:0001:AF18"), is("0:0:0:1762:0:b03:1:af18"));
         assertThat(IpAndDnsValidation.normalizeIpv6Address("0000:0000:0000:1762:0000:0B03::0001:AF18"), is("0:0:0:1762:0:b03:1:af18"));
