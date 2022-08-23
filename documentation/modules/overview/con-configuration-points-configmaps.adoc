@@ -1,0 +1,83 @@
+// This module is included in:
+//
+// assembly-overview.adoc
+
+[id="configuration-points-configmaps-{context}"]
+= Using ConfigMaps to add configuration 
+
+[role="_abstract"]
+Use `ConfigMap` resources to add specific configuration to your Strimzi deployment.
+ConfigMaps use key-value pairs to store non-confidential data.  
+Configuration data added to ConfigMaps is maintained in one place and can be reused amongst components.
+
+ConfigMaps can only store configuration data related to the following:
+
+* Logging configuration
+* Metrics configuration
+* External configuration for Kafka Connect connectors
+
+You can't use ConfigMaps for other areas of configuration.
+
+When you configure a component, you can add a reference to a ConfigMap using the `configMapKeyRef` property. 
+
+For example, you can use `configMapKeyRef` to reference a ConfigMap that provides configuration for logging. 
+You might use a ConfigMap to pass a Log4j configuration file.
+You add the reference to the `logging` configuration. 
+
+.Example ConfigMap for logging
+[source,shell,subs="+quotes,attributes"]
+----
+spec:
+  # ...
+  logging:
+    type: external
+    valueFrom:
+      configMapKeyRef:
+        name: my-config-map
+        key: my-config-map-key
+----
+
+To use a ConfigMap for metrics configuration, you add a reference to the `metricsConfig` configuration of the component in the same way.
+
+`ExternalConfiguration` properties make data from a ConfigMap (or Secret) mounted to a pod available as environment variables or volumes.
+You can use external configuration data for the connectors used by Kafka Connect.
+The data might be related to an external data source, providing the values needed for the connector to communicate with that data source.
+
+For example, you can use the `configMapKeyRef` property to pass configuration data from a ConfigMap as an environment variable.  
+
+.Example ConfigMap providing environment variable values
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  externalConfiguration:
+    env:
+      - name: MY_ENVIRONMENT_VARIABLE
+        valueFrom:
+          configMapKeyRef:
+            name: my-config-map
+            key: my-key
+----
+
+If you are using ConfigMaps that are managed externally, use configuration providers to load the data in the ConfigMaps.  
+For more information on using configuration providers, see xref:assembly-loading-config-with-providers-{context}[].
+
+== Naming custom ConfigMaps 
+
+Strimzi xref:ref-list-of-kafka-cluster-resources-str[creates its own ConfigMaps and other resources] when it is deployed to Kubernetes. 
+The ConfigMaps contain data necessary for running components.  
+The ConfigMaps created by Strimzi must not be edited. 
+
+Make sure that any custom ConfigMaps you create do not have the same name as these default ConfigMaps. If they have the same name, they will be overwritten. For example, if your ConfigMap has the same name as the ConfigMap for the Kafka cluster, it will be overwritten when there is an update to the Kafka cluster.
+
+[role="_additional-resources"]
+.Additional resources
+* xref:ref-list-of-kafka-cluster-resources-str[] (including ConfigMaps)
+* xref:external-logging_str[]
+* xref:con-common-configuration-prometheus-reference[]
+* xref:type-ExternalConfiguration-reference[]
+* xref:assembly-loading-config-with-providers-{context}[]

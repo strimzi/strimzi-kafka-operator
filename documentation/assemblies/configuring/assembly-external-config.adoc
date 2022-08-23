@@ -11,7 +11,7 @@ The providers operate independently of Strimzi.
 You can use them to load configuration data for all Kafka components, including producers and consumers.
 Use them, for example, to provide the credentials for Kafka Connect connector configuration.
 
-Kubernetes Configuration Provider:: The Kubernetes Configuration Provider plugin loads configuration data from Kubernetes secrets or config maps.
+Kubernetes Configuration Provider:: The Kubernetes Configuration Provider plugin loads configuration data from Kubernetes secrets or ConfigMaps.
 +
 Suppose you have a `Secret` object that's managed outside the Kafka namespace, or outside the Kafka cluster.
 The Kubernetes Configuration Provider allows you to reference the values of the secret in your configuration without extracting the files.
@@ -21,12 +21,12 @@ This capability avoids disruption when a Kafka Connect instance hosts multiple c
 
 Environment Variables Configuration Provider:: The Environment Variables Configuration Provider plugin loads configuration data from environment variables.
 +
-The values for the environment variables can be mapped from secrets or config maps.
+The values for the environment variables can be mapped from secrets or ConfigMaps.
 You can use the Environment Variables Configuration Provider, for example, to load certificates or JAAS configuration from environment variables mapped from Kubernetes secrets.
 
 NOTE: Kubernetes Configuration Provider can't use mounted files.
 For example, it can't load values that need the location of a truststore or keystore.
-Instead, you can mount config maps or secrets into a Kafka Connect pod as environment variables or volumes.
+Instead, you can mount ConfigMaps or secrets into a Kafka Connect pod as environment variables or volumes.
 You can use the Environment Variables Configuration Provider to load values for environment variables.
 You add configuration using the xref:type-ExternalConfiguration-reference[`externalConfiguration` property] in `KafkaConnect.spec`.
 You don't need to set up access rights with this approach.
