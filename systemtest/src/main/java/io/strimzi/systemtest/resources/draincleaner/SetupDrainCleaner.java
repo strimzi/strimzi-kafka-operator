@@ -21,6 +21,8 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -45,11 +47,12 @@ public class SetupDrainCleaner {
         final SystemTestCertAndKey drainCleanerKeyPair = SystemTestCertManager
             .generateRootCaCertAndKey("C=CZ, L=Prague, O=Strimzi Drain Cleaner, CN=StrimziDrainCleanerCA",
                 // add hostnames (i.e., SANs) to the certificate
-//                "strimzi-drain-cleaner," +
-//                "strimzi-drain-cleaner.strimzi-drain-cleaner," +
-                "strimzi-drain-cleaner.strimzi-drain-cleaner.svc"
-//                "strimzi-drain-cleaner.strimzi-drain-cleaner.svc.cluster.local"
-                );
+                new ASN1Encodable[] {
+                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner"),
+                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner.strimzi-drain-cleaner"),
+                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner.strimzi-drain-cleaner.svc"),
+                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner.strimzi-drain-cleaner.svc.cluster.local")
+                });
         final CertAndKeyFiles drainCleanerKeyPairPemFormat = SystemTestCertManager.exportToPemFiles(drainCleanerKeyPair);
 
         final Map<String, String> certsPaths = new HashMap<>();

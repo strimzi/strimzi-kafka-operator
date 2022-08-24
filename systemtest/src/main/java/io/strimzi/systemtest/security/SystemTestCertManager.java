@@ -87,13 +87,12 @@ public class SystemTestCertManager {
                 .build();
     }
 
-    public static SystemTestCertAndKey generateRootCaCertAndKey(final String rootCaDn, final String sanDnsNames) {
-        final SystemTestCertAndKeyBuilder systemTestCertAndKey = rootCaCertBuilder()
+    public static SystemTestCertAndKey generateRootCaCertAndKey(final String rootCaDn, final ASN1Encodable[] sanDnsNames) {
+        return rootCaCertBuilder()
             .withIssuerDn(rootCaDn)
             .withSubjectDn(rootCaDn)
-            .withSanDnsName(sanDnsNames);
-
-        return systemTestCertAndKey.build();
+            .withSanDnsNames(sanDnsNames)
+            .build();
     }
 
     public static SystemTestCertAndKey generateIntermediateCaCertAndKey(SystemTestCertAndKey rootCert) {

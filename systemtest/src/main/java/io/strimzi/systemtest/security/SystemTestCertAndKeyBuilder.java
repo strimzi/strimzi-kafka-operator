@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -151,6 +152,14 @@ public class SystemTestCertAndKeyBuilder {
         final GeneralName dnsName = new GeneralName(dNSName, hostName);
         final byte[] subjectAltName = encode(GeneralNames.getInstance(new DERSequence(dnsName)));
         extensions.add(new Extension(subjectAlternativeName, false, subjectAltName));
+        return this;
+    }
+
+    public SystemTestCertAndKeyBuilder withSanDnsNames(final ASN1Encodable[] sanDnsNames) {
+        final DERSequence subjectAlternativeNames = new DERSequence(sanDnsNames);
+        final byte[] subjectAltName = encode(GeneralNames.getInstance(subjectAlternativeNames));
+        extensions.add(new Extension(subjectAlternativeName, false, subjectAltName));
+
         return this;
     }
 
