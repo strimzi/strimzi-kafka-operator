@@ -147,9 +147,9 @@ public class SystemTestCertAndKeyBuilder {
         return this;
     }
 
-    public SystemTestCertAndKeyBuilder withSanDnsName(String hostName) {
-        GeneralName dnsName = new GeneralName(dNSName, hostName);
-        byte[] subjectAltName = encode(GeneralNames.getInstance(new DERSequence(dnsName)));
+    public SystemTestCertAndKeyBuilder withSanDnsName(final String hostName) {
+        final GeneralName dnsName = new GeneralName(dNSName, hostName);
+        final byte[] subjectAltName = encode(GeneralNames.getInstance(new DERSequence(dnsName)));
         extensions.add(new Extension(subjectAlternativeName, false, subjectAltName));
         return this;
     }
