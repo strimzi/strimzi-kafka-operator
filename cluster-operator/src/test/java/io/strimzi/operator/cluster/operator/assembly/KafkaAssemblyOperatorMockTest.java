@@ -54,10 +54,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -400,20 +397,24 @@ public class KafkaAssemblyOperatorMockTest {
             })))
             .compose(v -> operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                int originalSize = client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().size();
                 // Check the Volumes and PVCs were not changed
-                assertPVCs(context, CLUSTER_NAME + "-kafka", originalSize);
+                assertPVCs(context, CLUSTER_NAME + "-kafka");
                 assertVolumes(context, CLUSTER_NAME + "-kafka");
                 async.flag();
             })));
     }
 
 
-    private void assertPVCs(VertxTestContext context, String podSetName, int originalSize) {
+    private void assertPVCs(VertxTestContext context, String podSetName) {
         context.verify(() -> {
             assertThat(kafkaStorage.getType(), is("persistent-claim"));
-            List<PersistentVolumeClaim> pvc = client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems();
-            assertThat(pvc.size(), is(originalSize));
+            List<PersistentVolumeClaim> pvc = new ArrayList<>();
+            client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().forEach(persistentVolumeClaim -> {
+                if (persistentVolumeClaim.getMetadata().getName().contains(podSetName)){
+                    pvc.add(persistentVolumeClaim);
+                }
+            });
+            assertThat(pvc.size(), is(3));
         });
     }
 
