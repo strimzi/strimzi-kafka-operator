@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.WatcherException;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
@@ -20,6 +19,7 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
@@ -80,37 +80,52 @@ public abstract class AbstractOperator<
 
     private final Optional<LabelSelector> selector;
 
-    protected final MetricsProvider metrics;
+    protected final OperatorMetricsHolder metrics;
 
-    private final Labels selectorLabels;
     private Map<String, AtomicInteger> resourcesStateCounter = new ConcurrentHashMap<>(1);
-    private Map<String, AtomicInteger> resourceCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, AtomicInteger> pausedResourceCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> periodicReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> reconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> failedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> successfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Timer> reconciliationsTimerMap = new ConcurrentHashMap<>(1);
 
-    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
+    /**
+     * Constructs the AbstractOperator. This constructor is used to construct the AbstractOperator using the
+     * OperatorMetricsHolder instance. This constructor is used by subclasses which want to use specialized metrics
+     * ¨holder such as the subclasses dealing with KafkaConnector resources and their metrics.
+     *
+     * @param vertx             Vert.x instance
+     * @param kind              Resource kind which will be operated by this operator
+     * @param resourceOperator  Resource operator for given custom resource
+     * @param metrics           MetricsHolder for managing operator metrics
+     * @param selectorLabels    Selector labels for selecting custom resources which should be operated
+     */
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, OperatorMetricsHolder metrics, Labels selectorLabels) {
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
         this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
         this.metrics = metrics;
-        this.selectorLabels = selectorLabels;
     }
 
-    @Override
-    public void resetCounters() {
-        resourceCounterMap.entrySet().forEach(entry -> entry.getValue().set(0));
-        pausedResourceCounterMap.entrySet().forEach(entry -> entry.getValue().set(0));
+    /**
+     * Constructs the AbstractOperator. This constructor is used to construct the AbstractOperator using the
+     * MetricsProvider instance, which is used to create OperatorMetricsHolder inside the constructor. It is used by
+     * subclasses which do not need a more specialized type of metrics holder.
+     *
+     * @param vertx             Vert.x instance
+     * @param kind              Resource kind which will be operated by this operator
+     * @param resourceOperator  Resource operator for given custom resource
+     * @param metricsProvider   Metrics provider which should be used to create the OperatorMetricsHolder instance
+     * @param selectorLabels    Selector labels for selecting custom resources which should be operated
+     */
+    public AbstractOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metricsProvider, Labels selectorLabels) {
+        this(vertx, kind, resourceOperator, new OperatorMetricsHolder(kind, selectorLabels, metricsProvider), selectorLabels);
     }
 
     @Override
     public String kind() {
         return kind;
+    }
+
+    @Override
+    public OperatorMetricsHolder metrics()   {
+        return metrics;
     }
 
     /**
@@ -160,8 +175,8 @@ public abstract class AbstractOperator<
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
 
-        reconciliationsCounter(reconciliation.namespace()).increment();
-        Timer.Sample reconciliationTimerSample = Timer.start(metrics.meterRegistry());
+        metrics().reconciliationsCounter(reconciliation.namespace()).increment();
+        Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry());
 
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
             T cr = resourceOperator.get(namespace, name);
@@ -192,7 +207,7 @@ public abstract class AbstractOperator<
                             createOrUpdate.fail(statusResult.cause());
                         }
                     });
-                    pausedResourceCounter(namespace).getAndIncrement();
+                    metrics().pausedResourceCounter(namespace).getAndIncrement();
                     LOGGER.infoCr(reconciliation, "Reconciliation of {} {} is paused", kind, name);
                     return createOrUpdate.future();
                 } else if (cr.getSpec() == null) {
@@ -481,69 +496,26 @@ public abstract class AbstractOperator<
     private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
         if (result.succeeded()) {
             updateResourceState(reconciliation, true, null);
-            successfulReconciliationsCounter(reconciliation.namespace()).increment();
-            reconciliationTimerSample.stop(reconciliationsTimer(reconciliation.namespace()));
+            metrics().successfulReconciliationsCounter(reconciliation.namespace()).increment();
+            reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
             LOGGER.infoCr(reconciliation, "reconciled");
         } else {
             Throwable cause = result.cause();
 
             if (cause instanceof InvalidConfigParameterException) {
                 updateResourceState(reconciliation, false, cause);
-                failedReconciliationsCounter(reconciliation.namespace()).increment();
-                reconciliationTimerSample.stop(reconciliationsTimer(reconciliation.namespace()));
+                metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
+                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
                 LOGGER.warnCr(reconciliation, "Failed to reconcile {}", cause.getMessage());
             } else if (cause instanceof UnableToAcquireLockException) {
-                lockedReconciliationsCounter(reconciliation.namespace()).increment();
+                metrics().lockedReconciliationsCounter(reconciliation.namespace()).increment();
             } else  {
                 updateResourceState(reconciliation, false, cause);
-                failedReconciliationsCounter(reconciliation.namespace()).increment();
-                reconciliationTimerSample.stop(reconciliationsTimer(reconciliation.namespace()));
+                metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
+                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
                 LOGGER.warnCr(reconciliation, "Failed to reconcile", cause);
             }
         }
-    }
-
-    @Override
-    public Counter periodicReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, kind(), METRICS_PREFIX + "reconciliations.periodical", metrics, selectorLabels, periodicReconciliationsCounterMap,
-                "Number of periodical reconciliations done by the operator");
-    }
-
-    public Counter reconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, kind(), METRICS_PREFIX + "reconciliations", metrics, selectorLabels, reconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources");
-    }
-
-    public Counter failedReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, kind(), METRICS_PREFIX + "reconciliations.failed", metrics, selectorLabels, failedReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which failed");
-    }
-
-    public Counter successfulReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, kind(), METRICS_PREFIX + "reconciliations.successful", metrics, selectorLabels, successfulReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which were successful");
-    }
-
-    public Counter lockedReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, kind(), METRICS_PREFIX + "reconciliations.locked", metrics, selectorLabels, lockedReconciliationsCounterMap,
-                "Number of reconciliations skipped because another reconciliation for the same resource was still running");
-    }
-
-    @Override
-    public AtomicInteger resourceCounter(String namespace) {
-        return Operator.getGauge(namespace, kind(), METRICS_PREFIX + "resources", metrics, selectorLabels, resourceCounterMap,
-                "Number of custom resources the operator sees");
-    }
-
-    @Override
-    public AtomicInteger pausedResourceCounter(String namespace) {
-        return Operator.getGauge(namespace, kind(), METRICS_PREFIX + "resources.paused", metrics, selectorLabels, pausedResourceCounterMap,
-                "Number of custom resources the operator sees but does not reconcile due to paused reconciliations");
-    }
-
-    public Timer reconciliationsTimer(String namespace) {
-        return Operator.getTimer(namespace, kind(), METRICS_PREFIX + "reconciliations.duration", metrics, selectorLabels, reconciliationsTimerMap,
-                "The time the reconciliation takes to complete");
     }
 
     /**
@@ -564,7 +536,7 @@ public abstract class AbstractOperator<
 
         T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
 
-        Optional<Meter> metric = metrics.meterRegistry().getMeters()
+        Optional<Meter> metric = metrics().metricsProvider().meterRegistry().getMeters()
                 .stream()
                 .filter(meter -> meter.getId().getName().equals(METRICS_PREFIX + "resource.state") &&
                         meter.getId().getTags().contains(Tag.of("kind", reconciliation.kind())) &&
@@ -574,14 +546,14 @@ public abstract class AbstractOperator<
 
         if (metric.isPresent()) {
             // remove metric so it can be re-added with new tags
-            metrics.meterRegistry().remove(metric.get().getId());
+            metrics().metricsProvider().meterRegistry().remove(metric.get().getId());
             resourcesStateCounter.remove(key);
             LOGGER.debugCr(reconciliation, "Removed metric " + METRICS_PREFIX + "resource.state{}", key);
         }
 
         if (cr != null && Util.matchesSelector(selector(), cr)) {
             resourcesStateCounter.computeIfAbsent(key, tags ->
-                    metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
+                    metrics().metricsProvider().gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
             );
             resourcesStateCounter.get(key).set(ready ? 1 : 0);
             LOGGER.debugCr(reconciliation, "Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);

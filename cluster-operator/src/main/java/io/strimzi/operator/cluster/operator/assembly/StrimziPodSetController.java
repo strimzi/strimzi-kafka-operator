@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -26,14 +27,16 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -51,12 +54,15 @@ import java.util.stream.Collectors;
 public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
 
+    private static final long DEFAULT_RESYNC_PERIOD = 5 * 60 * 1_000L; // 5 minutes by default
+
     private final Thread controllerThread;
 
     private volatile boolean stop = false;
 
     private final PodOperator podOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
+    private final ControllerMetricsHolder metrics;
     private final Optional<LabelSelector> crSelector;
     private final String watchedNamespace;
 
@@ -79,14 +85,18 @@ public class StrimziPodSetController implements Runnable {
      * @param strimziPodSetOperator         StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
      *                                      their status etc.
      * @param podOperator                   Pod operator for managing pods
+     * @param metricsProvider               Metrics provider
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
-    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, StrimziPodSetOperator strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
+    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, StrimziPodSetOperator strimziPodSetOperator, PodOperator podOperator, MetricsProvider metricsProvider, int podSetControllerWorkQueueSize) {
         this.podOperator = podOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
         this.watchedNamespace = watchedNamespace;
         this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
+
+        // Set up the metrics holder
+        this.metrics = new ControllerMetricsHolder("StrimziPodSet", crSelectorLabels != null ? crSelectorLabels : Labels.EMPTY, metricsProvider);
 
         // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
         this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
@@ -95,9 +105,30 @@ public class StrimziPodSetController implements Runnable {
         // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
         this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace);
         this.strimziPodSetLister = new Lister<>(strimziPodSetInformer.getIndexer());
-        this.strimziPodSetInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
+
+        // Pod informer and lister is used to get events about pods and get pods quickly
+        this.podInformer = podOperator.informer(watchedNamespace, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka"));
+        this.podLister = new Lister<>(podInformer.getIndexer());
+
+        this.controllerThread = new Thread(this, "StrimziPodSetController");
+    }
+
+    protected ControllerMetricsHolder metrics()   {
+        return metrics;
+    }
+
+    protected boolean isSynced() {
+        return podInformer.hasSynced() && strimziPodSetInformer.hasSynced() && kafkaInformer.hasSynced();
+    }
+
+    protected void startController() {
+        strimziPodSetInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
             @Override
             public void onAdd(StrimziPodSet podSet) {
+                if (matchesCrSelector(podSet)) {
+                    metrics.resourceCounter(podSet.getMetadata().getNamespace()).incrementAndGet();
+                }
+
                 enqueueStrimziPodSet(podSet, "ADDED");
             }
 
@@ -108,15 +139,16 @@ public class StrimziPodSetController implements Runnable {
 
             @Override
             public void onDelete(StrimziPodSet podSet, boolean deletedFinalStateUnknown) {
+                if (matchesCrSelector(podSet)) {
+                    metrics.resourceCounter(podSet.getMetadata().getNamespace()).decrementAndGet();
+                }
+
                 LOGGER.debugOp("StrimziPodSet {} in namespace {} was {}", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace(), "DELETED");
                 // Nothing to do => garbage collection should take care of things
             }
-        }, 10 * 60 * 1000);
+        }, DEFAULT_RESYNC_PERIOD);
 
-        // Pod informer and lister is used to get events about pods and get pods quickly
-        this.podInformer = podOperator.informer(watchedNamespace, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka"));
-        this.podLister = new Lister<>(podInformer.getIndexer());
-        this.podInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
+        podInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
             @Override
             public void onAdd(Pod pod) {
                 enqueuePod(pod, "ADDED");
@@ -131,9 +163,13 @@ public class StrimziPodSetController implements Runnable {
             public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
                 enqueuePod(pod, "DELETED");
             }
-        }, 10 * 60 * 1000);
+        }, DEFAULT_RESYNC_PERIOD);
+    }
 
-        controllerThread = new Thread(this, "StrimziPodSetController");
+    protected void stopController() {
+        podInformer.stop();
+        strimziPodSetInformer.stop();
+        kafkaInformer.stop();
     }
 
     /**
@@ -231,57 +267,70 @@ public class StrimziPodSetController implements Runnable {
      * @param reconciliation    Reconciliation identifier used for logging
      */
     private void reconcile(Reconciliation reconciliation)    {
-        String name = reconciliation.name();
-        String namespace = reconciliation.namespace();
-        StrimziPodSet podSet = strimziPodSetLister.namespace(namespace).get(name);
+        metrics().reconciliationsCounter(reconciliation.namespace()).increment(); // Increase the reconciliation counter
+        Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry()); // Start the reconciliation timer
 
-        if (podSet == null) {
-            LOGGER.debugCr(reconciliation, "StrimziPodSet is null => nothing to do");
-        } else if (!matchesCrSelector(podSet))    {
-            LOGGER.debugCr(reconciliation, "StrimziPodSet doesn't match the selector => nothing to do");
-        } else if (isDeleting(podSet))    {
-            // When the PodSet is deleted, the pod deletion is done by Kubernetes Garbage Collection. When the PodSet
-            // deletion is non-cascading, Kubernetes will remove the owner references. In order to avoid setting the
-            // owner reference again, we need to check if the PodSet is being deleted and if it is, we leave it to
-            // Kubernetes.
-            LOGGER.infoCr(reconciliation, "StrimziPodSet is deleting => nothing to do");
-        } else {
-            LOGGER.infoCr(reconciliation, "StrimziPodSet will be reconciled");
+        try {
+            String name = reconciliation.name();
+            String namespace = reconciliation.namespace();
+            StrimziPodSet podSet = strimziPodSetLister.namespace(namespace).get(name);
 
-            StrimziPodSetStatus status = new StrimziPodSetStatus();
-            status.setObservedGeneration(podSet.getMetadata().getGeneration());
+            if (podSet == null) {
+                LOGGER.debugCr(reconciliation, "StrimziPodSet is null => nothing to do");
+                metrics.successfulReconciliationsCounter(reconciliation.namespace()).increment();
+            } else if (!matchesCrSelector(podSet)) {
+                LOGGER.debugCr(reconciliation, "StrimziPodSet doesn't match the selector => nothing to do");
+                metrics.successfulReconciliationsCounter(reconciliation.namespace()).increment();
+            } else if (isDeleting(podSet)) {
+                // When the PodSet is deleted, the pod deletion is done by Kubernetes Garbage Collection. When the PodSet
+                // deletion is non-cascading, Kubernetes will remove the owner references. In order to avoid setting the
+                // owner reference again, we need to check if the PodSet is being deleted and if it is, we leave it to
+                // Kubernetes.
+                LOGGER.infoCr(reconciliation, "StrimziPodSet is deleting => nothing to do");
+                metrics.successfulReconciliationsCounter(reconciliation.namespace()).increment();
+            } else {
+                LOGGER.infoCr(reconciliation, "StrimziPodSet will be reconciled");
 
-            try {
-                // This has to:
-                // 1) Create missing pods
-                // 2) Modify changed pods if needed (patch owner reference)
-                // 3) Delete scaled down pods
+                StrimziPodSetStatus status = new StrimziPodSetStatus();
+                status.setObservedGeneration(podSet.getMetadata().getGeneration());
 
-                // Will be used later to find out if any pod needs to be deleted
-                Set<String> desiredPods = new HashSet<>(podSet.getSpec().getPods().size());
-                PodCounter podCounter = new PodCounter();
-                podCounter.pods = podSet.getSpec().getPods().size();
+                try {
+                    // This has to:
+                    // 1) Create missing pods
+                    // 2) Modify changed pods if needed (patch owner reference)
+                    // 3) Delete scaled down pods
 
-                for (Map<String, Object> desiredPod : podSet.getSpec().getPods()) {
-                    Pod pod = PodSetUtils.mapToPod(desiredPod);
-                    desiredPods.add(pod.getMetadata().getName());
+                    // Will be used later to find out if any pod needs to be deleted
+                    Set<String> desiredPods = new HashSet<>(podSet.getSpec().getPods().size());
+                    PodCounter podCounter = new PodCounter();
+                    podCounter.pods = podSet.getSpec().getPods().size();
 
-                    maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet), podCounter);
+                    for (Map<String, Object> desiredPod : podSet.getSpec().getPods()) {
+                        Pod pod = PodSetUtils.mapToPod(desiredPod);
+                        desiredPods.add(pod.getMetadata().getName());
+
+                        maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet), podCounter);
+                    }
+
+                    // Check if any pods needs to be deleted
+                    removeDeletedPods(reconciliation, podSet.getSpec().getSelector(), desiredPods, podCounter);
+
+                    status.setPods(podCounter.pods);
+                    status.setReadyPods(podCounter.readyPods);
+                    status.setCurrentPods(podCounter.currentPods);
+                    metrics.successfulReconciliationsCounter(reconciliation.namespace()).increment();
+                } catch (Exception e) {
+                    LOGGER.errorCr(reconciliation, "StrimziPodSet {} in namespace {} reconciliation failed", reconciliation.name(), reconciliation.namespace(), e);
+                    status.addCondition(StatusUtils.buildConditionFromException("Error", "true", e));
+                    metrics.failedReconciliationsCounter(reconciliation.namespace()).increment();
+                } finally {
+                    maybeUpdateStatus(reconciliation, podSet, status);
+                    LOGGER.infoCr(reconciliation, "reconciled");
                 }
-
-                // Check if any pods needs to be deleted
-                removeDeletedPods(reconciliation, podSet.getSpec().getSelector(), desiredPods, podCounter);
-
-                status.setPods(podCounter.pods);
-                status.setReadyPods(podCounter.readyPods);
-                status.setCurrentPods(podCounter.currentPods);
-            } catch (Exception e) {
-                LOGGER.errorCr(reconciliation, "StrimziPodSet {} in namespace {} reconciliation failed", reconciliation.name(), reconciliation.namespace(), e);
-                status.addCondition(StatusUtils.buildConditionFromException("Error", "true", e));
-            } finally {
-                maybeUpdateStatus(reconciliation, podSet, status);
-                LOGGER.infoCr(reconciliation, "reconciled");
             }
+        } finally   {
+            // Tasks after reconciliation
+            reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace())); // Stop the reconciliation timer
         }
     }
 
@@ -398,6 +447,7 @@ public class StrimziPodSetController implements Runnable {
             LOGGER.debugOp("Enqueueing StrimziPodSet {} in namespace {}", reconciliation.name, reconciliation.name);
             workQueue.add(reconciliation);
         } else {
+            metrics().alreadyEnqueuedReconciliationsCounter(reconciliation.namespace).increment(); // Increase the metrics counter
             LOGGER.debugOp("StrimziPodSet {} in namespace {} is already enqueued => ignoring", reconciliation.name, reconciliation.name);
         }
     }
@@ -408,12 +458,13 @@ public class StrimziPodSetController implements Runnable {
     @Override
     public void run() {
         LOGGER.infoOp("Starting StrimziPodSet controller for namespace {}", watchedNamespace);
+        startController();
 
         LOGGER.infoOp("Waiting for informers to sync");
-        while (!stop
-                && (!podInformer.hasSynced() || !strimziPodSetInformer.hasSynced() || !kafkaInformer.hasSynced()))   {
+        while (!stop && !isSynced())   {
             // Nothing to do => just loop
         }
+
         LOGGER.infoOp("Informers are in-sync");
 
         while (!stop) {
@@ -430,9 +481,7 @@ public class StrimziPodSetController implements Runnable {
 
         LOGGER.infoOp("Stopping StrimziPodSet controller");
 
-        podInformer.stop();
-        strimziPodSetInformer.stop();
-        kafkaInformer.stop();
+        stopController();
     }
 
     /**
