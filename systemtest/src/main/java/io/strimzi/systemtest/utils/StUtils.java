@@ -449,6 +449,7 @@ public class StUtils {
                 .withKind("Secret")
                 .withNewMetadata()
                     .withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))

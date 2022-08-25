@@ -48,10 +48,10 @@ public class SetupDrainCleaner {
             .generateRootCaCertAndKey("C=CZ, L=Prague, O=Strimzi Drain Cleaner, CN=StrimziDrainCleanerCA",
                 // add hostnames (i.e., SANs) to the certificate
                 new ASN1Encodable[] {
-                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner"),
-                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner.strimzi-drain-cleaner"),
-                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner.strimzi-drain-cleaner.svc"),
-                    new GeneralName(GeneralName.dNSName, "strimzi-drain-cleaner.strimzi-drain-cleaner.svc.cluster.local")
+                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME),
+                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + Constants.DRAIN_CLEANER_DEPLOYMENT_NAME),
+                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc"),
+                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc.cluster.local")
                 });
         final CertAndKeyFiles drainCleanerKeyPairPemFormat = SystemTestCertManager.exportToPemFiles(drainCleanerKeyPair);
 
@@ -60,8 +60,8 @@ public class SetupDrainCleaner {
         certsPaths.put("tls.key", drainCleanerKeyPairPemFormat.getKeyPath());
 
         final SecretBuilder customDrainCleanerSecretBuilder = SecretUtils.retrieveSecretBuilderFromFile(certsPaths,
-            "strimzi-drain-cleaner", "strimzi-drain-cleaner",
-            Collections.singletonMap("app", "strimzi-drain-cleaner"), "kubernetes.io/tls");
+            Constants.DRAIN_CLEANER_DEPLOYMENT_NAME, Constants.DRAIN_CLEANER_NAMESPACE,
+            Collections.singletonMap("app", Constants.DRAIN_CLEANER_DEPLOYMENT_NAME), "kubernetes.io/tls");
 
         drainCleanerFiles.forEach(file -> {
             if (!file.getName().contains("README") && !file.getName().contains("Namespace") && !file.getName().contains("Deployment")) {
