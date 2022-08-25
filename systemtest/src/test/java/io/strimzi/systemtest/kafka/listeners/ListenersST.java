@@ -2054,6 +2054,7 @@ public class ListenersST extends AbstractST {
         Secret password = new SecretBuilder()
             .withNewMetadata()
                 .withName(secretName)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .addToData("password", firstEncodedPassword)
             .build();

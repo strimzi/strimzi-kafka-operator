@@ -1068,6 +1068,7 @@ class ConnectIsolatedST extends AbstractST {
         Secret connectSecret = new SecretBuilder()
             .withNewMetadata()
                 .withName(secretName)
+                .withNamespace(namespaceName)
             .endMetadata()
             .withType("Opaque")
             .addToData(secretKey, encodedPassword)
@@ -1083,6 +1084,7 @@ class ConnectIsolatedST extends AbstractST {
         Secret dotedConnectSecret = new SecretBuilder()
             .withNewMetadata()
                 .withName(dotedSecretName)
+                .withNamespace(namespaceName)
             .endMetadata()
             .withType("Opaque")
             .addToData(secretKey, encodedPassword)
@@ -1271,6 +1273,7 @@ class ConnectIsolatedST extends AbstractST {
         Secret passwordSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName("custom-pwd-secret")
+                    .withNamespace(namespaceName)
                 .endMetadata()
                 .addToData("pwd", "MTIzNDU2Nzg5")
                 .build();
@@ -1321,6 +1324,7 @@ class ConnectIsolatedST extends AbstractST {
         Secret newPasswordSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName("new-custom-pwd-secret")
+                    .withNamespace(namespaceName)
                 .endMetadata()
                 .addToData("pwd", newPassword)
                 .build();

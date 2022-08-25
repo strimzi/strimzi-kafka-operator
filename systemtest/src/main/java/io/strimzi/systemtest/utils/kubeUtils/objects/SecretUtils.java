@@ -114,6 +114,33 @@ public class SecretUtils {
         }
     }
 
+    public static SecretBuilder retrieveSecretBuilderFromFile(final Map<String, String> certFilesPath, final String name,
+                                                              final String namespace, final Map<String, String> labels,
+                                                              final String secretType) {
+        byte[] encoded;
+        final Map<String, String> data = new HashMap<>();
+
+        try {
+            for (final Map.Entry<String, String> entry : certFilesPath.entrySet()) {
+                encoded = Files.readAllBytes(Paths.get(entry.getValue()));
+
+                final Base64.Encoder encoder = Base64.getEncoder();
+                data.put(entry.getKey(), encoder.encodeToString(encoded));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new SecretBuilder()
+            .withType(secretType)
+            .withData(data)
+                .withNewMetadata()
+                .withName(name)
+                .withNamespace(namespace)
+                .addToLabels(labels)
+            .endMetadata();
+    }
+
     public static void createCustomSecret(String name, String clusterName, String namespace, CertAndKeyFiles certAndKeyFiles) {
         Map<String, String> secretLabels = new HashMap<>();
         secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);

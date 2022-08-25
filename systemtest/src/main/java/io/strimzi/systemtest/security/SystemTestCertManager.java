@@ -67,11 +67,7 @@ public class SystemTestCertManager {
             cmd.add("-key " + path + podName + ".key");
         }
 
-        if (component.equals("kafka")) {
-            return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
-        } else {
-            return cmdKubeClient(namespaceName).execInPod(podName,  "/bin/bash", "-c", String.join(" ", cmd)).out();
-        }
+        return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c", String.join(" ", cmd)).out();
     }
 
     public static List<String> getCertificateChain(String certificateName) {
@@ -89,6 +85,14 @@ public class SystemTestCertManager {
                 .withIssuerDn(STRIMZI_ROOT_CA)
                 .withSubjectDn(STRIMZI_ROOT_CA)
                 .build();
+    }
+
+    public static SystemTestCertAndKey generateRootCaCertAndKey(final String rootCaDn, final ASN1Encodable[] sanDnsNames) {
+        return rootCaCertBuilder()
+            .withIssuerDn(rootCaDn)
+            .withSubjectDn(rootCaDn)
+            .withSanDnsNames(sanDnsNames)
+            .build();
     }
 
     public static SystemTestCertAndKey generateIntermediateCaCertAndKey(SystemTestCertAndKey rootCert) {
