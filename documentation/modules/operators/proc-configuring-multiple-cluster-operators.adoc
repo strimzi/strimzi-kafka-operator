@@ -9,13 +9,13 @@
 To run additional Cluster Operator replicas in standby mode, you will need to increase the number of replicas and enable leader election.
 To configure leader election, use the leader election environment variables.
 
-To make the required changes, you can configure the following Cluster Operator installation files located in `install/cluster-operator/`: 
+To make the required changes, configure the following Cluster Operator installation files located in `install/cluster-operator/`: 
 
 * 060-Deployment-strimzi-cluster-operator.yaml
 * 022-ClusterRole-strimzi-cluster-operator-role.yaml
 * 022-RoleBinding-strimzi-cluster-operator.yaml
 
-Leader election has its own its own `ClusterRole` and `RoleBinding` RBAC resources that target the namespace where Cluster Operator is running, rather than the namespace it is watching. 
+Leader election has its own `ClusterRole` and `RoleBinding` RBAC resources that target the namespace where the Cluster Operator is running, rather than the namespace it is watching. 
 
 The default deployment configuration creates a `Lease` resource called `strimzi-cluster-operator` in the same namespace as the Cluster Operator.
 The Cluster Operator uses leases to manage leader election. 
@@ -29,7 +29,7 @@ Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means t
 
 .Procedure
 
-Edit the `Deployment` resource used to deploy the Cluster Operator in the `060-Deployment-strimzi-cluster-operator.yaml` file.
+Edit the `Deployment` resource that is used to deploy the Cluster Operator, which is defined in the `060-Deployment-strimzi-cluster-operator.yaml` file.
 
 . Change the `replicas` property from the default (1) to a value that matches the required number of replicas.
 +
