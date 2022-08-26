@@ -6,7 +6,7 @@
 = Configuring Cluster Operator replicas
 
 [role="_abstract"]
-Increase the number of replicas and enable leader election to run additional Cluster Operator replicas in standby mode.
+To run additional Cluster Operator replicas in standby mode, you will need to increase the number of replicas and enable leader election.
 To configure leader election, use leader election environment variables.
 
 To make the required changes, you can configure the following Cluster Operator installation files located in `install/cluster-operator/`: 
