@@ -1682,7 +1682,18 @@
     "Kafka"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "hide": 0,
+        "label": "datasource",
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "type": "datasource"
+      }
+	]
   },
   "time": {
     "from": "now-1h",
