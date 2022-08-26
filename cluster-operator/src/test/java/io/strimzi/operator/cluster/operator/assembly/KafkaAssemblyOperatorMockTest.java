@@ -54,7 +54,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -406,12 +410,15 @@ public class KafkaAssemblyOperatorMockTest {
 
 
     private void assertPVCs(VertxTestContext context, String podSetName) {
+        assertThat(kafkaStorage.getType(), is("persistent-claim"));
+
         context.verify(() -> {
-            assertThat(kafkaStorage.getType(), is("persistent-claim"));
             List<PersistentVolumeClaim> pvc = new ArrayList<>();
             client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().forEach(persistentVolumeClaim -> {
-                if (persistentVolumeClaim.getMetadata().getName().contains(podSetName)){
+                if (persistentVolumeClaim.getMetadata().getName().startsWith("data-" + podSetName)){
                     pvc.add(persistentVolumeClaim);
+                    System.out.println(persistentVolumeClaim);
+                    assertThat(persistentVolumeClaim.getSpec().getStorageClassName(),  is("foo"));
                 }
             });
             assertThat(pvc.size(), is(3));
