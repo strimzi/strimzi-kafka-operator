@@ -410,15 +410,16 @@ public class KafkaAssemblyOperatorMockTest {
 
 
     private void assertPVCs(VertxTestContext context, String podSetName) {
+
         assertThat(kafkaStorage.getType(), is("persistent-claim"));
 
         context.verify(() -> {
             List<PersistentVolumeClaim> pvc = new ArrayList<>();
             client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().forEach(persistentVolumeClaim -> {
-                if (persistentVolumeClaim.getMetadata().getName().startsWith("data-" + podSetName)){
+                if (persistentVolumeClaim.getMetadata().getName().startsWith("data-" + podSetName)) {
                     pvc.add(persistentVolumeClaim);
-                    System.out.println(persistentVolumeClaim);
-                    assertThat(persistentVolumeClaim.getSpec().getStorageClassName(),  is("foo"));
+                    assertThat(persistentVolumeClaim.getSpec().getStorageClassName(), is("foo"));
+                    assertThat(persistentVolumeClaim.getSpec().getResources().getRequests().toString(), is("{storage=123}"));
                 }
             });
             assertThat(pvc.size(), is(3));
