@@ -8,7 +8,7 @@
 
 [role="_abstract"]
 Strimzi uses the Cluster Operator to deploy and manage clusters.
-By default, when you deploy Strimzi a single Cluster Operator is deployed. 
+By default, when you deploy Strimzi a single Cluster Operator replica is deployed. 
 You can add replicas with leader election so that additional Cluster Operators are on standby in case of disruption.  
 
 The Cluster Operator manages the clusters of the following Kafka components:

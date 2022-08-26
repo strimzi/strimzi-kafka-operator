@@ -114,7 +114,7 @@ kubectl get deployments -n myproject
 [source,shell,subs="+quotes"]
 ----
 NAME                      READY  UP-TO-DATE  AVAILABLE
-strimzi-cluster-operator  1/1    1           3
+strimzi-cluster-operator  3/3    3           3
 ----
 +
 `READY` shows the number of replicas that are ready/expected.

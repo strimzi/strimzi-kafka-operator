@@ -6,12 +6,13 @@
 = Running multiple Cluster Operator replicas with leader election
 
 [role="_abstract"]
-Enable xref:ref-operator-cluster-leader-election-{context}[leader election] in the Cluster Operator configuration to run multiple parallel replicas of the Cluster Operator.
+The default Cluster Operator configuration enables xref:ref-operator-cluster-leader-election-{context}[leader election]. 
+Use leader election to run multiple parallel replicas of the Cluster Operator.
 One replica is elected as the active leader and operates the deployed resources.
 The other replicas run in standby mode.
 When the leader stops or fails, one of the standby replicas is elected as the new leader and starts operating the deployed resources.
 
-By default, Strimzi runs with a single Cluster Operator that is always the leader replica. 
+By default, Strimzi runs with a single Cluster Operator replica that is always the leader replica. 
 When a single Cluster Operator replica stops or fails, Kubernetes starts a new replica.
 
 Running the Cluster Operator with multiple replicas is not essential.
