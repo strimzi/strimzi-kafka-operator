@@ -26,7 +26,7 @@ To apply the relabeling rules and metrics configuration, do one of the following
 * Copy the example configuration to your own custom resources
 * Deploy the custom resource with the metrics configuration
 
-If you want to include Kafka Exporter metrics, add `kafkaExporter` configuration to your `Kafka` resource.
+If you want to include xref:con-metrics-kafka-exporter-lag-str[Kafka Exporter] metrics, add `kafkaExporter` configuration to your `Kafka` resource.
 
 IMPORTANT: Kafka Exporter provides only additional metrics related to consumer lag and consumer offsets.
 For regular Kafka metrics, you have to configure the Prometheus metrics in xref:proc-metrics-kafka-deploy-options-{context}[Kafka brokers].
@@ -160,6 +160,8 @@ spec:
 <7> link:{BookURLUsing}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
 <8> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
 <9> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
+
+NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 
 [role="_additional-resources"]
 .Additional resources
