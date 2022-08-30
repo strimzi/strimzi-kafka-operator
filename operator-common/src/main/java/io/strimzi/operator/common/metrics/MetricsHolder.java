@@ -17,9 +17,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
- * Util class which holds the different metrics used by controllers
+ * Abstract base class holding common metrics used by operators and controllers.
+ * Subclasses can add more specialized metrics.
  */
-public abstract class AbstractMetricsHolder {
+public abstract class MetricsHolder {
     protected static final String METRICS_PREFIX = "strimzi.";
 
     protected final String kind;
@@ -41,7 +42,7 @@ public abstract class AbstractMetricsHolder {
      * @param selectorLabels    Selector labels to select the controller resources
      * @param metricsProvider   Metrics provider
      */
-    public AbstractMetricsHolder(String kind, Labels selectorLabels, MetricsProvider metricsProvider) {
+    public MetricsHolder(String kind, Labels selectorLabels, MetricsProvider metricsProvider) {
         this.kind = kind;
         this.selectorLabels = selectorLabels;
         this.metricsProvider = metricsProvider;
@@ -111,7 +112,7 @@ public abstract class AbstractMetricsHolder {
     }
 
     /**
-     * Counter metric for number of resources.
+     * Counter metric for number of resources managed by this operator.
      *
      * @param namespace     Namespace of the resources being reconciled
      *
@@ -190,7 +191,7 @@ public abstract class AbstractMetricsHolder {
      *
      * @return  Counter metric
      */
-    public static Counter getCounter(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Counter> counterMap, String metricHelp) {
+    protected static Counter getCounter(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Counter> counterMap, String metricHelp) {
         return metric(namespace, kind, selectorLabels, counterMap, tags -> metrics.counter(metricName, metricHelp, tags));
     }
 
@@ -207,7 +208,7 @@ public abstract class AbstractMetricsHolder {
      *
      * @return  Gauge metric
      */
-    public static AtomicInteger getGauge(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, AtomicInteger> gaugeMap, String metricHelp) {
+    protected static AtomicInteger getGauge(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, AtomicInteger> gaugeMap, String metricHelp) {
         return metric(namespace, kind, selectorLabels, gaugeMap, tags -> metrics.gauge(metricName, metricHelp, tags));
     }
 
@@ -224,7 +225,7 @@ public abstract class AbstractMetricsHolder {
      *
      * @return  Timer metric
      */
-    public static Timer getTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
+    protected static Timer getTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
         return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.timer(metricName, metricHelp, tags));
     }
 }

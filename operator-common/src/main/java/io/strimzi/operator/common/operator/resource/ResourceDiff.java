@@ -12,12 +12,8 @@ import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.regex.Pattern;
 
-public class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
+class ResourceDiff<T extends HasMetadata> extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceDiff.class.getName());
-
-    public static final Pattern DEFAULT_IGNORABLE_PATHS = Pattern.compile(
-            "^(/metadata/managedFields" +
-                    "|/status)$");
 
     private final boolean isEmpty;
 

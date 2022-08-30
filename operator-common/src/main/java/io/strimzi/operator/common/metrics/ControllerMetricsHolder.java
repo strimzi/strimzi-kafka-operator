@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Util class which holds the different metrics used by controllers
+ * A metrics holder for controllers.
  */
-public class ControllerMetricsHolder extends AbstractMetricsHolder {
+public class ControllerMetricsHolder extends MetricsHolder {
     private final Map<String, Counter> alreadyQueuedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
 
     /**

@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Util class which holds the different metrics used by operators
+ * A metrics holder for operators.
  */
-public class OperatorMetricsHolder extends AbstractMetricsHolder {
+public class OperatorMetricsHolder extends MetricsHolder {
     private final Map<String, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
 
     /**
