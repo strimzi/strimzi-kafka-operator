@@ -287,7 +287,7 @@ public abstract class Ca {
 
     /*test*/ CertAndKey generateSignedCert(Subject subject,
                                            File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
-        LOGGER.debugCr(reconciliation, "Generating certificate {} with SAN {}, signed by CA {}", subject, subject.subjectAltNames(), this);
+        LOGGER.infoCr(reconciliation, "Generating certificate {}, signed by CA {}", subject, this);
 
         certManager.generateCsr(keyFile, csrFile, subject);
         certManager.generateCert(csrFile, currentCaKey(), currentCaCertBytes(),
@@ -411,7 +411,7 @@ public abstract class Ca {
             }
 
             if (!reasons.isEmpty())  {
-                LOGGER.debugCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
+                LOGGER.infoCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
 
                 CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
                 certs.put(podName, newCertAndKey);
@@ -476,7 +476,9 @@ public abstract class Ca {
             LOGGER.traceCr(reconciliation, "Alternate subjects match. No need to refresh cert for pod {}.", podName);
             return false;
         } else {
-            LOGGER.debugCr(reconciliation, "Alternate subjects for pod {} differ - current: {}; desired: {}", podName, currentAltNames, desiredAltNames);
+            LOGGER.infoCr(reconciliation, "Alternate subjects for pod {} differ", podName);
+            LOGGER.infoCr(reconciliation, "Current alternate subjects: {}", currentAltNames);
+            LOGGER.infoCr(reconciliation, "Desired alternate subjects: {}", desiredAltNames);
             return true;
         }
     }
@@ -485,7 +487,8 @@ public abstract class Ca {
      * Extracts the alternate subject names out of existing certificate
      *
      * @param certificate Existing X509 certificate as a byte array
-     * @return
+     *
+     * @return  List of certificate Subject Alternate Names
      */
     protected List<String> getSubjectAltNames(byte[] certificate) {
         List<String> subjectAltNames = null;
@@ -601,12 +604,11 @@ public abstract class Ca {
     }
 
     private Subject nextCaSubject(int version) {
-        Subject result = new Subject.Builder()
+        return new Subject.Builder()
         // Key replacements does not work if both old and new CA certs have the same subject DN, so include the
         // key generation in the DN so the certificates appear distinct during CA key replacement.
             .withCommonName(commonName + " v" + version)
             .withOrganizationName(IO_STRIMZI).build();
-        return result;
     }
 
     private RenewalType shouldCreateOrRenew(X509Certificate currentCert, String namespace, String clusterName, boolean maintenanceWindowSatisfied) {
@@ -829,7 +831,7 @@ public abstract class Ca {
             Instant expiryDate = cert.getNotAfter().toInstant();
             remove = expiryDate.isBefore(clock.instant());
             if (remove) {
-                LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
+                LOGGER.infoCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
                         certName.replace(".", "\\."), expiryDate);
             }
         } catch (CertificateException e) {
@@ -950,7 +952,7 @@ public abstract class Ca {
     }
 
     static CertificateFactory certificateFactory() {
-        CertificateFactory factory = null;
+        CertificateFactory factory;
         try {
             factory = CertificateFactory.getInstance("X.509");
         } catch (CertificateException e) {
@@ -989,7 +991,7 @@ public abstract class Ca {
 
     private void generateCaKeyAndCert(Subject subject, Map<String, String> keyData, Map<String, String> certData) {
         try {
-            LOGGER.debugCr(reconciliation, "Generating CA with subject={}", subject);
+            LOGGER.infoCr(reconciliation, "Generating CA with subject={}", subject);
             File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
             try {
                 File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
@@ -1032,7 +1034,7 @@ public abstract class Ca {
 
     private void renewCaCert(Subject subject, Map<String, String> certData) {
         try {
-            LOGGER.debugCr(reconciliation, "Renewing CA with subject={}, org={}", subject);
+            LOGGER.infoCr(reconciliation, "Renewing CA with subject={}", subject);
 
             Base64.Decoder decoder = Base64.getDecoder();
             byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
@@ -1071,19 +1073,19 @@ public abstract class Ca {
 
     /**
      * @return the name of the annotation bringing the generation of the specific CA certificate type (cluster or clients)
-     *         on the Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
+     *         on the Secrets containing certificates signed by that CA (i.e. ZooKeeper nodes, Kafka brokers, ...)
      */
     protected abstract String caCertGenerationAnnotation();
 
     /**
-     * @return if the current (cluster or clients) CA certificate generation is changed compared to the the one
-     *         brought on Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
+     * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
+     *         brought on Secrets containing certificates signed by that CA (i.e. ZooKeeper nodes, Kafka brokers, ...)
      */
     protected abstract boolean hasCaCertGenerationChanged();
 
     /**
      * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
-     * brought by the corresponding annotation on the provided Secret (i.e ZooKeeper nodes, Kafka brokers, ...)
+     * brought by the corresponding annotation on the provided Secret (i.e. ZooKeeper nodes, Kafka brokers, ...)
      *
      * @param secret Secret containing certificates signed by the current (clients or cluster) CA
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
