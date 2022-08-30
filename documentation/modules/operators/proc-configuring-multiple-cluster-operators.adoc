@@ -24,8 +24,7 @@ If you use a different `Lease` name or namespace, update the `ClusterRole` and `
 
 .Prerequisites
 
-* This procedure requires use of a Kubernetes user account which is able to create `CustomResourceDefinition`, `ClusterRole`, and `ClusterRoleBinding` resources.
-Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means that permission to create, edit, and delete these resources is limited to Kubernetes cluster administrators, such as `system:admin`.
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
 
 .Procedure
 
@@ -40,7 +39,9 @@ include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yam
   replicas: 3 
 ----
 
-. Configure leader election `env` properties.
+. Check that the leader election `env` properties are set.
++
+If they are not set, configure them.
 +
 To enable leader election, `STRIMZI_LEADER_ELECTION_ENABLED` must be set to `true` (default).
 +
