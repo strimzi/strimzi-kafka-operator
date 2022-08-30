@@ -1,0 +1,123 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-using-multiple-cluster-operators.adoc
+
+[id='assembly-configuring-proxy-config-cluster-operator-{context}']
+= Configuring Cluster Operator replicas
+
+[role="_abstract"]
+To run additional Cluster Operator replicas in standby mode, you will need to increase the number of replicas and enable leader election.
+To configure leader election, use the leader election environment variables.
+
+To make the required changes, configure the following Cluster Operator installation files located in `install/cluster-operator/`: 
+
+* 060-Deployment-strimzi-cluster-operator.yaml
+* 022-ClusterRole-strimzi-cluster-operator-role.yaml
+* 022-RoleBinding-strimzi-cluster-operator.yaml
+
+Leader election has its own `ClusterRole` and `RoleBinding` RBAC resources that target the namespace where the Cluster Operator is running, rather than the namespace it is watching. 
+
+The default deployment configuration creates a `Lease` resource called `strimzi-cluster-operator` in the same namespace as the Cluster Operator.
+The Cluster Operator uses leases to manage leader election. 
+The RBAC resources provide the permissions to use the `Lease` resource.
+If you use a different `Lease` name or namespace, update the `ClusterRole` and `RoleBinding` files accordingly.
+
+.Prerequisites
+
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
+
+.Procedure
+
+Edit the `Deployment` resource that is used to deploy the Cluster Operator, which is defined in the `060-Deployment-strimzi-cluster-operator.yaml` file.
+
+. Change the `replicas` property from the default (1) to a value that matches the required number of replicas.
++
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Increasing the number of Cluster Operator replicas
+----
+include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..7] 
+  replicas: 3 
+----
+
+. Check that the leader election `env` properties are set.
++
+If they are not set, configure them.
++
+To enable leader election, `STRIMZI_LEADER_ELECTION_ENABLED` must be set to `true` (default).
++
+In this example, the name of the lease is changed to `my-strimzi-cluster-operator`.
++
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Configuring leader election environment variables for the Cluster Operator
+----
+# ... 
+spec
+  containers:
+    - name: strimzi-cluster-operator
+      # ...
+      env:
+        - name: STRIMZI_LEADER_ELECTION_ENABLED
+          value: "true"
+        - name: STRIMZI_LEADER_ELECTION_LEASE_NAME
+          value: "my-strimzi-cluster-operator"
+        - name: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        - name: STRIMZI_LEADER_ELECTION_IDENTITY
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+----
++
+For a description of the available environment variables, see xref:ref-operator-cluster-leader-election-{context}[].
++
+If you specified a different name or namespace for the `Lease` resource used in leader election, update the RBAC resources.
+
+. (optional) Edit the `ClusterRole` resource in the `022-ClusterRole-strimzi-cluster-operator-role.yaml` file.
++
+Update `resourceNames` with the name of the `Lease` resource.
++ 
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Updating the ClusterRole references to the lease 
+----
+include::../install/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml[lines=1..7;21]
+      - my-strimzi-cluster-operator
+# ...      
+----
+
+. (optional) Edit the the `RoleBinding` resource in the `022-RoleBinding-strimzi-cluster-operator.yaml` file.
++
+Update `subjects.name` and `subjects.namespace` with the name of the `Lease` resource and the namespace where it was created.
++ 
+[source,yaml,numbered,options="nowrap",highlight='12']
+.Updating the RoleBinding references to the lease 
+----
+include::../install/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml[lines=1..8]
+    name: my-strimzi-cluster-operator
+    namespace: myproject
+# ...
+----
+
+. Deploy the Cluster Operator:
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl create -f install/cluster-operator -n myproject
+
+. Check the status of the deployment:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments -n myproject
+----
++
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                      READY  UP-TO-DATE  AVAILABLE
+strimzi-cluster-operator  3/3    3           3
+----
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows the correct number of replicas.
+

@@ -33,7 +33,7 @@ The timeout for internal operations, in milliseconds. This value should be
 increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
 `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`:: Optional, default 10000 ms.
-
++
 The session timeout (in milliseconds) for the Cluster Operator's ZooKeeper admin client.
 This value should be increased if ZooKeeper requests from the Cluster Operator are regularly failing due to timeout issues.
 There is a maximum allowed session time set on the ZooKeeper server side via the `maxSessionTimeout` config.
@@ -217,17 +217,24 @@ Enables or disables features and functionality controlled by xref:ref-operator-c
 `STRIMZI_POD_SECURITY_PROVIDER_CLASS`:: Optional.
 Configures the pluggable `PodSecurityProvider` class which can be used to provide the security context configuration for Pods and containers.
 
-[[STRIMZI_LEADER_ELECTION_ENABLED]]
-`STRIMZI_LEADER_ELECTION_ENABLED`:: Optional, default `false`.
-Enables or disables the leader election which allows to run additional operator instances as a hot-stand-by.
-Disabled by default.
+[id='ref-operator-cluster-leader-election-{context}']
+== Leader election environment variables 
+
+Use leader election environment variables when xref:assembly-using-multiple-cluster-operator-replicas-{context}[running additional Cluster Operator replicas].
+You might run additional replicas to safeguard against disruption caused by major failure.
+
+`STRIMZI_LEADER_ELECTION_ENABLED`:: Optional, disabled (`false`) by default.
+Enables or disables leader election, which allows additional Cluster Operator replicas to run on standby.
+
+NOTE: Leader election is disabled by default.
+It is only enabled when applying this environment variable on installation.  
 
 `STRIMZI_LEADER_ELECTION_LEASE_NAME`:: Required when leader election is enabled.
-The name of the Kubernetes Lease resource which is used for the leader election.
+The name of the Kubernetes `Lease` resource that is used for the leader election.
 
 `STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE`:: Required when leader election is enabled.
-The namespace where the Kubernetes Lease resource used for the leader election will be created.
-You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the namespace where the operator is deployed.
+The namespace where the Kubernetes `Lease` resource used for leader election is created.
+You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the namespace where the Cluster Operator is deployed.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -239,9 +246,9 @@ env:
 ----
 
 `STRIMZI_LEADER_ELECTION_IDENTITY`:: Required when leader election is enabled.
-Configures the identity of given operator instance used during the leader election.
-Should be unique for each operator instance
-You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the name of the operator pod.
+Configures the identity of a given Cluster Operator instance used during the leader election.
+The identity must be unique for each operator instance.
+You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the name of the pod where the Cluster Operator is deployed.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -253,13 +260,13 @@ env:
 ----
 
 `STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS`:: Optional, default 15000 ms.
-Configures the duration for which the acquired lease is valid.
+Specifies the duration the acquired lease is valid.
 
 `STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS`:: Optional, default 10000 ms.
-Configures the duration for which should the leader retry to maintain the leadership
+Specifies the period the leader should try to maintain leadership.
 
 `STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default 2000 ms.
-Configures how often does the leader update the lease lock
+Specifies the frequency of updates to the lease lock by the leader.
 
 == Logging configuration by ConfigMap
 
@@ -314,24 +321,6 @@ if the operator is not running, or if a notification is not received for any rea
 
 In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.
 You can set the time interval for the periodic reconciliations using the xref:STRIMZI_FULL_RECONCILIATION_INTERVAL_MS[] variable.
-
-== Running multiple operator replicas
-
-With the xref:STRIMZI_LEADER_ELECTION_ENABLED[leader election] enabled in the Cluster Operator configuration, you can run multiple parallel replicas of the operator.
-One of them will be elected as a leader and will actively operate the deployed operands.
-The other replicas will be running in a stand-by mode.
-When the leader stops or crashes, one of the stand-by replicas will be elected as a new leader and will start operating the deployed resources.
-
-Running the operator with multiple replicas is not required.
-When using only single replica, the single replica will be always the leader replica.
-And when the single replica is stopped or crashed, Kubernetes will automatically start a new replica.
-
-But in some situations it might be an advantage to have the stand-by replicas already scheduled and running.
-For example during large scale disruptions such as crash of multiple worker nodes or of a whole availability zone.
-
-NOTE::
-The default installation files contain the RBAC permissions to use the Kubernetes `Lease` resource with name `strimzi-cluster-operator` in the same namespace where the Cluster Operator runs.
-If you decide to use other `Lease` name or a different namespace, you have to update the `ClusterRole` and `RoleBinding` files accordingly.
 
 == Provisioning Role-Based Access Control (RBAC)
 
