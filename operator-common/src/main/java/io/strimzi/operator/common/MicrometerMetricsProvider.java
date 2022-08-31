@@ -21,14 +21,15 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     private final MeterRegistry metrics;
 
     /**
-     * Constructor of the Micrometer metrics provider
+     * Constructor of the Micrometer metrics provider which uses the Vert.x provided metrics registry
      */
     public MicrometerMetricsProvider() {
         this.metrics = BackendRegistries.getDefaultNow();
     }
 
     /**
-     * Constructor of the Micrometer metrics provider. Mainly for test purposes
+     * Constructor of the Micrometer metrics provider.
+     *
      * @param metrics   Meter registry
      */
     public MicrometerMetricsProvider(MeterRegistry metrics) {

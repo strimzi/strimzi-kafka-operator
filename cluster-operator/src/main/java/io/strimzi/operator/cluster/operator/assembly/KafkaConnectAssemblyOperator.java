@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -27,10 +26,9 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Operator;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -48,8 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -66,9 +62,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final ConnectBuildOperator connectBuildOperator;
     private final KafkaVersion.Lookup versions;
     protected final long connectBuildTimeoutMs;
-
-    private final Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
-    private final Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
 
     /**
      * @param vertx The Vertx instance
@@ -194,11 +187,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             connectorOperator.listAsync(namespace, connectorsSelector)
                     .onComplete(ar -> {
                         if (ar.succeeded()) {
-                            resetConnectorsCounters(namespace);
+                            metrics().resetConnectorsCounters(namespace);
                             ar.result().forEach(connector -> {
-                                connectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
+                                metrics().connectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
                                 if (isPaused(connector.getStatus())) {
-                                    pausedConnectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
+                                    metrics().pausedConnectorsResourceCounter(connector.getMetadata().getNamespace()).incrementAndGet();
                                 }
                             });
                             handler.handle(Future.succeededFuture());
@@ -251,29 +244,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return dep;
     }
 
-    private void resetConnectorsCounters(String namespace) {
-        if (namespace.equals("*")) {
-            connectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
-            pausedConnectorsResourceCounterMap.forEach((key, counter) -> counter.set(0));
-        } else {
-            connectorsResourceCounter(namespace).set(0);
-            pausedConnectorsResourceCounter(namespace).set(0);
-        }
-    }
-
     private boolean isPaused(KafkaConnectorStatus status) {
         return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
-    }
-
-    public AtomicInteger connectorsResourceCounter(String namespace) {
-        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources",
-                metrics, null, connectorsResourceCounterMap,
-                "Number of custom resources the operator sees");
-    }
-
-    public AtomicInteger pausedConnectorsResourceCounter(String namespace) {
-        return Operator.getGauge(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "resources.paused",
-                metrics, null, pausedConnectorsResourceCounterMap,
-                "Number of connectors the connect operator sees but does not reconcile due to paused reconciliations");
     }
 }

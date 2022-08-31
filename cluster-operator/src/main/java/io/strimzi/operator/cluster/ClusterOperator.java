@@ -133,7 +133,7 @@ public class ClusterOperator extends AbstractVerticle {
             try {
                 if (config.featureGates().useStrimziPodSetsEnabled()) {
                     strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator,
-                            resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations, config.getPodSetControllerWorkQueueSize());
+                            resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations, resourceOperatorSupplier.metricsProvider, config.getPodSetControllerWorkQueueSize());
                     strimziPodSetController.start();
                 }
                 future.complete();

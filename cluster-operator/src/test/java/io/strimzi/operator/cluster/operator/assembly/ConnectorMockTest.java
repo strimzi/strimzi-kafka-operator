@@ -1840,7 +1840,7 @@ public class ConnectorMockTest {
             Gauge resources = meterRegistry.get("strimzi.resources").tags(tags).gauge();
             assertThat(resources.value(), is(1.0));
 
-            kafkaConnectOperator.pausedConnectorsResourceCounter(NAMESPACE); // to create metric, otherwise MeterNotFoundException will be thrown
+            kafkaConnectOperator.metrics().pausedConnectorsResourceCounter(NAMESPACE); // to create metric, otherwise MeterNotFoundException will be thrown
             Gauge resourcesPaused = meterRegistry.get("strimzi.resources.paused").tags(tags).gauge();
             assertThat(resourcesPaused.value(), is(0.0));
             async.flag();

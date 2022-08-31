@@ -14,6 +14,8 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
@@ -23,8 +25,11 @@ import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -43,11 +48,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
@@ -67,6 +75,7 @@ public class StrimziPodSetControllerMockTest {
     private CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private StrimziPodSetOperator podSetOperator;
     private PodOperator podOperator;
+    private MetricsProvider metricsProvider;
 
     @BeforeEach
     public void beforeEach() {
@@ -82,6 +91,7 @@ public class StrimziPodSetControllerMockTest {
         kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
         podSetOperator = new StrimziPodSetOperator(vertx, client, 10_000L);
         podOperator = new PodOperator(vertx, client);
+        metricsProvider = ResourceUtils.metricsProvider();
 
         kafkaOp().inNamespace(NAMESPACE).resource(kafka(KAFKA_NAME, MATCHING_LABELS)).create();
         kafkaOp().inNamespace(NAMESPACE).resource(kafka(OTHER_KAFKA_NAME, OTHER_LABELS)).create();
@@ -191,7 +201,7 @@ public class StrimziPodSetControllerMockTest {
     }
 
     private void startController()  {
-        controller = new StrimziPodSetController(NAMESPACE, Labels.fromMap(MATCHING_LABELS), kafkaOperator, podSetOperator, podOperator, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
+        controller = new StrimziPodSetController(NAMESPACE, Labels.fromMap(MATCHING_LABELS), kafkaOperator, podSetOperator, podOperator, metricsProvider, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         controller.start();
     }
 
@@ -555,6 +565,71 @@ public class StrimziPodSetControllerMockTest {
             podSetOp().inNamespace(NAMESPACE).withName(otherPodSetName).delete();
             client.pods().inNamespace(NAMESPACE).withName(otherPreExistingPodName).delete();
             client.pods().inNamespace(NAMESPACE).withName(preExistingPodName).delete();
+        }
+    }
+
+    /**
+     * Tests the metrics during the reconciliation
+     *   - It creates and deletes the SPS
+     *   - Checks the metrics during these operations
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testMetrics(VertxTestContext context) {
+        String podSetName = "metrics-test";
+        String podName = podSetName + "-0";
+
+        try {
+            Pod pod = pod(podName, KAFKA_NAME, podSetName);
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod)).create();
+
+            // Wait for PodSet to be ready
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSetStatus",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(NAMESPACE).withName(podSetName).get();
+                        return podSet.getStatus().getCurrentPods() == 1
+                                && podSet.getStatus().getReadyPods() == 1
+                                && podSet.getStatus().getPods() == 1;
+                    },
+                    () -> context.failNow("Pod stats do not match"));
+
+            // Check the metrics
+            // Depending on timing, there might be multiple reconciliations happening. That is why we use of greaterThanOrEqualTo
+            MeterRegistry registry = metricsProvider.meterRegistry();
+
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", "strimzi-pod-set-controller-test"), Tag.of("selector", "selector=matching")));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value(), is(1.0));
+
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", "strimzi-pod-set-controller-test"), Tag.of("selector", "selector=matching")));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", "strimzi-pod-set-controller-test"), Tag.of("selector", "selector=matching")));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "StrimziPodSet").counter().count(), greaterThanOrEqualTo(3.0));
+
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags(), contains(Tag.of("kind", "StrimziPodSet"), Tag.of("namespace", "strimzi-pod-set-controller-test"), Tag.of("selector", "selector=matching")));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "StrimziPodSet").timer().count(), greaterThanOrEqualTo(3L));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "StrimziPodSet").timer().totalTime(TimeUnit.MILLISECONDS), greaterThanOrEqualTo(0.0));
+
+            // Delete the PodSet
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
+
+            // The controller needs to react to the event => we wait until the metric is actually reset to 0 to avoid race condition
+            TestUtils.waitFor(
+                    "Wait for resource metric to be 0 again",
+                    100,
+                    1_000,
+                    () -> registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "StrimziPodSet").gauge().value() == 0.0,
+                    () -> context.failNow("Resource metric did not returned to 0"));
+
+            context.completeNow();
+        } finally {
+            // Delete the PodSet (in case something failed)
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
+
         }
     }
 }
