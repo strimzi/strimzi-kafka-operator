@@ -3,18 +3,19 @@
 // assembly-using-the-cluster-operator.adoc
 
 [id='ref-operator-cluster-{context}']
-= Cluster Operator configuration
+= Configuring the Cluster Operator with environment variables
 
 [role="_abstract"]
-You can configure the Cluster Operator using supported environment variables, and through its logging configuration.
+You can configure the Cluster Operator using environment variables.
+The supported environment variables are listed here. 
 
-The environment variables relate to container configuration for the deployment of the Cluster Operator image.
+NOTE: The environment variables relate to the container configuration for the deployment of the Cluster Operator image.
 For more information on `image` configuration, see, xref:con-common-configuration-images-reference[].
 
-`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator should operate in.
-When not set, set to empty string, or set to `*`, the Cluster Operator will operate in all namespaces.
-The Cluster Operator deployment might use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^]
-to set this automatically to the namespace the Cluster Operator is deployed in.
+`STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator operates in.
+When not set, set to empty string, or set to `*`, the Cluster Operator operates in all namespaces.
++
+The Cluster Operator deployment might use the downward API to set this automatically to the namespace the Cluster Operator is deployed in.
 +
 .Example configuration for Cluster Operator namespaces
 [source,yaml,options="nowrap"]
@@ -26,28 +27,27 @@ env:
         fieldPath: metadata.namespace
 ----
 
-[[STRIMZI_FULL_RECONCILIATION_INTERVAL_MS]] `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default is 120000 ms. The interval between periodic reconciliations, in milliseconds.
+`STRIMZI_FULL_RECONCILIATION_INTERVAL_MS`:: Optional, default is 120000 ms. 
+The interval between xref:ref-operator-cluster-periodic-reconciliation-{context}[periodic reconciliations], in milliseconds.
 
 `STRIMZI_OPERATION_TIMEOUT_MS`:: Optional, default 300000 ms.
-The timeout for internal operations, in milliseconds. This value should be
-increased when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
+The timeout for internal operations, in milliseconds. Increase this value when using Strimzi on clusters where regular Kubernetes operations take longer than usual (because of slow downloading of Docker images, for example).
 
 `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`:: Optional, default 10000 ms.
-+
-The session timeout (in milliseconds) for the Cluster Operator's ZooKeeper admin client.
-This value should be increased if ZooKeeper requests from the Cluster Operator are regularly failing due to timeout issues.
+The session timeout for the Cluster Operator's ZooKeeper admin client, in milliseconds.
+Increase the value if ZooKeeper requests from the Cluster Operator are regularly failing due to timeout issues.
 There is a maximum allowed session time set on the ZooKeeper server side via the `maxSessionTimeout` config.
-By default this session max value is 20 times the default `tickTime` (whose default is 2000) therefore 40000 ms.
-If you require a higher timeout, you will need to change the `maxSessionTimeout` ZooKeeper server config value.
+By default, the maximum session timeout value is 20 times the default `tickTime` (whose default is 2000) at 40000 ms.
+If you require a higher timeout, change the `maxSessionTimeout` ZooKeeper server configuration value.
 
-`STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10
-The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the cluster operator.
+`STRIMZI_OPERATIONS_THREAD_POOL_SIZE`:: Optional, default 10.
+The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the Cluster Operator.
 
-`STRIMZI_OPERATOR_NAME`:: Optional, defaults to pod's hostname.
+`STRIMZI_OPERATOR_NAME`:: Optional, defaults to the pod's hostname.
 The operator name identifies the Strimzi instance when link:{BookURLDeploying}#proc-operator-restart-events-str[emitting Kubernetes events^].
 
-`STRIMZI_OPERATOR_NAMESPACE`:: The name of the namespace where the Strimzi Cluster Operator is running.
-Do not configure this variable manually. Use the Kubernetes Downward API.
+`STRIMZI_OPERATOR_NAMESPACE`:: The name of the namespace where the Cluster Operator is running.
+Do not configure this variable manually. Use the downward API.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -60,8 +60,9 @@ env:
 
 `STRIMZI_OPERATOR_NAMESPACE_LABELS`:: Optional.
 The labels of the namespace where the Strimzi Cluster Operator is running.
-Namespace labels are used to configure the namespace selector in network policies to allow the Strimzi Cluster Operator to only have access to the operands from the namespace with these labels.
-When not set, the namespace selector in network policies is configured to allow access to the Strimzi Cluster Operator from any namespace in the Kubernetes cluster.
+Use namespace labels to configure the namespace selector in xref:ref-operator-cluster-network-policy-{context}[network policies].
+Network policies allow the Strimzi Cluster Operator access only to the operands from the namespace with these labels.
+When not set, the namespace selector in network policies is configured to allow access to the Cluster Operator from any namespace in the Kubernetes cluster.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -71,7 +72,7 @@ env:
 ----
 
 `STRIMZI_LABELS_EXCLUSION_PATTERN`:: Optional, default regex pattern is `^app.kubernetes.io/(?!part-of).*`.
-Specifies the regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
+The regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
 The labels exclusion filter is not applied to labels in template sections such as `spec.kafka.template.pod.metadata.labels`.
 +
 [source,yaml,options="nowrap"]
@@ -85,7 +86,7 @@ env:
 One or more custom labels to apply to all the pods created by the `{COMPONENT_NAME}` custom resource.
 The Cluster Operator labels the pods when the custom resource is created or is next reconciled.
 +
-Environment variables exist for the following components:
+Labels can be applied to the following components:
 +
 * `KAFKA`
 * `KAFKA_CONNECT`
@@ -100,11 +101,11 @@ Environment variables exist for the following components:
 * `JMX_TRANS`
 
 `STRIMZI_CUSTOM_RESOURCE_SELECTOR`:: Optional.
-Specifies label selector used to filter the custom resources handled by the operator.
-The operator will operate only on those custom resources which will have the specified labels set.
+The label selector to filter the custom resources handled by the Cluster Operator.
+The operator will operate only on those custom resources that have the specified labels set.
 Resources without these labels will not be seen by the operator.
 The label selector applies to `Kafka`, `KafkaConnect`, `KafkaBridge`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` resources.
-`KafkaRebalance` and `KafkaConnector` resources will be operated only when their corresponding Kafka and Kafka Connect clusters have the matching labels.
+`KafkaRebalance` and `KafkaConnector` resources are operated only when their corresponding Kafka and Kafka Connect clusters have the matching labels.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -114,48 +115,50 @@ env:
 ----
 
 `STRIMZI_KAFKA_IMAGES`:: Required.
-This provides a mapping from Kafka version to the corresponding Docker image containing a Kafka broker of that version.
-The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+The mapping from the Kafka version to the corresponding Docker image containing a Kafka broker for that version.
+The required syntax is whitespace or comma-separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `Kafka.spec.kafka.version` property is specified but not the `Kafka.spec.kafka.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE`:: Optional, default `{DockerKafkaInit}`.
-The image name to use as default for the init container started before the broker for initial configuration work (that is, rack support), if no image is specified as the `kafka-init-image` in the `Kafka` resource.
+The image name to use as default for the init container if no image is specified as the `kafka-init-image` in the `Kafka` resource.
+The init container is started before the broker for initial configuration work, such as rack support. 
 
 `STRIMZI_KAFKA_CONNECT_IMAGES`:: Required.
-This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
-The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+The mapping from the Kafka version to the corresponding Docker image of Kafka Connect for that version.
+The required syntax is whitespace or comma-separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`.
 
 `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
-This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
-The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
+The mapping from the Kafka version to the corresponding Docker image of MirrorMaker for that version.
+The required syntax is whitespace or comma-separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaMirrorMaker.spec.version` property is specified but not the `KafkaMirrorMaker.spec.image`.
 
 `STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE`:: Optional, default `{DockerTopicOperator}`.
-The image name to use as the default when deploying the topic operator,
-if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in `Kafka` resource.
+The image name to use as the default when deploying the Topic Operator
+if no image is specified as the `Kafka.spec.entityOperator.topicOperator.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_USER_OPERATOR_IMAGE`:: Optional, default `{DockerUserOperator}`.
-The image name to use as the default when deploying the user operator,
+The image name to use as the default when deploying the User Operator
 if no image is specified as the `Kafka.spec.entityOperator.userOperator.image` in the `Kafka` resource.
 
 `STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE`:: Optional, default `{DockerEntityOperatorStunnel}`.
-The image name to use as the default when deploying the sidecar container which provides TLS support for the Entity Operator, if
+The image name to use as the default when deploying the sidecar container for the Entity Operator if
 no image is specified as the `Kafka.spec.entityOperator.tlsSidecar.image` in the `Kafka` resource.
+The sidecar provides TLS support. 
 
 `STRIMZI_IMAGE_PULL_POLICY`:: Optional.
-The `ImagePullPolicy` which will be applied to containers in all pods managed by Strimzi Cluster Operator.
+The `ImagePullPolicy` that is applied to containers in all pods managed by the Cluster Operator.
 The valid values are `Always`, `IfNotPresent`, and `Never`.
-If not specified, the Kubernetes defaults will be used.
+If not specified, the Kubernetes defaults are used.
 Changing the policy will result in a rolling update of all your Kafka, Kafka Connect, and Kafka MirrorMaker clusters.
 
 `STRIMZI_IMAGE_PULL_SECRETS`:: Optional.
 A comma-separated list of `Secret` names.
 The secrets referenced here contain the credentials to the container registries where the container images are pulled from.
-The secrets are used in the `imagePullSecrets` field for all `Pods` created by the Cluster Operator.
+The secrets are specified in the `imagePullSecrets` property for all pods created by the Cluster Operator.
 Changing this list results in a rolling update of all your Kafka, Kafka Connect, and Kafka MirrorMaker clusters.
 
 `STRIMZI_KUBERNETES_VERSION`:: Optional.
@@ -196,26 +199,26 @@ If you are using a different DNS domain name suffix in your cluster, change the 
 
 `STRIMZI_CONNECT_BUILD_TIMEOUT_MS`:: Optional, default 300000 ms.
 The timeout for building new Kafka Connect images with additional connectors, in milliseconds.
-This value should be increased when using Strimzi to build container images containing many connectors or using a slow container registry.
+Consider increasing this value when using Strimzi to build container images containing many connectors or using a slow container registry.
 
-`STRIMZI_NETWORK_POLICY_GENERATION` :: Optional, default `true`.
-Controls whether Strimzi generates network policy resources.
+`STRIMZI_NETWORK_POLICY_GENERATION`:: Optional, default `true`.
+Network policy for resources.
 Network policies allow connections between Kafka components.
-
++
 Set this environment variable to `false` to disable network policy generation. You might do this, for example, if you want to use custom network policies. Custom network policies allow more control over maintaining the connections between components.
 
-`STRIMZI_DNS_CACHE_TTL` :: Optional, default `30`.
-Number of seconds to cache successful name lookups in local DNS resolver. Any negative value means cache forever. Zero means do not cache. This can be useful to avoid connection errors due to long caching policies being applied.
+`STRIMZI_DNS_CACHE_TTL`:: Optional, default `30`.
+Number of seconds to cache successful name lookups in local DNS resolver. Any negative value means cache forever. Zero means do not cache, which can be useful for avoiding connection errors due to long caching policies being applied.
 
-`STRIMZI_POD_SET_RECONCILIATION_ONLY` :: Optional, default `false`.
-When set to `true`, the Cluster Operator will reconcile only the `StrimziPodSet` resources and any changes to the other custom resources (`Kafka`, `KafkaConnect`, and so on) will be ignored.
-This mode is useful to ensure that your Pods will be recreated if needed, but no other changes happen to your clusters.
+`STRIMZI_POD_SET_RECONCILIATION_ONLY`:: Optional, default `false`.
+When set to `true`, the Cluster Operator reconciles only the `StrimziPodSet` resources and any changes to the other custom resources (`Kafka`, `KafkaConnect`, and so on) are ignored.
+This mode is useful for ensuring that your pods are recreated if needed, but no other changes happen to the clusters.
 
 `STRIMZI_FEATURE_GATES`:: Optional.
-Enables or disables features and functionality controlled by xref:ref-operator-cluster-feature-gates-{context}[feature gates].
+Enables or disables the features and functionality controlled by xref:ref-operator-cluster-feature-gates-{context}[feature gates].
 
 `STRIMZI_POD_SECURITY_PROVIDER_CLASS`:: Optional.
-Configures the pluggable `PodSecurityProvider` class which can be used to provide the security context configuration for Pods and containers.
+Configuration for the pluggable `PodSecurityProvider` class, which can be used to provide the security context configuration for Pods and containers.
 
 [id='ref-operator-cluster-leader-election-{context}']
 == Leader election environment variables 
@@ -234,7 +237,7 @@ The name of the Kubernetes `Lease` resource that is used for the leader election
 
 `STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE`:: Required when leader election is enabled.
 The namespace where the Kubernetes `Lease` resource used for leader election is created.
-You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the namespace where the Cluster Operator is deployed.
+You can use the downward API to configure it to the namespace where the Cluster Operator is deployed.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -248,7 +251,7 @@ env:
 `STRIMZI_LEADER_ELECTION_IDENTITY`:: Required when leader election is enabled.
 Configures the identity of a given Cluster Operator instance used during the leader election.
 The identity must be unique for each operator instance.
-You can use the link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Kubernetes Downward API^] to configure it to the name of the pod where the Cluster Operator is deployed.
+You can use the downward API to configure it to the name of the pod where the Cluster Operator is deployed.
 +
 [source,yaml,options="nowrap"]
 ----
@@ -268,39 +271,16 @@ Specifies the period the leader should try to maintain leadership.
 `STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default 2000 ms.
 Specifies the frequency of updates to the lease lock by the leader.
 
-== Logging configuration by ConfigMap
-
-The Cluster Operator's logging is configured by the `strimzi-cluster-operator` `ConfigMap`.
-
-A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
-This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
-You configure Cluster Operator logging by changing the data field `log4j2.properties` in this `ConfigMap`.
-
-To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
-[source,shell,subs=+quotes]
-kubectl create -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
-
-Alternatively, edit the `ConfigMap` directly:
-[source,shell,subs=+quotes]
-kubectl edit configmap strimzi-cluster-operator
-
-To change the frequency of the reload interval, set a time in seconds in the `monitorInterval` option in the created `ConfigMap`.
-
-If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
-
-If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
-Create a new `ConfigMap` to load a new logging configuration.
-
-NOTE: Do not remove the `monitorInterval` option from the ConfigMap.
-
+[id='ref-operator-cluster-network-policy-{context}']
 == Restricting Cluster Operator access with network policy
 
+Use the `STRIMZI_OPERATOR_NAMESPACE_LABELS` environment variable to establish network policy for the Cluster Operator using namespace labels.
+
 The Cluster Operator can run in the same namespace as the resources it manages, or in a separate namespace.
-By default, the `STRIMZI_OPERATOR_NAMESPACE` environment variable is configured to use the Kubernetes Downward API to find which namespace the Cluster Operator is running in.
-If the Cluster Operator is running in the same namespace as the resources, only local access is required, and allowed by Strimzi.
+By default, the `STRIMZI_OPERATOR_NAMESPACE` environment variable is configured to use the downward API to find the namespace the Cluster Operator is running in.
+If the Cluster Operator is running in the same namespace as the resources, only local access is required and allowed by Strimzi.
 
 If the Cluster Operator is running in a separate namespace to the resources it manages, any namespace in the Kubernetes cluster is allowed access to the Cluster Operator unless network policy is configured.
-Use the optional `STRIMZI_OPERATOR_NAMESPACE_LABELS` environment variable to establish network policy for the Cluster Operator using namespace labels.
 By adding namespace labels, access to the Cluster Operator is restricted to the namespaces specified.
 
 .Network policy configured for the Cluster Operator deployment
@@ -314,159 +294,17 @@ env:
   #...
 ----
 
-== Periodic reconciliation
+[id='ref-operator-cluster-periodic-reconciliation-{context}']
+== Setting the time interval for periodic reconciliation
 
-Although the Cluster Operator reacts to all notifications about the desired cluster resources received from the Kubernetes cluster,
-if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync with the state of the running Kubernetes cluster.
+Use the `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` variable to set the time interval for periodic reconciliations.
 
-In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.
-You can set the time interval for the periodic reconciliations using the xref:STRIMZI_FULL_RECONCILIATION_INTERVAL_MS[] variable.
+The Cluster Operator reacts to all notifications about applicable cluster resources received from the Kubernetes cluster.
+If the operator is not running, or if a notification is not received for any reason, resources will get out of sync with the state of the running Kubernetes cluster.
+In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the resources with the current cluster deployments in order to have a consistent state across all of them.
 
-== Provisioning Role-Based Access Control (RBAC)
 
-For the Cluster Operator to function it needs permission within the Kubernetes cluster to interact with resources such as `Kafka`, `KafkaConnect`, and so on, as well as the managed resources, such as `ConfigMaps`, `Pods`, `Deployments`, `StatefulSets` and `Services`.
-Such permission is described in terms of Kubernetes role-based access control (RBAC) resources:
+[role="_additional-resources"]
+.Additional resources
 
-* `ServiceAccount`,
-* `Role` and `ClusterRole`,
-* `RoleBinding` and `ClusterRoleBinding`.
-
-In addition to running under its own `ServiceAccount` with a `ClusterRoleBinding`, the Cluster Operator manages some RBAC resources for the components that need access to Kubernetes resources.
-
-Kubernetes also includes privilege escalation protections that prevent components operating under one `ServiceAccount` from granting other `ServiceAccounts` privileges that the granting `ServiceAccount` does not have.
-Because the Cluster Operator must be able to create the `ClusterRoleBindings`, and `RoleBindings` needed by resources it manages, the Cluster Operator must also have those same privileges.
-
-[id='delegated-privileges-{context}']
-== Delegated privileges
-
-When the Cluster Operator deploys resources for a desired `Kafka` resource it also creates `ServiceAccounts`, `RoleBindings`, and `ClusterRoleBindings`, as follows:
-
-* The Kafka broker pods use a `ServiceAccount` called `_cluster-name_-kafka`
-  - When the rack feature is used, the `strimzi-_cluster-name_-kafka-init` `ClusterRoleBinding` is used to grant this `ServiceAccount` access to the nodes within the cluster via a `ClusterRole` called `strimzi-kafka-broker`
-  - When the rack feature is not used and the cluster is not exposed via nodeport, no binding is created
-* The ZooKeeper pods use a `ServiceAccount` called `_cluster-name_-zookeeper`
-* The Entity Operator pod uses a `ServiceAccount` called `_cluster-name_-entity-operator`
-    - The Topic Operator produces Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`
-* The pods for `KafkaConnect` resource uses a `ServiceAccount` called `_cluster-name_-cluster-connect`
-* The pods for `KafkaMirrorMaker` use a `ServiceAccount` called `_cluster-name_-mirror-maker`
-* The pods for `KafkaMirrorMaker2` use a `ServiceAccount` called `_cluster-name_-mirrormaker2`
-* The pods for `KafkaBridge` use a `ServiceAccount` called `_cluster-name_-bridge`
-
-== `ServiceAccount`
-
-The Cluster Operator is best run using a `ServiceAccount`:
-
-[source,yaml,options="nowrap"]
-.Example `ServiceAccount` for the Cluster Operator
-----
-include::../install/cluster-operator/010-ServiceAccount-strimzi-cluster-operator.yaml[]
-----
-
-The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
-
-[source,yaml,numbered,options="nowrap",highlight='12']
-.Partial example of `Deployment` for the Cluster Operator
-----
-include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
-      # ...
-----
-
-Note line 12, where the `strimzi-cluster-operator` `ServiceAccount` is specified as the `serviceAccountName`.
-
-== `ClusterRoles`
-
-The Cluster Operator needs to operate using `ClusterRoles` that gives access to the necessary resources.
-Depending on the Kubernetes cluster setup, a cluster administrator might be needed to create the `ClusterRoles`.
-
-NOTE: Cluster administrator rights are only needed for the creation of the `ClusterRoles`.
-The Cluster Operator will not run under the cluster admin account.
-
-The `ClusterRoles` follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate Kafka, Kafka Connect, and ZooKeeper clusters. The first set of assigned privileges allow the Cluster Operator to manage Kubernetes resources such as `StatefulSets`, `Deployments`, `Pods`, and `ConfigMaps`.
-
-Cluster Operator uses ClusterRoles to grant permission at the namespace-scoped resources level and cluster-scoped resources level:
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` with namespaced resources for the Cluster Operator
-----
-include::../install/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml[]
-----
-
-The second includes the permissions needed for cluster-scoped resources.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` with cluster-scoped resources for the Cluster Operator
-----
-include::../install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
-----
-
-The `strimzi-cluster-operator-leader-election` `ClusterRole` represents the permissions needed for the leader election.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` with leader election permissions
-----
-include::../install/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml[]
-----
-
-The `strimzi-kafka-broker` `ClusterRole` represents the access needed by the init container in Kafka pods that is used for the rack feature. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka broker pods
-----
-include::../install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
-----
-
-The `strimzi-entity-operator` `ClusterRole` represents the access needed by the Topic and User Operators. As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic and User Operators
-----
-include::../install/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml[]
-----
-
-The `strimzi-kafka-client` `ClusterRole` represents the access needed by the components based on Kafka clients which use the client rack-awareness.
-As described in the xref:delegated-privileges-str[Delegated privileges] section, this role is also needed by the Cluster Operator in order to be able to delegate this access.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka client based pods
-----
-include::../install/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml[]
-----
-
-== `ClusterRoleBindings`
-
-The operator needs `ClusterRoleBindings` and `RoleBindings` which associates its `ClusterRole` with its `ServiceAccount`:
-`ClusterRoleBindings` are needed for `ClusterRoles` containing cluster-scoped resources.
-
-[source,yaml,options="nowrap"]
-.Example `ClusterRoleBinding` for the Cluster Operator
-----
-include::../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
-----
-
-`ClusterRoleBindings` are also needed for the `ClusterRoles` needed for delegation:
-
-[source,yaml,options="nowrap"]
-.Example `ClusterRoleBinding` for the Cluster Operator for the Kafka broker rack-awareness
-----
-include::../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
-----
-
-and
-
-[source,yaml,options="nowrap"]
-.Example `ClusterRoleBinding` for the Cluster Operator for the Kafka client rack-awareness
-----
-include::../install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml[]
-----
-
-`ClusterRoles` containing only namespaced resources are bound using `RoleBindings` only.
-
-[source,yaml,options="nowrap"]
-----
-include::../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml[]
-----
-
-[source,yaml,options="nowrap"]
-----
-include::../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml[]
-----
+* {K8sDownwardAPI}

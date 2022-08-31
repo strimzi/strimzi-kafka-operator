@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='ref-operator-cluster-logging-configmap-{context}']
+= ConfigMap for Cluster Operator logging
+
+[role="_abstract"]
+Cluster Operator logging is configured through a `ConfigMap` named `strimzi-cluster-operator`.
+
+A `ConfigMap` containing logging configuration is created when installing the Cluster Operator.
+This `ConfigMap` is described in the file `install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml`.
+You configure Cluster Operator logging by changing the data field `log4j2.properties` in this `ConfigMap`.
+
+To update the logging configuration, you can edit the `050-ConfigMap-strimzi-cluster-operator.yaml` file and then run the following command:
+[source,shell,subs=+quotes]
+kubectl create -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operator.yaml_
+
+Alternatively, edit the `ConfigMap` directly:
+[source,shell,subs=+quotes]
+kubectl edit configmap strimzi-cluster-operator
+
+To change the frequency of the reload interval, set a time in seconds in the `monitorInterval` option in the created `ConfigMap`.
+
+If the `ConfigMap` is missing when the Cluster Operator is deployed, the default logging values are used.
+
+If the `ConfigMap` is accidentally deleted after the Cluster Operator is deployed, the most recently loaded logging configuration is used.
+Create a new `ConfigMap` to load a new logging configuration.
+
+NOTE: Do not remove the `monitorInterval` option from the `ConfigMap`.
