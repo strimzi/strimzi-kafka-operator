@@ -10,6 +10,11 @@ The Cluster Operator is used to deploy a Kafka cluster and other Kafka component
 
 For information on deploying the Cluster Operator, see link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^].
 
+//rbac resources
+include::../../modules/operators/ref-operator-cluster-rbac-resources.adoc[leveloffset=+1]
+//logging configmap
+include::../../modules/operators/ref-operator-cluster-logging-configmap.adoc[leveloffset=+1]
+//configuring environment variables
 include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]
 //Passing proxy configuration variables from Cluster Operator
 include::../../modules/operators/proc-configuring-proxy-config-cluster-operator.adoc[leveloffset=+1]

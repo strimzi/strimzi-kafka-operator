@@ -60,6 +60,7 @@
 :kubernetes-docs: link:https://kubernetes.io/docs/home/
 :kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
+:K8sDownwardAPI: link:https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/#the-downward-api[Downward API^]
 :K8sTolerations: link:https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[Kubernetes taints and tolerations^]
 :K8sTopologySpreadConstraints: link:https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints^]
 :K8sEmptyDir: link:https://kubernetes.io/docs/concepts/storage/volumes/#emptydir[emptyDir^]
