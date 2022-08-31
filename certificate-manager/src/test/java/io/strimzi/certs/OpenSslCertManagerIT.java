@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class OpenSslCertManagerTest {
+public class OpenSslCertManagerIT {
 
     private static CertificateFactory certFactory;
     private static OpenSslCertManager ssl;
@@ -258,7 +258,7 @@ public class OpenSslCertManagerTest {
     @Test
     public void testGenerateClientCert() throws Exception {
 
-        Path path = Files.createTempDirectory(OpenSslCertManagerTest.class.getSimpleName());
+        Path path = Files.createTempDirectory(OpenSslCertManagerIT.class.getSimpleName());
         path.toFile().deleteOnExit();
         long fileCount = Files.list(path).count();
         File caKey = File.createTempFile("ca-key-", ".key");
