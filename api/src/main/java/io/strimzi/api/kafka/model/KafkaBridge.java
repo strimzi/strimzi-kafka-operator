@@ -23,6 +23,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.Collections.emptyMap;
 
@@ -145,6 +146,10 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Predicate<KafkaBridge> isReady() {
+        return CustomResourceConditions.isReady();
     }
 
 }

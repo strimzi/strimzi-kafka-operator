@@ -26,6 +26,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @JsonDeserialize
 @Crd(
@@ -147,4 +148,9 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
+
+    public static Predicate<Kafka> isReady() {
+        return CustomResourceConditions.isReady();
+    }
+
 }

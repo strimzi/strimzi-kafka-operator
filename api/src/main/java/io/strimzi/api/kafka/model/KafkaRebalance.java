@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -24,6 +25,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @JsonDeserialize
 @Crd(
@@ -153,5 +155,9 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Predicate<KafkaRebalance> isState(KafkaRebalanceState state) {
+        return CustomResourceConditions.isLatestGenerationAndAnyConditionMatches(state.name(), "True");
     }
 }

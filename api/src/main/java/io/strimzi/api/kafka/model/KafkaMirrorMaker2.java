@@ -24,6 +24,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @JsonDeserialize
 @Crd(
@@ -140,5 +141,9 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    public static Predicate<KafkaMirrorMaker2> isReady() {
+        return CustomResourceConditions.isReady();
     }
 }

@@ -22,6 +22,7 @@ import lombok.ToString;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.Collections.emptyMap;
 
@@ -135,6 +136,10 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    public static Predicate<KafkaConnector> isReady() {
+        return CustomResourceConditions.isReady();
     }
 }
 

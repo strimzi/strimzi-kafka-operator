@@ -5,11 +5,32 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.Status;
 
 import java.util.function.Predicate;
 
-public class CustomResourceConditions {
+/**
+ * CustomResourceConditions supplies convenience predicates that are intended to reduce boilerplate
+ * code when using fabric8 clients to wait for a CRD to enter some anticipated state. This class provides
+ * a generic implementation that can be used internally, public Predicates are exposed on the CRD
+ * classes.
+ * <p>
+ * An example usage of one of the public predicates ({@link io.strimzi.api.kafka.model.Kafka#isReady() Kafka::isReady}):
+ * <pre>
+ * Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
+ * Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(NAME).waitUntilCondition(Kafka.isReady(), 5, TimeUnit.MINUTES);
+ * </pre>
+ * and to wait on a specific KafkaRebalance state using {@link io.strimzi.api.kafka.model.KafkaRebalance#isState(KafkaRebalanceState) KafkaRebalance::isState}:
+ * <pre>
+ * Crds.kafkaRebalanceOperation(client).inNamespace(NAMESPACE).withName(REBALANCE_NAME)
+ *     .waitUntilCondition(KafkaRebalance.isState(KafkaRebalanceState.ProposalReady), 5, TimeUnit.MINUTES);
+ * </pre>
+ */
+class CustomResourceConditions {
+
+    private CustomResourceConditions() {
+    }
 
     /**
      * Returns a predicate that determines if a CustomResource is ready. A CustomResource is
@@ -20,19 +41,22 @@ public class CustomResourceConditions {
      * @param <T> the type of the custom resource
      * @return a predicate that checks if a CustomResource is ready
      */
-    public static <Y extends Status, T extends CustomResource<?, Y>> Predicate<T> isReady() {
-        return isStatusLatestGenerationAndMatches(anyCondition("Ready", "True"));
+    static <Y extends Status, T extends CustomResource<?, Y>> Predicate<T> isReady() {
+        return isLatestGenerationAndAnyConditionMatches("Ready", "True");
     }
 
     /**
-     * Returns a predicate that determines if a KafkaRebalance is in a ProposalReady state. A KafkaRebalance is
-     * in proposal ready if the observedGeneration of its status is equal to the generation of its metadata
-     * and any of the conditions of its status has type:"ProposalReady" and status:"True"
+     * Returns a predicate that determines if a CustomResource's status is the latest generation
+     * and any of the conditions of its status matches the type and status specified.
      *
-     * @return a predicate that checks if a KafkaRebalance is in ProposalReady state
+     * @param <Y>    the type of the custom resources Status
+     * @param <T>    the type of the custom resource
+     * @param type   the Type of the condition we expect to be present in the status
+     * @param status the Status of the condition we expect to be present in the status
+     * @return a predicate that checks if a CustomResource is ready
      */
-    public static Predicate<KafkaRebalance> isKafkaRebalanceProposalReady() {
-        return isStatusLatestGenerationAndMatches(anyCondition("ProposalReady", "True"));
+    static <Y extends Status, T extends CustomResource<?, Y>> Predicate<T> isLatestGenerationAndAnyConditionMatches(String type, String status) {
+        return isStatusLatestGenerationAndMatches(anyCondition(type, status));
     }
 
 
