@@ -33,6 +33,7 @@
             <version>${cruise-control.version}</version>
         </dependency>
         <!-- This is used to override CVE-2022-25857 => should be removed once swagger uses it out of the box -->
+        <!-- https://github.com/strimzi/strimzi-kafka-operator/issues/7261 covers the removal of this override -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
