@@ -194,11 +194,11 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
             .defaultInstallation()
-//            .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
-//                .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
-//                // default is `baseline` and thus other tests suites are testing it
-//                .withValue("restricted")
-//                .build()))
+            .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
+                .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
+                // default is `baseline` and thus other tests suites are testing it
+                .withValue("restricted")
+                .build()))
             .createInstallation()
             .runInstallation();
     }
