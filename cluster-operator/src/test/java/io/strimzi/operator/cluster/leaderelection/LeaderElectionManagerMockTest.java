@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @EnableKubernetesMockClient(crud = true)
@@ -52,7 +54,7 @@ public class LeaderElectionManagerMockTest {
         // Stop the second member => the leadership in the lease resource will stay as it was
         le2.stop();
         le2NotLeader.await();
-        assertThat(getLease().getSpec().getHolderIdentity(), is("le-2"));
+        assertThat(getLease().getSpec().getHolderIdentity(), anyOf(is("le-2"), nullValue()));
     }
 
     private LeaderElectionManager createLeaderElectionManager(String identity, Runnable startLeadershipCallback, Runnable stopLeadershipCallback)   {
