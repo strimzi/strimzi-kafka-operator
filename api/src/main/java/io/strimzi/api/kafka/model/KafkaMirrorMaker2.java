@@ -143,6 +143,15 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
         this.additionalProperties.put(name, value);
     }
 
+    /**
+     * Returns a predicate that determines if KafkaMirrorMaker2 is ready. A KafkaMirrorMaker2 CRD is
+     * ready if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:"Ready" and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @return a predicate that checks if a KafkaMirrorMaker2 is ready
+     */
     public static Predicate<KafkaMirrorMaker2> isReady() {
         return CustomResourceConditions.isReady();
     }

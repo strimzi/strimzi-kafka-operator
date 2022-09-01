@@ -149,6 +149,15 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
         this.additionalProperties.put(name, value);
     }
 
+    /**
+     * Returns a predicate that determines if Kafka is ready. A Kafka CRD is
+     * ready if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:"Ready" and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @return a predicate that checks if a Kafka is ready
+     */
     public static Predicate<Kafka> isReady() {
         return CustomResourceConditions.isReady();
     }

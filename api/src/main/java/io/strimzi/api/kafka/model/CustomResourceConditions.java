@@ -32,33 +32,13 @@ class CustomResourceConditions {
     private CustomResourceConditions() {
     }
 
-    /**
-     * Returns a predicate that determines if a CustomResource is ready. A CustomResource is
-     * ready if the observedGeneration of its status is equal to the generation of its metadata
-     * and any of the conditions of its status has type:"Ready" and status:"True"
-     *
-     * @param <Y> the type of the custom resources Status
-     * @param <T> the type of the custom resource
-     * @return a predicate that checks if a CustomResource is ready
-     */
     static <Y extends Status, T extends CustomResource<?, Y>> Predicate<T> isReady() {
         return isLatestGenerationAndAnyConditionMatches("Ready", "True");
     }
 
-    /**
-     * Returns a predicate that determines if a CustomResource's status is the latest generation
-     * and any of the conditions of its status matches the type and status specified.
-     *
-     * @param <Y>    the type of the custom resources Status
-     * @param <T>    the type of the custom resource
-     * @param type   the Type of the condition we expect to be present in the status
-     * @param status the Status of the condition we expect to be present in the status
-     * @return a predicate that checks if a CustomResource is ready
-     */
     static <Y extends Status, T extends CustomResource<?, Y>> Predicate<T> isLatestGenerationAndAnyConditionMatches(String type, String status) {
         return isStatusLatestGenerationAndMatches(anyCondition(type, status));
     }
-
 
     private static <Y extends Status> Predicate<Y> anyCondition(String expectedType, String expectedStatus) {
         return (status) -> {

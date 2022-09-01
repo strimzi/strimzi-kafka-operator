@@ -157,6 +157,16 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
         }
     }
 
+    /**
+     * Returns a predicate that determines if KafkaRebalance is in a specified state. A KafkaRebalance CRD is
+     * in that state if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:expectedState and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @param state the expected state of the CRD
+     * @return a predicate that checks if a KafkaRebalance is in a particular state
+     */
     public static Predicate<KafkaRebalance> isState(KafkaRebalanceState state) {
         return CustomResourceConditions.isLatestGenerationAndAnyConditionMatches(state.name(), "True");
     }

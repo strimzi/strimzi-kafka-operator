@@ -145,6 +145,15 @@ public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectS
         this.additionalProperties.put(name, value);
     }
 
+    /**
+     * Returns a predicate that determines if KafkaConnect is ready. A KafkaConnect CRD is
+     * ready if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:"Ready" and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @return a predicate that checks if a KafkaConnect is ready
+     */
     public static Predicate<KafkaConnect> isReady() {
         return CustomResourceConditions.isReady();
     }
