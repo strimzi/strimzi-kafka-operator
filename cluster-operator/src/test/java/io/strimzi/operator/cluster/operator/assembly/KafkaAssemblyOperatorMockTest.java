@@ -34,7 +34,6 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -99,10 +98,6 @@ public class KafkaAssemblyOperatorMockTest {
     private StrimziPodSetController podSetController;
     private KafkaAssemblyOperator operator;
 
-    /*
-     * Params contains the parameterized fields of different configurations of a Kafka and Zookeeper Strimzi cluster
-     */
-
     private Kafka cluster;
 
     @BeforeAll
@@ -157,7 +152,6 @@ public class KafkaAssemblyOperatorMockTest {
                  .endSpec()
                  .build();
 
-        // Configure replicas and storage
         this.kafkaStorage = cluster.getSpec().getKafka().getStorage();
 
         // Configure the Kubernetes Mock
@@ -183,8 +177,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {
-        ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
-        return new ResourceOperatorSupplier(vertx, client, leaderFinder,
+        return new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion), 2_000);
     }
@@ -194,7 +187,7 @@ public class KafkaAssemblyOperatorMockTest {
         LOGGER.info("Reconciling initially -> create");
         return operator.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-kafka").get();
+                StrimziPodSet sps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
                 assertThat(sps, is(notNullValue()));
 
                 sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
@@ -202,7 +195,7 @@ public class KafkaAssemblyOperatorMockTest {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                 });
 
-                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(CLUSTER_NAME + "-zookeeper").get();
+                StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
                 zkSps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
                 });
@@ -415,7 +408,7 @@ public class KafkaAssemblyOperatorMockTest {
 
         context.verify(() -> {
             List<PersistentVolumeClaim> pvc = new ArrayList<>();
-            client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().stream().forEach(persistentVolumeClaim -> {
+            client.persistentVolumeClaims().inNamespace(NAMESPACE).list().getItems().forEach(persistentVolumeClaim -> {
                 if (persistentVolumeClaim.getMetadata().getName().startsWith("data-" + podSetName)) {
                     pvc.add(persistentVolumeClaim);
                     assertThat(persistentVolumeClaim.getSpec().getStorageClassName(), is("foo"));
@@ -503,8 +496,6 @@ public class KafkaAssemblyOperatorMockTest {
     /** Create a cluster from a Kafka Cluster CM */
     @Test
     public void testReconcileKafkaScaleDown(VertxTestContext context) {
-        assumeTrue(KAFKA_REPLICAS > 1, "Skipping scale down test because there's only 1 broker");
-
         int scaleDownTo = KAFKA_REPLICAS - 1;
         // final ordinal will be deleted
         String deletedPod = KafkaResources.kafkaPodName(CLUSTER_NAME, scaleDownTo);
