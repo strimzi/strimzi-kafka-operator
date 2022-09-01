@@ -42,6 +42,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -131,6 +132,8 @@ public class ReconciliationST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorsTaskMaxChangeViaAPI(namespaceName, connectPodName, clusterName, SCALE_TO);
     }
 
+    // Disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/7408
+    @Disabled
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")

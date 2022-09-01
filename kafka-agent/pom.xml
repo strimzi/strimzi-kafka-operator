@@ -33,6 +33,11 @@
             <artifactId>kafka_2.13</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-server-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>

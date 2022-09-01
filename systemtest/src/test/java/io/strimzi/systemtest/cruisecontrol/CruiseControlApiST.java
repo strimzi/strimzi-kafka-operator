@@ -20,6 +20,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -34,6 +35,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+// Disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/7408
+@Disabled
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @Tag(ACCEPTANCE)

@@ -172,7 +172,7 @@
   checksum: 5954C1CF38187134A6E0A21520CBEF5CD5320A3E9290E630C3895990E892219917D911FABBC64DA5DB17BCAA940B8277C23344B50F2FF4256EACA78116E9FDC9
   zookeeper: 3.6.3
   third-party-libs: 3.1.x
-  supported: true
+  supported: false
   default: false
 - version: 3.1.1
   format: 3.1
@@ -181,7 +181,7 @@
   checksum: 5EC72EE76AD14997763F2654ECEF0390FD9628413C287619B734F44193252950D412DEBA684AAE5147AC844A88D9EF10EEFC0FFEB14435F2E00347EF946AA5D6
   zookeeper: 3.6.3
   third-party-libs: 3.1.x
-  supported: true
+  supported: false
   default: false
 - version: 3.1.2
   format: 3.1
@@ -190,7 +190,7 @@
   checksum: EC5955BD9BE0FFE15ADF84EF428F48D341B5393A1E4CBB9D7F80EC4062FF57A28A38D575E19BC0B40AF4143164BB5126721844F42DCE8E70516FC30348C57F95
   zookeeper: 3.6.3
   third-party-libs: 3.1.x
-  supported: true
+  supported: false
   default: false
 - version: 3.2.0
   format: 3.2
@@ -216,6 +216,15 @@
   url: https://archive.apache.org/dist/kafka/3.2.3/kafka_2.13-3.2.3.tgz
   checksum: 4A57D69F8D3B5158DDCA9C64AC366C2975CA55F4C2EF02CD3B122E127016AD1A5AA1DE92E7E2F392FDC3B57AABE75D4631373D77A3A5958C28D911F4034A136F
   zookeeper: 3.6.3
-  third-party-libs: 3.2.3 # Kafka 3.2.3 uses a separate 3rd party libs directory because it uses Jackson 2.13 rather then 2.12 used by previous Kafka 3.2.x versions
+  third-party-libs: 3.2.3 # Kafka 3.2.3 uses a separate 3rd party libs directory because it uses Jackson 2.13 rather than 2.12 used by previous Kafka 3.2.x versions
+  supported: true
+  default: false
+- version: 3.3.0
+  format: 3.3
+  protocol: 3.3
+  url: https://archive.apache.org/dist/kafka/3.3.0/kafka_2.13-3.3.0.tgz
+  checksum: 0943231E4881A70269656CEFE6FC326E856E5FFB17E517996610FF34D9DBA21D84E09F2296F83A5BBC56654740A94D6B341185916AF5DFCE228C15A8E4A45624
+  zookeeper: 3.6.3
+  third-party-libs: 3.3.x
   supported: true
   default: true
