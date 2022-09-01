@@ -139,18 +139,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Aligning with Jackson version 2.12.6 brought by Kafka 3.1.1 and 3.1.2. But Kafka 3.1.0 brings 2.12.3, so we need to exclude jackson-core to avoid conflict -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.jr</groupId>
-            <artifactId>jackson-jr-objects</artifactId>
-            <version>2.12.6</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!-- OAuth -->
         <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-oauth-common</artifactId>
@@ -351,72 +340,14 @@
             <groupId>io.strimzi</groupId>
             <artifactId>kafka-kubernetes-config-provider</artifactId>
             <version>${kafka-kubernetes-config-provider.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.dataformat</groupId>
-                    <artifactId>jackson-dataformat-yaml</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.datatype</groupId>
-                    <artifactId>jackson-datatype-jsr310</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- BEGIN: To avoid conflicts between Jackson 2.12 used by Kafka and 2.13 used by Fabric8, we have to exclude these libraries and include the right versions -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>2.12.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- This is used to override CVE-2022-25857 => should be removed once jackson-dataformat-yaml uses it out of the box -->
         <!-- https://github.com/strimzi/strimzi-kafka-operator/issues/7261 covers the removal of this override -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.32</version>
+            <version>1.33</version>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.12.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-databind</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- END: To avoid conflicts between Jackson 2.12 used by Kafka and 2.13 used by Fabric8, we have to exclude these libraries and include the right versions -->
         <!-- EnvVar Configuration Provider for Apache Kafka -->
         <dependency>
             <groupId>io.strimzi</groupId>

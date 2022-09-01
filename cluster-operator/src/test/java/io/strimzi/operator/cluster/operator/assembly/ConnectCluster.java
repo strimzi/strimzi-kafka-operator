@@ -21,6 +21,7 @@ public class ConnectCluster {
     private int numNodes;
     private String brokerList;
     private final List<Connect> connectInstances = new ArrayList<>();
+    private final List<Integer> connectPorts = new ArrayList<>();
     private final List<String> pluginPath = new ArrayList<>();
 
     ConnectCluster addConnectNodes(int numNodes) {
@@ -35,8 +36,10 @@ public class ConnectCluster {
 
     public void startup() throws InterruptedException {
         for (int i = 0; i < numNodes; i++) {
+            int port = getFreePort();
+
             Map<String, String> workerProps = new HashMap<>();
-            workerProps.put("listeners", "http://localhost:" + getFreePort());
+            workerProps.put("listeners", "http://localhost:" + port);
             workerProps.put("plugin.path", String.join(",", pluginPath));
             workerProps.put("group.id", toString());
             workerProps.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
@@ -59,6 +62,7 @@ public class ConnectCluster {
                     ConnectDistributed connectDistributed = new ConnectDistributed();
                     Connect connect = connectDistributed.startConnect(workerProps);
                     connectInstances.add(connect);
+                    connectPorts.add(port);
                     l.countDown();
                     connect.awaitStop();
                 } catch (ConnectException e)    {
@@ -95,7 +99,7 @@ public class ConnectCluster {
      * @return      Port which is used by given Connect node
      */
     public int getPort(int node) {
-        return connectInstances.get(node).adminUrl().getPort();
+        return connectPorts.get(node);
     }
 
     /**
