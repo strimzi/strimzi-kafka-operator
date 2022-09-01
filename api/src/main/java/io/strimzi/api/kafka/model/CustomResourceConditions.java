@@ -21,10 +21,10 @@ import java.util.function.Predicate;
  * Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
  * Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(NAME).waitUntilCondition(Kafka.isReady(), 5, TimeUnit.MINUTES);
  * </pre>
- * and to wait on a specific KafkaRebalance state using {@link io.strimzi.api.kafka.model.KafkaRebalance#isState(KafkaRebalanceState) KafkaRebalance::isState}:
+ * and to wait on a specific KafkaRebalance state using {@link io.strimzi.api.kafka.model.KafkaRebalance#isInState(KafkaRebalanceState) KafkaRebalance::isInState}:
  * <pre>
  * Crds.kafkaRebalanceOperation(client).inNamespace(NAMESPACE).withName(REBALANCE_NAME)
- *     .waitUntilCondition(KafkaRebalance.isState(KafkaRebalanceState.ProposalReady), 5, TimeUnit.MINUTES);
+ *     .waitUntilCondition(KafkaRebalance.isInState(KafkaRebalanceState.ProposalReady), 5, TimeUnit.MINUTES);
  * </pre>
  */
 class CustomResourceConditions {

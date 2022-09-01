@@ -167,7 +167,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
      * @param state the expected state of the CRD
      * @return a predicate that checks if a KafkaRebalance is in a particular state
      */
-    public static Predicate<KafkaRebalance> isState(KafkaRebalanceState state) {
+    public static Predicate<KafkaRebalance> isInState(KafkaRebalanceState state) {
         return CustomResourceConditions.isLatestGenerationAndAnyConditionMatches(state.name(), "True");
     }
 }

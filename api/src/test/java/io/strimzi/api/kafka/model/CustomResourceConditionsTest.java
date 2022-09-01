@@ -233,7 +233,7 @@ class CustomResourceConditionsTest {
                     .addNewCondition().withType(crdState.name()).withStatus("True").endCondition()
                     .endStatus().build();
             for (KafkaRebalanceState testState : KafkaRebalanceState.values()) {
-                assertEquals(KafkaRebalance.isState(testState).test(build), testState == crdState);
+                assertEquals(KafkaRebalance.isInState(testState).test(build), testState == crdState);
             }
         }
     }
