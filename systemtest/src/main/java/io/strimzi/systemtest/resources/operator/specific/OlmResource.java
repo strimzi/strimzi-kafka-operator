@@ -4,6 +4,11 @@
  */
 package io.strimzi.systemtest.resources.operator.specific;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
@@ -28,7 +33,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -52,18 +59,18 @@ public class OlmResource implements SpecificResourceType {
 
     @Override
     public void create(ExtensionContext extensionContext) {
-        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, null);
     }
 
-    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        this.clusterOperator(this.namespace, operationTimeout, reconciliationInterval);
+        this.clusterOperator(this.namespace, operationTimeout, reconciliationInterval, extraEnvVars);
     }
 
     public void create(final String namespaceName, OlmInstallationStrategy olmInstallationStrategy, String fromVersion,
-                       final String channelName) {
+                       final String channelName, List<EnvVar> extraEnvVars) {
         this.namespace = namespaceName;
-        this.clusterOperator(namespaceName, olmInstallationStrategy, fromVersion, channelName);
+        this.clusterOperator(namespaceName, olmInstallationStrategy, fromVersion, channelName, extraEnvVars);
     }
 
     @Override
@@ -76,19 +83,19 @@ public class OlmResource implements SpecificResourceType {
     }
 
     private void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion,
-                                 final String channelName) {
+                                 final String channelName, List<EnvVar> extraEnvVars) {
         clusterOperator(namespace, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL,
-            olmInstallationStrategy, fromVersion, channelName);
+            olmInstallationStrategy, fromVersion, channelName, extraEnvVars);
     }
 
-    private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval) {
+    private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars) {
         clusterOperator(namespace, operationTimeout, reconciliationInterval, OlmInstallationStrategy.Automatic, null,
-            "stable");
+            "stable", extraEnvVars);
     }
 
     private void clusterOperator(String namespace, long operationTimeout, long reconciliationInterval,
                                  OlmInstallationStrategy olmInstallationStrategy, String fromVersion,
-                                 final String channelName) {
+                                 final String channelName, List<EnvVar> extraEnvVars) {
 
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
         if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(namespace)) {
@@ -97,12 +104,12 @@ public class OlmResource implements SpecificResourceType {
 
         if (fromVersion != null) {
             createAndModifySubscription(namespace, operationTimeout, reconciliationInterval, olmInstallationStrategy,
-                fromVersion, channelName);
+                fromVersion, channelName, extraEnvVars);
             // must be strimzi-cluster-operator.v0.18.0
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + fromVersion;
         } else {
             createAndModifySubscriptionLatestRelease(namespace, operationTimeout, reconciliationInterval,
-                olmInstallationStrategy);
+                olmInstallationStrategy, extraEnvVars);
             csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION;
         }
 
@@ -113,7 +120,7 @@ public class OlmResource implements SpecificResourceType {
             approveNonUsedInstallPlan();
         }
 
-        // Make sure that operator will be deleted
+        // Make sure that operator will be created
         TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
             () -> kubeClient(namespace).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null);
 
@@ -229,7 +236,7 @@ public class OlmResource implements SpecificResourceType {
     public void updateSubscription(final String newChannelName, final String olmOperatorVersion, final long operationsTimeout,
                                    final long reconciliationInterval, final OlmInstallationStrategy olmInstallationStrategy) {
         createAndModifySubscription(this.namespace, operationsTimeout, reconciliationInterval, olmInstallationStrategy,
-            olmOperatorVersion, newChannelName);
+            olmOperatorVersion, newChannelName, null);
         this.csvName = Environment.OLM_APP_BUNDLE_PREFIX + ".v" + olmOperatorVersion;
     }
 
@@ -259,34 +266,58 @@ public class OlmResource implements SpecificResourceType {
      */
     private static void createAndModifySubscription(String namespace, long operationTimeout, long reconciliationInterval,
                                                     OlmInstallationStrategy installationStrategy, String version,
-                                                    final String channelName) {
+                                                    final String channelName, List<EnvVar> extraEnvVars) {
         try {
-            File subscriptionFile = File.createTempFile("subscription", ".yaml");
-            InputStream subscriptionInputStream = OlmResource.class.getClassLoader().getResourceAsStream("olm/subscription.yaml");
-            String subscription = TestUtils.readResource(subscriptionInputStream);
-            TestUtils.writeFile(subscriptionFile.getAbsolutePath(),
-                subscription.replace("${OPERATOR_NAMESPACE}", namespace)
-                    .replace("${OLM_OPERATOR_NAME}", Environment.OLM_OPERATOR_NAME)
-                    .replace("${OLM_SOURCE_NAME}", Environment.OLM_SOURCE_NAME)
-                    .replace("${OLM_SOURCE_NAMESPACE}", Environment.OLM_SOURCE_NAMESPACE)
-                    .replace("${OLM_APP_BUNDLE_PREFIX}", Environment.OLM_APP_BUNDLE_PREFIX)
-                    .replace("${OLM_OPERATOR_VERSION}", version)
-                    .replace("${OLM_CHANNEL}", channelName)
-                    .replace("${OLM_INSTALL_PLAN_APPROVAL}", installationStrategy.toString())
-                    .replace("${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}", Long.toString(reconciliationInterval))
-                    .replace("${STRIMZI_OPERATION_TIMEOUT_MS}", Long.toString(operationTimeout))
-                    .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES));
+            YAMLMapper mapper = new YAMLMapper();
+            File loadedSubscriptionFile = new File(Objects.requireNonNull(OlmResource.class.getClassLoader().getResource("olm/subscription.yaml")).getPath());
+            JsonNode node = mapper.readTree(loadedSubscriptionFile);
 
-            cmdKubeClient(namespace).apply(subscriptionFile);
+            ObjectNode metadataNode = (ObjectNode) node.at("/metadata");
+            metadataNode.put("namespace", namespace);
+
+            ObjectNode specNode = (ObjectNode) node.at("/spec");
+            specNode.put("name", Environment.OLM_OPERATOR_NAME);
+            specNode.put("source", Environment.OLM_SOURCE_NAME);
+            specNode.put("sourceNamespace", Environment.OLM_SOURCE_NAMESPACE);
+            specNode.put("startingCSV", Environment.OLM_APP_BUNDLE_PREFIX + ".v0.29.0" + version);
+            specNode.put("channel", channelName);
+            specNode.put("installPlanApproval", installationStrategy.toString());
+
+            ObjectNode configNode = (ObjectNode) specNode.at("/config");
+            for (JsonNode envVar : configNode.get("env")) {
+                String varName = envVar.get("name").textValue();
+                if (varName.matches("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS")) {
+                    ((ObjectNode) envVar).put("value", String.valueOf(reconciliationInterval));
+                }
+                if (varName.matches("STRIMZI_OPERATION_TIMEOUT_MS")) {
+                    ((ObjectNode) envVar).put("value", String.valueOf(operationTimeout));
+                }
+                if (varName.matches("STRIMZI_FEATURE_GATES")) {
+                    ((ObjectNode) envVar).put("value", Environment.STRIMZI_FEATURE_GATES);
+                }
+            }
+
+            if (extraEnvVars != null) {
+                JsonNode envNode = configNode.at("/env");
+                for (EnvVar envVar: extraEnvVars) {
+                    ObjectNode objectEnvVar = mapper.createObjectNode();
+                    objectEnvVar.put("name", envVar.getName());
+                    objectEnvVar.put("value", envVar.getValue());
+
+                    ((ArrayNode) envNode).add(objectEnvVar);
+                }
+            }
+
+            cmdKubeClient(namespace).applyContent(mapper.writeValueAsString(node));
         }  catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static void createAndModifySubscriptionLatestRelease(String namespace, long reconciliationInterval,
-                                                                 long operationTimeout, OlmInstallationStrategy installationStrategy) {
+                                                                 long operationTimeout, OlmInstallationStrategy installationStrategy, List<EnvVar> extraEnvVars) {
         createAndModifySubscription(namespace, reconciliationInterval, operationTimeout, installationStrategy,
-            Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION, "stable");
+            Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION, "stable", extraEnvVars);
     }
 
     private static void deleteOlm(String deploymentName, String namespace, String csvName) {

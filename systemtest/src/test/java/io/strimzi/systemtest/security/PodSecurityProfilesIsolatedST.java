@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -196,11 +194,11 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
             .defaultInstallation()
-            .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
-                .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
-                // default is `baseline` and thus other tests suites are testing it
-                .withValue("restricted")
-                .build()))
+//            .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
+//                .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
+//                // default is `baseline` and thus other tests suites are testing it
+//                .withValue("restricted")
+//                .build()))
             .createInstallation()
             .runInstallation();
     }
