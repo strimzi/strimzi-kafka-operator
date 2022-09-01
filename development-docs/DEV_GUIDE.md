@@ -103,7 +103,7 @@ Follow these steps to import the project in IntelliJ IDEA, run code generation a
 
 Afterwards IntelliJ should no longer have any`Cannot resolve symbol` errors. 
 
-## IDE build problems
+### IDE build problems
 
 The build also uses a Java annotation processor. Some IDEs (such as IntelliJ's IDEA) by default don't run the annotation
 processor in their build process. You can run `mvn clean install -DskipTests` to run the annotation processor
