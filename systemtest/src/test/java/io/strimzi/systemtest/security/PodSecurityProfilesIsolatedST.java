@@ -18,6 +18,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
+import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -87,6 +88,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testKafkaWithKafkaBridgeRestrictedSecurityProfile(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext);
+        addRestrictedPodSecurityProfileToNamespace(ts.getNamespaceName());
 
         // if Kafka and KafkaBridge Pods deploys it means that it works...
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(ts.getClusterName(), 3).build());
@@ -118,7 +120,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             KafkaTopicTemplates.topic(ts.getClusterName(), ts.getTopicName()).build(),
             KafkaTopicTemplates.topic(ts.getTargetClusterName(), ts.getTargetTopicName()).build());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(ts.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(ts.getClusterName()))
@@ -126,6 +128,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             .withConsumerName(ts.getConsumerName())
             .withNamespaceName(ts.getNamespaceName())
             .withUserName(ts.getUserName())
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
@@ -160,7 +163,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             KafkaTopicTemplates.topic(ts.getClusterName(), ts.getTopicName()).build(),
             KafkaTopicTemplates.topic(ts.getTargetClusterName(), ts.getTargetTopicName()).build());
 
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(ts.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(ts.getClusterName()))
@@ -168,6 +171,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             .withConsumerName(ts.getConsumerName())
             .withNamespaceName(ts.getNamespaceName())
             .withUserName(ts.getUserName())
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
@@ -187,6 +191,41 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerStrimzi());
 
         ClientUtils.waitForClientSuccess(ts.getConsumerName(), ts.getNamespaceName(), MESSAGE_COUNT);
+    }
+
+    @ParallelNamespaceTest
+    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
+    void testKafkaWithIncorrectConfiguredKafkaClient(ExtensionContext extensionContext) {
+        final TestStorage ts = new TestStorage(extensionContext);
+        addRestrictedPodSecurityProfileToNamespace(ts.getNamespaceName());
+
+        // if Kafka Pods deploys it means that it works...
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(ts.getClusterName(), 3).build());
+
+        // 1. check the generated structure of SecurityContext of Kafka Pods
+        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
+        verifyPodAndContainerSecurityContext(PodUtils.getKafkaClusterPods(ts));
+
+        // 2. check that Client is unable to create due to incorrect configuration
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(ts.getTopicName())
+            .withMessageCount(MESSAGE_COUNT)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(ts.getClusterName()))
+            .withConsumerName(ts.getConsumerName())
+            .withProducerName(ts.getProducerName())
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            // we set DEFAULT, which is in this case incorrect and client should crash
+            .withPodSecurityPolicy(PodSecurityProfile.DEFAULT)
+            .build();
+
+        // 3. excepted failure
+        // job_controller.go:1437 pods "..." is forbidden: violates PodSecurity "restricted:latest": allowPrivilegeEscalation != false
+        // (container "..." must set securityContext.allowPrivilegeEscalation=false),
+        // unrestricted capabilities (container "..." must set securityContext.capabilities.drop=["ALL"]),
+        // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
+        // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
+        resourceManager.createResource(extensionContext, false, kafkaClients.producerStrimzi());
+        ClientUtils.waitForClientTimeout(ts.getProducerName(), ts.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @BeforeAll
@@ -247,6 +286,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withProducerName(testStorage.getProducerName())
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 
         resourceManager.createResource(extensionContext,
