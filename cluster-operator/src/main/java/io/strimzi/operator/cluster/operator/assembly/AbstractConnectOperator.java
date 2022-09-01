@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -51,7 +50,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.Operator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -85,7 +83,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -121,17 +118,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final ServiceAccountOperator serviceAccountOperations;
     private final int port;
 
-    private Map<String, Counter> connectorsReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
-    private Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
-
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                    CrdOperator<C, T, L> resourceOperator,
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
                                    int port) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
+        super(vertx, kind, resourceOperator, new ConnectOperatorMetricsHolder(kind, config.getCustomResourceSelector(), supplier.metricsProvider), config.getCustomResourceSelector());
+
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
@@ -163,6 +156,16 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             }
             return CompositeFuture.join(connectorFutures);
         }).map(ignored -> Boolean.FALSE);
+    }
+
+    @Override
+    public ConnectOperatorMetricsHolder metrics()   {
+        // We have to check the type because of Spotbugs
+        if (metrics instanceof ConnectOperatorMetricsHolder) {
+            return (ConnectOperatorMetricsHolder) metrics;
+        } else {
+            throw new RuntimeException("MetricsHolder in AbstractConnectOperator should be always of type ConnectOperatorMetricsHolder");
+        }
     }
 
     /**
@@ -402,14 +405,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                              boolean useResources, String connectorName, KafkaConnector connector) {
         Promise<Void> reconciliationResult = Promise.promise();
 
-        connectorsReconciliationsCounter(reconciliation.namespace()).increment();
-        Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics.meterRegistry());
+        metrics().connectorsReconciliationsCounter(reconciliation.namespace()).increment();
+        Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics().metricsProvider().meterRegistry());
 
         if (connector != null && Annotations.isReconciliationPausedWithAnnotation(connector)) {
             return maybeUpdateConnectorStatus(reconciliation, connector, null, null).compose(
                 i -> {
-                    connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
-                    connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
+                    connectorsReconciliationsTimerSample.stop(metrics().connectorsReconciliationsTimer(reconciliation.namespace()));
+                    metrics().connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
                     return Future.succeededFuture();
                 }
             );
@@ -420,28 +423,28 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     if (result.succeeded() && result.result() == null)  {
                         // The reconciliation succeeded, but there is no status to be set => we complete the reconciliation and return
                         // This normally means that the connector was deleted and there is no status to be set
-                        connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
-                        connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+                        metrics().connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
+                        connectorsReconciliationsTimerSample.stop(metrics().connectorsReconciliationsTimer(reconciliation.namespace()));
                         reconciliationResult.complete();
                     } else if (result.failed() && connector == null) {
                         // The reconciliation failed on connector deletion, so there is nowhere for status to be set => we complete the reconciliation and return
                         LOGGER.warnCr(reconciliation, "Error reconciling connector {}", connectorName, result.cause());
-                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
-                        connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+                        metrics().connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
+                        connectorsReconciliationsTimerSample.stop(metrics().connectorsReconciliationsTimer(reconciliation.namespace()));
 
                         // We suppress the error to not fail Connect reconciliation just because of a failing connector
                         reconciliationResult.complete();
                     } else {
                         maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
                                 .onComplete(statusResult -> {
-                                    connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+                                    connectorsReconciliationsTimerSample.stop(metrics().connectorsReconciliationsTimer(reconciliation.namespace()));
 
                                     if (result.succeeded() && statusResult.succeeded()) {
-                                        connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
+                                        metrics().connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
                                         reconciliationResult.complete();
                                     } else {
                                         // Reconciliation failed if either reconciliation or status update failed
-                                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
+                                        metrics().connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
 
                                         // We suppress the error to not fail Connect reconciliation just because of a failing connector
                                         reconciliationResult.complete();
@@ -869,27 +872,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             });
         }
         return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), null);
-    }
-
-    public Counter connectorsReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations", metrics, null, connectorsReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources");
-    }
-
-    public Counter connectorsFailedReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.failed", metrics, null, connectorsFailedReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which failed");
-    }
-
-    public Counter connectorsSuccessfulReconciliationsCounter(String namespace) {
-        return Operator.getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.successful", metrics, null, connectorsSuccessfulReconciliationsCounterMap,
-                "Number of reconciliations done by the operator for individual resources which were successful");
-    }
-
-    public Timer connectorsReconciliationsTimer(String namespace) {
-        return Operator.getTimer(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.duration",
-                metrics, null, connectorsReconciliationsTimerMap,
-                "The time the reconciliation takes to complete");
     }
 
     /**

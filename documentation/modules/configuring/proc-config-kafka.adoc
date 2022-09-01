@@ -223,7 +223,7 @@ Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
 <30> Entity Operator xref:type-TlsSidecar-reference[TLS sidecar configuration]. Entity Operator uses the TLS sidecar for secure communication with ZooKeeper.
 <31> Specified xref:property-topic-operator-logging-reference[Topic Operator loggers and log levels]. This example uses `inline` logging.
 <32> Specified xref:property-user-operator-logging-reference[User Operator loggers and log levels].
-<33> Kafka Exporter configuration. link:{BookURLDeploying}#assembly-metrics-kafka-exporter-str[Kafka Exporter] is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data.
+<33> Kafka Exporter configuration. link:{BookURLDeploying}#con-metrics-kafka-exporter-lag-str[Kafka Exporter] is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 <34> Optional configuration for Cruise Control, which is used to xref:cruise-control-concepts-str[rebalance the Kafka cluster].
 
 . Create or update the resource:

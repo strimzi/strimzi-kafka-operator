@@ -1,0 +1,25 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='assembly-using-multiple-cluster-operator-replicas-{context}']
+= Running multiple Cluster Operator replicas with leader election
+
+[role="_abstract"]
+The default Cluster Operator configuration enables xref:ref-operator-cluster-leader-election-{context}[leader election]. 
+Use leader election to run multiple parallel replicas of the Cluster Operator.
+One replica is elected as the active leader and operates the deployed resources.
+The other replicas run in standby mode.
+When the leader stops or fails, one of the standby replicas is elected as the new leader and starts operating the deployed resources.
+
+By default, Strimzi runs with a single Cluster Operator replica that is always the leader replica. 
+When a single Cluster Operator replica stops or fails, Kubernetes starts a new replica.
+
+Running the Cluster Operator with multiple replicas is not essential.
+But it's useful to have replicas on standby in case of large-scale disruptions. 
+For example, suppose multiple worker nodes or an entire availability zone fails. 
+This failure might cause the Cluster Operator pod and many Kafka pods to go down at the same time.  
+If subsequent pod scheduling causes congestion through lack of resources, this can delay operations when running a single Cluster Operator.  
+
+// Configuring Cluster Operator replicas
+include::../../modules/operators/proc-configuring-multiple-cluster-operators.adoc[leveloffset=+1]

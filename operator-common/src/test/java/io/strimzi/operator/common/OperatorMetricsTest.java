@@ -66,11 +66,11 @@ public class OperatorMetricsTest {
     }
 
     public void successfulReconcile(VertxTestContext context, Labels selectorLabels)  {
-        MetricsProvider metrics = createCleanMetricsProvider();
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, selectorLabels) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
@@ -90,7 +90,7 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
+                    MeterRegistry registry = metricsProvider.meterRegistry();
                     Tag selectorTag = Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "");
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
@@ -128,11 +128,11 @@ public class OperatorMetricsTest {
     }
 
     public void failingReconcile(VertxTestContext context, Labels selectorLabels)  {
-        MetricsProvider metrics = createCleanMetricsProvider();
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, selectorLabels) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
@@ -152,7 +152,7 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
+                    MeterRegistry registry = metricsProvider.meterRegistry();
                     Tag selectorTag = Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "");
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
@@ -192,11 +192,11 @@ public class OperatorMetricsTest {
 
     @Test
     public void testPauseReconcile(VertxTestContext context)  {
-        MetricsProvider metrics = createCleanMetricsProvider();
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
@@ -216,7 +216,7 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
+                    MeterRegistry registry = metricsProvider.meterRegistry();
                     Tag selectorTag = Tag.of("selector", "");
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
@@ -242,11 +242,11 @@ public class OperatorMetricsTest {
 
     @Test
     public void testFailingWithLockReconcile(VertxTestContext context)  {
-        MetricsProvider metrics = createCleanMetricsProvider();
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new UnableToAcquireLockException());
@@ -266,7 +266,7 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
+                    MeterRegistry registry = metricsProvider.meterRegistry();
                     Tag selectorTag = Tag.of("selector", "");
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
@@ -279,7 +279,7 @@ public class OperatorMetricsTest {
 
     @Test
     public void testDeleteCountsReconcile(VertxTestContext context)  {
-        MetricsProvider metrics = createCleanMetricsProvider();
+        MetricsProvider metricsProvider = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
@@ -298,7 +298,7 @@ public class OperatorMetricsTest {
             }
         };
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return null;
@@ -318,7 +318,7 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
+                    MeterRegistry registry = metricsProvider.meterRegistry();
                     Tag selectorTag = Tag.of("selector", "");
 
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));

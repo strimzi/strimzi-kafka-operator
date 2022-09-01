@@ -168,6 +168,6 @@ create -f install/cluster-operator -n my-cluster-operator-namespace
 [role="_additional-resources"]
 .Additional resources
 * xref:proc-config-kafka-str[Configuring Kafka]
-* xref:logging_configuration_by_configmap[Cluster Operator logging]
+* xref:ref-operator-cluster-logging-configmap-str[Cluster Operator logging]
 * xref:property-topic-operator-logging-reference[Topic Operator logging]
 * xref:property-user-operator-logging-reference[User Operator logging]

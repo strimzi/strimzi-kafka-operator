@@ -11,6 +11,7 @@
 * Update Strimzi Kafka Bridge to 0.22.0
 * Add support for IPv6 addresses being used in Strimzi issued certificates
 * Make it easier to wait for custom resource readiness when using the Strimzi api module
+* Add StrimziPodSet reconciliation metrics
 
 ### Deprecations and removals
 

@@ -20,7 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static java.util.Collections.emptyMap;
 
-public class SecretCertProviderTest {
+public class SecretCertProviderIT {
 
     private static CertManager ssl;
     private static SecretCertProvider secretCertProvider;
