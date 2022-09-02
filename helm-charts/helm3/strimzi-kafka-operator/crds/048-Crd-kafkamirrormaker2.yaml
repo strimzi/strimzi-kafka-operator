@@ -458,7 +458,7 @@ spec:
                       type: string
                       enum:
                         - jaeger
-                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
+                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing. The Jaeger tracing is deprecated.
                   required:
                     - type
                   description: The configuration of tracing in Kafka Connect.
@@ -925,6 +925,8 @@ spec:
                                     x-kubernetes-preserve-unknown-fields: true
                                     type: object
                               maxSkew:
+                                type: integer
+                              minDomains:
                                 type: integer
                               topologyKey:
                                 type: string
@@ -1601,6 +1603,8 @@ spec:
                                     x-kubernetes-preserve-unknown-fields: true
                                     type: object
                               maxSkew:
+                                type: integer
+                              minDomains:
                                 type: integer
                               topologyKey:
                                 type: string
