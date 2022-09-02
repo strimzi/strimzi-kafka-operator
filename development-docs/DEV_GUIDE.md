@@ -103,7 +103,7 @@ Follow these steps to import the project in IntelliJ IDEA, run code generation a
 2. From the toolbar in the [Maven tool window](https://www.jetbrains.com/help/idea/maven-projects-tool-window.html#toolbar), click on `Generate Sources and Update Folders For All Projects` button to initiate the code generation.
 3. Restart the IDE via **Find Action**: press `Ctrl+Shift+A` and type **Restart IDE**.
 
-Afterwards IntelliJ should no longer have any`Cannot resolve symbol` errors.
+Afterwards IntelliJ should no longer have any `Cannot resolve symbol` errors.
 
 Note: After running the Maven build in the terminal you might need to [reload the project](https://www.jetbrains.com/help/idea/delegate-build-and-run-actions-to-maven.html#maven_reimport) from the Maven tool window.
 
