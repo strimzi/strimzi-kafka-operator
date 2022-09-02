@@ -151,10 +151,20 @@ public class LogCollector {
                 if (StUtils.isIsolatedTest(extensionContext) ||
                     StUtils.isParallelTest(extensionContext) ||
                     StUtils.isParallelNamespaceTest(extensionContext))  {
+
+                    String testMethod = extensionContext.getTestMethod().isPresent() ? extensionContext.getTestMethod().get().getName() : "";
+
                     final Set<String> generatedTestSuiteNamespaces =
                         KubeClusterResource.getMapWithSuiteNamespaces().get(
-                            CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()));
-                    namespaces.addAll(generatedTestSuiteNamespaces);
+                            CollectorElement.createCollectorElement(
+                                extensionContext.getRequiredTestClass().getName(),
+                                testMethod
+                            ));
+
+                    if (generatedTestSuiteNamespaces != null) {
+                        namespaces.addAll(generatedTestSuiteNamespaces);
+                    }
+
                     LOGGER.debug("{} adding to all namespaces, which should be collected: {}", generatedTestSuiteNamespaces, namespaces.toString());
                 }
             }
