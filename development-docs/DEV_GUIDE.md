@@ -6,6 +6,9 @@ This document gives a detailed breakdown of the various build processes and opti
 
 - [Developer Quick Start](#developer-quick-start)
 - [Build Pre-Requisites](#build-pre-requisites)
+- [Using an IDE](#using-an-ide)
+   - [IntelliJ IDEA](#intellij-idea)
+   - [IDE build problems](#ide-build-problems)
 - [Build and deploy Strimzi from source](#build-and-deploy-from-source)
 - [Build details](#build-details)
    - [Make targets](#make-targets)
@@ -18,7 +21,6 @@ This document gives a detailed breakdown of the various build processes and opti
 - [Helm Chart](#helm-chart)
 - [Running system tests](#running-system-tests)
 - [DCO Signoff](#dco-signoff)
-- [IDE build problems](#ide-build-problems)
 - [Building container images for other platforms with Docker `buildx`](#building-container-images-for-other-platforms-with-docker-buildx)
 
 <!-- /TOC -->
@@ -101,7 +103,9 @@ Follow these steps to import the project in IntelliJ IDEA, run code generation a
 2. From the toolbar in the [Maven tool window](https://www.jetbrains.com/help/idea/maven-projects-tool-window.html#toolbar), click on `Generate Sources and Update Folders For All Projects` button to initiate the code generation.
 3. Restart the IDE via **Find Action**: press `Ctrl+Shift+A` and type **Restart IDE**.
 
-Afterwards IntelliJ should no longer have any`Cannot resolve symbol` errors. 
+Afterwards IntelliJ should no longer have any`Cannot resolve symbol` errors.
+
+Note: After running the Maven build in the terminal you might need to [reload the project](https://www.jetbrains.com/help/idea/delegate-build-and-run-actions-to-maven.html#maven_reimport) from the Maven tool window.
 
 ### IDE build problems
 
