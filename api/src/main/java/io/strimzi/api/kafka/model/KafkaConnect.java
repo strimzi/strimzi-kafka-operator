@@ -25,6 +25,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @JsonDeserialize
 @Crd(
@@ -142,5 +143,18 @@ public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectS
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    /**
+     * Returns a predicate that determines if KafkaConnect is ready. A KafkaConnect CRD is
+     * ready if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:"Ready" and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @return a predicate that checks if a KafkaConnect is ready
+     */
+    public static Predicate<KafkaConnect> isReady() {
+        return CustomResourceConditions.isReady();
     }
 }

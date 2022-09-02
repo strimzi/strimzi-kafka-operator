@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -24,6 +25,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 @JsonDeserialize
 @Crd(
@@ -153,5 +155,19 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Returns a predicate that determines if KafkaRebalance is in a specified state. A KafkaRebalance CRD is
+     * in that state if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:expectedState and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @param state the expected state of the CRD
+     * @return a predicate that checks if a KafkaRebalance is in a particular state
+     */
+    public static Predicate<KafkaRebalance> isInState(KafkaRebalanceState state) {
+        return CustomResourceConditions.isLatestGenerationAndAnyConditionMatches(state.name(), "True");
     }
 }

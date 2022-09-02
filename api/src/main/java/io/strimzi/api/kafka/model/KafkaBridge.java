@@ -23,6 +23,7 @@ import lombok.EqualsAndHashCode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static java.util.Collections.emptyMap;
 
@@ -145,6 +146,19 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Returns a predicate that determines if KafkaBridge is ready. A KafkaBridge CRD is
+     * ready if the observedGeneration of its status is equal to the generation of its metadata
+     * and any of the conditions of its status has type:"Ready" and status:"True"
+     * <p>
+     * See {@link CustomResourceConditions CustomResourceConditions} for explanation/examples
+     *
+     * @return a predicate that checks if a KafkaBridge is ready
+     */
+    public static Predicate<KafkaBridge> isReady() {
+        return CustomResourceConditions.isReady();
     }
 
 }
