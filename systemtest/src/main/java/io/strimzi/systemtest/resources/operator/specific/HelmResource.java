@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.operator.specific;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceItem;
@@ -18,6 +19,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -46,13 +48,13 @@ public class HelmResource implements SpecificResourceType {
     }
 
     public void create(ExtensionContext extensionContext) {
-        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL);
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, null);
     }
 
-    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
-        this.clusterOperator(operationTimeout, reconciliationInterval);
+        this.clusterOperator(operationTimeout, reconciliationInterval, extraEnvVars);
     }
 
     @Override
@@ -60,11 +62,7 @@ public class HelmResource implements SpecificResourceType {
         this.deleteClusterOperator();
     }
 
-    private void clusterOperator(long operationTimeout) {
-        clusterOperator(operationTimeout, Constants.RECONCILIATION_INTERVAL);
-    }
-
-    private void clusterOperator(long operationTimeout, long reconciliationInterval) {
+    private void clusterOperator(long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars) {
 
         Map<String, Object> values = new HashMap<>();
         // image registry config
@@ -93,6 +91,16 @@ public class HelmResource implements SpecificResourceType {
         values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
         if (!this.namespaceToWatch.equals("*") && !this.namespaceToWatch.equals(this.namespaceInstallTo)) {
             values.put("watchNamespaces", buildWatchNamespaces());
+        }
+
+        // Set extraEnvVars into Helm Chart
+        if (extraEnvVars != null) {
+            int envVarIndex = 0;
+            for (EnvVar envVar: extraEnvVars) {
+                values.put("extraEnvs[" + envVarIndex + "].name", envVar.getName());
+                values.put("extraEnvs[" + envVarIndex + "].value", envVar.getValue());
+                envVarIndex++;
+            }
         }
 
         Path pathToChart = new File(HELM_CHART).toPath();

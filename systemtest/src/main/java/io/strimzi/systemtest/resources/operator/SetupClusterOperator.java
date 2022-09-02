@@ -231,7 +231,7 @@ public class SetupClusterOperator {
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         }
         olmResource = new OlmResource(this.namespaceInstallTo);
-        olmResource.create(this.namespaceInstallTo, OlmInstallationStrategy.Manual, fromVersion, channelName);
+        olmResource.create(this.namespaceInstallTo, OlmInstallationStrategy.Manual, fromVersion, channelName, extraEnvVars);
 
         return this;
     }
@@ -240,7 +240,7 @@ public class SetupClusterOperator {
         LOGGER.info("Install ClusterOperator via Helm");
         helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
         createCONamespaceIfNeeded();
-        helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+        helmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars);
     }
 
     private void bundleInstallation() {
@@ -286,13 +286,13 @@ public class SetupClusterOperator {
                 createCONamespaceIfNeeded();
                 createClusterRoleBindings();
                 olmResource = new OlmResource(namespaceInstallTo);
-                olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+                olmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars);
             }
             // single-namespace olm co-operator
         } else {
             createCONamespaceIfNeeded();
             olmResource = new OlmResource(namespaceInstallTo);
-            olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+            olmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars);
         }
     }
 
