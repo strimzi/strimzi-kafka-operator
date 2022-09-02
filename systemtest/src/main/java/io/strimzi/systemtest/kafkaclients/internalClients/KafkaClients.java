@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.sundr.builder.annotations.Buildable;
@@ -41,6 +42,7 @@ public class KafkaClients extends BaseClients {
     private String userName;
     private String caCertSecretName;
     private String headers;
+    private PodSecurityProfile podSecurityPolicy;
 
     public String getProducerName() {
         return producerName;
@@ -124,6 +126,13 @@ public class KafkaClients extends BaseClients {
         this.headers = headers;
     }
 
+    public PodSecurityProfile getPodSecurityPolicy() {
+        return this.podSecurityPolicy;
+    }
+    public void setPodSecurityPolicy(final PodSecurityProfile podSecurityPolicy) {
+        this.podSecurityPolicy = podSecurityPolicy;
+    }
+
     public Job producerStrimzi() {
         return defaultProducerStrimzi().build();
     }
@@ -182,7 +191,7 @@ public class KafkaClients extends BaseClients {
             podSpecBuilder.withImagePullSecrets(imagePullSecrets);
         }
 
-        JobBuilder builder = new JobBuilder()
+        final JobBuilder builder = new JobBuilder()
             .withNewMetadata()
                 .withNamespace(this.getNamespaceName())
                 .withLabels(producerLabels)
@@ -245,7 +254,7 @@ public class KafkaClients extends BaseClients {
             .endSpec();
 
         if (this.getHeaders() != null) {
-            builder = builder
+            builder
                 .editSpec()
                     .editTemplate()
                         .editSpec()
@@ -258,6 +267,10 @@ public class KafkaClients extends BaseClients {
                         .endSpec()
                     .endTemplate()
                 .endSpec();
+        }
+
+        if (PodSecurityProfile.RESTRICTED == this.podSecurityPolicy) {
+            this.enableRestrictedProfile(builder);
         }
 
         return builder;
@@ -321,7 +334,7 @@ public class KafkaClients extends BaseClients {
             podSpecBuilder.withImagePullSecrets(imagePullSecrets);
         }
 
-        return new JobBuilder()
+        final JobBuilder builder = new JobBuilder()
             .withNewMetadata()
                 .withNamespace(this.getNamespaceName())
                 .withLabels(consumerLabels)
@@ -374,6 +387,11 @@ public class KafkaClients extends BaseClients {
                     .endSpec()
                 .endTemplate()
             .endSpec();
+
+        if (PodSecurityProfile.RESTRICTED == this.podSecurityPolicy) {
+            this.enableRestrictedProfile(builder);
+        }
+        return builder;
     }
 
     protected EnvVar getClusterCaCertEnv(String clusterName) {
@@ -440,5 +458,33 @@ public class KafkaClients extends BaseClients {
             .build();
 
         return List.of(userCrt, userKey);
+    }
+
+    private void enableRestrictedProfile(final JobBuilder jobBuilder) {
+        jobBuilder
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .withNewSecurityContext()
+                            .withRunAsNonRoot(true)
+                            .withNewSeccompProfile()
+                                .withType("RuntimeDefault")
+                            .endSeccompProfile()
+                        .endSecurityContext()
+                        .editFirstContainer()
+                            .withNewSecurityContext()
+                                .withAllowPrivilegeEscalation(false)
+                                .withNewCapabilities()
+                                    .withDrop("ALL")
+                                .endCapabilities()
+                                .withRunAsNonRoot(true)
+                                .withNewSeccompProfile()
+                                    .withType("RuntimeDefault")
+                                .endSeccompProfile()
+                            .endSecurityContext()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
     }
 }
