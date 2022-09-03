@@ -1,6 +1,9 @@
 
 # CHANGELOG
 
+## 0.32.0
+
+
 ## 0.31.0
 
 * Add support for Kafka 3.2.1
