@@ -269,7 +269,7 @@ public class MetricsIsolatedST extends AbstractST {
                         assertThat(value, containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
                     }
 
-                    kubeClient().listPods(Constants.INFRA_NAMESPACE, kafkaSelector).forEach(pod -> {
+                    kubeClient().listPods(clusterOperator.getDeploymentNamespace(), kafkaSelector).forEach(pod -> {
                         String address = pod.getMetadata().getName() + "." + metricsClusterName + "-kafka-brokers." + clusterOperator.getDeploymentNamespace() + ".svc";
                         assertThat(value, containsString("kafka_broker_info{address=\"" + address));
                     });
