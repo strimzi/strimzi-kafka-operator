@@ -75,7 +75,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
             kafkaTopic.getMetadata().setResourceVersion(null);
-            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).createOrReplace(kafkaTopic);
+            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).createOrReplace();
         }
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
@@ -239,11 +239,11 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().getClient().persistentVolumeClaims().inNamespace(clusterOperator.getDeploymentNamespace()).create(pvc);
+            kubeClient().getClient().persistentVolumeClaims().inNamespace(clusterOperator.getDeploymentNamespace()).resource(pvc).create();
 
             PersistentVolume pv = kubeClient().getClient().persistentVolumes().withName(pvc.getSpec().getVolumeName()).get();
             pv.getSpec().setClaimRef(null);
-            kubeClient().getClient().persistentVolumes().createOrReplace(pv);
+            kubeClient().getClient().persistentVolumes().resource(pv).createOrReplace();
         }
     }
 
@@ -268,7 +268,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
 
     @BeforeAll
     void createStorageClass() {
-        kubeClient().getClient().storage().storageClasses().withName(storageClassName).delete();
+        kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
         StorageClass storageClass = new StorageClassBuilder()
             .withNewMetadata()
                 .withName(storageClassName)
@@ -277,15 +277,15 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .withReclaimPolicy("Retain")
             .build();
 
-        kubeClient().getClient().storage().storageClasses().createOrReplace(storageClass);
+        kubeClient().getClient().storage().v1().storageClasses().resource(storageClass).createOrReplace();
     }
 
     @AfterAll
     void teardown() {
-        kubeClient().getClient().storage().storageClasses().withName(storageClassName).delete();
+        kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
 
         kubeClient().getClient().persistentVolumes().list().getItems().stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") || pv.getSpec().getClaimRef().getName().contains("zookeeper"))
-            .forEach(pv -> kubeClient().getClient().persistentVolumes().delete(pv));
+            .forEach(pv -> kubeClient().getClient().persistentVolumes().resource(pv).delete());
     }
 }

@@ -160,7 +160,7 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-        Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).delete(kUser);
+        Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).resource(kUser).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(userName);
     }
 

@@ -176,7 +176,8 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
                         .withNamespace(targetNamespace)
                     .endMetadata()
                     .build();
-        kubeClient(targetNamespace).getClient().secrets().inNamespace(targetNamespace).createOrReplace(s);
+
+        kubeClient(targetNamespace).getClient().secrets().inNamespace(targetNamespace).resource(s).createOrReplace();
     }
 
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
