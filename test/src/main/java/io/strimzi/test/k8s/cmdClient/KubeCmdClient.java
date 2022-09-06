@@ -31,6 +31,8 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
     /** Deletes the resources by resource name. */
     K deleteByName(String resourceType, String resourceName);
 
+    K deleteAllByResource(String resourceType);
+
     KubeCmdClient<K> namespace(String namespace);
 
     /** Returns namespace for cluster */

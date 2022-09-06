@@ -235,4 +235,9 @@ public class KafkaTopicUtils {
             .split("\n"))
             .collect(Collectors.toList());
     }
+
+    public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix) {
+        TestUtils.waitFor(String.format("all topics with prefix %s deletion", topicPrefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+            () -> getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix).size() == 0);
+    }
 }

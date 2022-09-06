@@ -23,7 +23,6 @@ import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -242,9 +241,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         cluster.createNamespace(clusterOperator.getDeploymentNamespace());
     }
 
-    @AfterEach
-    protected void tearDownEnvironmentAfterEach() {
+    protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
+        ResourceManager.getInstance().deleteResources(extensionContext);
         cluster.deleteNamespaces();
     }
 
