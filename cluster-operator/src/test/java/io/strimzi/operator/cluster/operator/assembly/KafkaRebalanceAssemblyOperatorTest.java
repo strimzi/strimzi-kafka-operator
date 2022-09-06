@@ -34,7 +34,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRestException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRetriableConnectException;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlRetriableConnectionException;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -1533,7 +1533,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }
                 // the resource moved from 'New' to 'NotReady' (mocked Cruise Control not reachable)
                 assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME,
-                        KafkaRebalanceState.NotReady, CruiseControlRetriableConnectException.class,
+                        KafkaRebalanceState.NotReady, CruiseControlRetriableConnectionException.class,
                         "Connection refused");
                 checkpoint.flag();
             }));

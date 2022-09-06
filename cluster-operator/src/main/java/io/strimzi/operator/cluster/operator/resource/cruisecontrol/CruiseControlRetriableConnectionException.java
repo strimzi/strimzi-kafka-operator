@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-public class CruiseControlRetriableConnectException extends RuntimeException {
+public class CruiseControlRetriableConnectionException extends RuntimeException {
 
-    public CruiseControlRetriableConnectException(String message) {
+    public CruiseControlRetriableConnectionException(Throwable message) {
         super(message);
     }
 }
