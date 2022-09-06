@@ -19,9 +19,7 @@ To set up a proxy with a name and password, the format is _\http://USERNAME:PASS
 
 .Prerequisites
 
-This procedure requires use of a Kubernetes user account which is able to create `CustomResourceDefinitions`, `ClusterRoles` and `ClusterRoleBindings`.
-Use of Role Base Access Control (RBAC) in the Kubernetes cluster usually means that permission to create, edit,
-and delete these resources is limited to Kubernetes cluster administrators, such as `system:admin`.
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
 
 .Procedure
 
