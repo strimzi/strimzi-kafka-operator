@@ -57,7 +57,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -87,6 +86,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -230,6 +230,8 @@ public class MetricsIsolatedST extends AbstractST {
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String kafkaName = KafkaResources.kafkaStatefulSetName(metricsClusterName);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(metricsClusterName, kafkaName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(kafkaExporterTopic)
@@ -261,11 +263,16 @@ public class MetricsIsolatedST extends AbstractST {
 
                 kafkaExporterMetricsData.forEach((key, value) -> {
                     assertThat("Value from collected metric should be non-empty", !value.isEmpty());
-                    assertThat(value, CoreMatchers.containsString("kafka_consumergroup_current_offset"));
-                    assertThat(value, CoreMatchers.containsString("kafka_consumergroup_lag"));
+                    assertThat(value, containsString("kafka_consumergroup_current_offset"));
+                    assertThat(value, containsString("kafka_consumergroup_lag"));
                     if (!Environment.isKRaftModeEnabled()) {
-                        assertThat(value, CoreMatchers.containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
+                        assertThat(value, containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
                     }
+
+                    kubeClient().listPods(clusterOperator.getDeploymentNamespace(), kafkaSelector).forEach(pod -> {
+                        String address = pod.getMetadata().getName() + "." + metricsClusterName + "-kafka-brokers." + clusterOperator.getDeploymentNamespace() + ".svc";
+                        assertThat(value, containsString("kafka_broker_info{address=\"" + address));
+                    });
                 });
 
                 return true;
