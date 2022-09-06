@@ -504,7 +504,7 @@ class RollingUpdateST extends AbstractST {
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
             ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
             configMap.getData().put("new.kafka.config", "new.config.value");
-            kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMap);
+            kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
         }
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
@@ -562,7 +562,7 @@ class RollingUpdateST extends AbstractST {
                 .withKey("log4j-custom.properties")
                 .build();
 
-        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapLoggers);
+        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).resource(configMapLoggers).createOrReplace();
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
@@ -585,7 +585,7 @@ class RollingUpdateST extends AbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapLoggers);
+        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapLoggers).createOrReplace();
 
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
@@ -714,8 +714,8 @@ class RollingUpdateST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).createOrReplace(metricsCMK);
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).createOrReplace(metricsCMZk);
+        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(metricsCMK).createOrReplace();
+        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(metricsCMZk).createOrReplace();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editMetadata()
@@ -785,8 +785,8 @@ class RollingUpdateST extends AbstractST {
                 .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(kafkaMetrics)))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).createOrReplace(metricsCMK);
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).createOrReplace(metricsCMZk);
+        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(metricsCMK).createOrReplace();
+        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(metricsCMZk).createOrReplace();
 
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));

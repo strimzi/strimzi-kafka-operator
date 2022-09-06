@@ -528,7 +528,7 @@ public class MetricsIsolatedST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(SECOND_NAMESPACE).createOrReplace(externalMetricsCm);
+        kubeClient().getClient().configMaps().inNamespace(SECOND_NAMESPACE).resource(externalMetricsCm).createOrReplace();
 
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
@@ -560,7 +560,7 @@ public class MetricsIsolatedST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(SECOND_NAMESPACE).createOrReplace(externalMetricsUpdatedCm);
+        kubeClient().getClient().configMaps().inNamespace(SECOND_NAMESPACE).resource(externalMetricsUpdatedCm).createOrReplace();
         PodUtils.verifyThatRunningPodsAreStable(SECOND_NAMESPACE, SECOND_CLUSTER);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(SECOND_CLUSTER, 1)) {

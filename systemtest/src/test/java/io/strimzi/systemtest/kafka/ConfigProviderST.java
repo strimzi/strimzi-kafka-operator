@@ -72,7 +72,7 @@ public class ConfigProviderST extends AbstractST {
             .withData(configData)
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).create(connectorConfig);
+        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(connectorConfig).create();
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(namespaceName, clusterName, 1)
             .editOrNewMetadata()

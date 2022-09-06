@@ -248,7 +248,7 @@ public class TopicST extends AbstractST {
                 .build());
             KafkaTopicUtils.waitForKafkaTopicReady(namespace, topicName);
 
-            adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
+            adminClient.describeTopics(singletonList(topicName)).topicNameValues().get(topicName);
 
             for (int i = 0; i < 10; i++) {
                 Thread.sleep(2_000);

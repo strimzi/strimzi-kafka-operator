@@ -298,7 +298,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endMetadata()
             .build();
 
-        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(storage.getNamespaceName()).create(imageStream);
+        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(storage.getNamespaceName()).resource(imageStream).create();
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
             .editMetadata()

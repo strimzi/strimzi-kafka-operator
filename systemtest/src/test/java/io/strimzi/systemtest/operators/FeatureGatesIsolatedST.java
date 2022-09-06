@@ -314,7 +314,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         Deployment coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
-        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).replace(coDep);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).replace();
 
         coPod = DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
@@ -328,7 +328,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
-        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).replace(coDep);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).replace();
 
         DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
