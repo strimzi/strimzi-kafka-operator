@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -15,6 +16,7 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -243,6 +245,11 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
+
+        // delete all topics created in test
+        cmdKubeClient(clusterOperator.getDeploymentNamespace()).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
+        KafkaTopicUtils.waitForTopicWithPrefixDeletion(clusterOperator.getDeploymentNamespace(), topicName);
+
         ResourceManager.getInstance().deleteResources(extensionContext);
         cluster.deleteNamespaces();
     }

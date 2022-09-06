@@ -238,6 +238,12 @@ public class KafkaTopicUtils {
 
     public static void waitForTopicWithPrefixDeletion(String namespaceName, String topicPrefix) {
         TestUtils.waitFor(String.format("all topics with prefix %s deletion", topicPrefix), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix).size() == 0);
+            () -> {
+                try {
+                    return getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix).size() == 0;
+                } catch (Exception e) {
+                    return true;
+                }
+            });
     }
 }
