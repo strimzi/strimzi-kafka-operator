@@ -146,7 +146,7 @@ public class KafkaReconciler {
 
     private final int currentReplicas;
 
-    private final Clock clock;
+    protected final Clock clock;
 
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
     private ReconcileResult<StatefulSet> statefulSetDiff;

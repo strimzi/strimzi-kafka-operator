@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.certs.CertManager;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -28,6 +27,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -41,6 +41,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -130,7 +131,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
@@ -181,7 +183,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
@@ -239,7 +242,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         Checkpoint async = context.checkpoint();
         kao.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka).onComplete(res -> {
@@ -280,7 +284,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
@@ -352,7 +357,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
@@ -401,7 +407,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
@@ -439,7 +446,8 @@ public class KafkaStatusTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Clock.systemUTC());
 
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
             assertThat(res.succeeded(), is(true));
@@ -450,8 +458,8 @@ public class KafkaStatusTest {
 
     // This allows to test the status handling when reconciliation succeeds
     static class MockWorkingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockWorkingKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, Clock clock) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, clock);
         }
 
         @Override
@@ -486,8 +494,8 @@ public class KafkaStatusTest {
     static class MockFailingKafkaAssemblyOperator extends KafkaAssemblyOperator  {
         private final Throwable exception;
 
-        public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockFailingKafkaAssemblyOperator(Throwable exception, Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, Clock clock) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, clock);
             this.exception = exception;
         }
 
@@ -509,8 +517,8 @@ public class KafkaStatusTest {
 
     // This allows to test the initial status handling when new resource is created
     static class MockInitialStatusKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockInitialStatusKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, Clock clock) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, clock);
         }
 
         @Override

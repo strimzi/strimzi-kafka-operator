@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -32,7 +31,6 @@ import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -40,6 +38,8 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -50,13 +50,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -167,6 +166,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -177,7 +178,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                null);
+                null,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -190,7 +192,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 null,
                 0,
                 null,
-                null);
+                null,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -199,7 +202,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -300,6 +304,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -310,7 +316,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                null);
+                null,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -323,7 +330,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 null,
                 0,
                 null,
-                null);
+                null,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -332,7 +340,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -440,6 +449,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -450,7 +461,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                null);
+                null,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -463,7 +475,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 null,
                 0,
                 null,
-                null);
+                null,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -472,7 +485,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -511,8 +525,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         ZooKeeperReconciler mockZooKeeperReconciler;
         KafkaReconciler mockKafkaReconciler;
 
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler, Clock clock) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, clock);
             this.mockZooKeeperReconciler = mockZooKeeperReconciler;
             this.mockKafkaReconciler = mockKafkaReconciler;
         }
@@ -524,8 +538,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return Future.succeededFuture(reconcileState)
-                    .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
-                    .compose(state -> state.reconcileKafka(this::dateSupplier))
+                    .compose(ReconciliationState::reconcileZooKeeper)
+                    .compose(ReconciliationState::reconcileKafka)
                     .mapEmpty();
         }
 
@@ -550,12 +564,12 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         int maybeRollZooKeeperInvocations = 0;
         Function<Pod, List<String>> zooPodNeedsRestart = null;
 
-        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa) {
-            super(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, versionChange, oldStorage, currentReplicas, clusterCa);
+        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, Clock clock) {
+            super(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, versionChange, oldStorage, currentReplicas, clusterCa, clock);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus)    {
             return manualRollingUpdate();
         }
 
@@ -571,12 +585,12 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa, Clock clock) {
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, clock);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus)    {
             return manualRollingUpdate();
         }
 

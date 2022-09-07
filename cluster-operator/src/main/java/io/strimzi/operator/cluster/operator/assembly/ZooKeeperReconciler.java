@@ -111,7 +111,7 @@ public class ZooKeeperReconciler {
 
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
 
-    private final Clock clock;
+    protected final Clock clock;
 
     private ReconcileResult<StatefulSet> statefulSetDiff;
     private ReconcileResult<StrimziPodSet> podSetDiff;

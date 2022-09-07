@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Date;
+import java.time.Clock;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -54,6 +54,8 @@ public class EntityOperatorReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+
+    private final Clock clock = Clock.systemUTC();
 
     private final static ClusterCa CLUSTER_CA = new ClusterCa(
             Reconciliation.DUMMY_RECONCILIATION,
@@ -119,11 +121,12 @@ public class EntityOperatorReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
+                CLUSTER_CA,
+                clock
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -221,11 +224,12 @@ public class EntityOperatorReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
+                CLUSTER_CA,
+                clock
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -320,11 +324,12 @@ public class EntityOperatorReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
+                CLUSTER_CA,
+                clock
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -409,11 +414,12 @@ public class EntityOperatorReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
+                CLUSTER_CA,
+                clock
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -496,11 +502,12 @@ public class EntityOperatorReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
+                CLUSTER_CA,
+                clock
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(nullValue()));
@@ -578,11 +585,12 @@ public class EntityOperatorReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                CLUSTER_CA
+                CLUSTER_CA,
+                clock
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(nullValue()));

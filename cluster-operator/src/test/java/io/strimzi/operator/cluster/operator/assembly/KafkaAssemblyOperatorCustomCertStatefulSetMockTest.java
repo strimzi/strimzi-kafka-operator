@@ -55,13 +55,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -130,7 +129,8 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config
+                config,
+                Clock.systemUTC()
         );
     }
 
@@ -339,12 +339,12 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
      * Override KafkaReconciler to only run reconciliation steps that concern the Ingress resources feature
      */
     class MockKafkaReconciler extends KafkaReconciler   {
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa, Clock clock) {
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, clock);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus)    {
             return listeners()
                     .compose(i -> statefulSet())
                     .compose(i -> podSet())
@@ -397,8 +397,8 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
      */
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
 
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, Clock clock) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, clock);
         }
 
         @Override
@@ -422,7 +422,8 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
                             oldStorage,
                             currentReplicas,
                             clusterCa,
-                            clientsCa
+                            clientsCa,
+                            clock
                     );
                 }
             };
@@ -430,8 +431,8 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
 
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.reconcileCas(this::dateSupplier)
-                    .compose(state -> state.reconcileKafka(this::dateSupplier))
+            return reconcileState.reconcileCas()
+                    .compose(ReconciliationState::reconcileKafka)
                     .map((Void) null);
         }
     }

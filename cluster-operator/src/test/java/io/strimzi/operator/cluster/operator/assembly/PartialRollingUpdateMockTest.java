@@ -43,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -137,7 +138,7 @@ public class PartialRollingUpdateMockTest {
         podSetController.start();
 
         kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), Clock.systemUTC());
 
         LOGGER.info("Initial reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);

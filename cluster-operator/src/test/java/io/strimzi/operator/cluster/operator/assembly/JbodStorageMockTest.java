@@ -45,6 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -145,7 +146,7 @@ public class JbodStorageMockTest {
 
         this.operator = new KafkaAssemblyOperator(JbodStorageMockTest.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), Clock.systemUTC());
     }
 
     @AfterEach

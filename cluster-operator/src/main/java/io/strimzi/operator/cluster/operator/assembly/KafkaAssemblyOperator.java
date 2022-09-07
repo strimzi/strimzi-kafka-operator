@@ -72,7 +72,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final KubernetesRestartEventPublisher eventsPublisher;
-    private final Clock clock;
+    protected final Clock clock;
 
     /**
      * @param vertx             The Vertx instance
@@ -103,7 +103,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.crdOperator = supplier.kafkaOperator;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.eventsPublisher = supplier.restartEventsPublisher;
-        this.clock = Clock.systemUTC();
+        this.clock = clock;
     }
 
     @Override

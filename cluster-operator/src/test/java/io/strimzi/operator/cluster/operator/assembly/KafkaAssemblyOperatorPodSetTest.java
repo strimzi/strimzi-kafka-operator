@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -35,17 +34,18 @@ import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -57,12 +57,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Clock;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -211,6 +210,8 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -221,7 +222,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                CLUSTER_CA);
+                CLUSTER_CA,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -234,7 +236,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 null,
                 0,
                 CLUSTER_CA,
-                CLIENTS_CA);
+                CLIENTS_CA,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -243,7 +246,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -316,6 +320,8 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -326,7 +332,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                CLUSTER_CA);
+                CLUSTER_CA,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -339,7 +346,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 null,
                 0,
                 CLUSTER_CA,
-                CLIENTS_CA);
+                CLIENTS_CA,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -348,7 +356,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -424,6 +433,8 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -434,7 +445,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                CLUSTER_CA);
+                CLUSTER_CA,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -447,7 +459,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 null,
                 0,
                 CLUSTER_CA,
-                CLIENTS_CA);
+                CLIENTS_CA,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -456,7 +469,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -542,6 +556,8 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -552,7 +568,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 VERSION_CHANGE,
                 null,
                 0,
-                CLUSTER_CA);
+                CLUSTER_CA,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -565,7 +582,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 null,
                 0,
                 CLUSTER_CA,
-                CLIENTS_CA);
+                CLIENTS_CA,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -574,7 +592,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -659,6 +678,8 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -669,7 +690,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 VERSION_CHANGE,
                 null,
                 1,
-                CLUSTER_CA);
+                CLUSTER_CA,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -682,7 +704,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 null,
                 1,
                 CLUSTER_CA,
-                CLIENTS_CA);
+                CLIENTS_CA,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -691,7 +714,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -792,6 +816,8 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
 
+        Clock clock = Clock.systemUTC();
+
         MockZooKeeperReconciler zr = new MockZooKeeperReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 vertx,
@@ -802,7 +828,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 VERSION_CHANGE,
                 null,
                 5,
-                CLUSTER_CA);
+                CLUSTER_CA,
+                clock);
 
         MockKafkaReconciler kr = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -815,7 +842,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 null,
                 5,
                 CLUSTER_CA,
-                CLIENTS_CA);
+                CLIENTS_CA,
+                clock);
 
         MockKafkaAssemblyOperator kao = new MockKafkaAssemblyOperator(
                 vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -824,7 +852,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 supplier,
                 config,
                 zr,
-                kr);
+                kr,
+                clock);
 
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
@@ -867,8 +896,8 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZooKeeperReconciler mockZooKeeperReconciler;
         KafkaReconciler mockKafkaReconciler;
 
-        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+        public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler, KafkaReconciler mockKafkaReconciler, Clock clock) {
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, clock);
             this.mockZooKeeperReconciler = mockZooKeeperReconciler;
             this.mockKafkaReconciler = mockKafkaReconciler;
         }
@@ -880,9 +909,9 @@ public class KafkaAssemblyOperatorPodSetTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return Future.succeededFuture(reconcileState)
-                    .compose(state -> state.reconcileCas(this::dateSupplier))
-                    .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
-                    .compose(state -> state.reconcileKafka(this::dateSupplier))
+                    .compose(ReconciliationState::reconcileCas)
+                    .compose(ReconciliationState::reconcileZooKeeper)
+                    .compose(ReconciliationState::reconcileKafka)
                     .mapEmpty();
         }
 
@@ -907,12 +936,12 @@ public class KafkaAssemblyOperatorPodSetTest {
         int maybeRollZooKeeperInvocations = 0;
         Function<Pod, List<String>> zooPodNeedsRestart = null;
 
-        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa) {
-            super(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, versionChange, oldStorage, currentReplicas, clusterCa);
+        public MockZooKeeperReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, Clock clock) {
+            super(reconciliation, vertx, config, supplier, pfa, kafkaAssembly, versionChange, oldStorage, currentReplicas, clusterCa, clock);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus)    {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> statefulSet())
@@ -934,12 +963,12 @@ public class KafkaAssemblyOperatorPodSetTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa, Clock clock) {
+            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, clock);
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus)    {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> scaleDown())

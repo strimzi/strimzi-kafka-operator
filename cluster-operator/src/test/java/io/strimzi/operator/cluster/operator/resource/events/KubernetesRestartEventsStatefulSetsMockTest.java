@@ -56,11 +56,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.util.Date;
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -115,7 +114,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
     private final ClusterOperatorConfig useStatefulSetsConfig = dummyClusterOperatorConfig("-UseStrimziPodSets");
 
     private KafkaStatus ks;
-    private final Supplier<Date> ds = Date::new;
+    private final Clock clock = Clock.systemUTC();
 
     @BeforeEach
     void setup(Vertx vertx) throws ExecutionException, InterruptedException {
@@ -141,7 +140,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
                 60_000);
 
         // Initial reconciliation to create cluster
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, useStatefulSetsConfig);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, useStatefulSetsConfig, clock);
         kao.reconcile(new Reconciliation("initial", "kafka", NAMESPACE, CLUSTER_NAME)).toCompletionStage().toCompletableFuture().get();
 
         reconciliation = new Reconciliation("test", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
@@ -166,14 +165,15 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
                 useStatefulSetsConfig,
                 supplier,
                 PFA,
-                vertx);
+                vertx,
+                clock);
 
         // Grab STS generation
         StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
         int statefulSetGen = StatefulSetOperator.getStsGeneration(kafkaSet);
 
         patchKafkaPodWithAnnotation(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION, String.valueOf(statefulSetGen - 1));
-        reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(POD_HAS_OLD_GENERATION, context));
+        reconciler.reconcile(ks).onComplete(verifyEventPublished(POD_HAS_OLD_GENERATION, context));
     }
 
     @Test
@@ -199,10 +199,11 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
                 useStatefulSetsConfig,
                 supplier,
                 PFA,
-                vertx
+                vertx,
+                clock
         );
 
-        lowerVolumes.reconcile(ks, ds).onComplete(verifyEventPublished(JBOD_VOLUMES_CHANGED, context));
+        lowerVolumes.reconcile(ks).onComplete(verifyEventPublished(JBOD_VOLUMES_CHANGED, context));
     }
 
     @Test
@@ -227,9 +228,10 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
                 useStatefulSetsConfig,
                 supplier,
                 PFA,
-                vertx);
+                vertx,
+                clock);
 
-        reconciler.reconcile(ks, ds).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
+        reconciler.reconcile(ks).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
     }
 
     @Test
@@ -237,7 +239,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         // Change custom listener cert thumbprint annotation to cause reconciliation requiring restart
         patchKafkaPodWithAnnotation(ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, "1234");
 
-        defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(CUSTOM_LISTENER_CA_CERT_CHANGE, context));
+        defaultReconciler(vertx).reconcile(ks).onComplete(verifyEventPublished(CUSTOM_LISTENER_CA_CERT_CHANGE, context));
     }
 
     @Test
@@ -264,7 +266,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
 
         podOps().resource(patch).replace();
 
-        defaultReconciler(vertx).reconcile(ks, ds).onComplete(verifyEventPublished(POD_STUCK, context));
+        defaultReconciler(vertx).reconcile(ks).onComplete(verifyEventPublished(POD_STUCK, context));
     }
 
     private <T> Handler<AsyncResult<T>> verifyEventPublished(RestartReason expectedReason, VertxTestContext context) {
@@ -287,7 +289,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
     }
 
     private KafkaReconciler defaultReconciler(Vertx vertx) {
-        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStatefulSetsConfig, supplier, PFA, vertx);
+        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStatefulSetsConfig, supplier, PFA, vertx, clock);
     }
 
     private Pod kafkaPod() {
