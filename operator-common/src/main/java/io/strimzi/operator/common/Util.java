@@ -31,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import java.time.Instant;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.quartz.CronExpression;
@@ -736,27 +737,26 @@ public class Util {
     }
 
     /**
-     * Checks whether maintenance time window is satisfied or not
+     * Checks whether maintenance time window is satisfied by a given point in time or not
      *
      * @param reconciliation        Reconciliation marker
      * @param maintenanceWindows    List of maintenance windows
-     * @param dateSupplier          Date supplier
+     * @param instant               The point in time to check the maintenance windows against
      *
      * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
      */
-    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Supplier<Date> dateSupplier) {
+    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Instant instant) {
         String currentCron = null;
         try {
             boolean isSatisfiedBy = maintenanceWindows == null || maintenanceWindows.isEmpty();
             if (!isSatisfiedBy) {
-                Date date = dateSupplier.get();
                 for (String cron : maintenanceWindows) {
                     currentCron = cron;
                     CronExpression cronExpression = new CronExpression(cron);
                     // the user defines the cron expression in "UTC/GMT" timezone but CO pod
                     // can be running on a different one, so setting it on the cron expression
                     cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    if (cronExpression.isSatisfiedBy(date)) {
+                    if (cronExpression.isSatisfiedBy(Date.from(instant))) {
                         isSatisfiedBy = true;
                         break;
                     }

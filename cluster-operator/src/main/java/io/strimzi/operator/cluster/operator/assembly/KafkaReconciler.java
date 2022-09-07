@@ -49,7 +49,6 @@ import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -74,6 +73,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -81,8 +81,8 @@ import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
 
+import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -91,7 +91,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -147,6 +146,8 @@ public class KafkaReconciler {
 
     private final int currentReplicas;
 
+    private final Clock clock;
+
     private final Set<String> fsResizingRestartRequest = new HashSet<>();
     private ReconcileResult<StatefulSet> statefulSetDiff;
     private ReconcileResult<StrimziPodSet> podSetDiff;
@@ -174,6 +175,8 @@ public class KafkaReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
+     * @param clock                     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                                  That time is used for checking maintenance windows
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
@@ -186,7 +189,8 @@ public class KafkaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
-            Vertx vertx
+            Vertx vertx,
+            Clock clock
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
@@ -216,6 +220,8 @@ public class KafkaReconciler {
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
 
+        this.clock = clock;
+
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
@@ -243,11 +249,10 @@ public class KafkaReconciler {
      * expected to be called from the outside to trigger the reconciliation.
      *
      * @param kafkaStatus   The Kafka Status class for adding conditions to it during the reconciliation
-     * @param dateSupplier  Date supplier for checking maintenance windows
      *
      * @return              Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+    public Future<Void> reconcile(KafkaStatus kafkaStatus)    {
         return modelWarnings(kafkaStatus)
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
@@ -257,7 +262,7 @@ public class KafkaReconciler {
                 .compose(i -> initClusterRoleBinding())
                 .compose(i -> scaleDown())
                 .compose(i -> listeners())
-                .compose(i -> certificateSecret(dateSupplier))
+                .compose(i -> certificateSecret())
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
@@ -717,16 +722,15 @@ public class KafkaReconciler {
     /**
      * Manages the Secret with the node certificates used by the Kafka brokers.
      *
-     * @param dateSupplier  Date supplier for checking the maintenance windows
      *
      * @return  Completes when the Secret was successfully created or updated
      */
-    protected Future<Void> certificateSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> certificateSecret() {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     return secretOperator
                             .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
-                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant())))
                             .compose(patchResult -> {
                                 if (patchResult instanceof ReconcileResult.Patched) {
                                     // The secret is patched and some changes to the existing certificates actually occurred

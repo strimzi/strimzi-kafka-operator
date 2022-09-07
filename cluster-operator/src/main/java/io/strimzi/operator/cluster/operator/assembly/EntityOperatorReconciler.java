@@ -31,9 +31,8 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
-import java.util.Date;
+import java.time.Clock;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Class used for reconciliation of Entity Operator. This class contains both the steps of the Entity Operator
@@ -54,6 +53,7 @@ public class EntityOperatorReconciler {
     private final RoleOperator roleOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ConfigMapOperator configMapOperator;
+    private final Clock clock;
 
     private boolean existingEntityTopicOperatorCertsChanged = false;
     private boolean existingEntityUserOperatorCertsChanged = false;
@@ -67,6 +67,8 @@ public class EntityOperatorReconciler {
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param clusterCa                 The Cluster CA instance
+     * @param clock                     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                                  That time is used for checking maintenance windows
      */
     public EntityOperatorReconciler(
             Reconciliation reconciliation,
@@ -74,12 +76,14 @@ public class EntityOperatorReconciler {
             ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
-            ClusterCa clusterCa
+            ClusterCa clusterCa,
+            Clock clock
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, config.featureGates().useKRaftEnabled());
         this.clusterCa = clusterCa;
+        this.clock = clock;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
 
         this.deploymentOperator = supplier.deploymentOperations;
@@ -97,11 +101,10 @@ public class EntityOperatorReconciler {
      * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
-     * @param dateSupplier      Date supplier for checking maintenance windows
      *
      * @return                  Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Supplier<Date> dateSupplier)    {
+    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets)    {
         return serviceAccount()
                 .compose(i -> entityOperatorRole())
                 .compose(i -> topicOperatorRole())
@@ -111,8 +114,8 @@ public class EntityOperatorReconciler {
                 .compose(i -> topicOperagorConfigMap())
                 .compose(i -> userOperatorConfigMap())
                 .compose(i -> deleteOldEntityOperatorSecret())
-                .compose(i -> topicOperatorSecret(dateSupplier))
-                .compose(i -> userOperatorSecret(dateSupplier))
+                .compose(i -> topicOperatorSecret())
+                .compose(i -> userOperatorSecret())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
@@ -329,13 +332,13 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> topicOperatorSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> topicOperatorSecret() {
         if (entityOperator != null && entityOperator.topicOperator() != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityTopicOperatorSecretName(reconciliation.name()),
-                                        entityOperator.topicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                        entityOperator.topicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant())))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
@@ -359,13 +362,13 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> userOperatorSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> userOperatorSecret() {
         if (entityOperator != null && entityOperator.userOperator() != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()),
-                                        entityOperator.userOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                        entityOperator.userOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant())))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred

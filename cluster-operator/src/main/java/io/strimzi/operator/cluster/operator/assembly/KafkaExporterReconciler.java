@@ -26,9 +26,8 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.Future;
 
-import java.util.Date;
+import java.time.Clock;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Class used for reconciliation of Kafka Exporter. This class contains both the steps of the Kafka Exporter
@@ -46,6 +45,7 @@ public class KafkaExporterReconciler {
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
+    private final Clock clock;
 
     private boolean existingKafkaExporterCertsChanged = false;
 
@@ -58,6 +58,8 @@ public class KafkaExporterReconciler {
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
      * @param clusterCa                 The Cluster CA instance
+     * @param clock                     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                                  That time is used for checking maintenance windows
      */
     public KafkaExporterReconciler(
             Reconciliation reconciliation,
@@ -65,13 +67,15 @@ public class KafkaExporterReconciler {
             ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
-            ClusterCa clusterCa
+            ClusterCa clusterCa,
+            Clock clock
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaExporter = KafkaExporter.fromCrd(reconciliation, kafkaAssembly, versions);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+        this.clock = clock;
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
@@ -85,13 +89,12 @@ public class KafkaExporterReconciler {
      * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
-     * @param dateSupplier      Date supplier for checking maintenance windows
      *
      * @return                  Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Supplier<Date> dateSupplier)    {
+    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets)    {
         return serviceAccount()
-                .compose(i -> certificatesSecret(dateSupplier))
+                .compose(i -> certificatesSecret())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
@@ -114,17 +117,15 @@ public class KafkaExporterReconciler {
     /**
      * Manages the Kafka Exporter Secret with certificates.
      *
-     * @param dateSupplier  Date supplier for checking maintenance windows for updating the certificates
-     *
      * @return  Future which completes when the reconciliation is done
      */
-    private Future<Void> certificatesSecret(Supplier<Date> dateSupplier) {
+    private Future<Void> certificatesSecret() {
         if (kafkaExporter != null) {
             return secretOperator.getAsync(reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()))
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()),
-                                        kafkaExporter.generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                        kafkaExporter.generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant())))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred
