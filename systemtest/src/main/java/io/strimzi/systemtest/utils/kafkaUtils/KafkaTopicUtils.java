@@ -242,7 +242,7 @@ public class KafkaTopicUtils {
                 try {
                     return getAllKafkaTopicsWithPrefix(namespaceName, topicPrefix).size() == 0;
                 } catch (Exception e) {
-                    return true;
+                    return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
                 }
             });
     }

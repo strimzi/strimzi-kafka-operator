@@ -59,7 +59,11 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @Override
     @SuppressWarnings("unchecked")
     public K deleteAllByResource(String resourceType) {
-        Exec.exec(namespacedCommand(DELETE, resourceType, "--all"));
+        try {
+            Exec.exec(namespacedCommand(DELETE, resourceType, "--all"));
+        } catch (Exception e) {
+            LOGGER.warn(e.getMessage());
+        }
         return (K) this;
     }
 
