@@ -17,7 +17,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -358,27 +357,23 @@ public class AbstractUpgradeST extends AbstractST {
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(topicName)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+                kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
             } else {
                 kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
-                LOGGER.info("Deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
-                cmdKubeClient().create(kafkaTopicYaml);
-                ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion), topicName);
             }
+            LOGGER.info("Deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
+            cmdKubeClient().create(kafkaTopicYaml);
+            ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion), topicName);
         }
         // Create bunch of topics for upgrade if it's specified in configuration
         if (upgradeData.getAdditionalTopics() != null && upgradeData.getAdditionalTopics() > 0) {
+            if (upgradeData.getFromVersion().equals("HEAD")) {
+                kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");
+            } else {
+                kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
+            }
             for (int x = 0; x < upgradeTopicCount; x++) {
-                if (upgradeData.getFromVersion().equals("HEAD")) {
-                    resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, topicName + "-" + x, 1, 1, 1)
-                        .editSpec()
-                            .withTopicName(topicName + "-" + x)
-                        .endSpec()
-                        .build());
-                } else {
-                    kafkaTopicYaml = new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml");
-                    cmdKubeClient().applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString).replace("name: \"my-topic\"", "name: \"" + topicName + "-" + x + "\""));
-                }
+                cmdKubeClient().applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString).replace("name: \"my-topic\"", "name: \"" + topicName + "-" + x + "\""));
             }
         }
 

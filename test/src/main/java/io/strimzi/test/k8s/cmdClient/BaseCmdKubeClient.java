@@ -56,6 +56,17 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         return (K) this;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public K deleteAllByResource(String resourceType) {
+        try {
+            Exec.exec(namespacedCommand(DELETE, resourceType, "--all"));
+        } catch (Exception e) {
+            LOGGER.warn(e.getMessage());
+        }
+        return (K) this;
+    }
+
     protected static class Context implements AutoCloseable {
         @Override
         public void close() { }
