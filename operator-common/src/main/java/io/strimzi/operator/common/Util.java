@@ -31,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import java.time.Instant;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.quartz.CronExpression;
@@ -733,6 +734,19 @@ public class Util {
                     })
                     .collect(Collectors.joining("\n"));
         }
+    }
+
+    /**
+     * Checks whether maintenance time window is satisfied by a given point in time or not
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param maintenanceWindows    List of maintenance windows
+     * @param instant               The point in time to check the maintenance windows against
+     *
+     * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
+     */
+    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Instant instant) {
+        return isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, () -> Date.from(instant));
     }
 
     /**

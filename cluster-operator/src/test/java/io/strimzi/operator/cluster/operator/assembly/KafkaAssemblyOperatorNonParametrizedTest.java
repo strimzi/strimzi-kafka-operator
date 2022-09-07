@@ -4,18 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -25,7 +13,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -41,11 +28,22 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
@@ -143,7 +141,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -228,7 +226,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -307,7 +305,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));

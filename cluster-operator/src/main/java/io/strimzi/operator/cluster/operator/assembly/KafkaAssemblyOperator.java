@@ -33,7 +33,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -41,11 +40,13 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.time.Clock;
 import java.util.Date;
 import java.util.function.Supplier;
 
@@ -70,6 +71,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final StatefulSetOperator stsOperations;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
+    protected Clock clock;
 
     /**
      * @param vertx The Vertx instance
@@ -92,6 +94,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.stsOperations = supplier.stsOperations;
         this.crdOperator = supplier.kafkaOperator;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
+        this.clock = Clock.systemUTC();
     }
 
     @Override
@@ -109,7 +112,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (reconcileResult.succeeded())    {
                 condition = new ConditionBuilder()
-                        .withLastTransitionTime(StatusUtils.iso8601(dateSupplier()))
+                        .withLastTransitionTime(StatusUtils.iso8601(Date.from(clock.instant())))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
@@ -118,7 +121,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 createOrUpdatePromise.complete(status);
             } else {
                 condition = new ConditionBuilder()
-                        .withLastTransitionTime(StatusUtils.iso8601(dateSupplier()))
+                        .withLastTransitionTime(StatusUtils.iso8601(Date.from(clock.instant())))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
@@ -147,7 +150,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
-                .compose(state -> state.reconcileCas(this::dateSupplier))
+                .compose(state -> state.reconcileCas())
                 .compose(state -> state.versionChange())
 
                 // Run reconciliations of the different components
@@ -266,7 +269,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         LOGGER.debugCr(reconciliation, "Setting the initial status for a new resource");
 
                         Condition deployingCondition = new ConditionBuilder()
-                                .withLastTransitionTime(StatusUtils.iso8601(dateSupplier()))
+                                .withLastTransitionTime(StatusUtils.iso8601(Date.from(clock.instant())))
                                 .withType("NotReady")
                                 .withStatus("True")
                                 .withReason("Creating")
@@ -341,7 +344,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  CaReconciler instance
          */
         CaReconciler caReconciler()   {
-            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, vertx, certManager, passwordGenerator);
+            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, vertx, certManager, passwordGenerator, clock);
         }
 
         /**
@@ -350,9 +353,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return  Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileCas(Supplier<Date> dateSupplier)    {
+        Future<ReconciliationState> reconcileCas()    {
             return caReconciler()
-                    .reconcile(dateSupplier)
+                    .reconcile()
                     .compose(cas -> {
                         this.clusterCa = cas.clusterCa;
                         this.clientsCa = cas.clientsCa;
@@ -662,4 +665,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
+
+    public void setClock(Clock clock) {
+        this.clock = clock;
+    }
+
 }
