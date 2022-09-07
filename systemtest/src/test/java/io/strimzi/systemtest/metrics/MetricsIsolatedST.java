@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -30,6 +31,7 @@ import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -312,7 +314,7 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    void testClusterOperatorMetrics(ExtensionContext extensionContext) {
+    void testClusterOperatorMetrics() {
         clusterOperatorMetricsData = collector.toBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withComponentType(ComponentType.ClusterOperator)
@@ -567,6 +569,29 @@ public class MetricsIsolatedST extends AbstractST {
             ConfigMap actualCm = kubeClient(SECOND_NAMESPACE).getConfigMap(cmName);
             assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
         }
+    }
+
+    @ParallelTest
+    @StrimziPodSetTest
+    void testStrimziPodSetMetrics() {
+        clusterOperatorMetricsData = collector.toBuilder()
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withComponentType(ComponentType.ClusterOperator)
+            .withComponentName("")
+            .build()
+            .collectMetricsFromPods();
+
+        // check StrimziPodSet metrics in CO
+        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), 2);
+        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, SECOND_NAMESPACE, 2);
+
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_sum", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_max", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_already_enqueued_total", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_successful_total", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
+        assertCoMetricNotNull("strimzi_reconciliations_total", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
     }
 
     @IsolatedTest
