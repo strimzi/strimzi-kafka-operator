@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.api.model.Build;
 
@@ -21,9 +22,9 @@ public class KafkaConnectBuildUtils {
                 && pod.getStatus() != null
                 && pod.getStatus().getContainerStatuses() != null
                 && pod.getStatus().getContainerStatuses().size() > 0
-                && pod.getStatus().getContainerStatuses().get(0) != null
-                && pod.getStatus().getContainerStatuses().get(0).getState() != null
-                && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null;
+                && getConnectBuildContainerStatus(pod) != null
+                && getConnectBuildContainerStatus(pod).getState() != null
+                && getConnectBuildContainerStatus(pod).getState().getTerminated() != null;
     }
 
     /**
@@ -35,7 +36,7 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildPodSucceeded(Pod pod)   {
         return buildPodComplete(pod)
-                && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode() == 0;
+                && getConnectBuildContainerStatus(pod).getState().getTerminated().getExitCode() == 0;
     }
 
     /**
@@ -47,7 +48,7 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildPodFailed(Pod pod)   {
         return buildPodComplete(pod)
-                && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode() != 0;
+                && getConnectBuildContainerStatus(pod).getState().getTerminated().getExitCode() != 0;
     }
 
     /**
@@ -74,7 +75,7 @@ public class KafkaConnectBuildUtils {
     }
 
     /**
-     * Checks if the build completed with wuccess
+     * Checks if the build completed with success
      *
      * @param build Build which should be checked for completion
      *
@@ -82,5 +83,16 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildComplete(Build build)   {
         return buildSucceeded(build) || buildFailed(build);
+    }
+
+    /**
+     * Get ContainerStatus of the Connect build container
+     *
+     * @param pod - Pod which contains ContainerStatus of the Connect build
+     *
+     * @return ContainerStatus of the build container
+     */
+    public static ContainerStatus getConnectBuildContainerStatus(Pod pod)   {
+        return pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals(pod.getMetadata().getName())).findFirst().orElseGet(ContainerStatus::new);
     }
 }
