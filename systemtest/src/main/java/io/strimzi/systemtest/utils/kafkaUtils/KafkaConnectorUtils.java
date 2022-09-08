@@ -124,6 +124,12 @@ public class KafkaConnectorUtils {
         );
     }
 
+    public static void waitForConnectorsTaskMaxChangeViaAPI(String namespaceName, String connectPodName, String connectorName, int taskMax) {
+        TestUtils.waitFor("Wait for KafkaConnector taskMax will change via API", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
+            () -> getConnectorSpecFromConnectAPI(namespaceName, connectPodName, connectorName).contains("\"tasks.max\":\"" + taskMax + "\""));
+    }
+
     public static String getConnectorSpecFromConnectAPI(String namespaceName, String podName, String connectorName) {
         return cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
             "curl http://localhost:8083/connectors/" + connectorName).out();

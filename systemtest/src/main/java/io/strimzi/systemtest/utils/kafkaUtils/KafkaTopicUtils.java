@@ -227,6 +227,12 @@ public class KafkaTopicUtils {
             () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, scraperPodName, bootstrapName, properties).contains(prefix));
     }
 
+    public static void waitForTopicWillBePresentInKafka(String namespaceName, String topicName, String bootstrapName, String scraperPodName) {
+        LOGGER.info("Waiting for KafkaTopic: {} will be present in Kafka", topicName);
+        TestUtils.waitFor(String.format("KafkaTopic: %s will be present in Kafka", topicName), Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            () -> KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, bootstrapName).contains(topicName));
+    }
+
     public static List<String> getKafkaTopicReplicasForEachPartition(String namespaceName, String topicName, String podName, String bootstrapServer) {
         return Arrays.stream(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, podName, bootstrapServer, topicName)
             .replaceFirst("Topic.*\n", "")
