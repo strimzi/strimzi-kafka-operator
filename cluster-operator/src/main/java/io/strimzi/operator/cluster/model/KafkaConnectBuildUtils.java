@@ -15,15 +15,17 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod   Pod which should be checked for completion
      *
+     * @param containerName Name of the Connect build container
+     *
      * @return      True if the Pod is already complete, false otherwise
      */
     @SuppressWarnings("BooleanExpressionComplexity")
-    public static boolean buildPodComplete(Pod pod)   {
+    public static boolean buildPodComplete(Pod pod, String containerName)   {
         return pod != null
                 && pod.getStatus() != null
                 && pod.getStatus().getContainerStatuses() != null
                 && pod.getStatus().getContainerStatuses().size() > 0
-                && getConnectBuildContainerStatus(pod).getTerminated() != null;
+                && getConnectBuildContainerStatus(pod, containerName).getTerminated() != null;
     }
 
     /**
@@ -31,11 +33,13 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod   Pod which should be checked for completion
      *
+     * @param containerName Name of the Connect build container
+     *
      * @return      True if the Pod is complete with success, false otherwise
      */
-    public static boolean buildPodSucceeded(Pod pod)   {
-        return buildPodComplete(pod)
-                && getConnectBuildContainerStatus(pod).getTerminated().getExitCode() == 0;
+    public static boolean buildPodSucceeded(Pod pod, String containerName)   {
+        return buildPodComplete(pod, containerName)
+                && getConnectBuildContainerStatus(pod, containerName).getTerminated().getExitCode() == 0;
     }
 
     /**
@@ -43,11 +47,13 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod   Pod which should be checked for completion
      *
+     * @param containerName Name of the Connect build container
+     *
      * @return      True if the Pod is complete with error, false otherwise
      */
-    public static boolean buildPodFailed(Pod pod)   {
-        return buildPodComplete(pod)
-                && getConnectBuildContainerStatus(pod).getTerminated().getExitCode() != 0;
+    public static boolean buildPodFailed(Pod pod, String containerName)   {
+        return buildPodComplete(pod, containerName)
+                && getConnectBuildContainerStatus(pod, containerName).getTerminated().getExitCode() != 0;
     }
 
     /**
@@ -89,11 +95,12 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod Pod which contains ContainerStatus of the Connect build
      *
+     * @param containerName Name of the Connect build container
+     *
      * @return ContainerStatus of the build container
      */
-    public static ContainerState getConnectBuildContainerStatus(Pod pod)   {
-        ContainerStatus containerStatus = pod.getStatus().getContainerStatuses().stream()
-            .filter(conStatus -> conStatus.getName().equals(pod.getMetadata().getName())).findFirst().orElseGet(ContainerStatus::new);
-        return containerStatus.getState() != null ? containerStatus.getState() : new ContainerState();
+    public static ContainerState getConnectBuildContainerStatus(Pod pod, String containerName)   {
+        return pod.getStatus().getContainerStatuses().stream().filter(conStatus -> conStatus.getName().equals(containerName))
+            .findFirst().orElseGet(ContainerStatus::new).getState();
     }
 }

@@ -144,12 +144,15 @@ public class ConnectBuildOperator {
      */
     private Future<String> kubernetesBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         final AtomicReference<String> buildImage = new AtomicReference<>();
-        return podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()))
+        // Build pod name is same as the container name
+        String buildPodName = KafkaConnectResources.buildPodName(connectBuild.getCluster());
+
+        return podOperator.getAsync(namespace, buildPodName)
                 .compose(pod -> {
                     if (pod != null)    {
                         String existingBuildRevision = Annotations.stringAnnotation(pod, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
                         if (newBuildRevision.equals(existingBuildRevision)
-                                && !KafkaConnectBuildUtils.buildPodFailed(pod)
+                                && !KafkaConnectBuildUtils.buildPodFailed(pod, buildPodName)
                                 && !forceRebuild) {
                             // Builder pod exists, is not failed, and is building the same Dockerfile and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
@@ -158,7 +161,7 @@ public class ConnectBuildOperator {
                         } else {
                             // Pod exists, but it either failed or is for different Dockerfile => start new build
                             LOGGER.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
-                            return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)
+                            return podOperator.reconcile(reconciliation, namespace, buildPodName, null)
                                     .compose(ignore -> kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision));
                         }
                     } else {
@@ -169,7 +172,7 @@ public class ConnectBuildOperator {
                 .compose(ignore -> kubernetesBuildWaitForFinish(reconciliation, namespace, connectBuild))
                 .compose(image -> {
                     buildImage.set(image);
-                    return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null);
+                    return podOperator.reconcile(reconciliation, namespace, buildPodName, null);
                 })
                 .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
                 .map(ignore -> buildImage.get());
@@ -202,9 +205,9 @@ public class ConnectBuildOperator {
      *
      * @return                      True if the build already finished, false if it is still building
      */
-    private boolean kubernetesBuildPodFinished(String namespace, String podName)   {
+    private boolean kubernetesBuildPodFinished(String namespace, String podName, String containerName)   {
         Pod buildPod = podOperator.get(namespace, podName);
-        return KafkaConnectBuildUtils.buildPodComplete(buildPod);
+        return KafkaConnectBuildUtils.buildPodComplete(buildPod, containerName);
     }
 
     /**
@@ -217,16 +220,19 @@ public class ConnectBuildOperator {
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
     private Future<String> kubernetesBuildWaitForFinish(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild)  {
-        return podOperator.waitFor(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
-                .compose(ignore -> podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
+        // Build pod name is same as the container name
+        String buildPodName = KafkaConnectResources.buildPodName(connectBuild.getCluster());
+
+        return podOperator.waitFor(reconciliation, namespace, buildPodName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, buildPodName, buildPodName))
+                .compose(ignore -> podOperator.getAsync(namespace, buildPodName))
                 .compose(pod -> {
-                    if (KafkaConnectBuildUtils.buildPodSucceeded(pod)) {
-                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStatus(pod).getTerminated();
+                    if (KafkaConnectBuildUtils.buildPodSucceeded(pod, buildPodName)) {
+                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStatus(pod, buildPodName).getTerminated();
                         String image = state.getMessage().trim();
                         LOGGER.infoCr(reconciliation, "Build completed successfully. New image is {}.", image);
                         return Future.succeededFuture(image);
                     } else {
-                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStatus(pod).getTerminated();
+                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStatus(pod, buildPodName).getTerminated();
                         LOGGER.warnCr(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
                         return Future.failedFuture("The Kafka Connect build failed");
                     }
