@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.api.model.Build;
@@ -22,9 +23,7 @@ public class KafkaConnectBuildUtils {
                 && pod.getStatus() != null
                 && pod.getStatus().getContainerStatuses() != null
                 && pod.getStatus().getContainerStatuses().size() > 0
-                && getConnectBuildContainerStatus(pod) != null
-                && getConnectBuildContainerStatus(pod).getState() != null
-                && getConnectBuildContainerStatus(pod).getState().getTerminated() != null;
+                && getConnectBuildContainerStatus(pod).getTerminated() != null;
     }
 
     /**
@@ -36,7 +35,7 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildPodSucceeded(Pod pod)   {
         return buildPodComplete(pod)
-                && getConnectBuildContainerStatus(pod).getState().getTerminated().getExitCode() == 0;
+                && getConnectBuildContainerStatus(pod).getTerminated().getExitCode() == 0;
     }
 
     /**
@@ -48,7 +47,7 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildPodFailed(Pod pod)   {
         return buildPodComplete(pod)
-                && getConnectBuildContainerStatus(pod).getState().getTerminated().getExitCode() != 0;
+                && getConnectBuildContainerStatus(pod).getTerminated().getExitCode() != 0;
     }
 
     /**
@@ -88,11 +87,13 @@ public class KafkaConnectBuildUtils {
     /**
      * Get ContainerStatus of the Connect build container
      *
-     * @param pod - Pod which contains ContainerStatus of the Connect build
+     * @param pod Pod which contains ContainerStatus of the Connect build
      *
      * @return ContainerStatus of the build container
      */
-    public static ContainerStatus getConnectBuildContainerStatus(Pod pod)   {
-        return pod.getStatus().getContainerStatuses().stream().filter(containerStatus -> containerStatus.getName().equals(pod.getMetadata().getName())).findFirst().orElseGet(ContainerStatus::new);
+    public static ContainerState getConnectBuildContainerStatus(Pod pod)   {
+        ContainerStatus containerStatus = pod.getStatus().getContainerStatuses().stream()
+            .filter(conStatus -> conStatus.getName().equals(pod.getMetadata().getName())).findFirst().orElseGet(ContainerStatus::new);
+        return containerStatus.getState() != null ? containerStatus.getState() : new ContainerState();
     }
 }
