@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 public class CruiseControlRetriableConnectionException extends RuntimeException {
 
-    public CruiseControlRetriableConnectionException(Throwable message) {
-        super(message);
+    public CruiseControlRetriableConnectionException(Throwable cause) {
+        super(cause);
     }
 }
