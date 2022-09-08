@@ -28,7 +28,6 @@ public class UpgradeDowngradeData {
     private String startingKafkaVersion;
     private String featureGatesBefore;
     private String featureGatesAfter;
-    private Map<String, String> conversionTool;
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
@@ -77,18 +76,6 @@ public class UpgradeDowngradeData {
 
     public String getFeatureGatesAfter() {
         return featureGatesAfter;
-    }
-
-    public Map<String, String> getConversionTool() {
-        return conversionTool;
-    }
-
-    public String getToConversionTool() {
-        return conversionTool.get("toConversionTool");
-    }
-
-    public String getUrlToConversionTool() {
-        return conversionTool.get("urlToConversionTool");
     }
 
     public Map<String, String> getImagesAfterOperations() {
@@ -208,11 +195,6 @@ public class UpgradeDowngradeData {
         this.featureGatesAfter = featureGatesAfter;
     }
 
-    public void setConversionTool(Map<String, String> conversionTool) {
-        this.conversionTool = conversionTool;
-    }
-
-
     public void setClient(Map<String, Object> client) {
         this.client = client;
     }
@@ -298,7 +280,6 @@ public class UpgradeDowngradeData {
                 ", startingKafkaVersion='" + startingKafkaVersion + '\'' +
                 ", featureGatesBefore='" + featureGatesBefore + '\'' +
                 ", featureGatesAfter='" + featureGatesAfter + '\'' +
-                ", conversionTool=" + conversionTool +
                 ", imagesAfterOperations=" + imagesAfterOperations +
                 ", client=" + client +
                 ", environmentInfo=" + environmentInfo +

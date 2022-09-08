@@ -30,11 +30,8 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.test.executor.Exec;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -45,8 +42,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
-import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -450,43 +445,5 @@ public class AbstractUpgradeST extends AbstractST {
         } else {
             return resourcePlural + "." + Constants.V1BETA1 + "." + Constants.RESOURCE_GROUP_NAME;
         }
-    }
-
-    protected void convertCRDs(String urlToConversionTool, String toConversionTool, String namespace) throws IOException {
-        File dir = FileUtils.downloadAndUnzip(urlToConversionTool);
-        String convertorPath = dir.getAbsolutePath() + "/" + toConversionTool + "/bin/api-conversion.sh";
-
-        Exec.exec("chmod", "+x", convertorPath);
-
-        LOGGER.info("Converting CRs ...");
-        // run conversion of crs
-        // CRs conversion may fail, because for 0.23 for example it's already done
-        // CRS conversion needs old versions of Strimzi CRDs, which are not available after 0.22
-        if (cmdKubeClient().exec(true, Level.DEBUG, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.spec.versions}").out().trim().contains(Constants.V1ALPHA1)) {
-            ExecResult execResult = Exec.exec(convertorPath, "cr", "-n=" + namespace);
-            LOGGER.debug("CRs conversion STDOUT:");
-            LOGGER.debug(execResult.out());
-            LOGGER.debug("CRs conversion STDERR:");
-            LOGGER.debug(execResult.err());
-            LOGGER.info("CRs conversion done!");
-
-            // run crd-upgrade
-            LOGGER.info("Converting CRDs");
-            execResult = Exec.exec(convertorPath, "crd");
-            LOGGER.debug("CRDs conversion STDOUT:");
-            LOGGER.debug(execResult.out());
-            LOGGER.debug("CRDs conversion STDERR:");
-            LOGGER.debug(execResult.err());
-            LOGGER.info("CRDs conversion done!");
-
-            waitForKafkaCRDChange();
-        } else {
-            LOGGER.info("CRs and CRDs already have v1beta2 versions");
-        }
-    }
-
-    protected void waitForKafkaCRDChange() {
-        TestUtils.waitFor("Kafka CRD kafkas.kafka.strimzi.io will change it's api version", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().exec(true, Level.TRACE, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.status.storedVersions}").out().trim().contains(Constants.V1BETA2));
     }
 }
