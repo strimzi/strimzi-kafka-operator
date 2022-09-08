@@ -46,6 +46,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -137,7 +141,7 @@ public class KafkaConnectorIT {
         config.put(TestingConnector.NUM_PARTITIONS, 1);
         config.put(TestingConnector.TOPIC_NAME, "my-topic");
 
-        KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider();
@@ -167,7 +171,7 @@ public class KafkaConnectorIT {
                 config.put(TestingConnector.START_TIME_MS, 1_000);
                 Crds.kafkaConnectorOperation(client)
                         .inNamespace(namespace)
-                        .resource(createKafkaConnector(namespace, connectorName, config))
+                        .resource(createKafkaConnector(namespace, connectorName, true, config))
                         .patch();
                 return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                         "localhost", connectClient, true, connectorName, connector);
@@ -207,7 +211,7 @@ public class KafkaConnectorIT {
         config.put(TestingConnector.NUM_PARTITIONS, 1);
         config.put(TestingConnector.TOPIC_NAME, "my-topic");
 
-        KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider();
@@ -256,7 +260,7 @@ public class KafkaConnectorIT {
         config.put(TestingConnector.NUM_PARTITIONS, 1);
         config.put(TestingConnector.TOPIC_NAME, "my-topic");
 
-        KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, false, config);
         Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
 
         MetricsProvider metrics = new MicrometerMetricsProvider();
@@ -296,7 +300,65 @@ public class KafkaConnectorIT {
                 }));
     }
 
-    private KafkaConnector createKafkaConnector(String namespace, String connectorName, LinkedHashMap<String, Object> config) {
+    @Test
+    public void testConnectorIsAutoRestarted(VertxTestContext context) {
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20);
+
+        String namespace = "ns";
+        String connectorName = "my-connector-4";
+
+        LinkedHashMap<String, Object> config = new LinkedHashMap<>();
+        config.put(TestingConnector.FAIL_ON_START, true);
+        config.put(TestingConnector.START_TIME_MS, 0);
+        config.put(TestingConnector.STOP_TIME_MS, 0);
+        config.put(TestingConnector.TASK_START_TIME_MS, 0);
+        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
+        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
+        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
+        config.put(TestingConnector.NUM_PARTITIONS, 1);
+        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, true, config);
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+
+        MetricsProvider metrics = new MicrometerMetricsProvider();
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+            new ZookeeperLeaderFinder(vertx,
+                // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                () -> new BackOff(5_000, 2, 4)),
+            new DefaultAdminClientProvider(),
+            new DefaultZookeeperScalerProvider(),
+            metrics,
+            pfa, 10_000
+        );
+
+        KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
+            ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+            connect -> new KafkaConnectApiImpl(vertx),
+            connectCluster.getPort(2)
+        ) { };
+
+        operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                "localhost", connectClient, true, connectorName,
+                connector)
+            .onComplete(context.succeeding(v -> {
+                assertConnectorIsAutoRestarted(1, context, client, namespace, connectorName);
+            }))
+            .compose(ignored -> {
+                Instant.now(Clock.fixed(Instant.now().plus(2, ChronoUnit.MINUTES), ZoneOffset.UTC));
+                return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                "localhost", connectClient, true, connectorName,
+                connector);
+            })
+            .onComplete(context.succeeding(v -> {
+                assertConnectorIsAutoRestarted(1, context, client, namespace, connectorName);
+                context.completeNow();
+            }));
+    }
+
+    private KafkaConnector createKafkaConnector(String namespace, String connectorName, boolean enableAutoRestart, LinkedHashMap<String, Object> config) {
         return new KafkaConnectorBuilder()
                     .withNewMetadata()
                         .withName(connectorName)
@@ -306,6 +368,9 @@ public class KafkaConnectorIT {
                         .withClassName(TestingConnector.class.getName())
                         .withTasksMax(1)
                         .withConfig(config)
+                        .withNewAutoRestart()
+                            .withEnabled(enableAutoRestart)
+                            .endAutoRestart()
                     .endSpec()
                     .build();
     }
@@ -369,6 +434,19 @@ public class KafkaConnectorIT {
             assertThat(notReadyCondition, hasProperty("status", equalTo("True")));
             assertThat(notReadyCondition, hasProperty("reason", equalTo("Throwable")));
             assertThat(notReadyCondition, hasProperty("message", equalTo("The following tasks have failed: 0, see connectorStatus for more details.")));
+        });
+    }
+
+    private void assertConnectorIsAutoRestarted(int count, VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
+        context.verify(() -> {
+            KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace)
+                .withName(connectorName).get();
+            assertThat(kafkaConnector, notNullValue());
+            assertThat(kafkaConnector.getStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getAutoRestart(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getAutoRestart().getCount(), is(count));
+
         });
     }
 }

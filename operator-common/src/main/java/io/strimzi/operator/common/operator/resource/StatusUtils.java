@@ -7,6 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
@@ -21,6 +22,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -46,6 +48,25 @@ public class StatusUtils {
      */
     public static String iso8601(Instant instant) {
         return ZonedDateTime.ofInstant(instant, ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+    }
+
+    /**
+     *  Returns an Instant from a string date in ISO 8601 format
+     * @param date a string representing a date, for example "2019-07-23T09:08:12.356Z"
+     * @return an Instant
+     */
+    public static Instant iso8601(String date)  {
+        return Instant.parse(date);
+    }
+
+    /**
+     * Get an amount of time unit between a date and now
+     * @param date the date to start from
+     * @param unit the time unit of the interval, for example ChronoUnit.MINUTES
+     * @return long amount of time
+     */
+    public static long unitDifferenceUntilNow(Instant date,  ChronoUnit unit) {
+        return unit.between(date, ZonedDateTime.now(ZoneOffset.UTC));
     }
 
     public static Condition buildConditionFromException(String type, String status, Throwable error) {
@@ -166,5 +187,22 @@ public class StatusUtils {
         if (status != null)  {
             status.addConditions(conditions);
         }
+    }
+
+    /**
+     * Create an AutoRestartStatus if null and
+     * Increment count and set the last restart timestamp of an AutoRestartStatus
+     *
+     * @param autoRestart   The AutoRestart status or null
+     * @return the AutoRestart status updated or a new one if it was null
+     */
+    public static AutoRestartStatus incrementAutoRestartStatus(AutoRestartStatus autoRestart)  {
+        if (autoRestart == null)  {
+            autoRestart = new AutoRestartStatus();
+            autoRestart.setCount(0);
+        }
+        autoRestart.setCount(autoRestart.getCount() + 1);
+        autoRestart.setLastRestartTimestamp(iso8601Now());
+        return autoRestart;
     }
 }

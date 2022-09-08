@@ -63,6 +63,13 @@ spec:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+              autoRestart:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    description: "Enable/Disable auto restart, default to true."
+                description: Whether the connector should restart when tasks fail .
               pause:
                 type: boolean
                 description: Whether the connector should be paused. Defaults to false.
@@ -94,6 +101,16 @@ spec:
               observedGeneration:
                 type: integer
                 description: The generation of the CRD that was last reconciled by the operator.
+              autoRestart:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: The number of time the element restarted.
+                  lastRestartTimestamp:
+                    type: string
+                    description: "Last time the  auto restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
+                description: The auto restart status.
               connectorStatus:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object

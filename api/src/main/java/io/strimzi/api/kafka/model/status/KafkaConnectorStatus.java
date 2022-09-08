@@ -23,7 +23,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "connectorStatus", "tasksMax", "topics" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "autoRestart", "connectorStatus", "tasksMax", "topics" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaConnectorStatus extends Status {
@@ -32,6 +32,7 @@ public class KafkaConnectorStatus extends Status {
     private Map<String, Object> connectorStatus;
     private int tasksMax;
     private List<String> topics;
+    private AutoRestartStatus autoRestart;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The connector status, as reported by the Kafka Connect REST API.")
@@ -61,5 +62,15 @@ public class KafkaConnectorStatus extends Status {
 
     public void setTopics(List<String> topics) {
         this.topics = topics;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The auto restart status")
+    public AutoRestartStatus getAutoRestart() {
+        return autoRestart;
+    }
+
+    public void setAutoRestart(AutoRestartStatus autoRestart) {
+        this.autoRestart = autoRestart;
     }
 }

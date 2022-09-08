@@ -1,0 +1,1 @@
+Specify whether the auto restart should be enabled on a Connector

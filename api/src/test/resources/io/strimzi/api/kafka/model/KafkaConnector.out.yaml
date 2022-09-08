@@ -11,6 +11,8 @@ spec:
   config:
     file: "/home/source/test.source.txt"
     topic: "test.topic"
+  autoRestart:
+    enabled: true
 status:
   observedGeneration: 0
   connectorStatus:
