@@ -1268,6 +1268,8 @@ spec:
                                         type: object
                                   maxSkew:
                                     type: integer
+                                  minDomains:
+                                    type: integer
                                   topologyKey:
                                     type: string
                                   whenUnsatisfiable:
@@ -1696,7 +1698,7 @@ spec:
                                   description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                               description: Metadata applied to the resource.
                           description: Template for Kafka `StrimziPodSet` resource.
-                      description: "Template for Kafka cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated."
+                      description: "Template for Kafka cluster resources. The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated."
                   required:
                     - replicas
                     - listeners
@@ -2385,6 +2387,8 @@ spec:
                                         type: object
                                   maxSkew:
                                     type: integer
+                                  minDomains:
+                                    type: integer
                                   topologyKey:
                                     type: string
                                   whenUnsatisfiable:
@@ -2611,7 +2615,7 @@ spec:
                                   description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                               description: Metadata applied to the resource.
                           description: Template for ZooKeeper `StrimziPodSet` resource.
-                      description: "Template for ZooKeeper cluster resources. The template allows users to specify how are the `StatefulSet`, `Pods` and `Services` generated."
+                      description: "Template for ZooKeeper cluster resources. The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated."
                   required:
                     - replicas
                     - storage
@@ -3458,6 +3462,8 @@ spec:
                                         x-kubernetes-preserve-unknown-fields: true
                                         type: object
                                   maxSkew:
+                                    type: integer
+                                  minDomains:
                                     type: integer
                                   topologyKey:
                                     type: string
@@ -4413,6 +4419,8 @@ spec:
                                         type: object
                                   maxSkew:
                                     type: integer
+                                  minDomains:
+                                    type: integer
                                   topologyKey:
                                     type: string
                                   whenUnsatisfiable:
@@ -5245,6 +5253,8 @@ spec:
                                         type: object
                                   maxSkew:
                                     type: integer
+                                  minDomains:
+                                    type: integer
                                   topologyKey:
                                     type: string
                                   whenUnsatisfiable:
@@ -5831,6 +5841,8 @@ spec:
                                         x-kubernetes-preserve-unknown-fields: true
                                         type: object
                                   maxSkew:
+                                    type: integer
+                                  minDomains:
                                     type: integer
                                   topologyKey:
                                     type: string
