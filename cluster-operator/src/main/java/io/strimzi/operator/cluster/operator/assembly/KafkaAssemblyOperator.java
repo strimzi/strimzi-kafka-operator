@@ -516,7 +516,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * Run the reconciliation pipeline for the ZooKeeper
+         * Run the reconciliation pipeline for Kafka
          *
          * @param   dateSupplier  Date supplier used to check maintenance windows
          *
