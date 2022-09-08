@@ -10,6 +10,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -27,6 +28,7 @@ import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -47,9 +49,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -67,12 +72,6 @@ public class KafkaConnectorIT {
 
     @BeforeAll
     public static void before() throws IOException {
-        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true)
-        ));
-
         final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
         kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
         cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
@@ -82,11 +81,15 @@ public class KafkaConnectorIT {
     @AfterAll
     public static void after() {
         cluster.stop();
-        vertx.close();
     }
 
     @BeforeEach
     public void beforeEach() throws InterruptedException {
+        vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
+                new MicrometerMetricsOptions()
+                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                        .setEnabled(true)
+        ));
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaConnectorCrd()
@@ -102,6 +105,7 @@ public class KafkaConnectorIT {
 
     @AfterEach
     public void afterEach() {
+        vertx.close();
         mockKube.stop();
 
         if (connectCluster != null) {
@@ -110,7 +114,7 @@ public class KafkaConnectorIT {
     }
 
     @Test
-    public void test(VertxTestContext context) {
+    public void testConnectorNotUpdatedWhenConfigUnchanged(VertxTestContext context) {
         KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20);
@@ -178,6 +182,104 @@ public class KafkaConnectorIT {
             })));
     }
 
+    @Test
+    public void testConnectorResourceNotReadyWhenConnectorFailed(VertxTestContext context) {
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20);
+
+        String namespace = "ns";
+        String connectorName = "my-connector-2";
+
+        LinkedHashMap<String, Object> config = new LinkedHashMap<>();
+        config.put(TestingConnector.FAIL_ON_START, true);
+        config.put(TestingConnector.START_TIME_MS, 0);
+        config.put(TestingConnector.STOP_TIME_MS, 0);
+        config.put(TestingConnector.TASK_START_TIME_MS, 0);
+        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
+        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
+        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
+        config.put(TestingConnector.NUM_PARTITIONS, 1);
+        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+
+        MetricsProvider metrics = new MicrometerMetricsProvider();
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+                new ZookeeperLeaderFinder(vertx,
+                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                        () -> new BackOff(5_000, 2, 4)),
+                new DefaultAdminClientProvider(),
+                new DefaultZookeeperScalerProvider(),
+                metrics,
+                pfa, 10_000
+        );
+
+        KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
+                ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+                connect -> new KafkaConnectApiImpl(vertx),
+                connectCluster.getPort(2)
+        ) { };
+
+        operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                        "localhost", connectClient, true, connectorName,
+                        connector)
+                .onComplete(context.succeeding(v -> {
+                    assertConnectorIsNotReady(context, client, namespace, connectorName);
+                    context.completeNow();
+                }));
+    }
+
+    @Test
+    public void testConnectorResourceNotReadyWhenTaskFailed(VertxTestContext context) {
+        KafkaConnectApiImpl connectClient = new KafkaConnectApiImpl(vertx);
+
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20);
+
+        String namespace = "ns";
+        String connectorName = "my-connector-3";
+
+        LinkedHashMap<String, Object> config = new LinkedHashMap<>();
+        config.put(TestingConnector.TASK_FAIL_ON_START, true);
+        config.put(TestingConnector.START_TIME_MS, 0);
+        config.put(TestingConnector.STOP_TIME_MS, 0);
+        config.put(TestingConnector.TASK_START_TIME_MS, 0);
+        config.put(TestingConnector.TASK_STOP_TIME_MS, 0);
+        config.put(TestingConnector.TASK_POLL_TIME_MS, 0);
+        config.put(TestingConnector.TASK_POLL_RECORDS, 100);
+        config.put(TestingConnector.NUM_PARTITIONS, 1);
+        config.put(TestingConnector.TOPIC_NAME, "my-topic");
+
+        KafkaConnector connector = createKafkaConnector(namespace, connectorName, config);
+        Crds.kafkaConnectorOperation(client).inNamespace(namespace).resource(connector).create();
+
+        MetricsProvider metrics = new MicrometerMetricsProvider();
+        ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
+                new ZookeeperLeaderFinder(vertx,
+                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                        () -> new BackOff(5_000, 2, 4)),
+                new DefaultAdminClientProvider(),
+                new DefaultZookeeperScalerProvider(),
+                metrics,
+                pfa, 10_000
+        );
+
+        KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
+                ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+                connect -> new KafkaConnectApiImpl(vertx),
+                connectCluster.getPort(2)
+        ) { };
+
+        operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                        "localhost", connectClient, true, connectorName,
+                        connector)
+                .onComplete(context.succeeding(v -> {
+                    assertConnectorTaskIsNotReady(context, client, namespace, connectorName);
+                    context.completeNow();
+                }));
+    }
+
     private KafkaConnector createKafkaConnector(String namespace, String connectorName, LinkedHashMap<String, Object> config) {
         return new KafkaConnectorBuilder()
                     .withNewMetadata()
@@ -202,6 +304,45 @@ public class KafkaConnectorIT {
             assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
             assertThat(kafkaConnector.getStatus().getConnectorStatus().get("connector"), instanceOf(Map.class));
             assertThat(((Map) kafkaConnector.getStatus().getConnectorStatus().get("connector")).get("state"), is("RUNNING"));
+        });
+    }
+
+    private void assertConnectorIsNotReady(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
+        context.verify(() -> {
+            KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
+            assertThat(kafkaConnector, notNullValue());
+            assertThat(kafkaConnector.getStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
+            JsonObject connectorStatus = new JsonObject(kafkaConnector.getStatus().getConnectorStatus());
+            assertThat(connectorStatus.getJsonObject("connector"), notNullValue());
+            assertThat(connectorStatus.getJsonObject("connector").getString("state"), is("FAILED"));
+            assertThat(kafkaConnector.getStatus().getConditions(), hasSize(1));
+            Condition notReadyCondition = kafkaConnector.getStatus().getConditions().get(0);
+            assertThat(notReadyCondition, hasProperty("type", equalTo("NotReady")));
+            assertThat(notReadyCondition, hasProperty("status", equalTo("True")));
+            assertThat(notReadyCondition, hasProperty("reason", equalTo("Throwable")));
+            assertThat(notReadyCondition, hasProperty("message", equalTo("Connector has failed, see connectorStatus for more details.")));
+        });
+    }
+
+    private void assertConnectorTaskIsNotReady(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
+        context.verify(() -> {
+            KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
+            assertThat(kafkaConnector, notNullValue());
+            assertThat(kafkaConnector.getStatus(), notNullValue());
+            assertThat(kafkaConnector.getStatus().getConnectorStatus(), notNullValue());
+            JsonObject connectorStatus = new JsonObject(kafkaConnector.getStatus().getConnectorStatus());
+            assertThat(connectorStatus.getJsonObject("connector"), notNullValue());
+            assertThat(connectorStatus.getJsonObject("connector").getString("state"), is("RUNNING"));
+            assertThat(connectorStatus.getJsonArray("tasks"), notNullValue());
+            assertThat(connectorStatus.getJsonArray("tasks").size(), is(1));
+            assertThat(connectorStatus.getJsonArray("tasks").getJsonObject(0).getString("state"), is("FAILED"));
+            assertThat(kafkaConnector.getStatus().getConditions(), hasSize(1));
+            Condition notReadyCondition = kafkaConnector.getStatus().getConditions().get(0);
+            assertThat(notReadyCondition, hasProperty("type", equalTo("NotReady")));
+            assertThat(notReadyCondition, hasProperty("status", equalTo("True")));
+            assertThat(notReadyCondition, hasProperty("reason", equalTo("Throwable")));
+            assertThat(notReadyCondition, hasProperty("message", equalTo("The following tasks have failed: 0, see connectorStatus for more details.")));
         });
     }
 }

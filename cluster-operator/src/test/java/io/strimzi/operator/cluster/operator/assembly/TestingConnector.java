@@ -20,11 +20,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A source connection used for testing which can be configured to be slow at doing things.
+ * A source connection used for testing which can be configured to be slow at doing things or fail.
  */
 public class TestingConnector extends SourceConnector {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(TestingConnector.class);
+    public static final String FAIL_ON_START = "fail.on.start";
+    public static final String TASK_FAIL_ON_START = "task.fail.on.start";
     public static final String START_TIME_MS = "start.time.ms";
     public static final String STOP_TIME_MS = "stop.time.ms";
     public static final String TASK_START_TIME_MS = "task.start.time.ms";
@@ -34,6 +36,7 @@ public class TestingConnector extends SourceConnector {
     public static final String TOPIC_NAME = "topic.name";
     public static final String NUM_PARTITIONS = "num.partitions";
 
+    private boolean taskFailOnStart;
     private long stopTime;
     private long taskStartTime;
     private long taskStopTime;
@@ -59,14 +62,18 @@ public class TestingConnector extends SourceConnector {
         @Override
         public void start(Map<String, String> map) {
             LOGGER.infoOp("Starting task {}", this);
-            long taskStartTime = getLong(map, "task.start.time.ms");
-            taskStopTime = getLong(map, "task.stop.time.ms");
-            taskPollTime = getLong(map, "task.poll.time.ms");
-            taskPollRecords = getLong(map, "task.poll.records");
-            topicName = map.get("topic.name");
-            numPartitions = Integer.parseInt(map.get("num.partitions"));
+            long taskStartTime = getLong(map, TASK_START_TIME_MS);
+            taskStopTime = getLong(map, TASK_STOP_TIME_MS);
+            taskPollTime = getLong(map, TASK_POLL_TIME_MS);
+            taskPollRecords = getLong(map, TASK_POLL_RECORDS);
+            topicName = map.get(TOPIC_NAME);
+            numPartitions = Integer.parseInt(map.get(NUM_PARTITIONS));
             LOGGER.infoOp("Sleeping for {}ms", taskStartTime);
             sleep(taskStartTime);
+            if (getBoolean(map, TASK_FAIL_ON_START)) {
+                LOGGER.infoOp("Failing task {}", this);
+                throw new RuntimeException("Task failed to start");
+            }
             LOGGER.infoOp("Started task {}", this);
         }
 
@@ -98,6 +105,7 @@ public class TestingConnector extends SourceConnector {
     @Override
     public void start(Map<String, String> map) {
         LOGGER.infoOp("Starting connector {}", this);
+        taskFailOnStart = getBoolean(map, TASK_FAIL_ON_START);
         long startTime = getLong(map, START_TIME_MS);
         stopTime = getLong(map, STOP_TIME_MS);
         taskStartTime = getLong(map, TASK_START_TIME_MS);
@@ -107,6 +115,10 @@ public class TestingConnector extends SourceConnector {
         topicName = map.get(TOPIC_NAME);
         numPartitions = Integer.parseInt(map.get(NUM_PARTITIONS));
         sleep(startTime);
+        if (getBoolean(map, FAIL_ON_START)) {
+            LOGGER.infoOp("Failing connector {}", this);
+            throw new RuntimeException("Failed to start connector");
+        }
         LOGGER.infoOp("Started connector {}", this);
     }
 
@@ -118,6 +130,10 @@ public class TestingConnector extends SourceConnector {
                 LOGGER.warnOp("Interrupted during sleep", e);
             }
         }
+    }
+
+    private static boolean getBoolean(Map<String, String> map, String configName) {
+        return Boolean.parseBoolean(map.get(configName));
     }
 
     private static long getLong(Map<String, String> map, String configName) {
@@ -132,6 +148,7 @@ public class TestingConnector extends SourceConnector {
     @Override
     public List<Map<String, String>> taskConfigs(int count) {
         Map<String, String> taskConfig = new HashMap<>();
+        taskConfig.put(TASK_FAIL_ON_START, Boolean.toString(taskFailOnStart));
         taskConfig.put(TASK_START_TIME_MS, Long.toString(taskStartTime));
         taskConfig.put(TASK_STOP_TIME_MS, Long.toString(taskStopTime));
         taskConfig.put(TASK_POLL_TIME_MS, Long.toString(taskPollTime));
@@ -155,6 +172,10 @@ public class TestingConnector extends SourceConnector {
     @Override
     public ConfigDef config() {
         return new ConfigDef()
+                .define(FAIL_ON_START, ConfigDef.Type.BOOLEAN, false, new ConfigDef.NonNullValidator(),
+                        ConfigDef.Importance.MEDIUM, "Whether start() should fail")
+                .define(TASK_FAIL_ON_START, ConfigDef.Type.BOOLEAN, false, new ConfigDef.NonNullValidator(),
+                        ConfigDef.Importance.MEDIUM, "Whether task start() should fail")
                 .define(START_TIME_MS, ConfigDef.Type.LONG, 5_000L, new ConfigDef.NonNullValidator(),
                         ConfigDef.Importance.MEDIUM, "The time that start() should take to return")
                 .define(STOP_TIME_MS, ConfigDef.Type.LONG, 5_000L, new ConfigDef.NonNullValidator(),
