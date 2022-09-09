@@ -60,7 +60,7 @@ public class KafkaRebalanceStateMachineTest {
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
-    private static final String REASON = "CruiseControlRetriableConnectionException";
+    private static final String CRUISE_CONTROL_RETRIABLE_CONNECTION_EXCEPTION = "CruiseControlRetriableConnectionException";
     private static final KafkaRebalanceSpec EMPTY_KAFKA_REBALANCE_SPEC = new KafkaRebalanceSpecBuilder().build();
     private static final KafkaRebalanceSpec ADD_BROKER_KAFKA_REBALANCE_SPEC =
             new KafkaRebalanceSpecBuilder()
@@ -878,26 +878,14 @@ public class KafkaRebalanceStateMachineTest {
     }
 
     @Test
-    public void testReadyAfterNoRouteToHostException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, null, EMPTY_KAFKA_REBALANCE_SPEC, REASON);
+    public void testReadyAfterCruiseControlRetriableConnectionException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, null, EMPTY_KAFKA_REBALANCE_SPEC, CRUISE_CONTROL_RETRIABLE_CONNECTION_EXCEPTION);
         this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.NotReady, KafkaRebalanceAnnotation.none);
 
-        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC, REASON);
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC, CRUISE_CONTROL_RETRIABLE_CONNECTION_EXCEPTION);
         this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.NotReady, KafkaRebalanceAnnotation.none);
 
-        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, REASON);
-        this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.NotReady, KafkaRebalanceAnnotation.none);
-    }
-
-    @Test
-    public void testReadyAfterConnectException(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-        KafkaRebalance kcRebalance = createKafkaRebalance(KafkaRebalanceState.NotReady, null, null, EMPTY_KAFKA_REBALANCE_SPEC, REASON);
-        this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.REBALANCE, kcRebalance, KafkaRebalanceState.NotReady, KafkaRebalanceAnnotation.none);
-
-        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, ADD_BROKER_KAFKA_REBALANCE_SPEC, REASON);
-        this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.ADD_BROKER, kcRebalance, KafkaRebalanceState.NotReady, KafkaRebalanceAnnotation.none);
-
-        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, REASON);
+        kcRebalance = createKafkaRebalance(KafkaRebalanceState.Ready, null, null, REMOVE_BROKER_KAFKA_REBALANCE_SPEC, CRUISE_CONTROL_RETRIABLE_CONNECTION_EXCEPTION);
         this.testStateWithException(vertx, context, 0, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance, KafkaRebalanceState.NotReady, KafkaRebalanceAnnotation.none);
     }
 
