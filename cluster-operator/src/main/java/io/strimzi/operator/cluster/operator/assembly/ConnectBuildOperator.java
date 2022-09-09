@@ -227,15 +227,17 @@ public class ConnectBuildOperator {
                 .compose(ignore -> podOperator.getAsync(namespace, buildPodName))
                 .compose(pod -> {
                     if (KafkaConnectBuildUtils.buildPodSucceeded(pod, buildPodName)) {
-                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStatus(pod, buildPodName).getTerminated();
+                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStateTerminated(pod, buildPodName);
                         String image = state.getMessage().trim();
                         LOGGER.infoCr(reconciliation, "Build completed successfully. New image is {}.", image);
                         return Future.succeededFuture(image);
-                    } else {
-                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStatus(pod, buildPodName).getTerminated();
+                    } else if (KafkaConnectBuildUtils.buildPodFailed(pod, buildPodName)) {
+                        ContainerStateTerminated state = KafkaConnectBuildUtils.getConnectBuildContainerStateTerminated(pod, buildPodName);
                         LOGGER.warnCr(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
-                        return Future.failedFuture("The Kafka Connect build failed");
+                    } else {
+                        LOGGER.warnCr(reconciliation, "Build failed - no container with name {}", buildPodName);
                     }
+                    return Future.failedFuture("The Kafka Connect build failed");
                 });
     }
 
