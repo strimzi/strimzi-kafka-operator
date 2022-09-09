@@ -134,8 +134,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getStartingKafkaVersion(), clusterOperator.getDeploymentNamespace());
-        UpgradeDowngradeData conversionData = new UpgradeDowngradeDatalist().getUpgradeData(0);
-        convertCRDs(conversionData.getUrlToConversionTool(), conversionData.getToConversionTool(), clusterOperator.getDeploymentNamespace());
+
         // Make snapshots of all pods
         makeSnapshots();
 
@@ -166,8 +165,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, null, clusterOperator.getDeploymentNamespace());
-        UpgradeDowngradeData conversionTool = new UpgradeDowngradeDatalist().getUpgradeData(0);
-        convertCRDs(conversionTool.getUrlToConversionTool(), conversionTool.getToConversionTool(), clusterOperator.getDeploymentNamespace());
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
@@ -207,13 +204,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, upgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", clusterOperator.getDeploymentNamespace());
-
-        logPodImages(clusterName);
-
-        // Upgrade CRDs and upgrade CO to 0.24
-        if (upgradeData.getConversionTool() != null) {
-            convertCRDs(upgradeData.getUrlToConversionTool(), upgradeData.getToConversionTool(), clusterOperator.getDeploymentNamespace());
-        }
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
