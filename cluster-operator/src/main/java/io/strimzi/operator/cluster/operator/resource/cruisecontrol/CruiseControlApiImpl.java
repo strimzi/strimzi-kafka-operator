@@ -441,7 +441,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
             // Vert.x throws a AnnotatedConnectException (inherits from ConnectException) when the request times out
             // so we catch and raise a CruiseControlRetriableConnectionException instead
             result.fail(new CruiseControlRetriableConnectionException(t));
-        }  else {
+        } else {
             result.fail(t);
         }
     }
