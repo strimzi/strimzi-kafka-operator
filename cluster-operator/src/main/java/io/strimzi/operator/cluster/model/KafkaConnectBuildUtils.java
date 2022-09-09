@@ -100,7 +100,8 @@ public class KafkaConnectBuildUtils {
      * @return ContainerStatus of the build container
      */
     public static ContainerState getConnectBuildContainerStatus(Pod pod, String containerName)   {
-        return pod.getStatus().getContainerStatuses().stream().filter(conStatus -> conStatus.getName().equals(containerName))
-            .findFirst().orElseGet(ContainerStatus::new).getState();
+        ContainerStatus containerStatus = pod.getStatus().getContainerStatuses().stream().filter(conStatus -> conStatus.getName().equals(containerName))
+            .findFirst().orElse(null);
+        return containerStatus != null ? containerStatus.getState() : null;
     }
 }
