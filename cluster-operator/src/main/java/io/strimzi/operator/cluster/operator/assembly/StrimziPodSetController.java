@@ -383,7 +383,13 @@ public class StrimziPodSetController implements Runnable {
             pod.getMetadata().setOwnerReferences(List.of(owner));
             podOperator.client().inNamespace(reconciliation.namespace()).resource(pod).create();
         } else {
-            if (ModelUtils.hasOwnerReference(currentPod, owner))    {
+            if (PodSetUtils.isInTerminalState(currentPod))  {
+                // The Pods might reach a terminal state of Succeeded or Failed in some situations such as node failures
+                // The controller detects these states and deletes such pods. Another reconciliation triggered by the
+                // deletion will recreate it.
+                LOGGER.debugCr(reconciliation, "Pod {} in namespace {} reached terminal phase {} => deleting it", currentPod.getMetadata().getName(), reconciliation.namespace(), currentPod.getStatus().getPhase());
+                podOperator.client().inNamespace(reconciliation.namespace()).resource(currentPod).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
+            } else if (ModelUtils.hasOwnerReference(currentPod, owner))    {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", pod.getMetadata().getName(), reconciliation.namespace());
             } else  {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} is missing owner reference => patching it", currentPod.getMetadata().getName(), reconciliation.namespace());
