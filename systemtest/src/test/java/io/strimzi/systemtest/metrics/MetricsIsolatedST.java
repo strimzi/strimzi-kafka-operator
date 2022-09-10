@@ -582,8 +582,8 @@ public class MetricsIsolatedST extends AbstractST {
             .collectMetricsFromPods();
 
         // check StrimziPodSet metrics in CO
-        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), 2);
-        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, SECOND_NAMESPACE, 2);
+        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), Environment.isKRaftModeEnabled() ? 1 : 2);
+        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, SECOND_NAMESPACE, Environment.isKRaftModeEnabled() ? 1 : 2);
 
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", StrimziPodSet.RESOURCE_KIND, clusterOperatorMetricsData);
