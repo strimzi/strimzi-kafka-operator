@@ -21,6 +21,7 @@ Pod security provider plugins:: Use pod security provider plugins to automatical
 Pod security providers offer a simpler alternative to specifying security context through `template` configuration.
 You can use both approaches.
 The `template` approach has a higher priority.
+Security context configured through `template` properties overrides the configuration set by pod security providers.  
 So you might use pod security providers to automatically configure the security context for most containers.
 And also use `template` configuration to set container-specific security context where needed.
 
@@ -83,7 +84,7 @@ env:
   # ...
 ----
 
-Instead of specifying `baseline` as the value, you can specify the `io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider` classpath.
+Instead of specifying `baseline` as the value, you can specify the `io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider` fully-qualified domain name.
 
 == Restricted Provider for pod security
 
@@ -103,7 +104,7 @@ env:
   # ...
 ----
 
-Instead of specifying `restricted` as the value, you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` classpath.
+Instead of specifying `restricted` as the value, you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` fully-qualified domain name.
 
 If you change to the Restricted Provider from the default Baseline Provider, the following restrictions are implemented in addition to the constraints defined in the baseline security profile:
 

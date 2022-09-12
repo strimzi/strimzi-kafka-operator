@@ -36,7 +36,7 @@ env:
   # ...
 ----
 +
-Or you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` classpath.
+Or you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` fully-qualified domain name.
 
 . Deploy the Cluster Operator:
 +
