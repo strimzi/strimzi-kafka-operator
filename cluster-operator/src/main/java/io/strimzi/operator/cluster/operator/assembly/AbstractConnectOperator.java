@@ -745,7 +745,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             List<String> failedTaskIds;
             if (connectorHasFailed(statusResultJson)) {
                 connectorReadiness = Future.failedFuture(new Throwable("Connector has failed, see connectorStatus for more details."));
-            } else if ((failedTaskIds = failedTasks(statusResultJson)).size() > 0) {
+            } else if ((failedTaskIds = failedTaskIds(statusResultJson)).size() > 0) {
                 connectorReadiness = Future.failedFuture(new Throwable(String.format("The following tasks have failed: %s, see connectorStatus for more details.", String.join(", ", failedTaskIds))));
             }
             topics = connectorStatus.topics.stream().sorted().collect(Collectors.toList());
@@ -777,7 +777,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return connectorStatus != null && "FAILED".equals(connectorStatus.getString("state"));
     }
 
-    private List<String> failedTasks(JsonObject statusResult) {
+    private List<String> failedTaskIds(JsonObject statusResult) {
         JsonArray tasks = Optional.ofNullable(statusResult.getJsonArray("tasks")).orElse(new JsonArray());
         List<String> failedTasks = new ArrayList<>();
         for (Object task : tasks) {

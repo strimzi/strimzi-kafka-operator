@@ -3,6 +3,11 @@
 
 ## 0.32.0
 
+* Update KafkaConnector CR status so the 'NotReady' condition is added if the connector or any tasks are reporting a 'FAILED' state.
+
+### Deprecations and removals
+
+* A connector or task failing triggers a 'NotReady' condition to be added to the KafkaConnector CR status. This is different from previous versions where the CR would report 'Ready' even if the connector or a task had failed.
 
 ## 0.31.0
 
