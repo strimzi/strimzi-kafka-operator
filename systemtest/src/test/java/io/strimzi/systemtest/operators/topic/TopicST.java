@@ -37,7 +37,6 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -286,7 +285,6 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
     void testTopicModificationOfReplicationFactor(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -391,7 +389,6 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
     void testCreateTopicAfterUnsupportedOperation(ExtensionContext extensionContext) {
         String topicName = "topic-with-replication-to-change";
         String newTopicName = "another-topic";

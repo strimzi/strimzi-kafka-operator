@@ -72,7 +72,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -453,7 +452,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     @ParallelTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
     void testKafkaTopicDecreaseStatus(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -479,7 +477,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     @ParallelTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
     void testKafkaTopicChangingInSyncReplicasStatus(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
