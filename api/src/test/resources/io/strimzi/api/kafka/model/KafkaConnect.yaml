@@ -38,17 +38,15 @@ spec:
     - name: foo
       secret:
         secretName: mysecret
-    # Uncomment after kubernetes/kubernetes#68466 is fixed
-#        items:
-#        - key: username
-#          path: my-group/my-username
+        items:
+        - key: username
+          path: my-group/my-username
     - name: config-map-volume
       configMap:
         name: my-config-map
     - name: config-vol
       configMap:
         name: log-config
-# Uncomment after kubernetes/kubernetes#68466 is fixed
-#        items:
-#        - key: log_level
-#          path: log_level
+        items:
+        - key: log_level
+          path: log_level
