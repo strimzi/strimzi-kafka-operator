@@ -72,6 +72,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -736,8 +737,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         List<String> topics = new ArrayList<>();
         List<Condition> conditions = new ArrayList<>();
 
+        Future<Void> connectorReadiness = Future.succeededFuture();
+
         if (connectorStatus != null) {
             statusResult = connectorStatus.statusResult;
+            JsonObject statusResultJson = new JsonObject(statusResult);
+            List<String> failedTaskIds;
+            if (connectorHasFailed(statusResultJson)) {
+                connectorReadiness = Future.failedFuture(new Throwable("Connector has failed, see connectorStatus for more details."));
+            } else if ((failedTaskIds = failedTaskIds(statusResultJson)).size() > 0) {
+                connectorReadiness = Future.failedFuture(new Throwable(String.format("The following tasks have failed: %s, see connectorStatus for more details.", String.join(", ", failedTaskIds))));
+            }
             topics = connectorStatus.topics.stream().sorted().collect(Collectors.toList());
             connectorStatus.conditions.forEach(condition -> conditions.add(condition));
         }
@@ -746,7 +756,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         unknownAndDeprecatedConditions.forEach(condition -> conditions.add(condition));
 
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
-            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
+            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : connectorReadiness);
             status.setConnectorStatus(statusResult);
             status.setTasksMax(getActualTaskCount(connector, statusResult));
             status.setTopics(topics);
@@ -760,6 +770,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             (connector1, status1) -> {
                 return new KafkaConnectorBuilder(connector1).withStatus(status1).build();
             });
+    }
+
+    private boolean connectorHasFailed(JsonObject statusResult) {
+        JsonObject connectorStatus = statusResult.getJsonObject("connector");
+        return connectorStatus != null && "FAILED".equals(connectorStatus.getString("state"));
+    }
+
+    private List<String> failedTaskIds(JsonObject statusResult) {
+        JsonArray tasks = Optional.ofNullable(statusResult.getJsonArray("tasks")).orElse(new JsonArray());
+        List<String> failedTasks = new ArrayList<>();
+        for (Object task : tasks) {
+            if (task instanceof JsonObject && "FAILED".equals(((JsonObject) task).getString("state"))) {
+                failedTasks.add(((JsonObject) task).getString("id"));
+            }
+        }
+        return failedTasks;
     }
 
     /**
