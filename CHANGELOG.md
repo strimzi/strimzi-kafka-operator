@@ -4,6 +4,7 @@
 ## 0.32.0
 
 * Update KafkaConnector CR status so the 'NotReady' condition is added if the connector or any tasks are reporting a 'FAILED' state.
+* Add auto-approval mechanism on KafkaRebalance resource when an optimization proposal is ready
 
 ### Deprecations and removals
 
