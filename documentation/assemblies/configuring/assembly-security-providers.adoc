@@ -18,5 +18,5 @@ include::../../modules/configuring/proc-config-restricted-security-provider.adoc
 //implementing your own provider
 include::../../modules/configuring/con-config-custom-security-providers.adoc[leveloffset=+1]
 endif::Section[]
-//security context on openshift
-include::../../modules/configuring/con-config-openshift-security-providers.adoc[leveloffset=+1]
+//security context on other platforms
+include::../../modules/configuring/con-config-platform-security-providers.adoc[leveloffset=+1]

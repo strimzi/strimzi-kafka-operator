@@ -28,11 +28,12 @@ Edit the `Deployment` resource that is used to deploy the Cluster Operator, whic
 .Cluster Operator configuration for the Restricted Provider
 [source,yaml,numbered,options="nowrap"]
 ----
-include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..13;18;28..29]
-          env:
-            - name: STRIMZI_POD_SECURITY_PROVIDER_CLASS
-              value: restricted
-          # ...
+# ...
+env:
+  # ...
+  - name: STRIMZI_POD_SECURITY_PROVIDER_CLASS
+    value: restricted
+  # ...
 ----
 +
 Or you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` classpath.
@@ -48,11 +49,11 @@ kubectl create -f install/cluster-operator -n myproject
 .Adding security context through `template` configuration
 ----
 template:
-  pod: # <1>
+  pod: 
     securityContext:
       runAsUser: 1000001
       fsGroup: 0
-  kafkaContainer: # <2>
+  kafkaContainer:
     securityContext:
     runAsUser: 2000
   # ...      

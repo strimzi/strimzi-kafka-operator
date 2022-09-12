@@ -29,10 +29,11 @@ For example, you'll need to apply the configuration to each pod in a Kafka clust
 
 To avoid repeating the same configuration, you can use the following pod security provider plugins so that the security configuration is in one place.
 
-* Baseline Provider
-* Restricted Provider
+Baseline Provider:: The Baseline Provider is based on the Kubernetes _baseline_ security profile. The baseline profile prevents privilege escalations and defines other standard access controls and limitations.
+Restricted Provider:: The Restricted Provider is based on the Kubernetes _restricted_ security profile. The restricted profile is more restrictive than the baseline profile, and is used where security needs to be tighter. 
 
-The providers are based on Kubernetes _baseline_ and _restricted_ security profiles.  
+For more information on the Kubernetes security profiles, see {K8sSecurityStandards}.
+
 
 == Template configuration for security context
 
@@ -131,7 +132,7 @@ securityContext:
 
 [NOTE]
 ====
-Container capabilities and `seecomp` are Linux kernel features that support container security. 
+Container capabilities and `seccomp` are Linux kernel features that support container security. 
 
 * Capabilities add fine-grained privileges for processes running on a container. The `NET_BIND_SERVICE` capability allows non-root user applications to bind to ports below 1024. 
 * `seccomp` profiles limit the processes running in a container to only a subset of system calls.  

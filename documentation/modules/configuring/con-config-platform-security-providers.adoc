@@ -3,14 +3,16 @@
 // assembly-security-providers.adoc
 
 [id='con-config-openshift-security-providers-{context}']
-= Applying security context to pods and containers on OpenShift
+= Handling of security context by Kubernetes platform
 
 [role="_abstract"]
-OpenShift uses security context constraints (SCCs) to control permissions for pods.
-Security context constraints (SCCs) are composed of settings and strategies that control the security features a pod has access to.
+Handling of security context depends on the tooling of the Kubernetes platform you are using.  
+
+For example, OpenShift uses built-in security context constraints (SCCs) to control permissions.  
+SCCs are the settings and strategies that control the security features a pod has access to.
 
 By default, OpenShift injects security context configuration automatically.
 In most cases, this means you don't need to configure security context for the pods and containers created by the Cluster Operator.  
-Although it is possible to create your own SCCs.
+Although it is possible to create and manage your own SCCs.
 
 For more information, see the {OpenShiftDocs}. 
