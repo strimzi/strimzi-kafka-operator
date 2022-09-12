@@ -274,3 +274,30 @@ Consider a shorter interval for fast changing clusters, although this increases 
 * xref:con-optimization-goals-{context}[]
 * xref:proc-generating-optimization-proposals-{context}[]
 * xref:proc-approving-optimization-proposal-{context}[]
+
+== Auto-approving an optimization proposal
+
+In some cases, the manual approval process of the optimization proposal is not necessary.
+Automatically approving an optimization proposal can save time from an operational point of view.
+It enables more automation where just creating a `KafkaRebalance` custom resource can go straight to the cluster rebalance without any additional manual interaction.
+
+To enable the optimization proposal auto-approval, create the `KafkaRebalance` resource with the `strimzi.io/rebalance-auto-approval` annotation set to `true`.
+Of course, not setting such annotation at all or setting it to `false` leaves the optimization proposal with the need of manual approval from the user.
+
+.Example of rebalance request with auto-approval enabled
+[source,yaml]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+  annotations:
+    strimzi.io/rebalance-auto-approval: true
+spec:
+  mode: # any mode
+  # ...
+----
+
+You are still able to see the optimization proposal summary in the `KafkaRebalance` status to be aware of the in progress rebalancing outcome.
