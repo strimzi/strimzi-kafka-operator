@@ -157,7 +157,7 @@ public class CertificateRenewalTest {
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Promise<ArgumentCaptor<Secret>> reconcileCasComplete = Promise.promise();
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(clock)
             .onComplete(ar -> {
                 // If succeeded return the argument captor object instead of the Reconciliation state
                 // This is for the purposes of testing

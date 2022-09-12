@@ -150,7 +150,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
-                .compose(state -> state.reconcileCas())
+                .compose(state -> state.reconcileCas(clock))
                 .compose(state -> state.versionChange())
 
                 // Run reconciliations of the different components
@@ -351,9 +351,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Creates the CaReconciler instance and reconciles the Clients and Cluster CAs. The resulting CAs are stored
          * in the ReconciliationState and used later to reconcile the operands.
          *
+         * @param clock     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *                  That time is used for checking maintenance windows
+         *
          * @return  Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileCas()    {
+        Future<ReconciliationState> reconcileCas(Clock clock)    {
             return caReconciler()
                     .reconcile(clock)
                     .compose(cas -> {

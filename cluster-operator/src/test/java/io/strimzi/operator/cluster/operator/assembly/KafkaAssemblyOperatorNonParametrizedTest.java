@@ -41,6 +41,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -141,7 +142,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -226,7 +227,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -305,7 +306,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         Checkpoint async = context.checkpoint();
 
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas()
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));

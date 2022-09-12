@@ -200,8 +200,9 @@ public class CaReconciler {
      * The main reconciliation method which triggers the whole reconciliation pipeline. This is the method which is
      * expected to be called from the outside to trigger the reconciliation.
      *
-     * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *                          That time is used for checking maintenance windows
+     * @param clock     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                  That time is used for checking maintenance windows
+     *
      * @return  Future with the CA reconciliation result containing the Cluster and Clients CAs
      */
     public Future<CaReconciliationResult> reconcile(Clock clock)    {
@@ -219,8 +220,8 @@ public class CaReconciler {
      * Within both the secrets the current certificate is stored under the key {@code ca.crt}
      * and the current key is stored under the key {@code ca.key}.
      *
-     * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *                          That time is used for checking maintenance windows
+     * @param clock     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                  That time is used for checking maintenance windows
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     Future<Void> reconcileCas(Clock clock) {

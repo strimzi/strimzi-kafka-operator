@@ -880,7 +880,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return Future.succeededFuture(reconcileState)
-                    .compose(ReconciliationState::reconcileCas)
+                    .compose(state -> state.reconcileCas(this.clock))
                     .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
                     .compose(state -> state.reconcileKafka(this::dateSupplier))
                     .mapEmpty();
