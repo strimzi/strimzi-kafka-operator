@@ -281,10 +281,10 @@ In some cases, the manual approval process of the optimization proposal is not n
 Automatically approving an optimization proposal can save time from an operational point of view.
 It enables more automation where just creating a `KafkaRebalance` custom resource can go straight to the cluster rebalance without any additional manual interaction.
 
-To enable the optimization proposal auto-approval, create the `KafkaRebalance` resource with the `strimzi.io/rebalance-auto-approval` annotation set to `true`.
-Of course, not setting such annotation at all or setting it to `false` leaves the optimization proposal with the need of manual approval from the user.
+To enable the optimization proposal auto-approval mechanism, create the `KafkaRebalance` resource with the `strimzi.io/rebalance-auto-approval` annotation set to `true`.
+Not setting the annotation at all or setting it to `false` leaves the optimization proposal with the need to be manual approved by the user.
 
-.Example of rebalance request with auto-approval enabled
+.Example of rebalance request with auto-approval mechanism enabled
 [source,yaml]
 ----
 apiVersion: kafka.strimzi.io/v1beta2
