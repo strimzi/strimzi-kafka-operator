@@ -277,7 +277,7 @@ Consider a shorter interval for fast changing clusters, although this increases 
 
 == Auto-approving an optimization proposal
 
-In some cases, the manual approval process of the optimization proposal is not necessary.
+If you want, an optimization proposal can be automatically approved.
 Automatically approving an optimization proposal can save time from an operational point of view.
 It enables more automation where just creating a `KafkaRebalance` custom resource can go straight to the cluster rebalance without any additional manual interaction.
 
