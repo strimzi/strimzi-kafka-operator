@@ -431,7 +431,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
 
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.reconcileCas(Clock.systemUTC())
+            return reconcileState.reconcileCas(clock)
                     .compose(state -> state.reconcileKafka(this::dateSupplier))
                     .map((Void) null);
         }
