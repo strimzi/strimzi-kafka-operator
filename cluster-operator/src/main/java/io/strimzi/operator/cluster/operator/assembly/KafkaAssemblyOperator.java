@@ -668,9 +668,4 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
-
-    public void setClock(Clock clock) {
-        this.clock = clock;
-    }
-
 }

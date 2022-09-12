@@ -152,7 +152,6 @@ public class CertificateRenewalTest {
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
-        op.setClock(clock);
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
