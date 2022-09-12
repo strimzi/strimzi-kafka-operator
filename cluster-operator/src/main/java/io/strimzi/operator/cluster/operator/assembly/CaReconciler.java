@@ -88,7 +88,6 @@ public class CaReconciler {
     private final Labels clusterOperatorSecretLabels;
     private final Map<String, String> clusterCaCertLabels;
     private final Map<String, String> clusterCaCertAnnotations;
-    private final Clock clock;
 
     // Fields used to store state during the reconciliation
     private ClusterCa clusterCa;
@@ -105,8 +104,6 @@ public class CaReconciler {
      * @param vertx             Vert.x instance
      * @param certManager       Certificate Manager for managing certificates
      * @param passwordGenerator Password generator for generating passwords
-     * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
-     *                          That time is used for checking maintenance windows
      */
     public CaReconciler(
             Reconciliation reconciliation,
@@ -115,8 +112,7 @@ public class CaReconciler {
             ResourceOperatorSupplier supplier,
             Vertx vertx,
             CertManager certManager,
-            PasswordGenerator passwordGenerator,
-            Clock clock
+            PasswordGenerator passwordGenerator
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
@@ -133,7 +129,6 @@ public class CaReconciler {
         this.zookeeperLeaderFinder = supplier.zookeeperLeaderFinder;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
-        this.clock = clock;
 
         this.eventPublisher = supplier.restartEventsPublisher;
 
@@ -205,12 +200,13 @@ public class CaReconciler {
      * The main reconciliation method which triggers the whole reconciliation pipeline. This is the method which is
      * expected to be called from the outside to trigger the reconciliation.
      *
-     *
+     * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                          That time is used for checking maintenance windows
      * @return  Future with the CA reconciliation result containing the Cluster and Clients CAs
      */
-    public Future<CaReconciliationResult> reconcile()    {
-        return reconcileCas()
-                .compose(i -> clusterOperatorSecret())
+    public Future<CaReconciliationResult> reconcile(Clock clock)    {
+        return reconcileCas(clock)
+                .compose(i -> clusterOperatorSecret(clock))
                 .compose(i -> rollingUpdateForNewCaKey())
                 .compose(i -> maybeRemoveOldClusterCaCertificates())
                 .map(i -> new CaReconciliationResult(clusterCa, clientsCa));
@@ -222,9 +218,12 @@ public class CaReconciler {
      * The clients CA secret has to have the name determined by {@link KafkaResources#clientsCaCertificateSecretName(String)}.
      * Within both the secrets the current certificate is stored under the key {@code ca.crt}
      * and the current key is stored under the key {@code ca.key}.
+     *
+     * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                          That time is used for checking maintenance windows
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    Future<Void> reconcileCas() {
+    Future<Void> reconcileCas(Clock clock) {
         Promise<Void> resultPromise = Promise.promise();
 
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -270,7 +269,7 @@ public class CaReconciler {
                             reconciliation.namespace(), reconciliation.name(), caLabels,
                             clusterCaCertLabels, clusterCaCertAnnotations,
                             clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant()));
+                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     // When we are not supposed to generate the CA, but it does not exist, we should just throw an error
                     checkCustomCaSecret(clientsCaConfig, clientsCaCertSecret, clientsCaKeySecret, "Clients CA");
@@ -287,7 +286,7 @@ public class CaReconciler {
                     clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                             caLabels, Map.of(), Map.of(),
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant()));
+                            Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
                     @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
                     List<Future> secretReconciliations = new ArrayList<>(2);
@@ -337,7 +336,7 @@ public class CaReconciler {
         }
     }
 
-    Future<Void> clusterOperatorSecret() {
+    Future<Void> clusterOperatorSecret(Clock clock) {
         oldCoSecret = clusterCa.clusterOperatorSecret();
         Secret secret = ModelUtils.buildSecret(
                 reconciliation,
@@ -349,7 +348,7 @@ public class CaReconciler {
                 "cluster-operator",
                 clusterOperatorSecretLabels,
                 ownerRef,
-                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, this.clock.instant())
+                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
         );
 
         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ClusterOperator.secretName(reconciliation.name()), secret)

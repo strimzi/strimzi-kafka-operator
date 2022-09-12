@@ -112,7 +112,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (reconcileResult.succeeded())    {
                 condition = new ConditionBuilder()
-                        .withLastTransitionTime(StatusUtils.iso8601(Date.from(clock.instant())))
+                        .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
                         .withType("Ready")
                         .withStatus("True")
                         .build();
@@ -121,7 +121,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 createOrUpdatePromise.complete(status);
             } else {
                 condition = new ConditionBuilder()
-                        .withLastTransitionTime(StatusUtils.iso8601(Date.from(clock.instant())))
+                        .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
                         .withType("NotReady")
                         .withStatus("True")
                         .withReason(reconcileResult.cause().getClass().getSimpleName())
@@ -269,7 +269,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         LOGGER.debugCr(reconciliation, "Setting the initial status for a new resource");
 
                         Condition deployingCondition = new ConditionBuilder()
-                                .withLastTransitionTime(StatusUtils.iso8601(Date.from(clock.instant())))
+                                .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
                                 .withType("NotReady")
                                 .withStatus("True")
                                 .withReason("Creating")
@@ -344,7 +344,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  CaReconciler instance
          */
         CaReconciler caReconciler()   {
-            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, vertx, certManager, passwordGenerator, clock);
+            return new CaReconciler(reconciliation, kafkaAssembly, config, supplier, vertx, certManager, passwordGenerator);
         }
 
         /**
@@ -355,7 +355,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileCas()    {
             return caReconciler()
-                    .reconcile()
+                    .reconcile(clock)
                     .compose(cas -> {
                         this.clusterCa = cas.clusterCa;
                         this.clientsCa = cas.clientsCa;

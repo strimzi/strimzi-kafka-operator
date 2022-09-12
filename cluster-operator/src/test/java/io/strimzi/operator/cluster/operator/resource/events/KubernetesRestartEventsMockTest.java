@@ -314,8 +314,8 @@ public class KubernetesRestartEventsMockTest {
         // Bump ca cert generation to make it look newer than pod knows of
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator, Clock.systemUTC());
-        reconciler.reconcile().onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
+        reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
     }
 
     @Test
@@ -332,8 +332,8 @@ public class KubernetesRestartEventsMockTest {
         // Bump ca cert generation to make it look newer than pod knows of
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100001");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator, Clock.systemUTC());
-        reconciler.reconcile().onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
+        reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
     @Test
