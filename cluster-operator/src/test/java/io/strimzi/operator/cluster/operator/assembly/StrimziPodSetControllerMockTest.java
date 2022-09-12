@@ -56,6 +56,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
@@ -630,6 +631,68 @@ public class StrimziPodSetControllerMockTest {
             // Delete the PodSet (in case something failed)
             podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
 
+        }
+    }
+
+    /**
+     * Tests the handling of failed Pod:
+     *   - Creation of StrimziPodSet and the managed pod
+     *   - Re-creation of a Pod which is moved to the Failed phase
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testFailedPodRecovery(VertxTestContext context) {
+        String podSetName = "basic-test";
+        String podName = podSetName + "-0";
+
+        try {
+            Pod pod = pod(podName, KAFKA_NAME, podSetName);
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, pod)).create();
+
+            // Check that pod is created
+            TestUtils.waitFor(
+                    "Wait for Pod to be created",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(NAMESPACE).withName(podName).get() != null,
+                    () -> context.failNow("Test timed out waiting for pod creation!"));
+
+            // Wait until the pod is ready
+            TestUtils.waitFor(
+                    "Wait for Pod to be ready",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(NAMESPACE).withName(podName).isReady(),
+                    () -> context.failNow("Test timed out waiting for pod readiness!"));
+
+            Pod actualPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+
+            // Set the Pod phase as failed
+            actualPod.getStatus().setPhase("Failed");
+            Pod failedPod = client.pods().inNamespace(NAMESPACE).resource(actualPod).patchStatus();
+
+            // We keep the resource version for pod re-creation test
+            String resourceVersion = failedPod.getMetadata().getResourceVersion();
+
+            // Check that pod is created
+            TestUtils.waitFor(
+                    "Wait for Pod to be recreated",
+                    100,
+                    10_000,
+                    () -> {
+                        Pod p = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+                        return p != null && !resourceVersion.equals(p.getMetadata().getResourceVersion());
+                    },
+                    () -> context.failNow("Test timed out waiting for pod recreation!"));
+
+            // Check the Pod is not failed anymore
+            Pod recreatedPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+            assertThat(recreatedPod.getStatus().getPhase(), is(not("Failed")));
+
+            context.completeNow();
+        } finally {
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
         }
     }
 }
