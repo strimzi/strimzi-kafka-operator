@@ -76,4 +76,17 @@ public class PodSetUtils {
     public static List<Pod> mapsToPods(List<Map<String, Object>> maps)  {
         return maps.stream().map(m -> mapToPod(m)).collect(Collectors.toList());
     }
+
+    /**
+     * Check whether the Pod reached one of its terminal phases: Succeeded or Failed. This is checked based on
+     * the .status.phase field.
+     *
+     * @param pod   The Pod object
+     *
+     * @return  True if the Pod is in terminal phase. False otherwise.
+     */
+    public static boolean isInTerminalState(Pod pod)   {
+        return pod.getStatus() != null
+                && ("Failed".equals(pod.getStatus().getPhase()) || "Succeeded".equals(pod.getStatus().getPhase()));
+    }
 }
