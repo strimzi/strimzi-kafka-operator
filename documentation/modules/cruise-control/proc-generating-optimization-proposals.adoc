@@ -147,6 +147,25 @@ spec:
   skipHardGoalCheck: true
 ----
 
+. (Optional) To approve the optimization proposal automatically, set the `strimzi.io/rebalance-auto-approval` annotation to `true`:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaRebalanceApiVersion}
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+  annotations:
+    strimzi.io/rebalance-auto-approval: true
+spec:
+  goals:
+    - RackAwareGoal
+    - ReplicaCapacityGoal
+  skipHardGoalCheck: true
+----
+
 . Create or update the resource:
 +
 [source,shell,subs="+quotes"]
@@ -157,7 +176,8 @@ kubectl apply -f _<kafka_rebalance_configuration_file>_
 The Cluster Operator requests the optimization proposal from Cruise Control.
 This might take a few minutes depending on the size of the Kafka cluster.
 
-. Wait for the status of the optimization proposal to change to `ProposalReady`:
+. If you used the automatic approval mechanism, wait for the status of the optimization proposal to change to `Ready`.
+If you haven't enabled the automatic approval mechanism, wait for the status of the optimization proposal to change to `ProposalReady`:
 +
 [source,shell,subs="+quotes"]
 ----

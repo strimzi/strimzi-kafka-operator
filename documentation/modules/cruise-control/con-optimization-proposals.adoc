@@ -60,7 +60,7 @@ A summary of a successfully generated optimization proposal is contained in the 
 The information provided is a summary of the full optimization proposal.
 Broker load:: The broker load is stored in a ConfigMap that contains data as a JSON string. The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
 
-== Approving or rejecting an optimization proposal
+== Manually approving or rejecting an optimization proposal
 
 An optimization proposal summary shows the proposed scope of changes.
 
@@ -145,6 +145,33 @@ A balancedness score is based on optimization goals.
 If all goals are satisfied, the score is 100.
 The score is reduced for each goal that will not be met.
 Compare the balancedness scores to see whether the Kafka cluster is less balanced than it could be following a rebalance.
+
+== Automatically approving an optimization proposal
+
+To save time, you can automate the process of approving optimization proposals.
+With automation, when you generate an optimization proposal it goes straight into a cluster rebalance.
+
+To enable the optimization proposal auto-approval mechanism, create the `KafkaRebalance` resource with the `strimzi.io/rebalance-auto-approval` annotation set to `true`.
+If the annotation is not set or set to `false`, the optimization proposal requires manual approval.
+
+.Example rebalance request with auto-approval mechanism enabled
+[source,yaml]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaRebalance
+metadata:
+  name: my-rebalance
+  labels:
+    strimzi.io/cluster: my-cluster
+  annotations:
+    strimzi.io/rebalance-auto-approval: true
+spec:
+  mode: # any mode
+  # ...
+----
+
+You can still check the status when automatically approving an optimization proposal.
+The status of the `KafkaRebalance` resource moves to `Ready` when the rebalance is complete.
 
 == Optimization proposal summary properties
 
