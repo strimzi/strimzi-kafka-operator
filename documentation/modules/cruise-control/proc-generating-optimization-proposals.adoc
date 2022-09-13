@@ -147,7 +147,7 @@ spec:
   skipHardGoalCheck: true
 ----
 
-. Optionally, to have the optimization proposal to be automatically approved when it is ready, add the `strimzi.io/rebalance-auto-approval: true` annotation
+. (Optional) To approve the optimization proposal automatically, set the `strimzi.io/rebalance-auto-approval` annotation to `true`:
 +
 [source,yaml,subs="attributes+"]
 ----
