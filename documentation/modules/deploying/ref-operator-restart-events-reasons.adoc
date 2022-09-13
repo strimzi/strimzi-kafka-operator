@@ -48,7 +48,7 @@ a|StatefulSet
 |The CA certificate used to secure the Kafka network listeners has changed, and the pod is restarted to use it.
 
 |FileSystemResizeNeeded
-|FileSystemResizeRequired
+|FileSystemResizeNeeded
 |The file system size has been increased, and a restart is needed to apply it.
 
 |KafkaCertificatesChanged
