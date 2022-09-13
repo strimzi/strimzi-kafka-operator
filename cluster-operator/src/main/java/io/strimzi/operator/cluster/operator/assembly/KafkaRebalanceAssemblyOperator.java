@@ -1360,8 +1360,11 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     private boolean shouldRenewRebalance(KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation) {
-        // check if refresh annotation applied or request are made when CC is not active
-        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh || kafkaRebalance.getStatus().getConditions().stream().anyMatch(condition -> "ConnectException".equals(condition.getReason()))) {
+        // Checks if `refresh` annotation applied or request are made when CC is not active
+        // We check for `CruiseControlRetriableConnectionException` which is thrown if requests are made when CC was not active. Not handling this case will move the KafkaRebalance to `NotReady` state
+        // and it will stay in `NotReady` state until we apply `refresh` annotation
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh
+                || kafkaRebalance.getStatus().getConditions().stream().anyMatch(condition -> "CruiseControlRetriableConnectionException".equals(condition.getReason()))) {
             return true;
         } else {
             return CruiseControlIssues.checkForMatch(kafkaRebalance.getStatus().getConditions());
