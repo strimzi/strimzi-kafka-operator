@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ContainerStateTerminated;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.api.model.Build;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 
 public class KafkaConnectBuildUtils {
     /**
@@ -88,6 +89,18 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildComplete(Build build)   {
         return buildSucceeded(build) || buildFailed(build);
+    }
+
+    /**
+     * Returns the name of the Kafka Connect {@code Build} container.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
+     * @param isOpenshift Flag for determining, if we are running on Openshift
+     *
+     * @return The name of the corresponding Kafka Connect {@code Build} Container.
+     */
+    public static String getBuildContainerName(String clusterName, boolean isOpenshift) {
+        return isOpenshift ? "docker-build" : KafkaConnectResources.buildPodName(clusterName);
     }
 
     /**

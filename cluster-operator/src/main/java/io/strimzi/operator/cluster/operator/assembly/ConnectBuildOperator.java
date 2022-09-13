@@ -151,7 +151,7 @@ public class ConnectBuildOperator {
                     if (pod != null)    {
                         String existingBuildRevision = Annotations.stringAnnotation(pod, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
                         if (newBuildRevision.equals(existingBuildRevision)
-                                && !KafkaConnectBuildUtils.buildPodFailed(pod, KafkaConnectResources.buildContainerName(connectBuild.getCluster(), pfa.isOpenshift()))
+                                && !KafkaConnectBuildUtils.buildPodFailed(pod, KafkaConnectBuildUtils.getBuildContainerName(connectBuild.getCluster(), pfa.isOpenshift()))
                                 && !forceRebuild) {
                             // Builder pod exists, is not failed, and is building the same Dockerfile and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
@@ -220,7 +220,7 @@ public class ConnectBuildOperator {
      */
     private Future<String> kubernetesBuildWaitForFinish(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild)  {
         String buildPodName = KafkaConnectResources.buildPodName(connectBuild.getCluster());
-        String containerName = KafkaConnectResources.buildContainerName(connectBuild.getCluster(), pfa.isOpenshift());
+        String containerName = KafkaConnectBuildUtils.getBuildContainerName(connectBuild.getCluster(), pfa.isOpenshift());
 
         return podOperator.waitFor(reconciliation, namespace, buildPodName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, buildPodName, containerName))
                 .compose(ignore -> podOperator.getAsync(namespace, buildPodName))

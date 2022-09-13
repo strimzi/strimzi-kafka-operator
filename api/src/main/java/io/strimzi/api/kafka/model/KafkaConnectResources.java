@@ -153,16 +153,4 @@ public class KafkaConnectResources {
     public static String buildName(String clusterName, Long buildVersion) {
         return buildConfigName(clusterName) + "-" + buildVersion;
     }
-
-    /**
-     * Returns the name of the Kafka Connect {@code Build} container.
-     *
-     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
-     * @param isOpenshift Flag for determining, if we are running on Openshift
-     *
-     * @return The name of the corresponding Kafka Connect {@code Build} Container.
-     */
-    public static String buildContainerName(String clusterName, boolean isOpenshift) {
-        return isOpenshift ? "docker-build" : buildPodName(clusterName);
-    }
 }
