@@ -1923,18 +1923,15 @@ public class KafkaCluster extends AbstractModel {
      * placeholders are replaced with the actual value only in the Kafka container when it starts. This method is
      * normally used with StatefulSets.
      *
-     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
-     *                              whether a separate control plan and replication listeners should be used.
-     *
-     * @return                      The Kafka broker configuration as a String
+     * @return The Kafka broker configuration as a String
      */
-    public String generateSharedBrokerConfiguration(boolean controlPlaneListener)   {
+    public String generateSharedBrokerConfiguration()   {
         return new KafkaBrokerConfigurationBuilder(reconciliation)
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
-                .withListeners(cluster, namespace, listeners, controlPlaneListener)
+                .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization, false)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                 .withUserConfiguration(configuration)
@@ -1945,15 +1942,13 @@ public class KafkaCluster extends AbstractModel {
      * Generates a shared configuration ConfigMap with shared configuration. This ConfigMap is used by all brokers in a
      * Kafka StatefulSet.
      *
-     * @param metricsAndLogging     Object with logging and metrics configuration collected from external user-provided config maps
-     * @param advertisedHostnames   Map with advertised hostnames for different brokers and listeners
-     * @param advertisedPorts       Map with advertised ports for different brokers and listeners
-     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
-     *                              whether a separate control plan and replication listeners should be used.
+     * @param metricsAndLogging   Object with logging and metrics configuration collected from external user-provided config maps
+     * @param advertisedHostnames Map with advertised hostnames for different brokers and listeners
+     * @param advertisedPorts     Map with advertised ports for different brokers and listeners
      *
-     * @return                      ConfigMap with the shared configuration.
+     * @return ConfigMap with the shared configuration.
      */
-    public ConfigMap generateSharedConfigurationConfigMap(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
+    public ConfigMap generateSharedConfigurationConfigMap(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         Map<String, String> data = new HashMap<>(6);
 
         String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
@@ -1964,7 +1959,7 @@ public class KafkaCluster extends AbstractModel {
         // Logging configuration
         data.put(ANCILLARY_CM_KEY_LOG_CONFIG, loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm()));
         // Broker configuration
-        data.put(BROKER_CONFIGURATION_FILENAME, generateSharedBrokerConfiguration(controlPlaneListener));
+        data.put(BROKER_CONFIGURATION_FILENAME, generateSharedBrokerConfiguration());
         // Array with advertised hostnames used for replacement inside the pod
         data.put(BROKER_ADVERTISED_HOSTNAMES_FILENAME,
                 advertisedHostnames
@@ -2008,15 +2003,13 @@ public class KafkaCluster extends AbstractModel {
      * or Rack IDs. All other values such as broker IDs, advertised ports or hostnames are already prefilled in the
      * configuration. This method is normally used with StrimziPodSets.
      *
-     * @param brokerId              ID of the broker for which is this configuration generated
-     * @param advertisedHostnames   Map with advertised hostnames for different listeners
-     * @param advertisedPorts       Map with advertised ports for different listeners
-     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
-     *                              whether a separate control plan and replication listeners should be used.
+     * @param brokerId            ID of the broker for which is this configuration generated
+     * @param advertisedHostnames Map with advertised hostnames for different listeners
+     * @param advertisedPorts     Map with advertised ports for different listeners
      *
-     * @return                      The Kafka broker configuration as a String
+     * @return The Kafka broker configuration as a String
      */
-    public String generatePerBrokerBrokerConfiguration(int brokerId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
+    public String generatePerBrokerBrokerConfiguration(int brokerId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         if (useKRaft) {
             return new KafkaBrokerConfigurationBuilder(reconciliation)
                     .withBrokerId(String.valueOf(brokerId))
@@ -2029,7 +2022,7 @@ public class KafkaCluster extends AbstractModel {
                             () -> getPodName(brokerId),
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
-                            controlPlaneListener, true)
+                            true)
                     .withAuthorization(cluster, authorization, true)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
@@ -2046,7 +2039,7 @@ public class KafkaCluster extends AbstractModel {
                             () -> getPodName(brokerId),
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
-                            controlPlaneListener, false)
+                            false)
                     .withAuthorization(cluster, authorization, false)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
@@ -2058,15 +2051,13 @@ public class KafkaCluster extends AbstractModel {
      * Generates a list of configuration ConfigMaps - one for each broker in the cluster. The ConfigMaps contain the
      * configurations which should be used by given broker. This is used with StrimziPodSets.
      *
-     * @param metricsAndLogging     Object with logging and metrics configuration collected from external user-provided config maps
-     * @param advertisedHostnames   Map with advertised hostnames for different brokers and listeners
-     * @param advertisedPorts       Map with advertised ports for different brokers and listeners
-     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
-     *                              whether a separate control plan and replication listeners should be used.
+     * @param metricsAndLogging   Object with logging and metrics configuration collected from external user-provided config maps
+     * @param advertisedHostnames Map with advertised hostnames for different brokers and listeners
+     * @param advertisedPorts     Map with advertised ports for different brokers and listeners
      *
-     * @return                      ConfigMap with the shared configuration.
+     * @return ConfigMap with the shared configuration.
      */
-    public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
+    public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
         String parsedLogging = loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm());
         List<ConfigMap> configMaps = new ArrayList<>(replicas);
@@ -2079,7 +2070,7 @@ public class KafkaCluster extends AbstractModel {
             }
 
             data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parsedLogging);
-            data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerBrokerConfiguration(brokerId, advertisedHostnames, advertisedPorts, controlPlaneListener));
+            data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerBrokerConfiguration(brokerId, advertisedHostnames, advertisedPorts));
             // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
             // environment variables are parsed in the container bash scripts
             data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));

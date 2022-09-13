@@ -235,42 +235,38 @@ public class KafkaBrokerConfigurationBuilder {
      * Configures the listeners based on the listeners enabled by the users in the Kafka CR. This is used to generate
      * the shared configuration which uses placeholders instead of the actual advertised addresses.
      *
-     * @param clusterName                   Name of the cluster (important for the advertised hostnames)
-     * @param namespace                     Namespace (important for generating the advertised hostname)
-     * @param kafkaListeners                The listeners configuration from the Kafka CR
-     * @param controlPlaneListenerActive    Activates the control plane listener (the listener is always configured,
-     *                                      but this flag tells Kafka to use it for control plane communication)
+     * @param clusterName    Name of the cluster (important for the advertised hostnames)
+     * @param namespace      Namespace (important for generating the advertised hostname)
+     * @param kafkaListeners The listeners configuration from the Kafka CR
      *
-     * @return  Returns the builder instance
+     * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners, boolean controlPlaneListenerActive)  {
+    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners)  {
         return withListeners(clusterName,
                 namespace,
                 kafkaListeners,
                 () -> KafkaResources.kafkaStatefulSetName(clusterName) + "-" + brokerId,
                 (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_HOSTNAME, listenerId),
                 (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_PORT, listenerId),
-                controlPlaneListenerActive, false);
+                false);
     }
 
     /**
      * Configures the listeners based on the listeners enabled by the users in the Kafka CR. This method is used to
      * generate the per-broker configuration which uses actual broker IDs and addresses instead of just placeholders.
      *
-     * @param clusterName                   Name of the cluster (important for the advertised hostnames)
-     * @param namespace                     Namespace (important for generating the advertised hostname)
-     * @param kafkaListeners                The listeners configuration from the Kafka CR
-     * @param podNameProvider               Lambda method which provides the name of the pod for which this configuration
-     *                                      is used. This is needed to configure the replication and control plane listeners.
-     * @param advertisedHostnameProvider    Lambda method which provides the advertised hostname for given listener and
-     *                                      broker. This is used to configure the user-configurable listeners.
-     * @param advertisedPortProvider        Lambda method which provides the advertised port for given listener and broker.
-     *                                      This is used to configure the user-configurable listeners.
-     * @param controlPlaneListenerActive    Activates the control plane listener (the listener is always configured,
-     *                                      but this flag tells Kafka to use it for control plane communication)
-     * @param useKRaft                      Use KRaft mode in the configuration
+     * @param clusterName                Name of the cluster (important for the advertised hostnames)
+     * @param namespace                  Namespace (important for generating the advertised hostname)
+     * @param kafkaListeners             The listeners configuration from the Kafka CR
+     * @param podNameProvider            Lambda method which provides the name of the pod for which this configuration
+     *                                   is used. This is needed to configure the replication and control plane listeners.
+     * @param advertisedHostnameProvider Lambda method which provides the advertised hostname for given listener and
+     *                                   broker. This is used to configure the user-configurable listeners.
+     * @param advertisedPortProvider     Lambda method which provides the advertised port for given listener and broker.
+     *                                   This is used to configure the user-configurable listeners.
+     * @param useKRaft                   Use KRaft mode in the configuration
      *
-     * @return  Returns the builder instance
+     * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withListeners(
             String clusterName, String namespace,
@@ -278,7 +274,6 @@ public class KafkaBrokerConfigurationBuilder {
             Supplier<String> podNameProvider,
             Function<String, String> advertisedHostnameProvider,
             Function<String, String> advertisedPortProvider,
-            boolean controlPlaneListenerActive,
             boolean useKRaft
     )  {
         List<String> listeners = new ArrayList<>();
@@ -340,7 +335,7 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
 
-        if (controlPlaneListenerActive && !useKRaft) {
+        if (!useKRaft) {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 

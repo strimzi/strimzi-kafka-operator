@@ -183,7 +183,7 @@ public class KafkaClusterPodSetTest {
         );
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts, true);
+        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
 
         assertThat(config, containsString("broker.id=2"));
         assertThat(config, containsString("node.id=2"));
@@ -206,7 +206,7 @@ public class KafkaClusterPodSetTest {
         );
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, advertisedHostnames, advertisedPorts, true);
+        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, advertisedHostnames, advertisedPorts);
 
         assertThat(cms.size(), is(3));
 

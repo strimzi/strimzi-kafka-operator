@@ -429,9 +429,9 @@ public class KafkaReconciler {
                                 adminClientProvider,
                                 brokerId -> {
                                     if (featureGates.useStrimziPodSetsEnabled()) {
-                                        return kafka.generatePerBrokerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
+                                        return kafka.generatePerBrokerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts);
                                     } else {
-                                        return kafka.generateSharedBrokerConfiguration(featureGates.controlPlaneListenerEnabled());
+                                        return kafka.generateSharedBrokerConfiguration();
                                     }
                                 },
                                 logging,
@@ -584,7 +584,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the Kafka Configuration is prepared
      */
     protected Future<Void> sharedKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
-        ConfigMap sharedCm = kafka.generateSharedConfigurationConfigMap(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts, featureGates.controlPlaneListenerEnabled());
+        ConfigMap sharedCm = kafka.generateSharedConfigurationConfigMap(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
 
         // BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME have the advertised addresses.
         // If they change, we need to roll the pods. Here we collect their hash to trigger the rolling update.
@@ -636,7 +636,7 @@ public class KafkaReconciler {
                     this.logging = kafka.loggingConfiguration(kafka.getLogging(), metricsAndLogging.getLoggingCm());
                     this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
 
-                    List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts, featureGates.controlPlaneListenerEnabled());
+                    List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
                     @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
                     List<Future> ops = new ArrayList<>(existingConfigMaps.size() + kafka.getReplicas());
 

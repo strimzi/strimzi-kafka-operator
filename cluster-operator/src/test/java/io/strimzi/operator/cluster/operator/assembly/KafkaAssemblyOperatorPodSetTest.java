@@ -286,7 +286,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
@@ -394,7 +394,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
@@ -516,7 +516,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         when(mockCmOps.reconcile(any(), any(), startsWith("my-cluster-kafka-"), any())).thenReturn(Future.succeededFuture());
         when(mockCmOps.deleteAsync(any(), any(), eq("my-cluster-kafka-config"), anyBoolean())).thenReturn(Future.succeededFuture());
 
@@ -626,7 +626,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
@@ -758,7 +758,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
