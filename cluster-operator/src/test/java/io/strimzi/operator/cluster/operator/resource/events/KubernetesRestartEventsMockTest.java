@@ -72,6 +72,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +143,7 @@ public class KubernetesRestartEventsMockTest {
 
     private KafkaStatus ks;
     private final Supplier<Date> ds = Date::new;
+    private final Clock utcClock = Clock.systemUTC();
 
     @BeforeEach
     void setup(Vertx vertx) throws ExecutionException, InterruptedException {
@@ -314,7 +316,7 @@ public class KubernetesRestartEventsMockTest {
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000");
 
         CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
-        reconciler.reconcile(ds).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
+        reconciler.reconcile(utcClock).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
     }
 
     @Test
@@ -332,7 +334,7 @@ public class KubernetesRestartEventsMockTest {
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100001");
 
         CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
-        reconciler.reconcile(ds).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
+        reconciler.reconcile(utcClock).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
     @Test

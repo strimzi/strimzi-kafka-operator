@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -34,8 +33,8 @@ import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
-
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -58,14 +57,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.Ca.CA_CRT;
@@ -101,6 +99,7 @@ public class CertificateRenewalTest {
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                     "0123456789");
+
     private List<Secret> secrets = new ArrayList<>();
 
     @BeforeEach
@@ -120,10 +119,10 @@ public class CertificateRenewalTest {
                 .endSpec()
                 .build();
 
-        return reconcileCa(vertx, kafka, Date::new);
+        return reconcileCa(vertx, kafka, Clock.systemUTC());
     }
 
-    private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, Kafka kafka, Supplier<Date> dateSupplier) {
+    private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, Kafka kafka, Clock clock) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         SecretOperator secretOps = supplier.secretOperations;
         DeploymentOperator deploymentOps = supplier.deploymentOperations;
@@ -153,10 +152,11 @@ public class CertificateRenewalTest {
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Promise<ArgumentCaptor<Secret>> reconcileCasComplete = Promise.promise();
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(dateSupplier)
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(clock)
             .onComplete(ar -> {
                 // If succeeded return the argument captor object instead of the Reconciliation state
                 // This is for the purposes of testing
@@ -579,7 +579,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:00:00Z")))
+        reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
@@ -680,7 +680,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:12:00Z")))
+        reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T10:12:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().size(), is(4));
 
@@ -884,7 +884,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:00:00Z")))
+        reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
@@ -984,7 +984,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:12:00Z")))
+        reconcileCa(vertx, kafka, Clock.fixed(Instant.parse("2018-11-26T09:12:00Z"), Clock.systemUTC().getZone()))
             .onComplete(context.succeeding(c -> context.verify(() -> {
 
                 assertThat(c.getAllValues(), hasSize(4));

@@ -6,8 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
-import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
@@ -16,8 +16,8 @@ import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Clock;
+import java.time.Instant;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,13 +51,13 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withLastTransitionTime(StatusUtils.iso8601(new Date()))
+                .withLastTransitionTime(StatusUtils.iso8601(Clock.systemUTC().instant()))
                 .withType("Ready")
                 .withStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withLastTransitionTime(StatusUtils.iso8601(new Date()))
+                .withLastTransitionTime(StatusUtils.iso8601(Clock.systemUTC().instant()))
                 .withType("Ready2")
                 .withStatus("True")
                 .build();
@@ -130,13 +130,13 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withLastTransitionTime(StatusUtils.iso8601(new Date()))
+                .withLastTransitionTime(StatusUtils.iso8601(Clock.systemUTC().instant()))
                 .withType("Ready")
                 .withStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                .withLastTransitionTime(StatusUtils.iso8601(Instant.parse("2011-01-01T00:00:00Z")))
                 .withType("Ready")
                 .withStatus("True")
                 .build();
