@@ -10,8 +10,7 @@
 
 [role="_abstract"]
 Use a `kubectl` command to list restart events initiated by the Cluster Operator.
-
-Filter restart events emitted by the Cluster Operator by setting the Cluster Operator as the reporting component using the `source` or `reportingComponent` event fields.
+Filter restart events emitted by the Cluster Operator by setting the Cluster Operator as the reporting component using the `reportingController` or `source` event fields.
 
 .Prerequisites
 
@@ -23,14 +22,14 @@ Filter restart events emitted by the Cluster Operator by setting the Cluster Ope
 +
 [source,shell]
 ----
-kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator
+kubectl -n kafka get events --field-selector reportingController=strimzi.io/cluster-operator
 ----
 +
 .Example showing events returned
 [source,shell]
 ----
 LAST SEEN   TYPE     REASON                   OBJECT                        MESSAGE
-2m          Normal   JbodVolumesChanged       pod/strimzi-cluster-kafka-0   JBOD volumes were added or removed
+2m          Normal   CaCertRenewed            pod/strimzi-cluster-kafka-0   CA certificate renewed
 58m         Normal   PodForceRestartOnError   pod/strimzi-cluster-kafka-1   Pod needs to be forcibly restarted due to an error
 5m47s       Normal   ManualRollingUpdate      pod/strimzi-cluster-kafka-2   Pod was manually annotated to be rolled
 ----
@@ -41,14 +40,14 @@ Here, a specific reason is added:
 +
 [source,shell]
 ----
-kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,reason=PodForceRestartOnError
+kubectl -n kafka get events --field-selector reportingController=strimzi.io/cluster-operator,reason=PodForceRestartOnError
 ----
 
 . Use an output format, such as YAML, to return more detailed information about one or more events.
 +
 [source,shell-session]
 ----
-kubectl -n kafka get events --field-selector source=strimzi.io/cluster-operator,reason=PodForceRestartOnError -o yaml
+kubectl -n kafka get events --field-selector reportingController=strimzi.io/cluster-operator,reason=PodForceRestartOnError -o yaml
 ----
 +
 .Example showing detailed events output
@@ -75,7 +74,7 @@ items:
       resourceVersion: "432961"
       uid: 29fcdb9e-f2cf-4c95-a165-a5efcd48edfc
   reason: PodForceRestartOnError
-  reportingComponent: strimzi.io/cluster-operator
+  reportingController: strimzi.io/cluster-operator
   reportingInstance: strimzi-cluster-operator-6458cfb4c6-6bpdp
   source: {} <1>
   type: Normal
