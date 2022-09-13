@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ContainerStateTerminated;
-import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.api.model.Build;
 
@@ -15,17 +13,17 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod   Pod which should be checked for completion
      *
-     * @param containerName Name of the Connect build container
-     *
      * @return      True if the Pod is already complete, false otherwise
      */
     @SuppressWarnings("BooleanExpressionComplexity")
-    public static boolean buildPodComplete(Pod pod, String containerName)   {
+    public static boolean buildPodComplete(Pod pod)   {
         return pod != null
                 && pod.getStatus() != null
                 && pod.getStatus().getContainerStatuses() != null
                 && pod.getStatus().getContainerStatuses().size() > 0
-                && getConnectBuildContainerStateTerminated(pod, containerName) != null;
+                && pod.getStatus().getContainerStatuses().get(0) != null
+                && pod.getStatus().getContainerStatuses().get(0).getState() != null
+                && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated() != null;
     }
 
     /**
@@ -33,13 +31,11 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod   Pod which should be checked for completion
      *
-     * @param containerName Name of the Connect build container
-     *
      * @return      True if the Pod is complete with success, false otherwise
      */
-    public static boolean buildPodSucceeded(Pod pod, String containerName)   {
-        return buildPodComplete(pod, containerName)
-                && getConnectBuildContainerStateTerminated(pod, containerName).getExitCode() == 0;
+    public static boolean buildPodSucceeded(Pod pod)   {
+        return buildPodComplete(pod)
+                && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode() == 0;
     }
 
     /**
@@ -47,13 +43,11 @@ public class KafkaConnectBuildUtils {
      *
      * @param pod   Pod which should be checked for completion
      *
-     * @param containerName Name of the Connect build container
-     *
      * @return      True if the Pod is complete with error, false otherwise
      */
-    public static boolean buildPodFailed(Pod pod, String containerName)   {
-        return buildPodComplete(pod, containerName)
-                && getConnectBuildContainerStateTerminated(pod, containerName).getExitCode() != 0;
+    public static boolean buildPodFailed(Pod pod)   {
+        return buildPodComplete(pod)
+                && pod.getStatus().getContainerStatuses().get(0).getState().getTerminated().getExitCode() != 0;
     }
 
     /**
@@ -80,7 +74,7 @@ public class KafkaConnectBuildUtils {
     }
 
     /**
-     * Checks if the build completed with success
+     * Checks if the build completed with wuccess
      *
      * @param build Build which should be checked for completion
      *
@@ -88,22 +82,5 @@ public class KafkaConnectBuildUtils {
      */
     public static boolean buildComplete(Build build)   {
         return buildSucceeded(build) || buildFailed(build);
-    }
-
-    /**
-     * Get ContainerStateTerminated of the Connect build container
-     *
-     * @param pod Pod which contains ContainerStatus of the Connect build
-     *
-     * @param containerName Name of the Connect build container
-     *
-     * @return ContainerStateTerminated of the build container
-     */
-    public static ContainerStateTerminated getConnectBuildContainerStateTerminated(Pod pod, String containerName)   {
-        ContainerStatus containerStatus = pod.getStatus().getContainerStatuses().stream().filter(conStatus -> conStatus.getName().equals(containerName))
-            .findFirst().orElse(null);
-
-        return containerStatus != null
-                && containerStatus.getState() != null ? containerStatus.getState().getTerminated() : null;
     }
 }

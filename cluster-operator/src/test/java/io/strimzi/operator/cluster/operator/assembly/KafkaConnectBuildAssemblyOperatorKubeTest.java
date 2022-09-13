@@ -183,15 +183,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(0)
-                                .withMessage("my-connect-build@sha256:blablabla")
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
@@ -341,14 +333,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(1)
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(1).endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
@@ -488,15 +473,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(0)
-                                .withMessage("my-connect-build@sha256:blablabla")
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
@@ -659,15 +636,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                .withContainerStatuses(new ContainerStatusBuilder()
-                    .withName(KafkaConnectResources.buildPodName(NAME))
-                    .withNewState()
-                        .withNewTerminated()
-                            .withExitCode(0)
-                            .withMessage("my-connect-build-2@sha256:blablabla")
-                        .endTerminated()
-                    .endState()
-                    .build())
+                .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build-2@sha256:blablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
@@ -842,15 +811,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(0)
-                                .withMessage("my-connect-build@sha256:blablabla")
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
@@ -1022,15 +983,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(0)
-                                .withMessage("my-connect-build@sha256:blablabla")
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
 
@@ -1209,15 +1162,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(0)
-                                .withMessage("my-connect-build@sha256:blablabla")
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:blablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
@@ -1409,7 +1354,6 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
     }
 
     @Test
-    @SuppressWarnings({"checkstyle:MethodLength"})
     public void testUpdateWithForcedRebuildOnKube(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -1495,15 +1439,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .withNewSpec()
                 .endSpec()
                 .withNewStatus()
-                    .withContainerStatuses(new ContainerStatusBuilder()
-                        .withName(KafkaConnectResources.buildPodName(NAME))
-                        .withNewState()
-                            .withNewTerminated()
-                                .withExitCode(0)
-                                .withMessage("my-connect-build@sha256:rebuiltblablabla")
-                            .endTerminated()
-                        .endState()
-                        .build())
+                    .withContainerStatuses(new ContainerStatusBuilder().withNewState().withNewTerminated().withExitCode(0).withMessage("my-connect-build@sha256:rebuiltblablabla").endTerminated().endState().build())
                 .endStatus()
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
