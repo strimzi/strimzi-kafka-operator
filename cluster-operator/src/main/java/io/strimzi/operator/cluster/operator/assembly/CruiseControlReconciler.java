@@ -33,9 +33,8 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 
-import java.util.Date;
+import java.time.Clock;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Class used for reconciliation of Cruise Control. This class contains both the steps of the Cruise Control
@@ -108,15 +107,16 @@ public class CruiseControlReconciler {
      * @param isOpenShift       Flag indicating whether we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy
      * @param imagePullSecrets  List of Image pull secrets
-     * @param dateSupplier      Date supplier for checking maintenance windows
+     * @param clock             The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+ *                              That time is used for checking maintenance windows
      *
      * @return                  Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Supplier<Date> dateSupplier)    {
+    public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return networkPolicy()
                 .compose(i -> serviceAccount())
                 .compose(i -> metricsAndLoggingConfigMap())
-                .compose(i -> certificatesSecret(dateSupplier))
+                .compose(i -> certificatesSecret(clock))
                 .compose(i -> apiSecret())
                 .compose(i -> service())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
@@ -185,15 +185,18 @@ public class CruiseControlReconciler {
     /**
      * Manages the Cruise Control certificates Secret.
      *
-     * @return  Future which completes when the reconciliation is done
+     * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *              That time is used for checking maintenance windows
+     *
+     * @return      Future which completes when the reconciliation is done
      */
-    protected Future<Void> certificatesSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> certificatesSecret(Clock clock) {
         if (cruiseControl != null) {
             return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()))
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.secretName(reconciliation.name()),
-                                        cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                        cruiseControl.generateCertificatesSecret(reconciliation.namespace(), reconciliation.name(), clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred

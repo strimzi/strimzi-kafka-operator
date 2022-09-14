@@ -13,11 +13,11 @@ import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -31,8 +31,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.time.Clock;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -225,7 +225,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
                             config.getClientsCaValidityDays(),
                             config.getClientsCaRenewalDays(),
                             config.getMaintenanceWindows(),
-                            KafkaUserOperator::dateSupplier
+                            Clock.systemUTC()
                     );
 
                     return Future.succeededFuture();
@@ -350,7 +350,4 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         return new KafkaUserStatus();
     }
 
-    private static Date dateSupplier()  {
-        return new Date();
-    }
 }

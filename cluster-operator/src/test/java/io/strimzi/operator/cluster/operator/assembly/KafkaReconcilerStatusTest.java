@@ -21,7 +21,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -41,6 +40,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -51,10 +51,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -162,7 +161,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check ClusterID
@@ -197,7 +196,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check model warning conditions
@@ -284,7 +283,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check listener status
@@ -390,7 +389,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check listener status
@@ -486,7 +485,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check listener status
@@ -579,7 +578,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check listener status
@@ -668,7 +667,7 @@ public class KafkaReconcilerStatusTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Date::new).onComplete(res -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
             assertThat(res.succeeded(), is(true));
 
             // Check listener status
@@ -748,7 +747,7 @@ public class KafkaReconcilerStatusTest {
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
                     .compose(i -> listeners())
                     .compose(i -> clusterId(kafkaStatus))

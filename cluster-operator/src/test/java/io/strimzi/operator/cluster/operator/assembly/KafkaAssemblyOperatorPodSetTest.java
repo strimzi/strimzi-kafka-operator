@@ -57,12 +57,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
+import java.time.Clock;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -881,8 +880,8 @@ public class KafkaAssemblyOperatorPodSetTest {
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return Future.succeededFuture(reconcileState)
                     .compose(state -> state.reconcileCas(this.clock))
-                    .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
-                    .compose(state -> state.reconcileKafka(this::dateSupplier))
+                    .compose(state -> state.reconcileZooKeeper(this.clock))
+                    .compose(state -> state.reconcileKafka(this.clock))
                     .mapEmpty();
         }
 
@@ -912,7 +911,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> statefulSet())
@@ -939,7 +938,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
                     .compose(i -> scaleDown())

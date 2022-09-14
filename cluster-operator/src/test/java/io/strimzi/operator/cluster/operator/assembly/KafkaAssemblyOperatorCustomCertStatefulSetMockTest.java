@@ -55,13 +55,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -344,7 +343,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
         }
 
         @Override
-        public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+        public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return listeners()
                     .compose(i -> statefulSet())
                     .compose(i -> podSet())
@@ -431,7 +430,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.reconcileCas(clock)
-                    .compose(state -> state.reconcileKafka(this::dateSupplier))
+                    .compose(state -> state.reconcileKafka(clock))
                     .map((Void) null);
         }
     }
