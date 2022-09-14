@@ -21,7 +21,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -62,7 +61,7 @@ class V1RestartEventPublisherTest {
                 .endMetadata()
                 .build();
 
-        Clock clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), ZoneId.of("UTC"));
+        Clock clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), Clock.systemUTC().getZone());
 
         V1RestartEventPublisher eventPublisher = new V1RestartEventPublisher(clock, client, "cluster-operator-id");
 
