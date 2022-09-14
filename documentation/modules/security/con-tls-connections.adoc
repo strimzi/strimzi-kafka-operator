@@ -15,7 +15,7 @@ Communication between Kafka brokers and ZooKeeper nodes is also encrypted.
 
 Communication between Kafka brokers is always encrypted using TLS.
 The connections between the Kafka controller and brokers use an internal _control plane listener_ on port 9090.
-Replication of data between brokers as well as internal connections from Strimzi operators, Cruise Control, or Kafka Exporter use the _replication listener on port 9091.
+Replication of data between brokers, as well as internal connections from Strimzi operators, Cruise Control, or the Kafka Exporter use the _replication listener_ on port 9091.
 These internal listeners are not available to Kafka clients.
 
 == Topic and User Operators

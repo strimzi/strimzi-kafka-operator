@@ -27,10 +27,10 @@ env:
 == ControlPlaneListener feature gate
 
 The `ControlPlaneListener` feature gate has moved to GA, which means it is now permanently enabled and cannot be disabled.
-With `ControlPlaneListener` enabled, control plane traffic (between Kafka controller and brokers) goes through a dedicated _control plane listener_ on port 9090.
-Replication of data between brokers as well as internal connections from Strimzi operators, Cruise Control, or Kafka Exporter use the _replication listener on port 9091.
+With `ControlPlaneListener` enabled, the connections between the Kafka controller and brokers use an internal _control plane listener_ on port 9090.
+Replication of data between brokers, as well as internal connections from Strimzi operators, Cruise Control, or the Kafka Exporter use the _replication listener_ on port 9091.
 
-IMPORTANT: With the `ControlPlaneListener` feature gate permanently enabled, it is not possible anymore to directly upgrade or downgrade between strimzi 0.32 and newer and Strimzi 0.22 and earlier.
+IMPORTANT: With the `ControlPlaneListener` feature gate permanently enabled, it is no longer possible to upgrade or downgrade directly between Strimzi 0.22 and earlier and Strimzi 0.32 and newer.
 You have to upgrade or downgrade through one of the Strimzi versions in between.
 
 == ServiceAccountPatching feature gate
