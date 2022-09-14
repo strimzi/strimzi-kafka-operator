@@ -26,6 +26,7 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -102,8 +103,8 @@ public class OpenSslCertManagerIT {
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
         Instant now = Instant.now();
-        ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
-        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
+        ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         ssl.generateRootCaCert(sbj, key, cert, notBefore, notAfter, 0);
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
@@ -190,8 +191,8 @@ public class OpenSslCertManagerIT {
 
         // Generate a root cert
         Instant now = Instant.now();
-        ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
-        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
+        ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(Clock.systemUTC().getZone());
         int rootPathLen = 1;
         ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, rootPathLen);
 

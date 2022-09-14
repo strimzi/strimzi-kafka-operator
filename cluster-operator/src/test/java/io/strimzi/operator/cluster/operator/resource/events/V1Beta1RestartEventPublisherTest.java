@@ -62,7 +62,7 @@ class V1Beta1RestartEventPublisherTest {
                 .endMetadata()
                 .build();
 
-        Clock clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), ZoneId.of("UTC"));
+        Clock clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), Clock.systemUTC().getZone());
 
         V1Beta1RestartEventPublisher eventPublisher = new V1Beta1RestartEventPublisher(clock, client, "cluster-operator-id");
 

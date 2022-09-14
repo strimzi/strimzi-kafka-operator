@@ -60,7 +60,6 @@ public class OpenSslCertManager implements CertManager {
     public static final int MAXIMUM_CN_LENGTH = 64;
 
     private static final Logger LOGGER = LogManager.getLogger(OpenSslCertManager.class);
-    public static final ZoneId UTC = ZoneId.of("UTC");
     private final Clock clock;
 
     public OpenSslCertManager() {
@@ -142,8 +141,8 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
         Instant now = clock.instant();
-        ZonedDateTime notBefore = now.atZone(UTC);
-        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
+        ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
         generateRootCaCert(sbj, keyFile, certFile, notBefore, notAfter, 0);
     }
 
@@ -394,8 +393,8 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject subject, int days) throws IOException {
         Instant now = clock.instant();
-        ZonedDateTime notBefore = now.atZone(UTC);
-        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
+        ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
         generateCaCert(null, null, subject, keyFile, certFile, notBefore, notAfter, 0);
     }
 
@@ -428,8 +427,8 @@ public class OpenSslCertManager implements CertManager {
     @Override
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
         Instant now = clock.instant();
-        ZonedDateTime notBefore = now.atZone(UTC);
-        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
+        ZonedDateTime notBefore = now.atZone(Clock.systemUTC().getZone());
+        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(Clock.systemUTC().getZone());
         generateCert(csrFile, caKey, caCert, crtFile, sbj, notBefore, notAfter);
     }
 
