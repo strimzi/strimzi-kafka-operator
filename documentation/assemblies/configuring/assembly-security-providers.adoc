@@ -1,0 +1,22 @@
+// This assembly is included in the following assemblies:
+//
+// configuring/configuring.adoc
+
+[id='assembly-security-providers-{context}']
+= Applying security context to Strimzi pods and containers
+
+[role="_abstract"]
+Security context defines constraints on pods and containers.
+By specifying a security context, pods and containers only have the permissions they need.
+For example, permissions can control runtime operations or access to resources.
+
+ifdef::Section[]
+//how security context and security providers work
+include::../../modules/configuring/con-config-security-providers.adoc[leveloffset=+1]
+//implementing your own provider
+include::../../modules/configuring/proc-config-restricted-security-provider.adoc[leveloffset=+1]
+//implementing your own provider
+include::../../modules/configuring/con-config-custom-security-providers.adoc[leveloffset=+1]
+endif::Section[]
+//security context on other platforms
+include::../../modules/configuring/con-config-platform-security-providers.adoc[leveloffset=+1]

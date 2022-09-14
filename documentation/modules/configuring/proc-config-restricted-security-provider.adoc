@@ -1,0 +1,62 @@
+// Module included in the following assemblies:
+//
+// assembly-security-providers.adoc
+
+[id='proc-config-restricted-security-providers-{context}']
+= Enabling the Restricted Provider for the Cluster Operator
+
+[role="_abstract"]
+Security pod providers configure the security context constraints of the pods and containers created by the Cluster Operator.
+The Baseline Provider is the default pod security provider used by Strimzi.
+You can switch to the Restricted Provider by changing the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable in the Cluster Operator configuration.
+
+To make the required changes, configure the `060-Deployment-strimzi-cluster-operator.yaml` Cluster Operator installation file located in `install/cluster-operator/`. 
+
+By enabling a new pod security provider, any pods or containers created by the Cluster Operator are subject to the limitations it imposes.
+Pods and containers that are already running are restarted for the changes to take affect.
+
+.Prerequsites
+
+* You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
+
+.Procedure
+
+Edit the `Deployment` resource that is used to deploy the Cluster Operator, which is defined in the `060-Deployment-strimzi-cluster-operator.yaml` file.
+
+. Add or amend the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable with a value of `restricted`.
++
+.Cluster Operator configuration for the Restricted Provider
+[source,yaml,numbered,options="nowrap"]
+----
+# ...
+env:
+  # ...
+  - name: STRIMZI_POD_SECURITY_PROVIDER_CLASS
+    value: restricted
+  # ...
+----
++
+Or you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` fully-qualified domain name.
+
+. Deploy the Cluster Operator:
++
+[source,shell,subs="+quotes,attributes+"]
+kubectl create -f install/cluster-operator -n myproject
+
+. (Optional) Use `template` configuration to set security context for specific components at the pod or container level.
++
+[source,yaml]
+.Adding security context through `template` configuration
+----
+template:
+  pod: 
+    securityContext:
+      runAsUser: 1000001
+      fsGroup: 0
+  kafkaContainer:
+    securityContext:
+    runAsUser: 2000
+  # ...      
+----
++
+If you apply specific security context for a component using `template` configuration, it takes priority over the general configuration provided by the pod security provider.

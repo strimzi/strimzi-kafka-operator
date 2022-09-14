@@ -1,0 +1,30 @@
+// Module included in the following assemblies:
+//
+// assembly-security-providers.adoc
+
+[id='con-config-custom-security-providers-{context}']
+= Implementing a custom pod security provider
+
+[role="_abstract"]
+If Strimzi's Baseline Provider and Restricted Provider don't quite match your needs, you can develop a custom pod security provider to deliver all-encompassing pod and container security context constraints.
+
+Implement a custom pod security provider to apply your own security context profile.
+You can decide what applications and privileges to include in the profile.
+
+Your custom pod security provider can implement the `PodSecurityProvider.java` interface that gets the security context for pods and containers. 
+Or it can extend the Baseline Provider or Restricted Provider classes. 
+
+The pod security provider plugins use the Java Service Provider Interface, so your custom pod security provider also requires a provider configuration file for service discovery. 
+
+To implement your own provider, the general steps are as follows:
+
+. Build the JAR file for the provider.
+. Add the JAR file to the Cluster Operator image.
+. Specify the custom pod security provider when setting the Cluster Operator environment variable `STRIMZI_POD_SECURITY_PROVIDER_CLASS`.
+
+[role="_additional-resources"]
+.Additional resources
+* {PodSecurityInterface}
+* {PodSecurityProviders}
+* {PodSecurityProvidersConfig}
+* {JavaServiceProvider}
