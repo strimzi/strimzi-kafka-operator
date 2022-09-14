@@ -686,7 +686,7 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testPerBrokerConfiguration() {
-        String config = KC.generateSharedBrokerConfiguration(true);
+        String config = KC.generateSharedBrokerConfiguration();
 
         assertThat(config, CoreMatchers.containsString("broker.id=${STRIMZI_BROKER_ID}"));
         assertThat(config, CoreMatchers.containsString("node.id=${STRIMZI_BROKER_ID}"));
@@ -708,7 +708,7 @@ public class KafkaClusterTest {
                 2, Map.of("PLAIN_9092", "10002", "TLS_9093", "20002")
         );
 
-        ConfigMap cm = KC.generateSharedConfigurationConfigMap(metricsAndLogging, advertisedHostnames, advertisedPorts, true);
+        ConfigMap cm = KC.generateSharedConfigurationConfigMap(metricsAndLogging, advertisedHostnames, advertisedPorts);
 
         assertThat(cm.getData().size(), is(5));
         assertThat(cm.getMetadata().getName(), is("foo-kafka-config"));
@@ -3443,7 +3443,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration(true);
+        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration();
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + 1));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + 1));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + 1));
@@ -3469,7 +3469,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration(true);
+        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration();
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + partitions));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + replicationFactor));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInsync));
@@ -3491,7 +3491,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration(true);
+        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration();
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInsync));
     }
 
@@ -3679,7 +3679,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS, null, 0, true);
 
         // Test that the broker configuration is with KRaft
-        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts, true);
+        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
         assertThat(config, CoreMatchers.containsString("process.roles"));
         assertThat(config, CoreMatchers.containsString("controller.quorum.voters"));
 
@@ -3717,7 +3717,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, existingKafka, VERSIONS, null, 0, true);
 
         // Test that the broker configuration is with KRaft
-        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts, true);
+        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
         assertThat(config, CoreMatchers.containsString("process.roles"));
         assertThat(config, CoreMatchers.containsString("controller.quorum.voters"));
 

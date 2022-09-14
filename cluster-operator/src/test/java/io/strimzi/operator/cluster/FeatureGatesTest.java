@@ -60,14 +60,14 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testFeatureGatesParsing() {
-        assertThat(new FeatureGates("+ControlPlaneListener").controlPlaneListenerEnabled(), is(true));
+        assertThat(new FeatureGates("+UseKRaft").useKRaftEnabled(), is(true));
         assertThat(new FeatureGates("+UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
-        assertThat(new FeatureGates("+ControlPlaneListener,-UseStrimziPodSets").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("+ControlPlaneListener,-UseStrimziPodSets").useStrimziPodSetsEnabled(), is(false));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +UseStrimziPodSets").controlPlaneListenerEnabled(), is(true));
-        assertThat(new FeatureGates("  +ControlPlaneListener    ,    +UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
-        assertThat(new FeatureGates("+UseStrimziPodSets,-ControlPlaneListener").controlPlaneListenerEnabled(), is(false));
-        assertThat(new FeatureGates("+UseStrimziPodSets,-ControlPlaneListener").useStrimziPodSetsEnabled(), is(true));
+        assertThat(new FeatureGates("-UseKRaft,-UseStrimziPodSets").useKRaftEnabled(), is(false));
+        assertThat(new FeatureGates("-UseKRaft,-UseStrimziPodSets").useStrimziPodSetsEnabled(), is(false));
+        assertThat(new FeatureGates("  +UseKRaft    ,    +UseStrimziPodSets").useKRaftEnabled(), is(true));
+        assertThat(new FeatureGates("  +UseKRaft    ,    +UseStrimziPodSets").useStrimziPodSetsEnabled(), is(true));
+        assertThat(new FeatureGates("+UseStrimziPodSets,-UseKRaft").useKRaftEnabled(), is(false));
+        assertThat(new FeatureGates("+UseStrimziPodSets,-UseKRaft").useStrimziPodSetsEnabled(), is(true));
     }
 
     @ParallelTest
@@ -88,20 +88,20 @@ public class FeatureGatesTest {
 
     @ParallelTest
     public void testDuplicateFeatureGateWithSameValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ControlPlaneListener,+ControlPlaneListener"));
-        assertThat(e.getMessage(), containsString("Feature gate ControlPlaneListener is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseKRaft,+UseKRaft"));
+        assertThat(e.getMessage(), containsString("Feature gate UseKRaft is configured multiple times"));
     }
 
     @ParallelTest
     public void testDuplicateFeatureGateWithDifferentValue() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+ControlPlaneListener,-ControlPlaneListener"));
-        assertThat(e.getMessage(), containsString("Feature gate ControlPlaneListener is configured multiple times"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("+UseKRaft,-UseKRaft"));
+        assertThat(e.getMessage(), containsString("Feature gate UseKRaft is configured multiple times"));
     }
 
     @ParallelTest
     public void testMissingSign() {
-        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("ControlPlaneListener"));
-        assertThat(e.getMessage(), containsString("ControlPlaneListener is not a valid feature gate configuration"));
+        InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> new FeatureGates("UseKRaft"));
+        assertThat(e.getMessage(), containsString("UseKRaft is not a valid feature gate configuration"));
     }
 
     @ParallelTest

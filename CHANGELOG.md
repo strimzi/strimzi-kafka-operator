@@ -1,14 +1,18 @@
-
 # CHANGELOG
 
 ## 0.32.0
 
 * Update KafkaConnector CR status so the 'NotReady' condition is added if the connector or any tasks are reporting a 'FAILED' state.
 * Add auto-approval mechanism on KafkaRebalance resource when an optimization proposal is ready
+* The `ControlPlaneListener` feature gate moves to GA
 
 ### Deprecations and removals
 
 * A connector or task failing triggers a 'NotReady' condition to be added to the KafkaConnector CR status. This is different from previous versions where the CR would report 'Ready' even if the connector or a task had failed.
+* The `ControlPlaneListener` feature gate moves to GA. 
+  Direct upgrade from Strimzi 0.22 or earlier is not possible anymore.
+  You have to upgrade first to one of the Strimzi versions between 0.22 and 0.32 before upgrading to Strimzi 0.32 or newer.
+  Please follow the docs for more details.  
 
 ## 0.31.0
 
