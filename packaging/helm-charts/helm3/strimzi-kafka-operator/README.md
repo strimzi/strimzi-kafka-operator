@@ -4,13 +4,13 @@ Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) clus
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
 See our [website](https://strimzi.io) for more details about the project.
 
-## CRD Upgrades
+**!!! IMPORTANT !!!**
+Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
+Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 **!!! IMPORTANT !!!**
-Strimzi 0.23 and newer supports only the API version `v1beta2` of all Strimzi custom resources.
-This is a required as part of the migration to `apiextensionsk8s.io/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions.k8s.io/v1beta1`.
-Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs before the upgrade to 0.23 or newer.
-For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str).
+From Strimzi 0.32, we support only Kubernetes 1.19 and newer.
+Kubernetes versions 1.16, 1.17, and 1.18 are no longer supported.
 
 ## Introduction
 
@@ -57,7 +57,7 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.16+
+- Kubernetes 1.19+
 
 ## Installing the Chart
 
