@@ -5,12 +5,12 @@ Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) clus
 See our [website](https://strimzi.io) for more details about the project.
 
 **!!! IMPORTANT !!!**
-Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is not possible anymore.
+Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no longer possible.
 Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 **!!! IMPORTANT !!!**
 From Strimzi 0.32, we support only Kubernetes 1.19 and newer.
-Kubernetes versions 1.16, 1.17, and 1.18 are not supported anymore.
+Kubernetes versions 1.16, 1.17, and 1.18 are no longer supported.
 
 ## Introduction
 
