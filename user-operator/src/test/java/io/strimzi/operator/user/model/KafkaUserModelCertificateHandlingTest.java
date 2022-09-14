@@ -17,9 +17,10 @@ import io.strimzi.operator.user.ResourceUtils;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Base64;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -62,7 +63,7 @@ public class KafkaUserModelCertificateHandlingTest {
     @Test
     public void testNewUser()    {
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, () -> new Date());
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
 
         assertThat(model.generateNewCertificateCalled, is(1));
         assertThat(model.reuseCertificateCalled, is(0));
@@ -79,7 +80,7 @@ public class KafkaUserModelCertificateHandlingTest {
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, () -> new Date());
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC());
 
         assertThat(model.generateNewCertificateCalled, is(1));
         assertThat(model.reuseCertificateCalled, is(0));
@@ -98,7 +99,7 @@ public class KafkaUserModelCertificateHandlingTest {
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, () -> new Date());
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC());
 
         assertThat(model.generateNewCertificateCalled, is(1));
         assertThat(model.reuseCertificateCalled, is(0));
@@ -117,7 +118,7 @@ public class KafkaUserModelCertificateHandlingTest {
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, () -> new Date());
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 365, 30, null, Clock.systemUTC());
 
         assertThat(model.generateNewCertificateCalled, is(0));
         assertThat(model.reuseCertificateCalled, is(1));
@@ -136,7 +137,7 @@ public class KafkaUserModelCertificateHandlingTest {
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, null, () -> new Date());
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, null, Clock.systemUTC());
 
         assertThat(model.generateNewCertificateCalled, is(1));
         assertThat(model.reuseCertificateCalled, is(0));
@@ -155,7 +156,7 @@ public class KafkaUserModelCertificateHandlingTest {
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, List.of("* * 8-10 * * ?", "* * 14-15 * * ?"), () -> Date.from(Instant.parse("2018-11-26T09:00:00Z")));
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, List.of("* * 8-10 * * ?", "* * 14-15 * * ?"), Clock.fixed(Instant.parse("2018-11-26T09:00:00Z"), ZoneId.of("UTC")));
 
         assertThat(model.generateNewCertificateCalled, is(1));
         assertThat(model.reuseCertificateCalled, is(0));
@@ -174,7 +175,7 @@ public class KafkaUserModelCertificateHandlingTest {
                 .build();
 
         MockKafkaUserModel model = new MockKafkaUserModel();
-        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, List.of("* * 8-10 * * ?", "* * 14-15 * * ?"), () -> Date.from(Instant.parse("2018-11-26T11:55:00Z")));
+        model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret, 1000, 500, List.of("* * 8-10 * * ?", "* * 14-15 * * ?"), Clock.fixed(Instant.parse("2018-11-26T11:55:00Z"), ZoneId.of("UTC")));
 
         assertThat(model.generateNewCertificateCalled, is(0));
         assertThat(model.reuseCertificateCalled, is(1));

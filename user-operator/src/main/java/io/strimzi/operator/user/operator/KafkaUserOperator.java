@@ -31,6 +31,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -225,7 +226,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
                             config.getClientsCaValidityDays(),
                             config.getClientsCaRenewalDays(),
                             config.getMaintenanceWindows(),
-                            KafkaUserOperator::dateSupplier
+                            Clock.systemUTC()
                     );
 
                     return Future.succeededFuture();
@@ -350,7 +351,4 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         return new KafkaUserStatus();
     }
 
-    private static Date dateSupplier()  {
-        return new Date();
-    }
 }

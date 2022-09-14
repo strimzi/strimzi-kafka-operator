@@ -81,6 +81,7 @@ import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -243,11 +244,12 @@ public class KafkaReconciler {
      * expected to be called from the outside to trigger the reconciliation.
      *
      * @param kafkaStatus   The Kafka Status class for adding conditions to it during the reconciliation
-     * @param dateSupplier  Date supplier for checking maintenance windows
+     * @param clock         The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                      That time is used for checking maintenance windows
      *
      * @return              Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
@@ -257,7 +259,7 @@ public class KafkaReconciler {
                 .compose(i -> initClusterRoleBinding())
                 .compose(i -> scaleDown())
                 .compose(i -> listeners())
-                .compose(i -> certificateSecret(dateSupplier))
+                .compose(i -> certificateSecret(clock))
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
@@ -717,16 +719,17 @@ public class KafkaReconciler {
     /**
      * Manages the Secret with the node certificates used by the Kafka brokers.
      *
-     * @param dateSupplier  Date supplier for checking the maintenance windows
+     * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *              That time is used for checking maintenance windows
      *
-     * @return  Completes when the Secret was successfully created or updated
+     * @return      Completes when the Secret was successfully created or updated
      */
-    protected Future<Void> certificateSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> certificateSecret(Clock clock) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     return secretOperator
                             .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
-                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                    kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                             .compose(patchResult -> {
                                 if (patchResult instanceof ReconcileResult.Patched) {
                                     // The secret is patched and some changes to the existing certificates actually occurred

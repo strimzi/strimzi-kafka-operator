@@ -47,8 +47,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.time.Clock;
-import java.util.Date;
-import java.util.function.Supplier;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 
@@ -154,11 +152,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.versionChange())
 
                 // Run reconciliations of the different components
-                .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileZooKeeper(this::dateSupplier))
-                .compose(state -> state.reconcileKafka(this::dateSupplier))
-                .compose(state -> state.reconcileEntityOperator(this::dateSupplier))
-                .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
-                .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
+                .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
+                .compose(state -> state.reconcileKafka(clock))
+                .compose(state -> state.reconcileEntityOperator(clock))
+                .compose(state -> state.reconcileCruiseControl(clock))
+                .compose(state -> state.reconcileKafkaExporter(clock))
                 .compose(state -> state.reconcileJmxTrans())
 
                 // Finish the reconciliation
@@ -447,13 +445,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Run the reconciliation pipeline for the ZooKeeper
          *
-         * @param   dateSupplier  Date supplier used to check maintenance windows
+         * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *              That time is used for checking maintenance windows
          *
-         * @return  Future with Reconciliation State
+         * @return      Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileZooKeeper(Supplier<Date> dateSupplier)    {
+        Future<ReconciliationState> reconcileZooKeeper(Clock clock)    {
             return zooKeeperReconciler()
-                    .compose(reconciler -> reconciler.reconcile(kafkaStatus, dateSupplier))
+                    .compose(reconciler -> reconciler.reconcile(kafkaStatus, clock))
                     .map(this);
         }
 
@@ -524,13 +523,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Run the reconciliation pipeline for Kafka
          *
-         * @param   dateSupplier  Date supplier used to check maintenance windows
+         * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *              That time is used for checking maintenance windows
          *
-         * @return  Future with Reconciliation State
+         * @return      Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileKafka(Supplier<Date> dateSupplier)    {
+        Future<ReconciliationState> reconcileKafka(Clock clock)    {
             return kafkaReconciler()
-                    .compose(reconciler -> reconciler.reconcile(kafkaStatus, dateSupplier))
+                    .compose(reconciler -> reconciler.reconcile(kafkaStatus, clock))
                     .map(this);
         }
 
@@ -553,13 +553,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Run the reconciliation pipeline for the Kafka Exporter
          *
-         * @param dateSupplier  Date supplier used to check maintenance windows
+         * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *              That time is used for checking maintenance windows
          *
-         * @return              Future with Reconciliation State
+         * @return      Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileKafkaExporter(Supplier<Date> dateSupplier)    {
+        Future<ReconciliationState> reconcileKafkaExporter(Clock clock)    {
             return kafkaExporterReconciler()
-                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, dateSupplier)
+                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock)
                     .map(this);
         }
 
@@ -608,13 +609,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Run the reconciliation pipeline for the Cruise Control
          *
-         * @param dateSupplier  Date supplier used to check maintenance windows
+         * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *              That time is used for checking maintenance windows
          *
-         * @return  Future with Reconciliation State
+         * @return      Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileCruiseControl(Supplier<Date> dateSupplier)    {
+        Future<ReconciliationState> reconcileCruiseControl(Clock clock)    {
             return cruiseControlReconciler()
-                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, dateSupplier)
+                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock)
                     .map(this);
         }
 
@@ -637,19 +639,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Run the reconciliation pipeline for the Entity Operator
          *
-         * @param dateSupplier  Date supplier used to check maintenance windows
+         * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+         *              That time is used for checking maintenance windows
          *
-         * @return  Future with Reconciliation State
+         * @return      Future with Reconciliation State
          */
-        Future<ReconciliationState> reconcileEntityOperator(Supplier<Date> dateSupplier)    {
+        Future<ReconciliationState> reconcileEntityOperator(Clock clock)    {
             return entityOperatorReconciler()
-                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, dateSupplier)
+                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, clock)
                     .map(this);
         }
-    }
-
-    /* test */ Date dateSupplier() {
-        return new Date();
     }
 
     @Override

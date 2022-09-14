@@ -29,7 +29,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
@@ -50,19 +49,19 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.time.Clock;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -181,11 +180,12 @@ public class ZooKeeperReconciler {
      * expected to be called from the outside to trigger the reconciliation.
      *
      * @param kafkaStatus   The Kafka Status class for adding conditions to it during the reconciliation
-     * @param dateSupplier  Date supplier for checking maintenance windows
+     * @param clock         The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *                      That time is used for checking maintenance windows
      *
      * @return              Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(KafkaStatus kafkaStatus, Supplier<Date> dateSupplier)    {
+    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
                 .compose(i -> jmxSecret())
                 .compose(i -> manualPodCleaning())
@@ -196,7 +196,7 @@ public class ZooKeeperReconciler {
                 .compose(i -> pvcs())
                 .compose(i -> service())
                 .compose(i -> headlessService())
-                .compose(i -> certificateSecret(dateSupplier))
+                .compose(i -> certificateSecret(clock))
                 .compose(i -> loggingAndMetricsConfigMap())
                 .compose(i -> podDisruptionBudget())
                 .compose(i -> podDisruptionBudgetV1Beta1())
@@ -436,16 +436,17 @@ public class ZooKeeperReconciler {
     /**
      * Manages the Secret with the node certificates used by the ZooKeeper nodes.
      *
-     * @param dateSupplier  Date supplier for checking the maintenance windows
+     * @param clock The clock for supplying the reconciler with the time instant of each reconciliation cycle.
+     *              That time is used for checking maintenance windows
      *
-     * @return  Completes when the Secret was successfully created or updated
+     * @return      Completes when the Secret was successfully created or updated
      */
-    protected Future<Void> certificateSecret(Supplier<Date> dateSupplier) {
+    protected Future<Void> certificateSecret(Clock clock) {
         return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperSecretName(reconciliation.name()))
                 .compose(oldSecret -> {
                     return secretOperator
                             .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperSecretName(reconciliation.name()),
-                                    zk.generateCertificatesSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                    zk.generateCertificatesSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                             .compose(patchResult -> {
                                 if (patchResult instanceof ReconcileResult.Patched) {
                                     // The secret is patched and some changes to the existing certificates actually occurred

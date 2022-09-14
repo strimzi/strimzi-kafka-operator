@@ -746,31 +746,17 @@ public class Util {
      * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
      */
     public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Instant instant) {
-        return isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, () -> Date.from(instant));
-    }
-
-    /**
-     * Checks whether maintenance time window is satisfied or not
-     *
-     * @param reconciliation        Reconciliation marker
-     * @param maintenanceWindows    List of maintenance windows
-     * @param dateSupplier          Date supplier
-     *
-     * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
-     */
-    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Supplier<Date> dateSupplier) {
         String currentCron = null;
         try {
             boolean isSatisfiedBy = maintenanceWindows == null || maintenanceWindows.isEmpty();
             if (!isSatisfiedBy) {
-                Date date = dateSupplier.get();
                 for (String cron : maintenanceWindows) {
                     currentCron = cron;
                     CronExpression cronExpression = new CronExpression(cron);
                     // the user defines the cron expression in "UTC/GMT" timezone but CO pod
                     // can be running on a different one, so setting it on the cron expression
                     cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    if (cronExpression.isSatisfiedBy(date)) {
+                    if (cronExpression.isSatisfiedBy(Date.from(instant))) {
                         isSatisfiedBy = true;
                         break;
                     }

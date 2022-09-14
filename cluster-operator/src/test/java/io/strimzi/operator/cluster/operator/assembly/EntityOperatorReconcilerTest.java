@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Date;
+import java.time.Clock;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -123,7 +123,7 @@ public class EntityOperatorReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -225,7 +225,7 @@ public class EntityOperatorReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -324,7 +324,7 @@ public class EntityOperatorReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -413,7 +413,7 @@ public class EntityOperatorReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -500,7 +500,7 @@ public class EntityOperatorReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(nullValue()));
@@ -582,7 +582,7 @@ public class EntityOperatorReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        rcnclr.reconcile(false, null, null, Date::new)
+        rcnclr.reconcile(false, null, null, Clock.systemUTC())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(nullValue()));
