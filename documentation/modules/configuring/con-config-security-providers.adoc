@@ -1,0 +1,151 @@
+// Module included in the following assemblies:
+//
+// assembly-security-providers.adoc
+
+[id='con-config-security-providers-{context}']
+= How to configure security context
+
+[role="_abstract"]
+Use security provider plugins or template configuration to apply security context to Strimzi pods and containers.
+
+Apply security context at the pod or container level:
+
+Pod-level security context:: Pod-level security context is applied to all containers in a specific pod.
+Container-level security context:: Container-level security context is applied to a specific container.
+
+With Strimzi, security context is applied through one or both of the following methods:
+
+Template configuration:: Use `template` configuration of Strimzi custom resources to specify security context at the pod or container level.
+Pod security provider plugins:: Use pod security provider plugins to automatically set security context across all pods and containers using preconfigured settings.  
+  
+Pod security providers offer a simpler alternative to specifying security context through `template` configuration.
+You can use both approaches.
+The `template` approach has a higher priority.
+Security context configured through `template` properties overrides the configuration set by pod security providers.  
+So you might use pod security providers to automatically configure the security context for most containers.
+And also use `template` configuration to set container-specific security context where needed.
+
+The `template` approach provides flexibility, but it also means you have to configure security context in numerous places to capture the security you want for all pods and containers. 
+For example, you'll need to apply the configuration to each pod in a Kafka cluster, as well as the pods for deployments of other Kafka components.
+
+To avoid repeating the same configuration, you can use the following pod security provider plugins so that the security configuration is in one place.
+
+Baseline Provider:: The Baseline Provider is based on the Kubernetes _baseline_ security profile. The baseline profile prevents privilege escalations and defines other standard access controls and limitations.
+Restricted Provider:: The Restricted Provider is based on the Kubernetes _restricted_ security profile. The restricted profile is more restrictive than the baseline profile, and is used where security needs to be tighter. 
+
+For more information on the Kubernetes security profiles, see {K8sSecurityStandards}.
+
+
+== Template configuration for security context
+
+In the following example, security context is configured for Kafka brokers in the `template` configuration of the `Kafka` resource.  
+Security context is specified at the pod and container level.
+
+[source,yaml]
+.Example `template` configuration for security context
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  kafka:
+    template:
+      pod: # <1>
+        securityContext:
+          runAsUser: 1000001
+          fsGroup: 0
+      kafkaContainer: # <2>
+        securityContext:
+          runAsUser: 2000
+  # ...      
+----
+<1> Pod security context
+<2> Container security context of the Kafka broker container
+
+== Baseline Provider for pod security
+
+The Baseline Provider is the default pod security provider.
+It configures the pods managed by Strimzi with a baseline security profile.
+The baseline profile is compatible with previous versions of Strimzi.
+
+The Baseline Provider is enabled by default if you don't specify a provider.
+Though you can enable it explicitly by setting the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable to `baseline` when xref:ref-operator-cluster-str[configuring the Cluster Operator]. 
+
+.Configuration for the Baseline Provider
+[source,yaml,options="nowrap"]
+----
+# ...
+env:
+  # ...
+  - name: STRIMZI_POD_SECURITY_PROVIDER_CLASS
+    value: baseline
+  # ...
+----
+
+Instead of specifying `baseline` as the value, you can specify the `io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider` fully-qualified domain name.
+
+== Restricted Provider for pod security
+
+The Restricted Provider provides a higher level of security than the Baseline Provider.
+It configures the pods managed by Strimzi with a restricted security profile.
+
+You enable the Restricted Provider by setting the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable to `restricted` when xref:ref-operator-cluster-str[configuring the Cluster Operator].
+
+.Configuration for the Restricted Provider
+[source,yaml,options="nowrap"]
+----
+# ...
+env:
+  # ...
+  - name: STRIMZI_POD_SECURITY_PROVIDER_CLASS
+    value: restricted
+  # ...
+----
+
+Instead of specifying `restricted` as the value, you can specify the `io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider` fully-qualified domain name.
+
+If you change to the Restricted Provider from the default Baseline Provider, the following restrictions are implemented in addition to the constraints defined in the baseline security profile:
+
+* Limits allowed volume types
+* Disallows privilege escalation
+* Requires applications to run under a non-root user 
+* Requires `seccomp` (secure computing mode) profiles to be set as `RuntimeDefault` or `Localhost`
+* Limits container capabilities to use only the `NET_BIND_SERVICE` capability
+
+With the Restricted Provider enabled, containers created by the Cluster Operator are set with the following security context.
+
+.Cluster Operator with restricted security context configuration
+[source,yaml,options="nowrap"]
+----
+# ...
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+# ...
+----
+
+[NOTE]
+====
+Container capabilities and `seccomp` are Linux kernel features that support container security. 
+
+* Capabilities add fine-grained privileges for processes running on a container. The `NET_BIND_SERVICE` capability allows non-root user applications to bind to ports below 1024. 
+* `seccomp` profiles limit the processes running in a container to only a subset of system calls.  
+The `RuntimeDefault` profile provides a default set of system calls.
+A `LocalHost` profile uses a profile defined in a file on the node.   
+
+====
+
+[role="_additional-resources"]
+.Additional resources
+
+* {K8sSecurityContext} on Kubernetes
+* {K8sSecurityStandards} on Kubernetes (including profile descriptions)
+* xref:type-ContainerTemplate-reference[]
+

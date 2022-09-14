@@ -57,6 +57,7 @@
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
+:JavaServiceProvider: link:https://www.baeldung.com/java-spi[Java Service Provider Interface^]
 :kubernetes-docs: link:https://kubernetes.io/docs/home/
 :kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
@@ -77,6 +78,8 @@
 :K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
 :K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
 :K8sPriorityClass: link:https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption[Pod Priority and Preemption^]
+:K8sSecurityContext: link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security context^]
+:K8sSecurityStandards: link:https://kubernetes.io/docs/concepts/security/pod-security-standards/[Pod security standards^]
 :K8sServiceDiscovery: https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
 :K8sWellKnownLabelsAnnotationsAndTaints: link:https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/[Well-Known Labels, Annotations and Taints^]
 :K8sZoneLabel: link:https://kubernetes.io/docs/reference/labels-annotations-taints/#topologykubernetesiozone[topology.kubernetes.io/zone^]
@@ -111,6 +114,14 @@
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
 :external-cors-link: link:https://fetch.spec.whatwg.org/[Fetch CORS specification^]
 :HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
+
+//strimzi github links
+:PodSecurityInterface: link:https://github.com/strimzi/strimzi-kafka-operator/blob/main/api/src/main/java/io/strimzi/plugin/security/profiles/PodSecurityProvider.java[Pod security provider interface^]
+:PodSecurityProviders: link:https://github.com/strimzi/strimzi-kafka-operator/tree/main/api/src/main/java/io/strimzi/plugin/security/profiles/impl[Baseline Provider and Restricted Provider classes^]
+:PodSecurityProvidersConfig: link:https://github.com/strimzi/strimzi-kafka-operator/blob/main/api/src/main/resources/META-INF/services/io.strimzi.plugin.security.profiles.PodSecurityProvider[Provider configuration file^]
+
+//OpenShift documentation
+:OpenShiftDocs: link:https://docs.openshift.com[OpenShift documentation^]
 
 // Container image names and repositories
 :DockerOrg: quay.io/strimzi
