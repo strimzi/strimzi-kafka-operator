@@ -49,7 +49,7 @@ If you don't have a cluster certificate in PKCS #12 format, use the OpenSSL TLS 
 
 .Example certificate generation command
 [source,shell,subs="+quotes"]
-openssl pkcs12 -export -in ca.crt --nokeys -out ca.p12 -password pass:__P12-PASSWORD__ -caname ca.crt
+openssl pkcs12 -export -in ca.crt -nokeys -out ca.p12 -password pass:__P12-PASSWORD__ -caname ca.crt
 
 Replace _P12-PASSWORD_ with your own password.
 
