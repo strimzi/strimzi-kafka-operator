@@ -21,6 +21,7 @@ Because of its permanent nature, persistent storage is recommended for productio
 
 PVCs can request different types of persistent storage by specifying a {K8SStorageClass}.
 Storage classes define storage profiles and dynamically provision PVs.  
+If a storage class is not specified, a standard profile is used.
 Persistent storage options might include SAN storage types or {K8sLocalPersistentVolumes}.
 
 To use persistent storage, you set the storage type configuration in the `Kafka` or `ZooKeeper` resource to `persistent-claim`.
