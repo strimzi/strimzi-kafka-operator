@@ -23,6 +23,7 @@ import java.util.Map;
         property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = JaegerTracing.TYPE_JAEGER, value = JaegerTracing.class),
+    @JsonSubTypes.Type(name = OpenTelemetryTracing.TYPE_OPENTELEMETRY, value = OpenTelemetryTracing.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
@@ -32,8 +33,8 @@ public abstract class Tracing implements UnknownPropertyPreserving, Serializable
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the tracing used. " +
-            "Currently the only supported type is `jaeger` for Jaeger tracing. " +
-            "The Jaeger tracing is deprecated")
+            "Currently the only supported types are `jaeger` for OpenTracing (Jaeger) tracing and `opentelemetry` for OpenTelemetry tracing. " +
+            "The OpenTracing (Jaeger) tracing is deprecated")
     public abstract String getType();
 
     @Override

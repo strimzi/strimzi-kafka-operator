@@ -53,6 +53,8 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -197,7 +199,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * from the instantiation of the (subclass of) KafkaConnectCluster,
      * thus permitting reuse of the setter-calling code for subclasses.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "deprecation"})
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
@@ -211,8 +213,13 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.setConfiguration(config);
         }
         if (kafkaConnect.tracing != null)   {
-            config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
-            config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+            if (JaegerTracing.TYPE_JAEGER.equals(kafkaConnect.tracing.getType())) {
+                config.setConfigOption("consumer.interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+                config.setConfigOption("producer.interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(kafkaConnect.tracing.getType())) {
+                config.setConfigOption("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+                config.setConfigOption("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+            }
         }
 
         if (kafkaConnect.getImage() == null) {

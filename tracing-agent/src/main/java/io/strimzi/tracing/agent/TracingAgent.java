@@ -4,17 +4,10 @@
  */
 package io.strimzi.tracing.agent;
 
-import io.jaegertracing.Configuration;
-import io.opentracing.Tracer;
-import io.opentracing.util.GlobalTracer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
- * A very simple Java agent which initializes the Jaeger Tracer
+ * A very simple Java agent which initializes the distributed tracing if requested
  */
 public class TracingAgent {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TracingAgent.class);
 
     /**
      * Agent entry point
@@ -22,16 +15,19 @@ public class TracingAgent {
      * @param agentArgs The type of tracing which should be initialized
      */
     public static void premain(String agentArgs) {
-        if ("jaeger".equals(agentArgs)) {
-            String jaegerServiceName = System.getenv("JAEGER_SERVICE_NAME");
-
-            if (jaegerServiceName != null) {
-                LOGGER.info("Initializing Jaeger tracing with service name {}", jaegerServiceName);
-                Tracer tracer = Configuration.fromEnv().getTracer();
-                GlobalTracer.registerIfAbsent(tracer);
-            } else {
-                LOGGER.error("Jaeger tracing cannot be initialized because JAEGER_SERVICE_NAME environment variable is not defined");
-            }
+        Tracing tracing;
+        switch (agentArgs) {
+            case "jaeger":
+                tracing = new JaegerTracing();
+                break;
+            case "opentelemetry":
+                tracing = new OpenTelemetryTracing();
+                break;
+            default:
+                // assuming no distributed tracing by default
+                tracing = new Tracing.NoTracing();
+                break;
         }
+        tracing.initialize();
     }
 }

@@ -22,6 +22,8 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -363,8 +365,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         }
 
         if (mirrorMaker2Cluster.getTracing() != null)   {
-            config.put("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
-            config.put("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+            if (JaegerTracing.TYPE_JAEGER.equals(mirrorMaker2Cluster.getTracing().getType())) {
+                config.put("consumer.interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+                config.put("producer.interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(mirrorMaker2Cluster.getTracing().getType())) {
+                config.put("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+                config.put("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+            }
         }
 
         // setting client.rack here because the consumer is created by the connector

@@ -25,6 +25,8 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
+import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
@@ -307,21 +309,31 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return containers;
     }
 
+    @SuppressWarnings("deprecation")
     private KafkaMirrorMakerConsumerConfiguration getConsumerConfiguration() {
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(reconciliation, consumer.getConfig().entrySet());
 
         if (tracing != null) {
-            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            if (JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
+                config.setConfigOption("interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
+                config.setConfigOption("interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+            }
         }
 
         return config;
     }
 
+    @SuppressWarnings("deprecation")
     private KafkaMirrorMakerProducerConfiguration getProducerConfiguration()    {
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(reconciliation, producer.getConfig().entrySet());
 
         if (tracing != null) {
-            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+            if (JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
+                config.setConfigOption("interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
+                config.setConfigOption("interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+            }
         }
 
         return config;
