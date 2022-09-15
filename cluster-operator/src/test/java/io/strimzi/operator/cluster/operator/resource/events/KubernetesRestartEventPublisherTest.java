@@ -9,46 +9,52 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.events.v1.Event;
+import io.fabric8.kubernetes.api.model.events.v1.EventList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.EventingAPIGroupDSL;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.V1EventingAPIGroupDSL;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isA;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class KubernetesRestartEventPublisherTest {
+    private final static String NAMESPACE = "test-ns";
+    private final static String POD_NAME = "example-pod";
 
     private KubernetesRestartEventPublisher publisher;
 
     @BeforeEach
     void setup() {
-        publisher = new KubernetesRestartEventPublisher() {
+        KubernetesClient client = mock(KubernetesClient.class);
+        publisher = new KubernetesRestartEventPublisher(client, "op") {
             @Override
             protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
             }
         };
-    }
-
-    @Test
-    void testVersionSpecificPublisherCreation() {
-        KubernetesClient client = Mockito.mock(KubernetesClient.class);
-
-        KubernetesRestartEventPublisher shouldBeV1 = KubernetesRestartEventPublisher.createPublisher(client, "",  true);
-        assertThat(shouldBeV1, isA(V1RestartEventPublisher.class));
-
-        KubernetesRestartEventPublisher shouldBeV1Beta1 = KubernetesRestartEventPublisher.createPublisher(client, "", false);
-        assertThat(shouldBeV1Beta1, isA(V1Beta1RestartEventPublisher.class));
     }
 
     @Test
@@ -98,8 +104,10 @@ class KubernetesRestartEventPublisherTest {
         when(mockPod.getMetadata()).thenReturn(mockPodMeta);
 
 
+        KubernetesClient client = mock(KubernetesClient.class);
+
         Set<String> capturedReasons = new HashSet<>();
-        KubernetesRestartEventPublisher capturingPublisher = new KubernetesRestartEventPublisher() {
+        KubernetesRestartEventPublisher capturingPublisher = new KubernetesRestartEventPublisher(client, "op") {
             @Override
             protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
                 capturedReasons.add(reason);
@@ -116,6 +124,58 @@ class KubernetesRestartEventPublisherTest {
 
         assertThat(capturedReasons, is(expectedReasons));
 
+
+    }
+
+    @Test
+    void testPopulatesExpectedFields() {
+        Resource<Event> mockEventResource = mock(Resource.class);
+
+        NonNamespaceOperation<Event, EventList, Resource<Event>> nonNamespaceOp = mock(NonNamespaceOperation.class);
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        when(nonNamespaceOp.resource(eventCaptor.capture())).thenReturn(mockEventResource);
+
+        MixedOperation<Event, EventList, Resource<Event>> mixedOp = mock(MixedOperation.class);
+        when(mixedOp.inNamespace(eq(NAMESPACE))).thenReturn(nonNamespaceOp);
+
+        V1EventingAPIGroupDSL v1EventingAPIGroupDSL = mock(V1EventingAPIGroupDSL.class);
+        when(v1EventingAPIGroupDSL.events()).thenReturn(mixedOp);
+
+        EventingAPIGroupDSL eventingAPIGroupDSL = mock(EventingAPIGroupDSL.class);
+        when(eventingAPIGroupDSL.v1()).thenReturn(v1EventingAPIGroupDSL);
+
+        KubernetesClient client = mock(KubernetesClient.class);
+        when(client.events()).thenReturn(eventingAPIGroupDSL);
+
+        Pod pod = new PodBuilder()
+                .withNewMetadata()
+                .withName(POD_NAME)
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build();
+
+        Clock clock = Clock.fixed(Instant.parse("2020-10-11T00:00:00Z"), Clock.systemUTC().getZone());
+
+        KubernetesRestartEventPublisher eventPublisher = new KubernetesRestartEventPublisher(client, "cluster-operator-id", clock);
+
+        RestartReasons reasons = new RestartReasons().add(RestartReason.JBOD_VOLUMES_CHANGED);
+        eventPublisher.publishRestartEvents(pod, reasons);
+
+        verify(mockEventResource, times(1)).create();
+
+        Event publishedEvent = eventCaptor.getValue();
+        assertThat(publishedEvent.getRegarding().getKind(), is("Pod"));
+        assertThat(publishedEvent.getRegarding().getName(), is(POD_NAME));
+        assertThat(publishedEvent.getRegarding().getNamespace(), is(NAMESPACE));
+
+        assertThat(publishedEvent.getReportingController(), is("strimzi.io/cluster-operator"));
+        assertThat(publishedEvent.getReportingInstance(), is("cluster-operator-id"));
+
+        assertThat(publishedEvent.getReason(), is("JbodVolumesChanged"));
+        assertThat(publishedEvent.getAction(), is("StrimziInitiatedPodRestart"));
+        assertThat(publishedEvent.getType(), is("Normal"));
+        assertThat(publishedEvent.getNote(), is(RestartReason.JBOD_VOLUMES_CHANGED.getDefaultNote()));
+        assertThat(publishedEvent.getEventTime().getTime(), is("2020-10-11T00:00:00.000000Z"));
 
     }
 }
