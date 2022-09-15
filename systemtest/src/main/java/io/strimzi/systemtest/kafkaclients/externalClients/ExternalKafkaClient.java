@@ -199,6 +199,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
         CompletableFuture<Integer> received = new CompletableFuture<>();
 
         int[] size = {0};
+        long currentTimeMs = System.currentTimeMillis();
 
         Runnable poll = new Runnable() {
             @Override
@@ -211,6 +212,8 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
 
                 if (size[0] >= messageCount) {
                     received.complete(size[0]);
+                } else if (System.currentTimeMillis() - currentTimeMs > Constants.GLOBAL_TIMEOUT) {
+                    received.completeExceptionally(new WaitException("Timeout for polling all the messages"));
                 } else {
                     this.run();
                 }
