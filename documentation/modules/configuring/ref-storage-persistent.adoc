@@ -27,8 +27,8 @@ To use persistent storage, you set the storage type configuration in the `Kafka`
 
 In the production environment, the following configuration is recommended:
 
-* For ZooKeeper, configure `type: persistent-claim`
 * For Kafka, configure `type: jbod`  with one or more `type: persistent-claim` volumes
+* For ZooKeeper, configure `type: persistent-claim`
 
 Persistent storage also has the following configuration options:
 
@@ -55,13 +55,33 @@ WARNING: Increasing the size of persistent volumes in an existing Strimzi cluste
 For other versions of Kubernetes and storage classes that do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
 Decreasing the size of existing persistent volumes is not possible.
 
-.Example persistent storage configuration with 1000Gi `size`
+.Example persistent storage configuration for Kafka and ZooKeeper
 [source,yaml]
 ----
 # ...
-storage:
-  type: persistent-claim
-  size: 1000Gi
+spec:
+  kafka:
+    # ...
+    storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+      - id: 1
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+      - id: 2
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+    # ...
+  zookeeper:
+    storage:
+      type: persistent-claim
+      size: 1000Gi
 # ...
 ----
 
@@ -117,17 +137,21 @@ spec:
   kafka:
     replicas: 3
     storage:
-      deleteClaim: true
-      size: 100Gi
-      type: persistent-claim
-      class: my-storage-class
-      overrides:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+        class: my-storage-class
+        overrides:
         - broker: 0
           class: my-storage-class-zone-1a
         - broker: 1
           class: my-storage-class-zone-1b
         - broker: 2
           class: my-storage-class-zone-1c
+      # ...
   # ...
   zookeeper:
     replicas: 3
