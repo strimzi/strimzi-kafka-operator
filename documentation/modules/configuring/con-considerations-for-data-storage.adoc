@@ -7,14 +7,13 @@
 
 [role="_abstract"]
 For Strimzi to work well, an efficient data storage infrastructure is essential.
-
 Block storage is required.
 File storage, such as NFS, does not work with Kafka.
 
-Choose from one of the following options for your block storage:
+Choose one of the following options for your block storage:
 
-* Cloud-based block storage solutions, such as {aws-ebs}
-* A mounted {K8sLocalPersistentVolumes}
+* A cloud-based block storage solution, such as {aws-ebs}
+* Persistent storage using {K8sLocalPersistentVolumes}
 * Storage Area Network (SAN) volumes accessed by a protocol such as _Fibre Channel_ or _iSCSI_
 
 NOTE: Strimzi does not require Kubernetes raw block volumes.

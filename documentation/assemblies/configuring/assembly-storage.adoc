@@ -11,7 +11,7 @@ Strimzi supports three storage types for this data:
 
 * Ephemeral (Recommended for development only)
 * Persistent
-* JBOD (Suitable for *Kafka only* not ZooKeeper)
+* JBOD (*Kafka only* not ZooKeeper)
 
 When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding ZooKeeper node. You configure the storage type using the `storage` property in the following resources:
 

@@ -6,21 +6,29 @@
 = Persistent storage
 
 [role="_abstract"]
-Persistent data storage retains data even when a pod that uses the storage restarts.
-Persistent data storage uses a storage framework called persistent volumes (PV). 
-PVs are storage resources, independent of the pods that use them.
-Pod configuration uses {K8sPersistentVolumeClaims} (PVCs) to make storage requests on the PVs.
+Persistent data storage retains data in the event of system disruption.
+For pods that use persistent data storage, data is persisted across pod failures and restarts.
+
+A dynamic provisioning framework enables clusters to be created with persistent storage. 
+Pod configuration uses {K8sPersistentVolumeClaims} (PVCs) to make storage requests on persistent volumes (PVs).
+PVs are storage resources that represent a storage volume.
+PVs are independent of the pods that use them.
 The PVC requests the amount of storage required when a pod is being created.
 The underlying storage infrastructure of the PV does not need to be understood. 
 If a PV matches the storage criteria, the PVC is bound to the PV.
 
-Because of its permanent nature, persistent storage is recommended for production. 
+Because of its permanent nature, persistent storage is recommended for production.
 
 PVCs can request different types of persistent storage by specifying a {K8SStorageClass}.
 Storage classes define storage profiles and dynamically provision PVs.  
-Persistent storage options might include SAN storage types or a {K8sLocalPersistentVolumes}.
+Persistent storage options might include SAN storage types or {K8sLocalPersistentVolumes}.
 
 To use persistent storage, you set the storage type configuration in the `Kafka` or `ZooKeeper` resource to `persistent-claim`.
+
+In the production environment, the following configuration is recommended:
+
+* For ZooKeeper, configure `type: persistent-claim`
+* For Kafka, configure `type: jbod`  with one or more `type: persistent-claim` volumes
 
 Persistent storage also has the following configuration options:
 
@@ -33,6 +41,7 @@ The size of the persistent volume claim, for example, "1000Gi".
 
 `class` (optional)::
 The Kubernetes {K8SStorageClass} to use for dynamic volume provisioning.
+Storage `class` configuration includes parameters that describe the profile of a volume in detail. 
 
 `selector` (optional)::
 Configuration to specify a specific PV.
@@ -161,7 +170,7 @@ PVC for the volume used for storing data for the Kafka broker pod `_idx_`.
 `data-_cluster-name_-zookeeper-_idx_`::
 PVC for the volume used for storing data for the ZooKeeper node pod `_idx_`.
 
-== Log directories for persistent storage
+== Mount path of Kafka log directories
 
 The persistent volume is used by the Kafka brokers as log directories mounted into the following path:
 
