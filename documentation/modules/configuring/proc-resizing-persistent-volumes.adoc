@@ -20,10 +20,14 @@ Decreasing the size of persistent volumes is not currently supported in Kubernet
 
 .Procedure
 
-. Edit a `Kafka` resource using the `size` property to increase the size of the persistent volume allocated to a Kafka cluster, a ZooKeeper cluster, or both.
-
+. Edit the `Kafka` resource for your cluster.
++
+Change the `size` property to increase the size of the persistent volume allocated to a Kafka cluster, a ZooKeeper cluster, or both.
++
+--
 * For Kafka clusters, update the `size` property under `spec.kafka.storage`.
 * For ZooKeeper clusters, update the `size` property under `spec.zookeeper.storage`.
+--
 +
 .Kafka configuration to increase the volume size to `2000Gi`
 [source,yaml,subs=attributes+]
