@@ -20,13 +20,16 @@ Decreasing the size of persistent volumes is not currently supported in Kubernet
 
 .Procedure
 
-. In a `Kafka` resource, increase the size of the persistent volume allocated to the Kafka cluster, the ZooKeeper cluster, or both.
-
-* To increase the volume size allocated to the Kafka cluster, edit the `spec.kafka.storage` property.
-* To increase the volume size allocated to the ZooKeeper cluster, edit the `spec.zookeeper.storage` property.
+. Edit the `Kafka` resource for your cluster.
 +
-For example, to increase the volume size from `1000Gi` to `2000Gi`:
+Change the `size` property to increase the size of the persistent volume allocated to a Kafka cluster, a ZooKeeper cluster, or both.
 +
+--
+* For Kafka clusters, update the `size` property under `spec.kafka.storage`.
+* For ZooKeeper clusters, update the `size` property under `spec.zookeeper.storage`.
+--
++
+.Kafka configuration to increase the volume size to `2000Gi`
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
@@ -53,6 +56,22 @@ kubectl apply -f _<kafka_configuration_file>_
 Kubernetes increases the capacity of the selected persistent volumes in response to a request from the Cluster Operator.
 When the resizing is complete, the Cluster Operator restarts all pods that use the resized persistent volumes.
 This happens automatically.
+
+. Verify that the storage capacity has increased for the relevant pods on the cluster:
++
+[source,shell,subs=+quotes]
+kubectl get pv
++
+.Kafka broker pods with increased storage
+[source,shell,subs="+quotes,attributes"]
+----
+NAME               CAPACITY   CLAIM
+pvc-0ca459ce-...   2000Gi     my-project/data-my-cluster-kafka-2
+pvc-6e1810be-...   2000Gi     my-project/data-my-cluster-kafka-0
+pvc-82dc78c9-...   2000Gi     my-project/data-my-cluster-kafka-1
+----
++
+The output shows the names of each PVC associated with a broker pod.
 
 [role="_additional-resources"]
 .Additional resources
