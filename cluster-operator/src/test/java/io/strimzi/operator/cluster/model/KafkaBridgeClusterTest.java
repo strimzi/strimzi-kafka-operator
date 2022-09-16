@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -25,8 +26,10 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -61,6 +64,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -73,6 +77,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
@@ -776,6 +781,117 @@ public class KafkaBridgeClusterTest {
         assertThat("Failed to correctly set container environment variable: " + testEnvTwoKey,
                 kafkaEnvVars.stream().filter(env -> testEnvTwoKey.equals(env.getName()))
                         .map(EnvVar::getValue).findFirst().orElse("").equals(testEnvTwoValue), is(true));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithRack() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editOrNewSpec()
+                .withNewRack()
+                .withTopologyKey("topology-key")
+                .endRack()
+                .endSpec()
+                .build();
+
+        assertRackAwareDeploymentConfigured(resource, "quay.io/strimzi/operator:latest");
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithRackAndCustomInitImage() {
+        final String customImage = "quay.io/strimzi/operator:custom";
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editOrNewSpec()
+                .withClientRackInitImage(customImage)
+                .withNewRack()
+                .withTopologyKey("topology-key")
+                .endRack()
+                .endSpec()
+                .build();
+
+        assertRackAwareDeploymentConfigured(resource, customImage);
+    }
+
+
+    private static void assertRackAwareDeploymentConfigured(final KafkaBridge resource, final String expectedInitImage) {
+        KafkaBridgeCluster bridgeCluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        Deployment deployment = bridgeCluster.generateDeployment(new HashMap<>(), false, null, null);
+
+        assertThat(resource.getSpec().getRack(), is(notNullValue()));
+        PodSpec podSpec = deployment.getSpec().getTemplate().getSpec();
+
+        List<Container> containers = podSpec.getContainers();
+        assertThat(containers, is(notNullValue()));
+        assertThat(containers, hasSize(1));
+        final Optional<Container> maybeContainer = containers.stream().filter(container -> container.getName().equals(bridgeCluster.getName())).findFirst();
+        assertThat(maybeContainer.isPresent(), is(true));
+        final Container bridgeContainer = maybeContainer.get();
+
+        assertThat(bridgeContainer.getVolumeMounts(), hasSize(3));
+        final Optional<VolumeMount> volumeMountOptional = bridgeContainer.getVolumeMounts().stream().filter(volumeMount -> volumeMount.getName().equals("rack-volume")).findFirst();
+        assertThat(volumeMountOptional.isPresent(), is(true));
+        final VolumeMount bridgeVolumeMount = volumeMountOptional.get();
+        assertThat(bridgeVolumeMount.getName(), is(KafkaBridgeCluster.INIT_VOLUME_NAME));
+        assertThat(bridgeVolumeMount.getMountPath(), is(KafkaBridgeCluster.INIT_VOLUME_MOUNT));
+
+        List<Container> initContainers = podSpec.getInitContainers();
+        assertThat(initContainers, is(notNullValue()));
+        assertThat(initContainers.size() > 0, is(true));
+
+        final Optional<Container> first = initContainers.stream().filter(container -> container.getName().equals(KafkaBridgeCluster.INIT_NAME)).findFirst();
+        assertThat(first.isPresent(), is(true));
+        final Container container = first.get();
+        assertThat(container.getImage(), is(expectedInitImage));
+        assertThat(container.getEnv(), hasSize(3));
+        final List<EnvVar> initEnv = container.getEnv();
+        assertThat(initEnv.stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY.equals(var.getName())).findFirst().orElseThrow().getValue(), is(
+                "topology-key"));
+        assertThat(initEnv.stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY.equals(var.getName())).findFirst().orElseThrow().getValue(), is(KafkaBridgeCluster.INIT_VOLUME_MOUNT));
+        assertThat(initEnv.stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_INIT_NODE_NAME.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getFieldRef().getFieldPath(), is("spec.nodeName"));
+
+        assertThat(container.getVolumeMounts(), hasSize(1));
+        final VolumeMount volumeMount = container.getVolumeMounts().get(0);
+        assertThat(volumeMount.getName(), is(KafkaBridgeCluster.INIT_VOLUME_NAME));
+        assertThat(volumeMount.getMountPath(), is(KafkaBridgeCluster.INIT_VOLUME_MOUNT));
+    }
+
+
+    @ParallelTest
+    public void testClusterRoleBindingRack() {
+        String testNamespace = "other-namespace";
+        String topologyKey = "topology-key";
+
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editOrNewMetadata()
+                .withNamespace(testNamespace)
+                .endMetadata()
+                .editOrNewSpec()
+                .withNewRack(topologyKey)
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster bridgeCluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        ClusterRoleBinding crb = bridgeCluster.generateClusterRoleBinding();
+
+        assertThat(crb.getMetadata().getName(), is(KafkaBridgeResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
+        assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
+        assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
+        assertThat(crb.getSubjects().get(0).getName(), is(bridgeCluster.getServiceAccountName()));
+    }
+
+    @ParallelTest
+    public void testNullClusterRoleBinding() {
+        String testNamespace = "other-namespace";
+
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editOrNewMetadata()
+                .withNamespace(testNamespace)
+                .endMetadata()
+                .build();
+
+        KafkaBridgeCluster cluster = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
+
+        assertThat(crb, is(nullValue()));
     }
 
     @ParallelTest

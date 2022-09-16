@@ -24,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "bridgeContainer", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "bridgeContainer", "serviceAccount", "initContainer"})
 @EqualsAndHashCode
 public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -34,6 +34,7 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
     private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate bridgeContainer;
+    private ContainerTemplate initContainer;
     private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -85,6 +86,16 @@ public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserv
 
     public void setBridgeContainer(ContainerTemplate bridgeContainer) {
         this.bridgeContainer = bridgeContainer;
+    }
+
+    @Description("Template for the Kafka Bridge init container")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ContainerTemplate getInitContainer() {
+        return initContainer;
+    }
+
+    public void setInitContainer(ContainerTemplate initContainer) {
+        this.initContainer = initContainer;
     }
 
     @Description("Template for the Kafka Bridge service account.")

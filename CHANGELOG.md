@@ -5,6 +5,7 @@
 * Update KafkaConnector CR status so the 'NotReady' condition is added if the connector or any tasks are reporting a 'FAILED' state.
 * Add auto-approval mechanism on KafkaRebalance resource when an optimization proposal is ready
 * The `ControlPlaneListener` feature gate moves to GA
+* Add client rack-awareness support to Strimzi Bridge pods
 
 ### Deprecations and removals
 
