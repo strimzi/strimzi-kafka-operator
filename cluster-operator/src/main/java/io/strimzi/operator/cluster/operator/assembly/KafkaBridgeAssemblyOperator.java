@@ -127,6 +127,21 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         return createOrUpdatePromise.future();
     }
 
+
+    /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation The Reconciliation identification
+     * @return Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return super.delete(reconciliation)
+                    .compose(i -> withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaBridgeResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
+                    .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
+
+
     @Override
     protected KafkaBridgeStatus createStatus() {
         return new KafkaBridgeStatus();

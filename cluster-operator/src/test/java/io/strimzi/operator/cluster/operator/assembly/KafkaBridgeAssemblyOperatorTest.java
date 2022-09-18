@@ -9,6 +9,9 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
@@ -16,6 +19,8 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -47,6 +52,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -57,7 +63,9 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.hamcrest.Matchers.hasSize;
@@ -68,6 +76,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -361,6 +370,35 @@ public class KafkaBridgeAssemblyOperatorTest {
                 verify(mockCmOps, never()).createOrUpdate(any(), any());
                 async.flag();
             })));
+    }
+
+
+    @Test
+    public void testDeleteClusterRoleBindings(VertxTestContext context) {
+        String bridgeName = "foo";
+        String bridgeNamespace = "test";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
+        when(mockCrbOps.reconcile(any(), eq(KafkaBridgeResources.initContainerClusterRoleBindingName(bridgeName, bridgeNamespace)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> mockCntrOps = supplier.kafkaBridgeOperator;
+        when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        KafkaBridgeAssemblyOperator op = new KafkaBridgeAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                                                                         new MockCertManager(), new PasswordGenerator(10, "a", "a"),
+                                                                         supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, bridgeNamespace, bridgeName);
+
+        Checkpoint async = context.checkpoint();
+
+        op.delete(reconciliation).onComplete(context.succeeding(c -> context.verify(() -> {
+            assertThat(desiredCrb.getValue(), is(nullValue()));
+            Mockito.verify(mockCrbOps, times(1)).reconcile(any(), any(), any());
+            async.flag();
+        })));
     }
 
     @Test
