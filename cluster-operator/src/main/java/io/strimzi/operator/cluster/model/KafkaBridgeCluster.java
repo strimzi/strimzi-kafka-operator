@@ -67,6 +67,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
 
+    protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
+
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -194,12 +196,12 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setKafkaAdminClientConfiguration(spec.getAdminClient());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
         kafkaBridgeCluster.setKafkaProducerConfiguration(spec.getProducer());
-        kafkaBridgeCluster.setRack(spec.getRack());
+        kafkaBridgeCluster.rack = spec.getRack();
         String initImage = spec.getClientRackInitImage();
         if (initImage == null) {
             initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
-        kafkaBridgeCluster.setInitImage(initImage);
+        kafkaBridgeCluster.initImage = initImage;
         if (kafkaBridge.getSpec().getLivenessProbe() != null) {
             kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getLivenessProbe());
         }
@@ -550,22 +552,10 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.bootstrapServers = bootstrapServers;
     }
 
-
-    protected void setRack(Rack rack) {
-        this.rack = rack;
-    }
-
-    protected void setInitImage(String initImage) {
-        this.initImage = initImage;
-    }
-
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
     }
 
-    public String getInitContainerClusterRoleBindingName() {
-        return KafkaBridgeResources.initContainerClusterRoleBindingName(cluster, namespace);
-    }
 
     /**
      * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
@@ -603,7 +593,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withKind("ClusterRole")
                 .build();
 
-        return getClusterRoleBinding(getInitContainerClusterRoleBindingName(), subject, roleRef);
+        return getClusterRoleBinding(KafkaBridgeResources.initContainerClusterRoleBindingName(getCluster(), namespace), subject, roleRef);
     }
 
     @Override
@@ -618,7 +608,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                    .withSecurityContext(securityProvider.kafkaBridgeInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
+                    .withSecurityContext(securityProvider.bridgeInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
                     .build();
 
             if (getResources() != null) {

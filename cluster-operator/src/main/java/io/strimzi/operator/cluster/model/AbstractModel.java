@@ -130,8 +130,6 @@ public abstract class AbstractModel {
     protected static final String INIT_VOLUME_NAME = "rack-volume";
     protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
     protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-
-    protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
 
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.json";

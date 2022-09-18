@@ -87,7 +87,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
         boolean bridgeHasZeroReplicas = bridge.getReplicas() == 0;
 
-        String initCrbName = bridge.getInitContainerClusterRoleBindingName();
+        String initCrbName = KafkaBridgeResources.initContainerClusterRoleBindingName(bridge.getCluster(), namespace);
         ClusterRoleBinding initCrb = bridge.generateClusterRoleBinding();
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Bridge cluster");
