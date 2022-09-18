@@ -341,7 +341,7 @@ spec:
                       description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0."
                   required:
                     - topologyKey
-                  description: Configuration of the node label which will be used as the `client.rack` consumer configuration.
+                  description: Configuration of the node label which will be used as the client.rack consumer configuration.
                 enableMetrics:
                   type: boolean
                   description: Enable the metrics for the Kafka Bridge. Default is false.
@@ -990,6 +990,22 @@ spec:
                                   type: string
                           description: Security context for the container.
                       description: Template for the Kafka Bridge container.
+                    serviceAccount:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            annotations:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                          description: Metadata applied to the resource.
+                      description: Template for the Kafka Bridge service account.
                     initContainer:
                       type: object
                       properties:
@@ -1063,23 +1079,7 @@ spec:
                                 runAsUserName:
                                   type: string
                           description: Security context for the container.
-                      description: Template for the Kafka init container.
-                    serviceAccount:
-                      type: object
-                      properties:
-                        metadata:
-                          type: object
-                          properties:
-                            labels:
-                              x-kubernetes-preserve-unknown-fields: true
-                              type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
-                            annotations:
-                              x-kubernetes-preserve-unknown-fields: true
-                              type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
-                          description: Metadata applied to the resource.
-                      description: Template for the Kafka Bridge service account.
+                      description: Template for the Kafka Bridge init container.
                   description: Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
                 tracing:
                   type: object
