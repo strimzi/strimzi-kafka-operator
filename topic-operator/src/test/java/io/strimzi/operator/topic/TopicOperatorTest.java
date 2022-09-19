@@ -182,9 +182,8 @@ public class TopicOperatorTest {
                                 "resource-namespace", "default-namespace",
                                 "reason", errorMessage),
                             is(0.0));
-            });
-            context.completeNow();
-
+                });
+                context.completeNow();
             }));
     }
 
@@ -489,9 +488,9 @@ public class TopicOperatorTest {
                                 "name", topicName.toString(),
                                 "resource-namespace", "default-namespace"),
                             is(1.0));
-            });
-            async.flag();
-        }));
+                });
+                async.flag();
+            }));
     }
 
     // TODO error getting full topic metadata, and then reconciliation
@@ -1168,7 +1167,7 @@ public class TopicOperatorTest {
             .compose(v -> {
                 context.verify(() -> {
                     assertCounterMatches("reconciliations", is(1.0));
-                    assertCounterMatches("resources.paused", is(0.0));
+                    assertGaugeMatches("resources.paused", Map.of("kind", "KafkaTopic"),  is(0.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
                     assertCounterValueIsZero("reconciliations.failed");
 
@@ -1179,14 +1178,13 @@ public class TopicOperatorTest {
                             "name", topicName.toString(),
                             "resource-namespace", "default-namespace"),
                             is(1.0));
-});
+                });
                 metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "true");
                 return resourceAdded(context, null, null);
             })
-            .compose(v -> topicOperator.reconcileAllTopics("periodic"))
-            .onComplete(context.succeeding(f -> context.verify(() -> {
+            .compose(v -> topicOperator.reconcileAllTopics("periodic")).onComplete(context.succeeding(f -> context.verify(() -> {
                 assertCounterMatches("reconciliations", is(2.0));
-                assertCounterMatches("resources.paused", is(1.0));
+                assertGaugeMatches("resources.paused", Map.of("kind", "KafkaTopic"), is(1.0));
                 assertCounterMatches("reconciliations.successful", is(2.0));
                 assertCounterValueIsZero("reconciliations.failed");
 
@@ -1194,8 +1192,8 @@ public class TopicOperatorTest {
 
                 assertGaugeMatches("resource.state",
                         Map.of("kind", "KafkaTopic",
-                            "name", topicName.toString(),
-                            "resource-namespace", "default-namespace"),
+                                "name", topicName.toString(),
+                                "resource-namespace", "default-namespace"),
                         is(1.0));
 
                 context.completeNow();
