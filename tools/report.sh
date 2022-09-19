@@ -114,7 +114,7 @@ if [[ $($KUBE_CLIENT get ns "$NAMESPACE" &>/dev/null) == "1" ]]; then
   error "Namespace $NAMESPACE not found! Exiting"
 fi
 
-if [[ -z $($KUBE_CLIENT get kafka "$CLUSTER" -o name -n "$NAMESPACE" --ignore-not-found) ]]; then
+if [[ -z $($KUBE_CLIENT get kafkas.kafka.strimzi.io "$CLUSTER" -o name -n "$NAMESPACE" --ignore-not-found) ]]; then
   error "Kafka cluster $CLUSTER in namespace $NAMESPACE not found! Exiting"
 fi
 
