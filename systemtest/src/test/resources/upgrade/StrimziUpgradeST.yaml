@@ -29,8 +29,8 @@
   urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.31.0/strimzi-0.31.0.zip
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.2.1
-    kafka: strimzi/kafka:latest-kafka-3.2.1
+    zookeeper: strimzi/kafka:latest-kafka-3.2.3
+    kafka: strimzi/kafka:latest-kafka-3.2.3
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
@@ -48,8 +48,8 @@
   urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.31.0/strimzi-0.31.0.zip
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:latest-kafka-3.2.1
-    kafka: strimzi/kafka:latest-kafka-3.2.1
+    zookeeper: strimzi/kafka:latest-kafka-3.2.3
+    kafka: strimzi/kafka:latest-kafka-3.2.3
     topicOperator: strimzi/operator:latest
     userOperator: strimzi/operator:latest
   client:
