@@ -170,22 +170,20 @@ public class TopicOperatorTest {
                 mockTopicStore.assertEmpty(context);
                 assertNotReadyStatus(context, new InvalidTopicException(null, throwable.getMessage()));
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterValueIsZero("reconciliations");
                     assertCounterValueIsZero("reconciliations.successful");
                     assertCounterValueIsZero("reconciliations.failed");
 
                     assertTimerMatches(0L, is(0.0));
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "KafkaTopic")
-                            .tag("name", "invalid")
-                            .tag("resource-namespace", "default-namespace")
-                            .tag("reason", errorMessage)
-                            .gauge().value(), is(0.0));
-                });
-                context.completeNow();
+                    assertGaugeMatches("resource.state",
+                            Map.of("kind", "KafkaTopic",
+                                "name", "invalid",
+                                "resource-namespace", "default-namespace",
+                                "reason", errorMessage),
+                            is(0.0));
+            });
+            context.completeNow();
 
             }));
     }
@@ -336,15 +334,11 @@ public class TopicOperatorTest {
             mockK8s.assertExists(context, resourceName);
             Topic t = TopicSerialization.fromTopicMetadata(topicMetadata);
             mockTopicStore.assertContains(context, t);
-            context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
-
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                        .tag("kind", "KafkaTopic")
-                        .tag("name", topicName.toString())
-                        .tag("resource-namespace", "default-namespace")
-                        .gauge().value(), is(1.0));
-            });
+            context.verify(() -> assertGaugeMatches("resource.state",
+                    Map.of("kind", "KafkaTopic",
+                            "name", topicName.toString(),
+                            "resource-namespace", "default-namespace"),
+                    is(1.0)));
             context.completeNow();
         }));
     }
@@ -391,19 +385,17 @@ public class TopicOperatorTest {
             mockK8s.assertExists(context, resourceName);
             mockTopicStore.assertContains(context, TopicSerialization.fromTopicMetadata(topicMetadata));
             context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
-
                 assertCounterMatches("reconciliations", is(1.0));
                 assertCounterMatches("reconciliations.successful", is(1.0));
                 assertCounterValueIsZero("reconciliations.failed");
 
                 assertTimerMatches(1L, greaterThan(0.0));
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                        .tag("kind", "KafkaTopic")
-                        .tag("name", topicName.toString())
-                        .tag("resource-namespace", "default-namespace")
-                        .gauge().value(), is(1.0));
+                assertGaugeMatches("resource.state",
+                        Map.of("kind", "KafkaTopic",
+                                "name", topicName.toString(),
+                                "resource-namespace", "default-namespace"),
+                        is(1.0));
             });
             context.completeNow();
         }));
@@ -436,8 +428,6 @@ public class TopicOperatorTest {
             mockK8s.assertNotExists(context, resourceName);
             mockTopicStore.assertNotExists(context, topicName);
             context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
-
                 assertCounterMatches("reconciliations", is(1.0));
                 assertCounterValueIsZero("reconciliations.successful");
                 assertCounterValueIsZero("reconciliations.failed");
@@ -488,22 +478,20 @@ public class TopicOperatorTest {
                 }));
 
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterMatches("reconciliations", is(1.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
                     assertCounterValueIsZero("reconciliations.failed");
 
                     assertTimerMatches(1L, greaterThan(0.0));
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "KafkaTopic")
-                            .tag("name", topicName.toString())
-                            .tag("resource-namespace", "default-namespace")
-                            .gauge().value(), is(1.0));
-                });
-                async.flag();
-            }));
+                    assertGaugeMatches("resource.state",
+                            Map.of("kind", "KafkaTopic",
+                                "name", topicName.toString(),
+                                "resource-namespace", "default-namespace"),
+                            is(1.0));
+            });
+            async.flag();
+        }));
     }
 
     // TODO error getting full topic metadata, and then reconciliation
@@ -605,8 +593,6 @@ public class TopicOperatorTest {
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult), is(kafkaTopic)));
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterMatches("reconciliations", is(1.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
                     assertCounterValueIsZero("reconciliations.failed");
@@ -692,8 +678,6 @@ public class TopicOperatorTest {
                 context.verify(() -> assertThat(readResult, is(kubeTopic)));
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterMatches("reconciliations", is(1.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
                     assertCounterValueIsZero("reconciliations.failed");
@@ -740,8 +724,6 @@ public class TopicOperatorTest {
                 context.verify(() -> assertThat(readResult.getResourceName(), is(kubeName)));
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(kafkaTopic)));
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterMatches("reconciliations", is(1.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
                     assertCounterValueIsZero("reconciliations.failed");
@@ -791,8 +773,6 @@ public class TopicOperatorTest {
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult), is(mergedTopic)));
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(mergedTopic)));
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterMatches("reconciliations", is(1.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
                     assertCounterValueIsZero("reconciliations.failed");
@@ -984,15 +964,11 @@ public class TopicOperatorTest {
                 context.verify(() -> assertThat(result, is(notNullValue())));
                 context.verify(() -> assertThat(TopicSerialization.fromTopicResource(result).getConfig().get("cleanup.policy"), is("baz")));
 
-                context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "KafkaTopic")
-                            .tag("name", topicName.toString())
-                            .tag("resource-namespace", "default-namespace")
-                            .gauge().value(), is(1.0));
-                });
+                context.verify(() -> assertGaugeMatches("resource.state",
+                    Map.of("kind", "KafkaTopic",
+                            "name", topicName.toString(),
+                            "resource-namespace", "default-namespace"),
+                    is(1.0)));
                 context.completeNow();
             }));
     }
@@ -1132,8 +1108,6 @@ public class TopicOperatorTest {
             context.verify(() -> assertThat(e.getMessage(), is("Error getting topic my-topic from topic store during periodic reconciliation")));
             context.verify(() -> assertThat(e.getCause(), is(error)));
             context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
-
                 assertCounterMatches("reconciliations", is(1.0));
                 assertCounterValueIsZero("reconciliations.successful");
                 assertCounterMatches("reconciliations.failed", is(1.0));
@@ -1166,19 +1140,19 @@ public class TopicOperatorTest {
         resourceAdded(context, null, null)
             .compose(v -> topicOperator.reconcileAllTopics("periodic"))
             .onComplete(context.succeeding(e -> context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
+
                 assertCounterMatches("reconciliations", is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
+                assertGaugeMatches("resources.paused", Map.of("kind", "KafkaTopic"), is(0.0));
                 assertCounterMatches("reconciliations.successful", is(1.0));
                 assertCounterValueIsZero("reconciliations.failed");
 
                 assertTimerMatches(1L, greaterThan(0.0));
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                        .tag("kind", "KafkaTopic")
-                                .tag("name", topicName.toString())
-                                .tag("resource-namespace", "default-namespace")
-                        .gauge().value(), is(1.0));
+                assertGaugeMatches("resource.state",
+                        Map.of("kind", "KafkaTopic",
+                            "name", topicName.toString(),
+                            "resource-namespace", "default-namespace"),
+                        is(1.0));
 
                 context.completeNow();
             })));
@@ -1193,8 +1167,6 @@ public class TopicOperatorTest {
             .compose(v -> topicOperator.reconcileAllTopics("periodic"))
             .compose(v -> {
                 context.verify(() -> {
-                    MeterRegistry registry = metrics.meterRegistry();
-
                     assertCounterMatches("reconciliations", is(1.0));
                     assertCounterMatches("resources.paused", is(0.0));
                     assertCounterMatches("reconciliations.successful", is(1.0));
@@ -1202,19 +1174,17 @@ public class TopicOperatorTest {
 
                     assertTimerMatches(1L, greaterThan(0.0));
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "KafkaTopic")
-                            .tag("name", topicName.toString())
-                            .tag("resource-namespace", "default-namespace")
-                            .gauge().value(), is(1.0));
-                });
+                    assertGaugeMatches("resource.state",
+                            Map.of("kind", "KafkaTopic",
+                            "name", topicName.toString(),
+                            "resource-namespace", "default-namespace"),
+                            is(1.0));
+});
                 metadata.getAnnotations().put("strimzi.io/pause-reconciliation", "true");
                 return resourceAdded(context, null, null);
             })
             .compose(v -> topicOperator.reconcileAllTopics("periodic"))
             .onComplete(context.succeeding(f -> context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
-
                 assertCounterMatches("reconciliations", is(2.0));
                 assertCounterMatches("resources.paused", is(1.0));
                 assertCounterMatches("reconciliations.successful", is(2.0));
@@ -1222,11 +1192,11 @@ public class TopicOperatorTest {
 
                 assertTimerMatches(2L, greaterThan(0.0));
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                        .tag("kind", "KafkaTopic")
-                        .tag("name", topicName.toString())
-                        .tag("resource-namespace", "default-namespace")
-                        .gauge().value(), is(1.0));
+                assertGaugeMatches("resource.state",
+                        Map.of("kind", "KafkaTopic",
+                            "name", topicName.toString(),
+                            "resource-namespace", "default-namespace"),
+                        is(1.0));
 
                 context.completeNow();
             })));
@@ -1239,7 +1209,6 @@ public class TopicOperatorTest {
         resourceRemoved(context,  null, null)
             .compose(v -> topicOperator.reconcileAllTopics("periodic"))
             .onComplete(context.succeeding(v -> {
-                MeterRegistry registry = metrics.meterRegistry();
                 // The reconciliation metrics are only incremented for topics that are in the reconcileState at the end of reconciliation.
                 // Since the topic has been deleted we expect the metric to show reconciliations as 0.
                 assertCounterValueIsZero("reconciliations");
@@ -1282,6 +1251,13 @@ public class TopicOperatorTest {
         MeterRegistry registry = metrics.meterRegistry();
         assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(expectedCount));
         assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), durationMatcher);
+    }
+
+    private void assertGaugeMatches(String counterName, Map<String, String> tags, Matcher<Double> matcher) {
+        MeterRegistry registry = metrics.meterRegistry();
+        final RequiredSearch requiredSearch = registry.get(TopicOperator.METRICS_PREFIX + counterName);
+        tags.forEach(requiredSearch::tag);
+        assertThat(requiredSearch.gauge().value(), matcher);
     }
 
     // TODO tests for nasty races (e.g. create on both ends, update on one end and delete on the other)
