@@ -3,9 +3,10 @@
 
 ## 0.31.1
 
-* Kafka 3.1.2 and 3.2.3
+* Kafka 3.1.2 and 3.2.3 (fixes CVE-2022-34917)
+* Make `sasl.server.max.receive.size` broker option user configurable
 * Documentation improvements
-* Configuring number of operator replicas in Helm Chart
+* Configuring number of operator replicas through the Strimzi Helm Chart
 * Update Strimzi Kafka Bridge to 0.22.1
 
 ## 0.31.0
