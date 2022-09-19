@@ -1,6 +1,13 @@
 
 # CHANGELOG
 
+## 0.31.1
+
+* Kafka 3.1.2 and 3.2.3
+* Documentation improvements
+* Configuring number of operator replicas in Helm Chart
+* Update Strimzi Kafka Bridge to 0.22.1
+
 ## 0.31.0
 
 * Add support for Kafka 3.2.1
