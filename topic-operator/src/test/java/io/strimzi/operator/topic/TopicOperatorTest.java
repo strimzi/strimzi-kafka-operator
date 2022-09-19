@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.search.RequiredSearch;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
@@ -30,6 +31,7 @@ import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -170,9 +172,9 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterValueIsZero("reconciliations");
+                    assertCounterValueIsZero("reconciliations.successful");
+                    assertCounterValueIsZero("reconciliations.failed");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
@@ -392,9 +394,9 @@ public class TopicOperatorTest {
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertCounterMatches("reconciliations", is(1.0));
+                assertCounterMatches("reconciliations.successful", is(1.0));
+                assertCounterValueIsZero("reconciliations.failed");
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -438,9 +440,9 @@ public class TopicOperatorTest {
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertCounterMatches("reconciliations", is(1.0));
+                assertCounterValueIsZero("reconciliations.successful");
+                assertCounterValueIsZero("reconciliations.failed");
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
@@ -491,9 +493,9 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterMatches("reconciliations", is(1.0));
+                    assertCounterMatches("reconciliations.successful", is(1.0));
+                    assertCounterValueIsZero("reconciliations.failed");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -609,10 +611,10 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterMatches("reconciliations", is(1.0));
+                    assertCounterMatches("reconciliations.successful", is(1.0));
+                    assertCounterValueIsZero("reconciliations.failed");
+                    assertCounterValueIsZero("reconciliations.locked");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -697,9 +699,9 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterMatches("reconciliations", is(1.0));
+                    assertCounterMatches("reconciliations.successful", is(1.0));
+                    assertCounterValueIsZero("reconciliations.failed");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -746,9 +748,9 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterMatches("reconciliations", is(1.0));
+                    assertCounterMatches("reconciliations.successful", is(1.0));
+                    assertCounterValueIsZero("reconciliations.failed");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -798,9 +800,9 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterMatches("reconciliations", is(1.0));
+                    assertCounterMatches("reconciliations.successful", is(1.0));
+                    assertCounterValueIsZero("reconciliations.failed");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -1140,9 +1142,9 @@ public class TopicOperatorTest {
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertCounterMatches("reconciliations", is(1.0));
+                assertCounterValueIsZero("reconciliations.successful");
+                assertCounterMatches("reconciliations.failed", is(1.0));
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -1174,19 +1176,18 @@ public class TopicOperatorTest {
             .compose(v -> topicOperator.reconcileAllTopics("periodic"))
             .onComplete(context.succeeding(e -> context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
-
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                assertCounterMatches("reconciliations", is(1.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertCounterMatches("reconciliations.successful", is(1.0));
+                assertCounterValueIsZero("reconciliations.failed");
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
                         .tag("kind", "KafkaTopic")
-                        .tag("name", topicName.toString())
-                        .tag("resource-namespace", "default-namespace")
+                                .tag("name", topicName.toString())
+                                .tag("resource-namespace", "default-namespace")
                         .gauge().value(), is(1.0));
 
                 context.completeNow();
@@ -1204,10 +1205,10 @@ public class TopicOperatorTest {
                 context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(0.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                    assertCounterMatches("reconciliations", is(1.0));
+                    assertCounterMatches("resources.paused", is(0.0));
+                    assertCounterMatches("reconciliations.successful", is(1.0));
+                    assertCounterValueIsZero("reconciliations.failed");
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -1225,10 +1226,10 @@ public class TopicOperatorTest {
             .onComplete(context.succeeding(f -> context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(2.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resources.paused").tag("kind", "KafkaTopic").gauge().value(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(2.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertCounterMatches("reconciliations", is(2.0));
+                assertCounterMatches("resources.paused", is(1.0));
+                assertCounterMatches("reconciliations.successful", is(2.0));
+                assertCounterValueIsZero("reconciliations.failed");
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(2L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
@@ -1253,9 +1254,9 @@ public class TopicOperatorTest {
                 MeterRegistry registry = metrics.meterRegistry();
                 // The reconciliation metrics are only incremented for topics that are in the reconcileState at the end of reconciliation.
                 // Since the topic has been deleted we expect the metric to show reconciliations as 0.
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+                assertCounterValueIsZero("reconciliations");
+                assertCounterValueIsZero("reconciliations.successful");
+                assertCounterValueIsZero("reconciliations.failed");
 
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(0L));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
@@ -1277,6 +1278,17 @@ public class TopicOperatorTest {
         });
 
         return metrics;
+    }
+
+    private void assertCounterValueIsZero(String counterName) {
+        final Matcher<Double> valueMatcher = is(0.0);
+        assertCounterMatches(counterName, valueMatcher);
+    }
+
+    private void assertCounterMatches(String counterName, Matcher<Double> valueMatcher) {
+        MeterRegistry registry = metrics.meterRegistry();
+        final RequiredSearch requiredSearch = registry.get(TopicOperator.METRICS_PREFIX + counterName).tag("kind", "KafkaTopic");
+        assertThat(requiredSearch.counter().count(), valueMatcher);
     }
 
     // TODO tests for nasty races (e.g. create on both ends, update on one end and delete on the other)
