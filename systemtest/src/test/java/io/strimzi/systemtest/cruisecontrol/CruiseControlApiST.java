@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
