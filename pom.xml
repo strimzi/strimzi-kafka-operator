@@ -169,7 +169,7 @@
     <repositories>
         <repository>
             <id>staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1161</url>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1187</url>
         </repository>
     </repositories>
 
