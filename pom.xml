@@ -168,8 +168,8 @@
 
     <repositories>
         <repository>
-            <id>oauth-pre</id>
-            <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+            <id>staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1161</url>
         </repository>
     </repositories>
 
