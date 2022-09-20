@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.cruisecontrol;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.common.Annotations;
