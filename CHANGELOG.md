@@ -14,6 +14,14 @@
   You have to upgrade first to one of the Strimzi versions between 0.22 and 0.32 before upgrading to Strimzi 0.32 or newer.
   Please follow the docs for more details.  
 
+## 0.31.1
+
+* Kafka 3.1.2 and 3.2.3 (fixes CVE-2022-34917)
+* Make `sasl.server.max.receive.size` broker option user configurable
+* Documentation improvements
+* Configuring number of operator replicas through the Strimzi Helm Chart
+* Update Strimzi Kafka Bridge to 0.22.1
+
 ## 0.31.0
 
 * Add support for Kafka 3.2.1
