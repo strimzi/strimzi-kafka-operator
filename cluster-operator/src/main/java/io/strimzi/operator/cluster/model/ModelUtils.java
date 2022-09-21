@@ -27,8 +27,6 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.SystemProperty;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
@@ -309,23 +307,6 @@ public class ModelUtils {
                 model.templateDeploymentStrategy = io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
             }
         }
-    }
-
-    /**
-     * Returns whether the given {@code Storage} instance is a persistent claim one or
-     * a JBOD containing at least one persistent volume.
-     *
-     * @param storage the Storage instance to check
-     * @return Whether the give Storage contains any persistent storage.
-     */
-    public static boolean containsPersistentStorage(Storage storage) {
-        boolean isPersistentClaimStorage = storage instanceof PersistentClaimStorage;
-
-        if (!isPersistentClaimStorage && storage instanceof JbodStorage) {
-            isPersistentClaimStorage |= ((JbodStorage) storage).getVolumes()
-                    .stream().anyMatch(volume -> volume instanceof PersistentClaimStorage);
-        }
-        return isPersistentClaimStorage;
     }
 
     public static Storage decodeStorageFromJson(String json) {
