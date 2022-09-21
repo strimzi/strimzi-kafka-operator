@@ -13,10 +13,10 @@ You might want to do this, for example, after:
 * A whole Kubernetes cluster is lost, but the PVs remain in the infrastructure
 
 //namespace deletion explained
-include::modules/con-namespace-deletion-recovery.adoc[leveloffset=+1]
+include::../../modules/managing/con-namespace-deletion-recovery.adoc[leveloffset=+1]
 
 //cluster loss explained
-include::modules/con-cluster-loss-recovery.adoc[leveloffset=+1]
+include::../../modules/managing/con-cluster-loss-recovery.adoc[leveloffset=+1]
 
 //General procedure to recover a cluster from a PV
-include::modules/proc-cluster-recovery-volume.adoc[leveloffset=+1]
+include::../../modules/managing/proc-cluster-recovery-volume.adoc[leveloffset=+1]

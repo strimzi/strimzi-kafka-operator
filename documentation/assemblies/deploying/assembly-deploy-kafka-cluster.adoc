@@ -24,8 +24,8 @@ However, you can use the Topic Operator and User Operator with a Kafka cluster t
 You can also deploy and use other Kafka components with a Kafka cluster not managed by Strimzi. 
 
 //Deploy Kafka cluster with storage option
-include::modules/proc-deploy-kafka-cluster.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-kafka-cluster.adoc[leveloffset=+1]
 //Include Topic Operator in deployment
-include::modules/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-topic-operator-with-cluster-operator.adoc[leveloffset=+1]
 //Include User Operator in deployment
-include::modules/proc-deploy-user-operator-with-cluster-operator.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-user-operator-with-cluster-operator.adoc[leveloffset=+1]

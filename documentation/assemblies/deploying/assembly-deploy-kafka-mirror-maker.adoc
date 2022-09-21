@@ -11,4 +11,4 @@ This process is called mirroring to avoid confusion with the Kafka partitions re
 MirrorMaker consumes messages from the source cluster and republishes those messages to the target cluster.
 
 //Procedure to deploy a MirrorMaker cluster
-include::modules/proc-deploy-kafka-mirror-maker.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-kafka-mirror-maker.adoc[leveloffset=+1]

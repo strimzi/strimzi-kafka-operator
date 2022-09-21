@@ -17,16 +17,16 @@ Follow the steps in the order provided to install Strimzi, and start sending and
 * Access the Kafka cluster to send and receive messages
 
 //prerequisites
-include::modules/ref-install-prerequisites.adoc[leveloffset=+1]
+include::../../modules/quickstart/ref-install-prerequisites.adoc[leveloffset=+1]
 
 //download the files
-include::modules/proc-downloading-product.adoc[leveloffset=+1]
+include::../../modules/quickstart/proc-downloading-product.adoc[leveloffset=+1]
 
 //install the product
-include::modules/proc-installing-product.adoc[leveloffset=+1]
+include::../../modules/quickstart/proc-installing-product.adoc[leveloffset=+1]
 
 //create kafka cluster
-include::modules/proc-creating-kafka-cluster.adoc[leveloffset=+1]
+include::../../modules/quickstart/proc-creating-kafka-cluster.adoc[leveloffset=+1]
 
 //send and receive messages from a topic
-include::modules/proc-sending-messages.adoc[leveloffset=+1]
+include::../../modules/quickstart/proc-sending-messages.adoc[leveloffset=+1]

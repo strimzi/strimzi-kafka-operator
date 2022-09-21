@@ -7,5 +7,5 @@
 
 Use the `Kafka` resource to configure the mechanisms used for Kafka authentication and authorization.
 
-include::modules/con-securing-kafka-authentication.adoc[leveloffset=+1]
-include::modules/con-securing-kafka-authorization.adoc[leveloffset=+1]
+include::../../modules/security/con-securing-kafka-authentication.adoc[leveloffset=+1]
+include::../../modules/security/con-securing-kafka-authorization.adoc[leveloffset=+1]

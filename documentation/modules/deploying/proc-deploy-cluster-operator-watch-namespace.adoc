@@ -18,7 +18,7 @@ This procedure shows how to deploy the Cluster Operator to watch Strimzi resourc
 +
 For example, in this procedure the Cluster Operator is installed into the namespace `my-cluster-operator-namespace`.
 +
-include::snip-cluster-operator-namespace-sed.adoc[]
+include::../../shared/snip-cluster-operator-namespace-sed.adoc[]
 
 . Deploy the Cluster Operator:
 +

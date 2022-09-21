@@ -15,12 +15,12 @@ Prometheus and Prometheus Alertmanager are used in the examples provided by Stri
 . xref:assembly-metrics-prometheus-{context}[Setting up Prometheus]
 . xref:proc-metrics-deploying-prometheus-alertmanager-{context}[Deploying Prometheus Alertmanager]
 
-include::modules/proc-metrics-kafka-deploy-options.adoc[leveloffset=+1]
+include::../../modules/metrics/proc-metrics-kafka-deploy-options.adoc[leveloffset=+1]
 
 include::assembly_metrics-prometheus-deploy.adoc[leveloffset=+1]
 
-include::modules/proc_metrics-deploying-prometheus-alertmanager.adoc[leveloffset=+1]
+include::../../modules/metrics/proc_metrics-deploying-prometheus-alertmanager.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
-include::modules/con_metrics-kafka-mini-kube.adoc[leveloffset=+1]
+include::../../modules/metrics/con_metrics-kafka-mini-kube.adoc[leveloffset=+1]
 endif::InstallationAppendix[]

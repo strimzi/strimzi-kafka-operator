@@ -11,6 +11,6 @@ For help in understanding cluster behavior, you can check restart events from th
 
 TIP: You can export and monitor restart events using metrics collection tools like Prometheus. Use the metrics tool with an _event exporter_ that can export the output in a suitable format. 
 
-include::modules/ref-operator-restart-events-reasons.adoc[leveloffset=+1]
-include::modules/ref-operator-restart-events-fields.adoc[leveloffset=+1]
-include::modules/proc-operator-restart-events.adoc[leveloffset=+1]
+include::../../modules/deploying/ref-operator-restart-events-reasons.adoc[leveloffset=+1]
+include::../../modules/deploying/ref-operator-restart-events-fields.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-operator-restart-events.adoc[leveloffset=+1]

@@ -30,7 +30,7 @@ Any changes will be *overwritten* by the new version of the Cluster Operator.
 
 .. Modify the installation files for the new Cluster Operator version according to the namespace the Cluster Operator is running in.
 +
-include::snip-cluster-operator-namespace-sed.adoc[]
+include::../../shared/snip-cluster-operator-namespace-sed.adoc[]
 +
 .. If you modified one or more environment variables in your existing Cluster Operator `Deployment`, edit the
 `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to use those environment variables.

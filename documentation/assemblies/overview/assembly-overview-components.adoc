@@ -13,16 +13,16 @@ include::../../shared/snip-intro-operators.adoc[leveloffset=+1]
 
 //description of Operators
 [discrete]
-include::modules/con-overview-components-operators.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-operators.adoc[leveloffset=+1]
 
 //description of Cluster Operator
-include::modules/con-overview-components-cluster-operator.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-cluster-operator.adoc[leveloffset=+1]
 
 //description of Topic Operator
-include::modules/con-overview-components-topic-operator.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-topic-operator.adoc[leveloffset=+1]
 
 //description of User Operator
-include::modules/con-overview-components-user-operator.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-user-operator.adoc[leveloffset=+1]
 
 //description of feature gates
-include::modules/con-feature-gates-overview.adoc[leveloffset=+1]
+include::../../modules/overview/con-feature-gates-overview.adoc[leveloffset=+1]

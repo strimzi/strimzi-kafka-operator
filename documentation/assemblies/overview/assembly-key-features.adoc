@@ -17,7 +17,7 @@ A distribution of Strimzi provides the files to deploy and manage a Kafka cluste
 A typical Kafka deployment is described, as well as the tools used to deploy and manage Kafka.
 
 //description of Kafka features and concepts
-include::modules/con-key-features-kafka.adoc[leveloffset=+1]
+include::../../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
 
 //description of product features
-include::modules/con-key-features-product.adoc[leveloffset=+1]
+include::../../modules/overview/con-key-features-product.adoc[leveloffset=+1]

@@ -22,13 +22,13 @@ This chapter introduces some of the key concepts behind Kafka, and also provides
 include::../shared/snip-intro-operators.adoc[leveloffset=+1]
 
 //description of Kafka features
-include::overview/modules/con-key-features-kafka.adoc[leveloffset=+1]
+include::../../modules/overview/con-key-features-kafka.adoc[leveloffset=+1]
 
 //description of product features
-include::overview/modules/con-key-features-product.adoc[leveloffset=+1]
+include::../../modules/overview/con-key-features-product.adoc[leveloffset=+1]
 
 //description of operators
-include::overview/modules/con-overview-components-operators.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-operators.adoc[leveloffset=+1]
 
 //formatting conventions used in guide
 include::../shared/ref-document-conventions.adoc[leveloffset=+1]

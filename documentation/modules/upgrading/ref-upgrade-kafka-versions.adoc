@@ -11,7 +11,7 @@ To ensure the correct versions are used, the upgrade process involves making con
 The following table shows the differences between Kafka versions:
 
 .Kafka version differences
-include::snip-kafka-versions.adoc[leveloffset=+1]
+include::../snip-kafka-versions.adoc[leveloffset=+1]
 
 .Inter-broker protocol version
 

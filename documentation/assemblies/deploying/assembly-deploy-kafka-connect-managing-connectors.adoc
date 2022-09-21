@@ -19,12 +19,12 @@ Source connector:: A source connector is a runtime entity that fetches data from
 Sink connector:: A sink connector is a runtime entity that fetches messages from Kafka topics and feeds them to an external system.
 
 //overview of connector APIs
-include::modules/con-deploy-kafka-connect-config-connector-api.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-kafka-connect-config-connector-api.adoc[leveloffset=+1]
 //Procedure to deploy a KafkaConnector resource
-include::modules/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector
-include::modules/proc-manual-restart-connector.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-manual-restart-connector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector task
-include::modules/proc-manual-restart-connector-task.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-manual-restart-connector-task.adoc[leveloffset=+1]
 //Tips to expose the Kafka Connect API
-include::modules/con-exposing-kafka-connect-api.adoc[leveloffset=+1]
+include::../../modules/deploying/con-exposing-kafka-connect-api.adoc[leveloffset=+1]

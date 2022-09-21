@@ -15,6 +15,6 @@ For example, you might be using a Kafka as a managed service.
 You adjust the deployment configuration for the standalone operator to match the address of your Kafka cluster.
 
 //Procedure for standalone deployment of Topic Operator
-include::modules/proc-deploy-topic-operator-standalone.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-topic-operator-standalone.adoc[leveloffset=+1]
 //Procedure for standalone deployment of User Operator
-include::modules/proc-deploy-user-operator-standalone.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-user-operator-standalone.adoc[leveloffset=+1]

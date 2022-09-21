@@ -26,8 +26,8 @@ The following tools help with Kafka tuning:
 * xref:type-Rack-reference[Rack configuration] spreads broker partitions across racks and allows consumers to fetch data from the nearest replica
 
 //Tips to optimize the performance of brokers, and producer and consumer clients
-include::modules/con-managed-broker-config-properties.adoc[leveloffset=+1]
-include::modules/con-broker-config-properties.adoc[leveloffset=+1]
-include::modules/con-producer-config-properties.adoc[leveloffset=+1]
-include::modules/con-consumer-config-properties.adoc[leveloffset=+1]
+include::../../modules/managing/con-managed-broker-config-properties.adoc[leveloffset=+1]
+include::../../modules/managing/con-broker-config-properties.adoc[leveloffset=+1]
+include::../../modules/managing/con-producer-config-properties.adoc[leveloffset=+1]
+include::../../modules/managing/con-consumer-config-properties.adoc[leveloffset=+1]
 include::../../modules/configuring/con-config-high-volume-messages.adoc[leveloffset=+1]

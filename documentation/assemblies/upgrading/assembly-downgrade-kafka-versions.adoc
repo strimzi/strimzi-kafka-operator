@@ -8,6 +8,6 @@
 Kafka version downgrades are performed by the Cluster Operator.
 
 //Version constraints on the downgrade
-include::modules/con-downgrade-target-version.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-downgrade-target-version.adoc[leveloffset=+1]
 //procedure to downgrade Kafka
-include::modules/proc-downgrade-brokers-older-kafka.adoc[leveloffset=+1]
+include::../../modules/upgrading/proc-downgrade-brokers-older-kafka.adoc[leveloffset=+1]

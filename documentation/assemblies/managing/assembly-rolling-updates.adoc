@@ -24,6 +24,6 @@ See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
 * link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
 
 //steps for manual rolling updates with statefulset
-include::modules/proc-manual-rolling-update-statefulset.adoc[leveloffset=+1]
+include::../../modules/managing/proc-manual-rolling-update-statefulset.adoc[leveloffset=+1]
 //steps for manual rolling update with pods
-include::modules/proc-manual-rolling-update-pods.adoc[leveloffset=+1]
+include::../../modules/managing/proc-manual-rolling-update-pods.adoc[leveloffset=+1]

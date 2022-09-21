@@ -18,4 +18,4 @@ If you do not have access to the {DockerRepository} or want to use your own cont
 NOTE: Each Kafka version supported for the release has a separate image.
 
 //dev-generated content, do not modify
-include::snip-images.adoc[]
+include::../snip-images.adoc[]

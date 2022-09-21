@@ -25,6 +25,6 @@ For information on deploying the example file connectors as `KafkaConnector` res
 NOTE: Up until Apache Kafka 3.1.0, the Strimzi container images for Kafka Connect included the example file connectors. From Apache Kafka 3.1.1 and 3.2.0, these connectors are no longer included and must be deployed like any connector. 
 
 //Procedure to create a container images using Strimzi and Kafka Connect build
-include::modules/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]
 //Procedure to create a container images from base image
-include::modules/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]

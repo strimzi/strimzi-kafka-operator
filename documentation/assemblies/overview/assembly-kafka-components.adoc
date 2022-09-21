@@ -8,4 +8,4 @@
 //standard kafka deployment intro
 include::../../shared/snip-intro-kafka-deployment.adoc[leveloffset=+1]
 //Overview of Kafka component interaction
-include::modules/con-kafka-concepts-components.adoc[leveloffset=+1]
+include::../../modules/overview/con-kafka-concepts-components.adoc[leveloffset=+1]

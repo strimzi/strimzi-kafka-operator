@@ -8,4 +8,4 @@
 //Standard kafka deployment introduction
 include::../../shared/snip-intro-kafka-deployment.adoc[leveloffset=+1]
 //General deploy order
-include::modules/con-deploy-options-order.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-options-order.adoc[leveloffset=+1]

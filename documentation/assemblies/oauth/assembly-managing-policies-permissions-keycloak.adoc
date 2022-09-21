@@ -13,11 +13,11 @@ Kafka permissions are granted to user accounts or service accounts using Keycloa
 
 xref:ref-example-permissions-for-kafka-operations_{context}[Examples] are shown of the different user permissions required for common Kafka operations, such as creating and listing topics.
 
-include::modules/con-kafka-keycloak-authz-models.adoc[leveloffset=+1]
+include::../../modules/oauth/con-kafka-keycloak-authz-models.adoc[leveloffset=+1]
 
-include::modules/con-mapping-keycloak-authz-services-to-kafka-model.adoc[leveloffset=+1]
+include::../../modules/oauth/con-mapping-keycloak-authz-services-to-kafka-model.adoc[leveloffset=+1]
 
-include::modules/ref-example-permissions-for-kafka-operations.adoc[leveloffset=+1]
+include::../../modules/oauth/ref-example-permissions-for-kafka-operations.adoc[leveloffset=+1]
 
 ifdef::parent-context[:context: {parent-context}]
 ifndef::parent-context[:!context:]

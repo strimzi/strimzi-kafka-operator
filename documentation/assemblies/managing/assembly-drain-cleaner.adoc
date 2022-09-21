@@ -67,6 +67,6 @@ To deploy and use the Strimzi Drain Cleaner, you need to download the deployment
 The Strimzi Drain Cleaner deployment files are available from the link:{ReleaseDownload}.
 
 //steps for deploying drain cleaner
-include::modules/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
+include::../../modules/managing/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
 //steps for using drain cleaner
-include::modules/proc-drain-cleaner-using.adoc[leveloffset=+1]
+include::../../modules/managing/proc-drain-cleaner-using.adoc[leveloffset=+1]

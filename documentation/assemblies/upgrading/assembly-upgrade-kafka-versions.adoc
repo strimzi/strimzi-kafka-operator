@@ -39,11 +39,11 @@ As part of the Kafka upgrade, the Cluster Operator initiates rolling updates for
 * A single rolling update occurs even if the ZooKeeper version is unchanged.
 * Additional rolling updates occur if the new version of Kafka requires a new ZooKeeper version.
 
-include::modules/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
+include::../../modules/upgrading/ref-upgrade-kafka-versions.adoc[leveloffset=+1]
 
 //strategies for upgrading clients - concept
-include::modules/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-strategies-for-upgrading-clients.adoc[leveloffset=+1]
 
-include::modules/con-upgrade-versions-and-images.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-versions-and-images.adoc[leveloffset=+1]
 
-include::modules/proc-upgrade-brokers-newer-kafka.adoc[leveloffset=+1]
+include::../../modules/upgrading/proc-upgrade-brokers-newer-kafka.adoc[leveloffset=+1]

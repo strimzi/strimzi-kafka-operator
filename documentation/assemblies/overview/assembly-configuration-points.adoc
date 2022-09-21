@@ -13,19 +13,19 @@ In this section we look at how Kafka components are configured through custom re
 Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files^], which can serve as a starting point when building your own Kafka component configuration for deployment.
 
 //Intro to custom resources
-include::modules/con-configuration-points-resources.adoc[leveloffset=+1]
+include::../../modules/overview/con-configuration-points-resources.adoc[leveloffset=+1]
 
 //Common component configuration points
-include::modules/con-configuration-points-common.adoc[leveloffset=+1]
+include::../../modules/overview/con-configuration-points-common.adoc[leveloffset=+1]
 
 //Kafka/broker configuration points
-include::modules/con-configuration-points-broker.adoc[leveloffset=+1]
+include::../../modules/overview/con-configuration-points-broker.adoc[leveloffset=+1]
 
 //MirrorMaker configuration points
-include::modules/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
+include::../../modules/overview/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
 
 //Kafka Connect configuration points
-include::modules/con-configuration-points-connect.adoc[leveloffset=+1]
+include::../../modules/overview/con-configuration-points-connect.adoc[leveloffset=+1]
 
 //Kafka Bridge configuration points
-include::modules/con-configuration-points-bridge.adoc[leveloffset=+1]
+include::../../modules/overview/con-configuration-points-bridge.adoc[leveloffset=+1]

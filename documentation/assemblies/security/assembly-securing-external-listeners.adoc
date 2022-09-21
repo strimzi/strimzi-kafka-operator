@@ -21,7 +21,7 @@ If you want to know more about the pros and cons of each connection type, refer 
 
 NOTE: `route` is only supported on OpenShift
 
-include::modules/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
-include::modules/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
-include::modules/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
-include::modules/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
+include::../../modules/security/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
+include::../../modules/security/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
+include::../../modules/security/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
+include::../../modules/security/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]

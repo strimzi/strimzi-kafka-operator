@@ -36,4 +36,4 @@ For more information on the metrics and monitoring tools, refer to the supportin
 * {JaegerHome}
 * link:https://github.com/linkedin/cruise-control/wiki[Cruise Control Wiki^]
 
-include::modules/con-metrics-overview-tools.adoc[leveloffset=+1]
+include::../../modules/overview/con-metrics-overview-tools.adoc[leveloffset=+1]
