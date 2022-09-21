@@ -461,49 +461,51 @@ public class TopicOperatorTest {
         Topic privateTopic = kubeTopic;
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
-        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+        Future<Void> kafkaTopicFuture = mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kafkaTopic), null);
         //mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
-        mockTopicStore.setCreateTopicResponse(topicName, null)
+        Future<Void> topicStoreFuture = mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic);
         mockTopicStore.setUpdateTopicResponse(topicName, null);
 
-        mockK8s.setCreateResponse(resourceName, null)
-                .createResource(resource);
+        Future<Void> topicResourceFuture = mockK8s.setCreateResponse(resourceName, null)
+                .createResource(resource).mapEmpty();
         mockK8s.setModifyResponse(resourceName, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         Checkpoint async = context.checkpoint(3);
-        topicOperator.onTopicConfigChanged(logContext, topicName).onComplete(context.succeeding(v -> {
-            context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
-            mockTopicStore.read(topicName).onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(result.getConfig().get("cleanup.policy"), is("baz")));
+        CompositeFuture.all(kafkaTopicFuture, topicStoreFuture, topicResourceFuture)
+            .compose(v -> topicOperator.onTopicConfigChanged(logContext, topicName))
+            .onComplete(context.succeeding(v -> {
+                context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
+                mockTopicStore.read(topicName).onComplete(context.succeeding(result -> {
+                    context.verify(() -> assertThat(result.getConfig().get("cleanup.policy"), is("baz")));
+                    async.flag();
+                }));
+                mockK8s.getFromName(resourceName).onComplete(context.succeeding(result -> {
+                    context.verify(() -> assertThat(TopicSerialization.fromTopicResource(result).getConfig().get("cleanup.policy"), is("baz")));
+                    async.flag();
+                }));
+
+                context.verify(() -> {
+                    MeterRegistry registry = metrics.meterRegistry();
+
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
+
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
+                            .tag("kind", "KafkaTopic")
+                            .tag("name", topicName.toString())
+                            .tag("resource-namespace", "default-namespace")
+                            .gauge().value(), is(1.0));
+                });
                 async.flag();
             }));
-            mockK8s.getFromName(resourceName).onComplete(context.succeeding(result -> {
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(result).getConfig().get("cleanup.policy"), is("baz")));
-                async.flag();
-            }));
-
-            context.verify(() -> {
-                MeterRegistry registry = metrics.meterRegistry();
-
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(1.0));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
-
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
-
-                assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                        .tag("kind", "KafkaTopic")
-                        .tag("name", topicName.toString())
-                        .tag("resource-namespace", "default-namespace")
-                        .gauge().value(), is(1.0));
-            });
-            async.flag();
-        }));
     }
 
     // TODO error getting full topic metadata, and then reconciliation
@@ -552,26 +554,23 @@ public class TopicOperatorTest {
         Topic kafkaTopic = null;
         Topic privateTopic = kubeTopic;
 
-        Checkpoint topicCreatedInK8sAndStored = context.checkpoint(2);
-        //Must create all checkpoints used before flagging any to prevent premature test success
-        Checkpoint completeTest = context.checkpoint();
-
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.DELETED, topicResource);
-        mockK8s.setCreateResponse(resourceName, null)
-                .createResource(topicResource).onComplete(ar -> topicCreatedInK8sAndStored.flag());
+        Future<Void> topicResourceFuture = mockK8s.setCreateResponse(resourceName, null)
+                .createResource(topicResource).mapEmpty();
         mockK8s.setDeleteResponse(resourceName, null);
-        mockTopicStore.setCreateTopicResponse(topicName, null)
-                .create(privateTopic).onComplete(ar -> topicCreatedInK8sAndStored.flag());
+        Future<Void> kafkaTopicFuture = mockTopicStore.setCreateTopicResponse(topicName, null)
+                .create(privateTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic)
+        CompositeFuture.all(topicResourceFuture, kafkaTopicFuture)
+            .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic))
             .onComplete(context.succeeding(v -> {
                 mockKafka.assertNotExists(context, kubeTopic.getTopicName());
                 mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
                 mockK8s.assertNotExists(context, kubeTopic.getResourceName());
                 mockK8s.assertNoEvents(context);
-                completeTest.flag();
+                context.completeNow();
             }));
     }
 
@@ -957,22 +956,21 @@ public class TopicOperatorTest {
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
 
-        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+        Future<Void> kafkaTopicFuture = mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kafkaTopic), null);
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
 
-        mockTopicStore.setCreateTopicResponse(topicName, null)
+        Future<Void> topicStoreFuture = mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic);
         mockTopicStore.setUpdateTopicResponse(topicName, null);
 
         mockK8s.setCreateResponse(resourceName, null);
-        mockK8s.createResource(resource).onComplete(ar -> {
-            assertSucceeded(context, ar);
-        });
+        Future<Void> topicResourceFuture = mockK8s.createResource(resource).mapEmpty();
         mockK8s.setModifyResponse(resourceName, null);
 
-        topicOperator.onResourceEvent(logContext, resource, MODIFIED)
+        CompositeFuture.all(kafkaTopicFuture, topicStoreFuture, topicResourceFuture)
+            .compose(v -> topicOperator.onResourceEvent(logContext, resource, MODIFIED))
             .compose(v -> {
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
                 return mockTopicStore.read(topicName);
@@ -1039,36 +1037,38 @@ public class TopicOperatorTest {
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 
-        mockK8s.setCreateResponse(resourceName, null)
-                .createResource(TopicSerialization.toTopicResource(kubeTopic, labels));
+        Future<Void> topicResourceFuture = mockK8s.setCreateResponse(resourceName, null)
+                .createResource(TopicSerialization.toTopicResource(kubeTopic, labels)).mapEmpty();
         mockK8s.setDeleteResponse(resourceName, k8sException);
 
-        mockTopicStore.setCreateTopicResponse(topicName, null)
+        Future<Void> topicStoreFuture = mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
         mockKafka.setTopicExistsResult(t -> Future.succeededFuture(topicExists));
 
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        return topicOperator.onTopicDeleted(logContext, topicName).onComplete(ar -> {
-            if (k8sException != null
-                    || storeException != null
-                    || topicExists) {
-                assertFailed(context, ar);
-                if (topicExists) {
-                    mockK8s.assertExists(context, resourceName);
-                } else if (k8sException == null) {
-                    mockK8s.assertNotExists(context, resourceName);
+        return CompositeFuture.all(topicResourceFuture, topicStoreFuture)
+            .compose(v -> topicOperator.onTopicDeleted(logContext, topicName))
+            .onComplete(ar -> {
+                if (k8sException != null
+                        || storeException != null
+                        || topicExists) {
+                    assertFailed(context, ar);
+                    if (topicExists) {
+                        mockK8s.assertExists(context, resourceName);
+                    } else if (k8sException == null) {
+                        mockK8s.assertNotExists(context, resourceName);
+                    } else {
+                        mockK8s.assertExists(context, resourceName);
+                    }
+                    mockTopicStore.assertExists(context, topicName);
                 } else {
-                    mockK8s.assertExists(context, resourceName);
+                    assertSucceeded(context, ar);
+                    mockK8s.assertNotExists(context, resourceName);
+                    mockTopicStore.assertNotExists(context, topicName);
                 }
-                mockTopicStore.assertExists(context, topicName);
-            } else {
-                assertSucceeded(context, ar);
-                mockK8s.assertNotExists(context, resourceName);
-                mockTopicStore.assertNotExists(context, topicName);
-            }
-        });
+            });
     }
 
     @Test
