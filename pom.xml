@@ -95,7 +95,7 @@
 
         <!-- Build tools -->
         <checkstyle.version>9.2.1</checkstyle.version>
-        <spotbugs.version>4.5.3</spotbugs.version>
+        <spotbugs.version>4.7.2</spotbugs.version>
         <sundrio.version>0.91.1</sundrio.version>
         <lombok.version>1.18.4</lombok.version>
 
