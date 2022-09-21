@@ -311,23 +311,6 @@ public class ModelUtils {
         }
     }
 
-    /**
-     * Returns whether the given {@code Storage} instance is a persistent claim one or
-     * a JBOD containing at least one persistent volume.
-     *
-     * @param storage the Storage instance to check
-     * @return Whether the give Storage contains any persistent storage.
-     */
-    public static boolean containsPersistentStorage(Storage storage) {
-        boolean isPersistentClaimStorage = storage instanceof PersistentClaimStorage;
-
-        if (!isPersistentClaimStorage && storage instanceof JbodStorage) {
-            isPersistentClaimStorage |= ((JbodStorage) storage).getVolumes()
-                    .stream().anyMatch(volume -> volume instanceof PersistentClaimStorage);
-        }
-        return isPersistentClaimStorage;
-    }
-
     public static Storage decodeStorageFromJson(String json) {
         try {
             return new ObjectMapper().readValue(json, Storage.class);

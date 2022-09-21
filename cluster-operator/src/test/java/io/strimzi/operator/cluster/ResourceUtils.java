@@ -203,28 +203,6 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static List<Secret> createKafkaInitialSecrets(String namespace, String name) {
-        List<Secret> secrets = new ArrayList<>();
-        secrets.add(createInitialCaCertSecret(namespace, name,
-                AbstractModel.clusterCaCertSecretName(name), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"));
-        secrets.add(createInitialCaKeySecret(namespace, name,
-                AbstractModel.clusterCaKeySecretName(name), MockCertManager.clusterCaKey()));
-        return secrets;
-    }
-
-    public static ClusterCa createInitialClusterCa(Reconciliation reconciliation, String clusterName, Secret initialClusterCaCert, Secret initialClusterCaKey) {
-        return new ClusterCa(reconciliation, new MockCertManager(), new PasswordGenerator(10, "a", "a"), clusterName, initialClusterCaCert, initialClusterCaKey);
-    }
-
-    public static ClientsCa createInitialClientsCa(Reconciliation reconciliation, String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
-        return new ClientsCa(reconciliation, new MockCertManager(),
-                new PasswordGenerator(10, "a", "a"),
-                KafkaResources.clientsCaCertificateSecretName(clusterName),
-                initialClientsCaCert,
-                KafkaResources.clientsCaKeySecretName(clusterName),
-                initialClientsCaKey, 365, 30, true, null);
-    }
-
     public static Secret createInitialCaCertSecret(String clusterNamespace, String clusterName, String secretName,
                                                    String caCert, String caStore, String caStorePassword) {
         return new SecretBuilder()
@@ -250,83 +228,6 @@ public class ResourceUtils {
                 .endMetadata()
                 .addToData("ca.key", caKey)
                 .build();
-    }
-
-    public static List<Secret> createKafkaSecretsWithReplicas(String namespace, String name, int kafkaReplicas, int zkReplicas) {
-        List<Secret> secrets = new ArrayList<>();
-
-        secrets.add(createInitialCaKeySecret(namespace, name,
-                AbstractModel.clusterCaKeySecretName(name), MockCertManager.clusterCaKey()));
-        secrets.add(createInitialCaCertSecret(namespace, name,
-                AbstractModel.clusterCaCertSecretName(name), MockCertManager.clusterCaCert(), MockCertManager.clusterCaCertStore(), "123456"));
-
-        secrets.add(
-                new SecretBuilder()
-                        .withNewMetadata()
-                        .withName(KafkaResources.clientsCaKeySecretName(name))
-                        .withNamespace(namespace)
-                        .withLabels(Labels.forStrimziCluster(name).toMap())
-                        .endMetadata()
-                        .addToData("clients-ca.key", MockCertManager.clientsCaKey())
-                        .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
-                        .build()
-        );
-
-        secrets.add(
-                new SecretBuilder()
-                        .withNewMetadata()
-                        .withName(KafkaResources.clientsCaCertificateSecretName(name))
-                        .withNamespace(namespace)
-                        .withLabels(Labels.forStrimziCluster(name).toMap())
-                        .endMetadata()
-                        .addToData("clients-ca.crt", MockCertManager.clientsCaCert())
-                        .build()
-        );
-
-        SecretBuilder builder =
-                new SecretBuilder()
-                        .withNewMetadata()
-                        .withName(KafkaResources.kafkaSecretName(name))
-                        .withNamespace(namespace)
-                        .withLabels(Labels.forStrimziCluster(name).toMap())
-                        .endMetadata()
-                        .addToData("cluster-ca.crt", MockCertManager.clusterCaCert());
-
-        for (int i = 0; i < kafkaReplicas; i++) {
-            builder.addToData(KafkaResources.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-internal-base64key".getBytes()))
-                    .addToData(KafkaResources.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-internal-base64crt".getBytes()));
-        }
-        secrets.add(builder.build());
-
-        builder = new SecretBuilder()
-                        .withNewMetadata()
-                            .withName(KafkaCluster.clusterCaCertSecretName(name))
-                            .withNamespace(namespace)
-                            .withLabels(Labels.forStrimziCluster(name).toMap())
-                        .endMetadata()
-                        .addToData("ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
-
-        for (int i = 0; i < kafkaReplicas; i++) {
-            builder.addToData(KafkaResources.kafkaPodName(name, i) + ".key", Base64.getEncoder().encodeToString("brokers-clients-base64key".getBytes()))
-                    .addToData(KafkaResources.kafkaPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("brokers-clients-base64crt".getBytes()));
-        }
-        secrets.add(builder.build());
-
-        builder = new SecretBuilder()
-                        .withNewMetadata()
-                            .withName(KafkaResources.zookeeperSecretName(name))
-                            .withNamespace(namespace)
-                            .withLabels(Labels.forStrimziCluster(name).toMap())
-                        .endMetadata()
-                        .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
-
-        for (int i = 0; i < zkReplicas; i++) {
-            builder.addToData(KafkaResources.zookeeperPodName(name, i) + ".key", Base64.getEncoder().encodeToString("nodes-base64key".getBytes()))
-                    .addToData(KafkaResources.zookeeperPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("nodes-base64crt".getBytes()));
-        }
-        secrets.add(builder.build());
-
-        return secrets;
     }
 
     public static Kafka createKafka(String namespace, String name, int replicas,
