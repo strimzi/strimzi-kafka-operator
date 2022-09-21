@@ -289,11 +289,31 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
+    private GenericKafkaListener newIngressTCP = new GenericKafkaListenerBuilder()
+            .withName("ingTCP")
+            .withPort(9907)
+            .withType(KafkaListenerType.INGRESS_TCP)
+            .withTls(false)
+            .withNewConfiguration()
+            .withNewBootstrap()
+            .withHost("my-host")
+            .endBootstrap()
+            .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                            .withBroker(0)
+                            .withHost("my-host-1")
+                            .build(),
+                    new GenericKafkaListenerConfigurationBrokerBuilder()
+                            .withBroker(1)
+                            .withHost("my-host-2")
+                            .build())
+            .endConfiguration()
+            .build();
+
     List<GenericKafkaListener> oldListeners = asList(oldPlain, oldTls, oldExternal);
-    List<GenericKafkaListener> simpleListeners = asList(oldPlain, oldTls, oldExternal, newNodePort, newLoadBalancer, newIngress);
+    List<GenericKafkaListener> simpleListeners = asList(oldPlain, oldTls, oldExternal, newNodePort, newLoadBalancer, newIngress, newIngressTCP);
     List<GenericKafkaListener> internalListeners = asList(oldPlain, oldTls, newPlain, newTls);
     List<GenericKafkaListener> allListeners = asList(oldPlain, oldTls, oldExternal, newPlain, newTls, newRoute,
-            newNodePort, newNodePort2, newNodePort3, newLoadBalancer, newLoadBalancer2, newIngress, newIngress2);
+            newNodePort, newNodePort2, newNodePort3, newLoadBalancer, newLoadBalancer2, newIngress, newIngress2, newIngressTCP);
 
     @ParallelTest
     public void testInternalListeners()    {
@@ -304,9 +324,9 @@ public class ListenersUtilsTest {
 
     @ParallelTest
     public void testExternalListeners()    {
-        assertThat(ListenersUtils.externalListeners(allListeners), hasSize(9));
+        assertThat(ListenersUtils.externalListeners(allListeners), hasSize(10));
         assertThat(ListenersUtils.externalListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
-                containsInAnyOrder("external", "route", "np1", "np2", "np3", "lb1", "lb2", "ing1", "ing2"));
+                containsInAnyOrder("external", "route", "np1", "np2", "np3", "lb1", "lb2", "ing1", "ing2", "ingTCP"));
         assertThat(ListenersUtils.hasExternalListener(allListeners), is(true));
 
         assertThat(ListenersUtils.externalListeners(internalListeners), hasSize(0));
@@ -344,6 +364,17 @@ public class ListenersUtilsTest {
 
         assertThat(ListenersUtils.ingressListeners(internalListeners), hasSize(0));
         assertThat(ListenersUtils.hasIngressListener(internalListeners), is(false));
+    }
+
+    @ParallelTest
+    public void testIngressTCPListeners()    {
+        assertThat(ListenersUtils.ingressTCPListeners(allListeners), hasSize(1));
+        assertThat(ListenersUtils.ingressTCPListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
+                containsInAnyOrder("ingTCP"));
+        assertThat(ListenersUtils.hasIngressTCPListener(allListeners), is(true));
+
+        assertThat(ListenersUtils.ingressTCPListeners(internalListeners), hasSize(0));
+        assertThat(ListenersUtils.hasIngressTCPListener(internalListeners), is(false));
     }
 
     @ParallelTest
@@ -515,6 +546,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.bootstrapHost(oldExternal), is(nullValue()));
         assertThat(ListenersUtils.bootstrapHost(newRoute), is("my-route-host"));
         assertThat(ListenersUtils.bootstrapHost(newIngress), is("my-host"));
+        assertThat(ListenersUtils.bootstrapHost(newIngressTCP), is("my-host"));
         assertThat(ListenersUtils.bootstrapHost(newIngress2), is("my-ing-host"));
         assertThat(ListenersUtils.bootstrapHost(oldPlain), is(nullValue()));
         assertThat(ListenersUtils.bootstrapHost(newTls), is(nullValue()));
@@ -532,6 +564,9 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.brokerHost(newIngress, 0), is("my-host-1"));
         assertThat(ListenersUtils.brokerHost(newIngress, 1), is("my-host-2"));
         assertThat(ListenersUtils.brokerHost(newIngress, 2), is(nullValue()));
+        assertThat(ListenersUtils.brokerHost(newIngressTCP, 0), is("my-host-1"));
+        assertThat(ListenersUtils.brokerHost(newIngressTCP, 1), is("my-host-2"));
+        assertThat(ListenersUtils.brokerHost(newIngressTCP, 2), is(nullValue()));
         assertThat(ListenersUtils.brokerHost(oldPlain, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerHost(newTls, 1), is(nullValue()));
         assertThat(ListenersUtils.brokerHost(newNodePort, 1), is(nullValue()));
@@ -645,6 +680,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.ingressClass(newLoadBalancer), is(nullValue()));
         assertThat(ListenersUtils.ingressClass(oldExternal), is(nullValue()));
         assertThat(ListenersUtils.ingressClass(newIngress), is(nullValue()));
+        assertThat(ListenersUtils.ingressClass(newIngressTCP), is(nullValue()));
         assertThat(ListenersUtils.ingressClass(newIngress2), is("my-ingress"));
         assertThat(ListenersUtils.ingressClass(oldPlain), is(nullValue()));
         assertThat(ListenersUtils.ingressClass(newTls), is(nullValue()));
@@ -659,6 +695,7 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.serviceType(oldExternal), is("ClusterIP"));
         assertThat(ListenersUtils.serviceType(newLoadBalancer), is("LoadBalancer"));
         assertThat(ListenersUtils.serviceType(newIngress), is("ClusterIP"));
+        assertThat(ListenersUtils.serviceType(newIngressTCP), is("ClusterIP"));
         assertThat(ListenersUtils.serviceType(newNodePort), is("NodePort"));
         assertThat(ListenersUtils.serviceType(newRoute), is("ClusterIP"));
     }

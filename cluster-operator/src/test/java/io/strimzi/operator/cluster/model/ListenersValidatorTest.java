@@ -261,16 +261,16 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not Route, Ingress or IngressTCP based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener",
+                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not Route, Ingress or IngressTCP based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
-                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
+                "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener",
+                "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener",
                 "listener " + name + " cannot configure ipFamilyPolicy because it is internal listener",
                 "listener " + name + " cannot configure ipFamilies because it is internal listener"
         );
@@ -329,8 +329,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
+                "listener " + name + " cannot configure bootstrap.host because it is not Route, Ingress or IngressTCP based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not Route, Ingress or IngressTCP based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -408,9 +408,9 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not Route, Ingress or IngressTCP based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not Route, Ingress or IngressTCP based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener"
         );
 
@@ -656,6 +656,170 @@ public class ListenersValidatorTest {
                         new GenericKafkaListenerConfigurationBrokerBuilder()
                                 .withBroker(1)
                                 .withHost("host-1")
+                                .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)), hasSize(0));
+    }
+
+    @ParallelTest
+    public void testIngressTCPListenerWithoutTls() {
+        String name = "ingresstcp";
+
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.INGRESS_TCP)
+                .withTls(false)
+                .withNewConfiguration()
+                .withNewBootstrap()
+                .withHost("my-host")
+                .endBootstrap()
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(0)
+                                .withAdvertisedHost("my-host")
+                                .withAdvertisedPort(12345)
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .withAdvertisedHost("my-host")
+                                .withAdvertisedPort(12346)
+                                .build())
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, listeners), hasSize(0));
+    }
+
+    @ParallelTest
+    public void testIngressTCPListener() {
+        String name = "ingresstcp";
+
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName(name)
+                .withPort(9092)
+                .withType(KafkaListenerType.INGRESS_TCP)
+                .withTls(true)
+                .withNewConfiguration()
+                .withIngressClass("my-ingress")
+                .withUseServiceDnsDomain(true)
+                .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
+                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
+                .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
+                .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
+                .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
+                .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
+                .withNewBootstrap()
+                .withAlternativeNames(asList("my-name-1", "my-name-2"))
+                .withLoadBalancerIP("130.211.204.1")
+                .withNodePort(32189)
+                .withHost("my-host")
+                .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                .endBootstrap()
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(0)
+                                .withAdvertisedHost("advertised-host")
+                                .withAdvertisedPort(9092)
+                                .withLoadBalancerIP("130.211.204.1")
+                                .withNodePort(32189)
+                                .withHost("my-host")
+                                .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .withAdvertisedHost("advertised-host")
+                                .withAdvertisedPort(9092)
+                                .withLoadBalancerIP("130.211.204.1")
+                                .withNodePort(32189)
+                                .withHost("my-host")
+                                .withAnnotations(Collections.singletonMap("dns-anno", "dns-value"))
+                                .build())
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = asList(listener1);
+
+        List<String> expectedErrors = asList(
+                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
+                "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
+                "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
+                "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
+                "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
+                "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
+                "listener " + name + " cannot configure ingressClass because it is not Ingress based listener"
+        );
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, listeners), containsInAnyOrder(expectedErrors.toArray()));
+    }
+
+    @ParallelTest
+    public void testIngressTCPListenerHostNames() {
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("ingresstcp")
+                .withPort(9092)
+                .withType(KafkaListenerType.INGRESS_TCP)
+                .withTls(true)
+                .build();
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)),
+                containsInAnyOrder("listener " + listener.getName() + " is missing a configuration with advertised host names which is required for IngressTCP based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)),
+                containsInAnyOrder("listener " + listener.getName() + " is missing a broker configuration with advertised host names which is required for IngressTCP based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
+                        .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(0)
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)), hasSize(4));
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)),
+                containsInAnyOrder("listener " + listener.getName() + " is missing a broker advertised host name for broker with ID 0 which is required for IngressTCP based listeners",
+                        "listener " + listener.getName() + " is missing a broker advertised port for broker with ID 0 which is required for IngressTCP based listeners",
+                        "listener " + listener.getName() + " is missing a broker advertised host name for broker with ID 1 which is required for IngressTCP based listeners",
+                        "listener " + listener.getName() + " is missing a broker advertised port for broker with ID 1 which is required for IngressTCP based listeners"
+                ));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                        .withBroker(1)
+                        .withAdvertisedHost("ingress-host-name")
+                        .withAdvertisedPort(99191)
+                        .build())
+                .build());
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)), hasSize(2));
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)),
+                containsInAnyOrder("listener " + listener.getName() + " is missing a broker advertised host name for broker with ID 0 which is required for IngressTCP based listeners",
+                        "listener " + listener.getName() + " is missing a broker advertised port for broker with ID 0 which is required for IngressTCP based listeners"));
+
+        listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(0)
+                                .withAdvertisedHost("ingress-host-name")
+                                .withAdvertisedPort(99190)
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .withAdvertisedHost("ingress-host-name")
+                                .withAdvertisedPort(99191)
                                 .build())
                 .build());
 

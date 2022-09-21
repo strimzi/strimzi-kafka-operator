@@ -1873,6 +1873,15 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
+     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using IngressTCP
+     *
+     * @return true when the Kafka cluster is exposed using Kubernetes Ingress with TCP mode.
+     */
+    public boolean isExposedWithIngressTCP() {
+        return ListenersUtils.hasIngressTCPListener(listeners);
+    }
+
+    /**
      * Returns the advertised URL for given broker.
      * It will take into account the overrides specified by the user.
      *

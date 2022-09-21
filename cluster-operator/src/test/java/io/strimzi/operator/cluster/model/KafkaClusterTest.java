@@ -3142,6 +3142,100 @@ public class KafkaClusterTest {
         assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS));
     }
 
+
+    @ParallelTest
+    public void testExternalIngressTCP() {
+        GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withAdvertisedHost("my-ingress.com")
+                .withAdvertisedPort(9990)
+                .withLabels(Collections.singletonMap("label", "label-value"))
+                .withBroker(0)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker broker1 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withAdvertisedHost("my-ingress.com")
+                .withAdvertisedPort(9991)
+                .withLabels(Collections.singletonMap("label", "label-value"))
+                .withBroker(1)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker broker2 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withAdvertisedHost("my-ingress.com")
+                .withAdvertisedPort(9992)
+                .withLabels(Collections.singletonMap("label", "label-value"))
+                .withBroker(2)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.INGRESS_TCP)
+                        .withTls(true)
+                        .withNewConfiguration()
+                        .withNewBootstrap()
+                        .withLabels(Collections.singletonMap("label", "label-value"))
+                        .endBootstrap()
+                        .withBrokers(broker0, broker1, broker2)
+                        .endConfiguration()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        assertThat(kc.isExposedWithIngressTCP(), is(true));
+
+        // Check port
+        List<ContainerPort> ports = kc.getContainerPortList();
+        assertThat(ports.contains(kc.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, "TCP")), is(true));
+
+        // Check external bootstrap service
+        Service ext = kc.generateExternalBootstrapServices().get(0);
+        assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
+        assertThat(ext.getSpec().getType(), is("ClusterIP"));
+        assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
+        assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
+        checkOwnerReference(kc.createOwnerReference(), ext);
+
+        // Check per pod services
+        for (int i = 0; i < REPLICAS; i++)  {
+            Service srv = kc.generateExternalServices(i).get(0);
+            assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
+            assertThat(srv.getSpec().getType(), is("ClusterIP"));
+            assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
+            assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
+            checkOwnerReference(kc.createOwnerReference(), srv);
+        }
+
+    }
+    @ParallelTest
+    public void testExternalIngressTCPMissingConfiguration() {
+        GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withBroker(0)
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.INGRESS_TCP)
+                        .withTls(false)
+                        .withNewConfiguration()
+                        .withBrokers(broker0)
+                        .endConfiguration()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS));
+    }
     @ParallelTest
     public void testClusterRoleBindingNodePort() {
         String testNamespace = "other-namespace";

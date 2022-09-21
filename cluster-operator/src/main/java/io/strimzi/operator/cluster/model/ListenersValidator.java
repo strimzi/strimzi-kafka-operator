@@ -108,6 +108,9 @@ public class ListenersValidator {
             if (KafkaListenerType.INGRESS.equals(listener.getType()))    {
                 validateIngress(errors, replicas, listener);
             }
+            if (KafkaListenerType.INGRESS_TCP.equals(listener.getType()))    {
+                validateIngressTCP(errors, replicas, listener);
+            }
         }
 
         return errors;
@@ -183,6 +186,39 @@ public class ListenersValidator {
 
         } else {
             errors.add("listener " + listener.getName() + " is missing a configuration with host names which is required for Ingress based listeners");
+        }
+    }
+
+    /**
+     * Validates that IngressTCP type listener has the right host configurations
+     *
+     * @param errors    List where any found errors will be added
+     * @param replicas  Number of Kafka replicas
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateIngressTCP(Set<String> errors, int replicas, GenericKafkaListener listener) {
+        if (listener.getConfiguration() != null)    {
+            GenericKafkaListenerConfiguration conf = listener.getConfiguration();
+
+            if (conf.getBrokers() != null) {
+                for (int i = 0; i < replicas; i++)  {
+                    final int id = i;
+                    GenericKafkaListenerConfigurationBroker broker = conf.getBrokers().stream().filter(b -> b.getBroker() == id).findFirst().orElse(null);
+
+                    if (broker == null || broker.getAdvertisedHost() == null) {
+                        errors.add("listener " + listener.getName() + " is missing a broker advertised host name for broker with ID " + i + " which is required for IngressTCP based listeners");
+                    }
+                    if (broker == null || broker.getAdvertisedPort() == null) {
+                        errors.add("listener " + listener.getName() + " is missing a broker advertised port for broker with ID " + i + " which is required for IngressTCP based listeners");
+                    }
+                }
+            } else {
+                errors.add("listener " + listener.getName() + " is missing a broker configuration with advertised host names which is required for IngressTCP based listeners");
+            }
+
+
+        } else {
+            errors.add("listener " + listener.getName() + " is missing a configuration with advertised host names which is required for IngressTCP based listeners");
         }
     }
 
@@ -313,9 +349,10 @@ public class ListenersValidator {
      * @param listener  Listener which needs to be validated
      */
     private static void validateBootstrapHost(Set<String> errors, GenericKafkaListener listener) {
-        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
+        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType())
+                && !KafkaListenerType.INGRESS_TCP.equals(listener.getType()))
                 && listener.getConfiguration().getBootstrap().getHost() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not Route ot Ingress based listener");
+            errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not Route, Ingress or IngressTCP based listener");
         }
     }
 
@@ -357,15 +394,16 @@ public class ListenersValidator {
         if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && !KafkaListenerType.NODEPORT.equals(listener.getType())
                 && !KafkaListenerType.ROUTE.equals(listener.getType())
-                && !KafkaListenerType.INGRESS.equals(listener.getType())) {
+                && !KafkaListenerType.INGRESS.equals(listener.getType())
+                && !KafkaListenerType.INGRESS_TCP.equals(listener.getType())) {
             if (listener.getConfiguration().getBootstrap().getLabels() != null
                     && !listener.getConfiguration().getBootstrap().getLabels().isEmpty()) {
-                errors.add("listener " + listener.getName() + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener");
             }
 
             if (listener.getConfiguration().getBootstrap().getAnnotations() != null
                     && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty()) {
-                errors.add("listener " + listener.getName() + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener");
             }
         }
     }
@@ -378,9 +416,9 @@ public class ListenersValidator {
      * @param broker    Broker configuration which needs to be validated
      */
     private static void validateBrokerHost(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
-        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
-                && broker.getHost() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not Route ot Ingress based listener");
+        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType())
+                && !KafkaListenerType.INGRESS_TCP.equals(listener.getType())) && broker.getHost() != null)    {
+            errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not Route, Ingress or IngressTCP based listener");
         }
     }
 
@@ -425,15 +463,16 @@ public class ListenersValidator {
         if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && !KafkaListenerType.NODEPORT.equals(listener.getType())
                 && !KafkaListenerType.ROUTE.equals(listener.getType())
-                && !KafkaListenerType.INGRESS.equals(listener.getType()))  {
+                && !KafkaListenerType.INGRESS.equals(listener.getType())
+                && !KafkaListenerType.INGRESS_TCP.equals(listener.getType()))  {
             if (broker.getLabels() != null
                     && !broker.getLabels().isEmpty()) {
-                errors.add("listener " + listener.getName() + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+                errors.add("listener " + listener.getName() + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener");
             }
 
             if (broker.getAnnotations() != null
                     && !broker.getAnnotations().isEmpty()) {
-                errors.add("listener " + listener.getName() + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener");
+                errors.add("listener " + listener.getName() + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, Ingress or IngressTCP based listener");
             }
         }
     }
