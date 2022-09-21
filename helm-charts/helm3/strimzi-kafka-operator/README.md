@@ -94,11 +94,12 @@ the documentation for more details.
 
 | Parameter                            | Description                               | Default                                              |
 | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
+| `replicas`                           | Number of replicas of the cluster operator | 1                                                   |
 | `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []             |
 | `watchAnyNamespace`                  | Watch the whole Kubernetes cluster (all namespaces) | `false`                                    |
 | `defaultImageRegistry`               | Default image registry for all the images | `quay.io`                                            |
 | `defaultImageRepository`             | Default image registry for all the images | `strimzi`                                            |
-| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.31.0`                              |
+| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.31.1`                              |
 | `image.registry`                     | Override default Cluster Operator image registry  | `nil`                                        |
 | `image.repository`                   | Override default Cluster Operator image repository  | `nil`                                      |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
@@ -151,7 +152,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
 | `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
-| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.22.0`                            |
+| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.22.1`                            |
 | `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
 | `kanikoExecutor.image.repository`    | Override default Kaniko Executor image repository          | `nil`                               |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |

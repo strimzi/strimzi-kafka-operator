@@ -1,5 +1,8 @@
 # Default values for strimzi-kafka-operator.
 
+# Default replicas for the cluster operator
+replicas: 1
+
 # If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
 # the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
 watchNamespaces: []
@@ -7,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.31.0
+defaultImageTag: 0.31.1
 
 image:
   registry: ""
@@ -91,7 +94,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.22.0
+    tag: 0.22.1
 kafkaExporter:
   image:
     registry: ""
