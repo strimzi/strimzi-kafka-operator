@@ -227,6 +227,10 @@
             <version>${sundrio.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-coordination</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

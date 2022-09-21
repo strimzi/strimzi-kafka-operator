@@ -82,6 +82,7 @@ public class SetupClusterOperator {
     private List<EnvVar> extraEnvVars;
     private Map<String, String> extraLabels;
     private ClusterOperatorRBACType clusterOperatorRBACType;
+    private int replicas = 1;
 
     private String testClassName;
     private String testMethodName;
@@ -113,6 +114,7 @@ public class SetupClusterOperator {
         this.extraEnvVars = builder.extraEnvVars;
         this.extraLabels = builder.extraLabels;
         this.clusterOperatorRBACType = builder.clusterOperatorRBACType;
+        this.replicas = builder.replicas;
 
         // assign defaults is something is not specified
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) {
@@ -240,7 +242,7 @@ public class SetupClusterOperator {
         LOGGER.info("Install ClusterOperator via Helm");
         helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
         createCONamespaceIfNeeded();
-        helmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars);
+        helmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars, replicas);
     }
 
     private void bundleInstallation() {
@@ -254,6 +256,7 @@ public class SetupClusterOperator {
         ResourceManager.setCoDeploymentName(clusterOperatorName);
         ResourceManager.getInstance().createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
+                .withReplicas(replicas)
                 .withName(clusterOperatorName)
                 .withNamespace(namespaceInstallTo)
                 .withWatchingNamespaces(namespaceToWatch)
@@ -342,6 +345,7 @@ public class SetupClusterOperator {
         private List<EnvVar> extraEnvVars;
         private Map<String, String> extraLabels;
         private ClusterOperatorRBACType clusterOperatorRBACType;
+        private int replicas = 1;
 
         public SetupClusterOperatorBuilder withExtensionContext(ExtensionContext extensionContext) {
             this.extensionContext = extensionContext;
@@ -409,6 +413,11 @@ public class SetupClusterOperator {
         // currently supported only for Bundle installation
         public SetupClusterOperatorBuilder withClusterOperatorRBACType(ClusterOperatorRBACType clusterOperatorRBACType) {
             this.clusterOperatorRBACType = clusterOperatorRBACType;
+            return self();
+        }
+
+        public SetupClusterOperatorBuilder withReplicas(int replicas) {
+            this.replicas = replicas;
             return self();
         }
 

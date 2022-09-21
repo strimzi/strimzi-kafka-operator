@@ -151,7 +151,11 @@ public class KubeClient {
     // =========================
 
     public PodResource editPod(String podName) {
-        return client.pods().inNamespace(getNamespace()).withName(podName);
+        return editPod(getNamespace(), podName);
+    }
+
+    public PodResource editPod(String namespaceName, String podName) {
+        return client.pods().inNamespace(namespaceName).withName(podName);
     }
 
     public String execInPod(String podName, String container, String... command) {

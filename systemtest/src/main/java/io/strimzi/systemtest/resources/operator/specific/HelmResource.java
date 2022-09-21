@@ -48,13 +48,13 @@ public class HelmResource implements SpecificResourceType {
     }
 
     public void create(ExtensionContext extensionContext) {
-        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, null);
+        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, null, 1);
     }
 
-    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars) {
+    public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars, int replicas) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
-        this.clusterOperator(operationTimeout, reconciliationInterval, extraEnvVars);
+        this.clusterOperator(operationTimeout, reconciliationInterval, extraEnvVars, replicas);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class HelmResource implements SpecificResourceType {
         this.deleteClusterOperator();
     }
 
-    private void clusterOperator(long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars) {
+    private void clusterOperator(long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars, int replicas) {
 
         Map<String, Object> values = new HashMap<>();
         // image registry config
@@ -89,6 +89,8 @@ public class HelmResource implements SpecificResourceType {
         // As FG is CSV, we need to escape commas for interpretation of helm installation string
         values.put("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,"));
         values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
+        values.put("replicas", replicas);
+
         if (!this.namespaceToWatch.equals("*") && !this.namespaceToWatch.equals(this.namespaceInstallTo)) {
             values.put("watchNamespaces", buildWatchNamespaces());
         }
@@ -98,7 +100,7 @@ public class HelmResource implements SpecificResourceType {
             int envVarIndex = 0;
             for (EnvVar envVar: extraEnvVars) {
                 values.put("extraEnvs[" + envVarIndex + "].name", envVar.getName());
-                values.put("extraEnvs[" + envVarIndex + "].value", envVar.getValue());
+                values.put("extraEnvs[" + envVarIndex + "].value", "\"" + envVar.getValue() + "\"");
                 envVarIndex++;
             }
         }
