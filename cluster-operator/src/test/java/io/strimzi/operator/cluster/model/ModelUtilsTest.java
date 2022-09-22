@@ -29,6 +29,8 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
@@ -569,7 +571,7 @@ public class ModelUtilsTest {
                 .endMetadata()
                 .build();
 
-        OwnerReference ref = ModelUtils.createOwnerReference(owner);
+        OwnerReference ref = ModelUtils.createOwnerReference(owner, false);
 
         assertThat(ref.getApiVersion(), is(owner.getApiVersion()));
         assertThat(ref.getKind(), is(owner.getKind()));
@@ -577,6 +579,25 @@ public class ModelUtilsTest {
         assertThat(ref.getUid(), is(owner.getMetadata().getUid()));
         assertThat(ref.getBlockOwnerDeletion(), is(false));
         assertThat(ref.getController(), is(false));
+    }
+
+    @ParallelTest
+    public void testCreateControllerOwnerReference()   {
+        StrimziPodSet owner = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster-kafka")
+                    .withUid("some-uid")
+                .endMetadata()
+                .build();
+
+        OwnerReference ref = ModelUtils.createOwnerReference(owner, true);
+
+        assertThat(ref.getApiVersion(), is(owner.getApiVersion()));
+        assertThat(ref.getKind(), is(owner.getKind()));
+        assertThat(ref.getName(), is(owner.getMetadata().getName()));
+        assertThat(ref.getUid(), is(owner.getMetadata().getUid()));
+        assertThat(ref.getBlockOwnerDeletion(), is(false));
+        assertThat(ref.getController(), is(true));
     }
 
     @ParallelTest

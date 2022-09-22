@@ -717,7 +717,7 @@ public class KafkaRebalanceAssemblyOperator
                     .withNamespace(kafkaRebalance.getMetadata().getNamespace())
                     .withName(kafkaRebalance.getMetadata().getName())
                     .withLabels(Collections.singletonMap("app", "strimzi"))
-                    .withOwnerReferences(ModelUtils.createOwnerReference(kafkaRebalance))
+                    .withOwnerReferences(ModelUtils.createOwnerReference(kafkaRebalance, false))
                 .endMetadata()
                 .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.encode()))
                 .build();
