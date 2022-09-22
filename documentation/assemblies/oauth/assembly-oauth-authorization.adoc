@@ -5,8 +5,8 @@
 [id='assembly-oauth-authorization_{context}']
 = Using OAuth 2.0 token-based authorization
 
-include::modules/con-oauth-authorization-intro.adoc[leveloffset=+1]
-include::modules/con-oauth-authorization-mechanism.adoc[leveloffset=+1]
-include::modules/proc-oauth-authorization-broker-config.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-authorization-intro.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-authorization-mechanism.adoc[leveloffset=+1]
+include::../../modules/oauth/proc-oauth-authorization-broker-config.adoc[leveloffset=+1]
 include::assembly-managing-policies-permissions-keycloak.adoc[leveloffset=+1]
-include::modules/proc-oauth-authorization-keycloak-example.adoc[leveloffset=+1]
+include::../../modules/oauth/proc-oauth-authorization-keycloak-example.adoc[leveloffset=+1]

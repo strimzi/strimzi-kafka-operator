@@ -50,4 +50,4 @@ kubectl get kafka _<kafka_cluster_name>_ -n _<namespace>_ -o jsonpath='{.status.
 
 Replace `_<kafka_cluster_name>_` with the name of your Kafka cluster and `_<namespace>_` with the Kubernetes namespace where the pod is running.
 
-include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]
+include::../../modules/upgrading/proc-upgrade-cluster-operator.adoc[leveloffset=+1]

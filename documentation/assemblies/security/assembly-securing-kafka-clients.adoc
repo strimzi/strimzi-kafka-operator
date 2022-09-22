@@ -22,6 +22,6 @@ For more information on configuring a `KafkaUser` resource to access Kafka broke
 * xref:proc-configuring-kafka-user-str[Securing user access to Kafka]
 * link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^]
 
-include::modules/con-securing-client-labels.adoc[leveloffset=+1]
-include::modules/con-securing-client-authentication.adoc[leveloffset=+1]
-include::modules/con-securing-client-authorization.adoc[leveloffset=+1]
+include::../../modules/security/con-securing-client-labels.adoc[leveloffset=+1]
+include::../../modules/security/con-securing-client-authentication.adoc[leveloffset=+1]
+include::../../modules/security/con-securing-client-authorization.adoc[leveloffset=+1]

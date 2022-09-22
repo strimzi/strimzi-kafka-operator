@@ -33,7 +33,7 @@ The steps to deploy Strimzi using the installation files are as follows:
 NOTE: To run the commands in this guide, a Kubernetes user must have the rights to manage role-based access control (RBAC) and CRDs.
 
 //Deployment paths
-include::modules/con-deploy-paths.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-paths.adoc[leveloffset=+1]
 //Options and instructions for deploying Cluster Operator
 include::assembly-deploy-cluster-operator.adoc[leveloffset=+1]
 //Options and instructions for deploying Kafka resource

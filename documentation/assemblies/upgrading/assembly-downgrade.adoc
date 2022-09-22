@@ -20,7 +20,7 @@ If the previous version of Strimzi does not support the version of Kafka you are
 you can also downgrade Kafka as long as the log message format versions appended to messages match.
 
 //steps to downgrade the operators
-include::modules/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
+include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
 
 //steps to downgrade Kafka
 include::assembly-downgrade-kafka-versions.adoc[leveloffset=+1]

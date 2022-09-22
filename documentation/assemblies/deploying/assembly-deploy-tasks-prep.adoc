@@ -18,16 +18,16 @@ endif::InstallationAppendix[]
 NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
 
 //Prereqs for a deployment
-include::modules/con-deploy-prereqs.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-prereqs.adoc[leveloffset=+1]
 //How to access release artifacts
-include::modules/con-deploy-product-downloads.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-product-downloads.adoc[leveloffset=+1]
 //How to access examples
-include::modules/con-deploy-examples.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-examples.adoc[leveloffset=+1]
 //Container images
-include::modules/con-deploy-container-images.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-container-images.adoc[leveloffset=+1]
 //Designating administrators to manage the install process
-include::modules/proc-deploy-designating-strimzi-administrators.adoc[leveloffset=+1]
+include::../../modules/deploying/proc-deploy-designating-strimzi-administrators.adoc[leveloffset=+1]
 //Alternatives to Kubernetes cluster
 ifdef::InstallationAppendix[]
-include::modules/con-deploy-kubernetes-cluster.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-kubernetes-cluster.adoc[leveloffset=+1]
 endif::InstallationAppendix[]

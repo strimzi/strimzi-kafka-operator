@@ -36,10 +36,10 @@ For a deployment of Strimzi, OAuth 2.0 integration provides:
 * Server-side OAuth 2.0 support for Kafka brokers
 * Client-side OAuth 2.0 support for Kafka MirrorMaker, Kafka Connect, and the Kafka Bridge
 
-include::modules/con-oauth-authentication-flow.adoc[leveloffset=+1]
-include::modules/con-oauth-authentication-broker.adoc[leveloffset=+1]
-include::modules/con-oauth-reauthentication.adoc[leveloffset=+1]
-include::modules/con-oauth-authentication-client.adoc[leveloffset=+1]
-include::modules/con-oauth-authentication-client-options.adoc[leveloffset=+1]
-include::modules/con-oauth-config.adoc[leveloffset=+1]
-include::modules/con-oauth-server-examples.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-authentication-flow.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-authentication-broker.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-reauthentication.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-authentication-client.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-authentication-client-options.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-config.adoc[leveloffset=+1]
+include::../../modules/oauth/con-oauth-server-examples.adoc[leveloffset=+1]

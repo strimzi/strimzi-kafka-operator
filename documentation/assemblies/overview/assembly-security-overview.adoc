@@ -12,10 +12,10 @@ A secure deployment of Strimzi can encompass:
 * Authorization to allow or decline actions executed by users
 
 //key points on encryption
-include::modules/con-security-configuration-encryption.adoc[leveloffset=+1]
+include::../../modules/overview/con-security-configuration-encryption.adoc[leveloffset=+1]
 
 //key points on authentication
-include::modules/con-security-configuration-authentication.adoc[leveloffset=+1]
+include::../../modules/overview/con-security-configuration-authentication.adoc[leveloffset=+1]
 
 //key points on authorization
-include::modules/con-security-configuration-authorization.adoc[leveloffset=+1]
+include::../../modules/overview/con-security-configuration-authorization.adoc[leveloffset=+1]

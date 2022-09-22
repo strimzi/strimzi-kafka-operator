@@ -28,4 +28,4 @@ Depending on the configuration of the connector instance, workers might also app
 Transforms adjust messages, such as filtering certain data, before they are converted.
 Kafka Connect has some built-in transforms, but other transformations can be provided by plugins if necessary.
 
-include::modules/con-key-features-kafka-connect.adoc[leveloffset=+1]
+include::../../modules/overview/con-key-features-kafka-connect.adoc[leveloffset=+1]

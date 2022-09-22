@@ -20,7 +20,7 @@ When running in this mode, the Cluster Operator automatically manages clusters i
 +
 For example, in this procedure the Cluster Operator is installed into the namespace `my-cluster-operator-namespace`.
 +
-include::snip-cluster-operator-namespace-sed.adoc[]
+include::../../shared/snip-cluster-operator-namespace-sed.adoc[]
 
 . Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to set the value of the `STRIMZI_NAMESPACE` environment variable to `*`.
 +

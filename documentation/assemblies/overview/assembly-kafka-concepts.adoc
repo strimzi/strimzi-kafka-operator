@@ -9,5 +9,5 @@ Apache Kafka is an open-source distributed publish-subscribe messaging system fo
 
 For more information about Apache Kafka, see the {kafkaDoc}.
 
-include::modules/con-kafka-concepts-key.adoc[leveloffset=+1]
-include::modules/con-kafka-concepts-producers-consumers.adoc[leveloffset=+1]
+include::../../modules/overview/con-kafka-concepts-key.adoc[leveloffset=+1]
+include::../../modules/overview/con-kafka-concepts-producers-consumers.adoc[leveloffset=+1]

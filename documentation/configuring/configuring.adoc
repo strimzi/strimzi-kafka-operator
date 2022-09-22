@@ -3,6 +3,7 @@ include::shared/attributes.adoc[]
 
 :context: str
 
+[id="configuring-book_{context}"]
 = Configuring Strimzi
 
 include::assemblies/configuring/assembly-overview.adoc[leveloffset=+1]

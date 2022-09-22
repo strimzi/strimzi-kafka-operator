@@ -8,7 +8,7 @@
 
 //Standard intro text to custom resources
 [role="_abstract"]
-include::modules/snip-intro-custom-resources.adoc[leveloffset=+1]
+include::../../shared/snip-intro-custom-resources.adoc[leveloffset=+1]
 
 //Example custom resource showing configuration options
-include::modules/con-deploy-custom-resources-example.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-custom-resources-example.adoc[leveloffset=+1]

@@ -42,12 +42,12 @@ For more information on the metrics and monitoring tools, refer to the supportin
 * link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper
 
 //what is Consumer lag?
-include::modules/con_kafka-exporter-lag.adoc[leveloffset=+1]
+include::../../modules/metrics/con_kafka-exporter-lag.adoc[leveloffset=+1]
 //Understanding metrics for Cruise Control
-include::modules/con-metrics-cruise-control.adoc[leveloffset=+1]
+include::../../modules/metrics/con-metrics-cruise-control.adoc[leveloffset=+1]
 //Example metrics files
 include::assembly-metrics-config-files.adoc[leveloffset=+1]
 //How to set up Prometheus
 include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 //How to add Grafana dashboards
-include::modules/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]
+include::../../modules/metrics/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]

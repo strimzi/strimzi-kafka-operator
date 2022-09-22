@@ -24,15 +24,15 @@ Upgrading Strimzi triggers rolling updates, where all brokers are restarted in t
 During rolling updates, not all brokers are online, so overall _cluster availability_ is temporarily reduced.
 A reduction in cluster availability increases the chance that a broker failure will result in lost messages.
 
-include::modules/con-upgrade-paths.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-paths.adoc[leveloffset=+1]
 
-include::modules/con-upgrade-sequence.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-sequence.adoc[leveloffset=+1]
 
-include::modules/con-upgrade-cluster.adoc[leveloffset=+1]
+include::../../modules/upgrading/con-upgrade-cluster.adoc[leveloffset=+1]
 
 include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
 
 //how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
-include::modules/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]
+include::../../modules/upgrading/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

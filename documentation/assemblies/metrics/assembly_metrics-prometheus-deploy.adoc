@@ -17,10 +17,10 @@ The Prometheus server configuration uses service discovery to discover the pods 
 For more information, see {K8sServiceDiscovery}.
 ====
 
-include::modules/con_metrics-prometheus-options.adoc[leveloffset=+1]
+include::../../modules/metrics/con_metrics-prometheus-options.adoc[leveloffset=+1]
 
-include::modules/con_metrics-prometheus-resources.adoc[leveloffset=+1]
+include::../../modules/metrics/con_metrics-prometheus-resources.adoc[leveloffset=+1]
 
-include::modules/proc_metrics-deploying-prometheus-operator.adoc[leveloffset=+1]
+include::../../modules/metrics/proc_metrics-deploying-prometheus-operator.adoc[leveloffset=+1]
 
-include::modules/proc_metrics-deploying-prometheus.adoc[leveloffset=+1]
+include::../../modules/metrics/proc_metrics-deploying-prometheus.adoc[leveloffset=+1]
