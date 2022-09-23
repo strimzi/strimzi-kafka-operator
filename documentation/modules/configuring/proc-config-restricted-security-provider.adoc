@@ -15,7 +15,7 @@ To make the required changes, configure the `060-Deployment-strimzi-cluster-oper
 By enabling a new pod security provider, any pods or containers created by the Cluster Operator are subject to the limitations it imposes.
 Pods and containers that are already running are restarted for the changes to take affect.
 
-.Prerequsites
+.Prerequisites
 
 * You need an account with permission to create and manage `CustomResourceDefinition` and RBAC (`ClusterRole`, and `RoleBinding`) resources.
 
