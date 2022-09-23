@@ -3,7 +3,7 @@
 // deploying/deploying.adoc
 
 [id='assembly-metrics-{context}']
-= Introducing metrics to Kafka
+= Introducing metrics
 
 [role="_abstract"]
 You can use Prometheus and Grafana to monitor your Strimzi deployment.

@@ -24,8 +24,6 @@ include::assemblies/operators/assembly-operators.adoc[leveloffset=+1]
 
 include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
 
-include::assemblies/tracing/assembly-distributed-tracing.adoc[leveloffset=+1]
-
 include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 
 include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]

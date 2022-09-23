@@ -122,7 +122,7 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <12> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <13> Optional: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <14> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<15> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
+<15> Environment variables are set for distributed tracing.
 
 . Create or update the resource:
 +
@@ -133,3 +133,4 @@ kubectl apply -f _KAFKA-BRIDGE-CONFIG-FILE_
 .Additional resources
 
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
+* link:{BookURLDeploying}#assembly-distributed-tracing-str[Introducing distributed tracing^]
