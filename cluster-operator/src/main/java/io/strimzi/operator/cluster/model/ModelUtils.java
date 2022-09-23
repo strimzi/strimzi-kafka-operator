@@ -675,19 +675,19 @@ public class ModelUtils {
      * Creates the OwnerReference based on the resource passed as parameter
      *
      * @param owner         The resource which should be the owner
-     * @param controller    Indicates whether the owner acts also as the controller. This value is used in the
+     * @param isController  Indicates whether the owner acts also as the controller. This value is used in the
      *                      controller flag which is part of the OwnerReference object.
      *
      * @return          The new OwnerReference
      */
-    public static OwnerReference createOwnerReference(HasMetadata owner, boolean controller)   {
+    public static OwnerReference createOwnerReference(HasMetadata owner, boolean isController)   {
         return new OwnerReferenceBuilder()
                 .withApiVersion(owner.getApiVersion())
                 .withKind(owner.getKind())
                 .withName(owner.getMetadata().getName())
                 .withUid(owner.getMetadata().getUid())
                 .withBlockOwnerDeletion(false)
-                .withController(controller)
+                .withController(isController)
                 .build();
     }
 
