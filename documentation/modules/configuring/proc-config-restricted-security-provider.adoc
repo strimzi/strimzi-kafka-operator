@@ -60,3 +60,16 @@ template:
 ----
 +
 If you apply specific security context for a component using `template` configuration, it takes priority over the general configuration provided by the pod security provider.
+
+. (Optional) Add a `pod-security` label to ensure that all pods created in a namespace must have a `restricted` security context.     
++
+Add the label to the namespace watched by the Cluster Operator.
++
+[source,yaml]
+.Adding a pod security label to a namespace
+----
+kubectl label --overwrite ns myproject \
+  pod-security.kubernetes.io/enforce=restricted
+----
++
+The label serves as a check, prohibiting the creation of pods in the namespace without a restricted security profile. 
