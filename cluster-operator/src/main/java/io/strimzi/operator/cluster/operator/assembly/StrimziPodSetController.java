@@ -309,7 +309,7 @@ public class StrimziPodSetController implements Runnable {
                         Pod pod = PodSetUtils.mapToPod(desiredPod);
                         desiredPods.add(pod.getMetadata().getName());
 
-                        maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet), podCounter);
+                        maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet, true), podCounter);
                     }
 
                     // Check if any pods needs to be deleted
