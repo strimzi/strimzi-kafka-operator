@@ -12,24 +12,30 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Arrays;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 
@@ -51,47 +57,20 @@ public class LeaderElectionIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(LeaderElectionIsolatedST.class);
 
-    /*
-     These env variables are already inside packaging/../060-Deployment-strimzi-cluster-operator.yaml, but to be sure that
-     we are setting everything correctly and the Leader Election is really enabled, we are adding it to additional envs
-     */
-    final EnvVar leaderEnabledEnv = new EnvVarBuilder()
+    final EnvVar leaderDisabledEnv = new EnvVarBuilder()
         .withName("STRIMZI_LEADER_ELECTION_ENABLED")
-        .withValue("true")
+        .withValue("false")
         .build();
 
-    final EnvVar leaseNameEnv = new EnvVarBuilder()
-        .withName("STRIMZI_LEADER_ELECTION_LEASE_NAME")
-        .withValue(Constants.STRIMZI_DEPLOYMENT_NAME)
-        .build();
-
-    final EnvVar leaseNamespaceEnv = new EnvVarBuilder()
-        .withName("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE")
-        .withNewValueFrom()
-            .withNewFieldRef()
-                .withFieldPath("metadata.namespace")
-            .endFieldRef()
-        .endValueFrom()
-        .build();
-
-    final EnvVar leaderIdentityEnv = new EnvVarBuilder()
-        .withName("STRIMZI_LEADER_ELECTION_IDENTITY")
-        .withNewValueFrom()
-            .withNewFieldRef()
-                .withFieldPath("metadata.name")
-            .endFieldRef()
-        .endValueFrom()
-        .build();
-
-    final List<EnvVar> envList = Arrays.asList(leaderEnabledEnv, leaseNameEnv, leaseNamespaceEnv, leaderIdentityEnv);
+    final String leaderMessage = "I'm the new leader";
 
     @IsolatedTest
     void testLeaderElection(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
+        // create CO with 2 replicas, wait for Deployment readiness and leader election
         clusterOperator = clusterOperator.defaultInstallation()
             .withExtensionContext(extensionContext)
-            .withExtraEnvVars(envList)
             .withReplicas(2)
             .createInstallation()
             .runInstallation();
@@ -115,15 +94,62 @@ public class LeaderElectionIsolatedST extends AbstractST {
         Lease currentLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
         String currentLeaderPodName = currentLease.getSpec().getHolderIdentity();
 
-        String logFromNewLeader = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, currentLeaderPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
+        String logFromNewLeader = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), currentLeaderPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
 
-        assertTrue(logFromNewLeader.contains("I'm the new leader"));
-        assertNotEquals(oldLeaderPodName, currentLeaderPodName);
+        LOGGER.info("Checking if the new leader is elected");
+        assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader, containsString(leaderMessage));
+        assertThat("Old and current leaders are same", oldLeaderPodName, not(equalTo(currentLeaderPodName)));
+    }
+
+    @IsolatedTest
+    void testLeaderElectionDisabled(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
+        // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
+        clusterOperator = clusterOperator.defaultInstallation()
+            .withExtensionContext(extensionContext)
+            .withExtraEnvVars(Collections.singletonList(leaderDisabledEnv))
+            .createInstallation()
+            .runInstallation();
+
+        String coPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), Constants.STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        Lease notExistingLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
+        String logFromCoPod = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), coPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
+
+        assertThat("Lease for CO exists", notExistingLease, nullValue());
+        assertThat("Log contains message about leader election", logFromCoPod, not(containsString(leaderMessage)));
+    }
+
+    void checkDeploymentFiles() throws Exception {
+        String pathToDepFile = "";
+
+        if (Environment.isHelmInstall()) {
+            pathToDepFile = HelmResource.HELM_CHART + "templates/060-Deployment-strimzi-cluster-operator.yaml";
+        } else {
+            pathToDepFile = BundleResource.PATH_TO_CO_CONFIG;
+        }
+
+        String clusterOperatorDep = Files.readString(Paths.get(pathToDepFile));
+
+        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_ENABLED"));
+        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_LEASE_NAME"));
+        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE"));
+        assertThat(clusterOperatorDep, containsString("STRIMZI_LEADER_ELECTION_IDENTITY"));
     }
 
     @BeforeAll
-    void setup() {
+    void setup() throws Exception {
+        // skipping if install type is OLM
+        // OLM installation doesn't support configuring number of replicas inside the subscription
         assumeTrue(!Environment.isOlmInstall());
+        clusterOperator.unInstall();
+
+        LOGGER.info("Checking if deployment files for install type: {} contains all needed env variables for leader election", Environment.CLUSTER_OPERATOR_INSTALL_TYPE);
+        checkDeploymentFiles();
+    }
+
+    @AfterEach
+    void cleanUp() {
         clusterOperator.unInstall();
     }
 }
