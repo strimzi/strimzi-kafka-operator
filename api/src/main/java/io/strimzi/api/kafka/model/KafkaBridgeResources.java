@@ -58,4 +58,16 @@ public class KafkaBridgeResources {
     public static String url(String clusterName, String namespace, int port) {
         return "http://" + serviceName(clusterName) + "." + namespace + ".svc:" + port;
     }
+
+    /**
+     * Get the name of the init container role binding given the name of the {@code cluster} and {@code namespace}.
+     *
+     * @param clusterName   The cluster name.
+     * @param namespace     The namespace.
+     *
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
+        return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
+    }
 }

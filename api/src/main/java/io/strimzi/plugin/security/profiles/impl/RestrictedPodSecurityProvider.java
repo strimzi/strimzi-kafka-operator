@@ -116,4 +116,9 @@ public class RestrictedPodSecurityProvider extends BaselinePodSecurityProvider {
     public SecurityContext bridgeContainerSecurityContext(ContainerSecurityProviderContext context) {
         return createRestrictedContainerSecurityContext(context);
     }
+
+    @Override
+    public SecurityContext bridgeInitContainerSecurityContext(ContainerSecurityProviderContext context) {
+        return createRestrictedContainerSecurityContext(context);
+    }
 }

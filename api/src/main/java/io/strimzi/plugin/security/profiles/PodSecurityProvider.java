@@ -239,6 +239,7 @@ public interface PodSecurityProvider {
         return securityContextOrNull(context);
     }
 
+
     /**
      * Provides the Pod security context for the Kafka Connect Build (Kaniko) pod. The default implementation just returns
      * the security context configured by the user in the template section or null (no Pod security context).
@@ -310,6 +311,19 @@ public interface PodSecurityProvider {
     default SecurityContext bridgeContainerSecurityContext(ContainerSecurityProviderContext context) {
         return securityContextOrNull(context);
     }
+    
+    /**
+     * Provides the (container) security context for the Kafka Bridge init containers. The default implementation just
+     * returns the security context configured by the user in the template section or null (no security context).
+     *
+     * @param context   Provides the context which can be used to generate the security context
+     *
+     * @return  Security context which will be set for the Kafka Bridge init containers
+     */
+    default SecurityContext bridgeInitContainerSecurityContext(ContainerSecurityProviderContext context) {
+        return securityContextOrNull(context);
+    }
+
 
     /**
      * Internal method to handle the default Pod security context.

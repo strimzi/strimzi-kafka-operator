@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
-    "producer", "resources", "jvmOptions", "logging",
+    "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
     "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec extends Spec {
@@ -51,6 +51,8 @@ public class KafkaBridgeSpec extends Spec {
     private Probe readinessProbe;
     private KafkaBridgeTemplate template;
     private Tracing tracing;
+    private String clientRackInitImage;
+    private Rack rack;
 
     @Description("The number of pods in the `Deployment`.")
     @Minimum(0)
@@ -224,5 +226,26 @@ public class KafkaBridgeSpec extends Spec {
 
     public void setTracing(Tracing tracing) {
         this.tracing = tracing;
+    }
+
+
+    @Description("The image of the init container used for initializing the `client.rack`.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public String getClientRackInitImage() {
+        return clientRackInitImage;
+    }
+
+    public void setClientRackInitImage(String brokerRackInitImage) {
+        this.clientRackInitImage = brokerRackInitImage;
+    }
+
+    @Description("Configuration of the node label which will be used as the client.rack consumer configuration.")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Rack getRack() {
+        return rack;
+    }
+
+    public void setRack(Rack rack) {
+        this.rack = rack;
     }
 }

@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.Affinity;
+import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -17,18 +19,24 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
+import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.api.model.rbac.Subject;
+import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeAdminClientSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
-import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
-import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -58,6 +66,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
+
+    protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
@@ -112,7 +122,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS = "KAFKA_BRIDGE_CORS_ALLOWED_METHODS";
 
     protected static final String CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_LABELS";
-
+    protected static final String INIT_VOLUME_MOUNT = "/opt/strimzi/init";
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private KafkaBridgeHttpConfig http;
@@ -123,8 +133,16 @@ public class KafkaBridgeCluster extends AbstractModel {
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
     private List<ContainerEnvVar> templateContainerEnvVars;
+    private List<ContainerEnvVar> templateInitContainerEnvVars;
     private SecurityContext templateContainerSecurityContext;
+
+    private SecurityContext templateInitContainerSecurityContext;
+
     private Tracing tracing;
+
+    private Rack rack;
+
+    private String initImage;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -178,6 +196,12 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setKafkaAdminClientConfiguration(spec.getAdminClient());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
         kafkaBridgeCluster.setKafkaProducerConfiguration(spec.getProducer());
+        kafkaBridgeCluster.rack = spec.getRack();
+        String initImage = spec.getClientRackInitImage();
+        if (initImage == null) {
+            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
+        }
+        kafkaBridgeCluster.initImage = initImage;
         if (kafkaBridge.getSpec().getLivenessProbe() != null) {
             kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getLivenessProbe());
         }
@@ -197,31 +221,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
-            KafkaBridgeTemplate template = spec.getTemplate();
-
-            ModelUtils.parseDeploymentTemplate(kafkaBridgeCluster, template.getDeployment());
-            ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
-            ModelUtils.parseInternalServiceTemplate(kafkaBridgeCluster, template.getApiService());
-
-            if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-                kafkaBridgeCluster.templateServiceLabels = template.getApiService().getMetadata().getLabels();
-                kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
-            }
-
-            if (template.getBridgeContainer() != null && template.getBridgeContainer().getEnv() != null) {
-                kafkaBridgeCluster.templateContainerEnvVars = template.getBridgeContainer().getEnv();
-            }
-
-            if (template.getBridgeContainer() != null && template.getBridgeContainer().getSecurityContext() != null) {
-                kafkaBridgeCluster.templateContainerSecurityContext = template.getBridgeContainer().getSecurityContext();
-            }
-
-            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                kafkaBridgeCluster.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                kafkaBridgeCluster.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-            }
-
-            ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
+            fromCrdTemplate(kafkaBridgeCluster, spec);
         }
 
         kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, DEFAULT_POD_LABELS);
@@ -236,7 +236,45 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         return kafkaBridgeCluster;
     }
-    
+
+
+    private static void fromCrdTemplate(final KafkaBridgeCluster kafkaBridgeCluster, final KafkaBridgeSpec spec) {
+        KafkaBridgeTemplate template = spec.getTemplate();
+
+        ModelUtils.parseDeploymentTemplate(kafkaBridgeCluster, template.getDeployment());
+        ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
+        ModelUtils.parseInternalServiceTemplate(kafkaBridgeCluster, template.getApiService());
+
+        if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
+            kafkaBridgeCluster.templateServiceLabels = template.getApiService().getMetadata().getLabels();
+            kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
+        }
+
+        if (template.getBridgeContainer() != null && template.getBridgeContainer().getEnv() != null) {
+            kafkaBridgeCluster.templateContainerEnvVars = template.getBridgeContainer().getEnv();
+        }
+
+        if (template.getBridgeContainer() != null && template.getBridgeContainer().getSecurityContext() != null) {
+            kafkaBridgeCluster.templateContainerSecurityContext = template.getBridgeContainer().getSecurityContext();
+        }
+
+        if (template.getInitContainer() != null && template.getInitContainer().getEnv() != null) {
+            kafkaBridgeCluster.templateInitContainerEnvVars = template.getInitContainer().getEnv();
+        }
+
+        if (template.getInitContainer() != null && template.getInitContainer().getSecurityContext() != null) {
+            kafkaBridgeCluster.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
+        }
+
+        if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
+            kafkaBridgeCluster.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
+            kafkaBridgeCluster.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+        }
+
+        ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
+    }
+
+
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(3);
 
@@ -290,6 +328,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         if (tls != null) {
             VolumeUtils.createSecretVolume(volumeList, tls.getTrustedCertificates(), isOpenShift);
         }
+        if (rack != null) {
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
+        }
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
         return volumeList;
     }
@@ -301,6 +342,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         if (tls != null) {
             VolumeUtils.createSecretVolumeMount(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
+        }
+        if (rack != null) {
+            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
         }
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
         return volumeMountList;
@@ -511,6 +555,85 @@ public class KafkaBridgeCluster extends AbstractModel {
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
     }
+
+
+    /**
+     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
+     */
+    @Override
+    protected Affinity getMergedAffinity() {
+        Affinity userAffinity = getUserAffinity();
+        AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
+        if (rack != null) {
+            builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
+        }
+        return builder.build();
+    }
+
+    /**
+     * Creates the ClusterRoleBinding which is used to bind the Kafka Bridge SA to the ClusterRole
+     * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
+     *
+     * @return The cluster role binding.
+     */
+    public ClusterRoleBinding generateClusterRoleBinding() {
+        if (rack == null) {
+            return null;
+        }
+
+        Subject subject = new SubjectBuilder()
+                .withKind("ServiceAccount")
+                .withName(getServiceAccountName())
+                .withNamespace(namespace)
+                .build();
+
+        RoleRef roleRef = new RoleRefBuilder()
+                .withName("strimzi-kafka-client")
+                .withApiGroup("rbac.authorization.k8s.io")
+                .withKind("ClusterRole")
+                .build();
+
+        return getClusterRoleBinding(KafkaBridgeResources.initContainerClusterRoleBindingName(getCluster(), namespace), subject, roleRef);
+    }
+
+    @Override
+    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
+        List<Container> initContainers = new ArrayList<>(1);
+
+        if (rack != null) {
+            Container initContainer = new ContainerBuilder()
+                    .withName(INIT_NAME)
+                    .withImage(initImage)
+                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
+                    .withEnv(getInitContainerEnvVars())
+                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
+                    .withSecurityContext(securityProvider.bridgeInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
+                    .build();
+
+            if (getResources() != null) {
+                initContainer.setResources(getResources());
+            }
+            initContainers.add(initContainer);
+        }
+
+        return initContainers;
+    }
+
+    protected List<EnvVar> getInitContainerEnvVars() {
+        List<EnvVar> varList = new ArrayList<>();
+        varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY, INIT_VOLUME_MOUNT));
+
+        // Add shared environment variables used for all containers
+        varList.addAll(getRequiredEnvVars());
+
+        addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
+
+        return varList;
+    }
+
 
     /**
      * Transforms properties to log4j2 properties file format and adds property for reloading the config
