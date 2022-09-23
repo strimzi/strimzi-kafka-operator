@@ -4,14 +4,19 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
+import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -181,6 +186,23 @@ public class CruiseControlApiST extends AbstractST {
 
         assertCCGoalsInResponse(response);
         assertThat(response, containsString("Cluster load after removing broker [3, 4]"));
+    }
+
+    @ParallelNamespaceTest
+    void testKafkaRebalanceAutoApprovalMechanism(ExtensionContext extensionContext) {
+        final TestStorage ts = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(ts.getClusterName(), 3, 3).build());
+
+        // KafkaRebalance with auto-approval
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(ts.getClusterName())
+            .editMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
+            .endMetadata()
+            .build());
+
+        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND,
+            ts.getNamespaceName(), ts.getClusterName()), ts.getNamespaceName(), ts.getClusterName());
     }
 
     private void assertCCGoalsInResponse(String response) {
