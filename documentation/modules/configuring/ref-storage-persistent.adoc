@@ -5,48 +5,91 @@
 [id='ref-persistent-storage-{context}']
 = Persistent storage
 
-Persistent storage uses {K8sPersistentVolumeClaims} to provision persistent volumes for storing data.
-Persistent Volume Claims can be used to provision volumes of many different types, depending on the {K8SStorageClass} which will provision the volume.
-The data types which can be used with persistent volume claims include many types of SAN storage as well as {K8sLocalPersistentVolumes}.
+[role="_abstract"]
+Persistent data storage retains data in the event of system disruption.
+For pods that use persistent data storage, data is persisted across pod failures and restarts.
 
-To use persistent storage, the `type` has to be set to `persistent-claim`.
-Persistent storage supports additional configuration options:
+A dynamic provisioning framework enables clusters to be created with persistent storage. 
+Pod configuration uses {K8sPersistentVolumeClaims} (PVCs) to make storage requests on persistent volumes (PVs).
+PVs are storage resources that represent a storage volume.
+PVs are independent of the pods that use them.
+The PVC requests the amount of storage required when a pod is being created.
+The underlying storage infrastructure of the PV does not need to be understood. 
+If a PV matches the storage criteria, the PVC is bound to the PV.
+
+Because of its permanent nature, persistent storage is recommended for production.
+
+PVCs can request different types of persistent storage by specifying a {K8SStorageClass}.
+Storage classes define storage profiles and dynamically provision PVs.  
+If a storage class is not specified, the default storage class is used.
+Persistent storage options might include SAN storage types or {K8sLocalPersistentVolumes}.
+
+To use persistent storage, you set the storage type configuration in the `Kafka` or `ZooKeeper` resource to `persistent-claim`.
+
+In the production environment, the following configuration is recommended:
+
+* For Kafka, configure `type: jbod`  with one or more `type: persistent-claim` volumes
+* For ZooKeeper, configure `type: persistent-claim`
+
+Persistent storage also has the following configuration options:
 
 `id` (optional)::
-Storage identification number. This option is mandatory for storage volumes defined in a JBOD storage declaration.
+A storage identification number. This option is mandatory for storage volumes defined in a JBOD storage declaration.
 Default is `0`.
 
 `size` (required)::
-Defines the size of the persistent volume claim, for example, "1000Gi".
+The size of the persistent volume claim, for example, "1000Gi".
 
 `class` (optional)::
 The Kubernetes {K8SStorageClass} to use for dynamic volume provisioning.
+Storage `class` configuration includes parameters that describe the profile of a volume in detail. 
 
 `selector` (optional)::
-Allows selecting a specific persistent volume to use.
-It contains key:value pairs representing labels for selecting such a volume.
+Configuration to specify a specific PV.
+Provides key:value pairs representing the labels of the volume selected.
 
 `deleteClaim` (optional)::
-Boolean value which specifies if the Persistent Volume Claim has to be deleted when the cluster is undeployed.
+Boolean value to specify whether the PVC is deleted when the cluster is uninstalled.
 Default is `false`.
 
 WARNING: Increasing the size of persistent volumes in an existing Strimzi cluster is only supported in Kubernetes versions that support persistent volume resizing. The persistent volume to be resized must use a storage class that supports volume expansion.
-For other versions of Kubernetes and storage classes which do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
+For other versions of Kubernetes and storage classes that do not support volume expansion, you must decide the necessary storage size before deploying the cluster.
 Decreasing the size of existing persistent volumes is not possible.
 
-.Example fragment of persistent storage configuration with 1000Gi `size`
+.Example persistent storage configuration for Kafka and ZooKeeper
 [source,yaml]
 ----
 # ...
-storage:
-  type: persistent-claim
-  size: 1000Gi
+spec:
+  kafka:
+    # ...
+    storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+      - id: 1
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+      - id: 2
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+    # ...
+  zookeeper:
+    storage:
+      type: persistent-claim
+      size: 1000Gi
 # ...
 ----
 
-The following example demonstrates the use of a storage class.
+If you do not specify a storage class, the default is used.
+The following example specifies a storage class.
 
-.Example fragment of persistent storage configuration with specific Storage Class
+.Example persistent storage configuration with specific storage class
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -57,9 +100,9 @@ storage:
 # ...
 ----
 
-Finally, a `selector` can be used to select a specific labeled persistent volume to provide needed features such as an SSD.
+Use a `selector` to specify a labeled persistent volume that provides certain features, such as an SSD.
 
-.Example fragment of persistent storage configuration with selector
+.Example persistent storage configuration with selector
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -74,8 +117,8 @@ storage:
 
 == Storage class overrides
 
-You can specify a different storage class for one or more Kafka brokers or ZooKeeper nodes, instead of using the default storage class.
-This is useful if, for example, storage classes are restricted to different availability zones or data centers.
+Instead of using the default storage class, you can specify a different storage class for one or more Kafka brokers or ZooKeeper nodes.
+This is useful, for example, when storage classes are restricted to different availability zones or data centers.
 You can use the `overrides` field for this purpose.
 
 In this example, the default storage class is named `my-storage-class`:
@@ -95,17 +138,21 @@ spec:
   kafka:
     replicas: 3
     storage:
-      deleteClaim: true
-      size: 100Gi
-      type: persistent-claim
-      class: my-storage-class
-      overrides:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+        class: my-storage-class
+        overrides:
         - broker: 0
           class: my-storage-class-zone-1a
         - broker: 1
           class: my-storage-class-zone-1b
         - broker: 2
           class: my-storage-class-zone-1c
+      # ...
   # ...
   zookeeper:
     replicas: 3
@@ -126,28 +173,29 @@ spec:
 
 As a result of the configured `overrides` property, the volumes use the following storage classes:
 
-* The persistent volumes of ZooKeeper node 0 will use `my-storage-class-zone-1a`.
-* The persistent volumes of ZooKeeper node 1 will use `my-storage-class-zone-1b`.
-* The persistent volumes of ZooKeeepr node 2 will use `my-storage-class-zone-1c`.
-* The persistent volumes of Kafka broker 0 will use `my-storage-class-zone-1a`.
-* The persistent volumes of Kafka broker 1 will use `my-storage-class-zone-1b`.
-* The persistent volumes of Kafka broker 2 will use `my-storage-class-zone-1c`.
+* The persistent volumes of ZooKeeper node 0 use `my-storage-class-zone-1a`.
+* The persistent volumes of ZooKeeper node 1 use `my-storage-class-zone-1b`.
+* The persistent volumes of ZooKeeepr node 2 use `my-storage-class-zone-1c`.
+* The persistent volumes of Kafka broker 0 use `my-storage-class-zone-1a`.
+* The persistent volumes of Kafka broker 1 use `my-storage-class-zone-1b`.
+* The persistent volumes of Kafka broker 2 use `my-storage-class-zone-1c`.
 
-The `overrides` property is currently used only to override storage class configurations. Overriding other storage configuration fields is not currently supported.
-Other fields from the storage configuration are currently not supported.
+The `overrides` property is currently used only to override storage class configurations. 
+Overrides for other storage configuration properties is not currently supported.
+Other storage configuration properties are currently not supported.
 
 [id='ref-persistent-storage-pvc-{context}']
-== Persistent Volume Claim naming
+== PVC resources for persistent storage
 
-When persistent storage is used, it creates Persistent Volume Claims with the following names:
+When persistent storage is used, it creates PVCs with the following names:
 
 `data-_cluster-name_-kafka-_idx_`::
-Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`.
+PVC for the volume used for storing data for the Kafka broker pod `_idx_`.
 
 `data-_cluster-name_-zookeeper-_idx_`::
-Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`.
+PVC for the volume used for storing data for the ZooKeeper node pod `_idx_`.
 
-== Log directories
+== Mount path of Kafka log directories
 
 The persistent volume is used by the Kafka brokers as log directories mounted into the following path:
 

@@ -3,17 +3,21 @@
 // assembly-storage.adoc
 
 [id='ref-jbod-storage-{context}']
-= JBOD storage overview
+= JBOD storage
 
 [role="_abstract"]
-You can configure Strimzi to use JBOD, a data storage configuration of multiple disks or volumes. JBOD is one approach to providing increased data storage for Kafka brokers. It can also improve performance.
+You can configure Strimzi to use JBOD, a data storage configuration of multiple disks or volumes. 
+JBOD is one approach to providing increased data storage for Kafka brokers. 
+It can also improve performance.
 
-A JBOD configuration is described by one or more volumes, each of which can be either xref:ref-ephemeral-storage-{context}[ephemeral] or xref:ref-persistent-storage-{context}[persistent]. The rules and constraints for JBOD volume declarations are the same as those for ephemeral and persistent storage. For example, you cannot decrease the size of a persistent storage volume after it has been provisioned, or you cannot change the value of `sizeLimit` when type=ephemeral.
+NOTE: JBOD storage is supported for *Kafka only* not ZooKeeper.
 
-== JBOD configuration
+A JBOD configuration is described by one or more volumes, each of which can be either xref:ref-ephemeral-storage-{context}[ephemeral] or xref:ref-persistent-storage-{context}[persistent]. The rules and constraints for JBOD volume declarations are the same as those for ephemeral and persistent storage. For example, you cannot decrease the size of a persistent storage volume after it has been provisioned, or you cannot change the value of `sizeLimit` when the type is `ephemeral`.
 
-To use JBOD with Strimzi, the storage `type` must be set to `jbod`. The `volumes` property allows you to describe the disks that make up your JBOD storage array or configuration. The following fragment shows an example JBOD configuration:
+To use JBOD storage, you set the storage type configuration in the `Kafka` resource to `jbod`.
+The `volumes` property allows you to describe the disks that make up your JBOD storage array or configuration. 
 
+.Example JBOD storage configuration
 [source,yaml]
 ----
 # ...
@@ -31,22 +35,26 @@ storage:
 # ...
 ----
 
-The ids cannot be changed once the JBOD volumes are created.
-
-Users can add or remove volumes from the JBOD configuration.
+The IDs cannot be changed once the JBOD volumes are created.
+You can add or remove volumes from the JBOD configuration.
 
 [id='ref-jbod-storage-pvc-{context}']
-== JBOD and Persistent Volume Claims
+== PVC resource for JBOD storage
 
-When persistent storage is used to declare JBOD volumes, the naming scheme of the resulting Persistent Volume Claims is as follows:
+When persistent storage is used to declare JBOD volumes, it creates a PVC with the following name:
 
 `data-_id_-_cluster-name_-kafka-_idx_`::
 
-Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`.
+PVC for the volume used for storing data for the Kafka broker pod `_idx_`.
+The `_id_` is the ID of the volume used for storing data for Kafka broker pod.
 
-== Log directories
+== Mount path of Kafka log directories
 
-The JBOD volumes will be used by the Kafka brokers as log directories mounted into the following path:
+The JBOD volumes are used by Kafka brokers as log directories mounted into the following path:
 
-`/var/lib/kafka/data-_id_/kafka-log_idx_`::
+[source,shell,subs="+quotes,attributes"]
+----
+/var/lib/kafka/data-_id_/kafka-log__idx__
+----
+
 Where `_id_` is the ID of the volume used for storing data for Kafka broker pod `_idx_`. For example `/var/lib/kafka/data-0/kafka-log0`.

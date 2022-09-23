@@ -3,16 +3,15 @@
 // assembly-config-kafka.adoc
 
 [id='assembly-storage-{context}']
-= Kafka and ZooKeeper storage types
+= Configuring Kafka and ZooKeeper storage
 
 [role="_abstract"]
-As stateful applications, Kafka and ZooKeeper need to store data on disk. Strimzi supports three storage types for this data:
+As stateful applications, Kafka and ZooKeeper store data on disk. 
+Strimzi supports three storage types for this data:
 
-* Ephemeral
+* Ephemeral (Recommended for development only)
 * Persistent
-* JBOD storage
-
-NOTE: JBOD storage is supported only for Kafka, not for ZooKeeper.
+* JBOD (*Kafka only* not ZooKeeper)
 
 When configuring a `Kafka` resource, you can specify the type of storage used by the Kafka broker and its corresponding ZooKeeper node. You configure the storage type using the `storage` property in the following resources:
 

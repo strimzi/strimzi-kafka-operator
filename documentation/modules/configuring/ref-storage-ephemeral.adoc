@@ -5,14 +5,24 @@
 [id='ref-ephemeral-storage-{context}']
 = Ephemeral storage
 
+[role="_abstract"]
+Ephemeral data storage is transient. 
+All pods on a node share a local ephemeral storage space. 
+Data is retained for as long as the pod that uses it is running.
+The data is lost when a pod is deleted. 
+Although a pod can recover data in a highly available environment.  
+
+Because of its transient nature, ephemeral storage is only recommended for development and testing.
+
 Ephemeral storage uses `{K8sEmptyDir}` volumes to store data.
-To use ephemeral storage, set the `type` field to `ephemeral`.
+An `emptyDir` volume is created when a pod is assigned to a node. 
+You can set the total amount of storage for the `emptyDir` using the `sizeLimit` property .
 
-IMPORTANT: `emptyDir` volumes are not persistent and the data stored in them is lost when the pod is restarted.
-After the new pod is started, it must recover all data from the other nodes of the cluster.
-Ephemeral storage is not suitable for use with single-node ZooKeeper clusters or for Kafka topics with a replication factor of 1. This configuration will cause data loss.
+IMPORTANT: Ephemeral storage is not suitable for single-node ZooKeeper clusters or Kafka topics with a replication factor of 1.
 
-.An example of Ephemeral storage
+To use ephemeral storage, you set the storage type configuration in the `Kafka` or `ZooKeeper` resource to `ephemeral`.
+
+.Example ephemeral storage configuration
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -32,9 +42,9 @@ spec:
     # ...
 ----
 
-== Log directories
+== Mount path of Kafka log directories
 
-The ephemeral volume is used by the Kafka brokers as log directories mounted into the following path:
+The ephemeral volume is used by Kafka brokers as log directories mounted into the following path:
 
 [source,shell,subs="+quotes,attributes"]
 ----
