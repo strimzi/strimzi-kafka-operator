@@ -92,8 +92,9 @@ public class KafkaRebalanceUtils {
         LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
 
         // using automatic-approval annotation
-        if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get()
-            .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL).equals("true")) {
+        final KafkaRebalance kr = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get();
+        if (kr.getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL) &&
+            kr.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL).equals("true")) {
             LOGGER.infoCr(reconciliation, "Triggering the rebalance automatically (because Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL is set to true) " +
                 "without an annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
         } else {
