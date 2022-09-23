@@ -57,12 +57,12 @@ public class LeaderElectionIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(LeaderElectionIsolatedST.class);
 
-    final EnvVar leaderDisabledEnv = new EnvVarBuilder()
+    private static final EnvVar LEADER_DISABLED_ENV = new EnvVarBuilder()
         .withName("STRIMZI_LEADER_ELECTION_ENABLED")
         .withValue("false")
         .build();
 
-    final String leaderMessage = "I'm the new leader";
+    private static final String LEADER_MESSAGE = "I'm the new leader";
 
     @IsolatedTest
     void testLeaderElection(ExtensionContext extensionContext) {
@@ -97,7 +97,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         String logFromNewLeader = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), currentLeaderPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
 
         LOGGER.info("Checking if the new leader is elected");
-        assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader, containsString(leaderMessage));
+        assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader, containsString(LEADER_MESSAGE));
         assertThat("Old and current leaders are same", oldLeaderPodName, not(equalTo(currentLeaderPodName)));
     }
 
@@ -108,7 +108,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
         clusterOperator = clusterOperator.defaultInstallation()
             .withExtensionContext(extensionContext)
-            .withExtraEnvVars(Collections.singletonList(leaderDisabledEnv))
+            .withExtraEnvVars(Collections.singletonList(LEADER_DISABLED_ENV))
             .createInstallation()
             .runInstallation();
 
@@ -117,7 +117,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         String logFromCoPod = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), coPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
 
         assertThat("Lease for CO exists", notExistingLease, nullValue());
-        assertThat("Log contains message about leader election", logFromCoPod, not(containsString(leaderMessage)));
+        assertThat("Log contains message about leader election", logFromCoPod, not(containsString(LEADER_MESSAGE)));
     }
 
     void checkDeploymentFiles() throws Exception {
