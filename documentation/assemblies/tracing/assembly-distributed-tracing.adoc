@@ -3,7 +3,7 @@
 // configuring/configuring.adoc
 
 [id='assembly-distributed-tracing-{context}']
-= Distributed tracing
+= Introducing distributed tracing
 
 Distributed tracing allows you to track the progress of transactions between applications in a distributed system. In a microservices architecture, tracing tracks the progress of transactions between services. Trace data is useful for monitoring application performance and investigating issues with target systems and end-user applications.
 

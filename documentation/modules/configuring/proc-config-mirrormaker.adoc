@@ -146,8 +146,8 @@ spec:
 <19> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
 <20> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <21> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<22> Environment variables are also xref:ref-tracing-environment-variables-str[set for distributed tracing using Jaeger].
-<23> xref:assembly-distributed-tracing-str[Distributed tracing is enabled for Jaeger].
+<22> Environment variables are set for distributed tracing.
+<23> Distributed tracing is enabled for Jaeger.
 +
 WARNING: With the `abortOnSendFailure` property set to `false`, the producer attempts to send the next message in a topic. The original message might be lost, as there is no attempt to resend a failed message.
 
@@ -155,3 +155,8 @@ WARNING: With the `abortOnSendFailure` property set to `false`, the producer att
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _<your-file>_
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLDeploying}#assembly-distributed-tracing-str[Introducing distributed tracing^]

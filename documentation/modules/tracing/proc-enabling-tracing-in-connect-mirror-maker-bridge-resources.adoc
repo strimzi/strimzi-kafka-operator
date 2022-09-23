@@ -121,9 +121,3 @@ spec:
 ----
 kubectl apply -f your-file
 ----
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:type-ContainerTemplate-reference[]
-* xref:assembly-customizing-kubernetes-resources-{context}[]
