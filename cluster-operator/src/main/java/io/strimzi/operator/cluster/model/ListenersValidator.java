@@ -167,6 +167,10 @@ public class ListenersValidator {
                 errors.add("listener " + listener.getName() + " is missing a bootstrap host name which is required for Ingress based listeners");
             }
 
+            if (conf.getIngressClass() == null) {
+                errors.add("listener " + listener.getName() + " is missing a class name which is required for Ingress based listeners");
+            }
+
             if (conf.getBrokers() != null) {
                 for (int i = 0; i < replicas; i++)  {
                     final int id = i;
