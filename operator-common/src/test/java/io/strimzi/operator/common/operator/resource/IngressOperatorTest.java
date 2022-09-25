@@ -7,14 +7,18 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -63,5 +67,37 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     @Override
     protected AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new IngressOperator(vertx, mockClient);
+    }
+
+    @Test
+    public void testIngressClassPatching()  {
+        KubernetesClient client = mock(KubernetesClient.class);
+
+        Ingress current = new IngressBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withIngressClassName("nginx")
+                    .withTls(new IngressTLSBuilder().withHosts("my-host").build())
+                .endSpec()
+                .build();
+
+        Ingress desired = new IngressBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withIngressClassName(null)
+                    .withTls(new IngressTLSBuilder().withHosts("my-host").build())
+                .endSpec()
+                .build();
+
+        IngressOperator op = new IngressOperator(vertx, client);
+        op.patchIngressClassName(current, desired);
+
+        assertThat(desired.getSpec().getIngressClassName(), is(current.getSpec().getIngressClassName()));
     }
 }
