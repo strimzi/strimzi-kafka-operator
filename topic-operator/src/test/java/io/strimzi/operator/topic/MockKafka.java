@@ -33,8 +33,8 @@ public class MockKafka implements Kafka {
     private Map<TopicName, Topic> topics = new HashMap<>();
 
     private Future<Set<String>> topicsListResponse = Future.succeededFuture(Collections.emptySet());
-    private int topicMetadataResposeCall = 0;
-    private List<Function<TopicName, Future<TopicMetadata>>> topicMetadataRespose = singletonList(
+    private int topicMetadataResponseCall = 0;
+    private List<Function<TopicName, Future<TopicMetadata>>> topicMetadataResponse = singletonList(
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicMetadataResponse."));
     private Function<TopicName, Future<Boolean>> topicExistsResult =
         t -> failedFuture("Unexpected. Your test probably need to configure the MockKafka with a topicExistsResult.");
@@ -55,20 +55,20 @@ public class MockKafka implements Kafka {
         return this;
     }
 
-    public MockKafka setTopicMetadataResponse(Function<TopicName, Future<TopicMetadata>> topicMetadataRespose) {
-        this.topicMetadataRespose = singletonList(topicMetadataRespose);
+    public MockKafka setTopicMetadataResponse(Function<TopicName, Future<TopicMetadata>> topicMetadataResponse) {
+        this.topicMetadataResponse = singletonList(topicMetadataResponse);
         return this;
     }
 
-    public MockKafka setTopicMetadataResponses(Function<TopicName, Future<TopicMetadata>>... topicMetadataRespose) {
-        this.topicMetadataRespose = asList(topicMetadataRespose);
-        this.topicMetadataResposeCall = 0;
+    public MockKafka setTopicMetadataResponses(Function<TopicName, Future<TopicMetadata>>... topicMetadataResponse) {
+        this.topicMetadataResponse = asList(topicMetadataResponse);
+        this.topicMetadataResponseCall = 0;
         return this;
     }
 
     public MockKafka setTopicMetadataResponse(TopicName topic, TopicMetadata topicMetadata, Exception exception) {
         Function<TopicName, Future<TopicMetadata>> old = getTopicNameFutureFunction();
-        this.topicMetadataRespose = singletonList(t -> {
+        this.topicMetadataResponse = singletonList(t -> {
             if (t.equals(topic)) {
                 if (exception != null) {
                     return failedFuture(exception);
@@ -210,7 +210,7 @@ public class MockKafka implements Kafka {
     }
 
     Function<TopicName, Future<TopicMetadata>> getTopicNameFutureFunction() {
-        return topicMetadataRespose.get(min(topicMetadataResposeCall++, topicMetadataRespose.size() - 1));
+        return topicMetadataResponse.get(min(topicMetadataResponseCall++, topicMetadataResponse.size() - 1));
     }
 
     @Override
@@ -234,7 +234,10 @@ public class MockKafka implements Kafka {
         context.verify(() -> {
             TopicName topicName = topic.getTopicName();
             assertThat("The topic " + topicName + " does not exist", topics, hasKey(topicName));
-            assertThat("The topic " + topicName + " has an unexpected state", topics.get(topicName), is(topic));
+            // Don't compare metadata since Kafka doesn't retain metadata, only k8s does.
+            assertThat("The topic " + topicName + " has an unexpected state",
+                    new Topic.Builder(topics.get(topicName)).withMetadata(null).build(),
+                    is(new Topic.Builder(topic).withMetadata(null).build()));
         });
     }
 

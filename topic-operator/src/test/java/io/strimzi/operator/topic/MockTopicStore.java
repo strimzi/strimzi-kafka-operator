@@ -76,7 +76,10 @@ public class MockTopicStore implements TopicStore {
     }
 
     public void assertContains(VertxTestContext context, Topic topic) {
-        context.verify(() -> assertThat(topics.get(topic.getTopicName()), is(topic)));
+        // Don't compare metadata since the topic store doesn't retain metadata, only k8s does.
+        context.verify(() -> assertThat("The topic " + topic.getTopicName() + " has an unexpected state",
+                new Topic.Builder(topics.get(topic.getTopicName())).withMetadata(null).build(),
+                is(new Topic.Builder(topic).withMetadata(null).build())));
     }
 
     public MockTopicStore setCreateTopicResponse(TopicName createTopic, Exception exception) {
