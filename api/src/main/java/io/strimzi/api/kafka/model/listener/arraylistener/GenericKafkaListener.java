@@ -84,8 +84,8 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
             "* `route` type uses OpenShift Routes to expose Kafka.\n" +
             "* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n" +
             "* `nodeport` type uses NodePort type services to expose Kafka.\n" +
-            "* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka, with passthrought.\n" +
-            "* `ingress-tcp` type uses Kubernetes Nginx Ingress to expose Kafka, with tcp port config.\n")
+            "* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrought.\n" +
+            "* `cluster-ip` type uses ClusterIP service with per broker port number. Can be exposed over Nginx Ingress Controller with tcp port config.\n")
     @JsonProperty(required = true)
     public KafkaListenerType getType() {
         return type;

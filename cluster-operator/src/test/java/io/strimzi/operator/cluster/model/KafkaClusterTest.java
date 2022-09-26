@@ -3144,7 +3144,7 @@ public class KafkaClusterTest {
 
 
     @ParallelTest
-    public void testExternalIngressTCP() {
+    public void testExternalClusterIP() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withAdvertisedHost("my-ingress.com")
                 .withAdvertisedPort(9990)
@@ -3172,7 +3172,7 @@ public class KafkaClusterTest {
                 .withListeners(new GenericKafkaListenerBuilder()
                         .withName("external")
                         .withPort(9094)
-                        .withType(KafkaListenerType.INGRESS_TCP)
+                        .withType(KafkaListenerType.CLUSTER_IP)
                         .withTls(true)
                         .withNewConfiguration()
                         .withNewBootstrap()
@@ -3187,7 +3187,7 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(kc.isExposedWithIngressTCP(), is(true));
+        assertThat(kc.isExposedWithClusterIP(), is(true));
 
         // Check port
         List<ContainerPort> ports = kc.getContainerPortList();
@@ -3213,7 +3213,7 @@ public class KafkaClusterTest {
 
     }
     @ParallelTest
-    public void testExternalIngressTCPMissingConfiguration() {
+    public void testExternalClusterIPMissingConfiguration() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .build();
@@ -3224,7 +3224,7 @@ public class KafkaClusterTest {
                 .withListeners(new GenericKafkaListenerBuilder()
                         .withName("external")
                         .withPort(9094)
-                        .withType(KafkaListenerType.INGRESS_TCP)
+                        .withType(KafkaListenerType.CLUSTER_IP)
                         .withTls(false)
                         .withNewConfiguration()
                         .withBrokers(broker0)

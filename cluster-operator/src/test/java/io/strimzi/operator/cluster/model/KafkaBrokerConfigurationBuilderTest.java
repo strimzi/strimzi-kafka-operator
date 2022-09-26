@@ -1427,7 +1427,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testWithExternalListenersIngressTCPWithTLS()  {
+    public void testWithExternalListenersClusterIPWithTLS()  {
         GenericKafkaListenerConfigurationBroker broker = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .withAdvertisedHost("ingress.mytld.com")
@@ -1437,7 +1437,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
                 .withPort(9094)
-                .withType(KafkaListenerType.INGRESS_TCP)
+                .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(true)
                 .withNewConfiguration()
                 .withBrokers(broker)
@@ -1476,7 +1476,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
-    public void testWithExternalListenersIngressTCPWithoutTLS()  {
+    public void testWithExternalListenersClusterIPWithoutTLS()  {
         GenericKafkaListenerConfigurationBroker broker = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .withAdvertisedHost("ingress.mytld.com")
@@ -1486,7 +1486,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("external")
                 .withPort(9094)
-                .withType(KafkaListenerType.INGRESS_TCP)
+                .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(false)
                 .withNewConfiguration()
                 .withBrokers(broker)

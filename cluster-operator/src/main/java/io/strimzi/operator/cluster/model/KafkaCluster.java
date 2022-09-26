@@ -1873,12 +1873,12 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using IngressTCP
+     * Returns true when the Kafka cluster is exposed to the outside of Kubernetes using ClusterIP services
      *
      * @return true when the Kafka cluster is exposed using Kubernetes Ingress with TCP mode.
      */
-    public boolean isExposedWithIngressTCP() {
-        return ListenersUtils.hasIngressTCPListener(listeners);
+    public boolean isExposedWithClusterIP() {
+        return ListenersUtils.hasClusterIPListener(listeners);
     }
 
     /**
