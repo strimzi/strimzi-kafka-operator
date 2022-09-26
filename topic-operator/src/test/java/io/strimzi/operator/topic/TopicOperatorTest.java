@@ -616,6 +616,9 @@ public class TopicOperatorTest {
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    // No assertions on resource.state metric because that is updated
+                    // by executeWithTopicLockHeld which is not on the call path of reconcile()
                 });
                 context.completeNow();
             }));
@@ -701,11 +704,8 @@ public class TopicOperatorTest {
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
-                    assertThat(registry.get(TopicOperator.METRICS_PREFIX + "resource.state")
-                            .tag("kind", "KafkaTopic")
-                            .tag("name", topicName.toString())
-                            .tag("resource-namespace", "default-namespace")
-                            .gauge().value(), is(0.0));
+                    // No assertions on resource.state metric because that is updated
+                    // by executeWithTopicLockHeld which is not on the call path of reconcile()
                 });
                 context.completeNow();
             }));
@@ -752,6 +752,9 @@ public class TopicOperatorTest {
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    // No assertions on resource.state metric because that is updated
+                    // by executeWithTopicLockHeld which is not on the call path of reconcile()
                 });
                 context.completeNow();
             }));
@@ -801,6 +804,9 @@ public class TopicOperatorTest {
 
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().count(), is(1L));
                     assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "KafkaTopic").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    // No assertions on resource.state metric because that is updated
+                    // by executeWithTopicLockHeld which is not on the call path of reconcile()
                 });
                 context.completeNow();
             }));
@@ -902,50 +908,52 @@ public class TopicOperatorTest {
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 
-        mockKafka.setCreateTopicResponse(topicName.toString(), null)
+        Future<Void> kafkaTopicFuture = mockKafka.setCreateTopicResponse(topicName.toString(), null)
                 .createTopic(Reconciliation.DUMMY_RECONCILIATION, kafkaTopic);
         mockKafka.setTopicMetadataResponse(topicName, Utils.getTopicMetadata(kubeTopic), null);
         mockKafka.setDeleteTopicResponse(topicName, deleteTopicException);
 
-        mockTopicStore.setCreateTopicResponse(topicName, null)
+        Future<Void> topicStoreFuture = mockTopicStore.setCreateTopicResponse(topicName, null)
                 .create(privateTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, storeException);
 
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.DELETED, resource);
 
-        return topicOperator.onResourceEvent(logContext, resource, DELETED).onComplete(ar -> {
-            if (deleteTopicException != null || storeException != null) {
+        return CompositeFuture.all(kafkaTopicFuture, topicStoreFuture)
+            .compose(v -> topicOperator.onResourceEvent(logContext, resource, DELETED))
+            .onComplete(ar -> {
+                if (deleteTopicException != null || storeException != null) {
 
-                if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
-                    // For the specific topic deletion disabled exception the exception will be caught and the resource
-                    // event will be processed successfully
+                    if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
+                        // For the specific topic deletion disabled exception the exception will be caught and the resource
+                        // event will be processed successfully
+                        assertSucceeded(context, ar);
+                    } else {
+                        // For all other exceptions the resource event will fail.
+                        assertFailed(context, ar);
+                    }
+
+                    if (deleteTopicException != null) {
+                        // If there was a broker deletion exception the broker topic should still exist
+                        mockKafka.assertExists(context, kafkaTopic.getTopicName());
+                    } else {
+                        mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
+                    }
+
+                    if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
+                        //If there was a topic deletion disabled exception then the Store topic would still be deleted.
+                        mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
+                    } else {
+                        mockTopicStore.assertExists(context, kafkaTopic.getTopicName());
+                    }
+
+                } else {
                     assertSucceeded(context, ar);
-                } else {
-                    // For all other exceptions the resource event will fail.
-                    assertFailed(context, ar);
-                }
-
-                if (deleteTopicException != null) {
-                    // If there was a broker deletion exception the broker topic should still exist
-                    mockKafka.assertExists(context, kafkaTopic.getTopicName());
-                } else {
                     mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
-                }
-
-                if (deleteTopicException != null && deleteTopicException instanceof TopicDeletionDisabledException) {
-                    //If there was a topic deletion disabled exception then the Store topic would still be deleted.
                     mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
-                } else {
-                    mockTopicStore.assertExists(context, kafkaTopic.getTopicName());
                 }
-
-            } else {
-                assertSucceeded(context, ar);
-                mockKafka.assertNotExists(context, kafkaTopic.getTopicName());
-                mockTopicStore.assertNotExists(context, kafkaTopic.getTopicName());
-            }
-        });
+            });
     }
 
     @Test
@@ -1239,12 +1247,12 @@ public class TopicOperatorTest {
     public void testReconcileMetricsDeletedTopic(VertxTestContext context) {
         mockKafka.setTopicsListResponse(Future.succeededFuture(emptySet()));
         mockKafka.setUpdateTopicResponse(topicName -> Future.succeededFuture());
-        resourceAdded(context, null, null)
-            .compose(v -> resourceRemoved(context,  null, null))
+        resourceRemoved(context,  null, null)
             .compose(v -> topicOperator.reconcileAllTopics("periodic"))
             .onComplete(context.succeeding(v -> {
                 MeterRegistry registry = metrics.meterRegistry();
-
+                // The reconciliation metrics are only incremented for topics that are in the reconcileState at the end of reconciliation.
+                // Since the topic has been deleted we expect the metric to show reconciliations as 0.
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations").tag("kind", "KafkaTopic").counter().count(), is(0.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "KafkaTopic").counter().count(), is(0.0));
                 assertThat(registry.get(TopicOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "KafkaTopic").counter().count(), is(0.0));
