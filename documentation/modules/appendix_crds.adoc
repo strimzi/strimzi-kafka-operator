@@ -2846,7 +2846,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 |xref:type-Probe-{context}[`Probe`]
 |template             1.2+<.<a|Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
-|tracing           1.2+<.<a|The configuration of tracing in Kafka Bridge. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
+|tracing              1.2+<.<a|The configuration of tracing in Kafka Bridge. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |====
 
