@@ -215,28 +215,15 @@ spec:
 ----
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-cluster-ip:: Configures an external listener to expose Kafka `cluserIP` type `Services`.
+cluster-ip:: Create a listener which uses per-broker `Services` instead of the headless Service.
 +
-This listener type can be helpful if you:
+This listener type can be useful to expose the cluster outside of Kuebrnetes with some custom mechanisms such as TCP Ingress or other Ingress controllers etc
 
-* don't want to manage dynamic broker adresses with nodeport services
-* don't want to bring new LoadBalancer and external IP by broker (+ bootstrap)
-* can't use tls in your existing kafka clients
-* can't enable ssl passthrough in your ingress controller
-+
-
-+
-Using only one LoadBalancer, brokers could be exposed using ingress controller.
 +
 A new clusterIP service is created for each Kafka broker pod.
 +
 An additional clusterIP is created to serve as a Kafka _bootstrap_ address.
 +
-The client connects on the `advertisedPort`, 9190 for broker 0, on `advertisedHost`, ingress.mycompany.com in the following example, but traffic is then routed to the port you configure,
-which is `9096` in the following example.
-+
-`advertisedHost` ingress.mycompany.com should be a dns name routed to ingress LoadBalancer service. In the Ingress Controller LoadBalancer service,
-we should add broker exposed ports + extra bootstrap port.
 
 .Example `cluster-ip` listener configuration
 [source,yaml,subs="+attributes"]
@@ -250,69 +237,8 @@ spec:
         type: cluster-ip
         tls: false
         port: 9096
-        configuration:
-          brokers:
-            - broker: 0
-              advertisedHost: ingress.mycompany.com
-              advertisedPort: 9190
-            - broker: 1
-              advertisedHost: ingress.mycompany.com
-              advertisedPort: 9191
-            - broker: 2
-              advertisedHost: ingress.mycompany.com
-              advertisedPort: 9192
     #...
 
-----
-In your ingress controller configuration you should set properly port->service mapping.
-
-Each broker (clusterIP service) should have different port number to give to ingress controller a selector to choose `Service` to forward to.
-
-bootstrap service should have also a different port than brokers.
-
-.Example `cluster-ip` ingress tcp configmap
-[source,yaml,subs="+attributes"]
-----
-#...
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: tcp-services
-data:
-  "9189": kafka/strimzi-kafka-external-bootstrap:9096
-  "9190": kafka/strimzi-kafka-external-0:9096
-  "9191": kafka/strimzi-kafka-external-1:9096
-  "9192": kafka/strimzi-kafka-external-2:9096
-    #...
-----
-
-Don't miss to add brokers and bootstrap exposed ports to your ingress LoadBalancer Service.
-
-.Example `cluster-ip` ingress tcp LoadBalancer service
-[source,yaml,subs="+attributes"]
-----
-#...
-apiVersion: v1
-kind: Service
-metadata:
-  name: ingress-nginx
-spec:
-  ports:
-    - name: strimzi-kafka-external-bootstrap
-      port: 9189
-      protocol: TCP
-    - name: strimzi-kafka-external-0
-      port: 9190
-      protocol: TCP
-    - name: strimzi-kafka-external-1
-      port: 9191
-      protocol: TCP
-    - name: strimzi-kafka-external-2
-      port: 9192
-      protocol: TCP
-  type: LoadBalancer
-
-#...
 ----
 
 
@@ -324,7 +250,6 @@ The port number is the port used in the Kafka cluster, which might not be the sa
 * `loadbalancer` listeners use the specified port number, as do `internal` listeners
 * `ingress` and `route` listeners use port 443 for access
 * `nodeport` listeners use the port number assigned by Kubernetes
-* `cluster-ip` listeners use advertised port numbers
 
 For client connection, use the address and port for the bootstrap service of the listener.
 You can retrieve this from the status of the `Kafka` resource.

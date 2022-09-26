@@ -290,7 +290,7 @@ public class ListenersUtilsTest {
             .build();
 
     private GenericKafkaListener newClusterIP = new GenericKafkaListenerBuilder()
-            .withName("ingTCP")
+            .withName("clusterIP")
             .withPort(9907)
             .withType(KafkaListenerType.CLUSTER_IP)
             .withTls(false)
@@ -326,7 +326,7 @@ public class ListenersUtilsTest {
     public void testExternalListeners()    {
         assertThat(ListenersUtils.externalListeners(allListeners), hasSize(10));
         assertThat(ListenersUtils.externalListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
-                containsInAnyOrder("external", "route", "np1", "np2", "np3", "lb1", "lb2", "ing1", "ing2", "ingTCP"));
+                containsInAnyOrder("external", "route", "np1", "np2", "np3", "lb1", "lb2", "ing1", "ing2", "clusterIP"));
         assertThat(ListenersUtils.hasExternalListener(allListeners), is(true));
 
         assertThat(ListenersUtils.externalListeners(internalListeners), hasSize(0));
@@ -370,7 +370,7 @@ public class ListenersUtilsTest {
     public void testClusterIPListeners()    {
         assertThat(ListenersUtils.clusterIPListeners(allListeners), hasSize(1));
         assertThat(ListenersUtils.clusterIPListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
-                containsInAnyOrder("ingTCP"));
+                containsInAnyOrder("clusterIP"));
         assertThat(ListenersUtils.hasClusterIPListener(allListeners), is(true));
 
         assertThat(ListenersUtils.clusterIPListeners(internalListeners), hasSize(0));
