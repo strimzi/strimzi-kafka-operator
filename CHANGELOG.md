@@ -6,6 +6,9 @@
 * Add auto-approval mechanism on KafkaRebalance resource when an optimization proposal is ready
 * The `ControlPlaneListener` feature gate moves to GA
 * Add client rack-awareness support to Strimzi Bridge pods
+* Add support for OpenTelemetry for distributed tracing
+  * Kafka Connect, Mirror Maker, Mirror Maker 2 and Strimzi Bridge can be configured to use OpenTelemetry
+  * Using Jaeger exporter by default for backward compatibility
 
 ### Deprecations and removals
 

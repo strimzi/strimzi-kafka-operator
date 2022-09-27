@@ -47,10 +47,14 @@ fi
 
 . ./set_kafka_jmx_options.sh "${KAFKA_CONNECT_JMX_ENABLED}" "${KAFKA_CONNECT_JMX_USERNAME}" "${KAFKA_CONNECT_JMX_PASSWORD}"
 
-# enabling Tracing agent (initializes Jaeger tracing) as Java agent
-if [ "$STRIMZI_TRACING" = "jaeger" ]; then
-    KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=jaeger"
+# enabling Tracing agent (initializes tracing) as Java agent
+if [ "$STRIMZI_TRACING" = "jaeger" ] || [ "$STRIMZI_TRACING" = "opentelemetry" ]; then
+    KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=$STRIMZI_TRACING"
     export KAFKA_OPTS
+    if [ "$STRIMZI_TRACING" = "opentelemetry" ] && [ -z "$OTEL_TRACES_EXPORTER" ]; then
+      # auto-set Jaeger exporter
+      export OTEL_TRACES_EXPORTER="jaeger"
+    fi
 fi
 
 if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then

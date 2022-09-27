@@ -60,6 +60,8 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
+import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -1375,20 +1377,46 @@ public class KafkaConnectClusterTest {
     }
 
     @ParallelTest
-    public void testTracing() {
-        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
-                .editSpec()
-                    .withNewJaegerTracing()
-                    .endJaegerTracing()
-                .endSpec()
-                .build();
+    public void testJaegerTracing() {
+        testTracing(JaegerTracing.TYPE_JAEGER,
+                JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
+                JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+    }
+
+    @ParallelTest
+    public void testOpenTelemetryTracing() {
+        testTracing(OpenTelemetryTracing.TYPE_OPENTELEMETRY,
+                OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
+                OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+    }
+
+    public void testTracing(String type, String consumerInterceptor, String producerInterceptor) {
+        KafkaConnectBuilder builder = new KafkaConnectBuilder(this.resource);
+        switch (type) {
+            case JaegerTracing.TYPE_JAEGER:
+                builder.editSpec()
+                            .withNewJaegerTracing()
+                            .endJaegerTracing()
+                        .endSpec();
+                break;
+            case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
+                builder.editSpec()
+                            .withNewOpenTelemetryTracing()
+                            .endOpenTelemetryTracing()
+                        .endSpec();
+                break;
+            default:
+                throw new IllegalArgumentException("The '" + type + "' is not a valid tracing type");
+        }
+        KafkaConnect resource = builder.build();
+
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
         Deployment dep = kc.generateDeployment(Collections.EMPTY_MAP, true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals("jaeger"), is(true));
-        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("consumer.interceptor.classes=io.opentracing.contrib.kafka.TracingConsumerInterceptor"), is(true));
-        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("producer.interceptor.classes=io.opentracing.contrib.kafka.TracingProducerInterceptor"), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(type), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("consumer.interceptor.classes=" + consumerInterceptor), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("producer.interceptor.classes=" + producerInterceptor), is(true));
     }
 
     @ParallelTest

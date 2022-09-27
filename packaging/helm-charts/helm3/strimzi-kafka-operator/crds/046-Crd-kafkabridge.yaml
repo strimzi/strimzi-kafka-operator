@@ -1088,7 +1088,8 @@ spec:
                       type: string
                       enum:
                         - jaeger
-                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing. The Jaeger tracing is deprecated.
+                        - opentelemetry
+                      description: Type of the tracing used. Currently the only supported types are `jaeger` for OpenTracing (Jaeger) tracing and `opentelemetry` for OpenTelemetry tracing. The OpenTracing (Jaeger) tracing is deprecated.
                   required:
                     - type
                   description: The configuration of tracing in Kafka Bridge.
