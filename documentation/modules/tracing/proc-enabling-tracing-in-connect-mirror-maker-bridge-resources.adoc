@@ -5,7 +5,7 @@
 [id='proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}']
 = Enabling tracing in MirrorMaker, Kafka Connect, and Kafka Bridge resources
 
-Update the configuration of `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` custom resources to specify and configure a tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers two events:
+Update the configuration of `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` custom resources to specify and configure a tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers the following events:
 
 * Interceptor classes are updated in the integrated consumers and producers in MirrorMaker, MirrorMaker 2.0, Kafka Connect, or the Strimzi Kafka Bridge.
 
@@ -13,7 +13,7 @@ Update the configuration of `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConne
 
 * For the Kafka Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
-You can enable tracing using OpenTracing or OpenTelemetry.
+You can enable tracing using OpenTelemetry or OpenTracing.
 
 .Procedure
 
@@ -22,9 +22,93 @@ Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConn
 . In the `spec.template` property, configure the tracer service.
 
 * Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
-* For OpenTracing, set the `spec.tracing.type` property to `jaeger`.
 * For OpenTelemetry, set the `spec.tracing.type` property to `opentelemetry`.
+* For OpenTracing, set the `spec.tracing.type` property to `jaeger`.
 +
+
+.Example tracing configuration for Kafka Connect using OpenTelemetry
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  template:
+    connectContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+          value: "http://jaeger-host:14250"
+  tracing:
+    type: opentelemetry
+  #...
+----
+
+.Example tracing configuration for MirrorMaker using OpenTelemetry
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaMirrorMakerApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  #...
+  template:
+    mirrorMakerContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+          value: "http://jaeger-host:14250"
+  tracing:
+    type: opentelemetry
+#...
+----
+
+.Example tracing configuration for MirrorMaker 2.0 using OpenTelemetry
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2-cluster
+spec:
+  #...
+  template:
+    connectContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+          value: "http://jaeger-host:14250"
+  tracing:
+    type: opentelemetry
+#...
+----
+
+.Example tracing configuration for the Kafka Bridge using OpenTelemetry
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  #...
+  template:
+    bridgeContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+          value: "http://jaeger-host:14250"
+  tracing:
+    type: opentelemetry
+#...
+----
 
 .Example tracing configuration for Kafka Connect using OpenTracing
 [source,yaml,subs=attributes+]
@@ -115,90 +199,6 @@ spec:
           value: "6831"
   tracing:
     type: jaeger
-#...
-----
-
-.Example tracing configuration for Kafka Connect using OpenTelemetry
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect
-metadata:
-  name: my-connect-cluster
-spec:
-  #...
-  template:
-    connectContainer:
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
-  tracing:
-    type: opentelemetry
-  #...
-----
-
-.Example tracing configuration for MirrorMaker using OpenTelemetry
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaMirrorMakerApiVersion}
-kind: KafkaMirrorMaker
-metadata:
-  name: my-mirror-maker
-spec:
-  #...
-  template:
-    mirrorMakerContainer:
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
-  tracing:
-    type: opentelemetry
-#...
-----
-
-.Example tracing configuration for MirrorMaker 2.0 using OpenTelemetry
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaMirrorMaker2ApiVersion}
-kind: KafkaMirrorMaker2
-metadata:
-  name: my-mm2-cluster
-spec:
-  #...
-  template:
-    connectContainer:
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
-  tracing:
-    type: opentelemetry
-#...
-----
-
-.Example tracing configuration for the Kafka Bridge using OpenTelemetry
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaBridgeApiVersion}
-kind: KafkaBridge
-metadata:
-  name: my-bridge
-spec:
-  #...
-  template:
-    bridgeContainer:
-      env:
-        - name: OTEL_SERVICE_NAME
-          value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
-  tracing:
-    type: opentelemetry
 #...
 ----
 
