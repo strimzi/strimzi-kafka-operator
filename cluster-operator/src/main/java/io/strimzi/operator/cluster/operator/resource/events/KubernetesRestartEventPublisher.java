@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.MicroTime;
 import io.fabric8.kubernetes.api.model.ObjectReference;
 import io.fabric8.kubernetes.api.model.ObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.events.v1.EventBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
@@ -21,13 +22,11 @@ import java.time.format.DateTimeFormatter;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Publishes KafkaRoller restart events as Kubernetes events, using either the events.k8s.io/v1beta1 or v1 API,
- * depending on which is available.
+ * Publishes KafkaRoller restart events as Kubernetes events
  */
-public abstract class KubernetesRestartEventPublisher {
+public class KubernetesRestartEventPublisher {
 
     private static final Logger LOG = LogManager.getLogger(KubernetesRestartEventPublisher.class);
-    private final Clock clock;
     private static final DateTimeFormatter K8S_MICROTIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
 
     protected static final String ACTION = "StrimziInitiatedPodRestart";
@@ -37,30 +36,24 @@ public abstract class KubernetesRestartEventPublisher {
     private static final int MAX_MESSAGE_LENGTH = 1000;
     private static final String ELLIPSIS = "...";
 
-    public KubernetesRestartEventPublisher() {
-        this(Clock.systemDefaultZone());
-    }
-
-    protected KubernetesRestartEventPublisher(Clock clock) {
-        this.clock = clock;
-    }
+    private final Clock clock;
+    private final String operatorName;
+    private final KubernetesClient client;
 
     /**
-     * Create an instance for the highest event API, there's three possible subtypes, due to how fabric8 delineates the differing
-     * event APIs.
+     * Create an instance for the event API.
      *
      * @param client       Kubernetes client
      * @param operatorName the pod name of the current cluster operator instance
-     * @param hasEventsV1  if the cluster is using events.k8s.io/v1 instead of events.k8s.io/v1beta1
-     * @return instance of the appropriate publisher for the given API
      */
-    public static KubernetesRestartEventPublisher createPublisher(KubernetesClient client, String operatorName, boolean hasEventsV1) {
-        Clock clock = Clock.systemDefaultZone();
-        if (hasEventsV1) {
-            return new V1RestartEventPublisher(clock, client, operatorName);
-        } else {
-            return new V1Beta1RestartEventPublisher(clock, client, operatorName);
-        }
+    public KubernetesRestartEventPublisher(KubernetesClient client, String operatorName) {
+        this(client, operatorName, Clock.systemDefaultZone());
+    }
+
+    public KubernetesRestartEventPublisher(KubernetesClient client, String operatorName, Clock clock) {
+        this.clock = clock;
+        this.operatorName = operatorName;
+        this.client = client;
     }
 
     public void publishRestartEvents(Pod pod, RestartReasons reasons) {
@@ -82,7 +75,7 @@ public abstract class KubernetesRestartEventPublisher {
     }
 
     /**
-     * Implemented by subclasses using version specific APIs
+     * Publish a Kubernetes Event referring to certain KafkaRoller pod action
      *
      * @param eventTime    - Microtime to use for event
      * @param podReference - ObjectReference pointing to rolled pod
@@ -90,7 +83,23 @@ public abstract class KubernetesRestartEventPublisher {
      * @param type         - the type of K8s event "Normal", or "Warning"
      * @param note         - the note to attach to the event
      */
-    protected abstract void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note);
+    protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
+        EventBuilder builder = new EventBuilder();
+
+        builder.withNewMetadata()
+                .withGenerateName("strimzi-event")
+                .endMetadata()
+                .withAction(ACTION)
+                .withReportingController(CONTROLLER)
+                .withReportingInstance(operatorName)
+                .withRegarding(podReference)
+                .withReason(reason)
+                .withType(type)
+                .withEventTime(eventTime)
+                .withNote(note);
+
+        client.events().v1().events().inNamespace(podReference.getNamespace()).resource(builder.build()).create();
+    }
 
     ObjectReference createPodReference(Pod pod) {
         return new ObjectReferenceBuilder().withKind("Pod")
