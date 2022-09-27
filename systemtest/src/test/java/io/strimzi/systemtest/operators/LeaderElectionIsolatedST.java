@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -65,6 +66,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
     private static final String LEADER_MESSAGE = "I'm the new leader";
 
     @IsolatedTest
+    @Tag(ACCEPTANCE)
     void testLeaderElection(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -103,6 +105,9 @@ public class LeaderElectionIsolatedST extends AbstractST {
 
     @IsolatedTest
     void testLeaderElectionDisabled(ExtensionContext extensionContext) {
+        // Currently there is no way how to disable LeaderElection when deploying CO via Helm (duplicated envs)
+        assumeTrue(!Environment.isHelmInstall());
+
         final TestStorage testStorage = new TestStorage(extensionContext);
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
