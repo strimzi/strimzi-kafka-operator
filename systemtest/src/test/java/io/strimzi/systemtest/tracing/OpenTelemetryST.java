@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.tracing;
 
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
@@ -25,32 +25,33 @@ import static io.strimzi.systemtest.Constants.TRACING;
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-public class TracingST extends TracingAbstractST {
+public class OpenTelemetryST extends TracingAbstractST {
+
     @Override
     protected Tracing tracing() {
-        return new JaegerTracing();
+        return new OpenTelemetryTracing();
     }
 
     @Override
     protected String serviceNameEnvVar() {
-        return TracingConstants.JAEGER_SERVICE_ENV;
+        return TracingConstants.OTEL_SERVICE_ENV;
     }
 
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
-    void testProducerConsumerStreamsService(final ExtensionContext extensionContext) {
+    void testProducerConsumerStreamsService(ExtensionContext extensionContext) {
         doTestProducerConsumerStreamsService(extensionContext);
     }
 
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER2)
-    void testProducerConsumerMirrorMaker2Service(final ExtensionContext extensionContext) {
+    void testProducerConsumerMirrorMaker2Service(ExtensionContext extensionContext) {
         doTestProducerConsumerMirrorMaker2Service(extensionContext);
     }
 
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER)
-    void testProducerConsumerMirrorMakerService(final ExtensionContext extensionContext) {
+    void testProducerConsumerMirrorMakerService(ExtensionContext extensionContext) {
         doTestProducerConsumerMirrorMakerService(extensionContext);
     }
 
@@ -58,19 +59,19 @@ public class TracingST extends TracingAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void testProducerConsumerStreamsConnectService(final ExtensionContext extensionContext) {
+    void testProducerConsumerStreamsConnectService(ExtensionContext extensionContext) {
         doTestProducerConsumerStreamsConnectService(extensionContext);
     }
 
     @Tag(BRIDGE)
     @ParallelNamespaceTest
-    void testKafkaBridgeService(final ExtensionContext extensionContext) {
+    void testKafkaBridgeService(ExtensionContext extensionContext) {
         doTestKafkaBridgeService(extensionContext);
     }
 
     @Tag(BRIDGE)
     @ParallelNamespaceTest
-    void testKafkaBridgeServiceWithHttpTracing(final ExtensionContext extensionContext) {
+    void testKafkaBridgeServiceWithHttpTracing(ExtensionContext extensionContext) {
         doTestKafkaBridgeServiceWithHttpTracing(extensionContext);
     }
 }

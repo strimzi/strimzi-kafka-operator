@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
+
 @Buildable(editableEnabled = false)
 public class KafkaTracingClients  extends KafkaClients {
     private static final String JAEGER_SAMPLER_TYPE =  "const";
@@ -30,6 +32,7 @@ public class KafkaTracingClients  extends KafkaClients {
     private String jaegerServiceStreamsName;
     private String jaegerServerAgentName;
     private String streamsTopicTargetName;
+    private String tracingServiceNameEnvVar;
     private boolean openTracing = false;
     private boolean openTelemetry = false;
     private String tracingType;
@@ -74,6 +77,14 @@ public class KafkaTracingClients  extends KafkaClients {
         this.streamsTopicTargetName = streamsTopicTargetName;
     }
 
+    public String getTracingServiceNameEnvVar() {
+        return tracingServiceNameEnvVar;
+    }
+
+    public void setTracingServiceNameEnvVar(String tracingServiceNameEnvVar) {
+        this.tracingServiceNameEnvVar = tracingServiceNameEnvVar;
+    }
+
     public void setOpenTelemetry(boolean openTelemetry) {
         this.openTelemetry = openTelemetry;
     }
@@ -113,12 +124,12 @@ public class KafkaTracingClients  extends KafkaClients {
                     .editSpec()
                         .editFirstContainer()
                             .addNewEnv()
-                                .withName("JAEGER_SERVICE_NAME")
-                                .withValue(jaegerServiceConsumerName)
+                                .withName(this.tracingServiceNameEnvVar)
+                                .withValue(this.jaegerServiceConsumerName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(jaegerServerAgentName)
+                                .withValue(this.jaegerServerAgentName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -131,6 +142,10 @@ public class KafkaTracingClients  extends KafkaClients {
                             .addNewEnv()
                                 .withName("TRACING_TYPE")
                                 .withValue(tracingType)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -146,12 +161,12 @@ public class KafkaTracingClients  extends KafkaClients {
                     .editSpec()
                         .editFirstContainer()
                             .addNewEnv()
-                                .withName("JAEGER_SERVICE_NAME")
-                                .withValue(jaegerServiceProducerName)
+                                .withName(this.tracingServiceNameEnvVar)
+                                .withValue(this.jaegerServiceProducerName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(jaegerServerAgentName)
+                                .withValue(this.jaegerServerAgentName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -164,6 +179,10 @@ public class KafkaTracingClients  extends KafkaClients {
                             .addNewEnv()
                                 .withName("TRACING_TYPE")
                                 .withValue(tracingType)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -217,19 +236,19 @@ public class KafkaTracingClients  extends KafkaClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("TARGET_TOPIC")
-                                .withValue(streamsTopicTargetName)
+                                .withValue(this.streamsTopicTargetName)
                             .endEnv()
                               .addNewEnv()
                                 .withName("LOG_LEVEL")
                                 .withValue("DEBUG")
                             .endEnv()
                             .addNewEnv()
-                                .withName("JAEGER_SERVICE_NAME")
-                                .withValue(jaegerServiceStreamsName)
+                                .withName(this.tracingServiceNameEnvVar)
+                                .withValue(this.jaegerServiceStreamsName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(jaegerServerAgentName)
+                                .withValue(this.jaegerServerAgentName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -238,6 +257,10 @@ public class KafkaTracingClients  extends KafkaClients {
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
                                 .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
                             .endEnv()
                             .addNewEnv()
                                 .withName("TRACING_TYPE")
