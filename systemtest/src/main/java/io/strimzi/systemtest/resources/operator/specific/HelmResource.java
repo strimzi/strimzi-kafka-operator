@@ -100,7 +100,7 @@ public class HelmResource implements SpecificResourceType {
             int envVarIndex = 0;
             for (EnvVar envVar: extraEnvVars) {
                 values.put("extraEnvs[" + envVarIndex + "].name", envVar.getName());
-                values.put("extraEnvs[" + envVarIndex + "].value", "\"" + envVar.getValue() + "\"");
+                values.put("extraEnvs[" + envVarIndex + "].value", envVar.getValue());
                 envVarIndex++;
             }
         }
