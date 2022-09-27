@@ -9,6 +9,7 @@
 * Add support for OpenTelemetry for distributed tracing
   * Kafka Connect, Mirror Maker, Mirror Maker 2 and Strimzi Bridge can be configured to use OpenTelemetry
   * Using Jaeger exporter by default for backward compatibility
+* Updated JMX Exporter dependency to 0.17.2
 
 ### Deprecations and removals
 
