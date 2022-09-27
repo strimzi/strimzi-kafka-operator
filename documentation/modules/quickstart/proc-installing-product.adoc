@@ -52,6 +52,20 @@ kubectl create ns my-kafka-project
 ----
 
 . Edit the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file and set the `STRIMZI_NAMESPACE` environment variable to the namespace `my-kafka-project`.
+Change the environment variable configuration from this:
++
+[source, yaml, subs=+quotes ]
+----
+# ...
+env:
+- name: STRIMZI_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
+# ...
+----
++
+To this:
 +
 [source, yaml, subs=+quotes ]
 ----
