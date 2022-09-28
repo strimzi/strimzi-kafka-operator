@@ -10,9 +10,15 @@
   * Kafka Connect, Mirror Maker, Mirror Maker 2 and Strimzi Bridge can be configured to use OpenTelemetry
   * Using Jaeger exporter by default for backward compatibility
 
-### Deprecations and removals
+### Changes, deprecations and removals
 
 * A connector or task failing triggers a 'NotReady' condition to be added to the KafkaConnector CR status. This is different from previous versions where the CR would report 'Ready' even if the connector or a task had failed.
+* The `ClusterRole` from file `020-ClusterRole-strimzi-cluster-operator-role.yaml` was split into two separate roles:
+  * The original `strimzi-cluster-operator-namespaced` `ClusterRole` in the file `020-ClusterRole-strimzi-cluster-operator-role.yaml` contains the rights related to the resources created based on some Strimzi custom resources.
+  * The new `strimzi-cluster-operator-watched` `ClusterRole` in the file `023-ClusterRole-strimzi-cluster-operator-role.yaml` contains the rights required to watch and manage the Strimzi custom resources.
+  
+  When deploying the Strimzi Cluster Operator as cluster-wide, the `strimzi-cluster-operator-watched` `ClusterRole` needs to be always granted at the cluster level.
+  But the `strimzi-cluster-operator-namespaced` `ClusterRole` might be granted only for the namespaces where any custom resources are created.
 * The `ControlPlaneListener` feature gate moves to GA. 
   Direct upgrade from Strimzi 0.22 or earlier is not possible anymore.
   You have to upgrade first to one of the Strimzi versions between 0.22 and 0.32 before upgrading to Strimzi 0.32 or newer.
