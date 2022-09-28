@@ -1,26 +1,55 @@
 // Module included in the following assemblies:
 //
-// assembly-instrumenting-kafka-clients-tracers.adoc
+// assembly-distributed tracing.adoc
 
 [id='proc-instrumenting-kafka-streams-with-tracers-{context}']
 = Instrumenting Kafka Streams applications for tracing
 
-This section describes how to instrument Kafka Streams API applications for distributed tracing.
+[role="_abstract"]
+Instrument Kafka Streams API applications for distributed tracing.
+OpenTelemetry and OpenTracing instrumentation projects provide classes that support instrumentation of Kafka Streams.
+
+You create a wrapped instance of the `TracingKafkaClientSupplier` supplier interface, which provides tracing instrumentation for Kafka Streams.
+
+.Prerequisites
+
+* You have xref:proc-configuring-tracers-kafka-clients-{context}[initialized tracing for the client].
++
+You enable instrumentation in Kafka Streams applications by adding the tracing JARs as dependencies to your project.
+* To instrument Kafka Streams with OpenTelemetry, you'll need to write a custom `TracingKafkaClientSupplier`.
++
+.Example custom `TracingKafkaClientSupplier`
+[source,java]
+----
+private static class TracingKafkaClientSupplier implements KafkaClientSupplier {
+    @Override
+    public Admin getAdmin(Map<String, Object> config) {
+        return Admin.create(config);
+    }
+    @Override
+    public Producer<byte[], byte[]> getProducer(Map<String, Object> config) {
+        KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
+        return tracing.wrap(new KafkaProducer<>(config));
+    }
+    @Override
+    public Consumer<byte[], byte[]> getConsumer(Map<String, Object> config) {
+        KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
+        return tracing.wrap(new KafkaConsumer<>(config));
+    }
+    @Override
+    public Consumer<byte[], byte[]> getRestoreConsumer(Map<String, Object> config) {
+        return getConsumer(config);
+    }
+    @Override
+    public Consumer<byte[], byte[]> getGlobalConsumer(Map<String, Object> config) {
+        return getConsumer(config);
+    }
+}
+----
 
 .Procedure
 
-In each Kafka Streams API application:
-
-. Add the `opentracing-kafka-streams` dependency to the pom.xml file for your Kafka Streams API application:
-+
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.opentracing.contrib</groupId>
-    <artifactId>opentracing-kafka-streams</artifactId>
-    <version>{OpenTracingKafkaClient}</version>
-</dependency>
-----
+Perform these steps for each Kafka Streams API application.
 
 . Create an instance of the `TracingKafkaClientSupplier` supplier interface:
 +
