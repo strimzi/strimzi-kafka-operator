@@ -36,6 +36,7 @@ public class BundleResource implements ResourceType<Deployment> {
     private long reconciliationInterval;
     private List<EnvVar> extraEnvVars;
     private Map<String, String> extraLabels;
+    private int replicas = 1;
 
     @Override
     public String getKind() {
@@ -76,6 +77,7 @@ public class BundleResource implements ResourceType<Deployment> {
         this.reconciliationInterval = builder.reconciliationInterval;
         this.extraEnvVars = builder.extraEnvVars;
         this.extraLabels = builder.extraLabels;
+        this.replicas = builder.replicas;
 
         // assign defaults is something is not specified
         if (this.name == null || this.name.isEmpty()) this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
@@ -95,6 +97,7 @@ public class BundleResource implements ResourceType<Deployment> {
         private long reconciliationInterval;
         private List<EnvVar> extraEnvVars;
         private Map<String, String> extraLabels;
+        private int replicas;
 
         public BundleResourceBuilder withName(String name) {
             this.name = name;
@@ -128,6 +131,11 @@ public class BundleResource implements ResourceType<Deployment> {
             return self();
         }
 
+        public BundleResourceBuilder withReplicas(int replicas) {
+            this.replicas = replicas;
+            return self();
+        }
+
         protected BundleResourceBuilder self() {
             return this;
         }
@@ -157,7 +165,8 @@ public class BundleResource implements ResourceType<Deployment> {
             .withWatchingNamespaces(namespaceToWatch)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval)
-            .withExtraEnvVars(extraEnvVars);
+            .withExtraEnvVars(extraEnvVars)
+            .withReplicas(replicas);
     }
 
     public DeploymentBuilder buildBundleDeployment() {
@@ -231,6 +240,7 @@ public class BundleResource implements ResourceType<Deployment> {
                 .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()
+                .withReplicas(this.replicas)
                 .withNewSelector()
                     .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
                     .addToMatchLabels(this.extraLabels)
