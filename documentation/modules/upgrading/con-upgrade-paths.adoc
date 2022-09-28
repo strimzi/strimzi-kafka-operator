@@ -37,18 +37,30 @@ In some cases, you can also downgrade to a previous supported Kafka version.
 
 If you are upgrading to the latest version of Strimzi from a version prior to version 0.22, do the following:
 
-. Upgrade Strimzi to version 0.22 following the xref:con-upgrade-sequence-{context}[standard sequence]
-. Convert Strimzi custom resources to `v1beta2` using the _API conversion tool_ provided with Strimzi
-. Upgrade Strimzi to a version between 0.23 and 0.31 to incorporate the `ControlPlaneListener` feature gate
-. Enable the `ControlPlaneListener` feature gate
-. Upgrade to Strimzi {ProductVersion} following the xref:con-upgrade-sequence-{context}[standard sequence]  
+. Upgrade Strimzi to version 0.22 following the xref:con-upgrade-sequence-{context}[standard sequence].
+. Convert Strimzi custom resources to `v1beta2` using the _API conversion tool_ provided with Strimzi.
+. Do one of the following:
++
+* Upgrade Strimzi to a version between 0.23 and 0.26 (where the `ControlPlaneListener` feature gate is disabled by default).
+* Upgrade Strimzi to a version between 0.27 and 0.31 (where the `ControlPlaneListener` feature gate is enabled by default) with the `ControlPlaneListener` feature gate disabled.
+. Enable the `ControlPlaneListener` feature gate.
+. Upgrade to Strimzi {ProductVersion} following the xref:con-upgrade-sequence-{context}[standard sequence].
 
+Strimzi custom resources started using the `v1beta2` API version in release 0.22.
 CRDs and custom resources must be converted *before* upgrading to Strimzi 0.23 or newer.
 For information on using the API conversion tool, see the {UpgradeGuide}.
 
 The `ControlPlaneListener` feature is now permanently enabled in Strimzi.
-You must upgrade to a version of Strimzi where it is not enabled by default, then enable it using the 
+You must upgrade to a version of Strimzi where it is disabled, then enable it using the 
 `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+.Disabling the `ControlPlaneListener` feature gate
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_FEATURE_GATES
+    value: -ControlPlaneListener
+----
 
 .Enabling the `ControlPlaneListener` feature gate
 [source,yaml,options="nowrap"]
