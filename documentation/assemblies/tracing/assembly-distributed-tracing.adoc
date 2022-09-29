@@ -17,12 +17,14 @@ Support for tracing is built in to the following Kafka components:
 * Strimzi Kafka Bridge
 
 Tracing is not supported for Kafka brokers.
-You enable and configure tracing for these components using template configuration properties in their custom resources. 
 
-You specify a tracing type using the `tracing.type` property:
+You enable and configure tracing for these components through their custom resources. 
+You enable tracing by specifying a tracing type using the `spec.tracing.type` property:
 
 * `opentelemetry` for OpenTelemetry with the Jaeger Exporter
 * `jaeger` for OpenTracing with Jaeger
+
+You add tracing configuration using `spec.template` properties. 
 
 [NOTE]
 ====
