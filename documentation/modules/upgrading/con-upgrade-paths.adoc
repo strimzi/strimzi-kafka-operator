@@ -50,6 +50,8 @@ Strimzi custom resources started using the `v1beta2` API version in release 0.22
 CRDs and custom resources must be converted *before* upgrading to Strimzi 0.23 or newer.
 For information on using the API conversion tool, see the {UpgradeGuide}.
 
+NOTE: As an alternative to first upgrading to version 0.22, you can install the custom resources from version 0.22 and then convert the resources.
+
 The `ControlPlaneListener` feature is now permanently enabled in Strimzi.
 You must upgrade to a version of Strimzi where it is disabled, then enable it using the 
 `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
@@ -69,5 +71,3 @@ env:
   - name: STRIMZI_FEATURE_GATES
     value: +ControlPlaneListener
 ----
-
-NOTE: As an alternative to first upgrading to version 0.22, you can install the custom resources from version 0.22 and then convert the resources.
