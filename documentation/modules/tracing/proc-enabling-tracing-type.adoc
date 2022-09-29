@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Instead of the default Jaeger system, you can specify other tracing systems that are supported by OpenTelemetry.
-You do this by adding the required artifacts to the library of the Kafka image provided with Strimzi.
+You do this by adding the required artifacts to the Kafka image provided with Strimzi.
 Any required implementation specific environment variables must also be set.
 You then enable the new tracing implementation using the `OTEL_TRACES_EXPORTER` environment variable.
 
@@ -41,7 +41,7 @@ spec:
       env:
         - name: OTEL_SERVICE_NAME
           value: my-zipkin-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+        - name: OTEL_EXPORTER_ZIPKIN_ENDPOINT
           value: http://zipkin-exporter-host-name:9411/api/v2/spans # <1>
         - name: OTEL_TRACES_EXPORTER
           value: zipkin # <2>
@@ -50,4 +50,4 @@ spec:
 #...
 ----
 <1> Specifies the Zipkin endpoint to connect to.
-<2> The Zipkin exporter used for tracing.
+<2> The Zipkin exporter.
