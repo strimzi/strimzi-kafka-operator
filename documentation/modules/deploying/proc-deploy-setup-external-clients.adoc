@@ -13,7 +13,7 @@ This procedure shows how to configure client access to a Kafka cluster from outs
 Kafka listeners provide access.
 The following listener types are supported:
 
-* `internal` to connect within the Kubernetes cluster
+* `internal` to connect within the same Kubernetes cluster
 * `route` to use OpenShift `Route` and the default HAProxy router
 * `loadbalancer` to use loadbalancer services
 * `nodeport` to use ports on Kubernetes nodes
@@ -24,13 +24,13 @@ For example, loadbalancers might not be suitable for certain infrastructure, suc
 
 In this procedure:
 
-. An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka _simple authorization_ enabled.
-. A `KafkaUser` is created for the client, with TLS authentication, and Access Control Lists (ACLs) defined for _simple authorization_.
+. An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka `simple` authorization enabled.
+. A `KafkaUser` is created for the client, with TLS authentication, and Access Control Lists (ACLs) defined for `simple` authorization.
 
-You can configure your listener to use TLS, SCRAM-SHA-512, or OAuth 2.0 authentication.
+You can configure your listener to use `tls`, `scram-sha-512`, or `oauth` authentication.
 TLS always uses encryption, but encryption is also recommended when using SCRAM-SHA-512 and OAuth 2.0 authentication.
 
-You can configure simple, OAuth 2.0, OPA, or custom authorization for Kafka brokers.
+You can configure `simple`, `oauth`, `opa`, or `custom` authorization for Kafka brokers.
 When enabled, authorization is applied to all enabled listeners.
 
 When you configure the `KafkaUser` authentication and authorization mechanisms, ensure they match the equivalent Kafka configuration:
@@ -90,14 +90,12 @@ spec:
       tls: true # <5>
       authentication:
         type: tls # <6>
-      configuration:
-        preferredNodePortAddressType: InternalDNS # <7>
-        _bootstrap and broker service overrides_ # <8>
+      configuration: # <7>
         #...
-    authorization: # <9>
+    authorization: # <8>
       type: simple
       superUsers:
-        - super-user-name # <10>
+        - super-user-name # <9>
   # ...
 ----
 <1> Configuration options for enabling external listeners are described in the link:{BookURLUsing}#type-GenericKafkaListener-reference[Generic Kafka listener schema reference^].
@@ -106,15 +104,9 @@ spec:
 <4> External listener type specified as `route`, `loadbalancer`, `nodeport` or `ingress`. An internal listener is specified as `internal`.
 <5> Enables TLS encryption on the listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <6> Authentication specified as `tls`.
-<7> (Optional, for `nodeport` listeners only) Configuration to link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-reference[specify a preference for the first address type used by Strimzi as the node address^].
-<8> (Optional) Strimzi automatically determines the addresses to advertise to clients.
-The addresses are automatically assigned by Kubernetes.
-You can override link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-reference[bootstrap and broker service addresses] if the infrastructure on which you are running Strimzi does not provide the right address.
-Validation is not performed on the overrides.
-The override configuration differs according to the listener type.
-For example, you can override hosts for `route`, DNS names or IP addresses for `loadbalancer`, and node ports for `nodeport`.
-<9> Authorization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
-<10> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
+<7> (Optional) Depending on the requirements of the listener type, you can specify additional link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-reference[listener configuration^].
+<8> Authorization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
+<9> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 +
 WARNING: An OpenShift Route address comprises the name of the Kafka cluster, the name of the listener, and the name of the namespace it is created in.
 For example, `my-cluster-kafka-listener1-bootstrap-myproject` (_CLUSTER-NAME_-kafka-_LISTENER-NAME_-bootstrap-_NAMESPACE_).
@@ -154,7 +146,7 @@ Use the bootstrap address in your Kafka client to connect to the Kafka cluster.
 . Create or modify a user representing the client that requires access to the Kafka cluster.
 +
 * Specify the same authentication type as the `Kafka` listener.
-* Specify the authorization ACLs for simple authorization.
+* Specify the authorization ACLs for `simple` authorization.
 +
 .Example user configuration
 [source,yaml,subs="+quotes,attributes"]

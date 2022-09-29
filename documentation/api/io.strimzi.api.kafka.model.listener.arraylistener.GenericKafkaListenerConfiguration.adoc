@@ -4,7 +4,7 @@ Configuration for Kafka listeners.
 === `brokerCertChainAndKey`
 
 The `brokerCertChainAndKey` property is only used with listeners that have TLS encryption enabled.
-You can use the property to providing your own Kafka listener certificates.
+You can use the property to provide your own Kafka listener certificates.
 
 .Example configuration for a `loadbalancer` external listener with TLS encryption enabled
 [source,yaml,subs="attributes+"]
