@@ -13,7 +13,7 @@ For example, permissions can control runtime operations or access to resources.
 ifdef::Section[]
 //how security context and security providers work
 include::../../modules/configuring/con-config-security-providers.adoc[leveloffset=+1]
-//implementing your own provider
+//enabling the provider
 include::../../modules/configuring/proc-config-restricted-security-provider.adoc[leveloffset=+1]
 //implementing your own provider
 include::../../modules/configuring/con-config-custom-security-providers.adoc[leveloffset=+1]

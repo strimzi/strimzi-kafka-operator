@@ -11,12 +11,11 @@ If Strimzi's Baseline Provider and Restricted Provider don't quite match your ne
 Implement a custom pod security provider to apply your own security context profile.
 You can decide what applications and privileges to include in the profile.
 
-Your custom pod security provider can implement the `PodSecurityProvider.java` interface that gets the security context for pods and containers. 
-Or it can extend the Baseline Provider or Restricted Provider classes. 
+Your custom pod security provider can implement the `PodSecurityProvider.java` interface that gets the security context for pods and containers; or it can extend the Baseline Provider or Restricted Provider classes. 
 
 The pod security provider plugins use the Java Service Provider Interface, so your custom pod security provider also requires a provider configuration file for service discovery. 
 
-To implement your own provider, the general steps are as follows:
+To implement your own provider, the general steps include the following:
 
 . Build the JAR file for the provider.
 . Add the JAR file to the Cluster Operator image.
