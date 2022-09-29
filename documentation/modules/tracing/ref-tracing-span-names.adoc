@@ -9,7 +9,7 @@
 A tracing __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
 Spans have built-in names, but you can specify custom span names in your Kafka client instrumentation where used. 
 
-Specifying custom span names is optional and only applies when xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[using a decorator pattern in producer and consumer client instrumentation]. 
+Specifying custom span names is optional and only applies when using a decorator pattern xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[in producer and consumer client instrumentation] or xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Kafka Streams instrumentation]. 
 
 == Specifying span names for OpenTelemetry
 

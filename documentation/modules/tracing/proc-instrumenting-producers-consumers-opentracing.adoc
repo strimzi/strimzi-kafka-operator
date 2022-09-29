@@ -11,8 +11,8 @@ You can then record traces when messages are produced or retrieved from a topic.
 
 OpenTelemetry and OpenTracing instrumentation projects provide classes that support instrumentation of producers and consumers.
 
-Decorator instrumentation:: For Decorator instrumentation, create a modified producer or consumer instance for tracing. Decorator instrumentation is different for OpenTelemetry and OpenTracing.
-Interceptor instrumentation:: For Interceptor instrumentation, add the tracing capability to the consumer or producer configuration. Interceptor instrumentation is the same for OpenTelemetry and OpenTracing.
+Decorator instrumentation:: For decorator instrumentation, create a modified producer or consumer instance for tracing. Decorator instrumentation is different for OpenTelemetry and OpenTracing.
+Interceptor instrumentation:: For interceptor instrumentation, add the tracing capability to the consumer or producer configuration. Interceptor instrumentation is the same for OpenTelemetry and OpenTracing.
 
 .Prerequisites
 
@@ -77,7 +77,7 @@ SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(),
 You use the `KafkaProducer` and `KafkaConsumer` classes in the usual way.
 The `TracingProducerInterceptor` and `TracingConsumerInterceptor` interceptor classes take care of the tracing capability.
 +
-.Example producer using interceptors
+.Example producer configuration using interceptors
 [source,java]
 ----
 senderProps.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, 
@@ -87,7 +87,7 @@ KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
 producer.send(...);
 ----
 +
-.Example consumer using interceptors
+.Example consumer configuration using interceptors
 [source,java]
 ----
 consumerProps.put(ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG,
