@@ -13,6 +13,6 @@ SCCs are the settings and strategies that control the security features a pod ha
 
 By default, OpenShift injects security context configuration automatically.
 In most cases, this means you don't need to configure security context for the pods and containers created by the Cluster Operator.  
-Although it is possible to create and manage your own SCCs.
+Although you can still create and manage your own SCCs.
 
 For more information, see the {OpenShiftDocs}. 
