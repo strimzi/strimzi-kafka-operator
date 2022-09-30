@@ -552,7 +552,7 @@ public class KafkaClusterStatefulSetTest {
 
     @ParallelTest
     public void testDefaultSecurityContext() {
-        StatefulSet sts = KC.generateStatefulSet(true, null, null, null);
+        StatefulSet sts = KC.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(0L));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext(), is(nullValue()));
     }
