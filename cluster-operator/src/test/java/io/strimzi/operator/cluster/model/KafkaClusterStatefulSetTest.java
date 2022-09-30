@@ -198,8 +198,6 @@ public class KafkaClusterStatefulSetTest {
         checkStatefulSet(sts, KAFKA);
         checkOwnerReference(KC.createOwnerReference(), sts);
 
-        System.out.println(sts.getSpec().getTemplate().getSpec().getVolumes());
-
         // Check Volumes
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().size(), is(6));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -553,6 +551,7 @@ public class KafkaClusterStatefulSetTest {
     @ParallelTest
     public void testDefaultSecurityContext() {
         StatefulSet sts = KC.generateStatefulSet(false, null, null, null);
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(0L));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getSecurityContext(), is(nullValue()));
     }
