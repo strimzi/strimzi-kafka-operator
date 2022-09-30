@@ -80,33 +80,19 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Write
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Create
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operation: All
         host: "*"
       - resource:
           type: cluster
           name: my-cluster
           patternType: literal
-        operation: Alter
+        operation: All
         host: "*"
       # ...
   # ...
 ----
 <1> User authentication mechanism defined as mutual `tls`.
 <2> Simple authorization and accompanying list of ACL rules.
-
-NOTE: Permission for a `Describe` operation is required as a minimum for TLS access to a topic.
 --
 
 .Procedure
