@@ -44,7 +44,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +74,9 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
     public static final EnvVar FIRST_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "app.kubernetes.io/operator=" + FIRST_CO_NAME, null);
     public static final EnvVar SECOND_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "app.kubernetes.io/operator=" + SECOND_CO_NAME, null);
 
+    public static final EnvVar FIRST_CO_LEASE_NAME_ENV = new EnvVar("STRIMZI_LEADER_ELECTION_LEASE_NAME", FIRST_CO_NAME, null);
+    public static final EnvVar SECOND_CO_LEASE_NAME_ENV = new EnvVar("STRIMZI_LEADER_ELECTION_LEASE_NAME", SECOND_CO_NAME, null);
+
     public static final Map<String, String> FIRST_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", FIRST_CO_NAME);
     public static final Map<String, String> SECOND_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", SECOND_CO_NAME);
 
@@ -91,8 +93,8 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
 
-        deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, FIRST_CO_SELECTOR_ENV, true);
-        deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
+        deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, Collections.singletonList(FIRST_CO_SELECTOR_ENV), true);
+        deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
         cluster.createNamespace(DEFAULT_NAMESPACE);
         cluster.setNamespace(DEFAULT_NAMESPACE);
@@ -165,11 +167,8 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
         int scaleTo = 4;
 
-        deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, FIRST_CO_SELECTOR_ENV, true);
-        deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
-
-        cluster.createNamespace(DEFAULT_NAMESPACE);
-        cluster.setNamespace(DEFAULT_NAMESPACE);
+        deployCOInNamespace(extensionContext, FIRST_CO_NAME, DEFAULT_NAMESPACE, List.of(FIRST_CO_SELECTOR_ENV, FIRST_CO_LEASE_NAME_ENV), false);
+        deployCOInNamespace(extensionContext, SECOND_CO_NAME, DEFAULT_NAMESPACE, List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false);
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_SELECTOR, FIRST_CO_NAME);
 
@@ -220,7 +219,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, clusterName), DEFAULT_NAMESPACE, clusterName);
     }
 
-    void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, EnvVar selectorEnv, boolean multipleNamespaces) {
+    void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
         String namespace = multipleNamespaces ? Constants.WATCH_ALL_NAMESPACES : coNamespace;
 
         if (multipleNamespaces) {
@@ -232,16 +231,13 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
         LOGGER.info("Creating {} in {} namespace", coName, coNamespace);
 
-        List<EnvVar> envVarList = new ArrayList<>();
-        envVarList.add(selectorEnv);
-
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(coNamespace)
             .withClusterOperatorName(coName)
             .withWatchingNamespaces(namespace)
             .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))
-            .withExtraEnvVars(envVarList)
+            .withExtraEnvVars(extraEnvs)
             .createInstallation()
             .runBundleInstallation();
     }
