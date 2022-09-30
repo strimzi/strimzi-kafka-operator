@@ -1,0 +1,59 @@
+// Module included in the following assemblies:
+//
+// assembly-distributed tracing.adoc
+
+[id='ref-tracing-span-names-{context}']
+= Custom span names
+
+[role="_abstract"]
+A tracing __span__ is a logical unit of work in Jaeger, with an operation name, start time, and duration. 
+Spans have built-in names, but you can specify custom span names in your Kafka client instrumentation where used. 
+
+Specifying custom span names is optional and only applies when using a decorator pattern xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[in producer and consumer client instrumentation] or xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Kafka Streams instrumentation]. 
+
+== Specifying span names for OpenTelemetry
+
+Custom span names cannot be specified directly with OpenTelemetry.
+Instead, you retrieve span names by adding code to your client application to extract additional tags and attributes.
+
+.Example code to extract attributes
+[source,java,subs=attributes+]
+----
+//Defines attribute extraction for a producer
+private static class ProducerAttribExtractor implements AttributesExtractor < ProducerRecord < ? , ? > , Void > {
+    @Override
+    public void onStart(AttributesBuilder attributes, ProducerRecord < ? , ? > producerRecord) {
+        set(attributes, AttributeKey.stringKey("prod_start"), "prod1");
+    }
+    @Override
+    public void onEnd(AttributesBuilder attributes, ProducerRecord < ? , ? > producerRecord, @Nullable Void unused, @Nullable Throwable error) {
+        set(attributes, AttributeKey.stringKey("prod_end"), "prod2");
+    }
+}
+//Defines attribute extraction for a consumer
+private static class ConsumerAttribExtractor implements AttributesExtractor < ConsumerRecord < ? , ? > , Void > {
+    @Override
+    public void onStart(AttributesBuilder attributes, ConsumerRecord < ? , ? > producerRecord) {
+        set(attributes, AttributeKey.stringKey("con_start"), "con1");
+    }
+    @Override
+    public void onEnd(AttributesBuilder attributes, ConsumerRecord < ? , ? > producerRecord, @Nullable Void unused, @Nullable Throwable error) {
+        set(attributes, AttributeKey.stringKey("con_end"), "con2");
+    }
+}
+//Extracts the attributes
+public static void main(String[] args) throws Exception {
+        Map < String, Object > configs = new HashMap < > (Collections.singletonMap(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092"));
+        System.setProperty("otel.traces.exporter", "jaeger");
+        System.setProperty("otel.service.name", "myapp1");
+        KafkaTracing tracing = KafkaTracing.newBuilder(GlobalOpenTelemetry.get())
+            .addProducerAttributesExtractors(new ProducerAttribExtractor())
+            .addConsumerAttributesExtractors(new ConsumerAttribExtractor())
+            .build();
+----
+
+== Specifying span names for OpenTracing
+
+To specify custom span names for OpenTracing, pass a `BiFunction` object as an additional argument when instrumenting producers and consumers.
+
+For more information on built-in names and specifying custom span names to instrument client application code in a decorator pattern, see the {OpenTracingKafkaClientDocs}.

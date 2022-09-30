@@ -1,95 +1,61 @@
 // Module included in the following assemblies:
 //
-// assembly-setting-up-tracing-kafka-clients.adoc
+// assembly-distributed tracing.adoc
 
 [id='ref-tracing-environment-variables-{context}']
 = Environment variables for tracing
 
-Use these environment variables when configuring a Jaeger tracer for Kafka clients.
+[role="_abstract"]
+Use environment variables when you are enabling tracing for Kafka components or initializing a tracer for Kafka clients.
 
-NOTE: The tracing environment variables are part of the Jaeger project and are subject to change. For the latest environment variables, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core#configuration-via-environment[Jaeger documentation^].
+Tracing environment variables are subject to change. 
+For the latest information, see the {OpenTelemetryDocs} and {OpenTracingDocs}.
 
-[%autowidth.stretch,cols="3*",options="header",stripes="none",separator=¦]
+The following tables describe the key environment variables for setting up a tracer. 
+
+.OpenTelemetry environment variables
+[cols="2m,1,2",options="header"]
 |===
 
-¦Property
-¦Required
-¦Description
+|Property
+|Required
+|Description
 
-m¦JAEGER_SERVICE_NAME
-¦Yes
-¦The name of the Jaeger tracer service.
+|OTEL_SERVICE_NAME
+|Yes
+|The name of the Jaeger tracing service for OpenTelemetry.
 
-m¦JAEGER_AGENT_HOST
-¦No
-¦The hostname for communicating with the `jaeger-agent` through the User Datagram Protocol (UDP).
+|OTEL_EXPORTER_JAEGER_ENDPOINT
+|Yes
+|The exporter used for tracing.
 
-m¦JAEGER_AGENT_PORT
-¦No
-¦The port used for communicating with the `jaeger-agent` through UDP.
+|OTEL_TRACES_EXPORTER
+|Yes
+|The exporter used for tracing.
+Set to `otlp` by default. If using Jaeger tracing, you need to specify this environment variable.
+If you are using another tracing implementation, xref:proc-enabling-tracing-type-{context}[specify the exporter used].
 
-m¦JAEGER_ENDPOINT
-¦No
-¦The `traces` endpoint. Only define this variable if the client application will bypass the `jaeger-agent` and connect directly to the `jaeger-collector`.
-
-m¦JAEGER_AUTH_TOKEN
-¦No
-¦The authentication token to send to the endpoint as a bearer token.
-
-m¦JAEGER_USER
-¦No
-¦The username to send to the endpoint if using basic authentication.
-
-m¦JAEGER_PASSWORD
-¦No
-¦The password to send to the endpoint if using basic authentication.
-
-m¦JAEGER_PROPAGATION
-¦No
-¦A comma-separated list of formats to use for propagating the trace context. Defaults to the standard Jaeger format. Valid values are `jaeger`, `b3`, and `w3c`.
-
-m¦JAEGER_REPORTER_LOG_SPANS
-¦No
-¦Indicates whether the reporter should also log the spans.
-
-m¦JAEGER_REPORTER_MAX_QUEUE_SIZE
-¦No
-¦The reporter's maximum queue size.
-
-m¦JAEGER_REPORTER_FLUSH_INTERVAL
-¦No
-¦The reporter's flush interval, in ms. Defines how frequently the Jaeger reporter flushes span batches.
-
-m¦JAEGER_SAMPLER_TYPE
-¦No
-a¦The sampling strategy to use for client traces:
-
-* Constant
-* Probabilistic
-* Rate Limiting
-* Remote (the default)
-
-To sample all traces, use the Constant sampling strategy with a parameter of 1.
-
-For an overview of the Jaeger architecture and client sampling configuration parameters, see the {JaegerDocs}.
-
-m¦JAEGER_SAMPLER_PARAM
-¦No
-¦The sampler parameter (number).
-
-m¦JAEGER_SAMPLER_MANAGER_HOST_PORT
-¦No
-¦The hostname and port to use if a Remote sampling strategy is selected.
-
-m¦JAEGER_TAGS
-¦No
-¦A comma-separated list of tracer-level tags that are added to all reported spans.
-
-The value can also refer to an environment variable using the format `${envVarName:default}`. `:default` is optional and identifies a value to use if the environment variable cannot be found.
 
 |===
 
-[role="_additional-resources"]
-.Additional resources
+.OpenTracing environment variables
+[cols="2m,1,2",options="header"]
+|===
 
-* xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[]
+|Property
+|Required
+|Description
+
+m|JAEGER_SERVICE_NAME
+|Yes
+|The name of the Jaeger tracer service.
+
+m|JAEGER_AGENT_HOST
+|No
+|The hostname for communicating with the `jaeger-agent` through the User Datagram Protocol (UDP).
+
+m|JAEGER_AGENT_PORT
+|No
+|The port used for communicating with the `jaeger-agent` through UDP.
+
+|===

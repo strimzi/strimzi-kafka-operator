@@ -1,0 +1,33 @@
+// Module included in the following assemblies:
+//
+// assembly-distributed-tracing.adoc
+
+[id='con-overview-tracing-{context}']
+= Tracing options
+
+[role="_abstract"]
+Use OpenTelemetry or OpenTracing (deprecated) with the Jaeger tracing system.
+
+OpenTelemetry and OpenTracing provide API specifications that are independent from the tracing or monitoring system.
+
+You use the APIs to instrument application code for tracing. 
+
+* Instrumented applications generate _traces_ for individual requests across the distributed system.
+
+* Traces are composed of _spans_ that define specific units of work over time.
+
+Jaeger is a tracing system for microservices-based distributed systems.
+
+* Jaeger implements the tracing APIs and provides client libraries for instrumentation.
+
+* The Jaeger user interface allows you to query, filter, and analyze trace data.
+
+.The Jaeger user interface showing a simple query
+image:image_con-overview-distributed-tracing.png[The Jaeger user interface showing a simple query]
+
+[role="_additional-resources"]
+.Additional resources
+
+* {JaegerDocs}
+* {OpenTelemetryDocs}
+* {OpenTracingDocs}

@@ -1,0 +1,53 @@
+// Module included in the following assemblies:
+//
+// assembly-distributed tracing.adoc
+
+[id='proc-enabling-tracing-type-{context}']
+= Introducing a different OpenTelemetry tracing system
+
+[role="_abstract"]
+Instead of the default Jaeger system, you can specify other tracing systems that are supported by OpenTelemetry.
+You do this by adding the required artifacts to the Kafka image provided with Strimzi.
+Any required implementation specific environment variables must also be set.
+You then enable the new tracing implementation using the `OTEL_TRACES_EXPORTER` environment variable.
+
+This procedure shows how to implement Zipkin tracing.
+
+.Procedure
+
+. Add the tracing artifacts to the `/opt/kafka/libs/` directory of the Strimzi Kafka image.
++
+You can use the Kafka container image on the {DockerRepository} as a base image for creating a new custom image.
++
+.OpenTelemetry artifact for Zipkin
+[source,env,subs=attributes+]
+----
+io.opentelemetry:opentelemetry-exporter-zipkin
+----
+
+. Set the tracing exporter and endpoint for the new tracing implementation.
++
+.Example Zikpin tracer configuration
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2-cluster
+spec:
+  #...
+  template:
+    connectContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-zipkin-service
+        - name: OTEL_EXPORTER_ZIPKIN_ENDPOINT
+          value: http://zipkin-exporter-host-name:9411/api/v2/spans # <1>
+        - name: OTEL_TRACES_EXPORTER
+          value: zipkin # <2>
+  tracing:
+    type: opentelemetry
+#...
+----
+<1> Specifies the Zipkin endpoint to connect to.
+<2> The Zipkin exporter.
