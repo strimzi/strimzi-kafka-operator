@@ -6,13 +6,13 @@
 = Instrumenting Kafka Streams applications for tracing
 
 [role="_abstract"]
-Use a decorator pattern or interceptors to instrument your Kafka Streams API applications tracing.
+Use a decorator pattern or interceptors to instrument your Kafka Streams API applications for tracing.
 You can then record traces when messages are produced or retrieved from a topic.
 
 Decorator instrumentation:: For decorator instrumentation, create a modified Kafka Streams instance for tracing. The OpenTracing instrumentation project provides a `TracingKafkaClientSupplier` class that supports instrumentation of Kafka Streams.
 You create a wrapped instance of the `TracingKafkaClientSupplier` supplier interface, which provides tracing instrumentation for Kafka Streams.
 For OpenTelemetry, the process is the same but you need to create a custom `TracingKafkaClientSupplier` class to provide the support. 
-Interceptor instrumentation:: For interceptor instrumentation, add the tracing capability to the Kafka Streams producer or consumer configuration. 
+Interceptor instrumentation:: For interceptor instrumentation, add the tracing capability to the Kafka Streams producer and consumer configuration. 
 
 .Prerequisites
 
@@ -64,18 +64,13 @@ KafkaStreams streams = new KafkaStreams(builder.build(), new StreamsConfig(confi
 streams.start();
 ----
 
-* To use interceptors, set the interceptor class in the Kafka Streams producer or consumer configuration.
+* To use interceptors, set the interceptor class in the Kafka Streams producer and consumer configuration.
 +
 The `TracingProducerInterceptor` and `TracingConsumerInterceptor` interceptor classes take care of the tracing capability.
 +
-.Example producer configuration using interceptors
+.Example producer and consumer configuration using interceptors
 [source,java,subs=attributes+]
 ----
 props.put(StreamsConfig.PRODUCER_PREFIX + ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, TracingProducerInterceptor.class.getName());
-----
-+
-.Example consumer configuration using interceptors
-[source,java,subs=attributes+]
-----
 props.put(StreamsConfig.CONSUMER_PREFIX + ConsumerConfig.INTERCEPTOR_CLASSES_CONFIG, TracingConsumerInterceptor.class.getName());
 ----
