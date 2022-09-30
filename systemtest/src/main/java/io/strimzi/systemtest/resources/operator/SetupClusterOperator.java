@@ -467,14 +467,15 @@ public class SetupClusterOperator {
 
     private String changeLeaseNameInResourceIfNeeded(String yamlPath) {
         final EnvVar leaseEnvVar = extraEnvVars.stream().filter(envVar -> envVar.getName().equals("STRIMZI_LEADER_ELECTION_LEASE_NAME")).findFirst().orElse(null);
-        if (leaseEnvVar != null && yamlPath.contains("022-")) {
+        Map.Entry<String, String> resourceEntry = Constants.LEASE_FILES_AND_RESOURCES.entrySet().stream().filter(entry -> yamlPath.equals(entry.getValue())).findFirst().orElse(null);
+
+        if (leaseEnvVar != null && resourceEntry != null) {
             try {
                 File tmpFile = File.createTempFile(yamlPath.replace(Constants.STRIMZI_DEPLOYMENT_NAME + ".yaml", leaseEnvVar.getValue()), "yaml");
-                String tmpFileContent = "";
+                String tmpFileContent;
                 final String resourceName = leaseEnvVar.getValue() + "-leader-election";
-                final String resourceType = yamlPath.replace(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/", "").split("-")[1];
 
-                switch (resourceType) {
+                switch (resourceEntry.getKey()) {
                     case Constants.ROLE:
                         RoleBuilder roleBuilder = new RoleBuilder(TestUtils.configFromYaml(yamlPath, Role.class))
                             .editMetadata()

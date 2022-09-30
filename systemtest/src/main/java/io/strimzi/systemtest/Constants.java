@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.strimzi.test.TestUtils;
 
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * Interface for keep global constants used across system tests.
@@ -400,4 +401,17 @@ public interface Constants {
     String KAFKA_SELECTOR = "KAFKA_SELECTOR";
     String ZOOKEEPER_SELECTOR = "ZOOKEEPER_SELECTOR";
     String ENTITY_OPERATOR_NAME = "ENTITY_OPERATOR_NAME";
+
+    /**
+     * Lease related resources - ClusterRole, Role, RoleBinding
+     */
+    String PATH_TO_LEASE_CLUSTER_ROLE = PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml";
+    // Path after change of ClusterRole -> Role in our SetupClusterOperator class
+    String PATH_TO_LEASE_ROLE = PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-Role-strimzi-cluster-operator-role.yaml";
+    String PATH_TO_LEASE_ROLE_BINDING = PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml";
+    Map<String, String> LEASE_FILES_AND_RESOURCES = Map.of(
+        CLUSTER_ROLE, PATH_TO_LEASE_CLUSTER_ROLE,
+        ROLE, PATH_TO_LEASE_ROLE,
+        ROLE_BINDING, PATH_TO_LEASE_ROLE_BINDING
+    );
 }
