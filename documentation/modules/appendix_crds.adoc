@@ -2465,14 +2465,16 @@ include::../api/io.strimzi.api.kafka.model.AclRule.adoc[leveloffset=+1]
 
 [options="header"]
 |====
-|Property          |Description
-|host       1.2+<.<a|The host from which the action described in the ACL rule is allowed or denied.
+|Property           |Description
+|host        1.2+<.<a|The host from which the action described in the ACL rule is allowed or denied.
 |string
-|operation  1.2+<.<a|Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
+|operation   1.2+<.<a|*The `operation` property has been deprecated, and should now be configured using `spec.authorization.acls[*].operations`.* Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
 |string (one of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs])
-|resource   1.2+<.<a|Indicates the resource for which given ACL rule applies. The type depends on the value of the `resource.type` property within the given object, which must be one of [topic, group, cluster, transactionalId].
+|operations  1.2+<.<a|List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
+|string (one or more of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs]) array
+|resource    1.2+<.<a|Indicates the resource for which given ACL rule applies. The type depends on the value of the `resource.type` property within the given object, which must be one of [topic, group, cluster, transactionalId].
 |xref:type-AclRuleTopicResource-{context}[`AclRuleTopicResource`], xref:type-AclRuleGroupResource-{context}[`AclRuleGroupResource`], xref:type-AclRuleClusterResource-{context}[`AclRuleClusterResource`], xref:type-AclRuleTransactionalIdResource-{context}[`AclRuleTransactionalIdResource`]
-|type       1.2+<.<a|The type of the rule. Currently the only supported type is `allow`. ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
+|type        1.2+<.<a|The type of the rule. Currently the only supported type is `allow`. ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
 |string (one of [allow, deny])
 |====
 

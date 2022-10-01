@@ -18,17 +18,15 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Read
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Read
+          - Describe
       - resource:
           type: group
           name: my-group
           patternType: prefix
-        operation: Read
+        operations:
+          - Read
 ----
 
 
@@ -63,21 +61,22 @@ When `patternType` is set as `literal`, you can set the name to `*` to indicate 
           type: topic
           name: "*"
           patternType: literal
-        operation: Read
+        operations:
+          - Read
 ----
 
 [id='property-acl-type-{context}']
 === `type`
 
-The `type` of rule, which is to `allow` or `deny` (not currently supported) an operation.
+The `type` of rule, which is to `allow` or `deny` (not currently supported) an operations.
 
 The `type` field is optional.
 If `type` is unspecified, the ACL rule is treated as an `allow` rule.
 
 [id='property-acl-operation-{context}']
-=== `operation`
+=== `operations`
 
-Specify an `operation` for the rule to allow or deny.
+Specify a list of `operations` for the rule to allow or deny.
 
 The following operations are supported:
 
