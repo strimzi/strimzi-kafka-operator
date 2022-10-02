@@ -281,12 +281,20 @@ public class VersionChangeCreator {
             }
 
             if (logMessageFormatVersionFromCr == null) {
-                // When log.message.format.version is not set, we set it to current Kafka version
-                logMessageFormatVersion = versionFromCr.messageVersion();
-
-                if (highestLogMessageFormatVersionFromPods != null &&
-                        !versionFromCr.messageVersion().equals(highestLogMessageFormatVersionFromPods)) {
-                    LOGGER.infoCr(reconciliation, "Upgrading Kafka log.message.format.version from {} to {}", highestLogMessageFormatVersionFromPods, versionFromCr.messageVersion());
+                if (interBrokerProtocolVersionFromCr != null
+                        && compareDottedIVVersions(interBrokerProtocolVersionFromCr, "3.0") >= 0) {
+                    // When inter.broker.protocol.version is set to 3.0 or higher, the log.message.format.version is
+                    // ignored. To avoid unnecessary rolling updates just because changing log.message.format.version,
+                    // when the user does not explicitly set it but sets inter.broker.protocol.version, we mirror
+                    // inter.broker.protocol.version for the log.message.format.version as well.
+                    logMessageFormatVersion = interBrokerProtocolVersionFromCr;
+                } else {
+                    // When log.message.format.version is not set, we set it to current Kafka version
+                    logMessageFormatVersion = versionFromCr.messageVersion();
+                    if (highestLogMessageFormatVersionFromPods != null &&
+                            !versionFromCr.messageVersion().equals(highestLogMessageFormatVersionFromPods)) {
+                        LOGGER.infoCr(reconciliation, "Upgrading Kafka log.message.format.version from {} to {}", highestLogMessageFormatVersionFromPods, versionFromCr.messageVersion());
+                    }
                 }
             }
         } else {
