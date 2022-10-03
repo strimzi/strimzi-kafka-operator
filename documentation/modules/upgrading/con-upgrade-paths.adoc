@@ -33,20 +33,41 @@ You can upgrade to a higher Kafka version as long as it is supported by your ver
 In some cases, you can also downgrade to a previous supported Kafka version.
 
 [id='con-upgrade-paths-earlier-versions-{context}']
-== Upgrading from a Strimzi version earlier than {ConvertAfterProductVersion}
+== Upgrading from a Strimzi version earlier than 0.22
 
-When upgrading Strimzi to {ProductVersion} from {ConvertAfterProductVersion} or earlier, you must ensure that your custom resources are using API version `{ApiVersion}`.
-You must upgrade the Custom Resource Definitions and the custom resources *before* upgrading to Strimzi {ConvertBeforeProductVersion} or newer.
-To perform the upgrade, you can use the _API conversion tool_ provided with Strimzi {LastReleaseWithCRDUpgrade}.
-For more information, see the {UpgradeGuide}.
+If you are upgrading to the latest version of Strimzi from a version prior to version 0.22, do the following:
 
-The `v1beta2` API version for all custom resources was introduced with Strimzi {ConvertAfterProductVersion}.
-For Strimzi {ConvertBeforeProductVersion} and newer, the `v1alpha1` and `v1beta1` API versions were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser`.
+. Upgrade Strimzi to version 0.22 following the xref:con-upgrade-sequence-{context}[standard sequence].
+. Convert Strimzi custom resources to `v1beta2` using the _API conversion tool_ provided with Strimzi.
+. Do one of the following:
++
+* Upgrade Strimzi to a version between 0.23 and 0.26 (where the `ControlPlaneListener` feature gate is disabled by default).
+* Upgrade Strimzi to a version between 0.27 and 0.31 (where the `ControlPlaneListener` feature gate is enabled by default) with the `ControlPlaneListener` feature gate disabled.
+. Enable the `ControlPlaneListener` feature gate.
+. Upgrade to Strimzi {ProductVersion} following the xref:con-upgrade-sequence-{context}[standard sequence].
 
-If you are upgrading from a Strimzi version prior to version {ConvertAfterProductVersion}:
+Strimzi custom resources started using the `v1beta2` API version in release 0.22.
+CRDs and custom resources must be converted *before* upgrading to Strimzi 0.23 or newer.
+For information on using the API conversion tool, see the {UpgradeGuide}.
 
-. Upgrade Strimzi to {ConvertAfterProductVersion}
-. Convert the custom resources to `v1beta2`
-. Upgrade Strimzi to {ConvertBeforeProductVersion} or newer
+NOTE: As an alternative to first upgrading to version 0.22, you can install the custom resources from version 0.22 and then convert the resources.
 
-NOTE: As an alternative, you can install the custom resources from version {ConvertAfterProductVersion}, convert the resources, and then upgrade to {ConvertBeforeProductVersion} or newer.
+The `ControlPlaneListener` feature is now permanently enabled in Strimzi.
+You must upgrade to a version of Strimzi where it is disabled, then enable it using the 
+`STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+.Disabling the `ControlPlaneListener` feature gate
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_FEATURE_GATES
+    value: -ControlPlaneListener
+----
+
+.Enabling the `ControlPlaneListener` feature gate
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_FEATURE_GATES
+    value: +ControlPlaneListener
+----

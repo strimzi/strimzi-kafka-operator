@@ -14,8 +14,8 @@ Strimzi {ProductVersion} requires Kubernetes {KubernetesVersion}.
 +
 You can xref:con-upgrade-cluster-{context}[upgrade Kubernetes with minimal downtime].
 
-. When upgrading Strimzi from {ConvertAfterProductVersion} or earlier, xref:con-upgrade-paths-earlier-versions-{context}[update existing custom resources to support the `v1beta2` API version].
-. xref:assembly-upgrade-cluster-operator-{context}[Update your Cluster Operator] to a new AMQ Streams version.
+. xref:assembly-upgrade-cluster-operator-{context}[Upgrade the Cluster Operator].
+
 . xref:assembly-upgrading-kafka-versions-{context}[Upgrade all Kafka brokers and client applications] to the latest supported Kafka version.
 
 . Optional: Upgrade consumers and Kafka Streams applications xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[to use the _incremental cooperative rebalance_ protocol] for partition rebalances.
