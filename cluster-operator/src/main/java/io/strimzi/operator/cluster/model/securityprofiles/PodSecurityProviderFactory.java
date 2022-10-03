@@ -25,8 +25,7 @@ public class PodSecurityProviderFactory {
     // The default value is set for Unit Tests which might be run without the factory being initialized
     private static PodSecurityProvider provider;
     static {
-        provider = new BaselinePodSecurityProvider();
-        provider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
+        initialize();
     }
 
     /**
@@ -62,6 +61,15 @@ public class PodSecurityProviderFactory {
         PodSecurityProviderFactory.provider = findProviderOrThrow(providerClass);
         LOGGER.info("Initializing PodSecurityProvider {}", providerClass);
         PodSecurityProviderFactory.provider.configure(platformFeatures);
+    }
+
+    /**
+     * Initializes the PodSecurityProvider factory with the default values. The default values use the Baseline provider
+     * with minimal supported version of Kubernetes.
+     */
+    public static void initialize() {
+        provider = new BaselinePodSecurityProvider();
+        provider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
     }
 
     /**

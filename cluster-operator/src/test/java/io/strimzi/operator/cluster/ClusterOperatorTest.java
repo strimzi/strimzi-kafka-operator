@@ -12,8 +12,10 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
+import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.test.annotations.IsolatedSuite;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.junit5.VertxExtension;
@@ -22,6 +24,7 @@ import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -45,6 +48,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@IsolatedSuite
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
@@ -72,6 +76,11 @@ public class ClusterOperatorTest {
         }
 
         return env;
+    }
+
+    @AfterAll
+    public static void afterAll()   {
+        PodSecurityProviderFactory.initialize();
     }
 
     @Test
