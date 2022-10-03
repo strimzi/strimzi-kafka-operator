@@ -69,6 +69,10 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
+/**
+ * Provides a general test cases (e.g., test that we are able to produce and consume messages, and then we could see traces
+ * in jaeger API) for the inherited classses (i.e., {@link OpenTelemetryST} and {@link OpenTracingST}).
+ */
 public abstract class TracingAbstractST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingAbstractST.class);
@@ -95,8 +99,8 @@ public abstract class TracingAbstractST extends AbstractST {
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
                     storageMap.get(extensionContext).getTopicName())
                 .editSpec()
-                .withReplicas(3)
-                .withPartitions(12)
+                    .withReplicas(3)
+                    .withPartitions(12)
                 .endSpec()
                 .build());
 
@@ -104,8 +108,8 @@ public abstract class TracingAbstractST extends AbstractST {
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
                     storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
                 .editSpec()
-                .withReplicas(3)
-                .withPartitions(12)
+                    .withReplicas(3)
+                    .withPartitions(12)
                 .endSpec()
                 .build());
 
@@ -145,15 +149,15 @@ public abstract class TracingAbstractST extends AbstractST {
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName())
             .editSpec()
-            .withReplicas(3)
-            .withPartitions(12)
+                .withReplicas(3)
+                .withPartitions(12)
             .endSpec()
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + storageMap.get(extensionContext).getTopicName())
             .editSpec()
-            .withReplicas(3)
-            .withPartitions(12)
+                .withReplicas(3)
+                .withPartitions(12)
             .endSpec()
             .build());
 
@@ -168,7 +172,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
-        KafkaTracingClients targetKafkaTracingClient = new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
+        final KafkaTracingClients targetKafkaTracingClient = new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .withTopicName(kafkaClusterSourceName + "." + storageMap.get(extensionContext).getTopicName())
             .build();
@@ -178,30 +182,30 @@ public abstract class TracingAbstractST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(storageMap.get(extensionContext).getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
             .withTracing(tracing())
-            .withNewTemplate()
-            .withNewConnectContainer()
-            .addNewEnv()
-            .withName(serviceNameEnvVar())
-            .withValue(JAEGER_MIRROR_MAKER2_SERVICE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_AGENT_HOST")
-            .withValue(JAEGER_AGENT_HOST)
-            .endEnv()
-            .addNewEnv()
-            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-            .withValue(JAEGER_COLLECTOR_URL)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_TYPE")
-            .withValue(JAEGER_SAMPLER_TYPE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_PARAM")
-            .withValue(JAEGER_SAMPLER_PARAM)
-            .endEnv()
-            .endConnectContainer()
-            .endTemplate()
+                .withNewTemplate()
+                    .withNewConnectContainer()
+                        .addNewEnv()
+                            .withName(serviceNameEnvVar())
+                            .withValue(JAEGER_MIRROR_MAKER2_SERVICE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_AGENT_HOST")
+                            .withValue(JAEGER_AGENT_HOST)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_URL)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_TYPE")
+                            .withValue(JAEGER_SAMPLER_TYPE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_PARAM")
+                            .withValue(JAEGER_SAMPLER_PARAM)
+                        .endEnv()
+                    .endConnectContainer()
+                .endTemplate()
             .endSpec()
             .build());
 
@@ -235,22 +239,22 @@ public abstract class TracingAbstractST extends AbstractST {
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName())
             .editSpec()
-            .withReplicas(3)
-            .withPartitions(12)
+                .withReplicas(3)
+                .withPartitions(12)
             .endSpec()
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, storageMap.get(extensionContext).getTopicName() + "-target")
             .editSpec()
-            .withReplicas(3)
-            .withPartitions(12)
-            .withTopicName(storageMap.get(extensionContext).getTopicName())
+                .withReplicas(3)
+                .withPartitions(12)
+                .withTopicName(storageMap.get(extensionContext).getTopicName())
             .endSpec()
             .build());
 
         LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
-        KafkaTracingClients sourceKafkaTracingClient =
+        final KafkaTracingClients sourceKafkaTracingClient =
             new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
                 .build();
@@ -269,30 +273,30 @@ public abstract class TracingAbstractST extends AbstractST {
                 ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
             .withTracing(tracing())
-            .withNewTemplate()
-            .withNewMirrorMakerContainer()
-            .addNewEnv()
-            .withName(serviceNameEnvVar())
-            .withValue(JAEGER_MIRROR_MAKER_SERVICE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_AGENT_HOST")
-            .withValue(JAEGER_AGENT_HOST)
-            .endEnv()
-            .addNewEnv()
-            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-            .withValue(JAEGER_COLLECTOR_URL)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_TYPE")
-            .withValue(JAEGER_SAMPLER_TYPE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_PARAM")
-            .withValue(JAEGER_SAMPLER_PARAM)
-            .endEnv()
-            .endMirrorMakerContainer()
-            .endTemplate()
+                .withNewTemplate()
+                    .withNewMirrorMakerContainer()
+                        .addNewEnv()
+                            .withName(serviceNameEnvVar())
+                            .withValue(JAEGER_MIRROR_MAKER_SERVICE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_AGENT_HOST")
+                            .withValue(JAEGER_AGENT_HOST)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_URL)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_TYPE")
+                            .withValue(JAEGER_SAMPLER_TYPE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_PARAM")
+                            .withValue(JAEGER_SAMPLER_PARAM)
+                        .endEnv()
+                    .endMirrorMakerContainer()
+                .endTemplate()
             .endSpec()
             .build());
 
@@ -315,8 +319,8 @@ public abstract class TracingAbstractST extends AbstractST {
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
                     storageMap.get(extensionContext).getTopicName())
                 .editSpec()
-                .withReplicas(3)
-                .withPartitions(12)
+                    .withReplicas(3)
+                    .withPartitions(12)
                 .endSpec()
                 .build());
 
@@ -324,12 +328,12 @@ public abstract class TracingAbstractST extends AbstractST {
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
                     storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
                 .editSpec()
-                .withReplicas(3)
-                .withPartitions(12)
+                    .withReplicas(3)
+                    .withPartitions(12)
                 .endSpec()
                 .build());
 
-        Map<String, Object> configOfKafkaConnect = new HashMap<>();
+        final Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "-1");
         configOfKafkaConnect.put("offset.storage.replication.factor", "-1");
         configOfKafkaConnect.put("status.storage.replication.factor", "-1");
@@ -340,62 +344,62 @@ public abstract class TracingAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storageMap.get(extensionContext).getClusterName(), 1)
             .editMetadata()
-            .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .withNewSpec()
-            .withConfig(configOfKafkaConnect)
-            .withTracing(tracing())
-            .withBootstrapServers(KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()))
-            .withReplicas(1)
-            .withNewTemplate()
-            .withNewConnectContainer()
-            .addNewEnv()
-            .withName(serviceNameEnvVar())
-            .withValue(JAEGER_KAFKA_CONNECT_SERVICE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_AGENT_HOST")
-            .withValue(JAEGER_AGENT_HOST)
-            .endEnv()
-            .addNewEnv()
-            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-            .withValue(JAEGER_COLLECTOR_URL)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_TYPE")
-            .withValue(JAEGER_SAMPLER_TYPE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_PARAM")
-            .withValue(JAEGER_SAMPLER_PARAM)
-            .endEnv()
-            .endConnectContainer()
-            .endTemplate()
-            // we need to set this for correct usage of the File plugin - because we need new spec, the kafkaConnectWithFilePlugin
-            // method cannot be used
-            .editOrNewBuild()
-            .withPlugins(new PluginBuilder()
-                .withName("file-plugin")
-                .withArtifacts(
-                    new JarArtifactBuilder()
-                        .withUrl(Environment.ST_FILE_PLUGIN_URL)
-                        .build()
-                )
-                .build())
-            .withNewDockerOutput()
-            .withImage(imageName)
-            .endDockerOutput()
-            .endBuild()
+                .withConfig(configOfKafkaConnect)
+                .withTracing(tracing())
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()))
+                .withReplicas(1)
+                .withNewTemplate()
+                    .withNewConnectContainer()
+                        .addNewEnv()
+                            .withName(serviceNameEnvVar())
+                            .withValue(JAEGER_KAFKA_CONNECT_SERVICE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_AGENT_HOST")
+                            .withValue(JAEGER_AGENT_HOST)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_URL)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_TYPE")
+                            .withValue(JAEGER_SAMPLER_TYPE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_PARAM")
+                            .withValue(JAEGER_SAMPLER_PARAM)
+                        .endEnv()
+                    .endConnectContainer()
+                .endTemplate()
+                // we need to set this for correct usage of the File plugin - because we need new spec, the kafkaConnectWithFilePlugin
+                // method cannot be used
+                .editOrNewBuild()
+                .withPlugins(new PluginBuilder()
+                    .withName("file-plugin")
+                    .withArtifacts(
+                        new JarArtifactBuilder()
+                            .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                            .build()
+                    )
+                    .build())
+                .withNewDockerOutput()
+                .withImage(imageName)
+                .endDockerOutput()
+                .endBuild()
             .endSpec()
             .build());
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(storageMap.get(extensionContext).getClusterName())
             .editSpec()
-            .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-            .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
-            .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .addToConfig("topics", storageMap.get(extensionContext).getTopicName())
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("topics", storageMap.get(extensionContext).getTopicName())
             .endSpec()
             .build());
 
@@ -420,35 +424,35 @@ public abstract class TracingAbstractST extends AbstractST {
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(storageMap.get(extensionContext).getClusterName(), KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()), 1)
             .editSpec()
-            .withTracing(tracing())
-            .withNewTemplate()
-            .withNewBridgeContainer()
-            .addNewEnv()
-            .withName(serviceNameEnvVar())
-            .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_AGENT_HOST")
-            .withValue(JAEGER_AGENT_HOST)
-            .endEnv()
-            .addNewEnv()
-            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-            .withValue(JAEGER_COLLECTOR_URL)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_TYPE")
-            .withValue(JAEGER_SAMPLER_TYPE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_PARAM")
-            .withValue(JAEGER_SAMPLER_PARAM)
-            .endEnv()
-            .endBridgeContainer()
-            .endTemplate()
+                .withTracing(tracing())
+                .withNewTemplate()
+                    .withNewBridgeContainer()
+                        .addNewEnv()
+                            .withName(serviceNameEnvVar())
+                            .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_AGENT_HOST")
+                            .withValue(JAEGER_AGENT_HOST)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_URL)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_TYPE")
+                            .withValue(JAEGER_SAMPLER_TYPE)
+                        .endEnv()
+                        .addNewEnv()
+                            .withName("JAEGER_SAMPLER_PARAM")
+                            .withValue(JAEGER_SAMPLER_PARAM)
+                        .endEnv()
+                    .endBridgeContainer()
+                .endTemplate()
             .endSpec()
             .build());
 
-        String bridgeProducer = "bridge-producer";
+        final String bridgeProducer = "bridge-producer";
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName())
                 .build());
@@ -478,28 +482,28 @@ public abstract class TracingAbstractST extends AbstractST {
             .editSpec()
             .withTracing(tracing())
             .withNewTemplate()
-            .withNewBridgeContainer()
-            .addNewEnv()
-            .withName(serviceNameEnvVar())
-            .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_AGENT_HOST")
-            .withValue(JAEGER_AGENT_HOST)
-            .endEnv()
-            .addNewEnv()
-            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-            .withValue(JAEGER_COLLECTOR_URL)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_TYPE")
-            .withValue(JAEGER_SAMPLER_TYPE)
-            .endEnv()
-            .addNewEnv()
-            .withName("JAEGER_SAMPLER_PARAM")
-            .withValue(JAEGER_SAMPLER_PARAM)
-            .endEnv()
-            .endBridgeContainer()
+                .withNewBridgeContainer()
+                    .addNewEnv()
+                        .withName(serviceNameEnvVar())
+                        .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
+                    .endEnv()
+                    .addNewEnv()
+                        .withName("JAEGER_AGENT_HOST")
+                        .withValue(JAEGER_AGENT_HOST)
+                    .endEnv()
+                    .addNewEnv()
+                        .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                        .withValue(JAEGER_COLLECTOR_URL)
+                    .endEnv()
+                    .addNewEnv()
+                        .withName("JAEGER_SAMPLER_TYPE")
+                        .withValue(JAEGER_SAMPLER_TYPE)
+                    .endEnv()
+                    .addNewEnv()
+                        .withName("JAEGER_SAMPLER_PARAM")
+                        .withValue(JAEGER_SAMPLER_PARAM)
+                    .endEnv()
+                .endBridgeContainer()
             .endTemplate()
             .endSpec()
             .build());
@@ -508,8 +512,8 @@ public abstract class TracingAbstractST extends AbstractST {
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName())
                 .build());
 
-        String bridgeProducer = "bridge-producer";
-        BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
+        final String bridgeProducer = "bridge-producer";
+        final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withTracingServiceNameEnvVar(this.serviceNameEnvVar())
             .withProducerName(bridgeProducer)
             .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
@@ -532,52 +536,52 @@ public abstract class TracingAbstractST extends AbstractST {
     /**
      * Delete Jaeger instance
      */
-    void deleteJaeger() {
-        while (!jaegerConfigs.empty()) {
-            cmdKubeClient().namespace(namespace).deleteContent(jaegerConfigs.pop());
+    private void deleteJaeger() {
+        while (!this.jaegerConfigs.empty()) {
+            cmdKubeClient().namespace(this.namespace).deleteContent(this.jaegerConfigs.pop());
         }
     }
 
-    private void deployJaegerContent(ExtensionContext extensionContext) throws FileNotFoundException {
-        File folder = new File(jaegerOperatorFilesPath);
-        File[] files = folder.listFiles();
+    private void deployJaegerContent() throws FileNotFoundException {
+        final File folder = new File(this.jaegerOperatorFilesPath);
+        final File[] files = folder.listFiles();
 
         if (files != null && files.length > 0) {
-            for (File file : files) {
-                String yamlContent = TestUtils.setMetadataNamespace(file, namespace)
-                    .replace("namespace: \"observability\"", "namespace: \"" + namespace + "\"");
-                jaegerConfigs.push(yamlContent);
+            for (final File file : files) {
+                final String yamlContent = TestUtils.setMetadataNamespace(file, this.namespace)
+                    .replace("namespace: \"observability\"", "namespace: \"" + this.namespace + "\"");
+                this.jaegerConfigs.push(yamlContent);
                 LOGGER.info("Creating {} from {}", file.getName(), file.getAbsolutePath());
-                cmdKubeClient(namespace).applyContent(yamlContent);
+                cmdKubeClient(this.namespace).applyContent(yamlContent);
             }
         } else {
             throw new FileNotFoundException("Folder with Jaeger files is empty or doesn't exist");
         }
     }
 
-    private void deployJaegerOperator(ExtensionContext extensionContext) throws IOException {
+    private void deployJaegerOperator(final ExtensionContext extensionContext) throws IOException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        deployJaegerContent(extensionContext);
+        this.deployJaegerContent();
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
             .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
-            .withName("jaeger-allow")
-            .withNamespace(namespace)
+                .withName("jaeger-allow")
+                .withNamespace(this.namespace)
             .endMetadata()
             .withNewSpec()
-            .addNewIngress()
-            .endIngress()
-            .withNewPodSelector()
-            .addToMatchLabels("app", "jaeger")
-            .endPodSelector()
-            .withPolicyTypes("Ingress")
+                .addNewIngress()
+                .endIngress()
+                .withNewPodSelector()
+                    .addToMatchLabels("app", "jaeger")
+                .endPodSelector()
+                .withPolicyTypes("Ingress")
             .endSpec()
             .build();
 
@@ -589,7 +593,7 @@ public abstract class TracingAbstractST extends AbstractST {
     /**
      * Install of Jaeger instance
      */
-    void deployJaegerInstance(ExtensionContext extensionContext, String namespaceName) {
+    void deployJaegerInstance(final ExtensionContext extensionContext, String namespaceName) {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(jaegerInstancePath), TestUtils::toYamlString);
@@ -600,12 +604,12 @@ public abstract class TracingAbstractST extends AbstractST {
     }
 
     @BeforeEach
-    void createTestResources(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, namespace);
+    void createTestResources(final ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext, this.namespace);
 
         storageMap.put(extensionContext, testStorage);
 
-        deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
+        this.deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
 
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(storageMap.get(extensionContext).getNamespaceName(), storageMap.get(extensionContext).getScraperName()).build());
         testStorage.addToTestStorage(Constants.SCRAPER_POD_KEY, kubeClient().listPodsByPrefixInName(storageMap.get(extensionContext).getNamespaceName(), storageMap.get(extensionContext).getScraperName()).get(0).getMetadata().getName());
@@ -633,7 +637,7 @@ public abstract class TracingAbstractST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) throws IOException {
+    void setup(final ExtensionContext extensionContext) throws IOException {
         // deployment of the jaeger
         deployJaegerOperator(extensionContext);
     }

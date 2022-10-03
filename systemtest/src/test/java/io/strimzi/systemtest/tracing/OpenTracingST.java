@@ -21,11 +21,17 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
 
+/**
+ * Provides test cases for Jaeger OpenTracing feature. The procedure for each test case in general follows this pattern:
+ *  (a) we deploy specific component with Tracing enabled,
+ *  (b) then we produce/consume messages,
+ *  (c) finally, we verify that we could see related data in the Jaeger API
+ */
 @Tag(REGRESSION)
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-public class TracingST extends TracingAbstractST {
+public class OpenTracingST extends TracingAbstractST {
     @Override
     protected Tracing tracing() {
         return new JaegerTracing();
