@@ -26,6 +26,8 @@ import java.util.function.Function;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -79,6 +81,63 @@ public class ZooKeeperRollerTest {
     }
 
     @Test
+    public void testNonReadyPodsAreRestartedFirst(VertxTestContext context) {
+
+        Function<Pod, List<String>> shouldRoll = pod -> List.of("Pod was manually annotated to be rolled");
+
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.isReady(any(), eq("my-cluster-zookeeper-0"))).thenReturn(true);
+        when(podOperator.isReady(any(), eq("my-cluster-zookeeper-1"))).thenReturn(false);
+        when(podOperator.isReady(any(), eq("my-cluster-zookeeper-2"))).thenReturn(true);
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+
+        ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
+        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture("my-cluster-zookeeper-2"));
+
+        MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
+
+        Checkpoint async = context.checkpoint();
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
+              .onComplete(context.succeeding(v -> context.verify(() -> {
+                  assertThat(roller.podRestarts.size(), is(3));
+                  assertThat(roller.podRestarts.pollFirst(), is("my-cluster-zookeeper-1"));
+                  assertThat(roller.podRestarts.pollFirst(), is("my-cluster-zookeeper-0"));
+                  assertThat(roller.podRestarts.pollFirst(), is("my-cluster-zookeeper-2"));
+                  async.flag();
+              })));
+    }
+
+    @Test
+    public void testReadinessOfNonRestartedPodCanPreventFurtherRestarts(VertxTestContext context)  {
+        Function<Pod, List<String>> shouldRoll = pod -> {
+            if (!"my-cluster-zookeeper-1".equals(pod.getMetadata().getName()))  {
+                return List.of("Should restart");
+            } else {
+                return List.of();
+            }
+        };
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.isReady(any(), eq("my-cluster-zookeeper-0"))).thenReturn(true);
+        when(podOperator.isReady(any(), eq("my-cluster-zookeeper-1"))).thenReturn(false);
+        when(podOperator.isReady(any(), eq("my-cluster-zookeeper-2"))).thenReturn(true);
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
+
+
+        ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
+        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture("my-cluster-zookeeper-2"));
+
+        MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
+
+        Checkpoint async = context.checkpoint();
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
+              .onComplete(context.failing(v -> context.verify(() -> {
+                  assertThat(roller.podRestarts.size(), is(0));
+                  async.flag();
+              })));
+    }
+
+    @Test
     public void testNoPodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
@@ -123,6 +182,7 @@ public class ZooKeeperRollerTest {
     public void testOnlySomePodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
