@@ -699,6 +699,35 @@ public class VersionChangeCreatorTest {
     }
 
     @Test
+    public void testUpgradeWithIbpv(VertxTestContext context) {
+        String kafkaVersion = VERSIONS.defaultVersion().version();
+        String oldInterBrokerProtocolVersion = KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION;
+        String oldLogMessageFormatVersion = KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION;
+
+        VersionChangeCreator vcc = mockVersionChangeCreator(
+                mockKafka(kafkaVersion, oldInterBrokerProtocolVersion, null),
+                mockNewCluster(
+                        null,
+                        mockSps(kafkaVersion),
+                        mockUniformPods(kafkaVersion, oldInterBrokerProtocolVersion, oldLogMessageFormatVersion)
+                )
+        );
+
+        Checkpoint async = context.checkpoint();
+        vcc.reconcile().onComplete(context.succeeding(c -> context.verify(() -> {
+            assertThat(c.isNoop(), is(true));
+            assertThat(c.isDowngrade(), is(false));
+            assertThat(c.isUpgrade(), is(false));
+            assertThat(c.from(), is(VERSIONS.defaultVersion()));
+            assertThat(c.to(), is(VERSIONS.defaultVersion()));
+            assertThat(c.interBrokerProtocolVersion(), is(nullValue())); // Is null because it is set in the Kafka CR
+            assertThat(c.logMessageFormatVersion(), is(oldInterBrokerProtocolVersion)); // Mirrors the inter.broker.protocol.version
+
+            async.flag();
+        })));
+    }
+
+    @Test
     public void testUpgradeWithVeryOldSubversions(VertxTestContext context) {
         String oldKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
         String oldInterBrokerProtocolVersion = "2.0";
