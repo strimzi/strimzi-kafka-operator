@@ -53,7 +53,7 @@ spec:
       secretName: my-cluster-cluster-ca-cert
 ----
 +
-Here we're mounting:
+Here we're mounting the following:
 +
 * The PKCS #12 file into an exact path, which can be configured
 * The password into an environment variable, where it can be used for Java configuration
@@ -92,4 +92,4 @@ spec:
       secretName: my-cluster-cluster-ca-cert
 ----
 
-. Use the certificate with clients that use certificates in X.509 format.
+. Use the extracted certificate to configure TLS connection in clients that use certificates in X.509 format.
