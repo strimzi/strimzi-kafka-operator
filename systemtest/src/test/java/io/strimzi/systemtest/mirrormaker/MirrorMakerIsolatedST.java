@@ -102,7 +102,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         // Deploy Mirror Maker
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, false)
@@ -145,7 +145,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     /**
@@ -220,7 +220,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(kafkaClusterSourceName), clients.consumerTlsStrimzi(kafkaClusterSourceName));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         // Deploy Mirror Maker with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
@@ -258,7 +258,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(kafkaClusterTargetName));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     /**
@@ -344,7 +344,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerScramShaTlsStrimzi(kafkaClusterSourceName), clients.consumerScramShaTlsStrimzi(kafkaClusterSourceName));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         // Deploy Mirror Maker with TLS and ScramSha512
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
@@ -376,7 +376,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.consumerScramShaTlsStrimzi(kafkaClusterTargetName));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     @ParallelNamespaceTest
@@ -409,14 +409,14 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(topicNotIncluded)
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editMetadata()
@@ -433,7 +433,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(topicNotIncluded)
@@ -442,7 +442,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
         LOGGER.info("Becuase {} is not included, we should not receive any message", topicNotIncluded);
 
         resourceManager.createResource(extensionContext, clients.consumerStrimzi());
-        ClientUtils.waitForClientTimeout(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientTimeout(testStorage);
     }
 
     @ParallelNamespaceTest

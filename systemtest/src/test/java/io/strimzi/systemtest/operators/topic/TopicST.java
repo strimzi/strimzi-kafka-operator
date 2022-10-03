@@ -331,7 +331,7 @@ public class TopicST extends AbstractST {
         LOGGER.info("Trying to send messages to non-existing topic {}", testStorage.getTopicName());
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking if {} is on topic list", testStorage.getTopicName());
         assertTrue(hasTopicInKafka(testStorage.getTopicName(), TOPIC_CLUSTER_NAME));
@@ -373,7 +373,7 @@ public class TopicST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForProducerClientSuccess(testStorage);
 
         String topicUid = KafkaTopicUtils.topicSnapshot(namespace, testStorage.getTopicName());
         LOGGER.info("Deleting KafkaTopic: {}", testStorage.getTopicName());
@@ -387,7 +387,7 @@ public class TopicST extends AbstractST {
         LOGGER.info("KafkaTopic {} recreated", testStorage.getTopicName());
 
         resourceManager.createResource(extensionContext, clients.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     @ParallelTest

@@ -193,19 +193,19 @@ public class CruiseControlApiST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaRebalanceAutoApprovalMechanism(ExtensionContext extensionContext) {
-        final TestStorage ts = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(ts.getClusterName(), 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 
         // KafkaRebalance with auto-approval
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(ts.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
             .endMetadata()
             .build());
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND,
-            ts.getNamespaceName(), ts.getClusterName()), ts.getNamespaceName(), ts.getClusterName());
+            testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     private void assertCCGoalsInResponse(String response) {

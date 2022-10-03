@@ -155,7 +155,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(TOPIC_NAME)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(MAIN_NAMESPACE_CLUSTER_NAME))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
@@ -164,7 +164,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), THIRD_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), THIRD_NAMESPACE, testStorage.getMessageCount());
 
         cluster.setNamespace(startingNamespace);
     }

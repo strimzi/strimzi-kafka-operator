@@ -110,7 +110,7 @@ public abstract class AbstractST implements TestSeparator {
 
     public static Random rng = new Random();
 
-    public static final int MESSAGE_COUNT = 100;
+    public static final int MESSAGE_COUNT = Constants.MESSAGE_COUNT;
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
 

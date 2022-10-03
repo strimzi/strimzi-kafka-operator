@@ -371,7 +371,7 @@ class UserST extends AbstractST {
 
         LOGGER.info("Checking if TLS user is able to send messages");
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         clients = new KafkaClientsBuilder(clients)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
@@ -380,7 +380,7 @@ class UserST extends AbstractST {
 
         LOGGER.info("Checking if SCRAM-SHA user is able to send messages");
         resourceManager.createResource(extensionContext, clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");
 

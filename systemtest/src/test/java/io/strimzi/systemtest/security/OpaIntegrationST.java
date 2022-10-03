@@ -63,14 +63,14 @@ public class OpaIntegrationST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withTopicName(testStorage.getTopicName())
             .withUserName(OPA_GOOD_USER)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking KafkaUser {} that is not able to send or receive messages to/from topic '{}'", OPA_BAD_USER, testStorage.getTopicName());
 
@@ -79,7 +79,7 @@ public class OpaIntegrationST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
-        ClientUtils.waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsTimeout(testStorage);
     }
 
     @ParallelTest
@@ -97,14 +97,14 @@ public class OpaIntegrationST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withTopicName(testStorage.getTopicName())
             .withUserName(OPA_SUPERUSER)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     @BeforeAll

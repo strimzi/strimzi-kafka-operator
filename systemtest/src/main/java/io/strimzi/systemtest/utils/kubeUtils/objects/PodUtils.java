@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.readiness.Readiness;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -357,13 +356,13 @@ public class PodUtils {
      */
     public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
         List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+            .listPodsByPrefixInName(testStorage.getKafkaStatefulSetName());
         // zk pods
         kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName())));
+            .listPodsByPrefixInName(testStorage.getZookeeperStatefulSetName()));
         // eo pod
         kafkaClusterPods.addAll(kubeClient(testStorage.getNamespaceName())
-            .listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName())));
+            .listPodsByPrefixInName(testStorage.getEoDeploymentName()));
 
         return kafkaClusterPods;
     }

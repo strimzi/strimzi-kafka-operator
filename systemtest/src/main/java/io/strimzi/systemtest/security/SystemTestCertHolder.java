@@ -103,7 +103,7 @@ public class SystemTestCertHolder {
         return "ca-" + localDateTime.toString().replaceAll(":", "-") + "." + dataKey.split("\\.")[1];
     }
 
-    public static void increaseCertGenerationCounterInSecret(final Secret secret, final TestStorage ts, final String annotationKey) {
+    public static void increaseCertGenerationCounterInSecret(final Secret secret, final TestStorage testStorage, final String annotationKey) {
         Map<String, String> clusterCaSecretAnnotations = secret.getMetadata().getAnnotations();
         if (clusterCaSecretAnnotations == null) {
             clusterCaSecretAnnotations = new HashMap<>();
@@ -112,7 +112,7 @@ public class SystemTestCertHolder {
             int generationNumber = Integer.parseInt(clusterCaSecretAnnotations.get(annotationKey));
             clusterCaSecretAnnotations.put(annotationKey, String.valueOf(++generationNumber));
         }
-        kubeClient(ts.getNamespaceName()).patchSecret(ts.getNamespaceName(), secret.getMetadata().getName(), secret);
+        kubeClient(testStorage.getNamespaceName()).patchSecret(testStorage.getNamespaceName(), secret.getMetadata().getName(), secret);
     }
 
     public SystemTestCertAndKey getStrimziRootCa() {

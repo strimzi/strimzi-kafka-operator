@@ -209,8 +209,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .build()));
         drainCleaner.createDrainCleaner(extensionContext);
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(testStorage.getClusterName());
-        String zkName = KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName());
+        String kafkaName = testStorage.getKafkaStatefulSetName();
+        String zkName = testStorage.getZookeeperStatefulSetName();
 
         Map<String, List<String>> nodesWithPods = NodeUtils.getPodsForEachNodeInNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
         // remove all pods from map, which doesn't contain "kafka" or "zookeeper" in its name

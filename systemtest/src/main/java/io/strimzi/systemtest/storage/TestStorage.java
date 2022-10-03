@@ -16,6 +16,7 @@ import java.util.Random;
 
 import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.MESSAGE_COUNT;
 
 /**
  * TestStorage generate and stores values in the specific @see{ExtensionContext}. This ensures that if one want to
@@ -42,15 +43,22 @@ final public class TestStorage {
     private String consumerName;
     private String adminName;
     private String userName;
+    private String eoDeploymentName;
+    private String kafkaStatefulSetName;
+    private String zkStatefulSetName;
     private LabelSelector kafkaSelector;
     private LabelSelector zkSelector;
-    private String eoDeploymentName;
+    private int messageCount;
 
     public TestStorage(ExtensionContext extensionContext) {
         this(extensionContext, INFRA_NAMESPACE);
     }
 
     public TestStorage(ExtensionContext extensionContext, String namespaceName) {
+        this(extensionContext, namespaceName, MESSAGE_COUNT);
+    }
+
+    public TestStorage(ExtensionContext extensionContext, String namespaceName, int messageCount) {
         this.extensionContext = extensionContext;
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
@@ -63,9 +71,12 @@ final public class TestStorage {
         this.consumerName = clusterName  + "-" + CONSUMER;
         this.adminName = clusterName + "-" + ADMIN;
         this.userName = clusterName + "-" + USER;
-        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        this.zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
+        this.kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(clusterName);
+        this.zkStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
+        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, this.kafkaStatefulSetName);
+        this.zkSelector = KafkaResource.getLabelSelector(clusterName, this.zkStatefulSetName);
+        this.messageCount = messageCount;
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
@@ -78,9 +89,12 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ADMIN_KEY, this.adminName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.userName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME, this.eoDeploymentName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_STATEFULSET_NAME, this.kafkaStatefulSetName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_STATEFULSET_NAME, this.zkStatefulSetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_SELECTOR, this.kafkaSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_SELECTOR, this.zkSelector);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME, this.eoDeploymentName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.MESSAGE_COUNT_KEY, this.messageCount);
     }
 
     public void addToTestStorage(String key, Object value) {
@@ -131,6 +145,17 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.USER_NAME_KEY).toString();
     }
 
+    public String getEoDeploymentName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME).toString();
+    }
+
+    public String getKafkaStatefulSetName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_STATEFULSET_NAME).toString();
+    }
+    public String getZookeeperStatefulSetName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ZOOKEEPER_STATEFULSET_NAME).toString();
+    }
+
     public LabelSelector getKafkaSelector() {
         return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_SELECTOR);
     }
@@ -139,7 +164,8 @@ final public class TestStorage {
         return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ZOOKEEPER_SELECTOR);
     }
 
-    public String getEoDeploymentName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME).toString();
+    public int getMessageCount() {
+        return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(MESSAGE_COUNT);
     }
+
 }
