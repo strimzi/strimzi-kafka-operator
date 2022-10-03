@@ -9,13 +9,14 @@ import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import com.yammer.metrics.core.MetricsRegistryListener;
-import kafka.metrics.KafkaYammerMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
@@ -24,8 +25,12 @@ import java.io.IOException;
  * The presence of this file is tested via a Kube "exec" readiness probe to determine when the broker is ready.
  */
 public class KafkaAgent {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
+
+    // KafkaYammerMetrics class in Kafka 3.3+
+    private static final String YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER = "org.apache.kafka.server.metrics.KafkaYammerMetrics";
+    // KafkaYammerMetrics class in Kafka 3.2-
+    private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
     private final File sessionConnectedFile;
     private File brokerReadyFile;
@@ -41,8 +46,7 @@ public class KafkaAgent {
 
     private void run() {
         LOGGER.info("Starting metrics registry");
-
-        MetricsRegistry metricsRegistry = KafkaYammerMetrics.defaultRegistry();
+        MetricsRegistry metricsRegistry = metricsRegistry();
 
         metricsRegistry.addListener(new MetricsRegistryListener() {
             @Override
@@ -77,6 +81,49 @@ public class KafkaAgent {
                 }
             }
         });
+    }
+
+    /**
+     * Acquires the MetricsRegistry from the KafkaYammerMetrics class. Depending on the Kafka version we are on, it will
+     * use reflection to use the right class to get it.
+     *
+     * @return  Metrics Registry object
+     */
+    private MetricsRegistry metricsRegistry()   {
+        Object metricsRegistry;
+        Class<?> yammerMetrics;
+
+        try {
+            // First we try to get the KafkaYammerMetrics class for Kafka 3.3+
+            yammerMetrics = Class.forName(YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
+            LOGGER.info("Found class {} for Kafka 3.3 and newer.", YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
+        } catch (ClassNotFoundException e)    {
+            LOGGER.info("Class {} not found. We are probably on Kafka 3.2 or older.", YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
+
+            // We did not find the KafkaYammerMetrics class from Kafka 3.3+. So we are probably on older Kafka version
+            //     => we will try the older class for KAfka 3.2-.
+            try {
+                yammerMetrics = Class.forName(YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER);
+                LOGGER.info("Found class {} for Kafka 3.2 and older.", YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER);
+            } catch (ClassNotFoundException e2) {
+                // No class was found for any Kafka version => we should fail
+                LOGGER.error("Class {} not found. We are not on Kafka 3.2 or earlier either.", YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER);
+                throw new RuntimeException("Failed to find Yammer Metrics class", e2);
+            }
+        }
+
+        try {
+            Method method = yammerMetrics.getMethod("defaultRegistry");
+            metricsRegistry = method.invoke(null);
+        } catch (InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to get metrics registry", e);
+        }
+
+        if (metricsRegistry instanceof MetricsRegistry) {
+            return (MetricsRegistry) metricsRegistry;
+        } else {
+            throw new RuntimeException("Metrics registry does not have the expected type");
+        }
     }
 
     private Runnable poller() {

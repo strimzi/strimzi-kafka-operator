@@ -46,6 +46,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -69,6 +70,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/7408
+@Disabled
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @ParallelSuite

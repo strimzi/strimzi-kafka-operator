@@ -1038,7 +1038,7 @@ public class VersionChangeCreatorTest {
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
             assertThat(c.getClass(), is(KafkaUpgradeException.class));
-            assertThat(c.getMessage(), is("log.message.format.version (" + oldInterBrokerProtocolVersion + ") and inter.broker.protocol.version (" + oldLogMessageFormatVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (3.1.0)"));
+            assertThat(c.getMessage(), is("log.message.format.version (" + oldInterBrokerProtocolVersion + ") and inter.broker.protocol.version (" + oldLogMessageFormatVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (" + KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + ")"));
 
             async.flag();
         })));
@@ -1067,7 +1067,7 @@ public class VersionChangeCreatorTest {
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
             assertThat(c.getClass(), is(KafkaUpgradeException.class));
-            assertThat(c.getMessage(), is("log.message.format.version (" + oldInterBrokerProtocolVersion + ") and inter.broker.protocol.version (" + oldLogMessageFormatVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (3.1.0)"));
+            assertThat(c.getMessage(), is("log.message.format.version (" + oldInterBrokerProtocolVersion + ") and inter.broker.protocol.version (" + oldLogMessageFormatVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (" + KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + ")"));
 
             async.flag();
         })));

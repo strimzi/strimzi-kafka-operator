@@ -113,7 +113,7 @@
         <snakeyaml.version>1.32</snakeyaml.version>
         <vertx.version>4.2.4</vertx.version>
         <vertx-junit5.version>4.2.4</vertx-junit5.version>
-        <kafka.version>3.2.3</kafka.version>
+        <kafka.version>3.3.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <scala-library.version>2.13.9</scala-library.version>
         <zookeeper.version>3.6.3</zookeeper.version>
@@ -153,7 +153,6 @@
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
         <!-- failsafe fork-count configuration -->
         <failsafe.forkCount>1</failsafe.forkCount>
-
     </properties>
 
     <distributionManagement>
@@ -384,6 +383,11 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.13</artifactId>
+                <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-server-common</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
             <dependency>

@@ -2,6 +2,7 @@
 
 ## 0.32.0
 
+* Add support for Kafka 3.3.1 and remove support for Kafka 3.1.0, 3.1.1, and 3.1.2
 * Update KafkaConnector CR status so the 'NotReady' condition is added if the connector or any tasks are reporting a 'FAILED' state.
 * Add auto-approval mechanism on KafkaRebalance resource when an optimization proposal is ready
 * The `ControlPlaneListener` feature gate moves to GA
