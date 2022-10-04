@@ -16,7 +16,7 @@ SECRETS_OPT="hidden"
 # sed non-printable text delimiter
 SD=$(echo -en "\001") && readonly SD
 # sed sensitive information filter expression
-SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1*****${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" && readonly SE
+SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1omitted${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1omitted${SD}" && readonly SE
 
 error() {
   echo "$@" 1>&2
@@ -197,8 +197,7 @@ get_nonnamespaced_yamls() {
     local resources && resources=$($KUBE_CLIENT get "$type" -l app=strimzi -o name -n "$NAMESPACE")
     echo "    $res"
     res=$(echo "$res" | cut -d "/" -f 2)
-    $KUBE_CLIENT get "$type" "$res" -o yaml | sed "s${SD}^\(\s*password\s*:\s*\).*${SD}\1*****${SD}" \
-      | sed "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/"$type"/"$res".yaml
+    $KUBE_CLIENT get "$type" "$res" -o yaml | sed "$SE" > "$TMP"/reports/"$type"/"$res".yaml
   done
 }
 
