@@ -128,6 +128,7 @@ public class KafkaListenersReconciler {
                 .compose(i -> nodePortServicesReady())
                 .compose(i -> routesReady())
                 .compose(i -> ingressesReady())
+                .compose(i -> clusterIPServicesReady())
                 .compose(i -> customListenerCertificates())
                 // This method should be called only after customListenerCertificates
                 .compose(customListenerCertificates -> addCertificatesToListenerStatuses(customListenerCertificates))
@@ -352,6 +353,63 @@ public class KafkaListenersReconciler {
 
             // Set status based on bootstrap service
             String bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
+
+            ListenerStatus ls = new ListenerStatusBuilder()
+                    .withName(listener.getName())
+                    .withAddresses(new ListenerAddressBuilder()
+                            .withHost(bootstrapAddress)
+                            .withPort(listener.getPort())
+                            .build())
+                    .build();
+            result.listenerStatuses.add(ls);
+
+            // Set advertised hostnames and ports
+            for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++) {
+                String brokerAddress;
+
+                if (useServiceDnsDomain) {
+                    brokerAddress = DnsNameGenerator.podDnsNameWithClusterDomain(reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), KafkaResources.kafkaStatefulSetName(reconciliation.name()) + "-" + brokerId);
+                } else {
+                    brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), KafkaResources.kafkaStatefulSetName(reconciliation.name()) + "-" + brokerId);
+                }
+
+                String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
+                if (userConfiguredAdvertisedHostname != null && listener.isTls()) {
+                    // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
+                    result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
+                }
+
+                registerAdvertisedHostname(brokerId, listener, brokerAddress);
+                registerAdvertisedPort(brokerId, listener, listener.getPort());
+            }
+        }
+
+        return Future.succeededFuture();
+    }
+
+    /**
+     * Collect all addresses of services related to clusterIP addresses for Statuses, certificates and advertised
+     * addresses. This method for all ClusterIP type listeners:
+     *      1) Collects the relevant addresses of bootstrap service and stores them for use in certificates
+     *      2) Collects the clusterIP addresses for certificates and advertised hostnames
+     *
+     * @return  Future which completes clusterIP service addresses are collected
+     */
+    protected Future<Void> clusterIPServicesReady()   {
+        for (GenericKafkaListener listener : ListenersUtils.clusterIPListeners(kafka.getListeners())) {
+            boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
+                    ? listener.getConfiguration().getUseServiceDnsDomain() : false;
+
+            String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
+
+            if (bootstrapAddress == null) {
+                // Set status based on bootstrap service
+                bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
+            }
+
+            if (listener.isTls()) {
+                result.bootstrapDnsNames.add(bootstrapAddress);
+            }
 
             ListenerStatus ls = new ListenerStatusBuilder()
                     .withName(listener.getName())
