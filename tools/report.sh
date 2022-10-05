@@ -14,7 +14,7 @@ MM2=""
 KUBECTL_INSTALLED=false
 OC_INSTALLED=false
 KUBE_CLIENT="kubectl"
-OUT_DIR="$(mktemp -d)"
+OUT_DIR=""
 SECRETS_OPT="hidden"
 
 # sed non-printable text delimiter
@@ -97,6 +97,10 @@ shift $((OPTIND-1))
 
 if [[ -z $NAMESPACE || -z $CLUSTER ]]; then
   error "$USAGE"
+fi
+
+if [[ -z $OUT_DIR ]]; then
+  OUT_DIR="$(mktemp -d)"
 fi
 
 if [[ "$SECRETS_OPT" != "all" && "$SECRETS_OPT" != "off" && "$SECRETS_OPT" != "hidden" ]]; then
