@@ -5,27 +5,46 @@
 [id='proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}']
 = Enabling tracing in MirrorMaker, Kafka Connect, and Kafka Bridge resources
 
-Update the configuration of `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` custom resources to specify and configure a tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers the following events:
+[role="_abstract"]
+Distributed tracing is supported for MirrorMaker, MirrorMaker 2.0, Kafka Connect, and the Strimzi Kafka Bridge.
+Configure the custom resource of the component to specify and enable a tracer service. 
 
-* Interceptor classes are updated in the integrated consumers and producers in MirrorMaker, MirrorMaker 2.0, Kafka Connect, or the Strimzi Kafka Bridge.
+Enabling tracing in a resource triggers the following events:
+
+* Interceptor classes are updated in the integrated consumers and producers of the component.
 
 * For MirrorMaker, MirrorMaker 2.0, and Kafka Connect, the tracing agent initializes a tracer based on the tracing configuration defined in the resource.
 
 * For the Kafka Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
-You can enable tracing using OpenTelemetry or OpenTracing.
+You can enable tracing that uses OpenTelemetry or OpenTracing.
+
+.Tracing in MirrorMaker and MirrorMaker 2.0
+
+For MirrorMaker and MirrorMaker 2.0, messages are traced from the source cluster to the target cluster. The trace data records messages entering and leaving the MirrorMaker or MirrorMaker 2.0 component.
+
+.Tracing in Kafka Connect
+
+For Kafka Connect, only messages produced and consumed by Kafka Connect are traced. To trace messages sent between Kafka Connect and external systems, you must configure tracing in the connectors for those systems.
+
+.Tracing in the Kafka Bridge
+
+For the Kafka Bridge, messages produced and consumed by the Kafka Bridge are traced. Incoming HTTP requests from client applications to send and receive messages through the Kafka Bridge are also traced.
+To have end-to-end tracing, you must configure tracing in your HTTP clients.
 
 .Procedure
 
 Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` resource.
 
 . In the `spec.template` property, configure the tracer service.
-
++
+--
 * Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
 * For OpenTelemetry, set the `spec.tracing.type` property to `opentelemetry`.
 * For OpenTracing, set the `spec.tracing.type` property to `jaeger`.
+--
 +
-
+--
 .Example tracing configuration for Kafka Connect using OpenTelemetry
 [source,yaml,subs=attributes+]
 ----
@@ -201,10 +220,11 @@ spec:
     type: jaeger
 #...
 ----
+--
 
 . Create or update the resource:
 +
-[source,shell,subs=attributes+]
+[source,shell,subs="+quotes"]
 ----
 kubectl apply -f _<resource_configuration_file>_
 ----

@@ -45,7 +45,7 @@ Setting up tracing for applications and systems beyond Strimzi is outside the sc
 
 To set up tracing for Strimzi, follow these procedures in order:
 
-* xref:assembly-setting-up-tracing-mirror-maker-connect-bridge-{context}[Set up tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
+* xref:proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}[Enable tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
 
 * Set up tracing for clients:
 
@@ -69,7 +69,7 @@ include::../../modules/tracing/ref-tracing-environment-variables.adoc[leveloffse
 
 include::../../modules/tracing/ref-tracing-span-names.adoc[leveloffset=+1]
 
-include::assembly-setting-up-tracing-mirror-maker-connect-bridge.adoc[leveloffset=+1]
+include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]
 
 include::../../modules/tracing/proc-configuring-tracers-kafka-clients.adoc[leveloffset=+1]
 
