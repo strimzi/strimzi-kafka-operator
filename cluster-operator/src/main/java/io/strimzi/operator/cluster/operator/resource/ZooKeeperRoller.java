@@ -87,19 +87,18 @@ public class ZooKeeperRoller {
 
                             // Then roll each non-leader pod => the leader is rolled last
                             for (ZookeeperPodContext podContext : clusterRollContext.getPodContextsWithNonReadyFirst())  {
-                                final String podName = podContext.getPodName();
-                                if (podContext.requiresRestart() && !podName.equals(leader)) {
-                                    LOGGER.debugCr(reconciliation, "Restarting non-leader pod {}", podName);
+                                if (podContext.requiresRestart() && !podContext.getPodName().equals(leader)) {
+                                    LOGGER.debugCr(reconciliation, "Restarting non-leader pod {}", podContext.getPodName());
                                     // roll the pod and wait until it is ready
                                     // this prevents rolling into faulty state (note: this applies just for ZK pods)
-                                    fut = fut.compose(ignore -> restartPod(reconciliation, podName, podContext.reasonsToRestart));
+                                    fut = fut.compose(ignore -> restartPod(reconciliation, podContext.getPodName(), podContext.reasonsToRestart));
                                 } else {
                                     if (podContext.requiresRestart()) {
-                                        LOGGER.debugCr(reconciliation, "Deferring restart of leader {}", podName);
+                                        LOGGER.debugCr(reconciliation, "Deferring restart of leader {}", podContext.getPodName());
                                     }
-                                    LOGGER.debugCr(reconciliation, "Pod {} does not need to be restarted", podName);
-                                    LOGGER.debugCr(reconciliation, "Waiting for non-restarted pod {} to become ready", podName);
-                                    fut = fut.compose(ignore -> podOperator.readiness(reconciliation, reconciliation.namespace(), podName, READINESS_POLLING_INTERVAL_MS, operationTimeoutMs));
+                                    LOGGER.debugCr(reconciliation, "Pod {} does not need to be restarted", podContext.getPodName());
+                                    LOGGER.debugCr(reconciliation, "Waiting for non-restarted pod {} to become ready", podContext.getPodName());
+                                    fut = fut.compose(ignore -> podOperator.readiness(reconciliation, reconciliation.namespace(), podContext.getPodName(), READINESS_POLLING_INTERVAL_MS, operationTimeoutMs));
                                 }
                             }
 
@@ -142,35 +141,28 @@ public class ZooKeeperRoller {
                 });
     }
 
-
     private static class ZookeeperClusterRollContext {
 
         private final List<ZookeeperPodContext> podContexts = new ArrayList<>();
 
-
         private ZookeeperClusterRollContext() {
         }
-
 
         public List<ZookeeperPodContext> getPodContextsWithNonReadyFirst() {
             return podContexts.stream().sorted((contextA, contextB) -> Boolean.compare(contextA.ready, contextB.ready)).collect(Collectors.toList());
         }
 
-
         public void add(final ZookeeperPodContext podContext) {
             podContexts.add(podContext);
         }
-
 
         public boolean requiresRestart() {
             return podContexts.stream().anyMatch(ZookeeperPodContext::requiresRestart);
         }
 
-
         public Set<String> podNames() {
             return podContexts.stream().map(ZookeeperPodContext::getPodName).collect(Collectors.toSet());
         }
-
 
         public ZookeeperPodContext get(final String podName) {
             return podContexts.stream().filter(podContext -> podContext.getPodName().equals(podName)).findAny().orElse(null);
@@ -185,7 +177,6 @@ public class ZooKeeperRoller {
 
         private final List<String> reasonsToRestart = new ArrayList<>();
 
-
         private ZookeeperPodContext(final Pod pod, final List<String> reasonsToRestart, final boolean ready) {
             this.pod = pod;
             this.ready = ready;
@@ -194,15 +185,12 @@ public class ZooKeeperRoller {
             }
         }
 
-
         String getPodName() {
             return pod.getMetadata().getName();
         }
 
-
         boolean requiresRestart() {
             return !reasonsToRestart.isEmpty();
         }
-
     }
 }
