@@ -41,7 +41,10 @@ public class KafkaCrdIT extends AbstractCrdIT {
             KubeClusterException.class,
             () -> createDeleteCustomResource("Kafka-with-extra-property.yaml"));
 
-        assertThat(exception.getMessage(), containsString("unknown field \"thisPropertyIsNotInTheSchema\""));
+        assertThat(exception.getMessage(), anyOf(
+                containsString("unknown field \"thisPropertyIsNotInTheSchema\""),
+                containsString("unknown field \"spec.thisPropertyIsNotInTheSchema\"")
+        ));
     }
 
     @Test
@@ -74,6 +77,7 @@ public class KafkaCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(),
                 anyOf(
                         containsStringIgnoringCase("invalid: spec.maintenanceTimeWindows: Invalid value: \"null\": spec.maintenanceTimeWindows in body must be of type string: \"null\""),
+                        containsStringIgnoringCase("invalid: spec.maintenanceTimeWindows[0]: Invalid value: \"null\": spec.maintenanceTimeWindows[0] in body must be of type string: \"null\""),
                         containsStringIgnoringCase("unknown object type \"nil\" in Kafka.spec.maintenanceTimeWindows[0]")
                 ));
     }
@@ -99,7 +103,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
         assertThat(exception.getMessage(), anyOf(
                 containsStringIgnoringCase("spec.zookeeper.storage.type in body should be one of [ephemeral persistent-claim]"),
                 containsStringIgnoringCase("spec.zookeeper.storage.type: Unsupported value: \"jbod\": supported values: \"ephemeral\", \"persistent-claim\""),
-                containsStringIgnoringCase("unknown field \"volumes\" in io.strimzi.kafka.v1beta2.Kafka.spec.zookeeper.storage")));
+                containsStringIgnoringCase("unknown field \"volumes\" in io.strimzi.kafka.v1beta2.Kafka.spec.zookeeper.storage"),
+                containsStringIgnoringCase("unknown field \"spec.zookeeper.storage.volumes\"")));
     }
 
     @Test
@@ -161,7 +166,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
             });
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
-                "targetMBean",
                 "attributes",
                 "outputs");
     }

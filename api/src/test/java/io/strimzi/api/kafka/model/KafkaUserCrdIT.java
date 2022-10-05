@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -49,7 +50,10 @@ public class KafkaUserCrdIT extends AbstractCrdIT {
             KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaUser-with-extra-property.yaml"));
 
-        assertThat(exception.getMessage(), containsString("unknown field \"thisPropertyIsNotInTheSchema\""));
+        assertThat(exception.getMessage(), anyOf(
+                containsString("unknown field \"thisPropertyIsNotInTheSchema\""),
+                containsString("unknown field \"spec.thisPropertyIsNotInTheSchema\"")
+        ));
     }
 
     @BeforeAll
