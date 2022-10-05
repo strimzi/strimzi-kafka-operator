@@ -91,6 +91,7 @@ public class ZooKeeperRollerTest {
         when(podOperator.isReady(any(), eq(followerPodNonReady))).thenReturn(false);
         when(podOperator.isReady(any(), eq(leaderPodReady))).thenReturn(true);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodReady));
@@ -140,6 +141,39 @@ public class ZooKeeperRollerTest {
     }
 
     @Test
+    public void testReadinessOfLeaderPodCanPreventFurtherRestarts(VertxTestContext context)  {
+        final String followerPod1NeedsRestart = "my-cluster-zookeeper-1";
+        final String leaderPodNeedsRestartNonReady = "my-cluster-zookeeper-2";
+        final String followerPod2NeedsRestart = "my-cluster-zookeeper-0";
+        final Set<String> needsRestart = Set.of(followerPod2NeedsRestart, leaderPodNeedsRestartNonReady);
+        Function<Pod, List<String>> shouldRestart = pod -> {
+            if (needsRestart.contains(pod.getMetadata().getName()))  {
+                return List.of("Should restart");
+            } else {
+                return List.of();
+            }
+        };
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.isReady(any(), eq(followerPod2NeedsRestart))).thenReturn(true);
+        when(podOperator.isReady(any(), eq(followerPod1NeedsRestart))).thenReturn(true);
+        when(podOperator.isReady(any(), eq(leaderPodNeedsRestartNonReady))).thenReturn(false);
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), eq(leaderPodNeedsRestartNonReady), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
+
+
+        ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
+        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestartNonReady));
+
+        MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
+
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRestart, new Secret(), new Secret())
+              .onComplete(context.failing(v -> context.verify(() -> {
+                  assertThat(roller.podRestarts.size(), is(0));
+                  context.completeNow();
+              })));
+    }
+
+    @Test
     public void testNoPodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
@@ -161,6 +195,7 @@ public class ZooKeeperRollerTest {
     public void testLeaderIsLast(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture("my-cluster-zookeeper-1"));
