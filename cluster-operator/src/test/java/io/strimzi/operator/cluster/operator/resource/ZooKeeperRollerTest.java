@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -100,9 +101,7 @@ public class ZooKeeperRollerTest {
         roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
               .onComplete(context.succeeding(v -> context.verify(() -> {
                   assertThat(roller.podRestarts.size(), is(3));
-                  assertThat(roller.podRestarts.pollFirst(), is("my-cluster-zookeeper-1"));
-                  assertThat(roller.podRestarts.pollFirst(), is("my-cluster-zookeeper-0"));
-                  assertThat(roller.podRestarts.pollFirst(), is("my-cluster-zookeeper-2"));
+                  assertThat(roller.podRestarts, contains("my-cluster-zookeeper-1", "my-cluster-zookeeper-0", "my-cluster-zookeeper-2"));
                   async.flag();
               })));
     }
