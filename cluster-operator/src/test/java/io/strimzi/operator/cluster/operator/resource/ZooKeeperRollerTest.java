@@ -108,7 +108,7 @@ public class ZooKeeperRollerTest {
     }
 
     @Test
-    public void testReadinessOfNonRestartedPodCanPreventFurtherRestarts(VertxTestContext context)  {
+    public void testNonReadinessOfPodCanPreventAllPodRestarts(VertxTestContext context)  {
         final String followerPodNonReady = "my-cluster-zookeeper-1";
         final String leaderPodNeedsRestart = "my-cluster-zookeeper-2";
         final String followerPodNeedsRestart = "my-cluster-zookeeper-0";
@@ -141,7 +141,7 @@ public class ZooKeeperRollerTest {
     }
 
     @Test
-    public void testReadinessOfLeaderPodCanPreventFurtherRestarts(VertxTestContext context)  {
+    public void testNonReadinessOfLeaderCanPreventAllPodRestarts(VertxTestContext context)  {
         final String followerPod1NeedsRestart = "my-cluster-zookeeper-1";
         final String leaderPodNeedsRestartNonReady = "my-cluster-zookeeper-2";
         final String followerPod2NeedsRestart = "my-cluster-zookeeper-0";

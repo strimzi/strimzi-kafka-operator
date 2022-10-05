@@ -89,12 +89,12 @@ public class ZooKeeperRoller {
                             for (ZookeeperPodContext podContext : clusterRollContext.getPodContextsWithNonReadyFirst())  {
                                 final String podName = podContext.getPodName();
                                 if (podContext.requiresRestart() && !podName.equals(leader)) {
-                                        LOGGER.debugCr(reconciliation, "Restarting non-leader pod {}", podName);
-                                        // roll the pod and wait until it is ready
-                                        // this prevents rolling into faulty state (note: this applies just for ZK pods)
-                                        fut = fut.compose(ignore -> restartPod(reconciliation, podName, podContext.reasonsToRestart));
+                                    LOGGER.debugCr(reconciliation, "Restarting non-leader pod {}", podName);
+                                    // roll the pod and wait until it is ready
+                                    // this prevents rolling into faulty state (note: this applies just for ZK pods)
+                                    fut = fut.compose(ignore -> restartPod(reconciliation, podName, podContext.reasonsToRestart));
                                 } else {
-                                    if(podContext.requiresRestart()) {
+                                    if (podContext.requiresRestart()) {
                                         LOGGER.debugCr(reconciliation, "Deferring restart of leader {}", podName);
                                     }
                                     LOGGER.debugCr(reconciliation, "Pod {} does not need to be restarted", podName);
