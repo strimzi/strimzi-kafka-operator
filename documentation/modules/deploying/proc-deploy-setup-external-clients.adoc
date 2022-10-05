@@ -4,7 +4,7 @@
 // getting-started.adoc
 
 [id='setup-external-clients-{context}']
-= Setting up client access to a Kafka cluster
+= Setting up client access to a Kafka cluster using listeners
 
 [role="_abstract"]
 Using the address of the Kafka cluster, you can provide access to a client in the same Kubernetes cluster; or provide external access to a client on a different Kubernetes namespace or outside Kubernetes entirely.

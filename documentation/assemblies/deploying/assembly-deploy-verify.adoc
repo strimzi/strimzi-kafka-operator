@@ -3,12 +3,12 @@
 // deploying/deploying.adoc
 
 [id="deploy-verify_{context}"]
-= Setting up client access to the Kafka cluster
+= Setting up client access to a Kafka cluster
 
 After you have xref:deploy-tasks_{context}[deployed Strimzi], the procedures in this section explain how to:
 
 * Deploy example producer and consumer clients, which you can use to verify your deployment
-* Set up external client access to the Kafka cluster
+* Set up client access to a Kafka cluster using listeners
 +
 The steps to set up access to the Kafka cluster for a client outside Kubernetes are more complex,
 and require familiarity with the link:{BookURLUsing}#assembly-deployment-configuration-str[Kafka component configuration procedures^].

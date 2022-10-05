@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
-Use MirrorMaker 2.0 to synchronize data between Kafka clusters
+Use MirrorMaker 2.0 to synchronize data between Kafka clusters.
 
 The configuration must specify:
 
