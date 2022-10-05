@@ -89,9 +89,9 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ADMIN_KEY, this.adminName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.userName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME, this.eoDeploymentName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_STATEFULSET_NAME, this.kafkaStatefulSetName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_STATEFULSET_NAME, this.zkStatefulSetName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME_KEY, this.eoDeploymentName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_STATEFULSET_NAME_KEY, this.kafkaStatefulSetName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_STATEFULSET_NAME_KEY, this.zkStatefulSetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_SELECTOR, this.kafkaSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_SELECTOR, this.zkSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.MESSAGE_COUNT_KEY, this.messageCount);
@@ -146,14 +146,14 @@ final public class TestStorage {
     }
 
     public String getEoDeploymentName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME).toString();
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME_KEY).toString();
     }
 
     public String getKafkaStatefulSetName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_STATEFULSET_NAME).toString();
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_STATEFULSET_NAME_KEY).toString();
     }
     public String getZookeeperStatefulSetName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ZOOKEEPER_STATEFULSET_NAME).toString();
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ZOOKEEPER_STATEFULSET_NAME_KEY).toString();
     }
 
     public LabelSelector getKafkaSelector() {
