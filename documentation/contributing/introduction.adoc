@@ -49,7 +49,7 @@ contributing/                 # Documentation contributor guide (this book)
 deploying/                    # Deploying Strimzi
 quickstart/                   # Strimzi Quick Start guide
 overview/                     # Strimzi Overview guide
-using/                        # Using Strimzi
+configuring/                  # Configuring Strimzi
 assemblies/                   # Assemblies provide content for all guides
 modules/                      # Modules provide the content for assemblies
 shared/                       # Shared include files
@@ -90,7 +90,7 @@ The majority of the content relates to how you might want to modify your deploym
 
 === Custom Resource API Reference
 
-The _Configuring Strimzi_ guide (documentation/using/configuring.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
+The _Configuring Strimzi_ guide (documentation/configuring/configuring.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
 
 The _Custom Resource API Reference_ is built from two files.
 

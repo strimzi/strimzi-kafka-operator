@@ -11,8 +11,8 @@ If your Strimzi deployment needs to handle a high volume of messages, you can us
 Producer and consumer configuration can help control the size and frequency of requests to Kafka brokers. 
 For more information on the configuration options, see the following:
 
-* xref:con-producer-config-properties-throughput-{context}[] 
-* xref:con-consumer-config-properties-throughput-{context}[]  
+* {ApacheKafkaProducerConfig}
+* {ApacheKafkaConsumerConfig}
 
 You can also use the same configuration options with the producers and consumers used by the Kafka Connect runtime source connectors (including MirrorMaker 2.0) and sink connectors.
 
