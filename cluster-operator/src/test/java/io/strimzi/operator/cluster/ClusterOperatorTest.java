@@ -15,7 +15,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.junit5.VertxExtension;
@@ -25,7 +25,6 @@ import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.MalformedURLException;
@@ -48,7 +47,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@IsolatedSuite
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
@@ -83,57 +81,57 @@ public class ClusterOperatorTest {
         PodSecurityProviderFactory.initialize();
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace", true, false, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace1,namespace2", true, false, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace", false, false, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace1,namespace2", false, false, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopSingleNamespaceWithPodSets(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace", false, true, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopMultiNamespaceWithPodSets(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace1,namespace2", false, true, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopMultiNamespaceWithPodSetsOnly(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace1,namespace2", false, true, true);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) throws InterruptedException {
         startStopAllNamespaces(context, "*", true, false, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopAllNamespacesOnK8s(VertxTestContext context) throws InterruptedException {
         startStopAllNamespaces(context, "*", false, false, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopAllNamespacesWithPodSets(VertxTestContext context) throws InterruptedException {
         startStopAllNamespaces(context, "*", false, true, false);
     }
 
-    @Test
+    @IsolatedTest
     public void testStartStopAllNamespacesWithPodSetsOnly(VertxTestContext context) throws InterruptedException {
         startStopAllNamespaces(context, "*", false, true, true);
     }
