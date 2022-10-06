@@ -20,7 +20,7 @@ Interceptor instrumentation:: For interceptor instrumentation, add the tracing c
 +
 You enable instrumentation in Kafka Streams applications by adding the tracing JARs as dependencies to your project.
 * To instrument Kafka Streams with OpenTelemetry, you'll need to write a custom `TracingKafkaClientSupplier`.
-* The custom `TracingKafkaClientSupplier` can extend the Kafka provided `DefaultKafkaClientSupplier` but overriding the producer and consumer creation methods in order to wrap the instances with the telemetry related code.
+* The custom `TracingKafkaClientSupplier` can extend Kafka's `DefaultKafkaClientSupplier`, overriding the producer and consumer creation methods to wrap the instances with the telemetry-related code.
 +
 .Example custom `TracingKafkaClientSupplier`
 [source,java]
