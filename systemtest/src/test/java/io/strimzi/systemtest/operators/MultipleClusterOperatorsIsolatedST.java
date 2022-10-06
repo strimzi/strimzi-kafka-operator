@@ -41,7 +41,6 @@ import org.apache.logging.log4j.Logger;
 
 import static org.hamcrest.CoreMatchers.is;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -160,8 +159,6 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
     }
 
-    // Disabled due to https://github.com/strimzi/strimzi-kafka-operator/issues/7408
-    @Disabled
     @IsolatedTest
     @Tag(CRUISE_CONTROL)
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
