@@ -11,7 +11,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
@@ -21,11 +20,15 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -66,7 +69,6 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, pod -> List.of("Should restart"), new Secret(), new Secret())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(3));
@@ -74,8 +76,101 @@ public class ZooKeeperRollerTest {
                     assertThat(roller.podRestarts.contains("my-cluster-zookeeper-1"), is(true));
                     assertThat(roller.podRestarts.contains("my-cluster-zookeeper-2"), is(true));
 
-                    async.flag();
+                    context.completeNow();
                 })));
+    }
+
+    @Test
+    public void testNonReadyPodsAreRestartedFirst(VertxTestContext context) {
+        final String leaderPodReady = "my-cluster-zookeeper-2";
+        final String followerPodReady = "my-cluster-zookeeper-0";
+        final String followerPodNonReady = "my-cluster-zookeeper-1";
+
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.isReady(any(), eq(followerPodReady))).thenReturn(true);
+        when(podOperator.isReady(any(), eq(followerPodNonReady))).thenReturn(false);
+        when(podOperator.isReady(any(), eq(leaderPodReady))).thenReturn(true);
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
+        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodReady));
+
+        MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
+
+        Function<Pod, List<String>> shouldRoll = pod -> List.of("Pod was manually annotated to be rolled");
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
+              .onComplete(context.succeeding(v -> context.verify(() -> {
+                  assertThat(roller.podRestarts.size(), is(3));
+                  assertThat(roller.podRestarts, contains(followerPodNonReady, followerPodReady, leaderPodReady));
+                  context.completeNow();
+              })));
+    }
+
+    @Test
+    public void testNonReadinessOfPodCanPreventAllPodRestarts(VertxTestContext context)  {
+        final String followerPodNonReady = "my-cluster-zookeeper-1";
+        final String leaderPodNeedsRestart = "my-cluster-zookeeper-2";
+        final String followerPodNeedsRestart = "my-cluster-zookeeper-0";
+        final Set<String> needsRestart = Set.of(followerPodNeedsRestart, leaderPodNeedsRestart);
+        Function<Pod, List<String>> shouldRestart = pod -> {
+            if (needsRestart.contains(pod.getMetadata().getName()))  {
+                return List.of("Should restart");
+            } else {
+                return List.of();
+            }
+        };
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.isReady(any(), eq(followerPodNeedsRestart))).thenReturn(true);
+        when(podOperator.isReady(any(), eq(followerPodNonReady))).thenReturn(false);
+        when(podOperator.isReady(any(), eq(leaderPodNeedsRestart))).thenReturn(true);
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
+
+
+        ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
+        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestart));
+
+        MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
+
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRestart, new Secret(), new Secret())
+              .onComplete(context.failing(v -> context.verify(() -> {
+                  assertThat(roller.podRestarts.size(), is(0));
+                  context.completeNow();
+              })));
+    }
+
+    @Test
+    public void testNonReadinessOfLeaderCanPreventAllPodRestarts(VertxTestContext context)  {
+        final String followerPod1NeedsRestart = "my-cluster-zookeeper-1";
+        final String leaderPodNeedsRestartNonReady = "my-cluster-zookeeper-2";
+        final String followerPod2NeedsRestart = "my-cluster-zookeeper-0";
+        final Set<String> needsRestart = Set.of(followerPod2NeedsRestart, leaderPodNeedsRestartNonReady);
+        Function<Pod, List<String>> shouldRestart = pod -> {
+            if (needsRestart.contains(pod.getMetadata().getName()))  {
+                return List.of("Should restart");
+            } else {
+                return List.of();
+            }
+        };
+        PodOperator podOperator = mock(PodOperator.class);
+        when(podOperator.isReady(any(), eq(followerPod2NeedsRestart))).thenReturn(true);
+        when(podOperator.isReady(any(), eq(followerPod1NeedsRestart))).thenReturn(true);
+        when(podOperator.isReady(any(), eq(leaderPodNeedsRestartNonReady))).thenReturn(false);
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), eq(leaderPodNeedsRestartNonReady), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
+
+
+        ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
+        when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestartNonReady));
+
+        MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
+
+        roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRestart, new Secret(), new Secret())
+              .onComplete(context.failing(v -> context.verify(() -> {
+                  assertThat(roller.podRestarts.size(), is(0));
+                  context.completeNow();
+              })));
     }
 
     @Test
@@ -88,12 +183,11 @@ public class ZooKeeperRollerTest {
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, pod -> null, new Secret(), new Secret())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(0));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -101,13 +195,13 @@ public class ZooKeeperRollerTest {
     public void testLeaderIsLast(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture("my-cluster-zookeeper-1"));
 
         MockZooKeeperRoller roller = new MockZooKeeperRoller(podOperator, leaderFinder, 300_00L);
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, pod -> List.of("Should restart"), new Secret(), new Secret())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(3));
@@ -115,7 +209,7 @@ public class ZooKeeperRollerTest {
                     assertThat(roller.podRestarts.contains("my-cluster-zookeeper-2"), is(true));
                     assertThat(roller.podRestarts.contains("my-cluster-zookeeper-0"), is(true));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -123,6 +217,7 @@ public class ZooKeeperRollerTest {
     public void testOnlySomePodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
         when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -137,14 +232,13 @@ public class ZooKeeperRollerTest {
             }
         };
 
-        Checkpoint async = context.checkpoint();
         roller.maybeRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, DUMMY_SELECTOR, shouldRoll, new Secret(), new Secret())
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(roller.podRestarts.size(), is(2));
                     assertThat(roller.podRestarts.contains("my-cluster-zookeeper-0"), is(true));
                     assertThat(roller.podRestarts.contains("my-cluster-zookeeper-2"), is(true));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
