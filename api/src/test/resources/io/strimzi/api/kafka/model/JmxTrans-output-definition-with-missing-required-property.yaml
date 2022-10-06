@@ -9,9 +9,6 @@ spec:
     storage:
       type: persistent-claim
       size: 500Gi
-    listeners:
-      plain: {}
-      tls: {}
   jmxTrans:
     outputDefinitions:
       - host: "wont matter about the host"

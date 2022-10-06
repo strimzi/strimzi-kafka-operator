@@ -116,6 +116,7 @@ public abstract class AbstractCrdIT implements TestSeparator {
             assertThat("Could not find" + requiredProperty + " in message: " + message, message, anyOf(
                     containsStringIgnoringCase(requiredProperty + " in body is required"),
                     containsStringIgnoringCase(requiredProperty + ": Required value"),
+                    containsStringIgnoringCase(requiredProperty.substring(requiredProperty.lastIndexOf(".") + 1) + ": Required value"),
                     containsStringIgnoringCase("missing required field \"" + requiredProperty + "\""),
                     containsStringIgnoringCase("missing required field \"" + requiredProperty.substring(requiredProperty.lastIndexOf(".") + 1) + "\"")
             ));

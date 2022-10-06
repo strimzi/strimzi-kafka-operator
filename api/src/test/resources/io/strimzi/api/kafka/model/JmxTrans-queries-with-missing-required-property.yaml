@@ -10,14 +10,16 @@ spec:
       type: persistent-claim
       size: 500Gi
     listeners:
-      plain: {}
-      tls: {}
+      - type: internal
+        tls: false
+        port: 9092
+        name: test
   jmxTrans:
     outputDefinitions:
       - outputType: "wont matter about type"
         name: "won't matter"
     kafkaQueries:
-      - empty: "object"
+      - targetMBean: ""
   zookeeper:
     replicas: 1
     storage:
