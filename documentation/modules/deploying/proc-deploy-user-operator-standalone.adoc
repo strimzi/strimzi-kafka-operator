@@ -86,8 +86,8 @@ spec:
               value: '* * 8-10 * * ?;* * 14-15 * * ?'
             - name: STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION <16>
               value: |
-                default.api.timeout.ms=60000
-                request.timeout.ms=120000
+                default.api.timeout.ms=120000
+                request.timeout.ms=60000
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
