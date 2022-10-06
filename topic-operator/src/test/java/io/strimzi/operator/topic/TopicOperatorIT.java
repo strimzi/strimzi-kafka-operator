@@ -59,14 +59,17 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     @AfterAll
     public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
-        teardown(true);
-        teardownKubeCluster();
-        adminClient.close();
-        kafkaCluster.stop();
+        try {
+            teardown(true);
+        } finally {
+            teardownKubeCluster();
+            adminClient.close();
+            kafkaCluster.stop();
+        }
     }
 
     @AfterEach
-    void afterEach() throws InterruptedException, ExecutionException, TimeoutException {
+    void afterEach() throws InterruptedException, TimeoutException {
         // clean-up KafkaTopic resources in Kubernetes
         clearKafkaTopics(true);
     }

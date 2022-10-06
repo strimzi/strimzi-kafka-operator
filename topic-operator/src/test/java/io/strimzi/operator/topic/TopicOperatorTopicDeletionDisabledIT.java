@@ -33,10 +33,13 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
     @AfterAll
     public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
-        teardown(false);
-        teardownKubeCluster();
-        adminClient.close();
-        kafkaCluster.stop();
+        try {
+            teardown(false);
+        } finally {
+            teardownKubeCluster();
+            adminClient.close();
+            kafkaCluster.stop();
+        }
     }
 
     @AfterEach

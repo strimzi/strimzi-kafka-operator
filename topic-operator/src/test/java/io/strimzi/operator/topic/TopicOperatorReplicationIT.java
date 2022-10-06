@@ -46,10 +46,13 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
     @AfterAll
     public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
-        teardown(true);
-        teardownKubeCluster();
-        adminClient.close();
-        kafkaCluster.stop();
+        try {
+            teardown(true);
+        } finally {
+            teardownKubeCluster();
+            adminClient.close();
+            kafkaCluster.stop();
+        }
     }
 
     @AfterEach
