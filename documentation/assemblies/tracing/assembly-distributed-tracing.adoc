@@ -67,8 +67,6 @@ include::../../modules/tracing/con-overview-tracing.adoc[leveloffset=+1]
 
 include::../../modules/tracing/ref-tracing-environment-variables.adoc[leveloffset=+1]
 
-include::../../modules/tracing/ref-tracing-span-names.adoc[leveloffset=+1]
-
 include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]
 
 include::../../modules/tracing/proc-configuring-tracers-kafka-clients.adoc[leveloffset=+1]
@@ -78,4 +76,6 @@ include::../../modules/tracing/proc-instrumenting-producers-consumers-opentracin
 include::../../modules/tracing/proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]
 
 include::../../modules/tracing/proc-enabling-tracing-type.adoc[leveloffset=+1]  
+
+include::../../modules/tracing/ref-tracing-span-names.adoc[leveloffset=+1]
 
