@@ -32,7 +32,7 @@ The following tables describe the key environment variables for setting up a tra
 |OTEL_TRACES_EXPORTER
 |Yes
 |The exporter used for tracing.
-Set to `otlp` by default. If using Jaeger tracing, you need to specify this environment variable.
+Set to `otlp` by default. If using Jaeger tracing, you need to set this environment variable as `jaeger`.
 If you are using another tracing implementation, xref:proc-enabling-tracing-type-{context}[specify the exporter used].
 
 
