@@ -20,32 +20,32 @@ Interceptor instrumentation:: For interceptor instrumentation, add the tracing c
 +
 You enable instrumentation in Kafka Streams applications by adding the tracing JARs as dependencies to your project.
 * To instrument Kafka Streams with OpenTelemetry, you'll need to write a custom `TracingKafkaClientSupplier`.
+* The custom `TracingKafkaClientSupplier` can extend the Kafka provided `DefaultKafkaClientSupplier` but overriding the producer and consumer creation methods in order to wrap the instances with the telemetry related code.
 +
 .Example custom `TracingKafkaClientSupplier`
 [source,java]
 ----
-private static class TracingKafkaClientSupplier implements KafkaClientSupplier {
-    @Override
-    public Admin getAdmin(Map<String, Object> config) {
-        return Admin.create(config);
-    }
+private class TracingKafkaClientSupplier extends DefaultKafkaClientSupplier {
     @Override
     public Producer<byte[], byte[]> getProducer(Map<String, Object> config) {
-        KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
-        return tracing.wrap(new KafkaProducer<>(config));
+        KafkaTelemetry telemetry = KafkaTelemetry.create(GlobalOpenTelemetry.get());
+        return telemetry.wrap(super.getProducer(config));
     }
+
     @Override
     public Consumer<byte[], byte[]> getConsumer(Map<String, Object> config) {
-        KafkaTracing tracing = KafkaTracing.create(GlobalOpenTelemetry.get());
-        return tracing.wrap(new KafkaConsumer<>(config));
+        KafkaTelemetry telemetry = KafkaTelemetry.create(GlobalOpenTelemetry.get());
+        return telemetry.wrap(super.getConsumer(config));
     }
+
     @Override
     public Consumer<byte[], byte[]> getRestoreConsumer(Map<String, Object> config) {
-        return getConsumer(config);
+        return this.getConsumer(config);
     }
+
     @Override
     public Consumer<byte[], byte[]> getGlobalConsumer(Map<String, Object> config) {
-        return getConsumer(config);
+        return this.getConsumer(config);
     }
 }
 ----
