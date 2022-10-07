@@ -208,7 +208,7 @@ get_nonnamespaced_yamls() {
     local resources && resources=$($KUBE_CLIENT get "$type" -l app=strimzi -o name -n "$NAMESPACE")
     echo "    $res"
     res=$(echo "$res" | cut -d "/" -f 2)
-    $KUBE_CLIENT get "$type" "$res" -o yaml | sed "$SE" > "$TMP"/reports/"$type"/"$res".yaml
+    $KUBE_CLIENT get "$type" "$res" -o yaml | sed "$SE" > "$OUT_DIR"/reports/"$type"/"$res".yaml
   done
 }
 
