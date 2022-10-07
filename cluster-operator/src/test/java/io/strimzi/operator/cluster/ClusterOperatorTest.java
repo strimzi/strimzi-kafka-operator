@@ -15,7 +15,6 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.test.annotations.IsolatedSuite;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.junit5.VertxExtension;
@@ -48,7 +47,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@IsolatedSuite
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
