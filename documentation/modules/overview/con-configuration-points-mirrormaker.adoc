@@ -5,6 +5,7 @@
 [id="configuration-points-topic_{context}"]
 = Kafka MirrorMaker configuration
 
+[role="_abstract"]
 To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
 
 You can use Strimzi with MirrorMaker 2.0, although the earlier version of MirrorMaker continues to be supported.
@@ -24,8 +25,8 @@ MirrorMaker 2.0 uses:
 
 You can use MirrorMaker 2.0 in _active/passive_ or _active/active_ cluster configurations.
 
-* In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want to make the same data available locally in different geographical locations.
-* In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
+active/active cluster configuration:: An active/active configuration has two active clusters replicating data bidirectionally. Applications can use either cluster. Each cluster can provide the same data. In this way,  you can make the same data available in different geographical locations.
+active/passive cluster configuration:: An active/passive configuration has an active cluster replicating data to a passive cluster. The passive cluster remains on standby. You might use the passive cluster for data recovery in the event of system failure.
 
 You configure a `KafkaMirrorMaker2` custom resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
 and then run a set of MirrorMaker 2.0 connectors to make the connection.
@@ -36,10 +37,10 @@ Topic replication is defined using regular expression patterns to include or exc
 
 The following MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
 
-MirrorSourceConnector:: A _MirrorSourceConnector_ creates remote topics from the source cluster.
+MirrorSourceConnector:: A _MirrorSourceConnector_ creates remote topics from the source cluster. It also replicates ACLs and is necessary for the `MirrorCheckpointConnector` to run.
 MirrorCheckpointConnector:: A _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an `offset-syncs` topic and `checkpoints` topic.
-The offset sync topic maps the source and target offsets for replicated topic partitions from record metadata.
-A checkpoint is emitted from each source cluster and replicated in the target cluster through the checkpoint topic.
+The `offset-syncs` topic maps the source and target offsets for replicated topic partitions from record metadata.
+A checkpoint is emitted from each source cluster and replicated in the target cluster through the `checkpoints` topic.
 The checkpoint topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
 MirrorHeartbeatConnector:: A _MirrorHeartbeatConnector_ periodically checks connectivity between clusters.
 A heartbeat is produced every second by the MirrorHeartbeatConnector into a _heartbeat_ topic that is created on the local cluster.
@@ -53,7 +54,7 @@ image::mirrormaker.png[MirrorMaker 2.0 replication between a Kafka cluster in Re
 [discrete]
 === Bidirectional replication across two clusters
 
-The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration,
+The MirrorMaker 2.0 architecture supports bidirectional replication in an active/active cluster configuration,
 so both clusters are active and provide the same data simultaneously.
 A MirrorMaker 2.0 cluster is required at each target destination.
 
