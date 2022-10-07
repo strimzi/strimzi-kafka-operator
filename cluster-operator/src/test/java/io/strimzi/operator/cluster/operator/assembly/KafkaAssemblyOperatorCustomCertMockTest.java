@@ -28,6 +28,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -38,7 +39,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -174,7 +174,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
         return "{tls=fc4c92a1}";
     }
 
-    @Test
+    @IsolatedTest
     public void testPodPodsRollWhenCustomCertificatesChange(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
 

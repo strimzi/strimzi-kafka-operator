@@ -44,6 +44,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.vertx.core.AsyncResult;
@@ -53,7 +54,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Clock;
@@ -151,7 +151,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         mockKube.stop();
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenPodInStatefulSetHasOldGeneration(Vertx vertx, VertxTestContext context) {
         KafkaReconciler reconciler = new KafkaReconciler(
                 reconciliation,
@@ -174,7 +174,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_GENERATION, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenJbodVolumeMembershipAltered(Vertx vertx, VertxTestContext context) {
         //Default Kafka CR has two volumes, so drop to 1
         Kafka kafkaWithLessVolumes = new KafkaBuilder(KAFKA)
@@ -203,7 +203,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         lowerVolumes.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(JBOD_VOLUMES_CHANGED, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenAnnotatedForManualRollingUpdate(Vertx vertx, VertxTestContext context) {
         StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
         StatefulSet patchedSet = new StatefulSetBuilder(kafkaSet)
@@ -230,7 +230,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenCustomListenerCaCertChanged(Vertx vertx, VertxTestContext context) {
         // Change custom listener cert thumbprint annotation to cause reconciliation requiring restart
         patchKafkaPodWithAnnotation(ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, "1234");
@@ -238,7 +238,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CUSTOM_LISTENER_CA_CERT_CHANGE, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenPodIsStuck(Vertx vertx, VertxTestContext context) {
         Pod kafkaPod = kafkaPod();
 

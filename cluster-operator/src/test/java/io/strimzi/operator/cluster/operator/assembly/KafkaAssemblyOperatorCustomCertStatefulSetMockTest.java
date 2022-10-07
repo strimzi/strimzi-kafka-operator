@@ -41,6 +41,7 @@ import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -52,7 +53,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Clock;
@@ -225,7 +225,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
                 .build();
     }
 
-    @Test
+    @IsolatedTest
     public void testPodToRestartIsEmptyWhenCustomCertAnnotationsHaveMatchingThumbprints(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
@@ -240,7 +240,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
             })));
     }
 
-    @Test
+    @IsolatedTest
     public void testPodToRestartNonemptyWhenCustomCertTlsListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
@@ -266,7 +266,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
             })));
     }
 
-    @Test
+    @IsolatedTest
     public void testPodToRestartTrueWhenCustomCertExternalListenerThumbprintAnnotationsNotMatchingThumbprint(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName), kafka)
@@ -293,7 +293,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
             })));
     }
 
-    @Test
+    @IsolatedTest
     public void testPodToRestartIsEmptyAndNoCustomCertAnnotationsWhenNoCustomCertificates(VertxTestContext context) {
         kafka = new KafkaBuilder(createKafka())
                 .editSpec()

@@ -36,13 +36,13 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Arrays;
@@ -222,7 +222,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testPodCreationDeletionAndRecreation(VertxTestContext context) {
         String podSetName = "basic-test";
         String podName = podSetName + "-0";
@@ -293,7 +293,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testScaleUpScaleDown(VertxTestContext context) {
         String podSetName = "scale-up-down";
         String pod1Name = podSetName + "-0";
@@ -386,7 +386,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testPodUpdates(VertxTestContext context) {
         String podSetName = "pod-updates";
         String podName = podSetName + "-0";
@@ -456,7 +456,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testOwnerReferencePatching(VertxTestContext context) {
         String podSetName = "owner-reference";
         String podName = podSetName + "-0";
@@ -504,7 +504,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testCrSelector(VertxTestContext context) {
         String podSetName = "matching-podset";
         String otherPodSetName = "other-podset";
@@ -576,7 +576,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testMetrics(VertxTestContext context) {
         String podSetName = "metrics-test";
         String podName = podSetName + "-0";
@@ -641,7 +641,7 @@ public class StrimziPodSetControllerMockTest {
      *
      * @param context   Test context
      */
-    @Test
+    @IsolatedTest
     public void testFailedPodRecovery(VertxTestContext context) {
         String podSetName = "basic-test";
         String podName = podSetName + "-0";

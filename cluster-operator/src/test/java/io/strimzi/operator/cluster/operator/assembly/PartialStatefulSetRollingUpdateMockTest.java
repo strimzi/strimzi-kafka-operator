@@ -27,6 +27,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -38,7 +39,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -196,7 +196,7 @@ public class PartialStatefulSetRollingUpdateMockTest {
                         .build());
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledKafkaCluster(VertxTestContext context) {
         updateStatefulSetGeneration(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
@@ -219,7 +219,7 @@ public class PartialStatefulSetRollingUpdateMockTest {
         });
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledZookeeperCluster(VertxTestContext context) {
         updateStatefulSetGeneration(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
         updatePodGeneration(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0), StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION, "3");
@@ -241,7 +241,7 @@ public class PartialStatefulSetRollingUpdateMockTest {
         });
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledClusterForClusterCaCertificate(VertxTestContext context) {
         updateSecretGeneration(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
         updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
@@ -274,7 +274,7 @@ public class PartialStatefulSetRollingUpdateMockTest {
         });
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledClusterForClientsCaCertificate(VertxTestContext context) {
         updateSecretGeneration(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "3");
         updatePodGeneration(KafkaResources.kafkaPodName(CLUSTER_NAME, 0), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "3");

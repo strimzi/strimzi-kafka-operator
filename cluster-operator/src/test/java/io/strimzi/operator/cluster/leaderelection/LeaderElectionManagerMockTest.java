@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster.leaderelection;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
-import org.junit.jupiter.api.Test;
+import io.strimzi.test.annotations.IsolatedTest;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
@@ -26,7 +26,7 @@ public class LeaderElectionManagerMockTest {
     @SuppressWarnings("unused")
     private KubernetesClient client;
 
-    @Test
+    @IsolatedTest
     public void testLeaderElectionManager() throws InterruptedException {
         CountDownLatch le1Leader = new CountDownLatch(1);
         CountDownLatch le1NotLeader = new CountDownLatch(1);

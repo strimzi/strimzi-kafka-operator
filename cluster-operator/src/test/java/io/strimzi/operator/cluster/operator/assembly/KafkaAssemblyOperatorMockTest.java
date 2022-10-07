@@ -37,6 +37,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -46,7 +47,6 @@ import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterEach;
@@ -213,7 +213,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Create a cluster from a Kafka */
-    @Test
+    @IsolatedTest
     public void testReconcile(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
@@ -222,7 +222,7 @@ public class KafkaAssemblyOperatorMockTest {
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileReplacesAllDeletedSecrets(VertxTestContext context) {
         initialReconcileThenDeleteSecretsThenReconcile(context,
                 KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
@@ -283,27 +283,27 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileReplacesDeletedZookeeperServices(VertxTestContext context) {
         initialReconcileThenDeleteServicesThenReconcile(context,
                 KafkaResources.zookeeperServiceName(CLUSTER_NAME),
                 KafkaResources.zookeeperHeadlessServiceName(CLUSTER_NAME));
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileReplacesDeletedKafkaServices(VertxTestContext context) {
         initialReconcileThenDeleteServicesThenReconcile(context,
                 KafkaResources.bootstrapServiceName(CLUSTER_NAME),
                 KafkaResources.brokersServiceName(CLUSTER_NAME));
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileReplacesDeletedZookeeperPodSet(VertxTestContext context) {
         String podSetName = CLUSTER_NAME + "-zookeeper";
         initialReconcileThenDeletePodSetsThenReconcile(context, podSetName);
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileReplacesDeletedKafkaPodSet(VertxTestContext context) {
         String podSetName = CLUSTER_NAME + "-kafka";
         initialReconcileThenDeletePodSetsThenReconcile(context, podSetName);
@@ -327,7 +327,7 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileUpdatesKafkaPersistentVolumes(VertxTestContext context) {
         assumeTrue(kafkaStorage instanceof PersistentClaimStorage, "Parameterized Test only runs for Params with Kafka Persistent storage");
 
@@ -368,7 +368,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .inNamespace(namespace).withName(name);
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileUpdatesKafkaStorageType(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
@@ -431,7 +431,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Test that we can change the deleteClaim flag, and that it's honoured */
-    @Test
+    @IsolatedTest
     public void testReconcileUpdatesKafkaWithChangedDeleteClaim(VertxTestContext context) {
         assumeTrue(kafkaStorage instanceof PersistentClaimStorage, "Kafka delete claims do not apply to non-persistent volumes");
 
@@ -492,7 +492,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Create a cluster from a Kafka Cluster CM */
-    @Test
+    @IsolatedTest
     public void testReconcileKafkaScaleDown(VertxTestContext context) {
         int scaleDownTo = KAFKA_REPLICAS - 1;
         // final ordinal will be deleted
@@ -539,7 +539,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     /** Create a cluster from a Kafka Cluster CM */
-    @Test
+    @IsolatedTest
     public void testReconcileKafkaScaleUp(VertxTestContext context) {
         AtomicInteger brokersInternalCertsCount = new AtomicInteger();
 
@@ -583,7 +583,7 @@ public class KafkaAssemblyOperatorMockTest {
             })));
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileResumePartialRoll(VertxTestContext context) {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)

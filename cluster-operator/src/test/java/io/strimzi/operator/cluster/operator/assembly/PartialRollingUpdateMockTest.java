@@ -29,6 +29,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -40,7 +41,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -180,7 +180,7 @@ public class PartialRollingUpdateMockTest {
                         .build());
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledKafkaCluster(VertxTestContext context) {
         updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
         updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 4), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
@@ -213,7 +213,7 @@ public class PartialRollingUpdateMockTest {
         });
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledZookeeperCluster(VertxTestContext context) {
         updatePodAnnotation(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
         updatePodAnnotation(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
@@ -247,7 +247,7 @@ public class PartialRollingUpdateMockTest {
         });
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledClusterForClusterCaCertificate(VertxTestContext context) {
         updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1");
         updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
@@ -277,7 +277,7 @@ public class PartialRollingUpdateMockTest {
         });
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileOfPartiallyRolledClusterForClientsCaCertificate(VertxTestContext context) {
         updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "-1");
         updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 2), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");

@@ -44,6 +44,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -57,7 +58,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
@@ -504,7 +504,7 @@ public class ConnectorMockTest {
                 .endSpec();
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectNotReadyWithoutSpec() {
         String connectName = "cluster";
         KafkaConnect connect = new KafkaConnectBuilder()
@@ -518,7 +518,7 @@ public class ConnectorMockTest {
         waitForConnectNotReady(connectName, "InvalidResourceException", "Spec cannot be null");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorNotReadyWithoutStrimziClusterLabel() {
         String connectorName = "connector";
 
@@ -536,7 +536,7 @@ public class ConnectorMockTest {
                 "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No connect cluster in which to create this connector.");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorNotReadyWhenConnectDoesNotExist() {
         String connectorName = "connector";
 
@@ -552,7 +552,7 @@ public class ConnectorMockTest {
                 "KafkaConnect resource 'cluster' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace ns.");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorNotReadyWithoutSpec() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -581,7 +581,7 @@ public class ConnectorMockTest {
         waitForConnectorNotReady(connectorName, "InvalidResourceException", "spec property is required");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorNotReadyWhenConnectNotConfiguredForConnectors() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -613,7 +613,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, delete connector, delete connect */
-    @Test
+    @IsolatedTest
     public void testConnectConnectorConnectorConnect() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -677,7 +677,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connector, create connect, delete connector, delete connect */
-    @Test
+    @IsolatedTest
     public void testConnectorConnectConnectorConnect() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -740,7 +740,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, delete connect, delete connector */
-    @Test
+    @IsolatedTest
     public void testConnectConnectorConnectConnector() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -804,7 +804,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connector, create connect, delete connect, delete connector */
-    @Test
+    @IsolatedTest
     public void testConnectorConnectConnectConnector() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -871,7 +871,7 @@ public class ConnectorMockTest {
      * check the connector is deleted from the old cluster
      * check the connector is added to the new cluster
      * */
-    @Test
+    @IsolatedTest
     public void testChangeStrimziClusterLabel(VertxTestContext context) {
         String oldConnectClusterName = "cluster1";
         String newConnectClusterName = "cluster2";
@@ -962,7 +962,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, delete connector, delete connect */
-    @Test
+    @IsolatedTest
     public void testConnectorNotReadyWhenExceptionFromConnectRestApi() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1018,7 +1018,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, pause connector, resume connector */
-    @Test
+    @IsolatedTest
     public void testConnectorPauseResume() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1106,7 +1106,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, restart connector */
-    @Test
+    @IsolatedTest
     public void testConnectorRestart() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1182,7 +1182,7 @@ public class ConnectorMockTest {
 
 
     /** Create connect, create connector, add restart annotation, fail to restart connector, check for condition */
-    @Test
+    @IsolatedTest
     public void testConnectorRestartFail() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1262,7 +1262,7 @@ public class ConnectorMockTest {
 
 
     /** Create connect, create connector, restart connector task */
-    @Test
+    @IsolatedTest
     public void testConnectorRestartTask() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1337,7 +1337,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, restart connector task */
-    @Test
+    @IsolatedTest
     public void testConnectorRestartTaskFail() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1417,7 +1417,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, Scale to 0 */
-    @Test
+    @IsolatedTest
     public void testConnectScaleToZero() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1483,7 +1483,7 @@ public class ConnectorMockTest {
     }
 
     /** Create connect, create connector, break the REST API */
-    @Test
+    @IsolatedTest
     public void testConnectRestAPIIssues() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1550,7 +1550,7 @@ public class ConnectorMockTest {
         waitForConnectorNotReady(connectorName, "ConnectTimeoutException", "connection timed out");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorUnknownField() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1592,7 +1592,7 @@ public class ConnectorMockTest {
         waitForConnectorCondition(connectorName, "Warning", "UnknownFields");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorReconciliationPausedUnpaused() {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1640,7 +1640,7 @@ public class ConnectorMockTest {
         waitForConnectorState(connectorName, "RUNNING");
     }
 
-    @Test
+    @IsolatedTest
     public void testConnectorDeleteFailsOnConnectReconciliation() {
         String connectName = "cluster";
 
@@ -1662,7 +1662,7 @@ public class ConnectorMockTest {
         waitForConnectReady(connectName);
     }
 
-    @Test
+    @IsolatedTest
     void testConnectorResourceMetrics(VertxTestContext context) {
         String connectName1 = "cluster1";
         String connectName2 = "cluster2";
@@ -1740,7 +1740,7 @@ public class ConnectorMockTest {
         })));
     }
 
-    @Test
+    @IsolatedTest
     void testConnectorResourceMetricsPausedConnect(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName1 = "connector1";
@@ -1799,7 +1799,7 @@ public class ConnectorMockTest {
     }
 
     @Disabled // MockKube2 does not support "In" selector => https://github.com/strimzi/strimzi-kafka-operator/issues/6740
-    @Test
+    @IsolatedTest
     void testConnectorResourceMetricsScaledToZero(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1847,7 +1847,7 @@ public class ConnectorMockTest {
         })));
     }
 
-    @Test
+    @IsolatedTest
     void testConnectorResourceMetricsStopUseResources(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName = "connector";
@@ -1895,7 +1895,7 @@ public class ConnectorMockTest {
     }
 
     @Disabled // MockKube2 does not support "In" selector => https://github.com/strimzi/strimzi-kafka-operator/issues/6740
-    @Test
+    @IsolatedTest
     void testConnectorResourceMetricsConnectDeletion(VertxTestContext context) {
         String connectName = "cluster";
         String connectorName1 = "connector1";
@@ -1962,7 +1962,7 @@ public class ConnectorMockTest {
     }
 
     @Disabled // MockKube2 does not support "In" selector => https://github.com/strimzi/strimzi-kafka-operator/issues/6740
-    @Test
+    @IsolatedTest
     void testConnectorResourceMetricsMoveConnectToOtherOperator(VertxTestContext context) {
         String connectName1 = "cluster1";
         String connectName2 = "cluster2";

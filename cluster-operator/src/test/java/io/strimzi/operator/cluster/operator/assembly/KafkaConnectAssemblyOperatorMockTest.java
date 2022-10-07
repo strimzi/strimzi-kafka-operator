@@ -26,6 +26,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -38,7 +39,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -136,7 +136,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         return created.future();
     }
 
-    @Test
+    @IsolatedTest
     public void testReconcileCreateAndUpdate(VertxTestContext context) {
         setConnectResource(new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -163,7 +163,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     }
 
-    @Test
+    @IsolatedTest
     public void testPauseReconcileUnpause(VertxTestContext context) {
         setConnectResource(new KafkaConnectBuilder()
                 .withMetadata(new ObjectMetaBuilder()

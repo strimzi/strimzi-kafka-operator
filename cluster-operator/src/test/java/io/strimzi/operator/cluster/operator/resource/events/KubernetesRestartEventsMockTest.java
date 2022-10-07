@@ -53,6 +53,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.vertx.core.AsyncResult;
@@ -69,7 +70,6 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.time.Clock;
@@ -181,7 +181,7 @@ public class KubernetesRestartEventsMockTest {
         mockKube.stop();
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenJbodVolumeMembershipAltered(Vertx vertx, VertxTestContext context) {
         //Default Kafka CR has two volumes, so drop to 1
         Kafka kafkaWithLessVolumes = new KafkaBuilder(KAFKA)
@@ -210,7 +210,7 @@ public class KubernetesRestartEventsMockTest {
         lowerVolumes.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenFileSystemResizeRequested(Vertx vertx, VertxTestContext context) {
         // Pretend the resizing process is underway by adding a condition of FileSystemResizePending
         // This will cause the pod to restart to pick up resized PVC
@@ -230,7 +230,7 @@ public class KubernetesRestartEventsMockTest {
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(FILE_SYSTEM_RESIZE_NEEDED, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenCaCertHasOldGeneration(Vertx vertx, VertxTestContext context) {
         Secret patched = modifySecretWithAnnotation(clusterCa.caCertSecret(), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "-1");
         ClusterCa oldGenClusterCa = createClusterCaWithSecret(patched);
@@ -250,7 +250,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_HAS_OLD_GENERATION, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenCaCertRemoved(Vertx vertx, VertxTestContext context) {
         ClusterCa ca = new OverridingClusterCa() {
             @Override
@@ -274,7 +274,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_REMOVED, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenCaCertRenewed(Vertx vertx, VertxTestContext context) {
         ClusterCa ca = new OverridingClusterCa() {
             @Override
@@ -298,7 +298,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_RENEWED, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenClientCaCertKeyReplaced(Vertx vertx, VertxTestContext context) {
         // Turn off cert authority generation to cause reconciliation to roll pods
         Kafka kafkaWithoutClientCaGen = new KafkaBuilder(KAFKA)
@@ -316,7 +316,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenClusterCaCertKeyReplaced(Vertx vertx, VertxTestContext context) {
         //Turn off cert authority generation to cause reconciliation to roll pods
         Kafka kafkaWithoutClusterCaGen = new KafkaBuilder(KAFKA)
@@ -334,7 +334,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenConfigChangeRequiresRestart(Vertx vertx, VertxTestContext context) {
         // Modify mccked configs call to return a new property to trigger a reconfiguration reconciliation that requires a restart
         Admin adminClient = withChangedBrokerConf(ResourceUtils.adminClientProvider().createAdminClient(null, null, null, null));
@@ -355,7 +355,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CONFIG_CHANGE_REQUIRES_RESTART, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenPodRevisionChanged(Vertx vertx, VertxTestContext context) {
         // Change custom listener cert thumbprint annotation to cause reconciliation requiring restart
         patchKafkaPodWithAnnotation(PodRevision.STRIMZI_REVISION_ANNOTATION, "doesnotmatchthepodset");
@@ -363,14 +363,14 @@ public class KubernetesRestartEventsMockTest {
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenPodAnnotatedForManualRollingUpdate(Vertx vertx, VertxTestContext context) {
         patchKafkaPodWithAnnotation(ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
 
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenStrimziPodSetAnnotatedForManualRollingUpdate(Vertx vertx, VertxTestContext context) {
         supplier.strimziPodSetOperator
                 .client()
@@ -385,7 +385,7 @@ public class KubernetesRestartEventsMockTest {
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(MANUAL_ROLLING_UPDATE, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenPodIsUnresponsive(Vertx vertx, VertxTestContext context) {
         // Simulate not being able to initiate an initial admin client connection broker at all
         ResourceOperatorSupplier supplierWithModifiedAdmin = supplierWithAdmin(vertx, () -> {
@@ -407,7 +407,7 @@ public class KubernetesRestartEventsMockTest {
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_UNRESPONSIVE, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenPodIsStuck(Vertx vertx, VertxTestContext context) {
         Pod kafkaPod = kafkaPod();
 
@@ -434,7 +434,7 @@ public class KubernetesRestartEventsMockTest {
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_STUCK, context));
     }
 
-    @Test
+    @IsolatedTest
     void testEventEmittedWhenKafkaBrokerCertsChanged(Vertx vertx, VertxTestContext context) {
         // Using the real SSL cert manager (after the cluster was created using the mock cert manager) will cause the desired Kafka broker certs to change,
         // thus the reconciliation will schedule the restart needed to pick them up
