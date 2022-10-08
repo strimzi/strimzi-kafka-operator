@@ -31,11 +31,16 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceOperator.class);
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
+                    "|/metadata/creationTimestamp" +
+                    "|/metadata/resourceVersion" +
+                    "|/metadata/generation" +
+                    "|/metadata/uid" +
                     "|/spec/sessionAffinity" +
                     "|/spec/clusterIP" +
                     "|/spec/clusterIPs" +
                     "|/spec/ipFamily" + // Legacy field from Kube 1.19 and earlier. We just ignore it, it is not configurable.
                     "|/spec/ipFamilies" + // Immutable field
+                    "|/spec/internalTrafficPolicy" + // Set by Kubernetes to Cluster as default (not configurable through Strimzi as it does nto seem to make much sense for us, so we ignore it)
                     "|/status)$");
 
     private final EndpointOperator endpointOperations;
@@ -73,7 +78,7 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
      * @param reconciliation The reconciliation
      * @param namespace Namespace of the service
      * @param name      Name of the service
-     * @param current   Current servicve
+     * @param current   Current service
      * @param desired   Desired Service
      *
      * @return  Future with reconciliation result

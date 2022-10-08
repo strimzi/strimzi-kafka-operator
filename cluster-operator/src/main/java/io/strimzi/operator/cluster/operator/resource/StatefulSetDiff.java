@@ -24,6 +24,10 @@ public class StatefulSetDiff extends AbstractJsonDiff {
 
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
         "^(/metadata/managedFields"
+        + "|/metadata/creationTimestamp"
+        + "|/metadata/resourceVersion"
+        + "|/metadata/generation"
+        + "|/metadata/uid"
         + "|/spec/revisionHistoryLimit"
         + "|/spec/template/metadata/annotations/" + SHORTENED_STRIMZI_DOMAIN + "~1generation"
         + "|/spec/template/spec/initContainers/[0-9]+/resources"
