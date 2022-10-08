@@ -13,17 +13,21 @@ spec:
           type: topic
           name: my-topic
           patternType: prefix
-        operation: Read
+        operations:
+          - Read
+          - Write
       - resource:
           type: topic
           name: my
           patternType: prefix
-        operation: Read
+        operations:
+          - Read
         host: 127.0.0.1
       - resource:
           type: group
           name: my-group
-        operation: Read
+        operations:
+          - Read
         host: 127.0.0.1
       - resource:
           type: cluster

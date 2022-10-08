@@ -109,6 +109,23 @@ spec:
                               - IdempotentWrite
                               - All
                             description: "Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
+                          operations:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                                - Read
+                                - Write
+                                - Create
+                                - Delete
+                                - Alter
+                                - Describe
+                                - ClusterAction
+                                - AlterConfigs
+                                - DescribeConfigs
+                                - IdempotentWrite
+                                - All
+                            description: "List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
                           resource:
                             type: object
                             properties:
@@ -139,7 +156,6 @@ spec:
                               - deny
                             description: The type of the rule. Currently the only supported type is `allow`. ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
                         required:
-                          - operation
                           - resource
                       description: List of ACL rules which should be applied to this user.
                     type:
@@ -314,6 +330,23 @@ spec:
                               - IdempotentWrite
                               - All
                             description: "Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
+                          operations:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                                - Read
+                                - Write
+                                - Create
+                                - Delete
+                                - Alter
+                                - Describe
+                                - ClusterAction
+                                - AlterConfigs
+                                - DescribeConfigs
+                                - IdempotentWrite
+                                - All
+                            description: "List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
                           resource:
                             type: object
                             properties:
@@ -344,7 +377,6 @@ spec:
                               - deny
                             description: The type of the rule. Currently the only supported type is `allow`. ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
                         required:
-                          - operation
                           - resource
                       description: List of ACL rules which should be applied to this user.
                     type:
@@ -519,6 +551,23 @@ spec:
                               - IdempotentWrite
                               - All
                             description: "Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
+                          operations:
+                            type: array
+                            items:
+                              type: string
+                              enum:
+                                - Read
+                                - Write
+                                - Create
+                                - Delete
+                                - Alter
+                                - Describe
+                                - ClusterAction
+                                - AlterConfigs
+                                - DescribeConfigs
+                                - IdempotentWrite
+                                - All
+                            description: "List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All."
                           resource:
                             type: object
                             properties:
@@ -549,7 +598,6 @@ spec:
                               - deny
                             description: The type of the rule. Currently the only supported type is `allow`. ACL rules with type `allow` are used to allow user to execute the specified operations. Default value is `allow`.
                         required:
-                          - operation
                           - resource
                       description: List of ACL rules which should be applied to this user.
                     type:

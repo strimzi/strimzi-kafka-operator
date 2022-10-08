@@ -78,6 +78,9 @@ structure after everything is said and done should look like `/Library/Java/Java
 doing that run the command at the beginning again and this should link the file and allow you to use maven with OpenJDK
 version 11.
 
+When running the tests, you may encounter `OpenSSL` related errors for parts that you may not have even worked on, in 
+which case you need to make sure you are using `OpenSSL` and not LibreSSL which comes by default with macOS.
+
 ### Kubernetes or OpenShift Cluster
 
 In order to run the integration tests and test any changes made to the operators you will need a functioning Kubernetes

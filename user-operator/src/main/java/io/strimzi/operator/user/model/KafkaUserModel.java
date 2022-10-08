@@ -562,7 +562,7 @@ public class KafkaUserModel {
         Set<SimpleAclRule> simpleAclRules = new HashSet<>();
 
         for (AclRule rule : rules)  {
-            simpleAclRules.add(SimpleAclRule.fromCrd(rule));
+            simpleAclRules.addAll(SimpleAclRule.fromCrd(rule));
         }
 
         this.simpleAclRules = simpleAclRules;

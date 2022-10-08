@@ -8,11 +8,16 @@ import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.AclRuleType;
 
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclPermissionType;
 import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
+
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Immutable class which represents a single ACL rule for AclAuthorizer.
@@ -27,10 +32,10 @@ public class SimpleAclRule {
     /**
      * Constructor
      *
-     * @param type          Type of the Acl rule (Allow or Deny)
-     * @param resource      The resource to which this rule applies (Topic, Group, Cluster, ...)
-     * @param host          The host from which is this rule allowed / denied
-     * @param operation     The Operation which is allowed or denied
+     * @param type      Type of the Acl rule (Allow or Deny)
+     * @param resource  The resource to which this rule applies (Topic, Group, Cluster, ...)
+     * @param host      The host from which is this rule allowed / denied
+     * @param operation The Operation which is allowed or denied
      */
     public SimpleAclRule(AclRuleType type, SimpleAclRuleResource resource, String host, AclOperation operation) {
         this.type = type;
@@ -133,13 +138,24 @@ public class SimpleAclRule {
     }
 
     /**
-     * Creates SimpleAclRule object based on AclRule object which is received as part ofthe KafkaUser CRD.
+     * Creates SimpleAclRule object based on AclRule object which is received as part of the KafkaUser CRD.
      *
-     * @param rule  AclRule object from KafkaUser CR
+     * @param rule AclRule object from KafkaUser CR
      * @return The SimpleAclRule.
      */
-    public static SimpleAclRule fromCrd(AclRule rule)   {
-        return new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), rule.getOperation());
+    @SuppressWarnings("deprecation")
+    public static List<SimpleAclRule> fromCrd(AclRule rule) {
+        if (rule.getOperations() != null && rule.getOperation() != null) {
+            throw new InvalidResourceException("Both fields `operations` and `operation` cannot be filled in at the same time");
+        } else if (rule.getOperations() != null) {
+            List<SimpleAclRule> simpleAclRules = new ArrayList<>();
+            for (AclOperation operation : rule.getOperations()) {
+                simpleAclRules.add(new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), operation));
+            }
+            return simpleAclRules;
+        } else {
+            return List.of(new SimpleAclRule(rule.getType(), SimpleAclRuleResource.fromCrd(rule.getResource()), rule.getHost(), rule.getOperation()));
+        }
     }
 
     private AclPermissionType toKafkaAclPermissionType(AclRuleType aclRuleType) {

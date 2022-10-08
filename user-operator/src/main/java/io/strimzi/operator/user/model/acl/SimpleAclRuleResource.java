@@ -216,7 +216,7 @@ public class SimpleAclRuleResource {
     }
 
     /**
-     * Creates SimpleAclRuleResource object based on the objects received as part fo the KAfkaUser CR
+     * Creates SimpleAclRuleResource object based on the objects received as part fo the KafkaUser CR
      *
      * @param resource  AclRuleResource as received in KafkaUser CR
      * @return The resource.

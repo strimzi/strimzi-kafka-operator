@@ -12,6 +12,7 @@
   * Using Jaeger exporter by default for backward compatibility
 * Updated JMX Exporter dependency to 0.17.2
 * ZookeeperRoller considers unready pods
+* Support multiple operations per ACLRule
 
 ### Changes, deprecations and removals
 
@@ -26,6 +27,8 @@
   Direct upgrade from Strimzi 0.22 or earlier is not possible anymore.
   You have to upgrade first to one of the Strimzi versions between 0.22 and 0.32 before upgrading to Strimzi 0.32 or newer.
   Please follow the docs for more details.  
+* The `spec.authorization.acls[*].operation` field in the `KafkaUser` resource has been deprecated in favour of the field
+  `spec.authorization.acls[*].operations` which allows to set multiple operations per ACLRule.
 
 ## 0.31.1
 

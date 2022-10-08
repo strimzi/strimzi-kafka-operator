@@ -78,9 +78,8 @@ public class ResourceUtils {
                     .withNewKafkaUserAuthorizationSimple()
                         .addNewAcl()
                             .withNewAclRuleTopicResource()
-                                .withName("my-topic")
-                            .endAclRuleTopicResource()
-                            .withOperation(AclOperation.READ)
+                                .withName("my-topic11").endAclRuleTopicResource()
+                            .withOperations(AclOperation.READ, AclOperation.CREATE, AclOperation.WRITE)
                         .endAcl()
                         .addNewAcl()
                             .withNewAclRuleTopicResource()
@@ -207,14 +206,14 @@ public class ResourceUtils {
     }
 
     public static Set<SimpleAclRule> createExpectedSimpleAclRules(KafkaUser user) {
-        Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();
+        Set<SimpleAclRule> simpleAclRules = new HashSet<>();
 
         if (user.getSpec().getAuthorization() != null && KafkaUserAuthorizationSimple.TYPE_SIMPLE.equals(user.getSpec().getAuthorization().getType())) {
             KafkaUserAuthorizationSimple adapted = (KafkaUserAuthorizationSimple) user.getSpec().getAuthorization();
 
             if (adapted.getAcls() != null) {
                 for (AclRule rule : adapted.getAcls()) {
-                    simpleAclRules.add(SimpleAclRule.fromCrd(rule));
+                    simpleAclRules.addAll(SimpleAclRule.fromCrd(rule));
                 }
             }
         }

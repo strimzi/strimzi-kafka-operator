@@ -6,13 +6,16 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
+import io.strimzi.crdgenerator.annotations.Example;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,16 +36,17 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
     private AclRuleResource resource;
     private String host = "*";
     private AclOperation operation;
+    private List<AclOperation> operations;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public AclRule() {
     }
 
-    public AclRule(AclRuleType type, AclRuleResource resource, String host, AclOperation operation) {
+    public AclRule(AclRuleType type, AclRuleResource resource, String host, List<AclOperation> operations) {
         this.type = type;
         this.resource = resource;
         this.host = host;
-        this.operation = operation;
+        this.operations = operations;
     }
 
     @Description("The type of the rule. " +
@@ -82,13 +86,25 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
 
     @Description("Operation which will be allowed or denied. " +
             "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
-    @JsonProperty(required = true)
+    @DeprecatedProperty(movedToPath = "spec.authorization.acls[*].operations")
+    @Deprecated
     public AclOperation getOperation() {
         return operation;
     }
 
     public void setOperation(AclOperation operation) {
         this.operation = operation;
+    }
+
+    @Description("List of operations which will be allowed or denied. " +
+            "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
+    @Example("operations: [\"Read\",\"Write\"]")
+    public List<AclOperation> getOperations() {
+        return operations;
+    }
+
+    public void setOperations(List<AclOperation> operations) {
+        this.operations = operations;
     }
 
     @Override
