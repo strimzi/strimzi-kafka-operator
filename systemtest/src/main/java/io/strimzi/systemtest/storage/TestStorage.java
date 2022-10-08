@@ -165,7 +165,7 @@ final public class TestStorage {
     }
 
     public int getMessageCount() {
-        return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(MESSAGE_COUNT);
+        return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.MESSAGE_COUNT_KEY);
     }
 
 }
