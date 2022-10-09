@@ -41,6 +41,10 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
+                    "|/metadata/creationTimestamp" +
+                    "|/metadata/resourceVersion" +
+                    "|/metadata/generation" +
+                    "|/metadata/uid" +
                     "|/status)$");
 
     protected final Vertx vertx;

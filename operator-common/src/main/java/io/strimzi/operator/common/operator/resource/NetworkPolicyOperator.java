@@ -16,6 +16,10 @@ import java.util.regex.Pattern;
 public class NetworkPolicyOperator extends AbstractResourceOperator<KubernetesClient, NetworkPolicy, NetworkPolicyList, Resource<NetworkPolicy>> {
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
+                    "|/metadata/creationTimestamp" +
+                    "|/metadata/resourceVersion" +
+                    "|/metadata/generation" +
+                    "|/metadata/uid" +
                     "|/spec/policyTypes" +
                     "|/status)$");
 

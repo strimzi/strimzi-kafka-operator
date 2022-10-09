@@ -51,6 +51,10 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
 
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
+                    "|/metadata/creationTimestamp" +
+                    "|/metadata/resourceVersion" +
+                    "|/metadata/generation" +
+                    "|/metadata/uid" +
                     "|/status)$");
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractResourceOperator.class);

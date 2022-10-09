@@ -25,6 +25,10 @@ public class PvcOperator extends AbstractResourceOperator<KubernetesClient, Pers
             "^(/metadata/managedFields" +
                     "|/metadata/annotations/pv.kubernetes.io~1bind-completed" +
                     "|/metadata/finalizers" +
+                    "|/metadata/creationTimestamp" +
+                    "|/metadata/resourceVersion" +
+                    "|/metadata/generation" +
+                    "|/metadata/uid" +
                     "|/status)$");
 
 
