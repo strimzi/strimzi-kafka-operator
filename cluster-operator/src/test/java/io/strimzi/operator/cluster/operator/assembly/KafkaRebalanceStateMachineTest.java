@@ -319,8 +319,9 @@ public class KafkaRebalanceStateMachineTest {
                         } else {
                             context.failNow(new RuntimeException("This operation failed with an unexpected error:" + result.cause().getMessage()));
                         }
+                    } else {
+                        context.failNow(new RuntimeException("This operations should have failed"));
                     }
-                    context.failNow(new RuntimeException("This operations should have failed"));
                 });
     }
 
