@@ -31,6 +31,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -65,6 +66,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
     private static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
     private final OpenSslCertManager certManager = new OpenSslCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
@@ -76,10 +78,12 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

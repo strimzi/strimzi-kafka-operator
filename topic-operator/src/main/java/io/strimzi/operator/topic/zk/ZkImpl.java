@@ -28,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ZkImpl implements Zk {
 
     private final static Logger LOGGER = LogManager.getLogger(ZkImpl.class);
+    private final WorkerExecutor workerExecutor;
+
     private static final <T> Handler<AsyncResult<T>> log(String msg) {
         return ignored -> {
             LOGGER.trace("{} returned {}", msg, ignored);
@@ -43,13 +45,14 @@ public class ZkImpl implements Zk {
 
     public ZkImpl(Vertx vertx, ZkClient zkClient) {
         this.vertx = vertx;
+        this.workerExecutor = vertx.createSharedWorkerExecutor(getClass().getName(), 4);
         this.zookeeper = zkClient;
     }
 
 
     @Override
     public Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode);
@@ -64,7 +67,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     zookeeper.writeData(path, data, version);
@@ -80,7 +83,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk disconnect(Handler<AsyncResult<Void>> handler) {
 
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     zookeeper.close();
@@ -95,7 +98,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     future.complete(zookeeper.readData(path));
@@ -129,7 +132,7 @@ public class ZkImpl implements Zk {
     @Override
     public Future<Zk> watchData(String path, Handler<AsyncResult<byte[]>> watcher) {
         Promise<Zk> result = Promise.promise();
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     IZkDataListener listener = new DataWatchAdapter(watcher);
@@ -153,7 +156,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk unwatchData(String path) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     IZkDataListener listener = dataWatches.remove(path);
@@ -171,7 +174,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     if (zookeeper.delete(path, version)) {
@@ -187,13 +190,9 @@ public class ZkImpl implements Zk {
         return this;
     }
 
-    private WorkerExecutor workerPool() {
-        return vertx.createSharedWorkerExecutor(getClass().getName(), 4);
-    }
-
     @Override
     public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     future.complete(zookeeper.getChildren(path));
@@ -208,7 +207,7 @@ public class ZkImpl implements Zk {
     @Override
     public Future<Zk> watchChildren(String path, Handler<AsyncResult<List<String>>> watcher) {
         Promise<Zk> result = Promise.promise();
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     IZkChildListener listener = (parentPath, currentChilds) -> watcher.handle(Future.succeededFuture(currentChilds));
@@ -232,7 +231,7 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk unwatchChildren(String path) {
-        workerPool().executeBlocking(
+        workerExecutor.executeBlocking(
             future -> {
                 try {
                     IZkChildListener listener = childWatches.remove(path);
@@ -251,7 +250,7 @@ public class ZkImpl implements Zk {
     @Override
     public Future<Boolean> pathExists(String path) {
         Promise<Boolean> promise = Promise.promise();
-        workerPool().<Boolean>executeBlocking(
+        workerExecutor.<Boolean>executeBlocking(
             p -> {
                 p.future().onComplete(promise);
                 try {

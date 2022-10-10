@@ -38,6 +38,7 @@ import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -77,6 +78,7 @@ public class StrimziPodSetControllerMockTest {
     private StrimziPodSetOperator podSetOperator;
     private PodOperator podOperator;
     private MetricsProvider metricsProvider;
+    private WorkerExecutor sharedWorkerExecutor;
 
     @BeforeEach
     public void beforeEach() {
@@ -89,6 +91,7 @@ public class StrimziPodSetControllerMockTest {
         mockKube.start();
 
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
         podSetOperator = new StrimziPodSetOperator(vertx, client, 10_000L);
         podOperator = new PodOperator(vertx, client);
@@ -104,6 +107,7 @@ public class StrimziPodSetControllerMockTest {
     public void afterEach() {
         stopController();
         mockKube.stop();
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

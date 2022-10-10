@@ -10,6 +10,7 @@ import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,9 @@ public class UserOperator extends AbstractVerticle {
 
     private Watch watch;
     private long reconcileTimer;
+    // this field is required to keep the underlying shared worker pool alive
+    @SuppressWarnings("unused")
+    private WorkerExecutor workerExecutor;
 
     public UserOperator(String namespace,
                         UserOperatorConfig config,
@@ -54,7 +58,7 @@ public class UserOperator extends AbstractVerticle {
         LOGGER.info("Starting UserOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
+        workerExecutor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
         kafkaUserOperator.createWatch(namespace, kafkaUserOperator.recreateWatch(namespace))
             .compose(w -> {

@@ -111,8 +111,8 @@
         <!-- This is used to override CVE-2022-25857 => should be removed once jackson-dataformat-yaml uses it out of the box -->
         <!-- https://github.com/strimzi/strimzi-kafka-operator/issues/7261 covers the removal of this override -->
         <snakeyaml.version>1.32</snakeyaml.version>
-        <vertx.version>4.2.4</vertx.version>
-        <vertx-junit5.version>4.2.4</vertx-junit5.version>
+        <vertx.version>4.3.4</vertx.version>
+        <vertx-junit5.version>4.3.4</vertx-junit5.version>
         <kafka.version>3.3.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <scala-library.version>2.13.9</scala-library.version>

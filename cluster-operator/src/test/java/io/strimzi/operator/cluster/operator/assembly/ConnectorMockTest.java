@@ -48,6 +48,7 @@ import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -111,6 +112,7 @@ public class ConnectorMockTest {
     }
 
     private Vertx vertx;
+    private WorkerExecutor sharedWorkerExecutor;
     // Injected by Fabric8 Mock Kubernetes Server
     @SuppressWarnings("unused")
     private KubernetesClient client;
@@ -148,6 +150,7 @@ public class ConnectorMockTest {
     @BeforeEach
     public void setup(VertxTestContext testContext) {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
 
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
@@ -331,6 +334,7 @@ public class ConnectorMockTest {
         mockKube.stop();
         connectWatch.close();
         connectorWatch.close();
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

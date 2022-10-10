@@ -34,6 +34,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -63,6 +64,7 @@ public class JbodStorageMockTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     private static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
     private Kafka kafka;
     // Injected by Fabric8 Mock Kubernetes Server
     @SuppressWarnings("unused")
@@ -76,10 +78,12 @@ public class JbodStorageMockTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

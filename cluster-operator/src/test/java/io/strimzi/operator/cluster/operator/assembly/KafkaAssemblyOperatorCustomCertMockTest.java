@@ -31,6 +31,7 @@ import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -52,6 +53,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
     private static final String CLUSTER_NAME = "testkafka";
 
     private static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
 
     // Injected by Fabric8 Mock Kubernetes Server
     @SuppressWarnings("unused")
@@ -64,6 +66,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @BeforeEach
@@ -99,6 +102,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

@@ -58,6 +58,7 @@ import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
@@ -142,8 +143,12 @@ public class KubernetesRestartEventsMockTest {
 
     private KafkaStatus ks;
 
+    @SuppressWarnings("unused")
+    private WorkerExecutor sharedWorkerExecutor;
+
     @BeforeEach
     void setup(Vertx vertx) throws ExecutionException, InterruptedException {
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withMockWebServerLoggingSettings(Level.WARNING, true)
                 .withKafkaCrd()
