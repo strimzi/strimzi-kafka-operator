@@ -264,8 +264,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route or Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route or Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
+                "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
@@ -750,7 +750,6 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
         );
 

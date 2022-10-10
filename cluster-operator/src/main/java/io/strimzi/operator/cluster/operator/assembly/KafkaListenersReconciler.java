@@ -400,12 +400,7 @@ public class KafkaListenersReconciler {
             boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
                     ? listener.getConfiguration().getUseServiceDnsDomain() : false;
 
-            String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
-
-            if (bootstrapAddress == null) {
-                // Set status based on bootstrap service
-                bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
-            }
+            String bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
 
             if (listener.isTls()) {
                 result.bootstrapDnsNames.add(bootstrapAddress);
@@ -422,13 +417,8 @@ public class KafkaListenersReconciler {
 
             // Set advertised hostnames and ports
             for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++) {
-                String brokerAddress;
-
-                if (useServiceDnsDomain) {
-                    brokerAddress = DnsNameGenerator.podDnsNameWithClusterDomain(reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), KafkaResources.kafkaStatefulSetName(reconciliation.name()) + "-" + brokerId);
-                } else {
-                    brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), KafkaResources.kafkaStatefulSetName(reconciliation.name()) + "-" + brokerId);
-                }
+                String brokerServiceName = ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener);
+                String brokerAddress = getInternalServiceHostname(reconciliation.namespace(), brokerServiceName, useServiceDnsDomain);
 
                 String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
                 if (userConfiguredAdvertisedHostname != null && listener.isTls()) {

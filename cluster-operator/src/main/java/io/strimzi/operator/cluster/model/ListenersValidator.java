@@ -357,15 +357,16 @@ public class ListenersValidator {
         if (!KafkaListenerType.LOADBALANCER.equals(listener.getType())
                 && !KafkaListenerType.NODEPORT.equals(listener.getType())
                 && !KafkaListenerType.ROUTE.equals(listener.getType())
-                && !KafkaListenerType.INGRESS.equals(listener.getType())) {
+                && !KafkaListenerType.INGRESS.equals(listener.getType())
+                && !KafkaListenerType.CLUSTER_IP.equals(listener.getType())) {
             if (listener.getConfiguration().getBootstrap().getLabels() != null
                     && !listener.getConfiguration().getBootstrap().getLabels().isEmpty()) {
-                errors.add("listener " + listener.getName() + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route or Ingress based listener");
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener");
             }
 
             if (listener.getConfiguration().getBootstrap().getAnnotations() != null
                     && !listener.getConfiguration().getBootstrap().getAnnotations().isEmpty()) {
-                errors.add("listener " + listener.getName() + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route or Ingress based listener");
+                errors.add("listener " + listener.getName() + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener");
             }
         }
     }
