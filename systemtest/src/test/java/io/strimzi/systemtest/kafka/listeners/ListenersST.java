@@ -668,6 +668,92 @@ public class ListenersST extends AbstractST {
         );
     }
 
+    @ParallelNamespaceTest
+    @Tag(SANITY)
+    @Tag(ACCEPTANCE)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testClusterIP(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                        .withPort(9102)
+                        .withType(KafkaListenerType.CLUSTER_IP)
+                        .withTls(false)
+                        .build())
+                .withConfig(Collections.singletonMap("default.replication.factor", 3))
+                .endKafka()
+                .endSpec()
+                .build());
+
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
+
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withMessageCount(MESSAGE_COUNT)
+                .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                .build();
+
+        externalKafkaClient.verifyProducedAndConsumedMessages(
+                externalKafkaClient.sendMessagesPlain(),
+                externalKafkaClient.receiveMessagesPlain()
+        );
+
+    }
+
+    @ParallelNamespaceTest
+    @Tag(SANITY)
+    @Tag(ACCEPTANCE)
+    @Tag(EXTERNAL_CLIENTS_USED)
+    void testClusterIPTls(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                        .withPort(9103)
+                        .withType(KafkaListenerType.CLUSTER_IP)
+                        .withTls(true)
+                        .withAuth(new KafkaListenerAuthenticationTls())
+                        .build())
+                .withConfig(Collections.singletonMap("default.replication.factor", 3))
+                .endKafka()
+                .endSpec()
+                .build());
+
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
+
+        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
+
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
+                .withTopicName(topicName)
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withMessageCount(MESSAGE_COUNT)
+                .withKafkaUsername(userName)
+                .withSecurityProtocol(SecurityProtocol.SSL)
+                .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                .build();
+
+        externalKafkaClient.verifyProducedAndConsumedMessages(
+                externalKafkaClient.sendMessagesTls(),
+                externalKafkaClient.receiveMessagesTls()
+        );
+
+    }
+
 //    ##########################################
 //    #### Custom Certificates in Listeners ####
 //    ##########################################
