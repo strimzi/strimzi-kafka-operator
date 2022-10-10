@@ -9,18 +9,17 @@
 If you are encountering issues with the version of Strimzi you upgraded to,
 you can revert your installation to the previous version.
 
-You can perform a downgrade to:
+If you used the installation artifacts to install Strimzi, you can use the same artifacts to perform the following downgrade procedures:
 
-. Revert your Cluster Operator to the previous Strimzi version.
-** xref:proc-downgrade-cluster-operator-{context}[]
-
-. Downgrade all Kafka brokers and client applications to the previous Kafka version.
-** xref:assembly-downgrade-kafka-versions-{context}[]
+. xref:proc-downgrade-cluster-operator-{context}[]
+. xref:assembly-downgrade-kafka-versions-{context}[]
 
 If the previous version of Strimzi does not support the version of Kafka you are using,
 you can also downgrade Kafka as long as the log message format versions appended to messages match.
 
-WARNING: The downgrade steps use the installation artifacts provided with Strimzi. The Operator Lifecycle Manager (OLM) does not support downgrades. If you installed Strimzi using the OLM, and wish to retain a subscription, you can try reinstalling an earlier version of Strimzi. Otherwise, if you use these downgrade instructions, your deployment will no longer be managed by the OLM.   
+WARNING: If you deployed Strimzi using another installation method, use a supported approach to downgrade Strimzi.
+Do not use the downgrade instructions provided here. 
+For example, if you installed Strimzi using the Operator Lifecycle Manager (OLM), you can downgrade by changing the deployment channel to an earlier version of Strimzi. 
 
 //steps to downgrade the operators
 include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
