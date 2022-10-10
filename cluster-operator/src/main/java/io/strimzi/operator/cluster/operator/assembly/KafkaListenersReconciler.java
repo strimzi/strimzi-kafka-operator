@@ -235,7 +235,6 @@ public class KafkaListenersReconciler {
      * @return  Future which completes when all ingresses are created or deleted.
      */
     protected Future<Void> ingresses() {
-
         List<Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngresses());
 
         int replicas = kafka.getReplicas();
