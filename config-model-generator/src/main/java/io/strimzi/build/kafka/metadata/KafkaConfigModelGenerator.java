@@ -7,6 +7,7 @@ package io.strimzi.build.kafka.metadata;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
@@ -44,7 +45,7 @@ public class KafkaConfigModelGenerator {
 
         String version = kafkaVersion();
         Map<String, ConfigModel> configs = configs(version);
-        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
+        ObjectMapper mapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY).build();
         ConfigModels root = new ConfigModels();
         root.setVersion(version);
         root.setConfigs(configs);
