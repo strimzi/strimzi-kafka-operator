@@ -27,7 +27,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -66,7 +65,6 @@ public class KafkaListenersReconciler {
     private final ServiceOperator serviceOperator;
     private final RouteOperator routeOperator;
     private final IngressOperator ingressOperator;
-    private final IngressV1Beta1Operator ingressV1Beta1Operator;
 
     /* test */ final ReconciliationResult result;
 
@@ -82,7 +80,6 @@ public class KafkaListenersReconciler {
      * @param serviceOperator           The Service operator for working with Kubernetes Services
      * @param routeOperator             The Route operator for working with Kubernetes Route
      * @param ingressOperator           The Ingress operator for working with Kubernetes Ingress
-     * @param ingressV1Beta1Operator    The Ingress v1beta1 operator for working with Kubernetes Ingress
      */
     public KafkaListenersReconciler(
             Reconciliation reconciliation,
@@ -95,8 +92,7 @@ public class KafkaListenersReconciler {
             SecretOperator secretOperator,
             ServiceOperator serviceOperator,
             RouteOperator routeOperator,
-            IngressOperator ingressOperator,
-            IngressV1Beta1Operator ingressV1Beta1Operator
+            IngressOperator ingressOperator
     ) {
         this.reconciliation = reconciliation;
         this.kafka = kafka;
@@ -109,7 +105,6 @@ public class KafkaListenersReconciler {
         this.serviceOperator = serviceOperator;
         this.routeOperator = routeOperator;
         this.ingressOperator = ingressOperator;
-        this.ingressV1Beta1Operator = ingressV1Beta1Operator;
 
         // Initialize the result object
         this.result = new ReconciliationResult();
@@ -128,13 +123,11 @@ public class KafkaListenersReconciler {
         return services()
                 .compose(i -> routes())
                 .compose(i -> ingresses())
-                .compose(i -> ingressesV1Beta1())
                 .compose(i -> internalServicesReady())
                 .compose(i -> loadBalancerServicesReady())
                 .compose(i -> nodePortServicesReady())
                 .compose(i -> routesReady())
                 .compose(i -> ingressesReady())
-                .compose(i -> ingressesV1Beta1Ready())
                 .compose(i -> customListenerCertificates())
                 // This method should be called only after customListenerCertificates
                 .compose(customListenerCertificates -> addCertificatesToListenerStatuses(customListenerCertificates))
@@ -242,10 +235,6 @@ public class KafkaListenersReconciler {
      * @return  Future which completes when all ingresses are created or deleted.
      */
     protected Future<Void> ingresses() {
-        if (!pfa.hasIngressV1()) {
-            return Future.succeededFuture();
-        }
-
         List<Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngresses());
 
         int replicas = kafka.getReplicas();
@@ -273,51 +262,6 @@ public class KafkaListenersReconciler {
                     // Delete ingresses which match our selector but are not desired anymore
                     for (String ingressName : existingIngressNames) {
                         ingressFutures.add(ingressOperator.reconcile(reconciliation, reconciliation.namespace(), ingressName, null));
-                    }
-
-                    return CompositeFuture
-                            .join(ingressFutures)
-                            .map((Void) null);
-                });
-    }
-
-    /**
-     * Makes sure all desired ingresses are updated and the rest is deleted.
-     *
-     * @return  Future which completes when all ingresses are created or deleted.
-     */
-    protected Future<Void> ingressesV1Beta1() {
-        if (pfa.hasIngressV1()) {
-            return Future.succeededFuture();
-        }
-
-        List<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngressesV1Beta1());
-
-        int replicas = kafka.getReplicas();
-        for (int i = 0; i < replicas; i++) {
-            ingresses.addAll(kafka.generateExternalIngressesV1Beta1(i));
-        }
-
-        return ingressV1Beta1Operator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
-                .compose(existingIngresses -> {
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> ingressFutures = new ArrayList<>(ingresses.size());
-                    List<String> existingIngressNames = existingIngresses.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
-
-                    LOGGER.debugCr(reconciliation, "Reconciling existing v1beta1 Ingresses {} against the desired ingresses", existingIngressNames);
-
-                    // Update desired ingresses
-                    for (io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress : ingresses) {
-                        String ingressName = ingress.getMetadata().getName();
-                        existingIngressNames.remove(ingressName);
-                        ingressFutures.add(ingressV1Beta1Operator.reconcile(reconciliation, reconciliation.namespace(), ingressName, ingress));
-                    }
-
-                    LOGGER.debugCr(reconciliation, "V1beta1 ingresses {} should be deleted", existingIngressNames);
-
-                    // Delete ingresses which match our selector but are not desired anymore
-                    for (String ingressName : existingIngressNames) {
-                        ingressFutures.add(ingressV1Beta1Operator.reconcile(reconciliation, reconciliation.namespace(), ingressName, null));
                     }
 
                     return CompositeFuture
@@ -738,9 +682,6 @@ public class KafkaListenersReconciler {
      * @return  Future which completes when all Ingresses are ready and their addresses are collected
      */
     protected Future<Void> ingressesReady() {
-        if (!pfa.hasIngressV1()) {
-            return Future.succeededFuture();
-        }
 
         List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafka.getListeners());
         @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
@@ -786,88 +727,6 @@ public class KafkaListenersReconciler {
                                     .findAny()
                                     .orElse(null);
                             LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener));
-
-                            result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
-
-                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId);
-                            if (advertisedHostname != null) {
-                                result.brokerDnsNames.get(finalBrokerId).add(ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId));
-                            }
-
-                            registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
-                            registerAdvertisedPort(finalBrokerId, listener, KafkaCluster.INGRESS_PORT);
-                        }
-
-                        return Future.succeededFuture();
-                    });
-
-            listenerFutures.add(perListenerFut);
-        }
-
-        return CompositeFuture
-                .join(listenerFutures)
-                .map((Void) null);
-    }
-
-    /**
-     * Makes sure all ingresses are ready and collects their addresses for Statuses,
-     * certificates and advertised addresses. This method for all ingresses:
-     *      1) Checks if the bootstrap ingress has been provisioned (has a loadbalancer address)
-     *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
-     *      3) Checks it the broker ingresses have been provisioned (have an address)
-     *      4) Collects the route addresses for certificates and advertised hostnames
-     *
-     * @return  Future which completes when all Ingresses are ready and their addresses are collected
-     */
-    protected Future<Void> ingressesV1Beta1Ready() {
-        if (pfa.hasIngressV1()) {
-            return Future.succeededFuture();
-        }
-
-        List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafka.getListeners());
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> listenerFutures = new ArrayList<>(ingressListeners.size());
-
-        for (GenericKafkaListener listener : ingressListeners) {
-            String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
-
-            Future<Void> perListenerFut = ingressV1Beta1Operator.hasIngressAddress(reconciliation, reconciliation.namespace(), bootstrapIngressName, 1_000, operationTimeoutMs)
-                    .compose(res -> {
-                        String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
-                        LOGGER.debugCr(reconciliation, "Using address {} for v1beta1 Ingress {}", bootstrapAddress, bootstrapIngressName);
-
-                        result.bootstrapDnsNames.add(bootstrapAddress);
-
-                        ListenerStatus ls = new ListenerStatusBuilder()
-                                .withName(listener.getName())
-                                .withAddresses(new ListenerAddressBuilder()
-                                        .withHost(bootstrapAddress)
-                                        .withPort(KafkaCluster.ROUTE_PORT)
-                                        .build())
-                                .build();
-                        result.listenerStatuses.add(ls);
-
-                        // Check if broker ingresses are ready
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> perPodFutures = new ArrayList<>(kafka.getReplicas());
-
-                        for (int pod = 0; pod < kafka.getReplicas(); pod++)  {
-                            perPodFutures.add(
-                                    ingressV1Beta1Operator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), pod, listener), 1_000, operationTimeoutMs)
-                            );
-                        }
-
-                        return CompositeFuture.join(perPodFutures);
-                    })
-                    .compose(res -> {
-                        for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++)  {
-                            final int finalBrokerId = brokerId;
-                            String brokerAddress = listener.getConfiguration().getBrokers().stream()
-                                    .filter(broker -> broker.getBroker() == finalBrokerId)
-                                    .map(GenericKafkaListenerConfigurationBroker::getHost)
-                                    .findAny()
-                                    .orElse(null);
-                            LOGGER.debugCr(reconciliation, "Using address {} for v1beta1 Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener));
 
                             result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
 

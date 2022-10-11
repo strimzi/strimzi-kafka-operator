@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -20,11 +19,11 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -103,8 +102,7 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
-                supplier.ingressOperations,
-                supplier.ingressV1Beta1Operations
+                supplier.ingressOperations
         );
 
         Checkpoint async = context.checkpoint();
@@ -178,8 +176,7 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
-                supplier.ingressOperations,
-                supplier.ingressV1Beta1Operations
+                supplier.ingressOperations
         );
 
         Checkpoint async = context.checkpoint();
@@ -247,8 +244,7 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
-                supplier.ingressOperations,
-                supplier.ingressV1Beta1Operations
+                supplier.ingressOperations
         );
 
         Checkpoint async = context.checkpoint();
@@ -319,9 +315,8 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
                 SecretOperator secretOperator,
                 ServiceOperator serviceOperator,
                 RouteOperator routeOperator,
-                IngressOperator ingressOperator,
-                IngressV1Beta1Operator ingressV1Beta1Operator) {
-            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
+                IngressOperator ingressOperator) {
+            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator);
         }
 
         @Override
