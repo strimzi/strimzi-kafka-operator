@@ -8,13 +8,6 @@
 [role="_abstract"]
 MirrorMaker 2.0 replicates data between two or more active Kafka clusters, within or across data centers.
 
-Data replication across clusters supports scenarios that require:
-
-* Recovery of data in the event of a system failure
-* Aggregation of data for analysis
-* Restriction of data access to a specific cluster
-* Provision of data at a specific location to improve latency
-
 If you are using MirrorMaker 2.0, you configure the `KafkaMirrorMaker2` resource.
 The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
 
