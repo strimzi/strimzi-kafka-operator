@@ -1834,7 +1834,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-cruise-control-.*\",container=\"cruise-control\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-cruise-control-.*\",container=\"cruise-control\"}) by (pod)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
