@@ -78,7 +78,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.ListTopicsOptions;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.TopicPartitionInfo;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -92,6 +95,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.Collection;
 
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
@@ -252,6 +256,7 @@ public class KafkaReconciler {
                 .compose(i -> pvcs())
                 .compose(i -> serviceAccount())
                 .compose(i -> initClusterRoleBinding())
+                .compose(i -> setUpAdminClient())
                 .compose(i -> scaleDown())
                 .compose(i -> listeners())
                 .compose(i -> certificateSecret(clock))
@@ -1137,12 +1142,12 @@ public class KafkaReconciler {
                     vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                             future -> {
                                 Admin kafkaAdmin = null;
-
                                 try {
                                     String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
                                     LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
                                     kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
                                     kafkaStatus.setClusterId(kafkaAdmin.describeCluster().clusterId().get());
+
                                 } catch (KafkaException e) {
                                     LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
                                 } catch (InterruptedException e) {
@@ -1154,13 +1159,81 @@ public class KafkaReconciler {
                                         kafkaAdmin.close();
                                     }
                                 }
-
                                 future.complete();
                             },
                             true,
                             resultPromise);
                     return resultPromise.future();
                 });
+    }
+
+    // TODO Place this method at the correct place in the reconcile chain
+
+    public Future<Void> setUpAdminClient() {
+        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
+                .compose(compositeFuture -> {
+                    Promise<Void> resultPromise = Promise.promise();
+                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+                            future -> {
+                                Admin kafkaAdmin = null;
+                                final Future<Collection<TopicDescription>> descriptions;
+                                try {
+                                    String bootstrapHostname = KafkaResources.bootstrapServiceName(reconciliation.name()) + "." + reconciliation.namespace() + ".svc:" + KafkaCluster.REPLICATION_PORT;
+                                    LOGGER.debugCr(reconciliation, "Creating AdminClient for clusterId using {}", bootstrapHostname);
+                                    kafkaAdmin = adminClientProvider.createAdminClient(bootstrapHostname, compositeFuture.resultAt(0), compositeFuture.resultAt(1), "cluster-operator");
+
+                                    Admin finalKafkaAdmin = kafkaAdmin;
+                                    Future<Set<String>> topicNames = topicNames(finalKafkaAdmin);
+
+                                    descriptions = topicNames.compose(names -> {
+                                        LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
+                                        LOGGER.traceCr(reconciliation, "Topic names {}", names);
+                                        return describeTopics(finalKafkaAdmin, names);
+                                    });
+
+                                    //TODO  Use the descriptions to group the topic by their brokers
+
+                                } catch (KafkaException e) {
+                                    LOGGER.warnCr(reconciliation, "Kafka exception getting clusterId {}", e.getMessage());
+                                } finally {
+                                    if (kafkaAdmin != null) {
+                                    }
+                                }
+                                future.complete();
+                            }, true, resultPromise);
+                    return resultPromise.future();
+                });
+    }
+
+
+    protected Future<Set<String>> topicNames(Admin kafkaAdmin) {
+        Promise<Set<String>> namesPromise = Promise.promise();
+        kafkaAdmin.listTopics(new ListTopicsOptions().listInternal(true)).names()
+                .whenComplete((names, error) -> {
+                    if (error != null) {
+                        namesPromise.fail(error);
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
+                        namesPromise.complete(names);
+                    }
+                });
+        return namesPromise.future();
+    }
+
+    protected Future<Collection<TopicDescription>> describeTopics(Admin kafkaAdmin, Set<String> names) {
+        Promise<Collection<TopicDescription>> descPromise = Promise.promise();
+        kafkaAdmin.describeTopics(names).allTopicNames()
+                .whenComplete((tds, error) -> {
+                    if (error != null) {
+                        System.out.println(error);
+                        descPromise.fail(error);
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Got topic descriptions for {} topics", tds.size());
+                        System.out.println(tds.values());
+                        descPromise.complete(tds.values());
+                    }
+                });
+        return descPromise.future();
     }
 
     /**
