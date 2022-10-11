@@ -2468,7 +2468,7 @@ include::../api/io.strimzi.api.kafka.model.AclRule.adoc[leveloffset=+1]
 |Property           |Description
 |host        1.2+<.<a|The host from which the action described in the ACL rule is allowed or denied.
 |string
-|operation   1.2+<.<a|*The `operation` property has been deprecated, and should now be configured using `spec.authorization.acls[*].operations`.* Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
+|operation   1.2+<.<a|**The `operation` property has been deprecated, and should now be configured using `spec.authorization.acls[*].operations`.** Operation which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
 |string (one of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs])
 |operations  1.2+<.<a|List of operations which will be allowed or denied. Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.
 |string (one or more of [Read, Write, Delete, Alter, Describe, All, IdempotentWrite, ClusterAction, Create, AlterConfigs, DescribeConfigs]) array
