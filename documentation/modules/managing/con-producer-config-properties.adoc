@@ -61,37 +61,25 @@ acknowledging that the message request was successfully received.
 The `acks=all` setting offers the strongest guarantee of delivery, but it will increase the latency between the producer sending a message and receiving acknowledgment.
 If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader partition has written the record to its log.
 
-With `acks=all`, a leader waits for all in-sync replicas to acknowledge message delivery.
+With `acks=all`, the leader waits for all in-sync replicas to acknowledge message delivery.
 A topic's `min.insync.replicas` configuration sets the minimum required number of in-sync replica acknowledgements.
+The number of acknowledgements include that of the leader and followers. 
 
 A typical starting point is to use the following configuration:
 
 * Producer
-** `acks=all`
-* Topic:
-** `default.replication.factor=3`
-** `min.insync.replicas=2`
+** `acks=all` (default)
+* Broker/Topic:
+** `default.replication.factor=3` (default = `1`)
+** `min.insync.replicas=2` (default = `1`)
 
-.Topic configuration to support `acks=all`
-[source,env]
-----
-# ...
-default.replication.factor=3
-min.insync.replicas=2 <1>
-# ...
-----
-<1> Use `2` in-sync replicas. The default is `1`.
-
-A topic replication factor of 3 creates one leader partition and two followers.
-In this configuration, the producer can continue if a single replica broker is unavailable.
-Some delay can occur whilst a failed broker is removed from the in-sync replicas or a new leader is created.
-If a second replica broker becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
+The following table describes how this configuration operates depending on the availability of replica brokers.
 
 .Replica broker availability
 [cols="2,3,2",options="header"]
 |===
 
-|Number of replica brokers available
+|Number of replica brokers available and in-sync
 |Acknowledgements 
 |Producer operable?
 
@@ -108,6 +96,11 @@ If a second replica broker becomes unavailable, the producer won’t receive ack
 |No
 
 |===
+
+A topic replication factor of 3 creates one leader partition and two followers.
+In this configuration, the producer can continue if a single replica broker is unavailable.
+Some delay can occur whilst a failed broker is removed from the in-sync replicas or a new leader is created.
+If a second replica broker becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
 
 NOTE: If the system fails, there is a risk of unsent data in the buffer being lost.
 
