@@ -55,11 +55,11 @@ acks=all <1>
 # ...
 ----
 
-<1> `acks=all` forces a partition leader to replicate messages to a certain number of followers before
+<1> `acks=all` forces a leader replica to replicate messages to a certain number of followers before
 acknowledging that the message request was successfully received. 
 
 The `acks=all` setting offers the strongest guarantee of delivery, but it will increase the latency between the producer sending a message and receiving acknowledgment.
-If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader partition has written the record to its log.
+If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader replica has written the record to its log.
 
 With `acks=all`, the leader waits for all in-sync replicas to acknowledge message delivery.
 A topic's `min.insync.replicas` configuration sets the minimum required number of in-sync replica acknowledgements.
@@ -67,28 +67,33 @@ The number of acknowledgements include that of the leader and followers.
 
 A typical starting point is to use the following configuration:
 
-* Producer
+* Producer configuration:
 ** `acks=all` (default)
-* Broker/Topic:
+* Broker configuration for topic replication:
 ** `default.replication.factor=3` (default = `1`)
 ** `min.insync.replicas=2` (default = `1`)
 
-The following table describes how this configuration operates depending on the availability of replica brokers.
+When you create a topic, you can override the default replication factor.
+You can also override `min.insync.replicas` at the topic level in the topic configuration. 
 
-.Replica broker availability
+Strimzi uses this configuration in the example configuration files for multi-node deployment of Kafka. 
+
+The following table describes how this configuration operates depending on the availability of followers that replicate the leader replica.
+
+.Follower availability
 [cols="2,3,2",options="header"]
 |===
 
-|Number of replica brokers available and in-sync
+|Number of followers available and in-sync
 |Acknowledgements 
-|Producer operable?
+|Producer can send messages?
 
 |2
-|The leader waits for 2 follower replica broker acknowledgements
+|The leader waits for 2 follower acknowledgements
 |Yes
 
 |1
-|The leader waits for 1 follower replica broker acknowledgement
+|The leader waits for 1 follower acknowledgement
 |Yes
 
 |0
@@ -97,10 +102,10 @@ The following table describes how this configuration operates depending on the a
 
 |===
 
-A topic replication factor of 3 creates one leader partition and two followers.
-In this configuration, the producer can continue if a single replica broker is unavailable.
+A topic replication factor of 3 creates one leader replica and two followers.
+In this configuration, the producer can continue if a single follower is unavailable.
 Some delay can occur whilst a failed broker is removed from the in-sync replicas or a new leader is created.
-If a second replica broker becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
+If a second follower becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
 
 NOTE: If the system fails, there is a risk of unsent data in the buffer being lost.
 
