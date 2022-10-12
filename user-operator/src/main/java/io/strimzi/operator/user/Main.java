@@ -27,6 +27,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.clients.admin.Admin;
@@ -34,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.Security;
+import java.util.concurrent.TimeUnit;
 
 @SuppressFBWarnings("DM_EXIT")
 public class Main {
@@ -48,6 +50,10 @@ public class Main {
         }
     }
 
+    // this field is required to keep the underlying shared worker pool alive
+    @SuppressWarnings("unused")
+    private static WorkerExecutor workerExecutor;
+
     public static void main(String[] args) {
         final String strimziVersion = Main.class.getPackage().getImplementationVersion();
         LOGGER.info("UserOperator {} is starting", strimziVersion);
@@ -60,6 +66,9 @@ public class Main {
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
+
+        // Configure the executor here, but it is used only in other places
+        workerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", strimziVersion).build();
         AdminClientProvider adminClientProvider = new DefaultAdminClientProvider();
