@@ -9,7 +9,7 @@
 If you are encountering issues with the version of Strimzi you upgraded to,
 you can revert your installation to the previous version.
 
-If you used the installation artifacts to install Strimzi, you can use the same artifacts to perform the following downgrade procedures:
+If you used the YAML installation files to install Strimzi, you can use the YAML installation files from the previous release to perform the following downgrade procedures:
 
 . xref:proc-downgrade-cluster-operator-{context}[]
 . xref:assembly-downgrade-kafka-versions-{context}[]
