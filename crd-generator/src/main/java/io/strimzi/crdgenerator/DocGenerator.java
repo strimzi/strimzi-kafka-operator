@@ -293,7 +293,7 @@ public class DocGenerator {
     }
 
     private String getDeprecation(Property property, DeprecatedProperty deprecated) {
-        String msg = String.format("*The `%s` property has been deprecated",
+        String msg = String.format("**The `%s` property has been deprecated",
                 property.getName());
         if (!deprecated.movedToPath().isEmpty()) {
             msg += ", and should now be configured using `" + deprecated.movedToPath() + "`";
@@ -301,7 +301,7 @@ public class DocGenerator {
         if (!deprecated.removalVersion().isEmpty()) {
             msg += ". The property " + property.getName() + " is removed in API version `" + deprecated.removalVersion() + "`";
         }
-        msg += ".* ";
+        msg += ".** ";
         if (!deprecated.description().isEmpty()) {
             msg += deprecated.description() + " ";
         }
