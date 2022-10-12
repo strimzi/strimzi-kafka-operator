@@ -36,7 +36,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -356,7 +355,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
 
         @Override
         protected KafkaListenersReconciler listenerReconciler()   {
-            return new MockKafkaListenersReconciler(reconciliation, kafka, pfa, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
+            return new MockKafkaListenersReconciler(reconciliation, kafka, pfa, secretOperator, serviceOperator, routeOperator, ingressOperator);
         }
 
         @Override
@@ -383,9 +382,8 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
                 SecretOperator secretOperator,
                 ServiceOperator serviceOperator,
                 RouteOperator routeOperator,
-                IngressOperator ingressOperator,
-                IngressV1Beta1Operator ingressV1Beta1Operator) {
-            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
+                IngressOperator ingressOperator) {
+            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator);
         }
 
         @Override

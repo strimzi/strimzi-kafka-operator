@@ -33,7 +33,6 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -77,7 +76,6 @@ public class ResourceOperatorSupplier {
     public final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
     public final PodOperator podOperations;
     public final IngressOperator ingressOperations;
-    public final IngressV1Beta1Operator ingressV1Beta1Operations;
     public final BuildConfigOperator buildConfigOperations;
     public final BuildOperator buildOperations;
     public final StorageClassOperator storageClassOperations;
@@ -150,7 +148,6 @@ public class ResourceOperatorSupplier {
                 new PodDisruptionBudgetV1Beta1Operator(vertx, client),
                 new PodOperator(vertx, client),
                 new IngressOperator(vertx, client),
-                new IngressV1Beta1Operator(vertx, client),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
@@ -187,7 +184,6 @@ public class ResourceOperatorSupplier {
                                     PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator,
                                     PodOperator podOperations,
                                     IngressOperator ingressOperations,
-                                    IngressV1Beta1Operator ingressV1Beta1Operations,
                                     BuildConfigOperator buildConfigOperations,
                                     BuildOperator buildOperations,
                                     CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator,
@@ -222,7 +218,6 @@ public class ResourceOperatorSupplier {
         this.kafkaOperator = kafkaOperator;
         this.podOperations = podOperations;
         this.ingressOperations = ingressOperations;
-        this.ingressV1Beta1Operations = ingressV1Beta1Operations;
         this.buildConfigOperations = buildConfigOperations;
         this.buildOperations = buildOperations;
         this.connectOperator = connectOperator;

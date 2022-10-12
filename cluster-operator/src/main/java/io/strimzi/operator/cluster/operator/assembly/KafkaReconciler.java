@@ -60,7 +60,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -137,7 +136,6 @@ public class KafkaReconciler {
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
     /* test */ final RouteOperator routeOperator;
     /* test */ final IngressOperator ingressOperator;
-    /* test */ final IngressV1Beta1Operator ingressV1Beta1Operator;
     private final NodeOperator nodeOperator;
 
     private final KubernetesRestartEventPublisher eventsPublisher;
@@ -230,7 +228,6 @@ public class KafkaReconciler {
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
         this.routeOperator = supplier.routeOperations;
         this.ingressOperator = supplier.ingressOperations;
-        this.ingressV1Beta1Operator = supplier.ingressV1Beta1Operations;
         this.nodeOperator = supplier.nodeOperator;
         this.eventsPublisher = supplier.restartEventsPublisher;
 
@@ -557,8 +554,7 @@ public class KafkaReconciler {
                 secretOperator,
                 serviceOperator,
                 routeOperator,
-                ingressOperator,
-                ingressV1Beta1Operator
+                ingressOperator
         );
     }
 
