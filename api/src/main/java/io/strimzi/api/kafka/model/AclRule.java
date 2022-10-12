@@ -84,7 +84,7 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
         this.host = host;
     }
 
-    @Description("**The `operation` property has been deprecated, and should now be configured using `spec.authorization.acls[*].operations`.** Operation which will be allowed or denied. " +
+    @Description("Operation which will be allowed or denied. " +
             "Supported operations are: Read, Write, Create, Delete, Alter, Describe, ClusterAction, AlterConfigs, DescribeConfigs, IdempotentWrite and All.")
     @DeprecatedProperty(movedToPath = "spec.authorization.acls[*].operations")
     @Deprecated

@@ -201,7 +201,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |disableTlsHostnameVerification     1.2+<.<a|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
-|enableECDSA                        1.2+<.<a|*The `enableECDSA` property has been deprecated.* Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
+|enableECDSA                        1.2+<.<a|**The `enableECDSA` property has been deprecated.** Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
 |boolean
 |enableOauthBearer                  1.2+<.<a|Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
 |boolean
@@ -1206,7 +1206,7 @@ include::../api/io.strimzi.api.kafka.model.EntityUserOperatorSpec.adoc[leveloffs
 |string
 |reconciliationIntervalSeconds   1.2+<.<a|Interval between periodic reconciliations.
 |integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<a|*The `zookeeperSessionTimeoutSeconds` property has been deprecated.* This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.
+|zookeeperSessionTimeoutSeconds  1.2+<.<a|**The `zookeeperSessionTimeoutSeconds` property has been deprecated.** This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.
 |integer
 |secretPrefix                    1.2+<.<a|The prefix that will be added to the KafkaUser name to be used as the Secret name.
 |string
@@ -1317,7 +1317,7 @@ include::../api/io.strimzi.api.kafka.model.CruiseControlSpec.adoc[leveloffset=+1
 |Property               |Description
 |image           1.2+<.<a|The docker image for the pods.
 |string
-|tlsSidecar      1.2+<.<a|*The `tlsSidecar` property has been deprecated.* TLS sidecar configuration.
+|tlsSidecar      1.2+<.<a|**The `tlsSidecar` property has been deprecated.** TLS sidecar configuration.
 |xref:type-TlsSidecar-{context}[`TlsSidecar`]
 |resources       1.2+<.<a|CPU and memory resources to reserve for the Cruise Control container. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
@@ -1360,7 +1360,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |cruiseControlContainer  1.2+<.<a|Template for the Cruise Control container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer     1.2+<.<a|*The `tlsSidecarContainer` property has been deprecated.* Template for the Cruise Control TLS sidecar container.
+|tlsSidecarContainer     1.2+<.<a|**The `tlsSidecarContainer` property has been deprecated.** Template for the Cruise Control TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |serviceAccount          1.2+<.<a|Template for the Cruise Control service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
@@ -1375,9 +1375,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 [options="header"]
 |====
 |Property                |Description
-|disk             1.2+<.<a|*The `disk` property has been deprecated.* The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for disk in bytes. Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. For example, 100000M, 100000Mi, 104857600000, or 1e+11.
+|disk             1.2+<.<a|**The `disk` property has been deprecated.** The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for disk in bytes. Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. For example, 100000M, 100000Mi, 104857600000, or 1e+11.
 |string
-|cpuUtilization   1.2+<.<a|*The `cpuUtilization` property has been deprecated.* The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for CPU resource utilization as a percentage (0 - 100).
+|cpuUtilization   1.2+<.<a|**The `cpuUtilization` property has been deprecated.** The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |integer
 |cpu              1.2+<.<a|Broker capacity for CPU resource in cores or millicores. For example, 1, 1.500, 1500m. For more information on valid CPU resource units see https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu.
 |string
@@ -1536,7 +1536,7 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod             1.2+<.<a|Template for Kafka Exporter `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|service         1.2+<.<a|*The `service` property has been deprecated.* The Kafka Exporter service has been removed. Template for Kafka Exporter `Service`.
+|service         1.2+<.<a|**The `service` property has been deprecated.** The Kafka Exporter service has been removed. Template for Kafka Exporter `Service`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |container       1.2+<.<a|Template for the Kafka Exporter container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
@@ -2661,7 +2661,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[ResourceRequirements]
-|whitelist       1.2+<.<a|*The `whitelist` property has been deprecated, and should now be configured using `spec.include`.* List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the expression `A\|B`. Or, as a special case, you can mirror all topics using the regular expression `*`. You can also specify multiple regular expressions separated by commas.
+|whitelist       1.2+<.<a|**The `whitelist` property has been deprecated, and should now be configured using `spec.include`.** List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the expression `A\|B`. Or, as a special case, you can mirror all topics using the regular expression `*`. You can also specify multiple regular expressions separated by commas.
 |string
 |include         1.2+<.<a|List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. Mirroring two topics named A and B is achieved by using the expression `A\|B`. Or, as a special case, you can mirror all topics using the regular expression `*`. You can also specify multiple regular expressions separated by commas.
 |string
@@ -3152,13 +3152,13 @@ Used in: xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
 |topicsPattern           1.2+<.<a|A regular expression matching the topics to be mirrored, for example, "topic1\|topic2\|topic3". Comma-separated lists are also supported.
 |string
-|topicsBlacklistPattern  1.2+<.<a|*The `topicsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.topicsExcludePattern`.* A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
+|topicsBlacklistPattern  1.2+<.<a|**The `topicsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.topicsExcludePattern`.** A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
 |string
 |topicsExcludePattern    1.2+<.<a|A regular expression matching the topics to exclude from mirroring. Comma-separated lists are also supported.
 |string
 |groupsPattern           1.2+<.<a|A regular expression matching the consumer groups to be mirrored. Comma-separated lists are also supported.
 |string
-|groupsBlacklistPattern  1.2+<.<a|*The `groupsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.groupsExcludePattern`.* A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
+|groupsBlacklistPattern  1.2+<.<a|**The `groupsBlacklistPattern` property has been deprecated, and should now be configured using `.spec.mirrors.groupsExcludePattern`.** A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
 |string
 |groupsExcludePattern    1.2+<.<a|A regular expression matching the consumer groups to exclude from mirroring. Comma-separated lists are also supported.
 |string
