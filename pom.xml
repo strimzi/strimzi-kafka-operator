@@ -105,7 +105,7 @@
         <fabric8.kubernetes-model.version>6.1.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.13.4</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.13.4</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-databind.version>2.13.4.1</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.13.4</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.13.4</fasterxml.jackson-annotations.version>
         <!-- This is used to override CVE-2022-25857 => should be removed once jackson-dataformat-yaml uses it out of the box -->
