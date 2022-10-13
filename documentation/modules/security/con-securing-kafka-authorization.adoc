@@ -27,6 +27,7 @@ and are supported by all authorization mechanisms.
 
 To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property.
 If a user uses TLS client authentication, their username is the common name from their certificate subject prefixed with `CN=`.
+Otherwise, if not using the User Operator and using your own certificates for TLS client authentication, their username is their full certificate subject, which uses the form `CN=writeuser,OU=Unknown,O=Unknown,L=Unknown,ST=Unknown,C=Unknown`.
 
 .An example configuration with super users
 [source,yaml,subs="attributes+"]
@@ -45,5 +46,6 @@ spec:
         - CN=client_1
         - user_2
         - CN=client_3
+        - CN=client_4,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=US
     # ...
 ----
