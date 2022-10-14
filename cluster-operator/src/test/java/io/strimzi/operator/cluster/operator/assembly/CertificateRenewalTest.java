@@ -42,8 +42,7 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,14 +89,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class CertificateRenewalTest {
 
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
-    private static Vertx vertx;
-
-    private static WorkerExecutor sharedWorkerExecutor;
 
     private final OpenSslCertManager certManager = new OpenSslCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
@@ -108,22 +103,17 @@ public class CertificateRenewalTest {
                     "0123456789");
 
     private List<Secret> secrets = new ArrayList<>();
+    private WorkerExecutor sharedWorkerExecutor;
 
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
+    @BeforeEach
+    public void setup(Vertx vertx) {
+        secrets = new ArrayList<>();
         sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
-    @AfterAll
-    public static void after() {
+    @AfterEach
+    public void teardown() {
         sharedWorkerExecutor.close();
-        vertx.close();
-    }
-
-    @BeforeEach
-    public void clearSecrets() {
-        secrets = new ArrayList<>();
     }
 
     private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {
@@ -270,7 +260,7 @@ public class CertificateRenewalTest {
 
 
     @Test
-    public void testReconcileCasGeneratesCertsInitially(VertxTestContext context) {
+    public void testReconcileCasGeneratesCertsInitially(Vertx vertx, VertxTestContext context) {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -300,7 +290,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testReconcileCasWhenCustomCertsAreMissingThrows(VertxTestContext context) {
+    public void testReconcileCasWhenCustomCertsAreMissingThrows(Vertx vertx, VertxTestContext context) {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
                 .withRenewalDays(10)
@@ -317,7 +307,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testReconcileCasNoCertsGetGeneratedOutsideRenewalPeriod(VertxTestContext context)
+    public void testReconcileCasNoCertsGetGeneratedOutsideRenewalPeriod(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         assertNoCertsGetGeneratedOutsideRenewalPeriod(vertx, context);
     }
@@ -389,7 +379,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testGenerateTruststoreFromOldSecrets(VertxTestContext context)
+    public void testGenerateTruststoreFromOldSecrets(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
@@ -465,7 +455,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testNewCertsGetGeneratedWhenInRenewalPeriodAuto(VertxTestContext context)
+    public void testNewCertsGetGeneratedWhenInRenewalPeriodAuto(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -550,7 +540,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoOutsideOfMaintenanceWindow(VertxTestContext context)
+    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoOutsideOfMaintenanceWindow(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -651,7 +641,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoWithinMaintenanceWindow(VertxTestContext context)
+    public void testNewCertsGetGeneratedWhenInRenewalPeriodAutoWithinMaintenanceWindow(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -751,7 +741,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testNewKeyGetGeneratedWhenInRenewalPeriodAuto(VertxTestContext context)
+    public void testNewKeyGetGeneratedWhenInRenewalPeriodAuto(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -854,7 +844,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testNewKeyGeneratedWhenInRenewalPeriodAutoOutsideOfTimeWindow(VertxTestContext context)
+    public void testNewKeyGeneratedWhenInRenewalPeriodAutoOutsideOfTimeWindow(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -954,7 +944,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testNewKeyGeneratedWhenInRenewalPeriodAutoWithinTimeWindow(VertxTestContext context)
+    public void testNewKeyGeneratedWhenInRenewalPeriodAutoWithinTimeWindow(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
@@ -1079,7 +1069,7 @@ public class CertificateRenewalTest {
 
 
     @Test
-    public void testExpiredCertsGetRemovedAuto(VertxTestContext context)
+    public void testExpiredCertsGetRemovedAuto(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(100)
@@ -1174,7 +1164,7 @@ public class CertificateRenewalTest {
     }
 
     @Test
-    public void testCustomCertsNotReconciled(VertxTestContext context)
+    public void testCustomCertsNotReconciled(Vertx vertx, VertxTestContext context)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
         CertificateAuthority certificateAuthority = new CertificateAuthorityBuilder()
                 .withValidityDays(2)
