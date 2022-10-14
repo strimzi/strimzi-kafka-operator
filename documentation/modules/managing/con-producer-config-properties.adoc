@@ -44,9 +44,10 @@ Compression is useful for improving throughput and reducing the load on storage,
 
 == Data durability
 
-Message delivery acknowledgments provide data durability to minimize the likelihood that messages are lost.
+Message delivery acknowledgments minimize the likelihood that messages are lost.
 Acknowledgments are enabled by default with the `acks` property set at `acks=all`.
 
+.Acknowledging message delivery
 [source,env]
 ----
 # ...
@@ -54,25 +55,60 @@ acks=all <1>
 # ...
 ----
 
-<1> `acks=all` forces a partition leader to replicate messages to a certain number of followers before
-acknowledging that the message request was successfully received.
+<1> `acks=all` forces a leader replica to replicate messages to a certain number of followers before
+acknowledging that the message request was successfully received. 
 
 The `acks=all` setting offers the strongest guarantee of delivery, but it will increase the latency between the producer sending a message and receiving acknowledgment.
-If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader partition has written the record to its log.
+If you don't require such strong guarantees, a setting of `acks=0` or `acks=1` provides either no delivery guarantees or only acknowledgment that the leader replica has written the record to its log.
 
-The number of brokers which need to have appended the messages to their logs before the acknowledgment is sent to the producer is determined by the topic's `min.insync.replicas` configuration.
-A typical starting point is to have a topic replication factor of 3, with two in-sync replicas on other brokers.
-In this configuration, the producer can continue unaffected if a single broker is unavailable.
-If a second broker becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
+With `acks=all`, the leader waits for all in-sync replicas to acknowledge message delivery.
+A topic's `min.insync.replicas` configuration sets the minimum required number of in-sync replica acknowledgements.
+The number of acknowledgements include that of the leader and followers. 
 
-.Topic configuration to support `acks=all`
-[source,env]
-----
-# ...
-min.insync.replicas=2 <1>
-# ...
-----
-<1> Use `2` in-sync replicas. The default is `1`.
+A typical starting point is to use the following configuration:
+
+* Producer configuration:
+** `acks=all` (default)
+* Broker configuration for topic replication:
+** `default.replication.factor=3` (default = `1`)
+** `min.insync.replicas=2` (default = `1`)
+
+When you create a topic, you can override the default replication factor.
+You can also override `min.insync.replicas` at the topic level in the topic configuration. 
+
+Strimzi uses this configuration in the example configuration files for multi-node deployment of Kafka. 
+
+The following table describes how this configuration operates depending on the availability of followers that replicate the leader replica.
+
+.Follower availability
+[cols="2,3,2",options="header"]
+|===
+
+|Number of followers available and in-sync
+|Acknowledgements 
+|Producer can send messages?
+
+|2
+|The leader waits for 2 follower acknowledgements
+|Yes
+
+|1
+|The leader waits for 1 follower acknowledgement
+|Yes
+
+|0
+|The leader raises an exception
+|No
+
+|===
+
+A topic replication factor of 3 creates one leader replica and two followers.
+In this configuration, the producer can continue if a single follower is unavailable.
+Some delay can occur whilst removing a failed broker from the in-sync replicas or a creating a new leader.
+If the second follower is also unavailable, message delivery will not be successful.
+Instead of acknowledging successful message delivery, the leader sends an error (_not enough replicas_) to the producer.  
+The producer raises an equivalent exception.
+With `retries` configuration, the producer can resend the failed message request.
 
 NOTE: If the system fails, there is a risk of unsent data in the buffer being lost.
 
