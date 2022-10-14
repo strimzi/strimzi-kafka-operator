@@ -18,7 +18,7 @@ Supported authorization options:
 * xref:type-KafkaAuthorizationCustom-reference[Custom authorization]
 
 .Kafka cluster authorization options
-image::kafka-authorization-config-options.png[options for kafks authorization configuration]
+image::kafka-authorization-config-options.png[options for kafka authorization configuration]
 
 == Super users
 
@@ -27,6 +27,7 @@ and are supported by all authorization mechanisms.
 
 To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property.
 If a user uses TLS client authentication, their username is the common name from their certificate subject prefixed with `CN=`.
+Otherwise, if not using the User Operator and using your own certificates for TLS client authentication, their username is their full certificate subject, with the fields formatted as: `CN=user,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=my_country_code`. Note that some fields may not be present in the certificate's subject, and thus should be omitted.
 
 .An example configuration with super users
 [source,yaml,subs="attributes+"]
@@ -45,5 +46,8 @@ spec:
         - CN=client_1
         - user_2
         - CN=client_3
+        - CN=client_4,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=US
+        - CN=client_5,OU=my_ou,O=my_org,C=GB
+        - CN=client_6,O=my_org
     # ...
 ----
