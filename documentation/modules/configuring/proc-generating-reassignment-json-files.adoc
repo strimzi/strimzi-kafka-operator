@@ -76,6 +76,7 @@ spec:
   authorization:
     type: simple <2>
     acls:
+      # access to the topic
       - resource:
           type: topic
           name: my-topic
@@ -85,6 +86,19 @@ spec:
           - Describe
           - Read
           - Write
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: AlterConfigs
+        host: "*"
+      # access to the cluster
+      - resource:
+          type: cluster
+          name: my-cluster
+          patternType: literal
+        operation: AlterConfigs
         host: "*"
       - resource:
           type: cluster
@@ -99,7 +113,6 @@ spec:
 <1> User authentication mechanism defined as mutual `tls`.
 <2> Simple authorization and accompanying list of ACL rules.
 
-NOTE: Permission for a `Describe` operation is required as a minimum for TLS access to a topic.
 --
 
 .Procedure
