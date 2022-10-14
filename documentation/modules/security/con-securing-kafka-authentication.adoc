@@ -78,7 +78,7 @@ Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide enc
 For mutual, or two-way, authentication, both the server and the client present certificates.
 When you configure mTLS authentication, the broker authenticates the client (client authentication) and the client authenticates the broker (server authentication).
 
-NOTE: mTLS authentication is more commonly one-way, with one party authenticating the identity of another.
+NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
 For example, when HTTPS is used between a web browser and a web server, the browser obtains proof of the identity of the web server.
 
 [id='con-scram-sha-authentication-{context}']
@@ -87,7 +87,7 @@ For example, when HTTPS is used between a web browser and a web server, the brow
 SCRAM (Salted Challenge Response Authentication Mechanism) is an authentication protocol that can establish mutual authentication using passwords.
 Strimzi can configure Kafka to use SASL (Simple Authentication and Security Layer) SCRAM-SHA-512 to provide authentication on both unencrypted and encrypted client connections.
 
-When SCRAM-SHA-512 authentication is used with an TLS client connection, the TLS protocol provides the encryption, but is not used for authentication.
+When SCRAM-SHA-512 authentication is used with a TLS connection, the TLS protocol provides the encryption, but is not used for authentication.
 
 The following properties of SCRAM make it safe to use SCRAM-SHA-512 even on unencrypted connections:
 

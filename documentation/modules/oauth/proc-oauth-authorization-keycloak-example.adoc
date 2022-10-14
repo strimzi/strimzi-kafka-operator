@@ -28,7 +28,7 @@ If you want to try the example with Keycloak, use these files to perform the tas
 
 . xref:proc-oauth-authorization-keycloak-example-setup_{context}[Accessing the Keycloak Admin Console]
 . xref:proc-oauth-authorization-keycloak-example-deploy-kafka_{context}[Deploying a Kafka cluster with Keycloak authorization]
-. xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Preparing mTLS connectivity for a CLI Kafka client session]
+. xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Preparing TLS connectivity for a CLI Kafka client session]
 . xref:proc-oauth-authorization-keycloak-example-check_{context}[Checking authorized access to Kafka using a CLI Kafka client session]
 
 .Authentication

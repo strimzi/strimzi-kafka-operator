@@ -15,8 +15,8 @@ Supported authentication types:
 * `tls-external` for mTLS authentication using external certificates
 * `scram-sha-512` for SCRAM-SHA-512 authentication
 
-If mutual `tls` or `scram-sha-512` is specified, the User Operator creates authentication credentials when it creates the user.
-If mutual `tls-external` is specified, the user still uses mTLS, but no authentication credentials are created.
+If `tls` or `scram-sha-512` is specified, the User Operator creates authentication credentials when it creates the user.
+If `tls-external` is specified, the user still uses mTLS, but no authentication credentials are created.
 Use this option when you're providing your own certificates.
 When no authentication type is specified, the User Operator does not create the user or its credentials.
 

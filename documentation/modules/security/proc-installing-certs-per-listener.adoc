@@ -43,8 +43,6 @@ listeners:
     port: 9094
     type: loadbalancer
     tls: true
-    authentication:
-      type: tls
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret
@@ -53,7 +51,7 @@ listeners:
 # ...
 ----
 +
-.Example configuration for an mTLS listener
+.Example configuration for a TLS listener
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -66,8 +64,6 @@ listeners:
     port: 9093
     type: internal
     tls: true
-    authentication:
-      type: tls
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret

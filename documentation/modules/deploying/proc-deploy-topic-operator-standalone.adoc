@@ -114,7 +114,7 @@ You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <9> Enables TLS support for encrypted communication with the Kafka brokers.
 <10> (Optional) The Java options used by the JVM running the Topic Operator.
 <11> (Optional) The debugging (`-D`) options set for the Topic Operator.
-<12> (Optional) Skips the generation of trust store certificates if mTLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
+<12> (Optional) Skips the generation of trust store certificates if TLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
 The default is `false`.
 <13> (Optional) Generates key store certificates for mTLS authentication. Setting this to `false` disables client authentication with mTLS to the Kafka brokers.
 The default is `true`.

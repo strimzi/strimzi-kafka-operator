@@ -81,7 +81,7 @@ spec:
 ----
 <1> Authentication type set to `oauth`.
 <2> URI of the token endpoint for authentication.
-<3> Trusted certificates for mTLS connection to the authorization server.
+<3> Trusted certificates for TLS connection to the authorization server.
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional configuration options you can use:
 +
