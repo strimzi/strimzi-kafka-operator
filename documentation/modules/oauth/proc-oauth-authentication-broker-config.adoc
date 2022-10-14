@@ -7,10 +7,10 @@
 
 This procedure describes how to configure Kafka brokers so that the broker listeners are enabled to use OAuth 2.0 authentication using an authorization server.
 
-We advise use of OAuth 2.0 over an encrypted interface through configuration of TLS listeners.
+We advise use of OAuth 2.0 over an encrypted interface through configuration of mTLS listeners.
 Plain listeners are not recommended.
 
-If the authorization server is using certificates signed by the trusted CA and matching the OAuth 2.0 server hostname, TLS connection works using the default settings.
+If the authorization server is using certificates signed by the trusted CA and matching the OAuth 2.0 server hostname, mTLS connection works using the default settings.
 Otherwise, you may need to configure the truststore with proper certificates or disable the certificate hostname validation.
 
 When configuring the Kafka broker you have two options for the mechanism used to validate the access token during OAuth 2.0 authentication of the newly connected Kafka client:
@@ -74,7 +74,7 @@ The examples here show the configuration options as configured for external list
 <3> URI of the JWKS certificate endpoint used for local JWT validation.
 <4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authentication flow and the authorization server used.
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
-<6> (Optional) Trusted certificates for TLS connection to the authorization server.
+<6> (Optional) Trusted certificates for mTLS connection to the authorization server.
 <7> (Optional) Disable TLS hostname verification. Default is `false`.
 <8> The duration the JWKS certificates are considered valid before they expire. Default is `360` seconds. If you specify a longer time, consider the risk of allowing access to revoked certificates.
 <9> The period between refreshes of JWKS certificates. The interval must be at least 60 seconds shorter than the expiry interval. Default is `300` seconds.

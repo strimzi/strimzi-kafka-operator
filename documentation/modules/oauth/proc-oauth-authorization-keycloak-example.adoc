@@ -28,7 +28,7 @@ If you want to try the example with Keycloak, use these files to perform the tas
 
 . xref:proc-oauth-authorization-keycloak-example-setup_{context}[Accessing the Keycloak Admin Console]
 . xref:proc-oauth-authorization-keycloak-example-deploy-kafka_{context}[Deploying a Kafka cluster with Keycloak authorization]
-. xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Preparing TLS connectivity for a CLI Kafka client session]
+. xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Preparing mTLS connectivity for a CLI Kafka client session]
 . xref:proc-oauth-authorization-keycloak-example-check_{context}[Checking authorized access to Kafka using a CLI Kafka client session]
 
 .Authentication
@@ -199,10 +199,10 @@ cat examples/security/keycloak-authorization/kafka-ephemeral-oauth-single-keyclo
 ----
 
 [id='proc-oauth-authorization-keycloak-example-authentication_{context}']
-== Preparing TLS connectivity for a CLI Kafka client session
+== Preparing mTLS connectivity for a CLI Kafka client session
 
 Create a new pod for an interactive CLI session.
-Set up a truststore with a Keycloak certificate for TLS connectivity.
+Set up a truststore with a Keycloak certificate for mTLS connectivity.
 The truststore is to connect to Keycloak and the Kafka broker.
 
 .Prerequisites
@@ -231,7 +231,7 @@ NOTE: If `kubectl` times out waiting on the image download, subsequent attempts 
 kubectl attach -ti kafka-cli -n $NS
 ----
 
-. Use the hostname of the Keycloak instance to prepare a certificate for client connection using TLS.
+. Use the hostname of the Keycloak instance to prepare a certificate for client connection using mTLS.
 +
 [source,shell,subs="+quotes"]
 ----
@@ -242,7 +242,7 @@ STOREPASS=storepass
 echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/sso.crt
 ----
 
-. Create a truststore for TLS connection to the Kafka brokers.
+. Create a truststore for mTLS connection to the Kafka brokers.
 +
 [source,shell,subs="+quotes"]
 ----

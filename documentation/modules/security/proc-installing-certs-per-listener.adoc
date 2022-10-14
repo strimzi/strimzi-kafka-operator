@@ -53,7 +53,7 @@ listeners:
 # ...
 ----
 +
-.Example configuration for a TLS listener
+.Example configuration for an mTLS listener
 [source,yaml,subs="attributes+"]
 ----
 # ...
@@ -85,7 +85,7 @@ kubectl apply -f _kafka.yaml_
 +
 The Cluster Operator starts a rolling update of the Kafka cluster, which updates the configuration of the listeners.
 +
-NOTE: A rolling update is also started if you update a Kafka listener certificate in a `Secret` that is already used by a TLS or external listener.
+NOTE: A rolling update is also started if you update a Kafka listener certificate in a `Secret` that is already used by a listener.
 
 [role="_additional-resources"]
 .Additional resources

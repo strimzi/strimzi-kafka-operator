@@ -77,4 +77,4 @@ kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="listener
 kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure TLS connection.
-If you enabled any authentication, you will also need to configure SASL or TLS authentication.
+If you enabled any authentication, you will also need to configure SASL or mTLS authentication.

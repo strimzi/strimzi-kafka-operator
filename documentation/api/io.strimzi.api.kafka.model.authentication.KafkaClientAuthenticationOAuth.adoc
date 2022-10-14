@@ -5,7 +5,7 @@ OAuth authentication can be configured using one of the following options:
 * Client ID and secret
 * Client ID and refresh token
 * Access token
-* TLS
+* mTLS
 
 .Client ID and secret
 You can configure the address of your authorization server in the `tokenEndpointUri` property together with the client ID and client secret used in authentication.
@@ -58,7 +58,7 @@ authentication:
     key: access-token
 ----
 
-.TLS
+.mTLS
 Accessing the OAuth server using the HTTPS protocol does not require any additional configuration as long as the TLS certificates used by it are signed by a trusted certification authority and its hostname is listed in the certificate.
 
 If your OAuth server is using certificates which are self-signed or are signed by a certification authority which is not trusted, you can configure a list of trusted certificates in the custom resource.

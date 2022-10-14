@@ -17,7 +17,7 @@ For CA certificates automatically created by the Cluster Operator, you can confi
 The default validity period for both certificates is 365 days.
 Manually-installed CA certificates should have their own validity periods defined.
 
-When a CA certificate expires, components and clients that still trust that certificate will not accept TLS connections from peers whose certificates were signed by the CA private key.
+When a CA certificate expires, components and clients that still trust that certificate will not accept mTLS connections from peers whose certificates were signed by the CA private key.
 The components and clients need to trust the _new_ CA certificate instead.
 
 To allow the renewal of CA certificates without a loss of service, the Cluster Operator initiates certificate renewal before the old CA certificates expire.

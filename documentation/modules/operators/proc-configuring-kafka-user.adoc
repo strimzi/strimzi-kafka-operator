@@ -22,14 +22,14 @@ For more information on using `Kafka` and `KafkaUser` resources to secure access
 
 .Prerequisites
 
-* A running Kafka cluster xref:con-securing-kafka-authentication-{context}[configured with a Kafka broker listener using TLS authentication and encryption].
+* A running Kafka cluster xref:con-securing-kafka-authentication-{context}[configured with a Kafka broker listener using mTLS authentication and TLS encryption].
 * A running User Operator (typically xref:assembly-kafka-entity-operator-str[deployed with the Entity Operator]).
 
 .Procedure
 
 . Configure the `KafkaUser` resource.
 +
-This example specifies TLS authentication and simple authorization using ACLs.
+This example specifies mTLS authentication and simple authorization using ACLs.
 +
 .Example Kafka user configuration
 [source,yaml,subs="attributes+"]

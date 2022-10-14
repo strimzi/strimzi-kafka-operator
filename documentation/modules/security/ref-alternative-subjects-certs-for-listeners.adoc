@@ -6,7 +6,7 @@
 
 = Alternative subjects in server certificates for Kafka listeners
 
-In order to use TLS hostname verification with your own xref:kafka-listener-certificates-{context}[Kafka listener certificates], you must use the correct Subject Alternative Names (SANs) for each listener. The certificate SANs must specify hostnames for:
+In order to use mTLS hostname verification with your own xref:kafka-listener-certificates-{context}[Kafka listener certificates], you must use the correct Subject Alternative Names (SANs) for each listener. The certificate SANs must specify hostnames for:
 
 * All of the Kafka brokers in your cluster
 
@@ -16,7 +16,7 @@ You can use wildcard certificates if they are supported by your CA.
 
 == TLS listener SAN examples
 
-Use the following examples to help you specify hostnames of the SANs in your certificates for TLS listeners.
+Use the following examples to help you specify hostnames of the SANs in your certificates for mTLS listeners.
 
 .Wildcards example
 
