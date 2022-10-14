@@ -104,8 +104,11 @@ The following table describes how this configuration operates depending on the a
 
 A topic replication factor of 3 creates one leader replica and two followers.
 In this configuration, the producer can continue if a single follower is unavailable.
-Some delay can occur whilst a failed broker is removed from the in-sync replicas or a new leader is created.
-If a second follower becomes unavailable, the producer won’t receive acknowledgments and won’t be able to produce more messages.
+Some delay can occur whilst removing a failed broker from the in-sync replicas or a creating a new leader.
+If the second follower is also unavailable, message delivery will not be successful.
+Instead of acknowledging successful message delivery, the leader sends an error (_not enough replicas_) to the producer.  
+The producer raises an equivalent exception.
+With `retries` configuration, the producer can resend the failed message request.
 
 NOTE: If the system fails, there is a risk of unsent data in the buffer being lost.
 
