@@ -15,36 +15,24 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Read
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Describe
+          - Read
         host: "*"
       - resource:
           type: group
           name: my-group
           patternType: literal
-        operation: Read
+        operations:
+          - Read
         host: "*"
       # Example Producer Acls for topic my-topic
       - resource:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Write
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Create
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Create
+          - Describe
+          - Write
         host: "*"

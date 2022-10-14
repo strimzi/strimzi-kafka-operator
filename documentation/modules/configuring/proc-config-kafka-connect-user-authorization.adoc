@@ -89,82 +89,41 @@ spec:
           type: topic
           name: connect-cluster-offsets
           patternType: literal
-        operation: Write
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-offsets
-          patternType: literal
-        operation: Create
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-offsets
-          patternType: literal
-        operation: Describe
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-offsets
-          patternType: literal
-        operation: Read
+        operations:
+          - Create
+          - Describe
+          - Read
+          - Write
         host: "*"
       # access to status.storage.topic
       - resource:
           type: topic
           name: connect-cluster-status
           patternType: literal
-        operation: Write
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-status
-          patternType: literal
-        operation: Create
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-status
-          patternType: literal
-        operation: Describe
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-status
-          patternType: literal
-        operation: Read
+        operations:
+          - Create
+          - Describe
+          - Read
+          - Write
         host: "*"
       # access to config.storage.topic
       - resource:
           type: topic
           name: connect-cluster-configs
           patternType: literal
-        operation: Write
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-configs
-          patternType: literal
-        operation: Create
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-configs
-          patternType: literal
-        operation: Describe
-        host: "*"
-      - resource:
-          type: topic
-          name: connect-cluster-configs
-          patternType: literal
-        operation: Read
+        operations:
+          - Create
+          - Describe
+          - Read
+          - Write
         host: "*"
       # consumer group
       - resource:
           type: group
           name: connect-cluster
           patternType: literal
-        operation: Read
+        operations:
+          - Read
         host: "*"
 ----
 

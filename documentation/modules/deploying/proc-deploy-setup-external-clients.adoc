@@ -167,17 +167,15 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Read
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Describe
+          - Read
       - resource:
           type: group
           name: my-group
           patternType: literal
-        operation: Read
+        operations:
+          - Read
 ----
 <1> The label must match the label of the Kafka cluster.
 <2> Authentication specified as `tls`.
