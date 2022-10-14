@@ -5,23 +5,13 @@
 [id='assembly-mirrormaker-{context}']
 = Kafka MirrorMaker 2.0 cluster configuration
 
-This section describes how to configure a Kafka MirrorMaker 2.0 deployment in your Strimzi cluster.
-
-MirrorMaker 2.0 is used to replicate data between two or more active Kafka clusters, within or across data centers.
-
-Data replication across clusters supports scenarios that require:
-
-* Recovery of data in the event of a system failure
-* Aggregation of data for analysis
-* Restriction of data access to a specific cluster
-* Provision of data at a specific location to improve latency
+[role="_abstract"]
+MirrorMaker 2.0 replicates data between two or more active Kafka clusters, within or across data centers.
 
 If you are using MirrorMaker 2.0, you configure the `KafkaMirrorMaker2` resource.
 The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
 
-MirrorMaker 2.0 introduces an entirely new way of replicating data between clusters.
-
-As a result, the resource configuration differs from the previous version of MirrorMaker.
+MirrorMaker 2.0 resource configuration differs from the previous version of MirrorMaker.
 If you choose to use MirrorMaker 2.0, there is currently no legacy support, so any resources must be manually converted into the new format.
 
 //Describes the underlying architecture and how it is used in replication

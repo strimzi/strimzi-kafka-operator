@@ -2,69 +2,15 @@
 //
 // overview/assembly-configuration-points.adoc
 
-[id="configuration-points-topic_{context}"]
+[id="con-configuration-points-mm2-{context}"]
 = Kafka MirrorMaker configuration
 
+[role="_abstract"]
 To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
 
 You can use Strimzi with MirrorMaker 2.0, although the earlier version of MirrorMaker continues to be supported.
 
-[discrete]
-== MirrorMaker 2.0
-
-MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
-
-MirrorMaker 2.0 uses:
-
-* Source cluster configuration to consume data from the source cluster
-* Target cluster configuration to output data to the target cluster
-
-[discrete]
-=== Cluster configuration
-
-You can use MirrorMaker 2.0 in _active/passive_ or _active/active_ cluster configurations.
-
-* In an _active/active_ configuration, both clusters are active and provide the same data simultaneously, which is useful if you want to make the same data available locally in different geographical locations.
-* In an _active/passive_ configuration, the data from an active cluster is replicated in a passive cluster, which remains on standby, for example, for data recovery in the event of system failure.
-
-You configure a `KafkaMirrorMaker2` custom resource to define the Kafka Connect deployment, including the connection details of the source and target clusters,
-and then run a set of MirrorMaker 2.0 connectors to make the connection.
-
-Topic configuration is automatically synchronized between the source and target clusters according to the topics defined in the `KafkaMirrorMaker2` custom resource.
-Configuration changes are propagated to remote topics so that new topics and partitions are detected and created.
-Topic replication is defined using regular expression patterns to include or exclude topics.
-
-The following MirrorMaker 2.0 connectors and related internal topics help manage the transfer and synchronization of data between the clusters.
-
-MirrorSourceConnector:: A _MirrorSourceConnector_ creates remote topics from the source cluster.
-MirrorCheckpointConnector:: A _MirrorCheckpointConnector_ tracks and maps offsets for specified consumer groups using an `offset-syncs` topic and `checkpoints` topic.
-The offset sync topic maps the source and target offsets for replicated topic partitions from record metadata.
-A checkpoint is emitted from each source cluster and replicated in the target cluster through the checkpoint topic.
-The checkpoint topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
-MirrorHeartbeatConnector:: A _MirrorHeartbeatConnector_ periodically checks connectivity between clusters.
-A heartbeat is produced every second by the MirrorHeartbeatConnector into a _heartbeat_ topic that is created on the local cluster.
-If you have MirrorMaker 2.0 at both the remote and local locations, the heartbeat emitted at the remote location by the MirrorHeartbeatConnector is treated like any remote topic and mirrored by the MirrorSourceConnector at the local cluster.
-The heartbeat topic makes it easy to check that the remote cluster is available and the clusters are connected.
-If things go wrong, the heartbeat topic offset positions and time stamps can help with recovery and diagnosis.
-
-.Replication across two clusters
-image::mirrormaker.png[MirrorMaker 2.0 replication between a Kafka cluster in Region 1 and a Kafka cluster in Region 2]
-
-[discrete]
-=== Bidirectional replication across two clusters
-
-The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration,
-so both clusters are active and provide the same data simultaneously.
-A MirrorMaker 2.0 cluster is required at each target destination.
-
-Remote topics are distinguished by automatic renaming that prepends the name of cluster to the name of the topic.
-This is useful if you want to make the same data available locally in different geographical locations.
-
-However, if you want to backup or migrate data in an active/passive cluster configuration, you might want to keep the original names of the topics.
-If so, you can configure MirrorMaker 2.0 to turn off automatic renaming.
-
-.Bidirectional replication
-image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
+include::con-overview-mirrormaker2.adoc[leveloffset=+1]
 
 [discrete]
 === Example YAML showing MirrorMaker 2.0 configuration
@@ -91,8 +37,7 @@ image::mirrormaker-renaming.png[MirrorMaker 2.0 bidirectional architecture]
       groupsPattern: "group1|group2|group3"
 ----
 
-[discrete]
-== MirrorMaker
+== MirrorMaker configuration
 
 The earlier version of MirrorMaker uses producers and consumers to replicate data across clusters.
 
