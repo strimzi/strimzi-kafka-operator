@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -26,6 +27,8 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.mockkube2.MockKube2;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
@@ -43,10 +46,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -274,7 +279,18 @@ public class KafkaConnectorIT {
         operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                         "localhost", connectClient, true, connectorName,
                         connector)
-                .onComplete(context.succeeding(v -> {
+                .compose(v -> {
+                    // Sometimes task status doesn't appear on first reconcile if tasks haven't started yet
+                    if (taskStatusIsPresent(client, namespace, connectorName)) {
+                        return Future.succeededFuture();
+                    } else {
+                        Promise<Void> promise = Promise.promise();
+                        vertx.setTimer(2000, id -> operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
+                                        "localhost", connectClient, true, connectorName, connector)
+                                .onComplete(result -> promise.complete(result.result())));
+                        return promise.future();
+                    }
+                }).onComplete(context.succeeding(v -> {
                     assertConnectorTaskIsNotReady(context, client, namespace, connectorName);
                     context.completeNow();
                 }));
@@ -323,6 +339,16 @@ public class KafkaConnectorIT {
             assertThat(notReadyCondition, hasProperty("reason", equalTo("Throwable")));
             assertThat(notReadyCondition, hasProperty("message", equalTo("Connector has failed, see connectorStatus for more details.")));
         });
+    }
+
+    private boolean taskStatusIsPresent(KubernetesClient client, String namespace, String connectorName) {
+        KafkaConnector kafkaConnector = Crds.kafkaConnectorOperation(client).inNamespace(namespace).withName(connectorName).get();
+        Map<String, Object> connectorStatus = Optional.ofNullable(kafkaConnector)
+                .map(KafkaConnector::getStatus)
+                .map(KafkaConnectorStatus::getConnectorStatus)
+                .orElseGet(HashMap::new);
+        Object tasks = connectorStatus.get("tasks");
+        return tasks instanceof ArrayList && ((ArrayList<?>) tasks).size() > 0;
     }
 
     private void assertConnectorTaskIsNotReady(VertxTestContext context, KubernetesClient client, String namespace, String connectorName) {
