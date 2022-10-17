@@ -199,10 +199,10 @@ cat examples/security/keycloak-authorization/kafka-ephemeral-oauth-single-keyclo
 ----
 
 [id='proc-oauth-authorization-keycloak-example-authentication_{context}']
-== Preparing mTLS connectivity for a CLI Kafka client session
+== Preparing TLS connectivity for a CLI Kafka client session
 
 Create a new pod for an interactive CLI session.
-Set up a truststore with a Keycloak certificate for mTLS connectivity.
+Set up a truststore with a Keycloak certificate for TLS connectivity.
 The truststore is to connect to Keycloak and the Kafka broker.
 
 .Prerequisites
@@ -231,7 +231,7 @@ NOTE: If `kubectl` times out waiting on the image download, subsequent attempts 
 kubectl attach -ti kafka-cli -n $NS
 ----
 
-. Use the hostname of the Keycloak instance to prepare a certificate for client connection using mTLS.
+. Use the hostname of the Keycloak instance to prepare a certificate for client connection using TLS.
 +
 [source,shell,subs="+quotes"]
 ----
@@ -242,7 +242,7 @@ STOREPASS=storepass
 echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/sso.crt
 ----
 
-. Create a truststore for mTLS connection to the Kafka brokers.
+. Create a truststore for TLS connection to the Kafka brokers.
 +
 [source,shell,subs="+quotes"]
 ----

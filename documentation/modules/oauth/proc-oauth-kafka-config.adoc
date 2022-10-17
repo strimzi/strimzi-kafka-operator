@@ -53,12 +53,12 @@ For OAuth 2.0 authentication, you can use:
 * Client ID and secret
 * Client ID and refresh token
 * Access token
-* mTLS
+* TLS
 --
 +
 xref:type-KafkaClientAuthenticationOAuth-reference[KafkaClientAuthenticationOAuth schema reference provides examples of each].
 +
-For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and mTLS:
+For example, here OAuth 2.0 is assigned to the Kafka Bridge client using a client ID and secret, and TLS:
 +
 [source,yaml,subs="+quotes,attributes"]
 ----
