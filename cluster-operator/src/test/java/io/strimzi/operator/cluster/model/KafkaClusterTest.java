@@ -3144,7 +3144,7 @@ public class KafkaClusterTest {
 
 
     @ParallelTest
-    public void testExternalClusterIP() {
+    public void testClusterIP() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withAdvertisedHost("my-ingress.com")
                 .withAdvertisedPort(9990)
@@ -3210,7 +3210,7 @@ public class KafkaClusterTest {
 
     }
     @ParallelTest
-    public void testExternalClusterIPMissingConfiguration() {
+    public void testClusterIPMissingConfiguration() {
         GenericKafkaListenerConfigurationBroker broker0 = new GenericKafkaListenerConfigurationBrokerBuilder()
                 .withBroker(0)
                 .build();

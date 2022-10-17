@@ -365,6 +365,7 @@ public interface Constants {
     String PLAIN_LISTENER_DEFAULT_NAME = "plain";
     String TLS_LISTENER_DEFAULT_NAME = "tls";
     String EXTERNAL_LISTENER_DEFAULT_NAME = "external";
+    String CLUSTER_IP_LISTENER_DEFAULT_NAME = "clusterip";
 
     /**
      * Loadbalancer finalizer config

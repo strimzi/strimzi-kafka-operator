@@ -218,13 +218,10 @@ NOTE: TLS hostname verification is not currently supported when exposing Kafka c
 cluster-ip:: Create a listener which uses per-broker `Services` instead of the headless Service.
 +
 This listener type can be useful to expose the cluster outside of Kuebrnetes with some custom mechanisms such as TCP Ingress or other Ingress controllers etc
-
 +
 A new clusterIP service is created for each Kafka broker pod.
-+
 An additional clusterIP is created to serve as a Kafka _bootstrap_ address.
 +
-
 .Example `cluster-ip` listener configuration
 [source,yaml,subs="+attributes"]
 ----
