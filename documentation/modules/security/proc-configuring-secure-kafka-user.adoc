@@ -52,17 +52,15 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Read
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Describe
+          - Read
       - resource:
           type: group
           name: my-group
           patternType: literal
-        operation: Read
+        operations:
+          - Read
 ----
 <1> User authentication mechanism, defined as mutual `tls` or `scram-sha-512`.
 <2> Simple authorization, which requires an accompanying list of ACL rules.
