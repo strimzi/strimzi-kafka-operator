@@ -86,7 +86,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(TOPIC_NAME)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SECOND_CLUSTER_NAME))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
@@ -94,7 +94,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }

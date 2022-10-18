@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils;
 
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -30,6 +31,15 @@ public class ClientUtils {
     // ensuring that object can not be created outside of class
     private ClientUtils() {}
 
+    // Both clients success
+    public static void waitForClientsSuccess(TestStorage testStorage) {
+        waitForClientsSuccess(testStorage, true);
+    }
+
+    public static void waitForClientsSuccess(TestStorage testStorage, boolean deleteAfterSuccess) {
+        waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
+    }
+
     public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount) {
         waitForClientsSuccess(producerName, consumerName, namespace, messageCount, true);
     }
@@ -49,6 +59,15 @@ public class ClientUtils {
         }
     }
 
+    // Client success
+    public static void waitForConsumerClientSuccess(TestStorage testStorage) {
+        waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+    }
+    
+    public static void waitForProducerClientSuccess(TestStorage testStorage) {
+        waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+    }
+
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
         waitForClientSuccess(jobName, namespace, messageCount, true);
     }
@@ -65,6 +84,23 @@ public class ClientUtils {
         if (deleteAfterSuccess) {
             JobUtils.deleteJobWithWait(namespace, jobName);
         }
+    }
+
+    // Client timeouts
+    public static void waitForProducerClientTimeout(TestStorage testStorage) {
+        waitForProducerClientTimeout(testStorage, true);
+    }
+
+    public static void waitForProducerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
+        waitForClientTimeout(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
+    }
+
+    public static void waitForConsumerClientTimeout(TestStorage testStorage) {
+        waitForConsumerClientTimeout(testStorage, true);
+    }
+
+    public static void waitForConsumerClientTimeout(TestStorage testStorage, boolean deleteAfterSuccess) {
+        waitForClientTimeout(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount(), deleteAfterSuccess);
     }
 
     public static void waitForClientTimeout(String jobName, String namespace, int messageCount) {
@@ -94,6 +130,11 @@ public class ClientUtils {
         }
     }
 
+    // Both clients timeouts
+    public static void waitForClientsTimeout(TestStorage testStorage) {
+        waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+    }
+    
     public static void waitForClientsTimeout(String producerName, String consumerName, String namespace, int messageCount) {
         waitForClientsTimeout(producerName, consumerName, namespace, messageCount, true);
     }

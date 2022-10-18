@@ -108,7 +108,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     /**
@@ -174,7 +174,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
                 .endUserOperator().build());
         });
 
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getEoDeploymentName(), 1);
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -186,7 +186,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, TestStorage testStorage) {
@@ -233,7 +233,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {

@@ -211,7 +211,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withBootstrapAddress(externalBootstrapServers)
             .withNamespaceName(namespace)
             .withTopicName(topicName)
-            .withMessageCount(100)
+            .withMessageCount(MESSAGE_COUNT)
             .withUserName(weirdUserName)
             .build();
 

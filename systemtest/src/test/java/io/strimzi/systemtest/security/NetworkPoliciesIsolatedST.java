@@ -126,14 +126,14 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(topic0)
             .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withProducerName(deniedProducerName)
@@ -143,7 +143,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         LOGGER.info("Check metrics exported by Kafka Exporter");
 
@@ -219,14 +219,14 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(topic0)
             .withUserName(testStorage.getUserName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withProducerName(deniedProducerName)

@@ -47,58 +47,58 @@ public class LogDumpScriptIsolatedST extends AbstractST {
 
     @IsolatedTest
     void dumpPartitions(ExtensionContext context) {
-        TestStorage storage = new TestStorage(context);
+        TestStorage testStorage = new TestStorage(context);
 
         String groupId = "my-group";
         String partitionNumber = "0";
-        String outPath = USER_PATH + "/target/" + storage.getClusterName();
+        String outPath = USER_PATH + "/target/" + testStorage.getClusterName();
         
-        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(storage.getClusterName(), 1, 1)
+        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
             .editMetadata()
-                .withNamespace(storage.getNamespaceName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(storage.getTopicName())
+            .withTopicName(testStorage.getTopicName())
             .withMessageCount(10)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storage.getClusterName()))
-            .withProducerName(storage.getProducerName())
-            .withConsumerName(storage.getConsumerName())
-            .withNamespaceName(storage.getNamespaceName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
             .withConsumerGroup(groupId)
             .build();
 
         // send messages and consume them
         resourceManager.createResource(context, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(storage.getProducerName(), storage.getConsumerName(), storage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         // dry run
-        LOGGER.info("Print partition segments from cluster {}/{}", storage.getNamespaceName(), storage.getClusterName());
+        LOGGER.info("Print partition segments from cluster {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         String[] printCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", storage.getNamespaceName(), "--cluster",
-            storage.getClusterName(), "--topic", storage.getTopicName(), "--partition", partitionNumber, "--dry-run"
+            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", testStorage.getNamespaceName(), "--cluster",
+            testStorage.getClusterName(), "--topic", testStorage.getTopicName(), "--partition", partitionNumber, "--dry-run"
         };
         Exec.exec(Level.INFO, printCmd);
         assertThat("Output directory created in dry mode", Files.notExists(Paths.get(outPath)));
         
         // partition dump
-        LOGGER.info("Dump topic partition from cluster {}/{}", storage.getNamespaceName(), storage.getClusterName());
+        LOGGER.info("Dump topic partition from cluster {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         String[] dumpPartCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", storage.getNamespaceName(), "--cluster",
-            storage.getClusterName(), "--topic", storage.getTopicName(), "--partition", partitionNumber, "--out-path", outPath
+            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", testStorage.getNamespaceName(), "--cluster",
+            testStorage.getClusterName(), "--topic", testStorage.getTopicName(), "--partition", partitionNumber, "--out-path", outPath
         };
         Exec.exec(Level.INFO, dumpPartCmd);
         assertThat("No output directory created", Files.exists(Paths.get(outPath)));
-        String dumpPartFilePath = outPath + "/" + storage.getTopicName() + "/kafka-0-" + storage.getTopicName() + "-" + partitionNumber + "/00000000000000000000.log";
+        String dumpPartFilePath = outPath + "/" + testStorage.getTopicName() + "/kafka-0-" + testStorage.getTopicName() + "-" + partitionNumber + "/00000000000000000000.log";
         assertThat("No partition file created", Files.exists(Paths.get(dumpPartFilePath)));
         assertThat("Empty partition file", new File(dumpPartFilePath).length() > 0);
         
         // __consumer_offsets dump
-        LOGGER.info("Dump consumer offsets partition from cluster {}/{}", storage.getNamespaceName(), storage.getClusterName());
+        LOGGER.info("Dump consumer offsets partition from cluster {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         String[] dumpCgCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", storage.getNamespaceName(), "--cluster",
-            storage.getClusterName(), "--group-id", groupId, "--out-path", outPath
+            USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", testStorage.getNamespaceName(), "--cluster",
+            testStorage.getClusterName(), "--group-id", groupId, "--out-path", outPath
         };
         Exec.exec(Level.INFO, dumpCgCmd);
         assertThat("No output directory created", Files.exists(Paths.get(outPath)));

@@ -381,6 +381,9 @@ public interface Constants {
     String NAMESPACE_KEY = "NAMESPACE_NAME";
     String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
 
+    // Count of test messages that needs to be sent during the test
+    int MESSAGE_COUNT = 100;
+
     /**
      * Auxiliary variable for cluster operator deployment
      */
@@ -396,11 +399,14 @@ public interface Constants {
     String CONSUMER_KEY = "CONSUMER_NAME";
     String ADMIN_KEY = "ADMIN_NAME";
     String USER_NAME_KEY = "USER_NAME";
+    String ENTITY_OPERATOR_NAME_KEY = "ENTITY_OPERATOR_NAME";
+    String KAFKA_STATEFULSET_NAME_KEY = "KAFKA_STATEFULSET_NAME";
+    String ZOOKEEPER_STATEFULSET_NAME_KEY = "ZOOKEEPER_STATEFULSET_NAME";
     String SCRAPER_POD_KEY = "SCRAPER_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
     String KAFKA_SELECTOR = "KAFKA_SELECTOR";
     String ZOOKEEPER_SELECTOR = "ZOOKEEPER_SELECTOR";
-    String ENTITY_OPERATOR_NAME = "ENTITY_OPERATOR_NAME";
+    String MESSAGE_COUNT_KEY = "MESSAGE_COUNT";
 
     /**
      * Lease related resources - ClusterRole, Role, RoleBinding

@@ -156,7 +156,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
     @ParallelTest
     void testBuildFailsWithWrongChecksumOfArtifact(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String imageName = getImageNameForTestCase();
 
@@ -168,9 +168,9 @@ class ConnectBuilderIsolatedST extends AbstractST {
                 .build())
             .build();
 
-        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(storage.getNamespaceName(), storage.getScraperName()).build());
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -184,14 +184,14 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnectUtils.waitForConnectNotReady(storage.getClusterName());
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(storage.getClusterName(), storage.getNamespaceName(), "The Kafka Connect build failed(.*)?");
+        KafkaConnectUtils.waitForConnectNotReady(testStorage.getClusterName());
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), "The Kafka Connect build failed(.*)?");
 
         LOGGER.info("Checking if KafkaConnect status condition contains message about build failure");
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(storage.getNamespaceName()).withName(storage.getClusterName()).get();
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Deploying network policies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(storage.getClusterName()));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         Condition connectCondition = kafkaConnect.getStatus().getConditions().stream().findFirst().orElseThrow();
 
@@ -199,7 +199,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         assertThat(connectCondition.getType(), is(NotReady.toString()));
 
         LOGGER.info("Replacing plugin's checksum with right one");
-        KafkaConnectResource.replaceKafkaConnectResource(storage.getClusterName(), kC -> {
+        KafkaConnectResource.replaceKafkaConnectResource(testStorage.getClusterName(), kC -> {
             Plugin pluginWithRightChecksum = new PluginBuilder()
                 .withName("connector-with-right-checksum")
                 .withArtifacts(new JarArtifactBuilder()
@@ -212,29 +212,29 @@ class ConnectBuilderIsolatedST extends AbstractST {
             kC.getSpec().getBuild().getPlugins().add(pluginWithRightChecksum);
         });
 
-        KafkaConnectUtils.waitForConnectReady(storage.getClusterName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getClusterName());
 
-        String scraperPodName = kubeClient(storage.getNamespaceName()).listPodsByPrefixInName(storage.getScraperName()).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking if KafkaConnect API contains EchoSink connector");
-        String plugins = cmdKubeClient().execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(storage.getClusterName()) + ":8083/connector-plugins").out();
+        String plugins = cmdKubeClient().execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertTrue(plugins.contains(ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Checking if KafkaConnect resource contains EchoSink connector in status");
-        kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(storage.getNamespaceName()).withName(storage.getClusterName()).get();
+        kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(ECHO_SINK_CLASS_NAME)));
     }
 
     @ParallelTest
     void testBuildWithJarTgzAndZip(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getNamespaceName(), storage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -256,51 +256,51 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .build());
 
         Map<String, Object> connectorConfig = new HashMap<>();
-        connectorConfig.put("topics", storage.getTopicName());
+        connectorConfig.put("topics", testStorage.getTopicName());
         connectorConfig.put("level", "INFO");
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(storage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(ECHO_SINK_CLASS_NAME)
                 .withConfig(connectorConfig)
             .endSpec()
             .build());
 
-        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(storage.getNamespaceName()).withName(storage.getClusterName()).get();
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
         assertThat(kafkaConnector.getSpec().getClassName(), is(ECHO_SINK_CLASS_NAME));
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(storage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storage.getNamespaceName()))
-            .withProducerName(storage.getProducerName())
-            .withNamespaceName(storage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getNamespaceName()))
+            .withProducerName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(storage.getProducerName(), storage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        String connectPodName = kubeClient(storage.getNamespaceName()).listPodNamesInSpecificNamespace(storage.getNamespaceName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).stream()
-                .filter(it -> it.contains(storage.getClusterName())).collect(Collectors.toList()).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(storage.getNamespaceName(), connectPodName, "Received message with key 'null' and value '\"Hello-world - 99\"'");
+        String connectPodName = kubeClient(testStorage.getNamespaceName()).listPodNamesInSpecificNamespace(testStorage.getNamespaceName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).stream()
+                .filter(it -> it.contains(testStorage.getClusterName())).collect(Collectors.toList()).get(0);
+        PodUtils.waitUntilMessageIsInPodLogs(testStorage.getNamespaceName(), connectPodName, "Received message with key 'null' and value '\"Hello-world - 99\"'");
     }
 
     @OpenShiftOnly
     @ParallelTest
     void testPushIntoImageStream(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String imageStreamName = "custom-image-stream";
         ImageStream imageStream = new ImageStreamBuilder()
             .editOrNewMetadata()
                 .withName(imageStreamName)
-                .withNamespace(storage.getNamespaceName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
 
-        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(storage.getNamespaceName()).resource(imageStream).create();
+        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(testStorage.getNamespaceName()).resource(imageStream).create();
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -314,7 +314,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(storage.getNamespaceName()).withName(storage.getClusterName()).get();
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Checking, if KafkaConnect has all artifacts and if is successfully created");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().get(0).getArtifacts().size(), is(2));
@@ -328,7 +328,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
     @ParallelTest
     void testUpdateConnectWithAnotherPlugin(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         String echoConnector = "echo-sink-connector";
         String camelConnector = "camel-http-connector";
@@ -344,9 +344,9 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .build();
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getNamespaceName(), topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -367,53 +367,53 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(storage.getNamespaceName(), storage.getScraperName()).build());
+        resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(storage.getClusterName()));
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", topicName);
         echoSinkConfig.put("level", "INFO");
 
         LOGGER.info("Creating EchoSink connector");
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(echoConnector, storage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(echoConnector, testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)
             .endSpec()
             .build());
 
-        String deploymentName = KafkaConnectResources.deploymentName(storage.getClusterName());
+        String deploymentName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
         Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(deploymentName);
-        String scraperPodName = kubeClient(storage.getNamespaceName()).listPodsByPrefixInName(storage.getScraperName()).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that KafkaConnect API contains EchoSink connector and not Camel-Telegram Connector class name");
-        String plugins = cmdKubeClient().execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(storage.getClusterName()) + ":8083/connector-plugins").out();
+        String plugins = cmdKubeClient().execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertFalse(plugins.contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME));
         assertTrue(plugins.contains(ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Adding one more connector to the KafkaConnect");
-        KafkaConnectResource.replaceKafkaConnectResource(storage.getClusterName(), kafkaConnect -> {
+        KafkaConnectResource.replaceKafkaConnectResource(testStorage.getClusterName(), kafkaConnect -> {
             kafkaConnect.getSpec().getBuild().getPlugins().add(secondPlugin);
         });
 
         DeploymentUtils.waitTillDepHasRolled(deploymentName, 1, connectSnapshot);
 
         Map<String, Object> camelHttpConfig = new HashMap<>();
-        camelHttpConfig.put("camel.sink.path.httpUri", "http://" + KafkaConnectResources.serviceName(storage.getClusterName()) + ":8083");
+        camelHttpConfig.put("camel.sink.path.httpUri", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083");
         camelHttpConfig.put("topics", topicName);
 
         LOGGER.info("Creating Camel-HTTP-Sink connector");
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(camelConnector, storage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(camelConnector, testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)
                 .withConfig(camelHttpConfig)
             .endSpec()
             .build());
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(storage.getNamespaceName()).withName(storage.getClusterName()).get();
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
@@ -424,15 +424,15 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
     @ParallelTest
     void testBuildOtherPluginTypeWithAndWithoutFileName(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String imageName = getImageNameForTestCase();
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storage.getNamespaceName(), topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName).build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), storage.getNamespaceName(), storage.getNamespaceName(), 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -450,9 +450,9 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String deploymentName = KafkaConnectResources.deploymentName(storage.getClusterName());
+        String deploymentName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
         Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(deploymentName);
-        String connectPodName = kubeClient().listPods(storage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String connectPodName = kubeClient().listPods(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that plugin has correct file name: {}", ECHO_SINK_FILE_NAME);
         assertEquals(getPluginFileNameFromConnectPod(connectPodName), ECHO_SINK_FILE_NAME);
@@ -468,14 +468,14 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Removing file name from the plugin, hash should be used");
-        KafkaConnectResource.replaceKafkaConnectResource(storage.getClusterName(), connect -> {
+        KafkaConnectResource.replaceKafkaConnectResource(testStorage.getClusterName(), connect -> {
             connect.getSpec().getBuild().setPlugins(Collections.singletonList(pluginWithoutFileName));
         });
 
         DeploymentUtils.waitTillDepHasRolled(deploymentName, 1, connectSnapshot);
 
         LOGGER.info("Checking that plugin has different name than before");
-        connectPodName = kubeClient().listPods(storage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        connectPodName = kubeClient().listPods(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String fileName = getPluginFileNameFromConnectPod(connectPodName);
         assertNotEquals(fileName, ECHO_SINK_FILE_NAME);
         assertEquals(fileName, Util.hashStub(ECHO_SINK_JAR_URL));
@@ -485,14 +485,14 @@ class ConnectBuilderIsolatedST extends AbstractST {
     @Tag(ACCEPTANCE)
     @ParallelTest
     void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
-        TestStorage storage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String imageName = getImageNameForTestCase();
-        final String connectorName = storage.getClusterName() + "-camel-connector";
+        final String connectorName = testStorage.getClusterName() + "-camel-connector";
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(storage.getNamespaceName(), storage.getTopicName()).build(),
-            KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), Constants.INFRA_NAMESPACE, storage.getNamespaceName(), 1)
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName()).build(),
+            KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -511,10 +511,10 @@ class ConnectBuilderIsolatedST extends AbstractST {
                 .build());
 
         Map<String, Object> connectorConfig = new HashMap<>();
-        connectorConfig.put("topics", storage.getTopicName());
+        connectorConfig.put("topics", testStorage.getTopicName());
         connectorConfig.put("camel.source.path.timerName", "timer");
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(connectorName, storage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(connectorName, testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_TIMER_CLASS_NAME)
                 .withConfig(connectorConfig)
@@ -522,15 +522,15 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .build());
 
         KafkaClients kafkaClient = new KafkaClientsBuilder()
-            .withConsumerName(storage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storage.getNamespaceName()))
-            .withTopicName(storage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerName(testStorage.getConsumerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getNamespaceName()))
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(0)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi());
-        ClientUtils.waitForClientSuccess(storage.getConsumerName(), storage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     private String getPluginFileNameFromConnectPod(String connectPodName) {

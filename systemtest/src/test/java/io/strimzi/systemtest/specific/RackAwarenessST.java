@@ -52,9 +52,9 @@ class RackAwarenessST extends AbstractST {
     void testKafkaRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage storage = storageMap.get(extensionContext);
+        TestStorage testStorage = storageMap.get(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 1, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
                 .editSpec()
                     .editKafka()
                         .withNewRack(TOPOLOGY_KEY)
@@ -64,12 +64,12 @@ class RackAwarenessST extends AbstractST {
                 .build());
 
         LOGGER.info("Kafka cluster deployed successfully");
-        String ssName = KafkaResources.kafkaStatefulSetName(storage.getClusterName());
-        String podName = PodUtils.getPodNameByPrefix(storage.getNamespaceName(), ssName);
-        Pod pod = kubeClient().getPod(storage.getNamespaceName(), podName);
+        String ssName = testStorage.getKafkaStatefulSetName();
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), ssName);
+        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = StUtils.getStatefulSetOrStrimziPodSetAffinity(storage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(storage.getClusterName()));
+        Affinity specAffinity = StUtils.getStatefulSetOrStrimziPodSetAffinity(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -81,16 +81,16 @@ class RackAwarenessST extends AbstractST {
         PodAffinityTerm podAntiAffinityTerm = pod.getSpec().getAffinity().getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm();
         assertThat(podAntiAffinityTerm, is(specPodAntiAffinityTerm));
         assertThat(specPodAntiAffinityTerm.getTopologyKey(), is(TOPOLOGY_KEY));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", storage.getClusterName()));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaStatefulSetName(storage.getClusterName())));
+        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", testStorage.getClusterName()));
+        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", testStorage.getKafkaStatefulSetName()));
 
         // check Kafka rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
 
-        String rackIdOut = cmdKubeClient(storage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(storage.getClusterName(), 0),
+        String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
-        String brokerRackOut = cmdKubeClient(storage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(storage.getClusterName(), 0),
+        String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
         assertThat(rackIdOut.trim(), is(hostname));
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
@@ -101,32 +101,32 @@ class RackAwarenessST extends AbstractST {
     void testConnectRackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage storage = storageMap.get(extensionContext);
+        TestStorage testStorage = storageMap.get(extensionContext);
         String invalidTopologyKey = "invalid-topology-key";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1).build());
 
         LOGGER.info("Deploy KafkaConnect with an invalid topology key: {}", invalidTopologyKey);
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(storage.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), 1)
                 .editSpec()
                     .withNewRack(invalidTopologyKey)
                 .endSpec()
                 .build());
 
         LOGGER.info("Check that KafkaConnect pod is unschedulable");
-        KafkaConnectUtils.waitForConnectPodCondition("Unschedulable", storage.getNamespaceName(), storage.getClusterName(), 30_000);
+        KafkaConnectUtils.waitForConnectPodCondition("Unschedulable", testStorage.getNamespaceName(), testStorage.getClusterName(), 30_000);
 
         LOGGER.info("Fix KafkaConnect with a valid topology key: {}", TOPOLOGY_KEY);
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(storage.getClusterName(), kc -> kc.getSpec().setRack(new Rack(TOPOLOGY_KEY)), storage.getNamespaceName());
-        KafkaConnectUtils.waitForConnectReady(storage.getNamespaceName(), storage.getClusterName());
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> kc.getSpec().setRack(new Rack(TOPOLOGY_KEY)), testStorage.getNamespaceName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("KafkaConnect cluster deployed successfully");
-        String deployName = KafkaConnectResources.deploymentName(storage.getClusterName());
-        String podName = PodUtils.getPodNameByPrefix(storage.getNamespaceName(), deployName);
-        Pod pod = kubeClient().getPod(storage.getNamespaceName(), podName);
+        String deployName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
+        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = kubeClient().getDeployment(storage.getNamespaceName(), deployName).getSpec().getTemplate().getSpec().getAffinity();
+        Affinity specAffinity = kubeClient().getDeployment(testStorage.getNamespaceName(), deployName).getSpec().getTemplate().getSpec().getAffinity();
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -137,7 +137,7 @@ class RackAwarenessST extends AbstractST {
         // check Kafka client rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
-        String commandOut = cmdKubeClient(storage.getNamespaceName()).execInPod(podName,
+        String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName,
                 "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
     }
@@ -147,9 +147,9 @@ class RackAwarenessST extends AbstractST {
     void testMirrorMaker2RackAwareness(ExtensionContext extensionContext) {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
-        TestStorage storage = storageMap.get(extensionContext);
-        String kafkaClusterSourceName = storage.getClusterName() + "-source";
-        String kafkaClusterTargetName = storage.getClusterName() + "-target";
+        TestStorage testStorage = storageMap.get(extensionContext);
+        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
+        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
 
         resourceManager.createResource(extensionContext,
                 KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
@@ -157,19 +157,19 @@ class RackAwarenessST extends AbstractST {
                 KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
 
         resourceManager.createResource(extensionContext,
-                KafkaMirrorMaker2Templates.kafkaMirrorMaker2(storage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                         .editSpec()
                             .withNewRack(TOPOLOGY_KEY)
                         .endSpec()
                         .build());
 
         LOGGER.info("MirrorMaker2 cluster deployed successfully");
-        String deployName = KafkaMirrorMaker2Resources.deploymentName(storage.getClusterName());
-        String podName = PodUtils.getPodNameByPrefix(storage.getNamespaceName(), deployName);
-        Pod pod = kubeClient().getPod(storage.getNamespaceName(), podName);
+        String deployName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
+        String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
+        Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = kubeClient().getDeployment(storage.getNamespaceName(), deployName).getSpec().getTemplate().getSpec().getAffinity();
+        Affinity specAffinity = kubeClient().getDeployment(testStorage.getNamespaceName(), deployName).getSpec().getTemplate().getSpec().getAffinity();
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -180,7 +180,7 @@ class RackAwarenessST extends AbstractST {
         // check Kafka client rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
-        String commandOut = cmdKubeClient(storage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
+        String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
     }
 
