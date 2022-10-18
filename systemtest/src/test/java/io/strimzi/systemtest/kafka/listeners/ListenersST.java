@@ -710,7 +710,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testClusterIPTls(ExtensionContext extensionContext) {
+    void testClusterIpTls(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
