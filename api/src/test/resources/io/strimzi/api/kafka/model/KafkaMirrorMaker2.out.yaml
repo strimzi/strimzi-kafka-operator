@@ -17,23 +17,23 @@ spec:
     targetCluster: "target"
     sourceConnector:
       tasksMax: 2
+      autoRestartConnectorsAndTasks:
+        enabled: true
       config:
         replication.factor: 1
         offset-syncs.topic.replication.factor: 1
-      autoRestart:
-        enabled: true
     heartbeatConnector:
       tasksMax: 2
+      autoRestartConnectorsAndTasks:
+        enabled: true
       config:
         heartbeats.topic.replication.factor: 1
-      autoRestart:
-        enabled: true
     checkpointConnector:
       tasksMax: 2
+      autoRestartConnectorsAndTasks:
+        enabled: true
       config:
         checkpoints.topic.replication.factor: 1
-      autoRestart:
-        enabled: true
     topicsPattern: "my-topic"
     groupsPattern: "my-group"
   template:

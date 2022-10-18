@@ -485,6 +485,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         mirrorMaker2Status.addConditions(result.result().conditions);
                         mirrorMaker2Status.getConnectors().add(result.result().statusResult);
                         mirrorMaker2Status.getConnectors().sort(new ConnectorsComparatorByName());
+                        var autoRestart = result.result().autoRestart;
+                        if (autoRestart != null) {
+                            autoRestart.setConnectorName(connectorName);
+                            mirrorMaker2Status.getAutoRestartStatuses().add(autoRestart);
+                        }
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());
                     }

@@ -33,7 +33,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     private Integer tasksMax;
     private Boolean pause;
 
-    private AutoRestart autoRestart = new AutoRestart();
+
     private Map<String, Object> config = new HashMap<>(0);
 
     @Description("The maximum number of tasks for the Kafka Connector")
@@ -64,13 +64,5 @@ public abstract class AbstractConnectorSpec extends Spec {
         this.pause = pause;
     }
 
-    @Description("Whether the connector should restart when tasks fail ")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public AutoRestart getAutoRestart() {
-        return autoRestart;
-    }
 
-    public void setAutoRestart(AutoRestart autoRestart) {
-        this.autoRestart = autoRestart;
-    }
 }

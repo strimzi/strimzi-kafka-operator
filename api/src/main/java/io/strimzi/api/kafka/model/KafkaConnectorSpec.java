@@ -16,12 +16,14 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"class", "tasksMax", "config"})
+@JsonPropertyOrder({"class", "tasksMax", "autoRestart", "config"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaConnectorSpec extends AbstractConnectorSpec {
     private static final long serialVersionUID = 1L;
 
     private String className;
+
+    private AutoRestart autoRestart = new AutoRestart();
 
     @Description("The Class for the Kafka Connector")
     @JsonProperty("class")
@@ -31,5 +33,15 @@ public class KafkaConnectorSpec extends AbstractConnectorSpec {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    @Description("Whether the connector should restart when tasks fail ")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public AutoRestart getAutoRestart() {
+        return autoRestart;
+    }
+
+    public void setAutoRestart(AutoRestart autoRestart) {
+        this.autoRestart = autoRestart;
     }
 }

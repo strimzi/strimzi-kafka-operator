@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
+import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;

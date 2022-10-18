@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -14,8 +15,20 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"tasksMax", "config"})
+@JsonPropertyOrder({"tasksMax", "autoRestartConnectorsAndTasks", "config"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec {
     private static final long serialVersionUID = 1L;
+
+    private AutoRestart autoRestartConnectorsAndTasks = new AutoRestart();
+
+    @Description("Whether the connector should restart when tasks fail ")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public AutoRestart getAutoRestartConnectorsAndTasks() {
+        return autoRestartConnectorsAndTasks;
+    }
+
+    public void setAutoRestartConnectorsAndTasks(AutoRestart autoRestart) {
+        this.autoRestartConnectorsAndTasks = autoRestart;
+    }
 }

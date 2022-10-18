@@ -59,10 +59,6 @@ spec:
                 type: integer
                 minimum: 1
                 description: The maximum number of tasks for the Kafka Connector.
-              config:
-                x-kubernetes-preserve-unknown-fields: true
-                type: object
-                description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
               autoRestart:
                 type: object
                 properties:
@@ -70,6 +66,10 @@ spec:
                     type: boolean
                     description: "Enable/Disable auto restart, default to true."
                 description: Whether the connector should restart when tasks fail .
+              config:
+                x-kubernetes-preserve-unknown-fields: true
+                type: object
+                description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
               pause:
                 type: boolean
                 description: Whether the connector should be paused. Defaults to false.
@@ -107,6 +107,9 @@ spec:
                   count:
                     type: integer
                     description: The number of time the element restarted.
+                  connectorName:
+                    type: string
+                    description: The name of the connector that is getting restarted.
                   lastRestartTimestamp:
                     type: string
                     description: "Last time the  auto restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."

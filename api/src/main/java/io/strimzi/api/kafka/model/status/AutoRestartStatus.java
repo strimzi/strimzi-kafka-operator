@@ -24,13 +24,16 @@ import static java.util.Collections.emptyMap;
     builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "count", "lastRestartTimestamp"})
+@JsonPropertyOrder({ "count", "connectorName", "lastRestartTimestamp"})
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class AutoRestartStatus implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private int count;
+
+    private String connectorName;
+
     private String lastRestartTimestamp;
     private Map<String, Object> additionalProperties;
 
@@ -42,6 +45,15 @@ public class AutoRestartStatus implements UnknownPropertyPreserving, Serializabl
 
     public void setCount(int count) {
         this.count = count;
+    }
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @Description("The name of the connector that is getting restarted")
+    public String getConnectorName() {
+        return connectorName;
+    }
+
+    public void setConnectorName(String connectorName) {
+        this.connectorName = connectorName;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
