@@ -166,6 +166,7 @@ the documentation for more details.
 | `readinessProbe.periodSeconds`       | Readiness probe period in seconds         | 30                                                   |
 | `imageTagOverride`                   | Override all image tag config             | `nil`                                                |
 | `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
+| `createAggregateRoles`               | Create clusterroles that extend aggregated roles to use strimzi crds  | `false`                  |
 | `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
 | `affinity`                           | Add affinities to Operator Pod            | `{}`                                                 |
 | `annotations`                        | Add annotations to Operator Pod           | `{}`                                                 |
