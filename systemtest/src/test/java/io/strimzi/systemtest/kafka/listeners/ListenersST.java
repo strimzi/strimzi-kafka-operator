@@ -673,14 +673,7 @@ public class ListenersST extends AbstractST {
     void testClusterIp(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String namespaceName = testStorage.getNamespaceName();
-        final String clusterName = testStorage.getClusterName();
-        final String topicName = testStorage.getTopicName();
-        final String userName = testStorage.getUserName();
-        final String producerName = testStorage.getProducerName();
-        final String consumerName = testStorage.getConsumerName();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -694,16 +687,14 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
-
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withNamespaceName(namespaceName)
-                .withTopicName(topicName)
-                .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122")
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getTopicName())
+                .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9102")
                 .withMessageCount(MESSAGE_COUNT)
-                .withUserName(userName)
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
+                .withUserName(testStorage.getUserName())
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
                 .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
@@ -715,17 +706,12 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(SANITY)
     @Tag(INTERNAL_CLIENTS_USED)
     void testClusterIpTls(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String namespaceName = testStorage.getNamespaceName();
         final String clusterName = testStorage.getClusterName();
-        final String topicName = testStorage.getTopicName();
         final String userName = testStorage.getUserName();
-        final String producerName = testStorage.getProducerName();
-        final String consumerName = testStorage.getConsumerName();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -744,16 +730,14 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
 
-        ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
-
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withNamespaceName(namespaceName)
-                .withTopicName(topicName)
-                .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122")
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withTopicName(testStorage.getTopicName())
+                .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9103")
                 .withMessageCount(MESSAGE_COUNT)
                 .withUserName(userName)
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
                 .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
