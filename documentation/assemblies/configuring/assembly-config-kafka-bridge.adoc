@@ -5,13 +5,11 @@
 [id='assembly-config-kafka-bridge-{context}']
 = Kafka Bridge cluster configuration
 
-This section describes how to configure a Kafka Bridge deployment in your Strimzi cluster.
-
+[role="_abstract"]
+Configure a Kafka Bridge deployment using the `KafkaBridge` resource.
 Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 
-If you are using the Kafka Bridge, you configure the `KafkaBridge` resource.
-
-The full schema of the `KafkaBridge` resource is described in xref:type-KafkaBridge-reference[].
+xref:type-KafkaBridge-reference[] describes the full schema of the `KafkaBridge` resource.
 
 //procedure to configure Kafka Bridge
 include::../../modules/configuring/proc-config-kafka-bridge.adoc[leveloffset=+1]

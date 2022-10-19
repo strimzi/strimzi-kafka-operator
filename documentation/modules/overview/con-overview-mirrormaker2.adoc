@@ -15,7 +15,7 @@ MirrorMaker 2.0 uses:
 
 MirrorMaker 2.0 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
 
-You configure a `KafkaMirrorMaker2` custom resource to define the Kafka Connect deployment, including the connection details of the source and target clusters, and then run a set of MirrorMaker 2.0 connectors to make the connection.
+You configure MirrorMaker 2.0 to define the Kafka Connect deployment, including the connection details of the source and target clusters, and then run a set of MirrorMaker 2.0 connectors to make the connection.
 
 MirrorMaker 2.0 consists of the following connectors:
 

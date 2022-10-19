@@ -21,9 +21,9 @@ include::assembly-config-kafka.adoc[leveloffset=+1]
 
 include::assembly-config-kafka-connect.adoc[leveloffset=+1]
 
-include::assembly-config-mirrormaker.adoc[leveloffset=+1]
-
 include::assembly-config-mirrormaker2.adoc[leveloffset=+1]
+
+include::assembly-config-mirrormaker.adoc[leveloffset=+1]
 
 include::assembly-config-kafka-bridge.adoc[leveloffset=+1]
 
