@@ -22,7 +22,7 @@ public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec {
 
     private AutoRestart autoRestartConnectorsAndTasks = new AutoRestart();
 
-    @Description("Whether the connector should restart when tasks fail ")
+    @Description("Automatic restart of connectors and tasks configuration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public AutoRestart getAutoRestartConnectorsAndTasks() {
         return autoRestartConnectorsAndTasks;

@@ -554,8 +554,8 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Void> restart(String host, int port, String connectorName) {
-        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/restart");
+    public Future<Void> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed) {
+        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/restart?includeTasks=" + includeTasks + "&onlyFailed=" + onlyFailed);
     }
 
     @Override

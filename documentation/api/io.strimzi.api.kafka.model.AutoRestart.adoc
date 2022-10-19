@@ -1,1 +1,35 @@
-Specify whether the auto restart should be enabled on a Connector
+Connectors and tasks that are in the FAILED state are automatically restarted.
+
+A back-off algorithm is applied to automatic restarts of each connector and it's tasks.
+When a connector is failing an auto restart attempt will happen at first and second reconcile then attempts while be delayed
+incrementing the time between automatic restarts by 2 minutes up to a maximum of 30 minutes, at which point no further
+automatic restarts are attempted, and the connector or tasks are left in the FAILED state.
+
+
+If you are using a kafka version <3.0.0, only the connector will be restarted not failed tasks.
+
+To disable the automatic restarting of the connector and it's tasks when they are in the FAILED state on a KafkaConnector resource:
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: strimzi.io/v1alpha1
+kind: KafkaConnector
+metadata:
+    name: my-source-connector
+spec:
+    autoRestart:
+        enabled: false
+----
+
+Similarly, a new field in the KafkaMirrorMaker2 spec named autoRestartConnectorsAndTasks with an enabled field value of false can be applied, to disable auto-restarting connectors and tasks.
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: strimzi.io/v1alpha1
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mm2-cluster
+spec:
+  autoRestartConnectorsAndTasks:
+    enabled: false
+----

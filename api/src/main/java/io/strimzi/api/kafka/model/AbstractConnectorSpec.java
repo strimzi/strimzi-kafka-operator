@@ -23,7 +23,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"pause", "tasksMax", "autoRestart", "config"})
+@JsonPropertyOrder({"pause", "tasksMax", "config"})
 @EqualsAndHashCode
 public abstract class AbstractConnectorSpec extends Spec {
     private static final long serialVersionUID = 1L;
@@ -32,8 +32,6 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     private Integer tasksMax;
     private Boolean pause;
-
-
     private Map<String, Object> config = new HashMap<>(0);
 
     @Description("The maximum number of tasks for the Kafka Connector")
@@ -63,6 +61,4 @@ public abstract class AbstractConnectorSpec extends Spec {
     public void setPause(Boolean pause) {
         this.pause = pause;
     }
-
-
 }

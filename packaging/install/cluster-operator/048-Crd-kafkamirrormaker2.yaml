@@ -248,8 +248,8 @@ spec:
                           properties:
                             enabled:
                               type: boolean
-                              description: "Enable/Disable auto restart, default to true."
-                          description: Whether the connector should restart when tasks fail .
+                              description: "Whether automatic restart should be enable or disable, default to true."
+                          description: Automatic restart of connectors and tasks configuration.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
@@ -270,8 +270,8 @@ spec:
                           properties:
                             enabled:
                               type: boolean
-                              description: "Enable/Disable auto restart, default to true."
-                          description: Whether the connector should restart when tasks fail .
+                              description: "Whether automatic restart should be enable or disable, default to true."
+                          description: Automatic restart of connectors and tasks configuration.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
@@ -292,8 +292,8 @@ spec:
                           properties:
                             enabled:
                               type: boolean
-                              description: "Enable/Disable auto restart, default to true."
-                          description: Whether the connector should restart when tasks fail .
+                              description: "Whether automatic restart should be enable or disable, default to true."
+                          description: Automatic restart of connectors and tasks configuration.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object

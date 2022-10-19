@@ -82,6 +82,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -297,7 +298,7 @@ public class ConnectorMockTest {
             }
             return Future.succeededFuture();
         });
-        when(api.restart(any(), anyInt(), anyString())).thenAnswer(invocation -> {
+        when(api.restart(any(), anyInt(), anyString(), anyBoolean(), anyBoolean())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
             String connectorName = invocation.getArgument(2);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
@@ -1157,7 +1158,9 @@ public class ConnectorMockTest {
 
         verify(api, never()).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, never()).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1174,7 +1177,9 @@ public class ConnectorMockTest {
 
         verify(api, times(1)).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, never()).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1187,7 +1192,7 @@ public class ConnectorMockTest {
         String connectName = "cluster";
         String connectorName = "connector";
 
-        when(api.restart(anyString(), anyInt(), anyString()))
+        when(api.restart(anyString(), anyInt(), anyString(), anyBoolean(), anyBoolean()))
             .thenAnswer(invocation -> Future.failedFuture(new ConnectRestException("GET", "/foo", 500, "Internal server error", "Bad stuff happened")));
 
         // Create KafkaConnect cluster and wait till it's ready
@@ -1236,7 +1241,9 @@ public class ConnectorMockTest {
 
         verify(api, never()).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, never()).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1254,7 +1261,9 @@ public class ConnectorMockTest {
         // could be triggered twice (creation followed by status update) but waitForConnectReady could be satisfied with single
         verify(api, atLeastOnce()).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, never()).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1313,7 +1322,9 @@ public class ConnectorMockTest {
 
         verify(api, never()).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, never()).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1330,7 +1341,9 @@ public class ConnectorMockTest {
 
         verify(api, times(0)).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, times(1)).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1391,7 +1404,9 @@ public class ConnectorMockTest {
 
         verify(api, never()).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            eq(false),
+            eq(false));
         verify(api, never()).restartTask(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName), eq(0));
@@ -1408,7 +1423,9 @@ public class ConnectorMockTest {
 
         verify(api, times(0)).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
-            eq(connectorName));
+            eq(connectorName),
+            any(),
+            any());
         // Might be triggered twice (on annotation and on status update), but the second hit is sometimes only after
         // this check depending on the timing
         verify(api, atLeastOnce()).restartTask(

@@ -35,7 +35,7 @@ public class KafkaConnectorSpec extends AbstractConnectorSpec {
         this.className = className;
     }
 
-    @Description("Whether the connector should restart when tasks fail ")
+    @Description("Automatic restart of connector and tasks configuration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public AutoRestart getAutoRestart() {
         return autoRestart;

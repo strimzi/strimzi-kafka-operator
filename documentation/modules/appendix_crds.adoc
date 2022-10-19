@@ -3014,7 +3014,7 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |string
 |tasksMax     1.2+<.<a|The maximum number of tasks for the Kafka Connector.
 |integer
-|autoRestart  1.2+<.<a|Whether the connector should restart when tasks fail .
+|autoRestart  1.2+<.<a|Automatic restart of connector and tasks configuration.
 |xref:type-AutoRestart-{context}[`AutoRestart`]
 |config       1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map
@@ -3038,7 +3038,7 @@ include::../api/io.strimzi.api.kafka.model.AutoRestart.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property        |Description
-|enabled  1.2+<.<a|Enable/Disable auto restart, default to true.
+|enabled  1.2+<.<a|Whether automatic restart should be enable or disable, default to true.
 |boolean
 |====
 
@@ -3216,7 +3216,7 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |Property                              |Description
 |tasksMax                       1.2+<.<a|The maximum number of tasks for the Kafka Connector.
 |integer
-|autoRestartConnectorsAndTasks  1.2+<.<a|Whether the connector should restart when tasks fail .
+|autoRestartConnectorsAndTasks  1.2+<.<a|Automatic restart of connectors and tasks configuration.
 |xref:type-AutoRestart-{context}[`AutoRestart`]
 |config                         1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map

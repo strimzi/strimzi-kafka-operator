@@ -353,7 +353,7 @@ public class KafkaConnectorIT {
                 connector);
             })
             .onComplete(context.succeeding(v -> {
-                assertConnectorIsAutoRestarted(1, context, client, namespace, connectorName);
+                assertConnectorIsAutoRestarted(2, context, client, namespace, connectorName);
                 context.completeNow();
             }));
     }

@@ -29,8 +29,7 @@ public class AutoRestart implements UnknownPropertyPreserving, Serializable {
     private boolean enabled = true;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-
-    @Description("Enable/Disable auto restart, default to true")
+    @Description("Whether automatic restart should be enable or disable, default to true")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnabled() {
         return enabled;

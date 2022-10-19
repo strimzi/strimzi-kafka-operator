@@ -164,9 +164,11 @@ public interface KafkaConnectApi {
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to restart.
+     * @param includeTasks Whether to restart the connector instance and task instances or just the connector.
+     * @param onlyFailed Specifies whether to restart just the instances with a FAILED status or all instances.
      * @return A Future which completes with the result of the request.
      */
-    Future<Void> restart(String host, int port, String connectorName);
+    Future<Void> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed);
 
     /**
      * Make a {@code POST} request to {@code /connectors/${connectorName}/tasks/${taskID}/restart}.
