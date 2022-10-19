@@ -45,8 +45,8 @@ spec:
       #...
 ----
 
-You can configure `plain`, `tls`, and `external` listeners.
-We recommend not using `plain` listeners or `external` listeners without TLS encryption enabled.
+You can configure OAuth 2.0 authentication in your listeners.
+We recommend using OAuth 2.0 authentication together with TLS encryption (`tls: true`).
 Without encryption, the connection is vulnerable to network eavesdropping and unauthorized access through token theft.
 
 You configure an `external` listener with `type: oauth` for a secure transport layer to communicate with the client.
