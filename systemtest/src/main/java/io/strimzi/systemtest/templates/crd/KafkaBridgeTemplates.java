@@ -66,7 +66,6 @@ public class KafkaBridgeTemplates {
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withClusterName(kafkaClusterName)
             .endMetadata()
             .editSpec()
                 .withBootstrapServers(bootstrap)

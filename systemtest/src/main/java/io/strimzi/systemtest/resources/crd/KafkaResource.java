@@ -57,7 +57,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     @Override
     public void delete(Kafka resource) {
         final String namespaceName = resource.getMetadata().getNamespace();
-        final String clusterName = resource.getMetadata().getClusterName();
+        final String clusterName = resource.getMetadata().getName();
 
         Preconditions.notNull(namespaceName, "Kafka namespace name is null!");
         Preconditions.notNull(clusterName, "Kafka cluster name is null!");

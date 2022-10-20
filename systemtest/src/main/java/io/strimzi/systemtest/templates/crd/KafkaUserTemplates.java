@@ -48,7 +48,6 @@ public class KafkaUserTemplates {
     public static KafkaUserBuilder defaultUser(String namespaceName, String clusterName, String name) {
         return new KafkaUserBuilder()
             .withNewMetadata()
-                .withClusterName(clusterName)
                 .withName(name)
                 .withNamespace(namespaceName)
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)

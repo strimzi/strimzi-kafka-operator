@@ -77,7 +77,6 @@ public class KafkaMirrorMaker2Templates {
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
-                .withClusterName(kafkaTargetClusterName)
             .endMetadata()
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
