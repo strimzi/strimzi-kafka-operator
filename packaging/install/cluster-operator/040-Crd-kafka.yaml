@@ -1265,10 +1265,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -2384,10 +2392,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -3460,10 +3476,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -4416,10 +4440,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -5250,10 +5282,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -5839,10 +5879,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
