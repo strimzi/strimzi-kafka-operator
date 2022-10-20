@@ -46,10 +46,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -347,7 +343,6 @@ public class KafkaConnectorIT {
                 assertConnectorIsAutoRestarted(1, context, client, namespace, connectorName);
             }))
             .compose(ignored -> {
-                Instant.now(Clock.fixed(Instant.now().plus(2, ChronoUnit.MINUTES), ZoneOffset.UTC));
                 return operator.reconcileConnectorAndHandleResult(new Reconciliation("test", "KafkaConnect", namespace, "bogus"),
                 "localhost", connectClient, true, connectorName,
                 connector);
