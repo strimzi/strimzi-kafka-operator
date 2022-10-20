@@ -17,6 +17,7 @@
 
 ### Changes, deprecations and removals
 
+* **From 0.32.0 on, Strimzi supports only Kubernetes version 1.19 and newer.**
 * A connector or task failing triggers a 'NotReady' condition to be added to the KafkaConnector CR status. This is different from previous versions where the CR would report 'Ready' even if the connector or a task had failed.
 * The `ClusterRole` from file `020-ClusterRole-strimzi-cluster-operator-role.yaml` was split into two separate roles:
   * The original `strimzi-cluster-operator-namespaced` `ClusterRole` in the file `020-ClusterRole-strimzi-cluster-operator-role.yaml` contains the rights related to the resources created based on some Strimzi custom resources.

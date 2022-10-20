@@ -106,7 +106,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
 
     private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms

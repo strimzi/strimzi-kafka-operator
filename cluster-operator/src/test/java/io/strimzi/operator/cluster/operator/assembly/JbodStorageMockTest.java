@@ -132,7 +132,7 @@ public class JbodStorageMockTest {
                 .build();
         mockKube.start();
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         // creating the Kafka operator
         ResourceOperatorSupplier ros =
                 new ResourceOperatorSupplier(JbodStorageMockTest.vertx, this.client,

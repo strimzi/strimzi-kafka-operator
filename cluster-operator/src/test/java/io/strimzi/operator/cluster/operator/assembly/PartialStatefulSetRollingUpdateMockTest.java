@@ -125,7 +125,7 @@ public class PartialStatefulSetRollingUpdateMockTest {
                 .build();
         mockKube.start();
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         ResourceOperatorSupplier supplier = supplier(client, pfa);
 
         kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000, "-UseStrimziPodSets"));

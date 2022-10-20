@@ -18,7 +18,7 @@ Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafk
 
 - bash 5+ (GNU)
 - tar 1.33+ (GNU)
-- kubectl 1.16+ (K8s CLI)
+- kubectl 1.19+ (K8s CLI)
 - yq 4.6+ (YAML processor)
 - enough disk space
 

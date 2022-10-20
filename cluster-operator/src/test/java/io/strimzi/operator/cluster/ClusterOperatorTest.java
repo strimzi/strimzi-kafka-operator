@@ -211,7 +211,7 @@ public class ClusterOperatorTest {
 
         CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
 
-        Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
+        Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                     ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(namespaceList.size()));
@@ -309,7 +309,7 @@ public class ClusterOperatorTest {
         Map<String, String> env = buildEnv(namespaces, strimziPodSets, podSetsOnly);
 
         CountDownLatch latch = new CountDownLatch(2);
-        Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
+        Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(openShift, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 ClusterOperatorConfig.fromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(1));

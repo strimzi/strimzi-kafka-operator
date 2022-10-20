@@ -11,7 +11,7 @@ Partition dumps can be useful to troubleshoot Kafka issues. For example, we can 
 ## Requirements
 
 - bash 5+ (GNU)
-- kubectl 1.16+ (K8s CLI)
+- kubectl 1.19+ (K8s CLI)
 - yq 4.6+ (YAML processor)
 - jshell (JDK 9+)
 

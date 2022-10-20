@@ -53,7 +53,7 @@ public class KafkaUpgradeDowngradeMockTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16);
+    private static final PlatformFeaturesAvailability PFA = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
     private static final Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)

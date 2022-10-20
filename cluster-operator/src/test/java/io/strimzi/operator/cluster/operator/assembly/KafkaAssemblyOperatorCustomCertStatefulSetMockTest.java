@@ -71,7 +71,7 @@ import static org.hamcrest.Matchers.not;
 @EnableKubernetesMockClient(crud = true)
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private final MockCertManager certManager = new MockCertManager();
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
     private final ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");

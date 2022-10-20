@@ -78,7 +78,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorPodSetTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
-    private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.V1_18;
+    private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final MockCertManager CERT_MANAGER = new MockCertManager();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
     private final static KafkaVersionChange VERSION_CHANGE = new KafkaVersionChange(

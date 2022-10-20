@@ -98,7 +98,7 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -172,7 +172,7 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,
@@ -240,7 +240,7 @@ public class KafkaListenerReconcilerSkipBootstrapLoadBalancerTest {
         MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
                 kafkaCluster,
-                new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
+                new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier.secretOperations,
                 supplier.serviceOperations,
                 supplier.routeOperations,

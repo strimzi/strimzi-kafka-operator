@@ -336,7 +336,7 @@ metadata:
   name: strimzi-cluster-operator.v # placeholder
   namespace: placeholder
 spec:
-  MinKubeVersion: 1.16.0
+  MinKubeVersion: 1.19.0
   customresourcedefinitions:
     owned:
     - description: Represents a Kafka cluster
