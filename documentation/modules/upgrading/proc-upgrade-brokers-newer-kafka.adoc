@@ -28,12 +28,12 @@ For the `Kafka` resource to be upgraded, check that:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl edit kafka _my-cluster_
+kubectl edit kafka _<my_cluster>_
 ----
 
-. If configured, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` and `inter.broker.protocol.version` set to the defaults for the _current_ Kafka version.
+. If configured, check that the `inter.broker.protocol.version` and `log.message.format.version` properties are set to the _current_ version.
 +
-For example, the current version is {KafkaVersionLower} if upgrading from Kafka version {KafkaVersionLower} to {KafkaVersionHigher}:
+For example, the current version is {InterBrokerVersionLower} if upgrading from Kafka version {KafkaVersionLower} to {KafkaVersionHigher}:
 +
 [source,yaml,subs=attributes+]
 ----
