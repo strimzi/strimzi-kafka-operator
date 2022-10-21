@@ -22,6 +22,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.WorkerExecutor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,6 +63,10 @@ public class ClusterOperator extends AbstractVerticle {
 
     private StrimziPodSetController strimziPodSetController;
 
+    // this field is required to keep the underlying shared worker pool alive
+    @SuppressWarnings("unused")
+    private WorkerExecutor sharedWorkerExecutor;
+
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
                            KubernetesClient client,
@@ -90,7 +95,7 @@ public class ClusterOperator extends AbstractVerticle {
         LOGGER.info("Starting ClusterOperator for namespace {}", namespace);
 
         // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
+        sharedWorkerExecutor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
         @SuppressWarnings({ "rawtypes" })
         List<Future> startFutures = new ArrayList<>(8);

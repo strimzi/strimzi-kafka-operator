@@ -43,6 +43,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -122,14 +123,17 @@ public class KafkaReconcilerStatusTest {
                 .build();
 
     private static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
 
     @BeforeAll
     public static void beforeAll()  {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void afterAll()    {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

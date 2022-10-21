@@ -6,14 +6,12 @@ package io.strimzi.operator.user;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
-
-import java.util.concurrent.TimeUnit;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,9 +50,6 @@ public class UserOperator extends AbstractVerticle {
     @Override
     public void start(Promise<Void> start) {
         LOGGER.info("Starting UserOperator for namespace {}", namespace);
-
-        // Configure the executor here, but it is used only in other places
-        getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
         kafkaUserOperator.createWatch(namespace, kafkaUserOperator.recreateWatch(namespace))
             .compose(w -> {

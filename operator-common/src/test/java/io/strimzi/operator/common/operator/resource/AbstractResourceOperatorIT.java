@@ -14,6 +14,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -48,6 +49,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
         R extends Resource<T>> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
+    private static WorkerExecutor sharedWorkerExecutor;
     protected String resourceName;
     protected static Vertx vertx;
     protected static KubernetesClient client;
@@ -67,6 +69,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
 
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
@@ -82,6 +85,7 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Deleting namespace {} after tests run", namespace);

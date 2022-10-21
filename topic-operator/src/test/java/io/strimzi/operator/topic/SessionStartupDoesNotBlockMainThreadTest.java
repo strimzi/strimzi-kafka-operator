@@ -12,20 +12,17 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.operator.topic.vertx.BlockedThreadWarnings;
-import io.strimzi.operator.topic.vertx.OverrideBlockedThreadCheckerLoggerDelegateFactory;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -36,17 +33,14 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-// Disabled because they were flaky in some environments.
-// Should be re-enabled after Vert.x 4.3.0 upgrade => https://github.com/strimzi/strimzi-kafka-operator/issues/6741
-@Disabled
 public class SessionStartupDoesNotBlockMainThreadTest {
 
     @Mock
@@ -77,17 +71,8 @@ public class SessionStartupDoesNotBlockMainThreadTest {
     private MockitoSession mockitoSession;
     private Vertx vertx;
 
-    @BeforeAll
-    static void beforeAll() {
-        // Use this factory to wrap BlockedThreadChecker logger to check if it's warning on blocked threads or not
-        // This was the only way I could find to access it, and believe me, I'm not super happy about it either.
-        System.setProperty("vertx.logger-delegate-factory-class-name", OverrideBlockedThreadCheckerLoggerDelegateFactory.class.getName());
-    }
-
     @BeforeEach
     void setup() {
-        BlockedThreadWarnings.getInstance().reset();
-
         mockitoSession = Mockito.mockitoSession().initMocks(this).startMocking();
 
         // Set max block low, and check interval to half of that,
@@ -102,7 +87,6 @@ public class SessionStartupDoesNotBlockMainThreadTest {
                 .setJvmMetricsEnabled(true)
                 .setEnabled(true));
         vertx = Vertx.vertx(options);
-
         // Look on my mocks returning mocks ye mighty and despair! I'm only doing this because Mockito's ANSWERS_DEEP_STUBS
         // failed to answer all the way through the chain of fabric8 method calls, for reasons I can't yet determine
         // And I want the start-up session to complete for this unit test
@@ -121,6 +105,7 @@ public class SessionStartupDoesNotBlockMainThreadTest {
 
     @Test
     void ensureSlowTopicStoreCreationDoesNotBlockThreads() throws ExecutionException, InterruptedException {
+        AtomicInteger warnings = installBlockedThreadHandler();
         Config config = new Config(mandatoryConfig);
         BiFunction<Zk, Config, TopicStore> slowStore = (zk, conf) -> {
             try {
@@ -144,14 +129,13 @@ public class SessionStartupDoesNotBlockMainThreadTest {
 
         startupPromise.future().toCompletionStage().toCompletableFuture().get();
 
-        BlockedThreadWarnings warnings = BlockedThreadWarnings.getInstance();
-        assertTrue(warnings.isPickedUpByVertx(), "Sanity check that Vert.x was using my gammy logger for the BlockedThread Checker");
-        assertEquals(0, warnings.blockedThreadWarningsCount(), "If the BlockedThreadChecker logged anything at WARN, then start-up is still blocking");
+        assertEquals(0, warnings.get(), "If the BlockedThreadChecker logged anything at WARN, then start-up is still blocking");
     }
 
     @Test
     @SuppressWarnings("unchecked")
     void ensureSlowK8sWatcherCreationDoesNotBlockThreads() throws ExecutionException, InterruptedException {
+        AtomicInteger warnings = installBlockedThreadHandler();
         //Deliberately cause the k8s watcher startup to be slow
         Mockito.reset(filterWatchListDeletable);
         when(filterWatchListDeletable.watch(any())).thenAnswer(invocation -> {
@@ -179,8 +163,12 @@ public class SessionStartupDoesNotBlockMainThreadTest {
 
         startupPromise.future().toCompletionStage().toCompletableFuture().get();
 
-        BlockedThreadWarnings warnings = BlockedThreadWarnings.getInstance();
-        assertTrue(warnings.isPickedUpByVertx(), "Sanity check that Vert.x was using my gammy logger for the BlockedThread Checker");
-        assertEquals(0, warnings.blockedThreadWarningsCount(), "If the BlockedThreadChecker logged anything at WARN, then start-up is still blocking");
+        assertEquals(0, warnings.get(), "If the BlockedThreadChecker logged anything at WARN, then start-up is still blocking");
+    }
+
+    private AtomicInteger installBlockedThreadHandler() {
+        AtomicInteger warnings = new AtomicInteger();
+        ((VertxInternal) vertx).blockedThreadChecker().setThreadBlockedHandler(event -> warnings.incrementAndGet());
+        return warnings;
     }
 }

@@ -43,6 +43,7 @@ import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -79,6 +80,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
     private final String namespace = "testns";
     private final String clusterName = "testkafka";
     protected static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
 
     private Kafka kafka;
     private KafkaAssemblyOperator operator;
@@ -93,6 +95,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @BeforeEach
@@ -139,6 +142,7 @@ public class KafkaAssemblyOperatorCustomCertStatefulSetMockTest {
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

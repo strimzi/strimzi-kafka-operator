@@ -14,6 +14,7 @@
 * Updated JMX Exporter dependency to 0.17.2
 * ZookeeperRoller considers unready pods
 * Support multiple operations per ACLRule
+* Upgrade Vert.x to 4.3.4
 
 ### Changes, deprecations and removals
 

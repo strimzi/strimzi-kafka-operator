@@ -13,6 +13,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -42,6 +43,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
     public static final String RESOURCE_NAME = "my-resource";
+    private static WorkerExecutor sharedWorkerExecutor;
     protected String resourceName;
     protected static Vertx vertx;
     protected static KubernetesClient client;
@@ -50,6 +52,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
     public static void before() {
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
     }
 
@@ -60,6 +63,7 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

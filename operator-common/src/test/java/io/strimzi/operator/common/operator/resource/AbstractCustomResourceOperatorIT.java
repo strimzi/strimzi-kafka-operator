@@ -18,6 +18,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -64,6 +65,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     protected static Vertx vertx;
     protected static KubernetesClient client;
     private static KubeClusterResource cluster;
+    private WorkerExecutor sharedWorkerExecutor;
 
     protected abstract CrdOperator<C, T, L> operator();
     protected abstract String getCrd();
@@ -82,6 +84,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
@@ -102,6 +105,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
     @AfterAll
     public void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
 
         String namespace = getNamespace();

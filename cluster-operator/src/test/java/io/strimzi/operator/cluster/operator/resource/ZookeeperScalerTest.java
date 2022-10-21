@@ -10,6 +10,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -49,6 +50,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class ZookeeperScalerTest {
     private static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
 
     // Shared values used in tests
     String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
@@ -68,10 +70,12 @@ public class ZookeeperScalerTest {
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

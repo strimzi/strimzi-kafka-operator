@@ -312,16 +312,13 @@ public class KafkaRebalanceStateMachineTest {
         checkTransition(vertx, context,
                 KafkaRebalanceState.New, KafkaRebalanceState.NotReady,
                 KafkaRebalanceAnnotation.none, kcRebalance)
-                .onComplete(result -> {
-                    if (result.failed()) {
-                        if (result.cause().getMessage().contains("java.lang.IllegalArgumentException: Missing hard goals")) {
-                            context.completeNow();
-                        } else {
-                            context.failNow(new RuntimeException("This operation failed with an unexpected error:" + result.cause().getMessage()));
-                        }
+                .onComplete(context.failing(throwable -> {
+                    if (throwable.getMessage().contains("java.lang.IllegalArgumentException: Missing hard goals")) {
+                        context.completeNow();
+                    } else {
+                        context.failNow(new RuntimeException("This operation failed with an unexpected error: " + throwable.getMessage(), throwable));
                     }
-                    context.failNow(new RuntimeException("This operations should have failed"));
-                });
+                }));
     }
 
     @Test

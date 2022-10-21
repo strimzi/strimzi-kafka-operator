@@ -42,6 +42,7 @@ import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -81,13 +82,18 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
     private static Vertx vertx;
 
+    @SuppressWarnings("unused")
+    private static WorkerExecutor sharedWorkerExecutor;
+
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 

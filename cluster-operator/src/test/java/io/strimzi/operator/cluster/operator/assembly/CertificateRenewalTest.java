@@ -38,9 +38,11 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -101,10 +103,17 @@ public class CertificateRenewalTest {
                     "0123456789");
 
     private List<Secret> secrets = new ArrayList<>();
+    private WorkerExecutor sharedWorkerExecutor;
 
     @BeforeEach
-    public void clearSecrets() {
+    public void setup(Vertx vertx) {
         secrets = new ArrayList<>();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
+    }
+
+    @AfterEach
+    public void teardown() {
+        sharedWorkerExecutor.close();
     }
 
     private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, CertificateAuthority clusterCa, CertificateAuthority clientsCa) {

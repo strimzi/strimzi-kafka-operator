@@ -22,6 +22,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -63,6 +64,7 @@ import static org.hamcrest.Matchers.greaterThan;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class TopicOperatorTest {
 
+    private static WorkerExecutor sharedWorkerExecutor;
     private final Labels labels = Labels.fromString("app=strimzi");
 
     private final TopicName topicName = new TopicName("my-topic");
@@ -94,10 +96,12 @@ public class TopicOperatorTest {
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setEnabled(true)
         ));
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void after(VertxTestContext context) {
+        sharedWorkerExecutor.close();
         vertx.close(done -> context.completeNow());
     }
 

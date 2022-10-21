@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -46,14 +47,17 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     public static final String RESOURCE_NAME = "my-resource";
     public static final String NAMESPACE = "test";
     protected static Vertx vertx;
+    private static WorkerExecutor sharedWorkerExecutor;
 
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
     }
 
     @AfterAll
     public static void after() {
+        sharedWorkerExecutor.close();
         vertx.close();
     }
 
