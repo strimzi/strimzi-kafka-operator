@@ -6,14 +6,13 @@
 = Kafka cluster configuration
 
 [role="_abstract"]
-This section describes how to configure a Kafka deployment in your Strimzi cluster.
-A Kafka cluster is deployed with a ZooKeeper cluster. The deployment can also include the Topic Operator and User Operator, which manage Kafka topics and users.
-
-You configure Kafka using the `Kafka` resource.
-Configuration options are also available for ZooKeeper and the Entity Operator within the `Kafka` resource.
+Configure a Kafka deployment using the `Kafka` resource.
+A Kafka cluster is deployed with a ZooKeeper cluster, so configuration options are also available for ZooKeeper within the `Kafka` resource.
 The Entity Operator comprises the Topic Operator and User Operator.
+You can also configure `entityOperator` properties in the `Kafka` resource to include the Topic Operator and User Operator in the deployment. 
 
-The full schema of the `Kafka` resource is described in the xref:type-Kafka-reference[].
+xref:type-Kafka-reference[] describes the full schema of the `Kafka` resource.
+
 For more information about Apache Kafka, see the {kafkaDoc}.
 
 .Listener configuration

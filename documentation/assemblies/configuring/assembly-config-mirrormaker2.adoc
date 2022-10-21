@@ -6,10 +6,10 @@
 = Kafka MirrorMaker 2.0 cluster configuration
 
 [role="_abstract"]
-MirrorMaker 2.0 replicates data between two or more active Kafka clusters, within or across data centers.
+Configure a Kafka MirrorMaker 2.0 deployment using the `KafkaMirrorMaker2` resource.
+MirrorMaker 2.0 replicates data between two or more Kafka clusters, within or across data centers.
 
-If you are using MirrorMaker 2.0, you configure the `KafkaMirrorMaker2` resource.
-The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
+xref:type-KafkaMirrorMaker2-reference[] describes the full schema of the `KafkaMirrorMaker2` resource.
 
 MirrorMaker 2.0 resource configuration differs from the previous version of MirrorMaker.
 If you choose to use MirrorMaker 2.0, there is currently no legacy support, so any resources must be manually converted into the new format.

@@ -6,12 +6,12 @@
 = Kafka Connect cluster configuration
 
 [role="_abstract"]
-This section describes how to configure a Kafka Connect deployment in your Strimzi cluster.
-
+Configure a Kafka Connect deployment using the `KafkaConnect` resource.
 Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using connector plugins.
 Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database, for import or export of data using connectors.
 Connectors are plugins that provide the connection configuration needed.
-The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
+
+xref:type-KafkaConnect-reference[] describes the full schema of the `KafkaConnect` resource.
 
 For more information on deploying connector plugins, see link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with connector plugins^].
 
