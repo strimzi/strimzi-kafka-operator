@@ -22,9 +22,6 @@ The affinity configuration can include different types of affinity:
 * Pod affinity and anti-affinity
 * Node affinity
 
-NOTE: On Kubernetes 1.16 and 1.17, the support for `topologySpreadConstraint` is disabled by default.
-In order to use `topologySpreadConstraint`, you have to enable the `EvenPodsSpread` feature gate in Kubernetes API server and scheduler.
-
 [role="_additional-resources"]
 .Additional resources
 
