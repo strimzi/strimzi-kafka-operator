@@ -86,8 +86,6 @@ public class KafkaAssemblyOperatorMockTest {
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
-
     private static final int KAFKA_REPLICAS = 3;
     private Storage kafkaStorage;
 
@@ -168,7 +166,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .build();
         mockKube.start();
 
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, kubernetesVersion);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
         supplier = supplierWithMocks();
         podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         podSetController.start();
@@ -181,7 +179,7 @@ public class KafkaAssemblyOperatorMockTest {
     private ResourceOperatorSupplier supplierWithMocks() {
         return new ResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, kubernetesVersion), 2_000);
+                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), 2_000);
     }
 
 

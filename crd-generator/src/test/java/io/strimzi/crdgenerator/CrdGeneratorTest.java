@@ -70,7 +70,7 @@ public class CrdGeneratorTest {
 
     @Test
     public void versionedTest() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.parseRange("1.16+"), ApiVersion.V1BETA1);
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_16_PLUS, ApiVersion.V1BETA1);
         StringWriter w = new StringWriter();
         crdGenerator.generate(VersionedExampleCrd.class, w);
         String s = w.toString();

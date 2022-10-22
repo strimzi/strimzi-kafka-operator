@@ -128,7 +128,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         PlatformFeaturesAvailability.create(vertx, client)
                 .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
-                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_16), CoreMatchers.is(not(lessThan(0))));
+                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CoreMatchers.is(not(lessThan(0))));
                 })))
 
                 .compose(pfa -> {
@@ -176,7 +176,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         PlatformFeaturesAvailability.create(vertx, client)
                 .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
-                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_16), CoreMatchers.is(not(lessThan(0))));
+                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CoreMatchers.is(not(lessThan(0))));
                 })))
                 .compose(pfa -> {
                     LOGGER.info("Creating resource");
@@ -224,7 +224,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         PlatformFeaturesAvailability.create(vertx, client)
                 .onComplete(context.succeeding(pfa -> context.verify(() -> {
                     assertThat("Kubernetes version : " + pfa.getKubernetesVersion() + " is too old",
-                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.V1_16), CoreMatchers.is(not(lessThan(0))));
+                            pfa.getKubernetesVersion().compareTo(KubernetesVersion.MINIMAL_SUPPORTED_VERSION), CoreMatchers.is(not(lessThan(0))));
                 })))
                 .compose(pfa -> {
                     LOGGER.info("Creating resource");

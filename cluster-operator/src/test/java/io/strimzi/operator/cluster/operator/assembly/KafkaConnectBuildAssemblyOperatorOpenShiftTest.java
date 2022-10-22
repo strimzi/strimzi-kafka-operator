@@ -85,7 +85,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     private static final String OUTPUT_IMAGE_HASH_STUB = Util.hashStub(OUTPUT_IMAGE);
 
     protected static Vertx vertx;
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
 
     @BeforeAll
     public static void before() {
