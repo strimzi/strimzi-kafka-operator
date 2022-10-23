@@ -57,7 +57,6 @@ public class KafkaConnectTemplates {
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(namespaceName)
-                .withClusterName(kafkaClusterName)
             .endMetadata()
             .editOrNewSpec()
                 .withVersion(Environment.ST_KAFKA_VERSION)
