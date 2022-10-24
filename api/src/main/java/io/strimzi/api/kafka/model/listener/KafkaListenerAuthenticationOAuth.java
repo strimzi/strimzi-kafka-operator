@@ -233,7 +233,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.jwksExpirySeconds = jwksExpirySeconds;
     }
 
-    @Description("Enable or disable whether the 'use' attribute of `key` declarations in JWKS endpoint response should be ignored. Default value is false.")
+    @Description("Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean getJwksIgnoreKeyUse() {
         return jwksIgnoreKeyUse;
