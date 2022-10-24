@@ -668,12 +668,6 @@ public class ListenersST extends AbstractST {
         );
     }
 
-    private String clusterIpBootstrapServiceName(String namespaceName, String clusterName, String listenerName) {
-        String serviceName = String.format("%s-kafka-%s-bootstrap", clusterName, listenerName);
-        String bootstrapServiceName = String.format("%s.%s.svc", serviceName, namespaceName);
-        return bootstrapServiceName;
-    }
-
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testClusterIp(ExtensionContext extensionContext) {
@@ -696,12 +690,10 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        String bootstrapServiceName = clusterIpBootstrapServiceName(namespaceName, clusterName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
-
         KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withNamespaceName(namespaceName)
                 .withTopicName(testStorage.getTopicName())
-                .withBootstrapAddress(bootstrapServiceName + ":9102")
+                .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
                 .withMessageCount(MESSAGE_COUNT)
                 .withUserName(testStorage.getUserName())
                 .withProducerName(testStorage.getProducerName())
@@ -742,12 +734,10 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
 
-        String bootstrapServiceName = clusterIpBootstrapServiceName(namespaceName, clusterName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME);
-
         KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withNamespaceName(namespaceName)
                 .withTopicName(testStorage.getTopicName())
-                .withBootstrapAddress(bootstrapServiceName + ":9103")
+                .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
                 .withMessageCount(MESSAGE_COUNT)
                 .withUserName(userName)
                 .withProducerName(testStorage.getProducerName())
