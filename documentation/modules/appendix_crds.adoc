@@ -209,7 +209,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |boolean
 |enablePlain                        1.2+<.<a|Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
 |boolean
-|failFast                           1.2+<.<a|Enable or disable if potentially recoverable runtime errors during startup should result in Kafka Broker process termination. Default value is true.
+|failFast                           1.2+<.<a|Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
 |boolean
 |fallbackUserNameClaim              1.2+<.<a|The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
 |string

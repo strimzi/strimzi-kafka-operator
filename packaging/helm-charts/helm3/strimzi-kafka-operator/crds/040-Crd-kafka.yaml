@@ -149,7 +149,7 @@ spec:
                                 description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
                               failFast:
                                 type: boolean
-                                description: Enable or disable if potentially recoverable runtime errors during startup should result in Kafka Broker process termination. Default value is true.
+                                description: Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
                               fallbackUserNameClaim:
                                 type: string
                                 description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
