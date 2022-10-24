@@ -60,9 +60,9 @@ authentication:
 ----
 
 .Username and password
-This way of authenticating clients uses the OAuth `Resource Owner Password Grant` mechanism which has been deprecated, and is only supported to enable integration in environments where the `Client Credentials` mechanism cannot be used due to the existing IAM solutions not supporting it or for some reason requiring the use of user accounts for the authentication.
+OAuth username and password configuration uses the OAuth _Resource Owner Password Grant_ mechanism. The mechanism is deprecated, and is only supported to enable integration in environments where client credentials (ID and secret) cannot be used. You might need to use user accounts if your access management system does not support another approach or user accounts are required for authentication.
 
-Typical use for this is to create a special user account in your IAM solution (the authorization server) that represents your client application. Give it a long randomly generated password and a very limited set of permissions - for example, it is only allowed to connect to your Kafka cluster but not allowed to use any other services or do any kind of UI login.
+A typical approach is to create a special user account in your authorization server that represents your client application. You then give the account a long randomly generated password and a very limited set of permissions. For example, the account can only connect to your Kafka cluster, but is not allowed to use any other services or login to the user interface.
 
 Consider using a refresh token mechanism first.
 
@@ -71,7 +71,8 @@ The OAuth client will connect to the OAuth server, authenticate using the userna
 
 In the `passwordSecret` property, specify a link to a `Secret` containing the password.
 
-Normally, you also have to configure a `clientId` using a public OAuth client. If using a confidential OAuth client, you also have to configure a `clientSecret`.
+Normally, you also have to configure a `clientId` using a public OAuth client. 
+If you are using a confidential OAuth client, you also have to configure a `clientSecret`.
 
 .An example of OAuth client authentication using username and a password with a public client
 [source,yaml,subs=attributes+]

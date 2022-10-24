@@ -439,7 +439,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.enableMetrics = enableMetrics;
     }
 
-    @Description("Enable or disable if potentially recoverable runtime errors during startup should result in Kafka Broker process termination. Default value is true.")
+    @Description("Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean getFailFast() {
         return failFast;
