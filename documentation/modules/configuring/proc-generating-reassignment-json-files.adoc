@@ -80,32 +80,18 @@ spec:
       - resource:
           type: topic
           name: my-topic
-          patternType: literal
         operations:
           - Create
           - Describe
           - Read
-          - Write
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: AlterConfigs
+          - AlterConfigs
         host: "*"
       # access to the cluster
       - resource:
           type: cluster
-          name: my-cluster
-          patternType: literal
-        operation: AlterConfigs
-        host: "*"
-      - resource:
-          type: cluster
-          name: my-cluster
-          patternType: literal
         operations:
           - Alter
+          - AlterConfigs
         host: "*"
       # ...
   # ...
