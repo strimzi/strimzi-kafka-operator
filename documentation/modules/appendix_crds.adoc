@@ -225,7 +225,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |jwksExpirySeconds                  1.2+<.<a|Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
 |integer
-|jwksIgnoreKeyUse                   1.2+<.<a|Enable or disable whether the 'use' attribute of `key` declarations in JWKS endpoint response should be ignored. Default value is false.
+|jwksIgnoreKeyUse                   1.2+<.<a|Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
 |boolean
 |jwksMinRefreshPauseSeconds         1.2+<.<a|The minimum pause between two consecutive refreshes. When an unknown signing key is encountered the refresh is scheduled immediately, but will always wait for this minimum pause. Defaults to 1 second.
 |integer

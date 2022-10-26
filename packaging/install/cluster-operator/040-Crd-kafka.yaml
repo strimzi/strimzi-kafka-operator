@@ -173,7 +173,7 @@ spec:
                               description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
                             jwksIgnoreKeyUse:
                               type: boolean
-                              description: Enable or disable whether the 'use' attribute of `key` declarations in JWKS endpoint response should be ignored. Default value is false.
+                              description: Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
                             jwksMinRefreshPauseSeconds:
                               type: integer
                               minimum: 0
