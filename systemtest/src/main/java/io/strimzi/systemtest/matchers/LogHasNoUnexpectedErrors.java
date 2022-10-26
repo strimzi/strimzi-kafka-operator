@@ -80,7 +80,9 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
         WATCHER_CLOSED_EXCEPTION("ERROR AbstractOperator:.+ - Watcher closed with exception in namespace .*"),
         CONCURRENT_RESOURCE_DELETION("io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException"),
         RECOVERY_STS_DELETION("java\\.lang\\.IllegalStateException: Can't wait for StatefulSet: recovery-cluster-(kafka|zookeeper) in namespace: recovery-cluster-test to scale. Resource is no longer available."),
+
         // error that pods already exist when doing reconciliation of StrimziPodSets
+        // connected to https://github.com/strimzi/strimzi-kafka-operator/issues/7529 - remove this once the issue will be fixed
         RECONCILIATION_PODSET_ALREADY_EXISTS("ERROR StrimziPodSetController:[0-9]+ - Reconciliation.*[fF]ailed.*already exists.*");
 
         final String name;
