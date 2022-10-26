@@ -419,11 +419,13 @@ public class KafkaListenersReconciler {
             for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++) {
                 String brokerServiceName = ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener);
                 String brokerAddress = getInternalServiceHostname(reconciliation.namespace(), brokerServiceName, useServiceDnsDomain);
+                if (listener.isTls()) {
+                    result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
 
-                String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
-                if (userConfiguredAdvertisedHostname != null && listener.isTls()) {
-                    // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
-                    result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
+                    String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
+                    if (userConfiguredAdvertisedHostname != null) {
+                        result.brokerDnsNames.get(brokerId).add(userConfiguredAdvertisedHostname);
+                    }
                 }
 
                 registerAdvertisedHostname(brokerId, listener, brokerAddress);
