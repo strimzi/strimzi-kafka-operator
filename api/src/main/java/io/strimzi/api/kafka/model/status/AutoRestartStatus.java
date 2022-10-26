@@ -38,7 +38,7 @@ public class AutoRestartStatus implements UnknownPropertyPreserving, Serializabl
     private Map<String, Object> additionalProperties;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The number of time the element restarted.")
+    @Description("The number of times the element restarted.")
     public int getCount() {
         return count;
     }

@@ -1,12 +1,12 @@
 Connectors and tasks that are in the FAILED state are automatically restarted.
 
 A back-off algorithm is applied to automatic restarts of each connector and it's tasks.
-When a connector is failing an auto restart attempt will happen at first and second reconcile then attempts while be delayed
+When a connector is failing an auto restart attempt will happen at first and second reconcile then attempts will be delayed,
 incrementing the time between automatic restarts by 2 minutes up to a maximum of 30 minutes, at which point no further
 automatic restarts are attempted, and the connector or tasks are left in the FAILED state.
 
 
-If you are using a kafka version <3.0.0, only the connector will be restarted not failed tasks.
+If you are using a Kafka version <3.0.0, only the connector will be restarted not failed tasks.
 
 To disable the automatic restarting of the connector and it's tasks when they are in the FAILED state on a KafkaConnector resource:
 
