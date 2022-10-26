@@ -1834,7 +1834,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-cruise-control-.*\",container=\"cruise-control\"}) by (pod)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-cruise-control-.*\",container=\"cruise-control\"}) by (pod)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -1926,11 +1926,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(process_cpu_seconds_total{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-cruise-control-.*\",container=\"cruise-control\"}[5m])) by (kubernetes_pod_name)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-cruise-control-.*\",container=\"cruise-control\"}[5m])) by (pod)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "{{kubernetes_pod_name}}",
+          "legendFormat": "{{pod}}",
           "refId": "A"
         }
       ],

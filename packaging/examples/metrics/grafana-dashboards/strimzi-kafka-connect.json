@@ -430,11 +430,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(process_cpu_seconds_total{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_connect_cluster_name-connect-.+\",container=\"$strimzi_connect_cluster_name-connect\"}[5m])) by (kubernetes_pod_name)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_connect_cluster_name-connect-.+\",container=\"$strimzi_connect_cluster_name-connect\"}[5m])) by (pod)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
-          "legendFormat": "{{kubernetes_pod_name}}",
+          "legendFormat": "{{pod}}",
           "metric": "",
           "refId": "A",
           "step": 4
