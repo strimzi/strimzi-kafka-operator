@@ -271,8 +271,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].labels because it is not LoadBalancer, NodePort, Route, or Ingress based listener",
-                "listener " + name + " cannot configure ipFamilyPolicy because it is not internal listener",
-                "listener " + name + " cannot configure ipFamilies because it is not internal listener"
+                "listener " + name + " cannot configure ipFamilyPolicy because it is internal listener",
+                "listener " + name + " cannot configure ipFamilies because it is internal listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));

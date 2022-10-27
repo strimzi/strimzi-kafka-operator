@@ -222,7 +222,7 @@ public class ListenersValidator {
     private static void validateIpFamilyPolicy(Set<String> errors, GenericKafkaListener listener) {
         if (KafkaListenerType.INTERNAL == listener.getType()
                 && listener.getConfiguration().getIpFamilyPolicy() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure ipFamilyPolicy because it is not internal listener");
+            errors.add("listener " + listener.getName() + " cannot configure ipFamilyPolicy because it is internal listener");
         }
     }
 
@@ -235,7 +235,7 @@ public class ListenersValidator {
     private static void validateIpFamilies(Set<String> errors, GenericKafkaListener listener) {
         if (KafkaListenerType.INTERNAL == listener.getType()
                 && listener.getConfiguration().getIpFamilies() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure ipFamilies because it is not internal listener");
+            errors.add("listener " + listener.getName() + " cannot configure ipFamilies because it is internal listener");
         }
     }
 
