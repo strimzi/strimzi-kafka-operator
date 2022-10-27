@@ -502,4 +502,24 @@ public class KafkaUtils {
     private static String namespacedBootstrapAddress(String clusterName, String namespace, int port) {
         return KafkaResources.bootstrapServiceName(clusterName) + "." + namespace + ".svc:" + port;
     }
+
+
+    public static String bootstrapAddressFromStatus(String clusterName, String namespaceName, String listenerName) {
+
+        List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners();
+
+        if (listenerStatusList == null || listenerStatusList.size() < 1) {
+            LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
+            throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
+        } else if (listenerName == null) {
+            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status.");
+            return listenerStatusList.get(0).getBootstrapServers();
+        }
+
+        return listenerStatusList.stream().filter(listener -> listener.getName().equals(listenerName))
+                .findFirst()
+                .orElseThrow(RuntimeException::new)
+                .getBootstrapServers();
+    }
+
 }

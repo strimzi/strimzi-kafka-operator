@@ -47,6 +47,7 @@ docker-images/operator/tmp/**
 # Connect plugin (tests)
 systemtest/*.tar.gz
 systemtest/my-plugins/
+systemtest/scripts/results.json
 
 # MacOS Desktop Services Store files
 **/.DS_Store

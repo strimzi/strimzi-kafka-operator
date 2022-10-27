@@ -71,7 +71,7 @@ you can configure multiple listeners.
 === `type`
 
 The type is set as `internal`,
-or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
+or for external listeners, as `route`, `loadbalancer`, `nodeport`, `ingress` or `cluster-ip`.
 
 internal:: You can configure internal listeners with or without encryption using the `tls` property.
 +
@@ -213,8 +213,31 @@ spec:
           preferredNodePortAddressType: InternalDNS
     #...
 ----
-+
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
+
+cluster-ip:: Create a listener which uses per-broker `Services` instead of the headless Service.
++
+This listener type can be useful to expose the cluster outside of Kuebrnetes with some custom mechanisms such as TCP Ingress or other Ingress controllers etc
++
+A new clusterIP service is created for each Kafka broker pod.
+An additional clusterIP is created to serve as a Kafka _bootstrap_ address.
++
+.Example `cluster-ip` listener configuration
+[source,yaml,subs="+attributes"]
+----
+#...
+spec:
+  kafka:
+    #...
+    listeners:
+      - name: external-cluster-ip
+        type: cluster-ip
+        tls: false
+        port: 9096
+    #...
+
+----
+
 
 [id='property-listener-port-{context}']
 === `port`

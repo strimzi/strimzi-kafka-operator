@@ -15,6 +15,7 @@
 * ZookeeperRoller considers unready pods
 * Support multiple operations per ACLRule
 * Upgrade Vert.x to 4.3.4
+* Add `cluster-ip` listener. We can use it with a tcp port configuration in an ingress controller to expose kafka with an optional tls encryption and a single LoadBalancer.
 
 ### Changes, deprecations and removals
 

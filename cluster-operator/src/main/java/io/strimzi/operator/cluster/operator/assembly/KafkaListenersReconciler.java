@@ -128,6 +128,7 @@ public class KafkaListenersReconciler {
                 .compose(i -> nodePortServicesReady())
                 .compose(i -> routesReady())
                 .compose(i -> ingressesReady())
+                .compose(i -> clusterIPServicesReady())
                 .compose(i -> customListenerCertificates())
                 // This method should be called only after customListenerCertificates
                 .compose(customListenerCertificates -> addCertificatesToListenerStatuses(customListenerCertificates))
@@ -376,6 +377,55 @@ public class KafkaListenersReconciler {
                 if (userConfiguredAdvertisedHostname != null && listener.isTls()) {
                     // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
                     result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
+                }
+
+                registerAdvertisedHostname(brokerId, listener, brokerAddress);
+                registerAdvertisedPort(brokerId, listener, listener.getPort());
+            }
+        }
+
+        return Future.succeededFuture();
+    }
+
+    /**
+     * Collect all addresses of services related to clusterIP addresses for Statuses, certificates and advertised
+     * addresses. This method for all ClusterIP type listeners:
+     *      1) Collects the relevant addresses of bootstrap service and stores them for use in certificates
+     *      2) Collects the clusterIP addresses for certificates and advertised hostnames
+     *
+     * @return  Future which completes clusterIP service addresses are collected
+     */
+    protected Future<Void> clusterIPServicesReady()   {
+        for (GenericKafkaListener listener : ListenersUtils.clusterIPListeners(kafka.getListeners())) {
+            boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
+                    ? listener.getConfiguration().getUseServiceDnsDomain() : false;
+
+            String bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
+
+            if (listener.isTls()) {
+                result.bootstrapDnsNames.add(bootstrapAddress);
+            }
+
+            ListenerStatus ls = new ListenerStatusBuilder()
+                    .withName(listener.getName())
+                    .withAddresses(new ListenerAddressBuilder()
+                            .withHost(bootstrapAddress)
+                            .withPort(listener.getPort())
+                            .build())
+                    .build();
+            result.listenerStatuses.add(ls);
+
+            // Set advertised hostnames and ports
+            for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++) {
+                String brokerServiceName = ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener);
+                String brokerAddress = getInternalServiceHostname(reconciliation.namespace(), brokerServiceName, useServiceDnsDomain);
+                if (listener.isTls()) {
+                    result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
+
+                    String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
+                    if (userConfiguredAdvertisedHostname != null) {
+                        result.brokerDnsNames.get(brokerId).add(userConfiguredAdvertisedHostname);
+                    }
                 }
 
                 registerAdvertisedHostname(brokerId, listener, brokerAddress);

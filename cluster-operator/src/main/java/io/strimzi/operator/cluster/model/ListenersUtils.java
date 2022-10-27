@@ -143,6 +143,16 @@ public class ListenersUtils {
     }
 
     /**
+     * Returns list of all Ingress type listeners
+     *
+     * @param listeners List of all listeners
+     * @return          List of clusterIP listeners
+     */
+    public static List<GenericKafkaListener> clusterIPListeners(List<GenericKafkaListener> listeners)    {
+        return listenersByType(listeners, KafkaListenerType.CLUSTER_IP);
+    }
+
+    /**
      * Returns true if the list has a listener of given type and false otherwise.
      *
      * @param listeners List of all listeners
@@ -205,6 +215,16 @@ public class ListenersUtils {
      */
     public static boolean hasIngressListener(List<GenericKafkaListener> listeners)    {
         return hasListenerOfType(listeners, KafkaListenerType.INGRESS);
+    }
+
+    /**
+     * Checks whether we have at least one ClusterIP listener
+     *
+     * @param listeners List of all listeners
+     * @return          True if at least one ClusterIP listener exists. False otherwise.
+     */
+    public static boolean hasClusterIPListener(List<GenericKafkaListener> listeners)    {
+        return hasListenerOfType(listeners, KafkaListenerType.CLUSTER_IP);
     }
 
     /**
