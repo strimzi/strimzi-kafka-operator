@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -63,6 +64,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT;
+import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT_NAME;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -260,6 +263,22 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
 
         checkOwnerReference(zc.createOwnerReference(), headless);
+    }
+
+    @ParallelTest
+    public void testExposesJmxContainerPortWhenJmxEnabled() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editZookeeper()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder().build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        ContainerPort jmxContainerPort = zc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
+        List<Container> containers = zc.getContainers(ImagePullPolicy.IFNOTPRESENT);
+
+        assertThat(containers.get(0).getPorts().contains(jmxContainerPort), is(true));
     }
 
     @ParallelTest
