@@ -1,18 +1,25 @@
-## Strimzi backup
+## Cold backup
 
-Bash script for offline (_cold_) backups of Kafka clusters on Kubernetes or OpenShift. 
-The script only supports a local file system, and you need to make sure to have enough free disk space in the target directory.
+Bash script for running cold backups of test or development Kafka clusters deployed on Kubernetes.
 
-If you think you don't need a backup strategy for Kafka because of its embedded data replication, then consider the impact of a misconfiguration, bug, or security breach that deletes all of your data. 
-For online (_hot_) backups, you can use storage snapshotting or stream into object storage.
+The backup procedure will stop the cluster operator and selected cluster for the entire duration of the backup.
+Run the script as a Kubernetes user with permission to work with PVC and Strimzi custom resources.
+The script only supports local file system, and you need to make sure to have enough free disk space in the target directory.
 
-Run the script as a Kubernetes user with permission to work with PVC and Strimzi custom resources. 
+Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed.
+The restored cluster is actually the same Kafka cluster, because volumes contain the same Kafka cluster ID.
 
-The procedure will stop the Cluster Operator and selected cluster for the duration of the backup. 
-Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed. 
-If you have a single cluster-wide Cluster Operator, then you need to scale it down manually. 
-You can run backup and restore procedures for different Kafka clusters in parallel. 
-Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafka Bridge custom resources.
+If one or more ZooKeeper nodes are crash looping because there is no snapshot, you can apply the following patch to recover them.
+
+```sh
+kubectl patch k my-cluster --type merge -p '
+  spec:
+    zookeeper:
+      jvmOptions:
+        javaSystemProperties:
+          - name: zookeeper.snapshot.trust.empty
+            value: "true"'
+```
 
 ## Requirements
 
@@ -20,7 +27,6 @@ Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafk
 - tar 1.33+ (GNU)
 - kubectl 1.19+ (K8s CLI)
 - yq 4.6+ (YAML processor)
-- enough disk space
 
 ## Usage example
 

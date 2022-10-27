@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: $name
+  name: value0
 spec:
-  storageClassName: $class
+  storageClassName: value1
   accessModes:
   - ReadWriteOnce
   resources:
     requests:
-      storage: $size
+      storage: value2
