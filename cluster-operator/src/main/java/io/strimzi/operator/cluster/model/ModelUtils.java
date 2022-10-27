@@ -733,4 +733,29 @@ public class ModelUtils {
     public static int idOfPod(String podName)  {
         return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
     }
+
+    /**
+     * Generates all possible DNS names for a Kubernetes service:
+     *     - service-name
+     *     - service-name.namespace
+     *     - service-name.namespace.svc
+     *     - service-name.namespace.svc.dns.suffix
+     *
+     * @param namespace     Namespace of the service
+     * @param serviceName   Name of the service
+     *
+     * @return  List with all possible DNS names
+     */
+    public static List<String> generateAllServiceDnsNames(String namespace, String serviceName)    {
+        DnsNameGenerator kafkaDnsGenerator = DnsNameGenerator.of(namespace, serviceName);
+
+        List<String> dnsNames = new ArrayList<>(4);
+
+        dnsNames.add(serviceName);
+        dnsNames.add(String.format("%s.%s", serviceName, namespace));
+        dnsNames.add(kafkaDnsGenerator.serviceDnsNameWithoutClusterDomain());
+        dnsNames.add(kafkaDnsGenerator.serviceDnsName());
+
+        return dnsNames;
+    }
 }

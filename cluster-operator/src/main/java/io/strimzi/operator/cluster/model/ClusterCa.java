@@ -177,22 +177,14 @@ public class ClusterCa extends Ca {
 
     public Map<String, CertAndKey> generateBrokerCerts(String namespace, String cluster, int replicas, Set<String> externalBootstrapAddresses,
                                                        Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        DnsNameGenerator kafkaDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.bootstrapServiceName(cluster));
-        DnsNameGenerator kafkaHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.brokersServiceName(cluster));
-
         Function<Integer, Subject> subjectFn = i -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
                     .withCommonName(KafkaResources.kafkaStatefulSetName(cluster));
 
-            subject.addDnsName(KafkaResources.bootstrapServiceName(cluster));
-            subject.addDnsName(String.format("%s.%s", KafkaResources.bootstrapServiceName(cluster), namespace));
-            subject.addDnsName(kafkaDnsGenerator.serviceDnsNameWithoutClusterDomain());
-            subject.addDnsName(kafkaDnsGenerator.serviceDnsName());
-            subject.addDnsName(KafkaResources.brokersServiceName(cluster));
-            subject.addDnsName(String.format("%s.%s", KafkaResources.brokersServiceName(cluster), namespace));
-            subject.addDnsName(kafkaHeadlessDnsGenerator.serviceDnsNameWithoutClusterDomain());
-            subject.addDnsName(kafkaHeadlessDnsGenerator.serviceDnsName());
+            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(cluster)));
+            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(cluster)));
+
             subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), KafkaResources.kafkaPodName(cluster, i)));
             subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), KafkaResources.kafkaPodName(cluster, i)));
 

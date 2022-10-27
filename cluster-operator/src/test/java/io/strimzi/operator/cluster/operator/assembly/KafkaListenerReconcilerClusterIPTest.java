@@ -200,8 +200,8 @@ public class KafkaListenerReconcilerClusterIPTest {
                     assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
                     //check hostnames
-                    assertThat(res.bootstrapDnsNames.size(), is(1));
-                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap.test.svc"));
+                    assertThat(res.bootstrapDnsNames.size(), is(4));
+                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
                     Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(s -> s.stream()).collect(Collectors.toSet());
                     assertThat(allBrokersDnsNames.size(), is(3));
                     assertThat(allBrokersDnsNames, hasItems("my-kafka-kafka-1.test.svc", "my-kafka-kafka-2.test.svc", "my-kafka-kafka-0.test.svc"));
@@ -300,8 +300,8 @@ public class KafkaListenerReconcilerClusterIPTest {
                     assertThat(listenerStatus.getAddresses().get(0).getPort(), is(LISTENER_PORT));
 
                     //check hostnames
-                    assertThat(res.bootstrapDnsNames.size(), is(1));
-                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap.test.svc"));
+                    assertThat(res.bootstrapDnsNames.size(), is(4));
+                    assertThat(res.bootstrapDnsNames, hasItems("my-kafka-kafka-external-bootstrap", "my-kafka-kafka-external-bootstrap.test", "my-kafka-kafka-external-bootstrap.test.svc", "my-kafka-kafka-external-bootstrap.test.svc.cluster.local"));
                     Set<String> allBrokersDnsNames = res.brokerDnsNames.values().stream().flatMap(s -> s.stream()).collect(Collectors.toSet());
                     assertThat(allBrokersDnsNames.size(), is(6));
                     assertThat(allBrokersDnsNames, hasItems("my-address-0", "my-address-1", "my-address-2", "my-kafka-kafka-1.test.svc", "my-kafka-kafka-2.test.svc", "my-kafka-kafka-0.test.svc"));

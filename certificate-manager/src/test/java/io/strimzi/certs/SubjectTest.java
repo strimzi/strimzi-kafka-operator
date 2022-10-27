@@ -4,6 +4,7 @@
  */
 package io.strimzi.certs;
 
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,6 +40,7 @@ public class SubjectTest {
                 .withOrganizationName("MyOrg")
                 .addDnsName("example.com")
                 .addDnsName("example.org")
+                .addDnsNames(List.of("example.cz", "example.co.uk"))
                 .addIpAddress("123.123.123.123")
                 .addIpAddress("127.0.0.1")
                 .build();
@@ -46,7 +48,9 @@ public class SubjectTest {
                 "IP.0", "123.123.123.123",
                 "IP.1", "127.0.0.1",
                 "DNS.0", "example.org",
-                "DNS.1", "example.com"),
+                "DNS.1", "example.co.uk",
+                "DNS.2", "example.com",
+                "DNS.3", "example.cz"),
                 subject.subjectAltNames());
     }
 
