@@ -48,6 +48,8 @@ import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.x509.GeneralName;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -680,7 +682,13 @@ public class ListenersST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
+        final SystemTestCertAndKey root1 = generateRootCaCertAndKey();
+        final SystemTestCertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
+        final SystemTestCertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1, this.retrieveKafkaBrokerSANs(testStorage));
+
+        final CertAndKeyFiles strimziCertAndKey1 = exportToPemFiles(strimzi1);
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editSpec()
@@ -765,8 +773,15 @@ public class ListenersST extends AbstractST {
         final String clusterCustomCertChain1 = testStorage.getClusterName() + "-" + customCertChain1;
         final String clusterCustomRootCA1 = testStorage.getClusterName() + "-" + customRootCA1;
 
-        SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), CHAIN_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), ROOT_CA_CERT_AND_KEY_1);
+        final SystemTestCertAndKey root1 = generateRootCaCertAndKey();
+        final SystemTestCertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
+        final SystemTestCertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1, this.retrieveKafkaBrokerSANs(testStorage));
+
+        final CertAndKeyFiles rootCertAndKey1 = exportToPemFiles(root1);
+        final CertAndKeyFiles chainCertAndKey1 = exportToPemFiles(strimzi1, intermediate1, root1);
+
+        SecretUtils.createCustomSecret(clusterCustomCertChain1, testStorage.getClusterName(), testStorage.getNamespaceName(), chainCertAndKey1);
+        SecretUtils.createCustomSecret(clusterCustomRootCA1, testStorage.getClusterName(), testStorage.getNamespaceName(), rootCertAndKey1);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
@@ -1451,8 +1466,20 @@ public class ListenersST extends AbstractST {
         final String clusterCustomCertServer1 = testStorage.getClusterName() + "-" + customCertServer1;
         final String clusterCustomCertServer2 = testStorage.getClusterName() + "-" + customCertServer2;
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_2);
+        final SystemTestCertAndKey root1 = generateRootCaCertAndKey();
+        final SystemTestCertAndKey intermediate1 = generateIntermediateCaCertAndKey(root1);
+        final SystemTestCertAndKey strimzi1 = generateEndEntityCertAndKey(intermediate1, this.retrieveKafkaBrokerSANs(testStorage));
+
+        final CertAndKeyFiles strimziCertAndKey1 = exportToPemFiles(strimzi1);
+
+        final SystemTestCertAndKey root2 = generateRootCaCertAndKey();
+        final SystemTestCertAndKey intermediate2 = generateIntermediateCaCertAndKey(root2);
+        final SystemTestCertAndKey strimzi2 = generateEndEntityCertAndKey(intermediate2, this.retrieveKafkaBrokerSANs(testStorage));
+
+        final CertAndKeyFiles strimziCertAndKey2 = exportToPemFiles(strimzi2);
+
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editSpec()
@@ -2241,5 +2268,15 @@ public class ListenersST extends AbstractST {
     void afterEach(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+    }
+
+    private ASN1Encodable[] retrieveKafkaBrokerSANs(final TestStorage testStorage) {
+        return new ASN1Encodable[] {
+            new GeneralName(GeneralName.dNSName, "*.127.0.0.1.nip.io"),
+            new GeneralName(GeneralName.dNSName, "*." + testStorage.getClusterName() + "-kafka-brokers"),
+            new GeneralName(GeneralName.dNSName, "*." + testStorage.getClusterName() + "-kafka-brokers." + testStorage.getNamespaceName() + ".svc"),
+            new GeneralName(GeneralName.dNSName, testStorage.getClusterName() + "-kafka-bootstrap"),
+            new GeneralName(GeneralName.dNSName, testStorage.getClusterName() + "-kafka-bootstrap." + testStorage.getNamespaceName() + ".svc")
+        };
     }
 }
