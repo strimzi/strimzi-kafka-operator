@@ -12,7 +12,7 @@ else
 endif
 
 release:
-	$(SED) -Ei -e "s#strimzi.io/docs/operators/[^/]+/using.html#strimzi.io/docs/operators/$(DOC_TAG)/using.html#" security/keycloak-authorization/README.md
+	$(SED) -Ei -e "s#strimzi.io/docs/operators/[^/]+/configuring.html#strimzi.io/docs/operators/$(DOC_TAG)/configuring.html#" security/keycloak-authorization/README.md
 	mkdir -p $(RELEASE_PATH)
 	$(CP) -r $$(ls | $(GREP) -Ev '^Makefile$$') $(RELEASE_PATH)/
 
