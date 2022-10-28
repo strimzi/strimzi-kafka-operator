@@ -456,10 +456,11 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
+
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        ContainerPort jmxContainerPort = kc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
         List<Container> containers = kc.getContainers(ImagePullPolicy.IFNOTPRESENT);
 
+        ContainerPort jmxContainerPort = kc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
         assertThat(containers.get(0).getPorts().contains(jmxContainerPort), is(true));
     }
 

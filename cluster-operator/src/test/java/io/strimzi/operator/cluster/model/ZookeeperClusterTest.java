@@ -274,10 +274,11 @@ public class ZookeeperClusterTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
+
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        ContainerPort jmxContainerPort = zc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
         List<Container> containers = zc.getContainers(ImagePullPolicy.IFNOTPRESENT);
 
+        ContainerPort jmxContainerPort = zc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
         assertThat(containers.get(0).getPorts().contains(jmxContainerPort), is(true));
     }
 
