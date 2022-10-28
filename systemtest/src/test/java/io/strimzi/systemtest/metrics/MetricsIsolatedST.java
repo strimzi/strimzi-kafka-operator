@@ -432,7 +432,8 @@ public class MetricsIsolatedST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
-    @Disabled("Started to fail on the system_cpu_count metric check which is different depending on the environment")
+    @Disabled("Started to fail on the system_cpu_count metric check which is different depending on the environment. " +
+            "Test has to be re-enabled as per https://github.com/strimzi/strimzi-kafka-operator/issues/7544")
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
