@@ -8,6 +8,7 @@ import javax.security.auth.x500.X500Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -31,18 +32,44 @@ public class Subject {
             this.commonName = commonName;
             return this;
         }
+
         public Builder withOrganizationName(String organizationName) {
             this.organizationName = organizationName;
             return this;
         }
+
+        /**
+         * Adds the name to the certificate subject as SAN. This creates a list with one item and delegates to the
+         * addDnsNames method.
+         *
+         * @param dnsName   DNS name
+         *
+         * @return  Instance of this builder
+         */
         public Builder addDnsName(String dnsName) {
-            if (!IpAndDnsValidation.isValidDnsNameOrWildcard(dnsName)) {
-                throw new IllegalArgumentException("Invalid DNS name: " + dnsName);
-            }
+            return addDnsNames(List.of(dnsName));
+        }
+
+        /**
+         * Adds one or more DNS names which will be used in the certificate subject for the SANs
+         *
+         * @param newDnsNames   List of DNS names
+         *
+         * @return  Instance of this builder
+         */
+        public Builder addDnsNames(List<String> newDnsNames)  {
             if (dnsNames == null) {
                 dnsNames = new HashSet<>();
             }
-            dnsNames.add(dnsName);
+
+            for (String newDnsName : newDnsNames)   {
+                if (!IpAndDnsValidation.isValidDnsNameOrWildcard(newDnsName)) {
+                    throw new IllegalArgumentException("Invalid DNS name: " + newDnsName);
+                }
+
+                dnsNames.add(newDnsName);
+            }
+
             return this;
         }
 

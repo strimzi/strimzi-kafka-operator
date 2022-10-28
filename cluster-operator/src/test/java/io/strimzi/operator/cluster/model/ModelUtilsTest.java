@@ -65,6 +65,7 @@ import static io.strimzi.operator.common.Util.parseMap;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -719,6 +720,14 @@ public class ModelUtilsTest {
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("70"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
+    }
+
+    @ParallelTest
+    public void testServiceDnsNames() {
+        List<String> dnsNames = ModelUtils.generateAllServiceDnsNames("my-namespace", "my-service");
+
+        assertThat(dnsNames.size(), is(4));
+        assertThat(dnsNames, hasItems("my-service", "my-service.my-namespace", "my-service.my-namespace.svc", "my-service.my-namespace.svc.cluster.local"));
     }
 
     /**

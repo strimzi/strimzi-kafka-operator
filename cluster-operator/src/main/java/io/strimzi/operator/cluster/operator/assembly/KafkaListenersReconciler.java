@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ListenersUtils;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -403,7 +404,8 @@ public class KafkaListenersReconciler {
             String bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
 
             if (listener.isTls()) {
-                result.bootstrapDnsNames.add(bootstrapAddress);
+                ModelUtils.generateAllServiceDnsNames(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener))
+                                .forEach(dnsName -> result.bootstrapDnsNames.add(dnsName));
             }
 
             ListenerStatus ls = new ListenerStatusBuilder()
