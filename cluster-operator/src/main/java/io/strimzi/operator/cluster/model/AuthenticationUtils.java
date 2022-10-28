@@ -79,10 +79,11 @@ public class AuthenticationUtils {
         boolean accessTokenCase = auth.getAccessToken() != null;
         boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
         boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;
+        boolean passwordGrantCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getUsername() != null && auth.getPasswordSecret() != null;
 
         // If not one of valid cases throw exception
-        if (!(accessTokenCase || refreshTokenCase || clientSecretCase)) {
-            throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret].");
+        if (!(accessTokenCase || refreshTokenCase || clientSecretCase || passwordGrantCase)) {
+            throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret], [tokenEndpointUri, username, password, clientId].");
         }
 
         // Additional validation
@@ -145,6 +146,9 @@ public class AuthenticationUtils {
                     }
                     if (oauth.getRefreshToken() != null) {
                         addNewVolume(volumeList, volumeNamePrefix, oauth.getRefreshToken().getSecretName(), isOpenShift);
+                    }
+                    if (oauth.getPasswordSecret() != null) {
+                        addNewVolume(volumeList, volumeNamePrefix, oauth.getPasswordSecret().getSecretName(), isOpenShift);
                     }
                 }
             }
@@ -217,6 +221,9 @@ public class AuthenticationUtils {
                     if (oauth.getRefreshToken() != null) {
                         volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getRefreshToken().getSecretName(), oauthSecretsVolumeMount + oauth.getRefreshToken().getSecretName()));
                     }
+                    if (oauth.getPasswordSecret() != null) {
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + oauth.getPasswordSecret().getSecretName(), oauthSecretsVolumeMount + oauth.getPasswordSecret().getSecretName()));
+                    }
                 }
             }
         }
@@ -249,6 +256,9 @@ public class AuthenticationUtils {
 
                 if (oauth.getRefreshToken() != null)    {
                     varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_REFRESH_TOKEN"), oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()));
+                }
+                if (oauth.getPasswordSecret() != null)    {
+                    varList.add(AbstractModel.buildEnvVarFromSecret(envVarNamer.apply("OAUTH_PASSWORD_GRANT_PASSWORD"), oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()));
                 }
             }
         }
@@ -284,6 +294,7 @@ public class AuthenticationUtils {
 
                 List<String> options = new ArrayList<>(2);
                 if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
+                if (oauth.getUsername() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername()));
                 if (oauth.getTokenEndpointUri() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri()));
                 if (oauth.getScope() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_SCOPE, oauth.getScope()));
                 if (oauth.getAudience() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_AUDIENCE, oauth.getAudience()));
@@ -292,6 +303,7 @@ public class AuthenticationUtils {
                 if (oauth.getMaxTokenExpirySeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds()));
                 if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds()));
                 if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0)  options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds()));
+                if (oauth.isEnableMetrics()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
 
                 properties.put(OAUTH_CONFIG, String.join(" ", options));
             }

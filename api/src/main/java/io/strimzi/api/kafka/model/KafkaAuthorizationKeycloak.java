@@ -25,7 +25,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
-    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers", "connectTimeoutSeconds", "readTimeoutSeconds"})
+    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers",
+    "connectTimeoutSeconds", "readTimeoutSeconds", "enableMetrics"})
 @EqualsAndHashCode
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -44,6 +45,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private Integer connectTimeoutSeconds;
     private Integer readTimeoutSeconds;
     private List<String> superUsers;
+    private boolean enableMetrics = false;
 
     @Description("Must be `" + TYPE_KEYCLOAK + "`")
     @Override
@@ -167,5 +169,15 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
         this.readTimeoutSeconds = readTimeoutSeconds;
+    }
+
+    @Description("Enable or disable OAuth metrics. Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnableMetrics() {
+        return enableMetrics;
+    }
+
+    public void setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
     }
 }

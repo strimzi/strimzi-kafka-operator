@@ -67,8 +67,8 @@ bin/kafka-console-consumer.sh --topic my-topic --group my-group-1 --from-beginni
 
 .Produce messages to a topic using an idempotent producer
 
-As well as the permissions for producing to a topic, an additional `IdempotentWrite` permission is required on the 
-`Cluster` resource.
+As well as the permissions for producing to a topic, an additional `IdempotentWrite` permission is required on the
+`Cluster:kafka-cluster` resource.
 
 Two `resources` are needed for matching. For example:
 

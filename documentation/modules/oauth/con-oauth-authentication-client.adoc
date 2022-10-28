@@ -24,4 +24,5 @@ If the Kafka client is not configured with an access token directly, the client 
 The Kafka client exchanges either:
 
 * Client ID and Secret
-* Client ID, refresh token, and (optionally) a Secret
+* Client ID, refresh token, and (optionally) a secret
+* Username and password, with client ID and (optionally) a secret

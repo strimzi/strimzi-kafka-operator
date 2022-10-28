@@ -454,6 +454,7 @@ public class KafkaBrokerConfigurationBuilder {
             KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) auth;
             List<String> options = new ArrayList<>();
             options.addAll(getOAuthOptions(oauth));
+            options.add("oauth.config.id=\"" + listenerName + "\"");
 
             if (oauth.getClientSecret() != null)    {
                 options.add(String.format("oauth.client.secret=\"" + PLACEHOLDER_OAUTH_CLIENT_SECRET + "\"", listenerNameInEnvVar));
@@ -552,6 +553,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
             addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
         }
+        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, oauth.getJwksIgnoreKeyUse());
         addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
         addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
@@ -573,6 +575,10 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
         }
+
+        addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
+
         return options;
     }
 
@@ -671,6 +677,9 @@ public class KafkaBrokerConfigurationBuilder {
             addOption(writer, "strimzi.authorization.grants.refresh.pool.size", keycloakAuthz.getGrantsRefreshPoolSize());
             addOption(writer, "strimzi.authorization.connect.timeout.seconds", keycloakAuthz.getConnectTimeoutSeconds());
             addOption(writer, "strimzi.authorization.read.timeout.seconds", keycloakAuthz.getReadTimeoutSeconds());
+            if (keycloakAuthz.isEnableMetrics()) {
+                writer.println("strimzi.authorization.enable.metrics=true");
+            }
             writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {

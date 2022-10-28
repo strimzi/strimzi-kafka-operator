@@ -5,6 +5,7 @@ OAuth authentication can be configured using one of the following options:
 * Client ID and secret
 * Client ID and refresh token
 * Access token
+* Username and password
 * TLS
 
 .Client ID and secret
@@ -57,6 +58,52 @@ authentication:
     secretName: my-access-token-secret
     key: access-token
 ----
+
+.Username and password
+OAuth username and password configuration uses the OAuth _Resource Owner Password Grant_ mechanism. The mechanism is deprecated, and is only supported to enable integration in environments where client credentials (ID and secret) cannot be used. You might need to use user accounts if your access management system does not support another approach or user accounts are required for authentication.
+
+A typical approach is to create a special user account in your authorization server that represents your client application. You then give the account a long randomly generated password and a very limited set of permissions. For example, the account can only connect to your Kafka cluster, but is not allowed to use any other services or login to the user interface.
+
+Consider using a refresh token mechanism first.
+
+You can configure the address of your authorization server in the `tokenEndpointUri` property together with the client ID, username and the password used in authentication.
+The OAuth client will connect to the OAuth server, authenticate using the username, the password, the client ID, and optionally even the client secret to obtain an access token which it will use to authenticate with the Kafka broker.
+
+In the `passwordSecret` property, specify a link to a `Secret` containing the password.
+
+Normally, you also have to configure a `clientId` using a public OAuth client. 
+If you are using a confidential OAuth client, you also have to configure a `clientSecret`.
+
+.An example of OAuth client authentication using username and a password with a public client
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: oauth
+  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  username: my-username
+  passwordSecret:
+    secretName: my-password-secret-name
+    password: my-password-field-name
+  clientId: my-public-client-id
+----
+
+.An example of OAuth client authentication using a username and a password with a confidential client
+[source,yaml,subs=attributes+]
+----
+authentication:
+  type: oauth
+  tokenEndpointUri: https://sso.myproject.svc:8443/auth/realms/internal/protocol/openid-connect/token
+  username: my-username
+  passwordSecret:
+    secretName: my-password-secret-name
+    password: my-password-field-name
+  clientId: my-confidential-client-id
+  clientSecret:
+    secretName: my-confidential-client-oauth-secret
+    key: client-secret
+----
+
+Optionally, `scope` and `audience` can be specified if needed.
 
 .TLS
 Accessing the OAuth server using the HTTPS protocol does not require any additional configuration as long as the TLS certificates used by it are signed by a trusted certification authority and its hostname is listed in the certificate.

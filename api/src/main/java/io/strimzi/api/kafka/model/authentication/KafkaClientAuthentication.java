@@ -36,7 +36,7 @@ public abstract class KafkaClientAuthentication implements UnknownPropertyPreser
     private Map<String, Object> additionalProperties;
 
     @Description("Authentication type. " +
-            "Currently the only supported types are `tls`, `scram-sha-256`, `scram-sha-512`, and `plain`. " +
+            "Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and 'oauth'. " +
             "`scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. " +
             "`plain` type uses SASL PLAIN Authentication. " +
             "`oauth` type uses SASL OAUTHBEARER Authentication. " +
