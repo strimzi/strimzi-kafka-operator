@@ -567,6 +567,10 @@ public class ZookeeperCluster extends AbstractModel {
             portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
+        if (isJmxEnabled) {
+            portList.add(createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP"));
+        }
+
         return portList;
     }
 

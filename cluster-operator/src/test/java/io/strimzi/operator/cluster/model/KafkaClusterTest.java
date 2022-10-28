@@ -94,6 +94,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT;
+import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT_NAME;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -443,6 +445,23 @@ public class KafkaClusterTest {
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
 
         checkOwnerReference(kc.createOwnerReference(), headless);
+    }
+
+    @ParallelTest
+    public void testExposesJmxContainerPortWhenJmxEnabled() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder().build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        List<Container> containers = kc.getContainers(ImagePullPolicy.IFNOTPRESENT);
+
+        ContainerPort jmxContainerPort = kc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
+        assertThat(containers.get(0).getPorts().contains(jmxContainerPort), is(true));
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})

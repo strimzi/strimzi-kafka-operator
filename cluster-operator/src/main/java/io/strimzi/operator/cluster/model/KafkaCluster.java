@@ -1321,6 +1321,10 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
         }
 
+        if (isJmxEnabled) {
+            ports.add(createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP"));
+        }
+
         return ports;
     }
 
