@@ -60,6 +60,7 @@ import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -431,6 +432,7 @@ public class MetricsIsolatedST extends AbstractST {
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
+    @Disabled("Started to fail on the system_cpu_count metric check which is different depending on the environment")
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
