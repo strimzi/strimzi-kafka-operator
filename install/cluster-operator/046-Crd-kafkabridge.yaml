@@ -140,6 +140,9 @@ spec:
                   disableTlsHostnameVerification:
                     type: boolean
                     description: Enable or disable TLS hostname verification. Default value is `false`.
+                  enableMetrics:
+                    type: boolean
+                    description: Enable or disable OAuth metrics. Default value is `false`.
                   maxTokenExpirySeconds:
                     type: integer
                     description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
@@ -201,7 +204,7 @@ spec:
                     - scram-sha-512
                     - plain
                     - oauth
-                    description: "Authentication type. Currently the only supported types are `tls`, `scram-sha-256`, `scram-sha-512`, and `plain`. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
+                    description: "Authentication type. Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and 'oauth'. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
                   username:
                     type: string
                     description: Username used for the authentication.
@@ -328,6 +331,19 @@ spec:
                 required:
                 - type
                 description: Logging configuration for Kafka Bridge.
+              clientRackInitImage:
+                type: string
+                description: The image of the init container used for initializing the `client.rack`.
+              rack:
+                type: object
+                properties:
+                  topologyKey:
+                    type: string
+                    example: topology.kubernetes.io/zone
+                    description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0."
+                required:
+                - topologyKey
+                description: Configuration of the node label which will be used as the client.rack consumer configuration.
               enableMetrics:
                 type: boolean
                 description: Enable the metrics for the Kafka Bridge. Default is false.
@@ -841,10 +857,18 @@ spec:
                                 matchLabels:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             maxSkew:
                               type: integer
                             minDomains:
                               type: integer
+                            nodeAffinityPolicy:
+                              type: string
+                            nodeTaintsPolicy:
+                              type: string
                             topologyKey:
                               type: string
                             whenUnsatisfiable:
@@ -992,6 +1016,80 @@ spec:
                             description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Bridge service account.
+                  initContainer:
+                    type: object
+                    properties:
+                      env:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: The environment variable key.
+                            value:
+                              type: string
+                              description: The environment variable value.
+                        description: Environment variables which should be applied to the container.
+                      securityContext:
+                        type: object
+                        properties:
+                          allowPrivilegeEscalation:
+                            type: boolean
+                          capabilities:
+                            type: object
+                            properties:
+                              add:
+                                type: array
+                                items:
+                                  type: string
+                              drop:
+                                type: array
+                                items:
+                                  type: string
+                          privileged:
+                            type: boolean
+                          procMount:
+                            type: string
+                          readOnlyRootFilesystem:
+                            type: boolean
+                          runAsGroup:
+                            type: integer
+                          runAsNonRoot:
+                            type: boolean
+                          runAsUser:
+                            type: integer
+                          seLinuxOptions:
+                            type: object
+                            properties:
+                              level:
+                                type: string
+                              role:
+                                type: string
+                              type:
+                                type: string
+                              user:
+                                type: string
+                          seccompProfile:
+                            type: object
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                          windowsOptions:
+                            type: object
+                            properties:
+                              gmsaCredentialSpec:
+                                type: string
+                              gmsaCredentialSpecName:
+                                type: string
+                              hostProcess:
+                                type: boolean
+                              runAsUserName:
+                                type: string
+                        description: Security context for the container.
+                    description: Template for the Kafka Bridge init container.
                 description: Template for Kafka Bridge resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
               tracing:
                 type: object
@@ -1000,7 +1098,8 @@ spec:
                     type: string
                     enum:
                     - jaeger
-                    description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing. The Jaeger tracing is deprecated.
+                    - opentelemetry
+                    description: Type of the tracing used. Currently the only supported types are `jaeger` for OpenTracing (Jaeger) tracing and `opentelemetry` for OpenTelemetry tracing. The OpenTracing (Jaeger) tracing is deprecated.
                 required:
                 - type
                 description: The configuration of tracing in Kafka Bridge.

@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.31.1
+defaultImageTag: 0.32.0
 
 image:
   registry: ""
@@ -94,7 +94,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.22.1
+    tag: 0.22.3
 kafkaExporter:
   image:
     registry: ""
@@ -146,6 +146,9 @@ readinessProbe:
   periodSeconds: 30
 
 createGlobalResources: true
+# Create clusterroles that extend existing clusterroles to interact with strimzi crds
+# Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
+createAggregateRoles: false
 # Override the exclude pattern for exclude some labels
 labelsExclusionPattern: ""
 # Controls whether Strimzi generates network policy resources (By default true)

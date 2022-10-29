@@ -84,7 +84,8 @@ spec:
                           - loadbalancer
                           - nodeport
                           - ingress
-                          description: "Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.\n"
+                          - cluster-ip
+                          description: "Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrought.\n* `cluster-ip` type uses ClusterIP service with per broker port number. Can be exposed over Nginx Ingress Controller with tcp port config.\n"
                         tls:
                           type: boolean
                           description: Enables TLS encryption on the listener. This is a required property.
@@ -137,12 +138,18 @@ spec:
                             enableECDSA:
                               type: boolean
                               description: Enable or disable ECDSA support by installing BouncyCastle crypto provider. ECDSA support is always enabled. The BouncyCastle libraries are no longer packaged with Strimzi. Value is ignored.
+                            enableMetrics:
+                              type: boolean
+                              description: Enable or disable OAuth metrics. Default value is `false`.
                             enableOauthBearer:
                               type: boolean
                               description: Enable or disable OAuth authentication over SASL_OAUTHBEARER. Default value is `true`.
                             enablePlain:
                               type: boolean
                               description: Enable or disable OAuth authentication over SASL_PLAIN. There is no re-authentication support when this mechanism is used. Default value is `false`.
+                            failFast:
+                              type: boolean
+                              description: Enable or disable termination of Kafka broker processes due to potentially recoverable runtime errors during startup. Default value is `true`.
                             fallbackUserNameClaim:
                               type: string
                               description: The fallback username claim to be used for the user id if the claim specified by `userNameClaim` is not present. This is useful when `client_credentials` authentication only results in the client id being provided in another claim. It only takes effect if `userNameClaim` is set.
@@ -165,6 +172,9 @@ spec:
                               type: integer
                               minimum: 1
                               description: Configures how often are the JWKS certificates considered valid. The expiry interval has to be at least 60 seconds longer then the refresh interval specified in `jwksRefreshSeconds`. Defaults to 360 seconds.
+                            jwksIgnoreKeyUse:
+                              type: boolean
+                              description: Flag to ignore the 'use' attribute of `key` declarations in a JWKS endpoint response. Default value is `false`.
                             jwksMinRefreshPauseSeconds:
                               type: integer
                               minimum: 0
@@ -567,7 +577,7 @@ spec:
                         description: Enable or disable TLS hostname verification. Default value is `false`.
                       enableMetrics:
                         type: boolean
-                        description: Defines whether the Open Policy Agent authorizer plugin should provide metrics. Defaults to `false`.
+                        description: Enable or disable OAuth metrics. Default value is `false`.
                       expireAfterMs:
                         type: integer
                         description: The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
@@ -1265,10 +1275,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -2384,10 +2402,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -3460,10 +3486,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -4416,10 +4450,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -5250,10 +5292,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
@@ -5839,10 +5889,18 @@ spec:
                                     matchLabels:
                                       x-kubernetes-preserve-unknown-fields: true
                                       type: object
+                                matchLabelKeys:
+                                  type: array
+                                  items:
+                                    type: string
                                 maxSkew:
                                   type: integer
                                 minDomains:
                                   type: integer
+                                nodeAffinityPolicy:
+                                  type: string
+                                nodeTaintsPolicy:
+                                  type: string
                                 topologyKey:
                                   type: string
                                 whenUnsatisfiable:
