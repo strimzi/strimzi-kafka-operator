@@ -2,24 +2,12 @@
 
 Bash script for running cold backups of test or development Kafka clusters deployed on Kubernetes.
 
-The backup procedure will stop the cluster operator and selected cluster for the entire duration of the backup.
+The script will pause the reconciliation and stop the selected cluster for the entire backup duration.
 Run the script as a Kubernetes user with permission to work with PVC and Strimzi custom resources.
 The script only supports local file system, and you need to make sure to have enough free disk space in the target directory.
 
 Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed.
 The restored cluster is actually the same Kafka cluster, because volumes contain the same Kafka cluster ID.
-
-If one or more ZooKeeper nodes are crash looping because there is no snapshot, you can apply the following patch to recover them.
-
-```sh
-kubectl patch k my-cluster --type merge -p '
-  spec:
-    zookeeper:
-      jvmOptions:
-        javaSystemProperties:
-          - name: zookeeper.snapshot.trust.empty
-            value: "true"'
-```
 
 ## Requirements
 

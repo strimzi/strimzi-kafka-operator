@@ -39,6 +39,8 @@ check_kube_conn() {
   kubectl version -o yaml --request-timeout=5s 1>/dev/null
 }
 
+# This function can be used to wait for some resource condition in a specific namespace.
+# Here you can find some examples on how to use it:
 # wait_for "condition=Ready" "kafkas.kafka.strimzi.io/my-cluster" "my-namespace"
 # wait_for "condition=Ready" "pod -l strimzi.io/kind=cluster-operator" "my-namespace"
 # wait_for "delete" "kafkas.kafka.strimzi.io/my-cluster" "my-namespace"
