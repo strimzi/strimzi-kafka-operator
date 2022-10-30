@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.33.0
+
+* n/a
+
 ## 0.32.0
 
 * Add support for Kafka 3.3.1 and remove support for Kafka 3.1.0, 3.1.1, and 3.1.2
@@ -16,6 +20,7 @@
 * Support multiple operations per ACLRule
 * Upgrade Vert.x to 4.3.4
 * Add `cluster-ip` listener. We can use it with a tcp port configuration in an ingress controller to expose kafka with an optional tls encryption and a single LoadBalancer.
+* Update Strimzi OAuth library to 0.11.0
 
 ### Changes, deprecations and removals
 
