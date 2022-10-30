@@ -583,6 +583,7 @@ public class TracingST extends AbstractST {
             .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
             .withJaegerServerAgentName(JAEGER_AGENT_NAME)
+            .withOpenTracing()
             .build();
 
         testStorage.addToTestStorage(Constants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClient);
