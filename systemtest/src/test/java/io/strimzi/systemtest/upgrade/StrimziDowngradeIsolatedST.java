@@ -64,12 +64,12 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(clusterName);
-        checkAllImages(downgradeData);
+        PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
+        checkAllImages(downgradeData, clusterOperator.getDeploymentNamespace());
         // Verify upgrade
         verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
-        assertNoCoErrorsLogged(0);
+        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @BeforeEach

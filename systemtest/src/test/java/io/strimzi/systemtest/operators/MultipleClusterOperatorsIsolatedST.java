@@ -156,7 +156,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(producerName, DEFAULT_NAMESPACE, MESSAGE_COUNT);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(DEFAULT_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
     }
 
     @IsolatedTest

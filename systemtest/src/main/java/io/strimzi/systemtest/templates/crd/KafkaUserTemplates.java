@@ -7,11 +7,15 @@ package io.strimzi.systemtest.templates.crd;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.storage.TestStorage;
 
 public class KafkaUserTemplates {
 
     private KafkaUserTemplates() {}
+
+    public static KafkaUserBuilder tlsUser(TestStorage testStorage) {
+        return tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUserName());
+    }
 
     public static KafkaUserBuilder tlsUser(String namespaceName, String clusterName, String name) {
         return defaultUser(namespaceName, clusterName, name)
@@ -21,8 +25,8 @@ public class KafkaUserTemplates {
             .endSpec();
     }
 
-    public static KafkaUserBuilder tlsUser(String clusterName, String name) {
-        return tlsUser(ResourceManager.kubeClient().getNamespace(), clusterName, name);
+    public static KafkaUserBuilder scramShaUser(TestStorage testStorage) {
+        return scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUserName());
     }
 
     public static KafkaUserBuilder scramShaUser(String namespaceName, String clusterName, String name) {
@@ -31,10 +35,6 @@ public class KafkaUserTemplates {
                 .withNewKafkaUserScramSha512ClientAuthentication()
                 .endKafkaUserScramSha512ClientAuthentication()
             .endSpec();
-    }
-
-    public static KafkaUserBuilder scramShaUser(String clusterName, String name) {
-        return scramShaUser(ResourceManager.kubeClient().getNamespace(), clusterName, name);
     }
 
     public static KafkaUserBuilder tlsExternalUser(final String namespaceName, final String clusterName, final String name) {
@@ -52,10 +52,6 @@ public class KafkaUserTemplates {
                 .withNamespace(namespaceName)
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, clusterName)
             .endMetadata();
-    }
-
-    public static KafkaUserBuilder defaultUser(String clusterName, String name) {
-        return defaultUser(ResourceManager.kubeClient().getNamespace(), clusterName, name);
     }
 
     public static KafkaUserBuilder userWithQuotas(KafkaUser user, Integer prodRate, Integer consRate, Integer requestPerc, Double mutRate) {

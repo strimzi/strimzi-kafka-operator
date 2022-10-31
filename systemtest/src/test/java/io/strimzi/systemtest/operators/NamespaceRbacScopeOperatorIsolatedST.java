@@ -54,7 +54,7 @@ class NamespaceRbacScopeOperatorIsolatedST extends AbstractST {
             .build());
 
         // Wait for Kafka to be Ready to ensure all potentially erroneous ClusterRole applications have happened
-        KafkaUtils.waitForKafkaReady(clusterName);
+        KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), clusterName);
 
         // Assert that no ClusterRoles are present on the server that have app strimzi
         // Naturally returns false positives if another Strimzi operator has been installed

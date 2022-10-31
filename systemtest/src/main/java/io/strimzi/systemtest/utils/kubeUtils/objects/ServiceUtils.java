@@ -54,12 +54,12 @@ public class ServiceUtils {
      * @param serviceName service name
      * @param serviceUid service original uid
      */
-    public static void waitForServiceRecovery(String serviceName, String serviceUid) {
-        LOGGER.info("Waiting when Service {}-{} in namespace {} will be recovered", serviceName, serviceUid, kubeClient().getNamespace());
+    public static void waitForServiceRecovery(String namespaceName, String serviceName, String serviceUid) {
+        LOGGER.info("Waiting when Service {}-{} in namespace {} will be recovered", serviceName, serviceUid, namespaceName);
 
         TestUtils.waitFor("Service " + serviceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getServiceUid(serviceName).equals(serviceUid));
-        LOGGER.info("{} in namespace {} is recovered", serviceName, kubeClient().getNamespace());
+        LOGGER.info("{} in namespace {} is recovered", serviceName, namespaceName);
     }
 
     public static void waitUntilAddressIsReachable(String address) {

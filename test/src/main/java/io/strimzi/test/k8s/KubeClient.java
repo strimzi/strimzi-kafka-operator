@@ -398,10 +398,6 @@ public class KubeClient {
         return client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).get();
     }
 
-    public Deployment getDeployment(String deploymentName) {
-        return getDeployment(kubeClient().getNamespace(), deploymentName);
-    }
-
     public String getDeploymentNameByPrefix(String namePrefix) {
         List<Deployment> prefixDeployments = client.apps().deployments().inNamespace(getNamespace()).list().getItems().stream().filter(
             rs -> rs.getMetadata().getName().startsWith(namePrefix)).collect(Collectors.toList());
@@ -416,8 +412,8 @@ public class KubeClient {
     /**
      * Gets deployment UID
      */
-    public String getDeploymentUid(String deploymentName) {
-        return getDeployment(deploymentName).getMetadata().getUid();
+    public String getDeploymentUid(String namespaceName, String deploymentName) {
+        return getDeployment(namespaceName, deploymentName).getMetadata().getUid();
     }
 
     /**
@@ -440,10 +436,6 @@ public class KubeClient {
 
     public void deleteDeployment(String namespaceName, String deploymentName) {
         client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-    }
-
-    public void deleteDeployment(String deploymentName) {
-        deleteDeployment(kubeClient().getNamespace(), deploymentName);
     }
 
     public void createOrReplaceDeployment(Deployment deployment) {

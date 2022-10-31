@@ -22,8 +22,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class StrimziPodSetUtils {
 
     private StrimziPodSetUtils() {}
@@ -96,18 +94,14 @@ public class StrimziPodSetUtils {
         waitForAllStrimziPodSetAndPodsReady(namespaceName, spsName, expectPods, READINESS_TIMEOUT);
     }
 
-    public static void waitForAllStrimziPodSetAndPodsReady(String spsName, int expectPods) {
-        waitForAllStrimziPodSetAndPodsReady(kubeClient().getNamespace(), spsName, expectPods, READINESS_TIMEOUT);
-    }
-
     /**
      * Wait until the given StrimziPodSet has been recovered.
      * @param resourceName The name of the StrimziPodSet.
      */
-    public static void waitForStrimziPodSetRecovery(String resourceName, String resourceUID) {
-        LOGGER.info("Waiting for StrimziPodSet {}-{} recovery in namespace {}", resourceName, resourceUID, kubeClient().getNamespace());
+    public static void waitForStrimziPodSetRecovery(String namespaceName, String resourceName, String resourceUID) {
+        LOGGER.info("Waiting for StrimziPodSet {}-{} recovery in namespace {}", resourceName, resourceUID, namespaceName);
         TestUtils.waitFor("StrimziPodSet " + resourceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
-            () -> !StrimziPodSetResource.strimziPodSetClient().inNamespace(kubeClient().getNamespace()).withName(resourceName).get().getMetadata().getUid().equals(resourceUID));
+            () -> !StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid().equals(resourceUID));
         LOGGER.info("StrimziPodSet {} was recovered", resourceName);
     }
 

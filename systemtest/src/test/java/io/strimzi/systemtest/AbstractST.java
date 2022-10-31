@@ -206,10 +206,6 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void checkComponentConfiguration(String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
-        checkComponentConfiguration(kubeClient().getNamespace(), podNamePrefix, containerName, configKey, config);
-    }
-
     /**
      * Verifies container environment variables passed as a map.
      * @param namespaceName Namespace name where container is located
@@ -233,10 +229,6 @@ public abstract class AbstractST implements TestSeparator {
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
-    }
-
-    protected void checkSpecificVariablesInContainer(String podNamePrefix, String containerName, Map<String, String> config) {
-        checkSpecificVariablesInContainer(kubeClient().getNamespace(), podNamePrefix, containerName, config);
     }
 
     /**
@@ -278,12 +270,6 @@ public abstract class AbstractST implements TestSeparator {
         } else {
             fail("Pod with prefix " + podNamePrefix + " in name, not found");
         }
-    }
-
-    protected void checkReadinessLivenessProbe(String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
-                                               int periodSeconds, int successThreshold, int failureThreshold) {
-        checkReadinessLivenessProbe(kubeClient().getNamespace(), podNamePrefix, containerName, initialDelaySeconds,
-            timeoutSeconds, periodSeconds, successThreshold, failureThreshold);
     }
 
     protected void verifyLabelsForKafkaCluster(String clusterOperatorNamespaceName, String componentsNamespaceName, String clusterName, String appName) {
@@ -478,10 +464,6 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
         String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
-    }
-
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
-        assertNoCoErrorsLogged(kubeClient().getNamespace(), sinceSeconds);
     }
 
     protected void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,

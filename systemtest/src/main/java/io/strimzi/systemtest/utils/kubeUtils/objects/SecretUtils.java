@@ -38,10 +38,6 @@ public class SecretUtils {
 
     private SecretUtils() { }
 
-    public static void waitForSecretReady(String secretName) {
-        waitForSecretReady(kubeClient().getNamespace(),  secretName, () -> { });
-    }
-
     public static void waitForSecretReady(String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
@@ -56,10 +52,6 @@ public class SecretUtils {
             () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) == null,
             onTimeout);
         LOGGER.info("Secret {} deleted", secretName);
-    }
-
-    public static void waitForSecretDeletion(String secretName) {
-        waitForSecretDeletion(kubeClient().getNamespace(), secretName, () -> { });
     }
 
     public static void waitForSecretDeletion(final String namespaceName, String secretName) {
@@ -78,10 +70,6 @@ public class SecretUtils {
             .withType("Opaque")
                 .withStringData(Collections.singletonMap(dataKey, dataValue))
             .build());
-    }
-
-    public static void createSecret(String secretName, String dataKey, String dataValue) {
-        createSecret(kubeClient().getNamespace(), secretName, dataKey, dataValue);
     }
 
     public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace, Map<String, String> labels) {

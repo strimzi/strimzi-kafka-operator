@@ -19,7 +19,6 @@ import static io.strimzi.systemtest.Constants.GLOBAL_RECONCILIATION_COUNT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectorUtils {
 
@@ -53,10 +52,6 @@ public class KafkaConnectorUtils {
         );
     }
 
-    public static void waitForConnectorStability(String connectorName, String connectPodName) {
-        waitForConnectorStability(kubeClient().getNamespace(), connectorName, connectPodName);
-    }
-
     /**
      * Wait until KafkaConnector is in desired state
      * @param namespaceName Namespace name
@@ -72,16 +67,8 @@ public class KafkaConnectorUtils {
         return waitForConnectorStatus(namespaceName, connectorName, Ready);
     }
 
-    public static boolean waitForConnectorReady(String connectorName) {
-        return waitForConnectorReady(kubeClient().getNamespace(), connectorName);
-    }
-
     public static boolean waitForConnectorNotReady(String namespaceName, String connectorName) {
         return waitForConnectorStatus(namespaceName, connectorName, NotReady);
-    }
-
-    public static boolean waitForConnectorNotReady(String connectorName) {
-        return waitForConnectorNotReady(kubeClient().getNamespace(), connectorName);
     }
 
     public static String getCreatedConnectors(String namespaceName, String connectPodName) {
@@ -90,16 +77,16 @@ public class KafkaConnectorUtils {
         ).out();
     }
 
-    public static void waitForConnectorDeletion(String connectorName) {
+    public static void waitForConnectorDeletion(String namespaceName, String connectorName) {
         TestUtils.waitFor(connectorName + " connector deletion", Constants.GLOBAL_POLL_INTERVAL, READINESS_TIMEOUT, () -> {
-            if (KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get() == null) {
+            if (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get() == null) {
                 return true;
             } else {
                 LOGGER.info("KafkaConnector: {} is not deleted yet, triggering force delete", connectorName);
                 cmdKubeClient().deleteByName(KafkaConnector.RESOURCE_KIND, connectorName);
                 return false;
             }
-        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(kubeClient().getNamespace()).withName(connectorName).get()));
+        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get()));
     }
 
     public static void createFileSinkConnector(String namespaceName, String podName, String topicName, String sinkFileName, String apiUrl) {
@@ -109,10 +96,6 @@ public class KafkaConnectorUtils {
                 "\"tasks.max\": \"1\", \"topics\": \"" + topicName + "\"," + " \"file\": \"" + sinkFileName + "\" } }' " +
                 apiUrl + "/connectors"
         );
-    }
-
-    public static void createFileSinkConnector(String podName, String topicName, String sinkFileName, String apiUrl) {
-        createFileSinkConnector(kubeClient().getNamespace(), podName, topicName, sinkFileName, apiUrl);
     }
 
     public static void waitForConnectorsTaskMaxChange(String namespaceName, String connectorName, int taskMax) {

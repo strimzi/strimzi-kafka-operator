@@ -117,7 +117,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         resourceManager.createResource(extensionContext, continuousClients.producerStrimzi(), continuousClients.consumerStrimzi());
         // ##############################
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -379,7 +379,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // ##############################
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())

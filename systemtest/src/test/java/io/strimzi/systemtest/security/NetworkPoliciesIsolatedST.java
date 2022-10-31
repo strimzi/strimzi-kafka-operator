@@ -112,13 +112,13 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .endSpec()
             .build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.scramShaUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1).build()
         );
 
         final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, testStorage.getClusterName());
+        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, testStorage.getClusterName(), testStorage.getNamespaceName());
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are able to exchange messages", testStorage.getProducerName(), testStorage.getConsumerName());
 
@@ -210,7 +210,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are able to exchange messages", testStorage.getProducerName(), testStorage.getConsumerName());
@@ -324,7 +324,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()

@@ -133,7 +133,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         //Test that CO doesn't have any exceptions in log
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(duration);
+        assertNoCoErrorsLogged(namespaceName, duration);
     }
 
     @ParallelNamespaceTest

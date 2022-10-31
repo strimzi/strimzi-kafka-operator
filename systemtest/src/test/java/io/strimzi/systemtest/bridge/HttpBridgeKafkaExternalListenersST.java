@@ -166,13 +166,13 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
         // Create user
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, weirdUserName)
+            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespace, clusterName, weirdUserName)
                 .editMetadata()
                     .withNamespace(namespace)
                 .endMetadata()
                 .build());
         } else {
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, weirdUserName)
+            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespace, clusterName, weirdUserName)
                 .editMetadata()
                     .withNamespace(namespace)
                 .endMetadata()

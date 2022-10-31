@@ -237,8 +237,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
         // Deploy topic
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build(),
-            KafkaUserTemplates.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).build(),
-            KafkaUserTemplates.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).build()
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
 
         // Initialize CertSecretSource with certificate and secret names for source
@@ -367,8 +367,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build(),
-            KafkaUserTemplates.scramShaUser(kafkaClusterSourceName, kafkaUserSourceName).build(),
-            KafkaUserTemplates.scramShaUser(kafkaClusterTargetName, kafkaUserTargetName).build()
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker2 spec
@@ -1006,8 +1006,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build(),
-            KafkaUserTemplates.scramShaUser(kafkaClusterSourceName, kafkaUserSourceName).build(),
-            KafkaUserTemplates.scramShaUser(kafkaClusterTargetName, kafkaUserTargetName).build()
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Source/Target MirrorMaker2 spec
@@ -1174,8 +1174,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build(),
-            KafkaUserTemplates.tlsUser(kafkaClusterSourceName, kafkaUserSourceName).build(),
-            KafkaUserTemplates.tlsUser(kafkaClusterTargetName, kafkaUserTargetName).build()
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
 
         // Initialize CertSecretSource with certificate and secret names for source

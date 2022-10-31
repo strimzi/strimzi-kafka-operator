@@ -21,8 +21,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-
 public class RollingUpdateUtils {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateUtils.class);
 
@@ -58,10 +56,6 @@ public class RollingUpdateUtils {
         return true;
     }
 
-    public static boolean componentHasRolled(LabelSelector selector, Map<String, String> snapshot) {
-        return componentHasRolled(kubeClient().getNamespace(), selector, snapshot);
-    }
-
     /**
      *  Method to wait when StatefulSet will be recreated after rolling update
      * @param namespaceName Namespace name
@@ -90,10 +84,6 @@ public class RollingUpdateUtils {
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
-    public static Map<String, String> waitTillComponentHasRolledAndPodsReady(LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
-        return waitTillComponentHasRolledAndPodsReady(kubeClient().getNamespace(), selector, expectedPods, snapshot);
-    }
-
     public static Map<String, String> waitTillComponentHasRolledAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
         String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
@@ -107,19 +97,11 @@ public class RollingUpdateUtils {
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
-    public static Map<String, String> waitTillComponentHasRolled(LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
-        return waitTillComponentHasRolled(kubeClient().getNamespace(), selector, expectedPods, snapshot);
-    }
-
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> snapshot) {
         waitTillComponentHasRolled(namespaceName, selector, snapshot);
         waitForComponentAndPodsReady(namespaceName, selector, expectedPods);
 
         return PodUtils.podSnapshot(namespaceName, selector);
-    }
-
-    public static void waitForComponentAndPodsReady(LabelSelector selector, int expectedPods) {
-        waitForComponentAndPodsReady(kubeClient().getNamespace(), selector, expectedPods);
     }
 
     public static void waitForComponentAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods) {

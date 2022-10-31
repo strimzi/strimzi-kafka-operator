@@ -180,7 +180,7 @@ public class SpecificIsolatedST extends AbstractST {
 
         LOGGER.info("Replacing Kafka CR invalid load-balancer source range to {}", invalidNetworkAddress);
 
-        KafkaResource.replaceKafkaResource(clusterName, kafka ->
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
             kafka.getSpec().getKafka().setListeners(Collections.singletonList(new GenericKafkaListenerBuilder()
                 .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                 .withPort(9094)
@@ -190,7 +190,8 @@ public class SpecificIsolatedST extends AbstractST {
                     .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
                     .withFinalizers(LB_FINALIZERS)
                 .endConfiguration()
-                .build()))
+                .build())),
+                clusterOperator.getDeploymentNamespace()
         );
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");

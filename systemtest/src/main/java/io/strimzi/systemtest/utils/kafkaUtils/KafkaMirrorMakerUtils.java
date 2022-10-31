@@ -10,7 +10,6 @@ import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMakerUtils {
 
@@ -33,15 +32,7 @@ public class KafkaMirrorMakerUtils {
         return waitForKafkaMirrorMakerStatus(namespaceName, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaMirrorMakerReady(String clusterName) {
-        return waitForKafkaMirrorMakerStatus(kubeClient().getNamespace(), clusterName, Ready);
-    }
-
     public static boolean waitForKafkaMirrorMakerNotReady(final String namespaceName, String clusterName) {
         return waitForKafkaMirrorMakerStatus(namespaceName, clusterName, NotReady);
-    }
-
-    public static boolean waitForKafkaMirrorMakerNotReady(String clusterName) {
-        return waitForKafkaMirrorMakerStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }
 }

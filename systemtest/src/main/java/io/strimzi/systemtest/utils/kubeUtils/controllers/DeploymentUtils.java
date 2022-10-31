@@ -92,10 +92,6 @@ public class DeploymentUtils {
      * @param name The Deployment name.
      * @return A map of pod name to resource version for pods in the given Deployment.
      */
-    public static Map<String, String> depSnapshot(String name) {
-        return depSnapshot(kubeClient().getNamespace(), name);
-    }
-
     public static Map<String, String> depSnapshot(String namespaceName, String name) {
         Deployment deployment = kubeClient(namespaceName).getDeployment(namespaceName, name);
         LabelSelector selector = deployment.getSpec().getSelector();
@@ -140,10 +136,6 @@ public class DeploymentUtils {
         return newDepSnapshot;
     }
 
-    public static Map<String, String> waitTillDepHasRolled(String name, int expectedPods, Map<String, String> snapshot) {
-        return waitTillDepHasRolled(kubeClient().getNamespace(), name, expectedPods, snapshot);
-    }
-
     public static Map<String, String> waitTillDepHasRolled(String namespaceName, String deploymentName, Map<String, String> snapshot) {
         LOGGER.info("Waiting for Deployment {} rolling update", deploymentName);
         TestUtils.waitFor("Deployment " + deploymentName + " rolling update in namespace:" + namespaceName,
@@ -157,10 +149,10 @@ public class DeploymentUtils {
      * Wait until the given Deployment has been recovered.
      * @param name The name of the Deployment.
      */
-    public static void waitForDeploymentRecovery(String name, String deploymentUid) {
-        LOGGER.info("Waiting for Deployment {}-{} recovery in namespace {}", name, deploymentUid, kubeClient().getNamespace());
+    public static void waitForDeploymentRecovery(String namespaceName, String name, String deploymentUid) {
+        LOGGER.info("Waiting for Deployment {}-{} recovery in namespace {}", name, deploymentUid, namespaceName);
         TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
-            () -> !kubeClient().getDeploymentUid(name).equals(deploymentUid));
+            () -> !kubeClient().getDeploymentUid(namespaceName, name).equals(deploymentUid));
         LOGGER.info("Deployment {} was recovered", name);
     }
 
@@ -170,23 +162,10 @@ public class DeploymentUtils {
         TestUtils.waitFor(String.format("Wait for Deployment: %s will be ready", deploymentName),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getDeploymentStatus(namespaceName, deploymentName),
-            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(deploymentName), namespaceName));
+            () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(namespaceName, deploymentName), namespaceName));
 
         LOGGER.info("Deployment: {} is ready", deploymentName);
         return true;
-    }
-
-    public static boolean waitForDeploymentReady(String deploymentName) {
-        return waitForDeploymentReady(kubeClient().getNamespace(), deploymentName);
-    }
-
-    /**
-     * Wait until the given Deployment is ready.
-     * @param deploymentName The name of the Deployment.
-     * @param expectPods The expected number of pods.
-     */
-    public static boolean waitForDeploymentAndPodsReady(String deploymentName, int expectPods) {
-        return waitForDeploymentAndPodsReady(kubeClient().getNamespace(), deploymentName, expectPods);
     }
 
     /**
@@ -223,9 +202,5 @@ public class DeploymentUtils {
                 }
             });
         LOGGER.debug("Deployment {} was deleted", name);
-    }
-
-    public static void waitForDeploymentDeletion(String name) {
-        waitForDeploymentDeletion(kubeClient().getNamespace(), name);
     }
 }

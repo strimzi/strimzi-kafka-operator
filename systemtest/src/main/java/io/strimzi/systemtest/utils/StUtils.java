@@ -159,10 +159,6 @@ public class StUtils {
                 .stream().filter(envVar -> envVar.getName().equals(envVarName)).findFirst().orElseThrow().getValue();
     }
 
-    public static String checkEnvVarInPod(String podName, String envVarName) {
-        return checkEnvVarInPod(kubeClient().getNamespace(), podName, envVarName);
-    }
-
     /**
      * Translate key/value pairs formatted like properties into a Map
      * @param keyValuePairs Pairs in key=value format; pairs are separated by newlines
@@ -564,10 +560,6 @@ public class StUtils {
         }
     }
 
-    public static Affinity getStatefulSetOrStrimziPodSetAffinity(String resourceName) {
-        return getStatefulSetOrStrimziPodSetAffinity(kubeClient().getNamespace(), resourceName);
-    }
-
     public static Affinity getStatefulSetOrStrimziPodSetAffinity(String namespaceName, String resourceName) {
         if (Environment.isStrimziPodSetEnabled()) {
             Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
@@ -585,15 +577,11 @@ public class StUtils {
         }
     }
 
-    public static void deleteStrimziPodSetOrStatefulSet(String resourceName) {
-        deleteStrimziPodSetOrStatefulSet(kubeClient().getNamespace(), resourceName);
-    }
-
-    public static void waitForStrimziPodSetOrStatefulSetRecovery(String resourceName, String resourceUID) {
+    public static void waitForStrimziPodSetOrStatefulSetRecovery(String namespaceName, String resourceName, String resourceUID) {
         if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetUtils.waitForStrimziPodSetRecovery(resourceName, resourceUID);
+            StrimziPodSetUtils.waitForStrimziPodSetRecovery(namespaceName, resourceName, resourceUID);
         } else {
-            StatefulSetUtils.waitForStatefulSetRecovery(resourceName, resourceUID);
+            StatefulSetUtils.waitForStatefulSetRecovery(namespaceName, resourceName, resourceUID);
         }
     }
 
@@ -605,19 +593,11 @@ public class StUtils {
         }
     }
 
-    public static void waitForStrimziPodSetOrStatefulSetAndPodsReady(String resourceName, int expectPods) {
-        waitForStrimziPodSetOrStatefulSetAndPodsReady(kubeClient().getNamespace(), resourceName, expectPods);
-    }
-
     public static String getStrimziPodSetOrStatefulSetUID(String namespaceName, String resourceName) {
         if (Environment.isStrimziPodSetEnabled()) {
             return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
         }
         return kubeClient(namespaceName).getStatefulSetUid(resourceName);
-    }
-
-    public static String getStrimziPodSetOrStatefulSetUID(String resourceName) {
-        return getStrimziPodSetOrStatefulSetUID(kubeClient().getNamespace(), resourceName);
     }
 
     /**

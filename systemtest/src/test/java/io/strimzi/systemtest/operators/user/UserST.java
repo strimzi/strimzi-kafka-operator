@@ -79,11 +79,7 @@ class UserST extends AbstractST {
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
 
         // Create user with correct name
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userWithCorrectName)
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespace, userClusterName, userWithCorrectName).build());
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(namespace, userWithCorrectName);
 
@@ -92,16 +88,9 @@ class UserST extends AbstractST {
         verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, saslUserWithLongName)
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespace, userClusterName, saslUserWithLongName).build());
 
-        resourceManager.createResource(extensionContext, false, KafkaUserTemplates.defaultUser(userClusterName, userWithLongName)
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
+        resourceManager.createResource(extensionContext, false, KafkaUserTemplates.defaultUser(namespace, userClusterName, userWithLongName)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
@@ -160,7 +149,7 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
         Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).resource(kUser).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(userName);
+        KafkaUserUtils.waitForKafkaUserDeletion(namespace, userName);
     }
 
     @Tag(SCALABILITY)
@@ -328,8 +317,8 @@ class UserST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), tlsUserName).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), scramShaUserName).build()
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), tlsUserName).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), scramShaUserName).build()
         );
 
         Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
@@ -442,13 +431,13 @@ class UserST extends AbstractST {
             String userNameWithSuffix = userName + "-" + i;
 
             if (typeOfUser.equals("TLS")) {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userNameWithSuffix)
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userNameWithSuffix)
                     .editMetadata()
                         .withNamespace(namespace)
                     .endMetadata()
                     .build());
             } else {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userNameWithSuffix)
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespace, userClusterName, userNameWithSuffix)
                     .editMetadata()
                         .withNamespace(namespace)
                     .endMetadata()
@@ -477,7 +466,7 @@ class UserST extends AbstractST {
         for (int i = 0; i < numberOfUsers; i++) {
             String userNameWithSuffix = userName + "-" + i;
             if (typeOfUser.equals("TLS")) {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userNameWithSuffix)
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userNameWithSuffix)
                     .editMetadata()
                         .withNamespace(namespace)
                     .endMetadata()
@@ -486,7 +475,7 @@ class UserST extends AbstractST {
                         .endSpec()
                     .build());
             } else {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userNameWithSuffix)
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespace, userClusterName, userNameWithSuffix)
                     .editMetadata()
                         .withNamespace(namespace)
                     .endMetadata()
