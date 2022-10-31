@@ -83,7 +83,9 @@ public class LogHasNoUnexpectedErrors extends BaseMatcher<String> {
 
         // error that pods already exist when doing reconciliation of StrimziPodSets
         // connected to https://github.com/strimzi/strimzi-kafka-operator/issues/7529 - remove this once the issue will be fixed
-        RECONCILIATION_PODSET_ALREADY_EXISTS("ERROR StrimziPodSetController:[0-9]+ - Reconciliation.*[fF]ailed.*already exists.*");
+        RECONCILIATION_PODSET_ALREADY_EXISTS("ERROR StrimziPodSetController:[0-9]+ - Reconciliation.*[fF]ailed"
+            + "(?s)(.*?)"
+            + "io.fabric8.kubernetes.client.KubernetesClientException.*already exists");
 
         final String name;
 
