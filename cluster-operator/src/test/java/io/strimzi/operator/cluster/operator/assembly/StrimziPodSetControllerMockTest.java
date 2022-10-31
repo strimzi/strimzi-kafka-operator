@@ -686,7 +686,9 @@ public class StrimziPodSetControllerMockTest {
                     10_000,
                     () -> {
                         Pod p = client.pods().inNamespace(NAMESPACE).withName(podName).get();
-                        return p != null && !resourceVersion.equals(p.getMetadata().getResourceVersion());
+                        return p != null
+                                && !resourceVersion.equals(p.getMetadata().getResourceVersion())
+                                && p.getStatus() != null; // We need to also wait for the Pod status to be set to avoid NullPointerExceptions
                     },
                     () -> context.failNow("Test timed out waiting for pod recreation!"));
 
