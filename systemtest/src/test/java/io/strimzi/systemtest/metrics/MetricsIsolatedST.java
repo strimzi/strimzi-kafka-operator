@@ -691,7 +691,7 @@ public class MetricsIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext,
-                KafkaConnectTemplates.kafkaConnectWithMetricsAndFileSinkPlugin(clusterOperator.getDeploymentNamespace(), metricsClusterName, metricsClusterName, 1)
+                KafkaConnectTemplates.kafkaConnectWithMetricsAndFileSinkPlugin(metricsClusterName, clusterOperator.getDeploymentNamespace(), metricsClusterName, 1)
                         .editMetadata()
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                         .endMetadata()

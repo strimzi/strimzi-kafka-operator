@@ -539,7 +539,7 @@ public class CustomCaST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
-        final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()));
+        final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
 
         // Check initial clientsCA validity days
         Secret clientsCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));

@@ -35,18 +35,22 @@ public class KafkaConnectTemplates {
         return kafkaConnect(name, namespaceName, clusterName, kafkaConnectReplicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetrics(String namespaceName, String name, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(namespaceName, name, name, kafkaConnectReplicas);
+    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, int kafkaConnectReplicas) {
+        return kafkaConnect(name, namespaceName, name, kafkaConnectReplicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetrics(String namespaceName, String name, String clusterName, int kafkaConnectReplicas) {
+    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String namespaceName, int kafkaConnectReplicas) {
+        return kafkaConnectWithMetrics(name, namespaceName, name, kafkaConnectReplicas);
+    }
+
+    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String namespaceName, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
-        createOrReplaceConnectMetrics();
-        return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, clusterName, kafkaConnectReplicas);
+        createOrReplaceConnectMetrics(namespaceName);
+        return defaultKafkaConnect(kafkaConnect, namespaceName, name, clusterName, kafkaConnectReplicas);
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String namespaceName, String name, String clusterName, int replicas) {
-        createOrReplaceConnectMetrics();
+    public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String name, String namespaceName, String clusterName, int replicas) {
+        createOrReplaceConnectMetrics(namespaceName);
         return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
     }
 
@@ -78,11 +82,11 @@ public class KafkaConnectTemplates {
             .endSpec();
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String clusterName, int replicas) {
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String clusterName, String namespaceName, int replicas) {
         return kafkaConnectWithFilePlugin(clusterName, namespaceName, clusterName, replicas);
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String namespaceName, String name, String clusterName, int replicas) {
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas) {
         return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
@@ -94,7 +98,7 @@ public class KafkaConnectTemplates {
      * @param replicas number of KafkaConnect replicas
      * @return KafkaConnect builder with File plugin
      */
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin( String namespaceName, String name, String clusterName, int replicas, String pathToConnectConfig) {
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
         final Plugin fileSinkPlugin = new PluginBuilder()
             .withName("file-plugin")
             .withArtifacts(
@@ -106,7 +110,7 @@ public class KafkaConnectTemplates {
 
         final String imageName = Environment.getImageOutputRegistry() + "/" + namespaceName + "/connect-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
 
-        return kafkaConnect(namespaceName, name, clusterName, replicas, pathToConnectConfig)
+        return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
             .editOrNewSpec()
                 .editOrNewBuild()
                     .withPlugins(fileSinkPlugin)

@@ -263,7 +263,6 @@ public class PodUtils {
      * it to be considered as stable. Otherwise this procedure will be repeat.
      * @param podPrefix all pods that matched the prefix will be verified
      * */
-
     public static void verifyThatRunningPodsAreStable(String namespaceName, String podPrefix) {
         LOGGER.info("Verify that all pods with prefix: {} are stable", podPrefix);
         verifyThatPodsAreStable(namespaceName, podPrefix, "Running");

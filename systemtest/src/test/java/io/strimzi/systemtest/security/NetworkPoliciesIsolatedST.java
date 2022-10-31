@@ -143,7 +143,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(testStorage);
 
         LOGGER.info("Check metrics exported by Kafka Exporter");
 
@@ -236,7 +236,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsTimeout(testStorage);
     }
 
     @IsolatedTest("Specific cluster operator for test case")

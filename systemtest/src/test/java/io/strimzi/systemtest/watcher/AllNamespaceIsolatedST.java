@@ -121,7 +121,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
     void testUOWatchingOtherNamespace(ExtensionContext extensionContext) {
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(cluster.getNamespace(), MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
 
         cluster.setNamespace(previousNamespace);
     }

@@ -174,7 +174,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
                 .endUserOperator().build());
         }, testStorage.getNamespaceName());
 
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getEoDeploymentName(), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1);
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())

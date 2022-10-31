@@ -321,7 +321,7 @@ public class TopicST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(TOPIC_CLUSTER_NAME))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         LOGGER.info("Checking if {} is on topic list", testStorage.getTopicName());
@@ -369,7 +369,7 @@ public class TopicST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi());

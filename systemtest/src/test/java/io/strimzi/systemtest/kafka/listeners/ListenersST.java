@@ -715,11 +715,7 @@ public class ListenersST extends AbstractST {
     void testClusterIpTls(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String clusterName = testStorage.getClusterName();
-        final String userName = testStorage.getUserName();
-        final String namespaceName = testStorage.getNamespaceName();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -734,23 +730,23 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withNamespaceName(namespaceName)
+                .withNamespaceName(testStorage.getNamespaceName())
                 .withTopicName(testStorage.getTopicName())
-                .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
-                .withMessageCount(MESSAGE_COUNT)
-                .withUserName(userName)
+                .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(testStorage.getClusterName(), testStorage.getNamespaceName(), Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
+                .withMessageCount(testStorage.getMessageCount())
+                .withUserName(testStorage.getUserName())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), namespaceName, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), namespaceName, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
 
     }
 

@@ -110,7 +110,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaStatusCondition.getType(), is(NotReady.toString()));
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()

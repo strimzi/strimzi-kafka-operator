@@ -91,15 +91,15 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
         logPodImages(clusterName);
-        checkAllImages(acrossUpgradeData);
+        checkAllImages(acrossUpgradeData, clusterOperator.getDeploymentNamespace());
 
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(acrossUpgradeData.getProcedures().getVersion()));
         // Check errors in CO log
-        assertNoCoErrorsLogged(0);
+        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @Test

@@ -45,7 +45,7 @@ class HelmChartIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(clusterName, topicName).build(),
             // Deploy KafkaConnect and wait for readiness
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterOperator.getDeploymentNamespace(), clusterName, 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, clusterOperator.getDeploymentNamespace(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
