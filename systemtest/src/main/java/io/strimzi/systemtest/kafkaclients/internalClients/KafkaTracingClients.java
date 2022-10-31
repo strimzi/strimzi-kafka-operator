@@ -22,11 +22,17 @@ public class KafkaTracingClients  extends KafkaClients {
     private static final String JAEGER_SAMPLER_TYPE =  "const";
     private static final String JAEGER_SAMPLER_PARAM =  "1";
 
+    private static final String OPEN_TELEMETRY = "OpenTelemetry";
+    private static final String OPEN_TRACING = "OpenTracing";
+
     private String jaegerServiceProducerName;
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
     private String jaegerServerAgentName;
     private String streamsTopicTargetName;
+    private boolean openTracing = false;
+    private boolean openTelemetry = false;
+    private String tracingType;
 
     public String getJaegerServiceConsumerName() {
         return jaegerServiceConsumerName;
@@ -68,6 +74,38 @@ public class KafkaTracingClients  extends KafkaClients {
         this.streamsTopicTargetName = streamsTopicTargetName;
     }
 
+    public void setOpenTelemetry(boolean openTelemetry) {
+        this.openTelemetry = openTelemetry;
+    }
+
+    public boolean getOpenTelemetry() {
+        return openTelemetry;
+    }
+
+    public void setOpenTracing(boolean openTracing) {
+        this.openTracing = openTracing;
+    }
+
+    public boolean getOpenTracing() {
+        return openTracing;
+    }
+
+    public void setTracingType(String tracingType) {
+        // if `withOpenTelemetry` or `withOpenTracing` is used, this is the only way how to set it also as the tracingType
+        // to remove need of extra check in each client's method
+        if (this.openTelemetry) {
+            this.tracingType = OPEN_TELEMETRY;
+        } else if (this.openTracing) {
+            this.tracingType = OPEN_TRACING;
+        } else {
+            this.tracingType = tracingType;
+        }
+    }
+
+    public String getTracingType() {
+        return tracingType;
+    }
+
     public Job consumerWithTracing() {
         return defaultConsumerStrimzi()
             .editSpec()
@@ -89,6 +127,10 @@ public class KafkaTracingClients  extends KafkaClients {
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
                                 .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("TRACING_TYPE")
+                                .withValue(tracingType)
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -118,6 +160,10 @@ public class KafkaTracingClients  extends KafkaClients {
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
                                 .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("TRACING_TYPE")
+                                .withValue(tracingType)
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -192,6 +238,10 @@ public class KafkaTracingClients  extends KafkaClients {
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
                                 .withValue(JAEGER_SAMPLER_PARAM)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("TRACING_TYPE")
+                                .withValue(tracingType)
                             .endEnv()
                         .endContainer()
                     .endSpec()
