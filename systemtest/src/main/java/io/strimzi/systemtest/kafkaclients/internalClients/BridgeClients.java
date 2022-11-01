@@ -17,17 +17,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_PARAM;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_TYPE;
-
 @Buildable(editableEnabled = false)
 public class BridgeClients extends KafkaClients {
     private int port;
     private int pollInterval;
-    private String tracingServiceNameEnvVar;
-
     public int getPollInterval() {
         return pollInterval;
     }
@@ -44,20 +37,7 @@ public class BridgeClients extends KafkaClients {
         this.port = port;
     }
 
-    public String getTracingServiceNameEnvVar() {
-        return tracingServiceNameEnvVar;
-    }
-
-    public void setTracingServiceNameEnvVar(String tracingServiceNameEnvVar) {
-        this.tracingServiceNameEnvVar = tracingServiceNameEnvVar;
-    }
-
-    private String serviceNameEnvVar() {
-        // use tracing service name env var if set, else use "dummy"
-        return tracingServiceNameEnvVar != null ? tracingServiceNameEnvVar : "TEST_SERVICE_NAME";
-    }
-
-    public Job producerStrimziBridge() {
+    public JobBuilder defaultProducerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", this.getProducerName());
         producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
@@ -107,35 +87,18 @@ public class BridgeClients extends KafkaClients {
                                 .withName("MESSAGE_COUNT")
                                 .withValue(Integer.toString(this.getMessageCount()))
                             .endEnv()
-                            .addNewEnv()
-                                .withName(this.serviceNameEnvVar())
-                                .withValue(this.getProducerName())
-                            .endEnv()
-                            // this will only get used if tracing is enabled -- see serviceNameEnvVar()
-                            .addNewEnv()
-                                .withName("JAEGER_AGENT_HOST")
-                                .withValue(JAEGER_AGENT_HOST)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                                .withValue(JAEGER_COLLECTOR_URL)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue(JAEGER_SAMPLER_TYPE)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue(JAEGER_SAMPLER_PARAM)
-                            .endEnv()
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build();
+            .endSpec();
     }
 
-    public Job consumerStrimziBridge() {
+
+    public Job producerStrimziBridge() {
+        return this.defaultProducerStrimziBridge().build();
+    }
+
+    public JobBuilder defaultConsumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", this.getConsumerName());
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
@@ -189,31 +152,13 @@ public class BridgeClients extends KafkaClients {
                                 .withName("GROUP_ID")
                                 .withValue(this.getConsumerGroup())
                             .endEnv()
-                            .addNewEnv()
-                                .withName(serviceNameEnvVar())
-                                .withValue(getConsumerName())
-                            .endEnv()
-                            // this will only get used if tracing is enabled -- see serviceNameEnvVar()
-                            .addNewEnv()
-                                .withName("JAEGER_AGENT_HOST")
-                                .withValue(JAEGER_AGENT_HOST)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                                .withValue(JAEGER_COLLECTOR_URL)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue(JAEGER_SAMPLER_TYPE)
-                            .endEnv()
-                            .addNewEnv()
-                                .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue(JAEGER_SAMPLER_PARAM)
-                            .endEnv()
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build();
+            .endSpec();
+    }
+
+    public Job consumerStrimziBridge() {
+        return this.defaultConsumerStrimziBridge().build();
     }
 }

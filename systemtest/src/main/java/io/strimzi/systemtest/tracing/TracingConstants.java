@@ -26,11 +26,13 @@ public interface TracingConstants {
     String JAEGER_AGENT_HOST = JAEGER_INSTANCE_NAME + "-agent";
     String JAEGER_QUERY_SERVICE = JAEGER_INSTANCE_NAME + "-query";
     String JAEGER_COLLECTOR_NAME = JAEGER_INSTANCE_NAME + "-collector";
-    String JAEGER_COLLECTOR_URL = "http://" + JAEGER_COLLECTOR_NAME + ":14268";
+    String JAEGER_COLLECTOR_URL = "http://" + JAEGER_COLLECTOR_NAME + ":14250";
 
     String JAEGER_VERSION = "1.22.1";
 
     String JAEGER_SERVICE_ENV = "JAEGER_SERVICE_NAME";
     String OTEL_SERVICE_ENV = "OTEL_SERVICE_NAME";
 
+    String OPEN_TELEMETRY = "OpenTelemetry";
+    String OPEN_TRACING = "OpenTracing";
 }

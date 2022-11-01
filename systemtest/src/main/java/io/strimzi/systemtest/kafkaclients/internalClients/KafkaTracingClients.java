@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.tracing.TracingConstants;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.Collections;
@@ -21,12 +22,6 @@ import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_UR
 
 @Buildable(editableEnabled = false)
 public class KafkaTracingClients  extends KafkaClients {
-    private static final String JAEGER_SAMPLER_TYPE =  "const";
-    private static final String JAEGER_SAMPLER_PARAM =  "1";
-
-    private static final String OPEN_TELEMETRY = "OpenTelemetry";
-    private static final String OPEN_TRACING = "OpenTracing";
-
     private String jaegerServiceProducerName;
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
@@ -105,9 +100,9 @@ public class KafkaTracingClients  extends KafkaClients {
         // if `withOpenTelemetry` or `withOpenTracing` is used, this is the only way how to set it also as the tracingType
         // to remove need of extra check in each client's method
         if (this.openTelemetry) {
-            this.tracingType = OPEN_TELEMETRY;
+            this.tracingType = TracingConstants.OPEN_TELEMETRY;
         } else if (this.openTracing) {
-            this.tracingType = OPEN_TRACING;
+            this.tracingType = TracingConstants.OPEN_TRACING;
         } else {
             this.tracingType = tracingType;
         }
@@ -133,19 +128,27 @@ public class KafkaTracingClients  extends KafkaClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue(JAEGER_SAMPLER_TYPE)
+                                .withValue(TracingConstants.JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue(JAEGER_SAMPLER_PARAM)
+                                .withValue(TracingConstants.JAEGER_SAMPLER_PARAM)
                             .endEnv()
                             .addNewEnv()
                                 .withName("TRACING_TYPE")
-                                .withValue(tracingType)
+                                .withValue(this.tracingType)
                             .endEnv()
                             .addNewEnv()
                                 .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
                                 .withValue(JAEGER_COLLECTOR_URL)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_TRACES_EXPORTER")
+                                .withValue("jaeger")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_METRICS_EXPORTER")
+                                .withValue("none")
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -170,19 +173,27 @@ public class KafkaTracingClients  extends KafkaClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue(JAEGER_SAMPLER_TYPE)
+                                .withValue(TracingConstants.JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue(JAEGER_SAMPLER_PARAM)
+                                .withValue(TracingConstants.JAEGER_SAMPLER_PARAM)
                             .endEnv()
                             .addNewEnv()
                                 .withName("TRACING_TYPE")
-                                .withValue(tracingType)
+                                .withValue(this.tracingType)
                             .endEnv()
                             .addNewEnv()
                                 .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
                                 .withValue(JAEGER_COLLECTOR_URL)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_TRACES_EXPORTER")
+                                .withValue("jaeger")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_METRICS_EXPORTER")
+                                .withValue("none")
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -252,11 +263,11 @@ public class KafkaTracingClients  extends KafkaClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
-                                .withValue(JAEGER_SAMPLER_TYPE)
+                                .withValue(TracingConstants.JAEGER_SAMPLER_TYPE)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_PARAM")
-                                .withValue(JAEGER_SAMPLER_PARAM)
+                                .withValue(TracingConstants.JAEGER_SAMPLER_PARAM)
                             .endEnv()
                             .addNewEnv()
                                 .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
@@ -264,7 +275,15 @@ public class KafkaTracingClients  extends KafkaClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("TRACING_TYPE")
-                                .withValue(tracingType)
+                                .withValue(this.tracingType)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_TRACES_EXPORTER")
+                                .withValue("jaeger")
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_METRICS_EXPORTER")
+                                .withValue("none")
                             .endEnv()
                         .endContainer()
                     .endSpec()

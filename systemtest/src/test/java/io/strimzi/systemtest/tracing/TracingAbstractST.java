@@ -16,8 +16,9 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeTracingClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceItem;
@@ -185,7 +186,7 @@ public abstract class TracingAbstractST extends AbstractST {
                 .withNewTemplate()
                     .withNewConnectContainer()
                         .addNewEnv()
-                            .withName(serviceNameEnvVar())
+                            .withName(this.serviceNameEnvVar())
                             .withValue(JAEGER_MIRROR_MAKER2_SERVICE)
                         .endEnv()
                         .addNewEnv()
@@ -276,7 +277,7 @@ public abstract class TracingAbstractST extends AbstractST {
                 .withNewTemplate()
                     .withNewMirrorMakerContainer()
                         .addNewEnv()
-                            .withName(serviceNameEnvVar())
+                            .withName(this.serviceNameEnvVar())
                             .withValue(JAEGER_MIRROR_MAKER_SERVICE)
                         .endEnv()
                         .addNewEnv()
@@ -354,7 +355,7 @@ public abstract class TracingAbstractST extends AbstractST {
                 .withNewTemplate()
                     .withNewConnectContainer()
                         .addNewEnv()
-                            .withName(serviceNameEnvVar())
+                            .withName(this.serviceNameEnvVar())
                             .withValue(JAEGER_KAFKA_CONNECT_SERVICE)
                         .endEnv()
                         .addNewEnv()
@@ -428,7 +429,7 @@ public abstract class TracingAbstractST extends AbstractST {
                 .withNewTemplate()
                     .withNewBridgeContainer()
                         .addNewEnv()
-                            .withName(serviceNameEnvVar())
+                            .withName(this.serviceNameEnvVar())
                             .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
                         .endEnv()
                         .addNewEnv()
@@ -447,6 +448,10 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withName("JAEGER_SAMPLER_PARAM")
                             .withValue(JAEGER_SAMPLER_PARAM)
                         .endEnv()
+                        .addNewEnv()
+                            .withName("OTEL_TRACES_EXPORTER")
+                            .withValue("jaeger")
+                        .endEnv()
                     .endBridgeContainer()
                 .endTemplate()
             .endSpec()
@@ -457,7 +462,8 @@ public abstract class TracingAbstractST extends AbstractST {
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName())
                 .build());
 
-        BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
+        final BridgeTracingClientsBuilder kafkaBridgeClientJobBuilder = new BridgeTracingClientsBuilder()
+            .withTracingServiceNameEnvVar(this.serviceNameEnvVar())
             .withProducerName(bridgeProducer)
             .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
             .withBootstrapAddress(KafkaBridgeResources.serviceName(storageMap.get(extensionContext).getClusterName()))
@@ -465,10 +471,10 @@ public abstract class TracingAbstractST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
-            .withPollInterval(1000)
-            .build();
+            .withPollInterval(1000);
+        final BridgeTracingClients bridgeTracingClientJob = (BridgeTracingClients) this.configureProperTracingType(kafkaBridgeClientJobBuilder.build());
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
+        resourceManager.createResource(extensionContext, bridgeTracingClientJob.producerStrimziBridgeWithTracing());
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
         ClientUtils.waitForClientSuccess(bridgeProducer, storageMap.get(extensionContext).getNamespaceName(), MESSAGE_COUNT);
 
@@ -484,7 +490,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .withNewTemplate()
                 .withNewBridgeContainer()
                     .addNewEnv()
-                        .withName(serviceNameEnvVar())
+                        .withName(this.serviceNameEnvVar())
                         .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
                     .endEnv()
                     .addNewEnv()
@@ -513,7 +519,7 @@ public abstract class TracingAbstractST extends AbstractST {
                 .build());
 
         final String bridgeProducer = "bridge-producer";
-        final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
+        final BridgeTracingClientsBuilder kafkaBridgeClientJobBuilder = new BridgeTracingClientsBuilder()
             .withTracingServiceNameEnvVar(this.serviceNameEnvVar())
             .withProducerName(bridgeProducer)
             .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
@@ -522,10 +528,10 @@ public abstract class TracingAbstractST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
-            .withPollInterval(1000)
-            .build();
+            .withPollInterval(1000);
+        final BridgeTracingClients bridgeTracingClients = (BridgeTracingClients) this.configureProperTracingType(kafkaBridgeClientJobBuilder.build());
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
+        resourceManager.createResource(extensionContext, bridgeTracingClients.producerStrimziBridgeWithTracing());
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
         ClientUtils.waitForClientSuccess(bridgeProducer, storageMap.get(extensionContext).getNamespaceName(), MESSAGE_COUNT);
 
@@ -616,7 +622,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         storageMap.put(extensionContext, testStorage);
 
-        final KafkaTracingClients kafkaTracingClient = new KafkaTracingClientsBuilder()
+        final KafkaTracingClientsBuilder kafkaTracingClientsBuilder = new KafkaTracingClientsBuilder()
             .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
             .withProducerName(storageMap.get(extensionContext).getProducerName())
             .withConsumerName(storageMap.get(extensionContext).getConsumerName())
@@ -628,12 +634,32 @@ public abstract class TracingAbstractST extends AbstractST {
             .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
             .withJaegerServerAgentName(JAEGER_AGENT_HOST)
-            .withTracingServiceNameEnvVar(this.serviceNameEnvVar())
-            .build();
+            .withTracingServiceNameEnvVar(this.serviceNameEnvVar());
+        final KafkaTracingClients kafkaTracingClient = (KafkaTracingClients) this.configureProperTracingType(kafkaTracingClientsBuilder.build());
+
+        LOGGER.info("{}:\n", kafkaTracingClient.toString());
 
         testStorage.addToTestStorage(Constants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClient);
 
         storageMap.put(extensionContext, testStorage);
+    }
+
+    private KafkaClients configureProperTracingType(final KafkaClients kafkaClients) {
+        if (kafkaClients instanceof BridgeTracingClients) {
+            if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
+                return new BridgeTracingClientsBuilder((BridgeTracingClients) kafkaClients).withOpenTelemetry().build();
+            } else {
+                return new BridgeTracingClientsBuilder((BridgeTracingClients) kafkaClients).withOpenTracing().build();
+            }
+        } else if (kafkaClients instanceof KafkaTracingClients) {
+            if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
+                return new KafkaTracingClientsBuilder((KafkaTracingClients) kafkaClients).withOpenTelemetry().build();
+            } else {
+                return new KafkaTracingClientsBuilder((KafkaTracingClients) kafkaClients).withOpenTracing().build();
+            }
+        } else {
+            throw new RuntimeException("Client " + kafkaClients.getClass().getSimpleName() + " + does not support tracing.");
+        }
     }
 
     @BeforeAll
