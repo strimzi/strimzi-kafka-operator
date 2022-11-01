@@ -747,14 +747,16 @@ class RollingUpdateST extends AbstractST {
             .build();
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
-        Map<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
-        Map<String, String> zkMetricsOutput = metricsCollector.toBuilder()
+        metricsCollector.collectMetricsFromPods();
+
+        assertThat(metricsCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
+
+        metricsCollector.toBuilder()
             .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPods();
 
-        assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
-        assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
+        assertThat(metricsCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
 
         LOGGER.info("Changing metrics to something else");
 
@@ -811,14 +813,16 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
 
-        kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
-        zkMetricsOutput = metricsCollector.toBuilder()
+        metricsCollector.collectMetricsFromPods();
+
+        assertThat(metricsCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
+
+        metricsCollector.toBuilder()
             .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPods();
 
-        assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
-        assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
+        assertThat(metricsCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
 
         LOGGER.info("Removing metrics from Kafka and Zookeeper and setting them to null");
 
@@ -833,8 +837,8 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are not existing in pods");
 
-        kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithoutWait();
-        zkMetricsOutput = metricsCollector.toBuilder()
+        Map<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithoutWait();
+        Map<String, String> zkMetricsOutput = metricsCollector.toBuilder()
             .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPodsWithoutWait();

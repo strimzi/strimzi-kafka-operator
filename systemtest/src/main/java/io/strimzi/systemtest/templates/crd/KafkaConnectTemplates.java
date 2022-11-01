@@ -28,9 +28,13 @@ public class KafkaConnectTemplates {
 
     private KafkaConnectTemplates() {}
 
-    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, String clusterName, int kafkaConnectReplicas) {
-        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
+    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, String clusterName, int kafkaConnectReplicas, String pathToConnectConfig) {
+        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(pathToConnectConfig);
         return defaultKafkaConnect(kafkaConnect, namespaceName, name, clusterName, kafkaConnectReplicas);
+    }
+
+    public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, String clusterName, int kafkaConnectReplicas) {
+        return kafkaConnect(name, namespaceName, clusterName, kafkaConnectReplicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
     public static KafkaConnectBuilder kafkaConnect(String name, int kafkaConnectReplicas) {
@@ -41,15 +45,20 @@ public class KafkaConnectTemplates {
         return kafkaConnect(name, ResourceManager.kubeClient().getNamespace(), clusterName, kafkaConnectReplicas);
     }
 
-    public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
-        return kafkaConnectWithMetrics(name, name, kafkaConnectReplicas);
-    }
-
     public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String clusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+        createOrReplaceConnectMetrics();
+        return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, clusterName, kafkaConnectReplicas);
+    }
+
+    public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String name, String clusterName, int replicas) {
+        createOrReplaceConnectMetrics();
+        return kafkaConnectWithFilePlugin(name, ResourceManager.kubeClient().getNamespace(), clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+    }
+
+    private static void createOrReplaceConnectMetrics() {
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).resource(metricsCm).createOrReplace();
-        return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, clusterName, kafkaConnectReplicas);
     }
 
     private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, final String namespaceName, String name, String kafkaClusterName, int kafkaConnectReplicas) {
@@ -79,6 +88,10 @@ public class KafkaConnectTemplates {
         return kafkaConnectWithFilePlugin(clusterName, namespaceName, clusterName, replicas);
     }
 
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas) {
+        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
+    }
+
     /**
      * Method for creating the KafkaConnect builder with File plugin - using the KafkaConnect build feature.
      * @param name Name for the KafkaConnect resource
@@ -87,7 +100,7 @@ public class KafkaConnectTemplates {
      * @param replicas number of KafkaConnect replicas
      * @return KafkaConnect builder with File plugin
      */
-    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas) {
+    public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
         final Plugin fileSinkPlugin = new PluginBuilder()
             .withName("file-plugin")
             .withArtifacts(
@@ -99,7 +112,7 @@ public class KafkaConnectTemplates {
 
         final String imageName = Environment.getImageOutputRegistry() + "/" + namespaceName + "/connect-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
 
-        return kafkaConnect(name, namespaceName, clusterName, replicas)
+        return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
             .editOrNewSpec()
                 .editOrNewBuild()
                     .withPlugins(fileSinkPlugin)
