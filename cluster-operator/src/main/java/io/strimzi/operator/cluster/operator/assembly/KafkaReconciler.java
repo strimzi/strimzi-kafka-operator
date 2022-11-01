@@ -259,6 +259,8 @@ public class KafkaReconciler {
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
                 .compose(i -> podDisruptionBudgetV1Beta1())
+                .compose(i -> maybeDeleteStatefulSet())
+                .compose(i -> maybeDeletePodSet())
                 .compose(i -> statefulSet())
                 .compose(i -> podSet())
                 .compose(i -> rollToAddOrRemoveVolumes())
@@ -837,8 +839,7 @@ public class KafkaReconciler {
     }
 
     /**
-     * Create or update the StatefulSet for the Kafka cluster. When StatefulSets are disabled, it will try to delete
-     * the old StatefulSet.
+     * Create or update the StatefulSet for the Kafka cluster.
      *
      * @return  Future which completes when the StatefulSet is created, updated or deleted
      */
@@ -852,6 +853,18 @@ public class KafkaReconciler {
                         return Future.succeededFuture();
                     });
         } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Deletes the StatefulSet if needed. The deletion happens when the cluster is switching from StatefulSet to
+     * StrimziPodSets. It needs to happen before the StrimziPodSets is created to allow the controller hand-off.
+     *
+     * @return          Future which completes when the StatefulSet is deleted or does not need to be deleted
+     */
+    protected Future<Void> maybeDeleteStatefulSet() {
+        if (featureGates.useStrimziPodSetsEnabled())   {
             // StatefulSets are disabled => delete the StatefulSet if it exists
             return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
                     .compose(sts -> {
@@ -861,12 +874,14 @@ public class KafkaReconciler {
                             return Future.succeededFuture();
                         }
                     });
+        } else {
+            return Future.succeededFuture();
         }
     }
 
     /**
-     * Create or update the StrimziPodSet for the Kafka cluster. When PodSets are disabled, it will try to delete the
-     * old PodSet. If set, it uses the old replica count since scaling-up happens only later in a separate step.
+     * Create or update the StrimziPodSet for the Kafka cluster. If set, it uses the old replica count since scaling-up
+     * happens only later in a separate step.
      *
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
@@ -894,6 +909,19 @@ public class KafkaReconciler {
                         return Future.succeededFuture();
                     });
         } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Deletes the StrimziPodsSet if needed. The deletion happens when the cluster is switching from StrimziPodSets to
+     * StatefulSets. It needs to happen before the StatefulSet is created to allow the controller hand-off (STS will not
+     * accept pods with another controller in owner references).
+     *
+     * @return          Future which completes when the PodSet is deleted or does not need to be deleted
+     */
+    protected Future<Void> maybeDeletePodSet() {
+        if (!featureGates.useStrimziPodSetsEnabled())   {
             // PodSets are disabled => delete the StrimziPodSet for Kafka
             return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
                     .compose(podSet -> {
@@ -903,6 +931,8 @@ public class KafkaReconciler {
                             return Future.succeededFuture();
                         }
                     });
+        } else {
+            return Future.succeededFuture();
         }
     }
 
