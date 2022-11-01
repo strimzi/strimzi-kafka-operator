@@ -233,7 +233,7 @@ public class MetricsCollector {
     }
 
     /**
-     * Method checks already collected metrics data, if
+     * Method checks already collected metrics data for Pattern containing desired metric
      * @param pattern Pattern of metric which is desired
      *
      * @return ArrayList of values collected from the metrics
