@@ -218,7 +218,9 @@ public class MetricsIsolatedST extends AbstractST {
 
         kubeClient().listPods(clusterOperator.getDeploymentNamespace(), kafkaSelector).forEach(pod -> {
             String address = pod.getMetadata().getName() + "." + metricsClusterName + "-kafka-brokers." + clusterOperator.getDeploymentNamespace() + ".svc";
-            assertMetricValueNotNull(kafkaExporterCollector, "kafka_broker_info\\{address=\"" + address);
+            Pattern pattern = Pattern.compile("kafka_broker_info\\{address=\"" + address + ".*\",.*} ([\\d])");
+            ArrayList<Double> values = kafkaExporterCollector.waitForSpecificMetricAndCollect(pattern);
+            assertThat(String.format("metric %s is not null", pattern), values, notNullValue());
         });
     }
 
@@ -292,9 +294,8 @@ public class MetricsIsolatedST extends AbstractST {
         assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, clusterOperator.getDeploymentNamespace(), 1, "none");
 
-        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), 0);
+        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), 1);
         assertCoMetricResources(KafkaConnector.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), metricsClusterName);
 
         assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), 0);
         assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, 0);
@@ -642,7 +643,7 @@ public class MetricsIsolatedST extends AbstractST {
 
     private ArrayList<Double> createPatternAndCollectWithoutWait(MetricsCollector collector, String metric) {
         Pattern pattern = Pattern.compile(metric + " ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        return collector.waitForSpecificMetricAndCollect(pattern);
+        return collector.collectSpecificMetric(pattern);
     }
 
     @BeforeAll
