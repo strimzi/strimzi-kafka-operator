@@ -59,7 +59,7 @@ NOTE: The value of `log.message.format.version` and `inter.broker.protocol.versi
 ====
 Changing the `kafka.version` ensures that all brokers in the cluster will be upgraded to start using the new broker binaries.
 During this process, some brokers are using the old binaries while others have already upgraded to the new ones.
-Leaving the `inter.broker.protocol.version` set to the current version ensures that the brokers can continue to communicate with each other throughout the upgrade.
+Leaving the `inter.broker.protocol.version` unchanged at the current setting ensures that the brokers can continue to communicate with each other throughout the upgrade.
 ====
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
