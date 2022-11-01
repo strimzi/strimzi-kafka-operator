@@ -200,8 +200,8 @@ public class ZooKeeperReconciler {
                 .compose(i -> loggingAndMetricsConfigMap())
                 .compose(i -> podDisruptionBudget())
                 .compose(i -> podDisruptionBudgetV1Beta1())
-                .compose(i -> maybeDeleteStatefulSet())
-                .compose(i -> maybeDeletePodSet())
+                .compose(i -> migrateFromStatefulSetToPodSet())
+                .compose(i -> migrateFromPodSetToStatefulSet())
                 .compose(i -> statefulSet())
                 .compose(i -> podSet())
                 .compose(i -> scaleDown())
@@ -545,12 +545,13 @@ public class ZooKeeperReconciler {
     }
 
     /**
-     * Deletes the StatefulSet if needed. The deletion happens when the cluster is switching from StatefulSet to
-     * StrimziPodSets. It needs to happen before the StrimziPodSets is created to allow the controller hand-off.
+     * Helps with the migration from StatefulSets to StrimziPodSets when the cluster is switching between them. When the
+     * switch happens, it deletes the old StatefulSet. It should happen before the new PodSet StatefulSet is created to
+     * allow the controller hand-off.
      *
      * @return          Future which completes when the StatefulSet is deleted or does not need to be deleted
      */
-    protected Future<Void> maybeDeleteStatefulSet() {
+    protected Future<Void> migrateFromStatefulSetToPodSet() {
         if (featureGates.useStrimziPodSetsEnabled())   {
             // StatefulSets are disabled => delete the StatefulSet if it exists
             return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
@@ -604,13 +605,13 @@ public class ZooKeeperReconciler {
     }
 
     /**
-     * Deletes the StrimziPodsSet if needed. The deletion happens when the cluster is switching from StrimziPodSets to
-     * StatefulSets. It needs to happen before the StatefulSet is created to allow the controller hand-off (STS will not
-     * accept pods with another controller in owner references).
+     * Helps with the migration from StrimziPodSets to StatefulSets when the cluster is switching between them. When the
+     * switch happens, it deletes the old StrimziPodSet. It needs to happen before the StatefulSet is created to allow
+     * the controller hand-off (STS will not accept pods with another controller in owner references).
      *
      * @return          Future which completes when the PodSet is deleted or does not need to be deleted
      */
-    protected Future<Void> maybeDeletePodSet() {
+    protected Future<Void> migrateFromPodSetToStatefulSet() {
         if (!featureGates.useStrimziPodSetsEnabled())   {
             // StrimziPodSets are disabled => delete the StrimziPodSet if it exists
             return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
