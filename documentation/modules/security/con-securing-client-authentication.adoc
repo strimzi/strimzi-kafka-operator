@@ -29,8 +29,8 @@ _USER-NAME_ is the common name given in a TLS certificate.
 [role="_additional-resources"]
 .Additional resources
 
-* xref:con-securing-kafka-authentication-{context}[When to use mTLS authentication or SCRAM-SHA Authentication authentication for clients]
-* xref:type-KafkaUserSpec-reference[`KafkaUserSpec` schema reference]
+* xref:con-securing-kafka-authentication-{context}[]
+* xref:type-KafkaUserSpec-reference[]
 
 == mTLS authentication
 

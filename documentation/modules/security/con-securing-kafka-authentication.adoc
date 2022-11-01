@@ -6,9 +6,12 @@
 = Listener authentication
 
 [role="_abstract"]
+Configure client authentication for Kafka brokers by creating listeners.
+Specify the listener authentication type using the `Kafka.spec.kafka.listeners.authentication` property in the `Kafka` resource.
+
 For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` _internal_ listeners.
 For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
-which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
+which can be `nodeport`, `loadbalancer`, `ingress`, or `route` (on OpenShift).
 
 For more information on the configuration options for connecting an external client, see xref:assembly-accessing-kafka-outside-cluster-str[Accessing Kafka outside of the Kubernetes cluster].
 
@@ -43,29 +46,36 @@ Each listener is configured with a unique name and port within a Kafka cluster.
 
 NOTE: Listeners cannot be configured to use the ports reserved for inter-broker communication (9091 or 9090) and metrics (9404).
 
-.An example showing listener authentication configuration
+.Example listener authentication configuration
 [source,yaml,subs="attributes+"]
 ----
-# ...
-listeners:
-  - name: plain
-    port: 9092
-    type: internal
-    tls: true
-    authentication:
-      type: scram-sha-512
-  - name: tls
-    port: 9093
-    type: internal
-    tls: true
-    authentication:
-      type: tls
-  - name: external
-    port: 9094
-    type: loadbalancer
-    tls: true
-    authentication:
-      type: tls
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: myproject
+spec:
+  kafka:
+    # ...
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: true
+        authentication:
+          type: scram-sha-512
+      - name: tls
+        port: 9093
+       type: internal
+       tls: true
+       authentication:
+         type: tls
+      - name: external
+        port: 9094
+        type: loadbalancer
+        tls: true
+        authentication:
+          type: tls
 # ...
 ----
 
@@ -77,6 +87,11 @@ mTLS authentication is always used for the communication between Kafka brokers a
 Strimzi can configure Kafka to use TLS (Transport Layer Security) to provide encrypted communication between Kafka brokers and clients either with or without mutual authentication.
 For mutual, or two-way, authentication, both the server and the client present certificates.
 When you configure mTLS authentication, the broker authenticates the client (client authentication) and the client authenticates the broker (server authentication).
+
+mTLS listener configuration in the `Kafka` resource requires the following:
+
+* `tls: true` to specify TLS encryption and server authentication
+* `authentication.type: TLS` to specify the client authentication
 
 NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
 For example, when HTTPS is used between a web browser and a web server, the browser obtains proof of the identity of the web server.
@@ -97,7 +112,7 @@ Instead the client and the server are each challenged by the other to offer proo
 * The server and client each generate a new challenge for each authentication exchange.
 This means that the exchange is resilient against replay attacks.
 
-When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12-character password consisting of upper and lowercase ASCII letters and numbers.
+When `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` the User Operator will generate a random 12-character password consisting of upper and lowercase ASCII letters and numbers.
 
 [id='assembly-kafka-broker-listener-network-policies-{context}']
 == Network policies

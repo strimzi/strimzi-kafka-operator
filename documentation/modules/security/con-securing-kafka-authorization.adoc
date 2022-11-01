@@ -5,7 +5,8 @@
 [id='con-securing-kafka-authorization-{context}']
 = Kafka authorization
 
-You can configure authorization for Kafka brokers using the `authorization` property in the `Kafka.spec.kafka` resource.
+[role="_abstract"]
+Configure authorization for Kafka brokers using the `Kafka.spec.kafka.authorization` property in the `Kafka` resource.
 If the `authorization` property is missing, no authorization is enabled and clients have no restrictions.
 When enabled, authorization is applied to all enabled listeners.
 The authorization method is defined in the `type` field.
