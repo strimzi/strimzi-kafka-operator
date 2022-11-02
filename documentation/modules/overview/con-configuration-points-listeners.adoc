@@ -22,7 +22,7 @@ Internal listeners connect clients to Kafka brokers within the Kubernetes cluste
 An `internal` type listener configuration uses a headless service and the DNS names given to the broker pods. 
 
 You might need to join your Kubernetes network to an outside network.
-in which case, you can configure an `internal` type listener (using the `useServiceDnsDomain` property) so that the Kubernetes service DNS domain (typically `.cluster.local`) is not used.
+In which case, you can configure an `internal` type listener (using the `useServiceDnsDomain` property) so that the Kubernetes service DNS domain (typically `.cluster.local`) is not used.
 
 You can also configure a `cluster-ip` type of listener that exposes a Kafka cluster based on per-broker `ClusterIP` services.
 This is a useful option when you can't route through the headless service or you wish to incorporate a custom access mechanism. 
