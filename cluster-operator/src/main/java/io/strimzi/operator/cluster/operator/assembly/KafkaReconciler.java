@@ -859,7 +859,7 @@ public class KafkaReconciler {
 
     /**
      * Helps with the migration from StatefulSets to StrimziPodSets when the cluster is switching between them. When the
-     * switch happens, it deletes the old StatefulSet. It should happen before the new PodSet StatefulSet is created to
+     * switch happens, it deletes the old StatefulSet. It should happen before the new PodSet is created to
      * allow the controller hand-off.
      *
      * @return          Future which completes when the StatefulSet is deleted or does not need to be deleted
