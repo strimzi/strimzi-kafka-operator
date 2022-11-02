@@ -339,7 +339,7 @@ public class KafkaRebalanceStateMachineTest {
                 .withSkipHardGoalCheck(true)
                 .build();
         kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, rebalanceSpec, null, false);
-        this.krNewBadGoalsError(vertx, context, CruiseControlEndpoints.ADD_BROKER, kcRebalance);
+        this.krNewBadGoalsErrorWithSkipHGCheck(vertx, context, CruiseControlEndpoints.ADD_BROKER, kcRebalance);
 
         rebalanceSpec = new KafkaRebalanceSpecBuilder()
                 .withMode(KafkaRebalanceMode.REMOVE_BROKERS)
@@ -348,7 +348,7 @@ public class KafkaRebalanceStateMachineTest {
                 .withSkipHardGoalCheck(true)
                 .build();
         kcRebalance = createKafkaRebalance(KafkaRebalanceState.New, null, null, rebalanceSpec, null, false);
-        this.krNewBadGoalsError(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
+        this.krNewBadGoalsErrorWithSkipHGCheck(vertx, context, CruiseControlEndpoints.REMOVE_BROKER, kcRebalance);
     }
 
     private void krNewBadGoalsErrorWithSkipHGCheck(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
