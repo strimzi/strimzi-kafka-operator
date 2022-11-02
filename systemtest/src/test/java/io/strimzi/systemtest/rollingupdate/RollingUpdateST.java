@@ -739,24 +739,24 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
         String metricsScraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+
+        MetricsCollector kafkaCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(metricsScraperPodName)
             .withComponentName(testStorage.getClusterName())
             .withComponentType(ComponentType.Kafka)
             .build();
 
-        LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
-        metricsCollector.collectMetricsFromPods();
-
-        assertThat(metricsCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
-
-        metricsCollector.toBuilder()
+        MetricsCollector zkCollector = kafkaCollector.toBuilder()
             .withComponentType(ComponentType.Zookeeper)
-            .build()
-            .collectMetricsFromPods();
+            .build();
 
-        assertThat(metricsCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
+        LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
+        kafkaCollector.collectMetricsFromPods();
+        zkCollector.collectMetricsFromPods();
+
+        assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
+        assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
 
         LOGGER.info("Changing metrics to something else");
 
@@ -813,16 +813,11 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
 
-        metricsCollector.collectMetricsFromPods();
+        kafkaCollector.collectMetricsFromPods();
+        zkCollector.collectMetricsFromPods();
 
-        assertThat(metricsCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
-
-        metricsCollector.toBuilder()
-            .withComponentType(ComponentType.Zookeeper)
-            .build()
-            .collectMetricsFromPods();
-
-        assertThat(metricsCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
+        assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
+        assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
 
         LOGGER.info("Removing metrics from Kafka and Zookeeper and setting them to null");
 
@@ -837,13 +832,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are not existing in pods");
 
-        Map<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithoutWait();
-        Map<String, String> zkMetricsOutput = metricsCollector.toBuilder()
-            .withComponentType(ComponentType.Zookeeper)
-            .build()
-            .collectMetricsFromPodsWithoutWait();
-
-        kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
-        zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
+        kafkaCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value, is("")));
+        zkCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value, is("")));
     }
 }
