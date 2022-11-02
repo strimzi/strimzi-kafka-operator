@@ -686,9 +686,13 @@ public class StrimziPodSetControllerMockTest {
                     10_000,
                     () -> {
                         Pod p = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+                        // Waits for the Pod to be re-created by the StrimziPodSetController and for its status to be
+                        // updated by MockKube (and its MockPodController). Waiting for the status of the Pod to be
+                        // updated is important to avoid any Null Pointer Exceptions in the asserts done after
+                        // the wait is complete
                         return p != null
                                 && !resourceVersion.equals(p.getMetadata().getResourceVersion())
-                                && p.getStatus() != null; // We need to also wait for the Pod status to be set to avoid NullPointerExceptions
+                                && p.getStatus() != null;
                     },
                     () -> context.failNow("Test timed out waiting for pod recreation!"));
 
