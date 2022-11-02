@@ -7,6 +7,8 @@
 
 [role="_abstract"]
 For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` _internal_ listeners.
+`The internal` listener type use a headless service and the DNS names given to the broker pods. 
+As an alternative to the headless service, you can also create a `cluster-ip` type of internal listener to expose Kafka using per-broker `ClusterIP` services.
 For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
 which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
 
