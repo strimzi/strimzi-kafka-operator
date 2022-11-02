@@ -31,7 +31,7 @@ Optionally, `scope` and `audience` can be specified if needed.
 You can configure the address of your OAuth server in the `tokenEndpointUri` property together with the OAuth client ID and refresh token.
 The OAuth client will connect to the OAuth server, authenticate using the client ID and refresh token and get an access token which it will use to authenticate with the Kafka broker.
 In the `refreshToken` property, specify a link to a `Secret` containing the refresh token.
-+
+
 .An example of OAuth client authentication using client ID and refresh token
 [source,yaml,subs=attributes+]
 ----

@@ -28,12 +28,12 @@ For the `Kafka` resource to be upgraded, check that:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl edit kafka _my-cluster_
+kubectl edit kafka _<my_cluster>_
 ----
 
-. If configured, ensure that `Kafka.spec.kafka.config` has the `log.message.format.version` and `inter.broker.protocol.version` set to the defaults for the _current_ Kafka version.
+. If configured, check that the `inter.broker.protocol.version` and `log.message.format.version` properties are set to the _current_ version.
 +
-For example, if upgrading from Kafka version {KafkaVersionLower} to {KafkaVersionHigher}:
+For example, the current version is {InterBrokerVersionLower} if upgrading from Kafka version {KafkaVersionLower} to {KafkaVersionHigher}:
 +
 [source,yaml,subs=attributes+]
 ----
@@ -59,7 +59,7 @@ NOTE: The value of `log.message.format.version` and `inter.broker.protocol.versi
 ====
 Changing the `kafka.version` ensures that all brokers in the cluster will be upgraded to start using the new broker binaries.
 During this process, some brokers are using the old binaries while others have already upgraded to the new ones.
-Leaving the `inter.broker.protocol.version` unchanged ensures that the brokers can continue to communicate with each other throughout the upgrade.
+Leaving the `inter.broker.protocol.version` unchanged at the current setting ensures that the brokers can continue to communicate with each other throughout the upgrade.
 ====
 +
 For example, if upgrading from Kafka {KafkaVersionLower} to {KafkaVersionHigher}:
