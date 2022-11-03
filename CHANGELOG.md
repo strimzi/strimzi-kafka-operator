@@ -2,7 +2,7 @@
 
 ## 0.33.0
 
-* n/a
+* Add readiness and liveness probes specifically for nodes running in KRaft mode.
 
 ## 0.32.0
 
