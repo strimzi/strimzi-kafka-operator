@@ -270,7 +270,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "zookeeper_outstandingrequests{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
+          "expr": "sum(zookeeper_outstandingrequests{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",strimzi_io_kind=\"Kafka\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -687,7 +687,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-zookeeper-[0-9]+\"}",
+          "expr": "sum(kubelet_volume_stats_available_bytes{namespace=\"$kubernetes_namespace\",persistentvolumeclaim=~\"data(-[0-9]+)?-$strimzi_cluster_name-zookeeper-[0-9]+\"}) by (persistentvolumeclaim)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{persistentvolumeclaim}}",
@@ -773,11 +773,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "process_open_fds{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-zookeeper-[0-9+]\",container=\"zookeeper\"}",
+          "expr": "sum(process_open_fds{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-zookeeper-[0-9+]\",container=\"zookeeper\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
-          "legendFormat": "{{pod}}",
+          "legendFormat": "{{kubernetes_pod_name}}",
           "refId": "A"
         }
       ],
@@ -1112,7 +1112,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "jvm_threads_current{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-zookeeper-[0-9+]\",strimzi_io_name=\"$strimzi_cluster_name-zookeeper\"}",
+          "expr": "sum(jvm_threads_current{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-zookeeper-[0-9+]\",strimzi_io_name=\"$strimzi_cluster_name-zookeeper\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -1197,7 +1197,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "zookeeper_minrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
+          "expr": "sum(zookeeper_minrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -1282,7 +1282,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "zookeeper_avgrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
+          "expr": "sum(zookeeper_avgrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -1367,7 +1367,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "zookeeper_maxrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}",
+          "expr": "sum(zookeeper_maxrequestlatency{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$zk_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
