@@ -10,6 +10,8 @@ spec:
       log-level: debug
       query:
         base-path: /jaeger
+      collector.grpc.tls.enabled: false
+      reporter.grpc.tls.enabled: false
   ingress:
     openshift: {}
     resources: {}
