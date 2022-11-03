@@ -33,15 +33,22 @@ public class KafkaAgent {
     private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
     private final File sessionConnectedFile;
-    private File brokerReadyFile;
+    private final File brokerReadyFile;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private MetricName sessionStateName;
     private Gauge sessionState;
+    private Boolean inKRaftMode = false;
 
     public KafkaAgent(File brokerReadyFile, File sessionConnectedFile) {
         this.brokerReadyFile = brokerReadyFile;
         this.sessionConnectedFile = sessionConnectedFile;
+    }
+
+    public KafkaAgent(File brokerReadyFile) {
+        this.brokerReadyFile = brokerReadyFile;
+        this.sessionConnectedFile = null;
+        this.inKRaftMode = true;
     }
 
     private void run() {
@@ -71,7 +78,7 @@ public class KafkaAgent {
                     }
                 }
                 if (brokerState != null
-                        && sessionState != null) {
+                        && (inKRaftMode || sessionState != null)) {
                     metricsRegistry.removeListener(this);
                     LOGGER.info("Starting poller");
                     Thread pollerThread = new Thread(poller(),
@@ -133,7 +140,9 @@ public class KafkaAgent {
             @Override
             public void run() {
                 while (true) {
-                    handleSessionState();
+                    if (!inKRaftMode) {
+                        handleSessionState();
+                    }
 
                     if (handleBrokerState()) {
                         break;
@@ -153,11 +162,19 @@ public class KafkaAgent {
             boolean handleBrokerState() {
                 LOGGER.trace("Polling {}", brokerStateName);
                 boolean ready = false;
-                Integer running = Integer.valueOf(3);
+                Integer running = 3;
+                Integer unknown = 127;
                 Object value = brokerState.value();
 
-                if ((value instanceof Integer && running.equals(value))
-                        || (value instanceof Byte && running.equals(((Byte) value).intValue()))) {
+                boolean stateIsRunning = false;
+                if (value instanceof Integer) {
+                    stateIsRunning = inKRaftMode ? running.compareTo((Integer) value) <= 0 && !unknown.equals(value) : running.equals(value);
+                }
+                if (value instanceof Byte) {
+                    int intValue = ((Byte) value).intValue();
+                    stateIsRunning = inKRaftMode ? running <= intValue && !unknown.equals(intValue) : running.equals(intValue);
+                }
+                if (stateIsRunning) {
                     try {
                         LOGGER.trace("Running as server according to {} => ready", brokerStateName);
                         touch(brokerReadyFile);
@@ -174,6 +191,11 @@ public class KafkaAgent {
 
             void handleSessionState() {
                 LOGGER.trace("Polling {}", sessionStateName);
+                // If not in KRaft mode these should not be null, but add a check to prevent null pointer
+                if (sessionConnectedFile == null || sessionState == null) {
+                    LOGGER.error("Session connected file or session state metric is null.");
+                    return;
+                }
                 String sessionStateStr = String.valueOf(sessionState.value());
                 if ("CONNECTED".equals(sessionStateStr)) {
                     if (!sessionConnectedFile.exists()) {
@@ -208,8 +230,15 @@ public class KafkaAgent {
     public static void premain(String agentArgs) {
         int index = agentArgs.indexOf(':');
         if (index == -1) {
-            LOGGER.error("Unable to parse arguments {}", agentArgs);
-            System.exit(1);
+            LOGGER.debug("Running in KRaft mode");
+            File brokerReadyFile = new File(agentArgs);
+            if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
+                LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
+                System.exit(1);
+            } else {
+                LOGGER.info("Starting KafkaAgent with brokerReadyFile={}", brokerReadyFile);
+                new KafkaAgent(brokerReadyFile).run();
+            }
         } else {
             File brokerReadyFile = new File(agentArgs.substring(0, index));
             File sessionConnectedFile = new File(agentArgs.substring(index + 1));
