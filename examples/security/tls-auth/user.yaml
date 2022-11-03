@@ -10,41 +10,21 @@ spec:
   authorization:
     type: simple
     acls:
-      # Example ACL rules for consuming from my-topic using consumer group my-group
+      # Example ACL rules for creating, describing, consuming and producing from my-topic using consumer group my-group
       - resource:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Read
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Read
+          - Describe
+          - Write
+          - Create
         host: "*"
       - resource:
           type: group
           name: my-group
           patternType: literal
-        operation: Read
-        host: "*"
-      # Example ACL rules for producing to topic my-topic
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Write
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Create
-        host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
+        operations:
+          - Read
         host: "*"

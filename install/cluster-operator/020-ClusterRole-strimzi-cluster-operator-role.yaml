@@ -5,6 +5,10 @@ metadata:
   labels:
     app: strimzi
 rules:
+  # Resources in this role are used by the operator based on an operand being deployed in some namespace. When needed, you
+  # can deploy the operator as a cluster-wide operator. But grant the rights listed in this role only on the namespaces
+  # where the operands will be deployed. That way, you can limit the access the operator has to other namespaces where it
+  # does not manage any clusters.
   - apiGroups:
       - "rbac.authorization.k8s.io"
     resources:
@@ -47,52 +51,6 @@ rules:
       - secrets
       # The cluster operator needs to access and manage persistent volume claims to bind them to Strimzi components for persistent data
       - persistentvolumeclaims
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
-  - apiGroups:
-      - "kafka.strimzi.io"
-    resources:
-      # The cluster operator runs the KafkaAssemblyOperator, which needs to access and manage Kafka resources
-      - kafkas
-      - kafkas/status
-      # The cluster operator runs the KafkaConnectAssemblyOperator, which needs to access and manage KafkaConnect resources
-      - kafkaconnects
-      - kafkaconnects/status
-      # The cluster operator runs the KafkaConnectorAssemblyOperator, which needs to access and manage KafkaConnector resources
-      - kafkaconnectors
-      - kafkaconnectors/status
-      # The cluster operator runs the KafkaMirrorMakerAssemblyOperator, which needs to access and manage KafkaMirrorMaker resources
-      - kafkamirrormakers
-      - kafkamirrormakers/status
-      # The cluster operator runs the KafkaBridgeAssemblyOperator, which needs to access and manage BridgeMaker resources
-      - kafkabridges
-      - kafkabridges/status
-      # The cluster operator runs the KafkaMirrorMaker2AssemblyOperator, which needs to access and manage KafkaMirrorMaker2 resources
-      - kafkamirrormaker2s
-      - kafkamirrormaker2s/status
-      # The cluster operator runs the KafkaRebalanceAssemblyOperator, which needs to access and manage KafkaRebalance resources
-      - kafkarebalances
-      - kafkarebalances/status
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - delete
-      - patch
-      - update
-  - apiGroups:
-      - "core.strimzi.io"
-    resources:
-      # The cluster operator uses StrimziPodSets to manage the Kafka and ZooKeeper pods
-      - strimzipodsets
-      - strimzipodsets/status
     verbs:
       - get
       - list
