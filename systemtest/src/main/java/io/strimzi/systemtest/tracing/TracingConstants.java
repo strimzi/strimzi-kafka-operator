@@ -8,6 +8,8 @@ package io.strimzi.systemtest.tracing;
  * Interface for keep tracing constants used across system tests.
  */
 public interface TracingConstants {
+
+    // client and a component services
     String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
     String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
     String JAEGER_KAFKA_STREAMS_SERVICE = "hello-world-streams";
@@ -15,9 +17,6 @@ public interface TracingConstants {
     String JAEGER_MIRROR_MAKER2_SERVICE = "my-mirror-maker2";
     String JAEGER_KAFKA_CONNECT_SERVICE = "my-connect";
     String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
-
-    String PRODUCER_JOB_NAME = "hello-world-producer";
-    String CONSUMER_JOB_NAME = "hello-world-consumer";
 
     String JAEGER_INSTANCE_NAME = "my-jaeger";
     String JAEGER_SAMPLER_TYPE = "const";
