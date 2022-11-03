@@ -12,11 +12,11 @@ Use a reassignment file to increase the number of brokers in a Kafka cluster.
 The reassignment file should describe how partitions are reassigned to brokers in the enlarged Kafka cluster.
 
 This procedure describes a secure scaling process that uses TLS.
-You'll need a Kafka cluster that uses TLS encryption and authentication.
+You'll need a Kafka cluster that uses TLS encryption and mTLS authentication.
 
 .Prerequisites
 
-* You have a running Kafka cluster based on a `Kafka` resource configured with internal TLS authentication and encryption.
+* You have a running Kafka cluster based on a `Kafka` resource configured with internal TLS encryption and mTLS authentication.
 * You have generated a reassignment JSON file named `reassignment.json`.
 * You are running an interactive pod container that is connected to the running Kafka broker.
 * You are connected as a `KafkaUser` configured with ACL rules that specify permission to manage the Kafka cluster and its topics.

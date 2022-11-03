@@ -1,5 +1,5 @@
-To configure TLS client authentication, set the `type` property to the value `tls`.
-TLS client authentication uses a TLS certificate to authenticate.
+To configure mTLS authentication, set the `type` property to the value `tls`.
+mTLS uses a TLS certificate to authenticate.
 
 === `certificateAndKey`
 
@@ -14,9 +14,9 @@ kubectl create secret generic _MY-SECRET_ \
 --from-file=_MY-PUBLIC-TLS-CERTIFICATE-FILE.crt_ \
 --from-file=_MY-PRIVATE.key_
 
-NOTE: TLS client authentication can only be used with TLS connections.
+NOTE: mTLS authentication can only be used with TLS connections.
 
-.Example TLS client authentication configuration
+.Example mTLS configuration
 [source,yaml,subs=attributes+]
 ----
 authentication:

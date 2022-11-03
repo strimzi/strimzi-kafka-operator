@@ -271,7 +271,7 @@ TLS encryption is always used with `route` listeners.
 
 Authentication for the listener can be specified as:
 
-* Mutual TLS (`tls`)
+* mTLS (`tls`)
 * SCRAM-SHA-512 (`scram-sha-512`)
 * Token-based OAuth 2.0 (`oauth`)
 * xref:type-KafkaListenerAuthenticationCustom-reference[Custom (`custom`)]

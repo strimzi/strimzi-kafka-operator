@@ -5,19 +5,18 @@
 [id='assembly-securing-access-{context}']
 = Managing secure access to Kafka
 
-You can secure your Kafka cluster by managing the access each client has to the Kafka brokers.
+[role="_abstract"]
+Secure your Kafka cluster by managing the access a client has to Kafka brokers.
+Specify configuration options to secure Kafka brokers and clients
 
-A secure connection between Kafka brokers and clients can encompass:
+A secure connection between Kafka brokers and clients can encompass the following:
 
 * Encryption for data exchange
 * Authentication to prove identity
 * Authorization to allow or decline actions executed by users
 
-This chapter explains how to set up secure connections between Kafka brokers and clients, with sections describing:
-
-* Security options for Kafka clusters and clients
-* How to secure Kafka brokers
-* How to use an authorization server for OAuth 2.0 token-based authentication and authorization
+The authentication and authorization mechanisms specified for a client must match those specified for the Kafka brokers.
+Strimzi operators automate the configuration process and create the certificates required for authentication.
 
 //Config options for securing Kafka
 include::assembly-securing-kafka-brokers.adoc[leveloffset=+1]
