@@ -238,26 +238,24 @@ public class MetricsCollector {
      *
      * @return ArrayList of values collected from the metrics
      */
-    public ArrayList<Double> waitForSpecificMetricAndCollect(Pattern pattern) {
-        synchronized (LOCK) {
-            ArrayList<Double> values = collectSpecificMetric(pattern);
+    public synchronized ArrayList<Double> waitForSpecificMetricAndCollect(Pattern pattern) {
+        ArrayList<Double> values = collectSpecificMetric(pattern);
 
-            if (values.isEmpty()) {
-                TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-                    this.collectMetricsFromPods();
-                    ArrayList<Double> vals = this.collectSpecificMetric(pattern);
+        if (values.isEmpty()) {
+            TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+                this.collectMetricsFromPods();
+                ArrayList<Double> vals = this.collectSpecificMetric(pattern);
 
-                    if (!vals.isEmpty()) {
-                        values.addAll(vals);
-                        return true;
-                    }
+                if (!vals.isEmpty()) {
+                    values.addAll(vals);
+                    return true;
+                }
 
-                    return false;
-                });
-            }
-
-            return values;
+                return false;
+            });
         }
+
+        return values;
     }
 
     /**
