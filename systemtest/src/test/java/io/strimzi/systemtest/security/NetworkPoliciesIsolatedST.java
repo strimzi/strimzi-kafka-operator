@@ -153,9 +153,9 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withComponentType(ComponentType.KafkaExporter)
             .build();
 
-        Map<String, String> kafkaExporterMetricsData = metricsCollector.collectMetricsFromPods();
-        assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
-        for (Map.Entry<String, String> entry : kafkaExporterMetricsData.entrySet()) {
+        metricsCollector.collectMetricsFromPods();
+        assertThat("Kafka Exporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
+        for (Map.Entry<String, String> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_consumergroup_current_offset"));
             assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topic0 + "\"} 1"));

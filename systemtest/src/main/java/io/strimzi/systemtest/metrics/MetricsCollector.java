@@ -39,6 +39,8 @@ public class MetricsCollector {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsCollector.class);
 
+    private static final Object LOCK = new Object();
+
     private String namespaceName;
     private String scraperPodName;
     private ComponentType componentType;
@@ -46,6 +48,7 @@ public class MetricsCollector {
     private int metricsPort;
     private String metricsPath;
     private LabelSelector componentLabelSelector;
+    private Map<String, String> collectedData;
 
     public static class Builder {
         private String namespaceName;
@@ -112,6 +115,10 @@ public class MetricsCollector {
 
     public int getMetricsPort() {
         return metricsPort;
+    }
+
+    public Map<String, String> getCollectedData() {
+        return collectedData;
     }
 
     protected MetricsCollector.Builder newBuilder() {
@@ -208,18 +215,46 @@ public class MetricsCollector {
     /**
      * Parse out specific metric from whole metrics file
      * @param pattern regex pattern for specific metric
-     * @param data all metrics data
      * @return list of parsed values
      */
-    public static ArrayList<Double> collectSpecificMetric(Pattern pattern, Map<String, String> data) {
+    public ArrayList<Double> collectSpecificMetric(Pattern pattern) {
         ArrayList<Double> values = new ArrayList<>();
 
-        for (Map.Entry<String, String> entry : data.entrySet()) {
-            Matcher t = pattern.matcher(entry.getValue());
-            if (t.find()) {
-                values.add(Double.parseDouble(t.group(1)));
+        if (collectedData != null && !collectedData.isEmpty()) {
+            for (Map.Entry<String, String> entry : collectedData.entrySet()) {
+                Matcher t = pattern.matcher(entry.getValue());
+                if (t.find()) {
+                    values.add(Double.parseDouble(t.group(1)));
+                }
             }
         }
+
+        return values;
+    }
+
+    /**
+     * Method checks already collected metrics data for Pattern containing desired metric
+     * @param pattern Pattern of metric which is desired
+     *
+     * @return ArrayList of values collected from the metrics
+     */
+    public synchronized ArrayList<Double> waitForSpecificMetricAndCollect(Pattern pattern) {
+        ArrayList<Double> values = collectSpecificMetric(pattern);
+
+        if (values.isEmpty()) {
+            TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+                this.collectMetricsFromPods();
+                ArrayList<Double> vals = this.collectSpecificMetric(pattern);
+
+                if (!vals.isEmpty()) {
+                    values.addAll(vals);
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
         return values;
     }
 
@@ -237,16 +272,14 @@ public class MetricsCollector {
         int ret = exec.execute(null, executableCommand, 20_000);
 
         LOGGER.info("Metrics collection for PodIp {} from Pod {} finished with return code: {}", metricsPodIp, scraperPodName, ret);
-
         return exec.out();
     }
 
     /**
      * Collect metrics from all pods with specific selector with wait
-     * @return map with metrics {podName, metrics}
      */
     @SuppressWarnings("unchecked")
-    public Map<String, String> collectMetricsFromPods() {
+    public void collectMetricsFromPods() {
         Map<String, String>[] metricsData = (Map<String, String>[]) new HashMap[1];
         TestUtils.waitFor("metrics has data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> {
@@ -265,7 +298,7 @@ public class MetricsCollector {
                 return true;
             });
 
-        return metricsData[0];
+        collectedData = metricsData[0];
     }
 
     public Map<String, String> collectMetricsFromPodsWithoutWait() {
