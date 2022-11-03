@@ -3038,7 +3038,7 @@ include::../api/io.strimzi.api.kafka.model.AutoRestart.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property        |Description
-|enabled  1.2+<.<a|Whether automatic restart should be enable or disable, default to true.
+|enabled  1.2+<.<a|Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
 |boolean
 |====
 
@@ -3074,11 +3074,11 @@ Used in: xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:
 [options="header"]
 |====
 |Property                     |Description
-|count                 1.2+<.<a|The number of time the element restarted.
+|count                 1.2+<.<a|The number of times the connector or task is restarted.
 |integer
-|connectorName         1.2+<.<a|The name of the connector that is getting restarted.
+|connectorName         1.2+<.<a|The name of the connector being restarted.
 |string
-|lastRestartTimestamp  1.2+<.<a|Last time the  auto restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone.
+|lastRestartTimestamp  1.2+<.<a|The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
 |string
 |====
 
@@ -3213,14 +3213,14 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 
 [options="header"]
 |====
-|Property                              |Description
-|tasksMax                       1.2+<.<a|The maximum number of tasks for the Kafka Connector.
+|Property            |Description
+|tasksMax     1.2+<.<a|The maximum number of tasks for the Kafka Connector.
 |integer
-|autoRestartConnectorsAndTasks  1.2+<.<a|Automatic restart of connectors and tasks configuration.
-|xref:type-AutoRestart-{context}[`AutoRestart`]
-|config                         1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
+|config       1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map
-|pause                          1.2+<.<a|Whether the connector should be paused. Defaults to false.
+|autoRestart  1.2+<.<a|Automatic restart of connector and tasks configuration.
+|xref:type-AutoRestart-{context}[`AutoRestart`]
+|pause        1.2+<.<a|Whether the connector should be paused. Defaults to false.
 |boolean
 |====
 

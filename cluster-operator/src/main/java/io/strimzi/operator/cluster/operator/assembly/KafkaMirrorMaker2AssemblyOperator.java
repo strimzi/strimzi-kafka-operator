@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
+import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
@@ -489,6 +490,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         if (autoRestart != null) {
                             autoRestart.setConnectorName(connectorName);
                             mirrorMaker2Status.getAutoRestartStatuses().add(autoRestart);
+                            mirrorMaker2Status.getAutoRestartStatuses().sort(Comparator.comparing(AutoRestartStatus::getConnectorName));
                         }
                     } else {
                         maybeUpdateMirrorMaker2Status(reconciliation, mirrorMaker2, result.cause());

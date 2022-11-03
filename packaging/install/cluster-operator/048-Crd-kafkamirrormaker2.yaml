@@ -243,17 +243,17 @@ spec:
                           type: integer
                           minimum: 1
                           description: The maximum number of tasks for the Kafka Connector.
-                        autoRestartConnectorsAndTasks:
-                          type: object
-                          properties:
-                            enabled:
-                              type: boolean
-                              description: "Whether automatic restart should be enable or disable, default to true."
-                          description: Automatic restart of connectors and tasks configuration.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
                           description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                        autoRestart:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+                          description: Automatic restart of connector and tasks configuration.
                         pause:
                           type: boolean
                           description: Whether the connector should be paused. Defaults to false.
@@ -265,17 +265,17 @@ spec:
                           type: integer
                           minimum: 1
                           description: The maximum number of tasks for the Kafka Connector.
-                        autoRestartConnectorsAndTasks:
-                          type: object
-                          properties:
-                            enabled:
-                              type: boolean
-                              description: "Whether automatic restart should be enable or disable, default to true."
-                          description: Automatic restart of connectors and tasks configuration.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
                           description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                        autoRestart:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+                          description: Automatic restart of connector and tasks configuration.
                         pause:
                           type: boolean
                           description: Whether the connector should be paused. Defaults to false.
@@ -287,17 +287,17 @@ spec:
                           type: integer
                           minimum: 1
                           description: The maximum number of tasks for the Kafka Connector.
-                        autoRestartConnectorsAndTasks:
-                          type: object
-                          properties:
-                            enabled:
-                              type: boolean
-                              description: "Whether automatic restart should be enable or disable, default to true."
-                          description: Automatic restart of connectors and tasks configuration.
                         config:
                           x-kubernetes-preserve-unknown-fields: true
                           type: object
                           description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                        autoRestart:
+                          type: object
+                          properties:
+                            enabled:
+                              type: boolean
+                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+                          description: Automatic restart of connector and tasks configuration.
                         pause:
                           type: boolean
                           description: Whether the connector should be paused. Defaults to false.
@@ -1918,13 +1918,13 @@ spec:
                   properties:
                     count:
                       type: integer
-                      description: The number of time the element restarted.
+                      description: The number of times the connector or task is restarted.
                     connectorName:
                       type: string
-                      description: The name of the connector that is getting restarted.
+                      description: The name of the connector being restarted.
                     lastRestartTimestamp:
                       type: string
-                      description: "Last time the  auto restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
+                      description: The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
                 description: List of MirrorMaker 2.0 connector auto restart statuses.
               connectorPlugins:
                 type: array

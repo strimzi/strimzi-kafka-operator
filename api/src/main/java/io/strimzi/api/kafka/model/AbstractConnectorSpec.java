@@ -34,6 +34,8 @@ public abstract class AbstractConnectorSpec extends Spec {
     private Boolean pause;
     private Map<String, Object> config = new HashMap<>(0);
 
+    private AutoRestart autoRestart;
+
     @Description("The maximum number of tasks for the Kafka Connector")
     @Minimum(1)
     public Integer getTasksMax() {
@@ -60,5 +62,15 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     public void setPause(Boolean pause) {
         this.pause = pause;
+    }
+
+    @Description("Automatic restart of connector and tasks configuration")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public AutoRestart getAutoRestart() {
+        return autoRestart;
+    }
+
+    public void setAutoRestart(AutoRestart autoRestart) {
+        this.autoRestart = autoRestart;
     }
 }

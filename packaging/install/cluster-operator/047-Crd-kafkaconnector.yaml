@@ -64,7 +64,7 @@ spec:
                 properties:
                   enabled:
                     type: boolean
-                    description: "Whether automatic restart should be enable or disable, default to true."
+                    description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
                 description: Automatic restart of connector and tasks configuration.
               config:
                 x-kubernetes-preserve-unknown-fields: true
@@ -106,13 +106,13 @@ spec:
                 properties:
                   count:
                     type: integer
-                    description: The number of time the element restarted.
+                    description: The number of times the connector or task is restarted.
                   connectorName:
                     type: string
-                    description: The name of the connector that is getting restarted.
+                    description: The name of the connector being restarted.
                   lastRestartTimestamp:
                     type: string
-                    description: "Last time the  auto restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
+                    description: The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
                 description: The auto restart status.
               connectorStatus:
                 x-kubernetes-preserve-unknown-fields: true

@@ -584,7 +584,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private  Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
         JsonObject statusResultJson = new JsonObject(status.statusResult);
-        if (connectorSpec.getAutoRestart().isEnabled() && (connectorHasFailed(statusResultJson) || (failedTaskIds(statusResultJson)).size() > 0)) {
+        if (connectorSpec.getAutoRestart() != null && connectorSpec.getAutoRestart().isEnabled()) {
             return getPreviousKafkaConnectorStatus(connectorOperator, resource)
                  .compose(previousStatus -> {
                      if (previousStatus == null) {
@@ -593,11 +593,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                      return Future.succeededFuture(previousStatus.getAutoRestart());
                  })
                  .compose(previousAutoRestartStatus -> {
-                     if (shouldAutoRestart(previousAutoRestartStatus)) {
+                     if (shouldAutoRestart(previousAutoRestartStatus, statusResultJson)) {
                          LOGGER.debugCr(reconciliation, "Auto restarting connector {}", connectorName);
                          return apiClient.restart(host, port, connectorName, true, true)
                              .compose(
-                                 success -> Future.succeededFuture(status),
+                                 statusResult -> {
+                                     status.statusResult = statusResult;
+                                     status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
+                                     return  Future.succeededFuture(status);
+                                 },
                                  throwable -> {
                                      status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
                                      String message = "Failed to auto restart for the " + status.autoRestart.getCount() + " time(s) connector  " + connectorName + ". " + throwable.getMessage();
@@ -616,20 +620,24 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Connector or tasks failed should only restart at minute 0, 0, 2, 6, 12, 20 and 30
+     * Connector or tasks failed should only restart at minute 0, 2, 6, 12, 20 and 30
      * @param autoRestartStatus
      * @return true if the connector
      */
-    private boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus) {
-        if (autoRestartStatus == null) {
-            return true;
+    protected boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
+        if (connectorHasFailed(statusResult) || failedTaskIds(statusResult).size() > 0) {
+            if (autoRestartStatus == null) {
+                return true;
+            }
+            var count =  autoRestartStatus.getCount();
+            var minutesSinceLastRestart = StatusUtils.unitDifferenceUntilNow(StatusUtils.iso8601(autoRestartStatus.getLastRestartTimestamp()), ChronoUnit.MINUTES);
+
+            // n^2 + n
+            var nextRestart = count * count + count;
+
+            return count <  7 &&  minutesSinceLastRestart  >= nextRestart;
         }
-        var count =  autoRestartStatus.getCount();
-        var minutesSinceLastRestart = StatusUtils.unitDifferenceUntilNow(StatusUtils.iso8601(autoRestartStatus.getLastRestartTimestamp()), ChronoUnit.MINUTES);
-
-        var nextRestart = count  * (count - 1);
-
-        return count <  7 &&  minutesSinceLastRestart  >= nextRestart;
+        return false;
     }
 
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {

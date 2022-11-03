@@ -23,8 +23,6 @@ public class KafkaConnectorSpec extends AbstractConnectorSpec {
 
     private String className;
 
-    private AutoRestart autoRestart = new AutoRestart();
-
     @Description("The Class for the Kafka Connector")
     @JsonProperty("class")
     public String getClassName() {
@@ -35,13 +33,4 @@ public class KafkaConnectorSpec extends AbstractConnectorSpec {
         this.className = className;
     }
 
-    @Description("Automatic restart of connector and tasks configuration")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public AutoRestart getAutoRestart() {
-        return autoRestart;
-    }
-
-    public void setAutoRestart(AutoRestart autoRestart) {
-        this.autoRestart = autoRestart;
-    }
 }
