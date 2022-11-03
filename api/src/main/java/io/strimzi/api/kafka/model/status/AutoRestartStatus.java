@@ -38,7 +38,7 @@ public class AutoRestartStatus implements UnknownPropertyPreserving, Serializabl
     private Map<String, Object> additionalProperties;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The number of times the element restarted.")
+    @Description("The number of times the connector or task is restarted.")
     public int getCount() {
         return count;
     }
@@ -47,7 +47,7 @@ public class AutoRestartStatus implements UnknownPropertyPreserving, Serializabl
         this.count = count;
     }
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The name of the connector that is getting restarted")
+    @Description("The name of the connector being restarted.")
     public String getConnectorName() {
         return connectorName;
     }
@@ -57,8 +57,8 @@ public class AutoRestartStatus implements UnknownPropertyPreserving, Serializabl
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Last time the  auto restart was attempted. " +
-        "The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone")
+    @Description("The last time the automatic restart was attempted. " +
+        "The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.")
     public String getLastRestartTimestamp() {
         return lastRestartTimestamp;
     }

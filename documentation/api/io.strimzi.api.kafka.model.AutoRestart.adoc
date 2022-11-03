@@ -1,15 +1,19 @@
-Connectors and tasks that are in the FAILED state are automatically restarted.
+Configures automatic restarts for connectors and tasks that are in a `FAILED` state.
 
-A back-off algorithm is applied to automatic restarts of each connector and it's tasks.
-When a connector is failing an auto restart attempt will happen at first and second reconcile then attempts will be delayed,
-incrementing the time between automatic restarts by 2 minutes up to a maximum of 30 minutes, at which point no further
-automatic restarts are attempted, and the connector or tasks are left in the FAILED state.
+A back-off algorithm applies the automatic restart to each failed connector and its tasks.
+
+The operator attempts an automatic restart on reconciliation. 
+If the first attempt fails, the operator makes up to six more attempts. 
+The duration between each restart attempt increases from 2 to 30 minutes. 
+If the restart fails after the final attempt, there is likely to be a problem with the connector configuration. 
+The connector and tasks remain in a `FAILED` state.  
 
 
-If you are using a Kafka version <3.0.0, only the connector will be restarted not failed tasks.
+If you are using Kafka 3.0.0 or later, only the failed connector is restarted not failed tasks.
 
 To disable the automatic restarting of the connector and it's tasks when they are in the FAILED state on a KafkaConnector resource:
 
+.Disabling automatic restarts of failed connectors for Kafka Connect
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: strimzi.io/v1alpha1
@@ -21,8 +25,9 @@ spec:
         enabled: false
 ----
 
-Similarly, a new field in the KafkaMirrorMaker2 spec named autoRestartConnectorsAndTasks with an enabled field value of false can be applied, to disable auto-restarting connectors and tasks.
+For MirrorMaker 2.0, use the `autoRestartConnectorsAndTasks` property of the `KafkaMirrorMaker2` resource to disable automatic restarts of failed connectors and tasks.
 
+.Disabling automatic restarts of failed connectors for MirrorMaker 2.0
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: strimzi.io/v1alpha1
