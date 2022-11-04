@@ -1587,7 +1587,7 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        int expectedMessageCountForNewGroup = testStorage.getMessageCount();
+        int expectedMessageCountForNewGroup = testStorage.getMessageCount() * 3;
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -1611,7 +1611,7 @@ public class ListenersST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
