@@ -15,15 +15,15 @@ Communication is always encrypted for communication between:
 * Operators and ZooKeeper nodes
 * Kafka Exporter
 
-You can also configure TLS between Kafka brokers and clients by applying TLS encryption to the listeners of the Kafka broker.
-TLS is specified for external clients when configuring an external listener.
+You can also configure TLS encryption between Kafka brokers and clients.
+TLS is specified for external clients when configuring an external listener for the Kafka broker.
 
 Strimzi components and Kafka clients use digital certificates for encryption.
 The Cluster Operator sets up certificates to enable encryption within the Kafka cluster.
 You can provide your own server certificates, referred to as _Kafka listener certificates_,
 for communication between Kafka clients and Kafka brokers, and inter-cluster communication.
 
-Strimzi uses _Secrets_ to store the certificates and private keys required for TLS in PEM and PKCS #12 format.
+Strimzi uses _Secrets_ to store the certificates and private keys required for mTLS in PEM and PKCS #12 format.
 
 A TLS Certificate Authority (CA) issues certificates to authenticate the identity of a component.
 Strimzi verifies the certificates for the components against the CA certificate.

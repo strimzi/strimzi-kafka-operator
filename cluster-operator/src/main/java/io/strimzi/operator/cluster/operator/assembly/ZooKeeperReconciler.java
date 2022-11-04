@@ -200,6 +200,8 @@ public class ZooKeeperReconciler {
                 .compose(i -> loggingAndMetricsConfigMap())
                 .compose(i -> podDisruptionBudget())
                 .compose(i -> podDisruptionBudgetV1Beta1())
+                .compose(i -> migrateFromStatefulSetToPodSet())
+                .compose(i -> migrateFromPodSetToStatefulSet())
                 .compose(i -> statefulSet())
                 .compose(i -> podSet())
                 .compose(i -> scaleDown())
@@ -522,12 +524,34 @@ public class ZooKeeperReconciler {
     }
 
     /**
-     * Create or update the StatefulSet for the ZooKeeper cluster. When StatefulSets are disabled, it will try to delete
-     * the old StatefulSet.
+     * Create or update the StatefulSet for the ZooKeeper cluster.
      *
      * @return  Future which completes when the StatefulSet is created, updated or deleted
      */
     protected Future<Void> statefulSet() {
+        if (!featureGates.useStrimziPodSetsEnabled())   {
+            // StatefulSets are enabled => make sure the StatefulSet exists with the right settings
+            StatefulSet zkSts = zk.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
+            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
+            return stsOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zkSts)
+                    .compose(rr -> {
+                        statefulSetDiff = rr;
+                        return Future.succeededFuture();
+                    });
+        } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Helps with the migration from StatefulSets to StrimziPodSets when the cluster is switching between them. When the
+     * switch happens, it deletes the old StatefulSet. It should happen before the new PodSet is created to
+     * allow the controller hand-off.
+     *
+     * @return          Future which completes when the StatefulSet is deleted or does not need to be deleted
+     */
+    protected Future<Void> migrateFromStatefulSetToPodSet() {
         if (featureGates.useStrimziPodSetsEnabled())   {
             // StatefulSets are disabled => delete the StatefulSet if it exists
             return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
@@ -539,15 +563,7 @@ public class ZooKeeperReconciler {
                         }
                     });
         } else {
-            // StatefulSets are enabled => make sure the StatefulSet exists with the right settings
-            StatefulSet zkSts = zk.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
-            return stsOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zkSts)
-                    .compose(rr -> {
-                        statefulSetDiff = rr;
-                        return Future.succeededFuture();
-                    });
+            return Future.succeededFuture();
         }
     }
 
@@ -572,6 +588,7 @@ public class ZooKeeperReconciler {
      */
     private Future<Void> podSet(int replicas) {
         if (featureGates.useStrimziPodSetsEnabled())   {
+            // StrimziPodSets are enabled => make sure the StrimziPodSet exists
             Map<String, String> podAnnotations = new LinkedHashMap<>(2);
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
             podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
@@ -583,6 +600,20 @@ public class ZooKeeperReconciler {
                         return Future.succeededFuture();
                     });
         } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Helps with the migration from StrimziPodSets to StatefulSets when the cluster is switching between them. When the
+     * switch happens, it deletes the old StrimziPodSet. It needs to happen before the StatefulSet is created to allow
+     * the controller hand-off (STS will not accept pods with another controller in owner references).
+     *
+     * @return          Future which completes when the PodSet is deleted or does not need to be deleted
+     */
+    protected Future<Void> migrateFromPodSetToStatefulSet() {
+        if (!featureGates.useStrimziPodSetsEnabled())   {
+            // StrimziPodSets are disabled => delete the StrimziPodSet if it exists
             return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
                     .compose(podSet -> {
                         if (podSet != null)    {
@@ -591,6 +622,8 @@ public class ZooKeeperReconciler {
                             return Future.succeededFuture();
                         }
                     });
+        } else {
+            return Future.succeededFuture();
         }
     }
 

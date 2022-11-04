@@ -86,7 +86,7 @@ tls:
 
 If certificates are stored in the same secret, it can be listed multiple times.
 
-If you want to enable TLS, but use the default set of public certification authorities shipped with Java,
+If you want to enable TLS encryption, but use the default set of public certification authorities shipped with Java,
 you can specify `trustedCertificates` as an empty array:
 
 .Example of enabling TLS with the default Java certificates
@@ -96,7 +96,7 @@ tls:
   trustedCertificates: []
 ----
 
-For information on configuring TLS client authentication, see the xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
+For information on configuring mTLS authentication, see the xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
 
 [id='con-common-configuration-resources-{context}']
 === `resources`

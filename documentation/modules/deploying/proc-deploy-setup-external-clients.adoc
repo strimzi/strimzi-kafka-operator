@@ -25,11 +25,11 @@ For example, loadbalancers might not be suitable for certain infrastructure, suc
 
 In this procedure:
 
-. An external listener is configured for the Kafka cluster, with TLS encryption and authentication, and Kafka `simple` authorization enabled.
-. A `KafkaUser` is created for the client, with TLS authentication, and Access Control Lists (ACLs) defined for `simple` authorization.
+. An external listener is configured for the Kafka cluster, with TLS encryption and mTLS authentication, and Kafka `simple` authorization enabled.
+. A `KafkaUser` is created for the client, with mTLS authentication, and Access Control Lists (ACLs) defined for `simple` authorization.
 
-You can configure your listener to use `tls`, `scram-sha-512`, or `oauth` authentication.
-TLS always uses encryption, but encryption is also recommended when using SCRAM-SHA-512 and OAuth 2.0 authentication.
+You can configure your listener to use mutual `tls`, `scram-sha-512`, or `oauth` authentication.
+mTLS always uses encryption, but encryption is also recommended when using SCRAM-SHA-512 and OAuth 2.0 authentication.
 
 You can configure `simple`, `oauth`, `opa`, or `custom` authorization for Kafka brokers.
 When enabled, authorization is applied to all enabled listeners.
@@ -42,7 +42,7 @@ When you configure the `KafkaUser` authentication and authorization mechanisms, 
 You should have at least one listener supporting the authentication you want to use for the `KafkaUser`.
 
 NOTE: Authentication between Kafka users and Kafka brokers depends on the authentication settings for each.
-For example, it is not possible to authenticate a user with TLS if it is not also enabled in the Kafka configuration.
+For example, it is not possible to authenticate a user with mTLS if it is not also enabled in the Kafka configuration.
 
 Strimzi operators automate the configuration process and create the certificates required for authentication:
 
@@ -104,7 +104,7 @@ spec:
 <3> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <4> External listener type specified as `route`, `loadbalancer`, `nodeport` or `ingress`. An internal listener is specified as `internal` or `cluster-ip`.
 <5> Enables TLS encryption on the listener. Default is `false`. TLS encryption is not required for `route` listeners.
-<6> Authentication specified as `tls`.
+<6> Authentication specified as mutual `tls`.
 <7> (Optional) Depending on the requirements of the listener type, you can specify additional link:{BookURLUsing}#type-GenericKafkaListenerConfiguration-reference[listener configuration^].
 <8> Authorization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
 <9> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
@@ -120,7 +120,7 @@ If you are using a `route` listener type, be careful that the whole length of th
 kubectl apply -f _<kafka_configuration_file>_
 ----
 +
-The Kafka cluster is configured with a Kafka broker listener using TLS authentication.
+The Kafka cluster is configured with a Kafka broker listener using mTLS authentication.
 +
 A service is created for each Kafka broker pod.
 +
@@ -179,7 +179,7 @@ spec:
           - Read
 ----
 <1> The label must match the label of the Kafka cluster.
-<2> Authentication specified as `tls`.
+<2> Authentication specified as mutual `tls`.
 <3> Simple authorization requires an accompanying list of ACL rules to apply to the user.
 The rules define the operations allowed on Kafka resources based on the _username_ (`my-user`).
 
@@ -189,7 +189,7 @@ The rules define the operations allowed on Kafka resources based on the _usernam
 kubectl apply -f _USER-CONFIG-FILE_
 +
 The user is created, as well as a secret with the same name as the `KafkaUser` resource.
-The secret contains a public and private key for TLS client authentication.
+The secret contains a public and private key for mTLS authentication.
 +
 .Example secret
 [source,yaml,subs="+quotes,attributes"]
@@ -244,7 +244,7 @@ props.put(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
 props.put(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, "_<ca.crt_file_content>_");
 ----
 +
-SSL is the specified security protocol for TLS authentication.
+SSL is the specified security protocol for mTLS authentication.
 Specify `SASL_SSL` for SCRAM-SHA-512 authentication over TLS.
 PEM is the file format of the truststore. 
 

@@ -918,6 +918,8 @@ public class KafkaAssemblyOperatorPodSetTest {
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return manualPodCleaning()
                     .compose(i -> manualRollingUpdate())
+                    .compose(i -> migrateFromStatefulSetToPodSet())
+                    .compose(i -> migrateFromPodSetToStatefulSet())
                     .compose(i -> statefulSet())
                     .compose(i -> podSet())
                     .compose(i -> scaleDown())
@@ -948,6 +950,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .compose(i -> scaleDown())
                     .compose(i -> listeners())
                     .compose(i -> brokerConfigurationConfigMaps())
+                    .compose(i -> migrateFromStatefulSetToPodSet())
+                    .compose(i -> migrateFromPodSetToStatefulSet())
                     .compose(i -> statefulSet())
                     .compose(i -> podSet())
                     .compose(i -> rollToAddOrRemoveVolumes())

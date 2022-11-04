@@ -8,13 +8,13 @@ Kafka listeners use authentication to ensure a secure client connection to the K
 
 Supported authentication mechanisms:
 
-* Mutual TLS client authentication (on listeners with TLS enabled encryption)
+* mTLS authentication (on listeners with TLS-enabled encryption)
 * SASL SCRAM-SHA-512
 * OAuth 2.0 token based authentication
 * Custom authentication
 
-The User Operator manages user credentials for TLS and SCRAM authentication, but not OAuth 2.0.
-For example, through the User Operator you can create a user representing a client that requires access to the Kafka cluster, and specify TLS as the authentication type.
+The User Operator manages user credentials for mTLS and SCRAM authentication, but not OAuth 2.0.
+For example, through the User Operator you can create a user representing a client that requires access to the Kafka cluster, and specify `tls` as the authentication type.
 
 Using OAuth 2.0 token-based authentication, application clients can access Kafka brokers without exposing account credentials.
 An authorization server handles the granting of access and inquiries about access.

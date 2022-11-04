@@ -86,4 +86,4 @@ Use the address for the bootstrap host you specified in the `configuration` and 
 kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 +
 Use the extracted certificate in your Kafka client to configure the TLS connection.
-If you enabled any authentication, you will also need to configure SASL or TLS authentication.
+If you enabled any authentication, you will also need to configure it in your client.

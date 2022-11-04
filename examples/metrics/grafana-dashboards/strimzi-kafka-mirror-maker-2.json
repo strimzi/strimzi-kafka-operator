@@ -728,7 +728,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum without(area)(jvm_memory_bytes_used{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+          "expr": "sum(jvm_memory_bytes_used{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -816,7 +816,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum without(gc)(rate(jvm_gc_collection_seconds_sum{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}[5m]))",
+          "expr": "sum(rate(jvm_gc_collection_seconds_sum{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}[5m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,

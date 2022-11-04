@@ -14,77 +14,47 @@ spec:
     - resource:
         type: group
         name: connect-cluster
-      operation: Read
+      operations:
+        - Read
     - resource:
         type: topic
         name: connect-cluster-configs
-      operation: Read
-    - resource:
-        type: topic
-        name: connect-cluster-configs
-      operation: Describe
-    - resource:
-        type: topic
-        name: connect-cluster-configs
-      operation: Write
-    - resource:
-        type: topic
-        name: connect-cluster-configs
-      operation: Create
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
     - resource:
         type: topic
         name: connect-cluster-status
-      operation: Read
-    - resource:
-        type: topic
-        name: connect-cluster-status
-      operation: Describe
-    - resource:
-        type: topic
-        name: connect-cluster-status
-      operation: Write
-    - resource:
-        type: topic
-        name: connect-cluster-status
-      operation: Create
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
     - resource:
         type: topic
         name: connect-cluster-offsets
-      operation: Read
-    - resource:
-        type: topic
-        name: connect-cluster-offsets
-      operation: Write
-    - resource:
-        type: topic
-        name: connect-cluster-offsets
-      operation: Describe
-    - resource:
-        type: topic
-        name: connect-cluster-offsets
-      operation: Create
-    # Additional topics and groups used by connectors
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
+      # Additional topics and groups used by connectors
     # Change to match the topics used by your connectors
     - resource:
         type: group
         name: connect-cluster
-      operation: Read
+      operations:
+        - Read
     - resource:
         type: topic
         name: my-topic
-      operation: Read
-    - resource:
-        type: topic
-        name: my-topic
-      operation: Describe
-    - resource:
-        type: topic
-        name: my-topic
-      operation: Write
-    - resource:
-        type: topic
-        name: my-topic
-      operation: Create
+      operations:
+        - Read
+        - Describe
+        - Write
+        - Create
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnect
@@ -96,7 +66,7 @@ metadata:
 #  # needing to call the Connect REST API directly
 #    strimzi.io/use-connector-resources: "true"
 spec:
-  version: 3.2.3
+  version: 3.3.1
   replicas: 1
   bootstrapServers: my-cluster-kafka-bootstrap:9093
   tls:

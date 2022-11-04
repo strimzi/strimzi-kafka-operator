@@ -43,8 +43,6 @@ listeners:
     port: 9094
     type: loadbalancer
     tls: true
-    authentication:
-      type: tls
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret
@@ -66,8 +64,6 @@ listeners:
     port: 9093
     type: internal
     tls: true
-    authentication:
-      type: tls
     configuration:
       brokerCertChainAndKey:
         secretName: my-secret
@@ -85,7 +81,7 @@ kubectl apply -f _kafka.yaml_
 +
 The Cluster Operator starts a rolling update of the Kafka cluster, which updates the configuration of the listeners.
 +
-NOTE: A rolling update is also started if you update a Kafka listener certificate in a `Secret` that is already used by a TLS or external listener.
+NOTE: A rolling update is also started if you update a Kafka listener certificate in a `Secret` that is already used by a listener.
 
 [role="_additional-resources"]
 .Additional resources

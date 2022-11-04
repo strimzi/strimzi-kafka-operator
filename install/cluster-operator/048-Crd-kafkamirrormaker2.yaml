@@ -149,6 +149,9 @@ spec:
                         disableTlsHostnameVerification:
                           type: boolean
                           description: Enable or disable TLS hostname verification. Default value is `false`.
+                        enableMetrics:
+                          type: boolean
+                          description: Enable or disable OAuth metrics. Default value is `false`.
                         maxTokenExpirySeconds:
                           type: integer
                           description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
@@ -210,7 +213,7 @@ spec:
                           - scram-sha-512
                           - plain
                           - oauth
-                          description: "Authentication type. Currently the only supported types are `tls`, `scram-sha-256`, `scram-sha-512`, and `plain`. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
+                          description: "Authentication type. Currently the supported types are `tls`, `scram-sha-256`, `scram-sha-512`, `plain`, and 'oauth'. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
                         username:
                           type: string
                           description: Username used for the authentication.
@@ -457,7 +460,8 @@ spec:
                     type: string
                     enum:
                     - jaeger
-                    description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing. The Jaeger tracing is deprecated.
+                    - opentelemetry
+                    description: Type of the tracing used. Currently the only supported types are `jaeger` for OpenTracing (Jaeger) tracing and `opentelemetry` for OpenTelemetry tracing. The OpenTracing (Jaeger) tracing is deprecated.
                 required:
                 - type
                 description: The configuration of tracing in Kafka Connect.
@@ -923,10 +927,18 @@ spec:
                                 matchLabels:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             maxSkew:
                               type: integer
                             minDomains:
                               type: integer
+                            nodeAffinityPolicy:
+                              type: string
+                            nodeTaintsPolicy:
+                              type: string
                             topologyKey:
                               type: string
                             whenUnsatisfiable:
@@ -1601,10 +1613,18 @@ spec:
                                 matchLabels:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
                             maxSkew:
                               type: integer
                             minDomains:
                               type: integer
+                            nodeAffinityPolicy:
+                              type: string
+                            nodeTaintsPolicy:
+                              type: string
                             topologyKey:
                               type: string
                             whenUnsatisfiable:
