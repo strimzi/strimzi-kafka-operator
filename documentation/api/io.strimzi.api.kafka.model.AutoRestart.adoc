@@ -27,7 +27,7 @@ spec:
         enabled: true
 ----
 
-For MirrorMaker 2.0, use the `autoRestartConnectorsAndTasks` property of the `KafkaMirrorMaker2` resource to enable automatic restarts of failed connectors and tasks.
+For MirrorMaker 2.0, use the `autoRestart` property of connectors in the `KafkaMirrorMaker2` resource to enable automatic restarts of failed connectors and tasks.
 
 .Enabling automatic restarts of failed connectors for MirrorMaker 2.0
 [source,yaml,subs="attributes+"]
@@ -37,6 +37,17 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mm2-cluster
 spec:
-  autoRestart:
-    enabled: true
+  mirrors:
+  - sourceConnector:
+      autoRestart:
+        enabled: true
+      # ...
+    heartbeatConnector:
+      autoRestart:
+        enabled: true
+      # ...
+    checkpointConnector:
+      autoRestart:
+        enabled: true
+      # ...
 ----

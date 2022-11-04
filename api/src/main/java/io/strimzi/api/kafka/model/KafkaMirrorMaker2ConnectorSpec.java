@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"tasksMax", "autoRestartConnectorsAndTasks", "config"})
+@JsonPropertyOrder({"tasksMax", "config"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaMirrorMaker2ConnectorSpec extends AbstractConnectorSpec {
     private static final long serialVersionUID = 1L;

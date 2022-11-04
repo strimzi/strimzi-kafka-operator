@@ -26,11 +26,10 @@ import java.util.Map;
 @EqualsAndHashCode
 public class AutoRestart implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
-    private boolean enabled = false;
+    private boolean enabled;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    @Description("Whether automatic restart for failed connectors and tasks should be enabled or disabled")
     public boolean isEnabled() {
         return enabled;
     }

@@ -32,5 +32,4 @@ public class KafkaConnectorSpec extends AbstractConnectorSpec {
     public void setClassName(String className) {
         this.className = className;
     }
-
 }
