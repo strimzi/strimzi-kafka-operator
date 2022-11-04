@@ -10,8 +10,8 @@ Use an external listener to expose your Strimzi Kafka cluster to a client outsid
 
 Specify the connection `type` to expose Kafka in the external listener configuration.
 
-* `nodeport` uses `NodePort` type `Services`
-* `loadbalancer` uses `Loadbalancer` type `Services`
+* `nodeport` uses a `NodePort` type `Service`
+* `loadbalancer` uses a `Loadbalancer` type `Service`
 * `ingress` uses Kubernetes `Ingress` and the {NginxIngressController}
 * `route` uses OpenShift `Routes` and the HAProxy router
 

@@ -72,6 +72,7 @@ you can configure multiple listeners.
 
 The type is set as `internal`,
 or for external listeners, as `route`, `loadbalancer`, `nodeport`, `ingress` or `cluster-ip`.
+You can also configure a `cluster-ip` listener, a type of internal listener you can use to build custom access mechanisms.
 
 internal:: You can configure internal listeners with or without encryption using the `tls` property.
 +
@@ -161,7 +162,7 @@ spec:
 +
 NOTE: External listeners using `Ingress` are currently only tested with the {NginxIngressController}.
 
-loadbalancer:: Configures an external listener to expose Kafka `Loadbalancer` type `Services`.
+loadbalancer:: Configures an external listener to expose Kafka using a `Loadbalancer` type `Service`.
 +
 A new loadbalancer service is created for every Kafka broker pod.
 An additional loadbalancer is created to serve as a Kafka _bootstrap_ address.
@@ -188,7 +189,7 @@ spec:
     #...
 ----
 
-nodeport:: Configures an external listener to expose Kafka using `NodePort` type `Services`.
+nodeport:: Configures an external listener to expose Kafka using a `NodePort` type `Service`.
 +
 Kafka clients connect directly to the nodes of Kubernetes.
 An additional `NodePort` type of service is created to serve as a Kafka bootstrap address.
@@ -215,12 +216,15 @@ spec:
 ----
 NOTE: TLS hostname verification is not currently supported when exposing Kafka clusters using node ports.
 
-cluster-ip:: Create a listener which uses per-broker `Services` instead of the headless Service.
+cluster-ip:: Configures an internal listener to expose Kafka using a per-broker `ClusterIP` type `Service`.
 +
-This listener type can be useful to expose the cluster outside of Kuebrnetes with some custom mechanisms such as TCP Ingress or other Ingress controllers etc
+The listener does not use a headless service and its DNS names to route traffic to Kafka brokers.
+You can use this type of listener to expose a Kafka cluster when using the headless service is unsuitable. 
+You might use it with a custom access mechanism, such as one that uses a specific Ingress controller or the Kubernetes Gateway API. 
 +
-A new clusterIP service is created for each Kafka broker pod.
-An additional clusterIP is created to serve as a Kafka _bootstrap_ address.
+A new `ClusterIP` service is created for each Kafka broker pod.
+The service is assigned a `ClusterIP` address to serve as a Kafka _bootstrap_ address with a per-broker port number.
+For example, you can configure the listener to expose a Kafka cluster over an Nginx Ingress Controller with TCP port configuration. 
 +
 .Example `cluster-ip` listener configuration
 [source,yaml,subs="+attributes"]
@@ -238,13 +242,12 @@ spec:
 
 ----
 
-
 [id='property-listener-port-{context}']
 === `port`
 
 The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
 
-* `loadbalancer` listeners use the specified port number, as do `internal` listeners
+* `loadbalancer` listeners use the specified port number, as do `internal` and `cluster-ip` listeners
 * `ingress` and `route` listeners use port 443 for access
 * `nodeport` listeners use the port number assigned by Kubernetes
 
@@ -282,6 +285,15 @@ Authentication for the listener can be specified as:
 Use `networkPolicyPeers` to configure network policies that restrict access to a listener at the network level.
 The following example shows a `networkPolicyPeers` configuration for a `plain` and a `tls` listener.
 
+In the following example:
+
+* Only application pods matching the labels `app: kafka-sasl-consumer` and `app: kafka-sasl-producer` can connect to the `plain` listener.
+The application pods must be running in the same namespace as the Kafka broker.
+* Only application pods running in namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
+
+The syntax of the `networkPolicyPeers` property is the same as the `from` property in `NetworkPolicy` resources.
+
+.Exanmple network policy configuration
 [source,yaml,subs="attributes+"]
 ----
 listeners:
@@ -315,10 +327,4 @@ listeners:
 # ...
 ----
 
-In the example:
 
-* Only application pods matching the labels `app: kafka-sasl-consumer` and `app: kafka-sasl-producer` can connect to the `plain` listener.
-The application pods must be running in the same namespace as the Kafka broker.
-* Only application pods running in namespaces matching the labels `project: myproject` and `project: myproject2` can connect to the `tls` listener.
-
-The syntax of the `networkPolicyPeers` field is the same as the `from` field in `NetworkPolicy` resources.
