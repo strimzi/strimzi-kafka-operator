@@ -1587,7 +1587,7 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        int expectedMessageCountForNewGroup = testStorage.getMessageCount() * 3;
+        int expectedMessageCountForNewGroup = testStorage.getMessageCount();
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -1611,10 +1611,10 @@ public class ListenersST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
+        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_2);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), STRIMZI_CERT_AND_KEY_1);
+        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
+        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaSnapshot);
 
