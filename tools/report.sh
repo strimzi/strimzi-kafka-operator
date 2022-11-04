@@ -27,10 +27,10 @@ error() {
   exit 1
 }
 
-if [[ $(kubectl &>/dev/null) -eq 0 ]]; then
+if [[ -x "$(command -v kubectl)" ]]; then
   KUBECTL_INSTALLED=true
 else
-  if [[ $(oc &>/dev/null) -eq 0 ]]; then
+  if [[ -x "$(command -v oc)" ]]; then
     OC_INSTALLED=true
     KUBE_CLIENT="oc"
   fi
