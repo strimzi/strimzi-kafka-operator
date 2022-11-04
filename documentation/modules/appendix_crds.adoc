@@ -3038,7 +3038,7 @@ include::../api/io.strimzi.api.kafka.model.AutoRestart.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property        |Description
-|enabled  1.2+<.<a|Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+|enabled  1.2+<.<a|Whether automatic restart for failed connectors and tasks should be enabled or disabled.
 |boolean
 |====
 

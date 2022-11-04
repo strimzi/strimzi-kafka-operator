@@ -252,7 +252,7 @@ spec:
                           properties:
                             enabled:
                               type: boolean
-                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
                           description: Automatic restart of connector and tasks configuration.
                         pause:
                           type: boolean
@@ -274,7 +274,7 @@ spec:
                           properties:
                             enabled:
                               type: boolean
-                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
                           description: Automatic restart of connector and tasks configuration.
                         pause:
                           type: boolean
@@ -296,7 +296,7 @@ spec:
                           properties:
                             enabled:
                               type: boolean
-                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled. Defaults to false.
+                              description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
                           description: Automatic restart of connector and tasks configuration.
                         pause:
                           type: boolean

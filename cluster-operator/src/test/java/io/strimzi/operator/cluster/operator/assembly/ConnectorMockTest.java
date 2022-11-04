@@ -1424,8 +1424,8 @@ public class ConnectorMockTest {
         verify(api, times(0)).restart(
             eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
             eq(connectorName),
-            any(),
-            any());
+            eq(false),
+            eq(false));
         // Might be triggered twice (on annotation and on status update), but the second hit is sometimes only after
         // this check depending on the timing
         verify(api, atLeastOnce()).restartTask(
