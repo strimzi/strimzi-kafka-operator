@@ -199,7 +199,7 @@ xref:scaling-clusters-{context}[scale clusters].
 <8> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-securing-kafka-brokers-str[configured as _internal_ or _external_ listeners for connection from inside or outside the Kubernetes cluster].
 <9> Name to identify the listener. Must be unique within the Kafka cluster.
 <10> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
-<11> Listener type specified as `internal` or `cluster-ip`(to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
+<11> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
 <12> Enables TLS encryption for each listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
 <14> Listener authentication mechanism xref:assembly-securing-kafka-brokers-str[specified as mutual TLS, SCRAM-SHA-512 or token-based OAuth 2.0].

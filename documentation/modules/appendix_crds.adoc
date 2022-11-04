@@ -124,7 +124,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 * `loadbalancer` type uses LoadBalancer type services to expose Kafka.
 * `nodeport` type uses NodePort type services to expose Kafka.
 * `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.
-* `cluster-ip` type uses a per-broker `ClusterIP` service and port number.
+* `cluster-ip` type uses a per-broker `ClusterIP` service.
 
 |string (one of [ingress, internal, route, loadbalancer, cluster-ip, nodeport])
 |tls                 1.2+<.<a|Enables TLS encryption on the listener. This is a required property.

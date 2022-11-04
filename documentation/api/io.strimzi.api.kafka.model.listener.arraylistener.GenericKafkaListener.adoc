@@ -72,7 +72,7 @@ you can configure multiple listeners.
 
 The type is set as `internal`,
 or for external listeners, as `route`, `loadbalancer`, `nodeport`, `ingress` or `cluster-ip`.
-You can also configure a `cluster-ip` listener, a type of internal listener that supports custom access mechanisms.
+You can also configure a `cluster-ip` listener, a type of internal listener you can use to build custom access mechanisms.
 
 internal:: You can configure internal listeners with or without encryption using the `tls` property.
 +
