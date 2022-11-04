@@ -6,6 +6,7 @@ package io.strimzi.systemtest.logs;
 
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -26,8 +27,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -116,8 +116,8 @@ public class LogCollector {
 
     /**
      * Core method, which collects logs from {@link #collectEvents(String)}, {@link #collectConfigMaps(String)},
-     * {@link #collectLogsFromPods(String)}, {@link #collectDeployments(String)}, {@link #collectStatefulSets(String)},
-     * {@link #collectReplicaSets(String)}, {@link #collectStrimzi(String)} and lastly {@link #collectClusterInfo(String)}.
+     * {@link #collectLogsFromPods(String)}, {@link #collectAllResourcesFromNamespace(String)} (String)},
+     * {@link #collectStrimzi(String)} and lastly {@link #collectClusterInfo(String)}.
      *
      * If anything fails in @BeforeAll or @AfterAll suite we gather these logs from @cde{this.testSuite}/@code{namespace}.
      * Otherwise we collect it in code@{this.testCase}/code{namespace}.
@@ -186,9 +186,7 @@ public class LogCollector {
             this.collectEvents(namespace);
             this.collectConfigMaps(namespace);
             this.collectLogsFromPods(namespace);
-            this.collectDeployments(namespace);
-            this.collectStatefulSets(namespace);
-            this.collectReplicaSets(namespace);
+            this.collectAllResourcesFromNamespace(namespace);
             this.collectStrimzi(namespace);
             this.collectClusterInfo(namespace);
         });
@@ -272,19 +270,20 @@ public class LogCollector {
         });
     }
 
-    private void collectDeployments(String namespace) {
-        LOGGER.info("Collecting Deployments in Namespace {}", namespace);
-        writeFile(namespaceFile + "/deployments.log", cmdKubeClient(namespace).getResourcesAsYaml(Constants.DEPLOYMENT));
+    private void collectAllResourcesFromNamespace(String namespace) {
+        List<String> resources = Arrays.asList(Constants.DEPLOYMENT, Constants.REPLICA_SET);
+        if (!Environment.isStrimziPodSetEnabled()) {
+            resources.add(Constants.STATEFUL_SET);
+        } else {
+            resources.add(StrimziPodSet.RESOURCE_KIND);
+        }
+
+        resources.forEach(resource -> collectResource(resource, namespace));
     }
 
-    private void collectStatefulSets(String namespace) {
-        LOGGER.info("Collecting StatefulSets in Namespace {}", namespace);
-        writeFile(namespaceFile + "/statefulsets.log", cmdKubeClient(namespace).getResourcesAsYaml(Constants.STATEFUL_SET));
-    }
-
-    private void collectReplicaSets(String namespace) {
-        LOGGER.info("Collecting ReplicaSets in Namespace {}", namespace);
-        writeFile(namespaceFile + "/replicasets.log", cmdKubeClient(namespace).getResourcesAsYaml("replicaset"));
+    private void collectResource(String kind, String namespace) {
+        LOGGER.info("Collecting {} in Namespace {}", kind, namespace);
+        writeFile(String.format("%s/%ss.log", namespaceFile, kind.toLowerCase()), cmdKubeClient(namespace).getResourcesAsYaml(kind.toLowerCase()));
     }
 
     private void collectStrimzi(String namespace) {

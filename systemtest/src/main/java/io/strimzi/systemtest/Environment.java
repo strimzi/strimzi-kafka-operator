@@ -253,7 +253,6 @@ public class Environment {
     }
 
     public static boolean isStrimziPodSetEnabled() {
-        // REMINDER: this will not work once StrimziPodSet will be moved to beta FG
         return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS);
     }
 
