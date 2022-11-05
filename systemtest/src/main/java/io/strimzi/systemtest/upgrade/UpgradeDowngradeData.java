@@ -9,7 +9,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.junit.jupiter.params.provider.Arguments;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class UpgradeDowngradeData {
     private Map<String, String> imagesAfterOperations;
     private Map<String, Object> client;
     private Map<String, String> environmentInfo;
-    private Map<String, String> procedures;
+    private UpgradeKafkaVersion procedures;
 
     // Downgrade specific variables
     private String toVersion;
@@ -127,20 +126,8 @@ public class UpgradeDowngradeData {
         return environmentInfo.get("reason");
     }
 
-    public Map<String, String> getProcedures() {
+    public UpgradeKafkaVersion getProcedures() {
         return procedures;
-    }
-
-    public String getProcedureKafkaVersion() {
-        return procedures.get("kafkaVersion");
-    }
-
-    public String getProcedureLogMessageVersion() {
-        return procedures.get("logMessageVersion");
-    }
-
-    public String getProcedureInterBrokerProtocolVersion() {
-        return procedures.get("interBrokerProtocolVersion");
     }
 
     public String getToVersion() {
@@ -203,7 +190,7 @@ public class UpgradeDowngradeData {
         this.environmentInfo = environmentInfo;
     }
 
-    public void setProcedures(Map<String, String> procedures) {
+    public void setProcedures(UpgradeKafkaVersion procedures) {
         this.procedures = procedures;
     }
 
@@ -237,11 +224,7 @@ public class UpgradeDowngradeData {
         TestKafkaVersion testKafkaVersion = testKafkaVersions.get(testKafkaVersions.size() - 1);
 
         // Generate procedures for upgrade
-        Map<String, String> procedures = new HashMap<>() {{
-                put("kafkaVersion", testKafkaVersion.version());
-                put("logMessageVersion", testKafkaVersion.messageVersion());
-                put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
-            }};
+        UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(testKafkaVersion.version());
 
         upgradeDataList.getUpgradeData().forEach(upgradeData -> {
             upgradeData.setProcedures(procedures);

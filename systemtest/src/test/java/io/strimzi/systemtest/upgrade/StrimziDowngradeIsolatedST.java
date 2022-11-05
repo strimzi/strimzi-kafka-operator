@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
@@ -49,15 +50,13 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
 
     @SuppressWarnings("MethodLength")
     private void performDowngrade(UpgradeDowngradeData downgradeData, ExtensionContext extensionContext) throws IOException {
-        String continuousTopicName = "continuous-topic";
-        String producerName = "hello-world-producer";
-        String consumerName = "hello-world-consumer";
-        String continuousConsumerGroup = "continuous-consumer-group";
+        TestStorage testStorage = new TestStorage(extensionContext);
+        UpgradeKafkaVersion testUpgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getDeployKafkaVersion(), downgradeData.getFromVersion());
 
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, downgradeData.getDeployKafkaVersion(), clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, clusterOperator.getDeploymentNamespace());
         logPodImages(clusterName);
         // Downgrade CO
         changeClusterOperator(downgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
@@ -68,7 +67,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         checkAllImages(downgradeData);
         // Verify upgrade
-        verifyProcedure(downgradeData, producerName, consumerName, clusterOperator.getDeploymentNamespace());
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
     }

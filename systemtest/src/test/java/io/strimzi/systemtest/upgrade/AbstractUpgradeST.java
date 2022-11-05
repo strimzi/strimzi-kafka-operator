@@ -17,6 +17,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -94,7 +95,7 @@ public class AbstractUpgradeST extends AbstractST {
         // Get Kafka version
         String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
         kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
-        String kafkaVersionFromProcedure = upgradeData.getProcedureKafkaVersion();
+        String kafkaVersionFromProcedure = upgradeData.getProcedures().getVersion();
 
         // #######################################################################
         // #################    Update CRs to latest version   ###################
@@ -123,7 +124,7 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
 
 
-        if (!upgradeData.getProcedures().isEmpty() && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
+        if (upgradeData.getProcedures() != null && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
             if (!kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure) && extensionContext.getTestClass().get().getSimpleName().toLowerCase(Locale.ROOT).contains("upgrade")) {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
@@ -131,8 +132,8 @@ public class AbstractUpgradeST extends AbstractST {
                 kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
             }
 
-            String logMessageVersion = upgradeData.getProcedureLogMessageVersion();
-            String interBrokerProtocolVersion = upgradeData.getProcedureInterBrokerProtocolVersion();
+            String logMessageVersion = upgradeData.getProcedures().getLogMessageVersion();
+            String interBrokerProtocolVersion = upgradeData.getProcedures().getInterBrokerVersion();
 
             if (!logMessageVersion.isEmpty() || !interBrokerProtocolVersion.isEmpty()) {
                 if (!logMessageVersion.isEmpty()) {
@@ -295,8 +296,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, UpgradeDowngradeData upgradeData, String producerName, String consumerName,
-                                                     String continuousTopicName, String continuousConsumerGroup, String kafkaVersion, String namespace) throws IOException {
+    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, UpgradeDowngradeData upgradeData, TestStorage testStorage, UpgradeKafkaVersion upgradeKafkaVersion, String namespace) throws IOException {
         LOGGER.info("Test upgrade of ClusterOperator from version {} to version {}", upgradeData.getFromVersion(), upgradeData.getToVersion());
         cluster.setNamespace(namespace);
 
@@ -325,9 +325,9 @@ public class AbstractUpgradeST extends AbstractST {
                 resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
                     .editSpec()
                         .editKafka()
-                            .withVersion(kafkaVersion)
-                            .addToConfig("log.message.format.version", TestKafkaVersion.getSpecificVersion(kafkaVersion).messageVersion())
-                            .addToConfig("inter.broker.protocol.version", TestKafkaVersion.getSpecificVersion(kafkaVersion).protocolVersion())
+                            .withVersion(upgradeKafkaVersion.getVersion())
+                            .addToConfig("log.message.format.version", upgradeKafkaVersion.getLogMessageVersion())
+                            .addToConfig("inter.broker.protocol.version", upgradeKafkaVersion.getInterBrokerVersion())
                         .endKafka()
                     .endSpec()
                     .build());
@@ -335,7 +335,11 @@ public class AbstractUpgradeST extends AbstractST {
                 kafkaYaml = new File(dir, upgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
                 LOGGER.info("Deploy Kafka from: {}", kafkaYaml.getPath());
                 // Change kafka version of it's empty (null is for remove the version)
-                cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaVersion(kafkaYaml, kafkaVersion));
+                if (upgradeKafkaVersion == null) {
+                    cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaVersion(kafkaYaml, null));
+                } else {
+                    cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, upgradeKafkaVersion.getVersion(), upgradeKafkaVersion.getLogMessageVersion(), upgradeKafkaVersion.getInterBrokerVersion()));
+                }
                 // Wait for readiness
                 waitForReadinessOfKafkaCluster();
             }
@@ -377,29 +381,28 @@ public class AbstractUpgradeST extends AbstractST {
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(continuousTopicName)) {
+            if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion)).contains(testStorage.getTopicName())) {
                 String pathToTopicExamples = upgradeData.getFromExamples().equals("HEAD") ? PATH_TO_KAFKA_TOPIC_CONFIG : upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml";
 
                 kafkaTopicYaml = new File(dir, pathToTopicExamples);
                 cmdKubeClient().applyContent(TestUtils.getContent(kafkaTopicYaml, TestUtils::toYamlString)
-                        .replace("name: \"my-topic\"", "name: \"" + continuousTopicName + "\"")
+                        .replace("name: \"my-topic\"", "name: \"" + testStorage.getTopicName() + "\"")
                         .replace("partitions: 1", "partitions: 3")
                         .replace("replicas: 1", "replicas: 3") +
                         "    min.insync.replicas: 2");
 
-                ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion), continuousTopicName);
+                ResourceManager.waitForResourceReadiness(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, operatorVersion), testStorage.getTopicName());
             }
 
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                .withTopicName(continuousTopicName)
+                .withTopicName(testStorage.getTopicName())
                 .withMessageCount(upgradeData.getContinuousClientsMessages())
                 .withAdditionalConfig(producerAdditionConfiguration)
-                .withConsumerGroup(continuousConsumerGroup)
                 .withDelayMs(1000)
                 .build();
 
