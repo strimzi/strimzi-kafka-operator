@@ -27,7 +27,11 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -283,7 +287,7 @@ public class LogCollector {
 
     private void collectResource(String kind, String namespace) {
         LOGGER.info("Collecting {} in Namespace {}", kind, namespace);
-        writeFile(String.format("%s/%ss.log", namespaceFile, kind.toLowerCase()), cmdKubeClient(namespace).getResourcesAsYaml(kind.toLowerCase()));
+        writeFile(String.format("%s/%ss.log", namespaceFile, kind.toLowerCase(Locale.ROOT)), cmdKubeClient(namespace).getResourcesAsYaml(kind.toLowerCase(Locale.ROOT)));
     }
 
     private void collectStrimzi(String namespace) {
