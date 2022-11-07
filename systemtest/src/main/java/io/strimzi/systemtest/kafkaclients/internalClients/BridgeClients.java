@@ -21,7 +21,6 @@ import java.util.Map;
 public class BridgeClients extends KafkaClients {
     private int port;
     private int pollInterval;
-
     public int getPollInterval() {
         return pollInterval;
     }
@@ -38,7 +37,7 @@ public class BridgeClients extends KafkaClients {
         this.port = port;
     }
 
-    public Job producerStrimziBridge() {
+    public JobBuilder defaultProducerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", this.getProducerName());
         producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
@@ -91,11 +90,15 @@ public class BridgeClients extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build();
+            .endSpec();
     }
 
-    public Job consumerStrimziBridge() {
+
+    public Job producerStrimziBridge() {
+        return this.defaultProducerStrimziBridge().build();
+    }
+
+    public JobBuilder defaultConsumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", this.getConsumerName());
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
@@ -152,7 +155,10 @@ public class BridgeClients extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build();
+            .endSpec();
+    }
+
+    public Job consumerStrimziBridge() {
+        return this.defaultConsumerStrimziBridge().build();
     }
 }
