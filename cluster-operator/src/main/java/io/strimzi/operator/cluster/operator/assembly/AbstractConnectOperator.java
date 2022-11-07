@@ -624,7 +624,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param autoRestartStatus
      * @return true if the connector
      */
-    protected boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
+    boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
         if (connectorHasFailed(statusResult) || failedTaskIds(statusResult).size() > 0) {
             if (autoRestartStatus == null) {
                 return true;

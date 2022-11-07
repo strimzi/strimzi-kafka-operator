@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
+import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -50,6 +51,7 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -60,6 +62,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -945,5 +950,53 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build());
 
         createKafkaConnectCluster(context, kc, true);
+    }
+
+    @Test
+    public void testShouldAutoRestartConnector(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+            supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        JsonObject status = new JsonObject();
+        status.put("connector", Map.of("state", "FAILED"));
+
+        // Should restart after minute 2 when auto restart count is 1
+        var autoRestartStatus =  new AutoRestartStatusBuilder()
+            .withCount(1)
+            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(DateTimeFormatter.ISO_INSTANT))
+            .build();
+        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(true));
+
+        // Should not restart before minute 2 when auto restart count is 1
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+            .withCount(1)
+            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(1).format(DateTimeFormatter.ISO_INSTANT))
+            .build();
+        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
+
+        // Should restart after minute 12 when auto restart count is 3
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+            .withCount(3)
+            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(13).format(DateTimeFormatter.ISO_INSTANT))
+            .build();
+        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(true));
+
+        // Should not restart before minute 12 when auto restart count is 3
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+            .withCount(3)
+            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(10).format(DateTimeFormatter.ISO_INSTANT))
+            .build();
+        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
+
+        // Should not restart after 6 attempts
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+            .withCount(7)
+            .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusDays(1).format(DateTimeFormatter.ISO_INSTANT))
+            .build();
+        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
+
+        context.completeNow();
     }
 }
