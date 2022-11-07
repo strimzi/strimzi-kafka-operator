@@ -38,6 +38,13 @@ If you are using another tracing implementation, xref:proc-enabling-tracing-type
 
 |===
 
+WARNING: the OpenTelemetry specification doesn't define any https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md[SDK environment variables^] for enabling TLS on the Jaeger exporter used by default on the Kafka components.
+It means that you cannot enable TLS encryption on the gRPC port of your Jaeger backend, otherwise the exporter will not be able to connect.
+If you are using the Jaeger operator to deploy the Jaeger instance, set the `collector.grpc.tls.enabled: false` property under the `spec.allInOne.options` in the `Jaeger` custom resource.
+
+NOTE: when using the `otlp` exporter, it is possible to use specific https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md[OTLP environment variables^] to enable TLS.
+This way, you can enable TLS on the Jaeger backend OTLP endpoint.
+
 .OpenTracing environment variables
 [cols="2m,1,2",options="header"]
 |===
