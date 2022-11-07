@@ -13,9 +13,7 @@ public class UpgradeKafkaVersion {
     private String interBrokerVersion;
 
     UpgradeKafkaVersion(TestKafkaVersion testKafkaVersion) {
-        this.version = testKafkaVersion.version();
-        this.logMessageVersion = testKafkaVersion.messageVersion();
-        this.interBrokerVersion = testKafkaVersion.protocolVersion();
+        this(testKafkaVersion.version(), testKafkaVersion.messageVersion(), testKafkaVersion.protocolVersion());
     }
 
     UpgradeKafkaVersion(String version) {
@@ -26,7 +24,16 @@ public class UpgradeKafkaVersion {
             shortVersion = String.format("%s.%s", versionSplit[0], versionSplit[1]);
         }
 
-        new UpgradeKafkaVersion(version, shortVersion, shortVersion);
+        this.version = version;
+        this.logMessageVersion = shortVersion;
+        this.interBrokerVersion = shortVersion;
+    }
+
+    /**
+     * Leaving empty, so original Kafka version in `kafka-persistent.yaml` will be used
+     */
+    UpgradeKafkaVersion() {
+        this("", "", "");
     }
 
     UpgradeKafkaVersion(String version, String logMessageVersion, String interBrokerVersion) {

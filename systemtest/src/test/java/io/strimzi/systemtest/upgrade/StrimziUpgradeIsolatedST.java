@@ -165,7 +165,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     private void performUpgrade(UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws IOException {
         TestStorage testStorage = new TestStorage(extensionContext);
         // leave empty, so the original Kafka version from appropriate Strimzi's yaml will be used
-        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion("");
+        UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, upgradeData, testStorage, upgradeKafkaVersion, clusterOperator.getDeploymentNamespace());

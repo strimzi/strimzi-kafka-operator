@@ -51,7 +51,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     @SuppressWarnings("MethodLength")
     private void performDowngrade(UpgradeDowngradeData downgradeData, ExtensionContext extensionContext) throws IOException {
         TestStorage testStorage = new TestStorage(extensionContext);
-        UpgradeKafkaVersion testUpgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getDeployKafkaVersion(), downgradeData.getFromVersion());
+        UpgradeKafkaVersion testUpgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getFromVersion(), downgradeData.getDeployKafkaVersion());
 
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
