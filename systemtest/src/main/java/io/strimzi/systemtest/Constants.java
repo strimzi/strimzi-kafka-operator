@@ -124,6 +124,7 @@ public interface Constants {
     String NETWORK_POLICY = "NetworkPolicy";
     String JOB = "Job";
     String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
+    String REPLICA_SET = "ReplicaSet";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
