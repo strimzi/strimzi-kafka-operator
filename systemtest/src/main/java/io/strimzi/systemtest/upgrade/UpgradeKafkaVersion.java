@@ -6,6 +6,10 @@ package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 
+/**
+ * Class for representing Kafka version, with LMFV and IBPV for our upgrade/downgrade tests
+ * Represents "procedures" which should be done after upgrade of operator/before downgrade of operator
+ */
 public class UpgradeKafkaVersion {
 
     private String version;
