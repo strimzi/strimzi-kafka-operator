@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -275,7 +276,8 @@ public class LogCollector {
     }
 
     private void collectAllResourcesFromNamespace(String namespace) {
-        List<String> resources = Arrays.asList(Constants.DEPLOYMENT, Constants.REPLICA_SET);
+        List<String> resources = new ArrayList<>(Arrays.asList(Constants.DEPLOYMENT, Constants.REPLICA_SET));
+
         if (!Environment.isStrimziPodSetEnabled()) {
             resources.add(Constants.STATEFUL_SET);
         } else {
