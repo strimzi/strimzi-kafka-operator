@@ -35,9 +35,10 @@ public class UpgradeKafkaVersion {
 
     /**
      * Leaving empty, so original Kafka version in `kafka-persistent.yaml` will be used
+     * LMFV and IBPV should be null, so the test steps will for updating the config will be skipped
      */
     UpgradeKafkaVersion() {
-        this("", "", "");
+        this("", null, null);
     }
 
     UpgradeKafkaVersion(String version, String logMessageVersion, String interBrokerVersion) {
