@@ -136,8 +136,10 @@ public class PodUtils {
         TestUtils.waitFor("pod with prefix" + podNamePrefix + " is present.", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
             () -> {
                 List<Pod> listOfPods = kubeClient(namespaceName).listPods(namespaceName)
-                    .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix))
-                    .collect(Collectors.toList());
+                    .stream().filter(p -> p.getMetadata().getName().startsWith(podNamePrefix)
+                        && !p.getMetadata().getName().contains("producer")
+                        && !p.getMetadata().getName().contains("consumer")
+                    ).collect(Collectors.toList());
                 // true if number of pods is more than 1
                 result.set(listOfPods);
                 return result.get().size() > 0;

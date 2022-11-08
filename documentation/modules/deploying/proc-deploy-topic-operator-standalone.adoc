@@ -116,7 +116,7 @@ You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <11> (Optional) The debugging (`-D`) options set for the Topic Operator.
 <12> (Optional) Skips the generation of trust store certificates if TLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
 The default is `false`.
-<13> (Optional) Generates key store certificates for mutual TLS authentication. Setting this to `false` disables client authentication with TLS to the Kafka brokers.
+<13> (Optional) Generates key store certificates for mTLS authentication. Setting this to `false` disables client authentication with mTLS to the Kafka brokers.
 The default is `true`.
 <14> (Optional) Enables SASL support for client authentication when connecting to Kafka brokers.
 The default is `false`.
@@ -132,9 +132,9 @@ The default value is "PLAINTEXT".
 You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
 
 . If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_PUBLIC_CA` to `true`. Set this property to `true`, for example, if you are using Amazon AWS MSK service.
-. If you enabled TLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
+. If you enabled mTLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
 +
-.Example TLS configuration
+.Example mTLS configuration
 [source,shell,subs=+quotes]
 ----
 # ....
@@ -151,7 +151,7 @@ env:
 ----
 <1> The truststore contains the public keys of the Certificate Authorities used to sign the Kafka and ZooKeeper server certificates.
 <2> The password for accessing the truststore.
-<3> The keystore contains the private key for TLS client authentication.
+<3> The keystore contains the private key for mTLS authentication.
 <4> The password for accessing the keystore.
 
 . Deploy the Topic Operator.

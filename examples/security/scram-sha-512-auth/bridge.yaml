@@ -15,23 +15,16 @@ spec:
     - resource:
         type: group
         name: my-group
-      operation: Read
+      operations:
+        - Read
     - resource:
         type: topic
         name: my-topic
-      operation: Read
-    - resource:
-        type: topic
-        name: my-topic
-      operation: Describe
-    - resource:
-        type: topic
-        name: my-topic
-      operation: Write
-    - resource:
-        type: topic
-        name: my-topic
-      operation: Create
+        operations:
+          - Create
+          - Describe
+          - Read
+          - Write
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaBridge

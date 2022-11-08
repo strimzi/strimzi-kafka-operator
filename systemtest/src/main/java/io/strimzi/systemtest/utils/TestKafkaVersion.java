@@ -198,6 +198,10 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
 
     public static TestKafkaVersion getSpecificVersion(String kafkaVersion) {
         // One specific version will always be only once in the list
-        return kafkaVersions.stream().filter(it -> it.version.equals(kafkaVersion)).collect(Collectors.toList()).get(0);
+        return getSpecificVersionFromList(kafkaVersions, kafkaVersion);
+    }
+
+    public static TestKafkaVersion getSpecificVersionFromList(List<TestKafkaVersion> versions, String kafkaVersion) {
+        return versions.stream().filter(it -> it.version.equals(kafkaVersion)).collect(Collectors.toList()).get(0);
     }
 }

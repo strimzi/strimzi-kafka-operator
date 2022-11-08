@@ -25,7 +25,7 @@ The credentials are not typically required when using public authorization serve
 
 == OAuth 2.0 authentication configuration in the Kafka cluster
 
-To use OAuth 2.0 authentication in the Kafka cluster, you specify, for example, a TLS listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
+To use OAuth 2.0 authentication in the Kafka cluster, you specify, for example, a `tls` listener configuration for your Kafka cluster custom resource with the authentication method `oauth`:
 
 .Assigining the authentication method type for OAuth 2.0
 [source,yaml,subs="+quotes, attributes"]
@@ -45,8 +45,9 @@ spec:
       #...
 ----
 
-You can configure `plain`, `tls` and `external` listeners,
-but it is recommended not to use `plain` listeners or `external` listeners with disabled TLS encryption with OAuth 2.0 as this creates a vulnerability to network eavesdropping and unauthorized access through token theft.
+You can configure OAuth 2.0 authentication in your listeners.
+We recommend using OAuth 2.0 authentication together with TLS encryption (`tls: true`).
+Without encryption, the connection is vulnerable to network eavesdropping and unauthorized access through token theft.
 
 You configure an `external` listener with `type: oauth` for a secure transport layer to communicate with the client.
 

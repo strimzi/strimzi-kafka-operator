@@ -5,7 +5,8 @@
 [id='con-securing-kafka-authorization-{context}']
 = Kafka authorization
 
-You can configure authorization for Kafka brokers using the `authorization` property in the `Kafka.spec.kafka` resource.
+[role="_abstract"]
+Configure authorization for Kafka brokers using the `Kafka.spec.kafka.authorization` property in the `Kafka` resource.
 If the `authorization` property is missing, no authorization is enabled and clients have no restrictions.
 When enabled, authorization is applied to all enabled listeners.
 The authorization method is defined in the `type` field.
@@ -26,8 +27,10 @@ Super users can access all resources in your Kafka cluster regardless of any acc
 and are supported by all authorization mechanisms.
 
 To designate super users for a Kafka cluster, add a list of user principals to the `superUsers` property.
-If a user uses TLS client authentication, their username is the common name from their certificate subject prefixed with `CN=`.
-Otherwise, if not using the User Operator and using your own certificates for TLS client authentication, their username is their full certificate subject, with the fields formatted as: `CN=user,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=my_country_code`. Note that some fields may not be present in the certificate's subject, and thus should be omitted.
+If a user uses mTLS authentication, the username is the common name from the TLS certificate subject prefixed with `CN=`.
+If you are not using the User Operator and using your own certificates for mTLS, the username is the full certificate subject.
+A full certificate subject can have the following fields: `CN=user,OU=my_ou,O=my_org,L=my_location,ST=my_state,C=my_country_code`. 
+Omit any fields that are not present.
 
 .An example configuration with super users
 [source,yaml,subs="attributes+"]

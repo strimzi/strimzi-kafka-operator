@@ -13,9 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class UpgradeDowngradeDatalist {
     private static final Logger LOGGER = LogManager.getLogger(UpgradeDowngradeDatalist.class);
@@ -77,11 +75,7 @@ public class UpgradeDowngradeDatalist {
         acrossUpgradeData.setOldestKafka(startingVersion.getOldestKafka());
 
         // Generate procedures for upgrade
-        Map<String, String> procedures = new HashMap<>() {{
-                put("kafkaVersion", latestKafkaSupported.version());
-                put("logMessageVersion", latestKafkaSupported.messageVersion());
-                put("interBrokerProtocolVersion", latestKafkaSupported.protocolVersion());
-            }};
+        UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(latestKafkaSupported.version());
 
         acrossUpgradeData.setProcedures(procedures);
 

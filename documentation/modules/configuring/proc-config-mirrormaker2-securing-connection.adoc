@@ -22,7 +22,7 @@ You can also configure your listener to xref:kafka-listener-certificates-str[use
 
 .Before you start
 Before starting this procedure, take a look at the link:{BookURLDeploying}#deploy-examples-{context}[example configuration files^] provided by Strimzi.
-They include examples for securing a deployment of MirrorMaker 2.0 using TLS or SCRAM-SHA-512 authentication.
+They include examples for securing a deployment of MirrorMaker 2.0 using mTLS or SCRAM-SHA-512 authentication.
 The examples specify internal listeners for connecting within a Kubernetes cluster.
 
 The examples provide the configuration for full authorization, including all the ACLs needed by MirrorMaker 2.0 to allow operations on the source and target Kafka clusters.
@@ -46,10 +46,10 @@ You need to reference the secrets in the MirrorMaker configuration.
 +
 You can add listener configuration for authentication and enable authorization.
 +
-In this example, an internal listener is configured for a Kafka cluster with TLS encryption and authentication.
+In this example, an internal listener is configured for a Kafka cluster with TLS encryption and mTLS authentication.
 Kafka `simple` authorization is enabled.
 +
-.Example source Kafka cluster configuration with TLS authentication
+.Example source Kafka cluster configuration with TLS encryption and mTLS authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -94,7 +94,7 @@ spec:
     userOperator: {}
 ----
 +
-.Example target Kafka cluster configuration with TLS authentication
+.Example target Kafka cluster configuration with TLS encryption and mTLS authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -154,15 +154,14 @@ The certificates are created in the secret `_<cluster_name>_-cluster-ca-cert`.
 +
 --
 .. Configure the same authentication and authorization types as the corresponding source and target Kafka cluster.
-For example, if you used `tls` authentication and `simple` authorization type in the `Kafka` configuration for the source Kafka cluster,
-use the same in the `KafkaUser` configuration.
+For example, if you used `tls` authentication and the `simple` authorization type in the `Kafka` configuration for the source Kafka cluster, use the same in the `KafkaUser` configuration.
 
 .. Configure the ACLs needed by MirrorMaker 2.0 to allow operations on the source and target Kafka clusters.
 +
 The ACLs are used by the internal MirrorMaker connectors, and by the underlying Kafka Connect framework.
 --
 +
-.Example source user configuration for TLS client authentication
+.Example source user configuration for mTLS authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -209,7 +208,7 @@ spec:
           - Read
 ----
 +
-.Example target user configuration for TLS client authentication
+.Example target user configuration for mTLS authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -308,12 +307,12 @@ kubectl apply -f _<kafka_user_configuration_file>_ -n _<namespace>_
 The User Operator creates the users representing the client (MirrorMaker), and the security credentials used for client authentication, based on the chosen authentication type.
 +
 The User Operator creates a new secret with the same name as the `KafkaUser` resource.
-The secret contains a private and public key for TLS client authentication.
+The secret contains a private and public key for mTLS authentication.
 The public key is contained in a user certificate, which is signed by the client Certificate Authority (CA).
 
 . Configure a `KafkaMirrorMaker2` resource with the authentication details to connect to the source and target Kafka clusters.
 +
-.Example MirrorMaker 2.0 configuration with TLS authentication
+.Example MirrorMaker 2.0 configuration with TLS encryption and mTLS authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}

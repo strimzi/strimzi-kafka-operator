@@ -107,14 +107,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_CONFIG";
     protected static final String ENV_VAR_KAFKA_BRIDGE_ID = "KAFKA_BRIDGE_ID";
 
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED = "KAFKA_BRIDGE_AMQP_ENABLED";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_FLOW_CREDIT = "KAFKA_BRIDGE_AMQP_FLOW_CREDIT";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_MODE = "KAFKA_BRIDGE_AMQP_MODE";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_HOST = "KAFKA_BRIDGE_AMQP_HOST";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_PORT = "KAFKA_BRIDGE_AMQP_PORT";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_CERT_DIR = "KAFKA_BRIDGE_AMQP_CERT_DIR";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_MESSAGE_CONVERTER = "KAFKA_BRIDGE_AMQP_MESSAGE_CONVERTER";
-
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED = "KAFKA_BRIDGE_HTTP_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_HOST = "KAFKA_BRIDGE_HTTP_HOST";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_PORT = "KAFKA_BRIDGE_HTTP_PORT";
@@ -128,7 +120,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     private KafkaClientAuthentication authentication;
     private KafkaBridgeHttpConfig http;
     private boolean httpEnabled = false;
-    private boolean amqpEnabled = false;
     private String bootstrapServers;
     private KafkaBridgeAdminClientSpec kafkaBridgeAdminClient;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
@@ -419,8 +410,6 @@ public class KafkaBridgeCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED, "false"));
         }
 
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_AMQP_ENABLED, String.valueOf(amqpEnabled)));
-
         if (tls != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_TLS, "true"));
 
@@ -643,7 +632,7 @@ public class KafkaBridgeCluster extends AbstractModel {
      */
     @Override
     public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().keySet().contains("monitorInterval")) {
+        if (!properties.asMap().containsKey("monitorInterval")) {
             properties.addPair("monitorInterval", "30");
         }
         return super.createLog4jProperties(properties);

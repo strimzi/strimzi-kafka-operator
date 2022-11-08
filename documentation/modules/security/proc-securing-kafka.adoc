@@ -12,7 +12,7 @@ The security implemented for Kafka brokers must be compatible with the security 
 * `Kafka.spec.kafka.listeners[*].authentication` matches `KafkaUser.spec.authentication`
 * `Kafka.spec.kafka.authorization` matches `KafkaUser.spec.authorization`
 
-The steps show the configuration for simple authorization and a listener using TLS authentication.
+The steps show the configuration for simple authorization and a listener using mTLS authentication.
 For more information on listener configuration, see xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
 
 Alternatively, you can use SCRAM-SHA or OAuth 2.0 for xref:con-securing-kafka-authentication-{context}[listener authentication],
@@ -51,8 +51,8 @@ spec:
     # ...
 ----
 <1> Authorization xref:con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `AclAuthorizer` Kafka plugin].
-<2> List of user principals with unlimited access to Kafka. _CN_ is the common name from the client certificate when TLS authentication is used.
-<3> Listener authentication mechanisms may be configured for each listener, and xref:assembly-securing-kafka-brokers-{context}[specified as mutual TLS, SCRAM-SHA-512 or token-based OAuth 2.0].
+<2> List of user principals with unlimited access to Kafka. _CN_ is the common name from the client certificate when mTLS authentication is used.
+<3> Listener authentication mechanisms may be configured for each listener, and xref:assembly-securing-kafka-brokers-{context}[specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0].
 +
 If you are configuring an external listener, the configuration is dependent on the chosen connection mechanism.
 
@@ -61,7 +61,7 @@ If you are configuring an external listener, the configuration is dependent on t
 [source,shell,subs=+quotes]
 kubectl apply -f _<kafka_configuration_file>_
 +
-The Kafka cluster is configured with a Kafka broker listener using TLS authentication.
+The Kafka cluster is configured with a Kafka broker listener using mTLS authentication.
 +
 A service is created for each Kafka broker pod.
 +
