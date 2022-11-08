@@ -632,7 +632,7 @@ public class KafkaBridgeCluster extends AbstractModel {
      */
     @Override
     public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().keySet().contains("monitorInterval")) {
+        if (!properties.asMap().containsKey("monitorInterval")) {
             properties.addPair("monitorInterval", "30");
         }
         return super.createLog4jProperties(properties);
