@@ -406,18 +406,11 @@ class UserST extends AbstractST {
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        final AclRule writeRule = new AclRuleBuilder()
+        final AclRule aclRule = new AclRuleBuilder()
             .withNewAclRuleTopicResource()
                 .withName(topicName)
             .endAclRuleTopicResource()
-            .withOperation(AclOperation.WRITE)
-            .build();
-
-        final AclRule describeRule = new AclRuleBuilder()
-            .withNewAclRuleTopicResource()
-                .withName(topicName)
-            .endAclRuleTopicResource()
-            .withOperation(AclOperation.DESCRIBE)
+            .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
             .build();
 
         // exercise (a) - create Kafka cluster with support for authorization
@@ -439,7 +432,7 @@ class UserST extends AbstractST {
         final KafkaUser tlsExternalUserWithQuotasAndAcls = KafkaUserTemplates.tlsExternalUser(namespaceName, clusterName, userName)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
-                    .addToAcls(writeRule, describeRule)
+                    .addToAcls(aclRule)
                 .endKafkaUserAuthorizationSimple()
                 .withNewQuotas()
                     .withConsumerByteRate(consRate)
