@@ -141,11 +141,6 @@ Replace _<kafka_user>_ with the name of the Kafka user.
 When you create a Kafka user using the `KafkaUser` resource, a secret with the user CA certificate is created with the Kafka user name.
 For example, `my-user`.
 
-. Copy the user CA certificate to the interactive pod container.
-+
-[source,shell,subs=+quotes]
-kubectl cp user.crt _<interactive_pod_name>_:/tmp
-
 . Extract the private key of the user from the `_<user_name>_` secret.
 +
 [source,shell,subs="+quotes"]
@@ -153,14 +148,9 @@ kubectl get secret _<user_name>_ -o jsonpath='{.data.user\.key}' | base64 -d > u
 +
 The CA certificates (public keys) and private key allow the interactive pod container to connect to the Kafka broker. 
 
-. Copy the private key to the interactive pod container.
-+
-[source,shell,subs=+quotes]
-kubectl cp user.key _<interactive_pod_name>_:/tmp
-
 . Create a `config.properties` file.
 +
-Add the certificates and user key you extracted in the previous steps.
+Add the certificates and private user key you extracted in the previous steps.
 +
 * Add the truststore credentials to identify and authenticate with the Kafka cluster.
 * Add the keystore credentials to verify the user when connecting to the Kafka cluster.
@@ -168,20 +158,24 @@ Add the certificates and user key you extracted in the previous steps.
 .Configuration file with credentials
 [source,properties,subs="+quotes,attributes"]
 ----
-bootstrap.servers=__<kafka_cluster_name>__-kafka-bootstrap:9093 <1>
-security.protocol=SSL <2>
-ssl.truststore.type=PEM <3>
-ssl.truststore.location=/tmp/ca.crt <4>
-ssl.keystore.type=PEM 
-ssl.keystore.location=/tmp/user.crt <5>
-ssl.keystore.key=/tmp/user.key  <6>
+bootstrap.servers=__<kafka_cluster_name>__-kafka-bootstrap:9093 # <1>
+security.protocol=SSL # <2>
+ssl.truststore.type=PEM # <3>
+ssl.truststore.location=/tmp/ca.crt # <4>
+ssl.keystore.certificate.chain=-----BEGIN CERTIFICATE----- \n__<user_certificate_content_line_1>__\n__<user_certificate_content_line_n>__\n-----END CERTIFICATE----- # <5>
+ssl.keystore.key=----BEGIN PRIVATE KEY-----\n__<user_key_content_line_1>__\n__<user_key_content_line_n>__\n-----END PRIVATE KEY----- # <6>
 ----
 <1> The bootstrap server address to connect to the Kafka cluster. Use your own Kafka cluster name to replace _<kafka_cluster_name>_.
 <2> The security protocol option when using TLS for encryption.
 <3> PEM file format of the truststore (and keystore). 
 <4> The truststore location contains the public key certificate (`ca.crt`) for the Kafka cluster.
-<5> The keystore location contains the public key certificate (`user.crt`) for the Kafka user.
-<6> The keystore key location contains the private key of the Kafka user.
+<5> The user certificate of the Kafka user.  
+<6> The private key of the Kafka user.
+
+NOTE: Add the keystore certificate and the private key directly to the configuration.
+Add as a single-line format. 
+Start the certificate and key with an escape sequence (`\n`). 
+End each line from the original certificate with a `\n`.
 
 . Copy the `config.properties` file to the interactive pod container.
 +
