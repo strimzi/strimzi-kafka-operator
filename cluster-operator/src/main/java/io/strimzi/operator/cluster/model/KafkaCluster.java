@@ -1575,9 +1575,6 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        String livenessCommand = useKRaft ? "/opt/kafka/kafka_liveness_kraft.sh" : "/opt/kafka/kafka_liveness.sh";
-        // In ZooKeeper mode kafka-agent will create /var/opt/kafka/kafka-ready in the container
-        String[] readinessCommand = useKRaft ? new String[]{"/opt/kafka/kafka_readiness_kraft.sh"} : new String[]{"test", "-f", "/var/opt/kafka/kafka-ready"};
         Container container = new ContainerBuilder()
                 .withName(KAFKA_NAME)
                 .withImage(getImage())
@@ -1586,11 +1583,11 @@ public class KafkaCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
-                            .withCommand(livenessCommand)
+                            .withCommand("/opt/kafka/kafka_liveness.sh")
                         .endExec().build())
                 .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
                         .withNewExec()
-                            .withCommand(readinessCommand)
+                            .withCommand("/opt/kafka/kafka_readiness.sh")
                         .endExec().build())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

@@ -38,11 +38,12 @@ public class KafkaAgent {
     private Gauge brokerState;
     private MetricName sessionStateName;
     private Gauge sessionState;
-    private Boolean inKRaftMode = false;
+    private final boolean inKRaftMode;
 
     public KafkaAgent(File brokerReadyFile, File sessionConnectedFile) {
         this.brokerReadyFile = brokerReadyFile;
         this.sessionConnectedFile = sessionConnectedFile;
+        this.inKRaftMode = false;
     }
 
     public KafkaAgent(File brokerReadyFile) {
@@ -162,17 +163,17 @@ public class KafkaAgent {
             boolean handleBrokerState() {
                 LOGGER.trace("Polling {}", brokerStateName);
                 boolean ready = false;
-                Integer running = 3;
-                Integer unknown = 127;
-                Object value = brokerState.value();
+                Integer runningState = 3;
+                Integer unknownState = 127;
+                Object observedState = brokerState.value();
 
                 boolean stateIsRunning = false;
-                if (value instanceof Integer) {
-                    stateIsRunning = inKRaftMode ? running.compareTo((Integer) value) <= 0 && !unknown.equals(value) : running.equals(value);
+                if (observedState instanceof Integer) {
+                    stateIsRunning = runningState.compareTo((Integer) observedState) <= 0 && !unknownState.equals(observedState);
                 }
-                if (value instanceof Byte) {
-                    int intValue = ((Byte) value).intValue();
-                    stateIsRunning = inKRaftMode ? running <= intValue && !unknown.equals(intValue) : running.equals(intValue);
+                if (observedState instanceof Byte) {
+                    int observedStateInt = ((Byte) observedState).intValue();
+                    stateIsRunning = runningState <= observedStateInt && !unknownState.equals(observedStateInt);
                 }
                 if (stateIsRunning) {
                     try {
@@ -184,7 +185,7 @@ public class KafkaAgent {
                     ready = true;
 
                 } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, value, value.getClass());
+                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, observedState, observedState.getClass());
                 }
                 return ready;
             }
@@ -240,6 +241,7 @@ public class KafkaAgent {
                 new KafkaAgent(brokerReadyFile).run();
             }
         } else {
+            LOGGER.debug("Running in ZK mode");
             File brokerReadyFile = new File(agentArgs.substring(0, index));
             File sessionConnectedFile = new File(agentArgs.substring(index + 1));
             if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {

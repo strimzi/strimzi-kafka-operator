@@ -64,8 +64,8 @@ if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
   fi
 
   rm -f /var/opt/kafka/kafka-ready 2> /dev/null
-    KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready"
-    export KAFKA_OPTS
+  KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready"
+  export KAFKA_OPTS
 else
   rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
