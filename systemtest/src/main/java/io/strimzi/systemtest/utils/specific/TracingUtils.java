@@ -6,7 +6,6 @@ package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -24,9 +23,6 @@ public class TracingUtils {
     private static final String JAEGER_QUERY_SERVICE_PARAM_SERVICE = "?service=";
     private static final String JAEGER_QUERY_SERVICE_PARAM_OPERATION = "&operation=";
     private static final int JAEGER_QUERY_PORT = 16686;
-
-    public final static String LATEST_TRACING_VERSION = "1.25";
-    public final static String OLD_TRACING_VERSION = "1.20";
 
     private TracingUtils() {}
 
@@ -102,13 +98,5 @@ public class TracingUtils {
             }
             return true;
         });
-    }
-
-    public static String getValidTracingVersion() {
-        if (Double.parseDouble(KubeClusterResource.getInstance().client().clusterKubernetesVersion()) >= 1.22) {
-            return LATEST_TRACING_VERSION;
-        } else {
-            return OLD_TRACING_VERSION;
-        }
     }
 }
