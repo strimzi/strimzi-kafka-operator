@@ -145,6 +145,29 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         // ##############################
     }
 
+    @IsolatedTest
+    void testUpgradeWithoutLogMessageFormatVersionSet(ExtensionContext extensionContext) {
+        List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
+
+        String producerName = clusterName + "-producer";
+        String consumerName = clusterName + "-consumer";
+
+        for (int x = 0; x < sortedVersions.size() - 1; x++) {
+            TestKafkaVersion initialVersion = sortedVersions.get(x);
+            TestKafkaVersion newVersion = sortedVersions.get(x + 1);
+
+            // If it is an upgrade test we keep the message format as the lower version number
+            String interBrokerProtocol = initialVersion.protocolVersion();
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, interBrokerProtocol, 3, 3, extensionContext);
+        }
+
+        // ##############################
+        // Validate that continuous clients finished successfully
+        // ##############################
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), continuousClientsMessageCount);
+        // ##############################
+    }
+
     @BeforeAll
     void setupEnvironment() {
         clusterOperator.unInstall();
@@ -331,7 +354,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
             assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
                     .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(initInterBrokerProtocol));
         } else {
-            if (currentLogMessageFormat != null || currentInterBrokerProtocol != null) {
+            if (currentLogMessageFormat != null && currentInterBrokerProtocol != null) {
                 LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
                 assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName)
                         .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
