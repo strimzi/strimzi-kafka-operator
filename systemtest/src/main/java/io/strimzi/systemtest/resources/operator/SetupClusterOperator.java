@@ -274,23 +274,6 @@ public class SetupClusterOperator {
             for (final HasMetadata itemRoleOrBinding : listOfRolesAndBindings) {
                 ResourceManager.getInstance().createResource(extensionContext, itemRoleOrBinding);
             }
-
-//            // a) deploy specific Roles
-//            for (final Role role : this.roles) {
-//                ResourceManager.getInstance().createResource(extensionContext, role);
-//            }
-//            // b) specific ClusterRole
-//            for (final ClusterRole clusterRole : this.clusterRoles) {
-//                ResourceManager.getInstance().createResource(extensionContext, clusterRole);
-//            }
-//            // c) RoleBindings
-//            for (final RoleBinding roleBinding : this.roleBindings) {
-//                ResourceManager.getInstance().createResource(extensionContext, roleBinding);
-//            }
-//            // d) ClusterRoleBindings
-//            for (final ClusterRoleBinding clusterRoleBinding : this.clusterRoleBindings) {
-//                ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding);
-//            }
         } else {
             this.applyDefaultBindings();
         }

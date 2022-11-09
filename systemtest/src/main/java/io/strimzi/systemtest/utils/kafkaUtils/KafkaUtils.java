@@ -107,11 +107,6 @@ public class KafkaUtils {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     String conditionMessage = condition.getMessage();
-                    LOGGER.error("---=---STATUS");
-                    LOGGER.error(conditionMessage);
-                    LOGGER.error("------EXPECTED");
-                    LOGGER.error(message);
-                    LOGGER.error("---=---");
                     if (conditionMessage.matches(message)) {
                         return true;
                     }

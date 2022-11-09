@@ -207,16 +207,9 @@ public class SpecificIsolatedST extends AbstractST {
             ));
     }
 
-    // 1. Deploy Cluster Operator with STRIMZI_NAMESPACE set to `*` (i.e., watch all namespaces)
-    // 2. During deployment of ClusterOperator, create ClusterRole (-watched) bound to a cluster-wide configuration
-    // 3. During deployment of ClusterOperator, create ClusterRole (-namespaced) bound to some specific namespace (e.g., example-namespace)
-    // 4. Deploy Kafka cluster into example-namespace
-    // 5. Deploy Kafka cluster into infra-namespace
-    // 6. Check that Kafka CR is present in infra-namespace but fails (it can be checked via CR Status)
-    // 7. Check that Kafka CR is present and successfully deployed in example-namespace
     @IsolatedTest
     @Tag(REGRESSION)
-    void testClusterRoleNamespaced(final ExtensionContext extensionContext) {
+    void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole(final ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
