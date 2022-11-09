@@ -51,22 +51,21 @@ public class StatusUtils {
     }
 
     /**
-     *  Returns an Instant from a string date in ISO 8601 format
+     * Returns an Instant from a string date in ISO 8601 format
      * @param date a string representing a date, for example "2019-07-23T09:08:12.356Z"
      * @return an Instant
      */
-    public static Instant iso8601(String date)  {
+    public static Instant isoUtcDatetime(String date)  {
         return Instant.parse(date);
     }
 
     /**
-     * Get an amount of time unit between a date and now
+     * Get an amount of minutes between a date and now
      * @param date the date to start from
-     * @param unit the time unit of the interval, for example ChronoUnit.MINUTES
      * @return long amount of time
      */
-    public static long unitDifferenceUntilNow(Instant date,  ChronoUnit unit) {
-        return unit.between(date, ZonedDateTime.now(ZoneOffset.UTC));
+    public static long minutesDifferenceUntilNow(Instant date) {
+        return ChronoUnit.MINUTES.between(date, ZonedDateTime.now(ZoneOffset.UTC));
     }
 
     public static Condition buildConditionFromException(String type, String status, Throwable error) {

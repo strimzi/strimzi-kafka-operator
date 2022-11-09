@@ -76,7 +76,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -630,7 +629,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 return true;
             }
             var count =  autoRestartStatus.getCount();
-            var minutesSinceLastRestart = StatusUtils.unitDifferenceUntilNow(StatusUtils.iso8601(autoRestartStatus.getLastRestartTimestamp()), ChronoUnit.MINUTES);
+            var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
 
             // n^2 + n
             var nextRestart = count * count + count;
