@@ -101,14 +101,6 @@ public class SystemTestCertManager {
                 .build();
     }
 
-    public static SystemTestCertAndKey generateIntermediateCaCertAndKey(final SystemTestCertAndKey rootCert,
-                                                                        final ASN1Encodable[] sanDnsNames) {
-        return intermediateCaCertBuilder(rootCert)
-                .withSubjectDn(STRIMZI_INTERMEDIATE_CA)
-                .withSanDnsNames(sanDnsNames)
-                .build();
-    }
-
     public static SystemTestCertAndKey generateStrimziCaCertAndKey(SystemTestCertAndKey rootCert, String subjectDn) {
         return strimziCaCertBuilder(rootCert)
                 .withSubjectDn(subjectDn)
