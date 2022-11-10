@@ -264,8 +264,8 @@ public class SetupClusterOperator {
         // check if namespace is already created
         createCONamespaceIfNeeded();
         prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
-        // if a user want to customise one of the Role, ClusterRole, RoleBindings and ClusterRoleBinding he must do it
-        // everything by himself in scope of RBAC permissions otherwise we apply the default one
+        // if we manage directly in the individual test one of the Role, ClusterRole, RoleBindings and ClusterRoleBinding we must do it
+        // everything by ourselves in scope of RBAC permissions otherwise we apply the default one
         if (this.isRolesAndBindingsManagedByAnUser()) {
             final List<HasMetadata> listOfRolesAndBindings = Stream.of(
                     this.roles, this.roleBindings, this.clusterRoles, this.clusterRoleBindings)

@@ -232,7 +232,7 @@ public class SpecificIsolatedST extends AbstractST {
 
         // ---- b) defining RoleBindings
         final RoleBinding strimziClusterOperator020Namespaced = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().switchClusterRolesToRolesIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml"), true), RoleBinding.class);
-        final RoleBinding strimziClusterOperator022LeaderElection = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().changeLeaseNameInResourceIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml").getAbsolutePath()), RoleBinding.class);
+        final RoleBinding strimziClusterOperator022LeaderElection = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().changeLeaseNameInResourceIfNeeded(new File(Constants.PATH_TO_LEASE_ROLE_BINDING).getAbsolutePath()), RoleBinding.class);
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
@@ -269,30 +269,30 @@ public class SpecificIsolatedST extends AbstractST {
             .createInstallation()
             .runBundleInstallation();
 
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+                .editMetadata()
+                // this should not work
+                    .withNamespace(clusterOperator.getDeploymentNamespace())
+                .endMetadata()
+                .build());
+
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
         // to create Custom Resources because of `*-namespaced Role`
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-            .editMetadata()
-            // this should work
-            .withNamespace(namespaceWhereCreationOfCustomResourcesIsApproved)
-            .endMetadata()
-            .build());
-
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-            .editMetadata()
-                // this should not work
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+                .editMetadata()
+                // this should work
+                    .withNamespace(namespaceWhereCreationOfCustomResourcesIsApproved)
+                .endMetadata()
+                .build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
-        KafkaUtils.waitForKafkaStatusUpdate(clusterOperator.getDeploymentNamespace(), testStorage.getClusterName());
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(),
+                ".*Forbidden!Configured service account doesn't have access.*");
 
         final Condition condition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));
-        assertThat(condition.getMessage(), CoreMatchers.containsString("Forbidden!Configured service account doesn't have access"));
 
         // rollback to the default configuration
         clusterOperator.rollbackToDefaultConfiguration();
