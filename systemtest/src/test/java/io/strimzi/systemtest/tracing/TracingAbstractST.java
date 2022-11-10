@@ -52,6 +52,8 @@ import java.util.Random;
 import java.util.Stack;
 
 import static io.strimzi.systemtest.Constants.KAFKA_TRACING_CLIENT_KEY;
+import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
+import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_CONSUMER_SERVICE;
@@ -79,7 +81,6 @@ public abstract class TracingAbstractST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(TracingAbstractST.class);
 
     private String jaegerConfigs;
-    private File certManager;
 
     private final String certManagerPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/cert-manager.yaml";
     private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
@@ -546,30 +547,37 @@ public abstract class TracingAbstractST extends AbstractST {
      */
     private void deleteJaeger() {
         cmdKubeClient().namespace(this.namespace).deleteContent(this.jaegerConfigs);
-        cmdKubeClient().delete(this.certManager);
     }
 
-    private void deployJaegerContent() throws IOException {
-        this.certManager = new File(certManagerPath);
+    private void deleteCertManager() {
+        cmdKubeClient().delete(certManagerPath);
+    }
+
+    private void deployJaegerContent(ExtensionContext extensionContext) throws IOException {
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
 
         LOGGER.info("Deploying CertManager from {}", certManagerPath);
-        cmdKubeClient("").apply(this.certManager);
+        // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
+        cmdKubeClient("").apply(certManagerPath);
+
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteCertManager));
+        // wait for CertManager's webhook deployment and pod to be ready
+        DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
 
         String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.namespace);
 
         this.jaegerConfigs = jaegerOperator;
         LOGGER.info("Creating Jaeger operator (and needed resources) from {}", jaegerOperatorPath);
         cmdKubeClient(this.namespace).applyContent(jaegerOperator);
+
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
+        DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
     private void deployJaegerOperator(final ExtensionContext extensionContext) throws IOException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        this.deployJaegerContent();
-
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
-        DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        this.deployJaegerContent(extensionContext);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")

@@ -27,7 +27,8 @@ public interface TracingConstants {
     String JAEGER_COLLECTOR_NAME = JAEGER_INSTANCE_NAME + "-collector";
     String JAEGER_COLLECTOR_URL = "http://" + JAEGER_COLLECTOR_NAME + ":14250";
 
-    String JAEGER_VERSION = "1.22.1";
+    String CERT_MANAGER_WEBHOOK_DEPLOYMENT = "cert-manager-webhook";
+    String CERT_MANAGER_NAMESPACE = "cert-manager";
 
     String JAEGER_SERVICE_ENV = "JAEGER_SERVICE_NAME";
     String OTEL_SERVICE_ENV = "OTEL_SERVICE_NAME";
