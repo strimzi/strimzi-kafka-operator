@@ -43,14 +43,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
 import static io.strimzi.systemtest.Constants.KAFKA_TRACING_CLIENT_KEY;
+import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
+import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_CONSUMER_SERVICE;
@@ -65,7 +68,6 @@ import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_PRODUCER_SER
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_QUERY_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_PARAM;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_TYPE;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_VERSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -78,10 +80,11 @@ public abstract class TracingAbstractST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingAbstractST.class);
 
-    private Stack<String> jaegerConfigs = new Stack<>();
+    private String jaegerConfigs;
 
-    private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/jaeger-instance.yaml";
-    private final String jaegerOperatorFilesPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/operator-files/";
+    private final String certManagerPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/cert-manager.yaml";
+    private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
+    private final String jaegerOperatorPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator.yaml";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(this.getClass().getSimpleName()).stream().findFirst().get();
 
@@ -543,36 +546,38 @@ public abstract class TracingAbstractST extends AbstractST {
      * Delete Jaeger instance
      */
     private void deleteJaeger() {
-        while (!this.jaegerConfigs.empty()) {
-            cmdKubeClient().namespace(this.namespace).deleteContent(this.jaegerConfigs.pop());
-        }
+        cmdKubeClient().namespace(this.namespace).deleteContent(this.jaegerConfigs);
     }
 
-    private void deployJaegerContent() throws FileNotFoundException {
-        final File folder = new File(this.jaegerOperatorFilesPath);
-        final File[] files = folder.listFiles();
+    private void deleteCertManager() {
+        cmdKubeClient().delete(certManagerPath);
+    }
 
-        if (files != null && files.length > 0) {
-            for (final File file : files) {
-                final String yamlContent = TestUtils.setMetadataNamespace(file, this.namespace)
-                    .replace("namespace: \"observability\"", "namespace: \"" + this.namespace + "\"");
-                this.jaegerConfigs.push(yamlContent);
-                LOGGER.info("Creating {} from {}", file.getName(), file.getAbsolutePath());
-                cmdKubeClient(this.namespace).applyContent(yamlContent);
-            }
-        } else {
-            throw new FileNotFoundException("Folder with Jaeger files is empty or doesn't exist");
-        }
+    private void deployJaegerContent(ExtensionContext extensionContext) throws IOException {
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+
+        LOGGER.info("Deploying CertManager from {}", certManagerPath);
+        // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
+        cmdKubeClient("").apply(certManagerPath);
+
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteCertManager));
+        // wait for CertManager's webhook deployment and pod to be ready
+        DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
+
+        String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.namespace);
+
+        this.jaegerConfigs = jaegerOperator;
+        LOGGER.info("Creating Jaeger operator (and needed resources) from {}", jaegerOperatorPath);
+        cmdKubeClient(this.namespace).applyContent(jaegerOperator);
+
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
+        DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
     private void deployJaegerOperator(final ExtensionContext extensionContext) throws IOException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        this.deployJaegerContent();
-
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
-        DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        this.deployJaegerContent(extensionContext);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
@@ -603,7 +608,7 @@ public abstract class TracingAbstractST extends AbstractST {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(jaegerInstancePath), TestUtils::toYamlString);
-        cmdKubeClient(namespaceName).applyContent(instanceYamlContent.replaceAll("image: 'jaegertracing/all-in-one:*'", "image: 'jaegertracing/all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
+        cmdKubeClient(namespaceName).applyContent(instanceYamlContent);
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
