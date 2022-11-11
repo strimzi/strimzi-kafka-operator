@@ -3024,14 +3024,36 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 
 [options="header"]
 |====
-|Property         |Description
-|class     1.2+<.<a|The Class for the Kafka Connector.
+|Property            |Description
+|class        1.2+<.<a|The Class for the Kafka Connector.
 |string
-|tasksMax  1.2+<.<a|The maximum number of tasks for the Kafka Connector.
+|tasksMax     1.2+<.<a|The maximum number of tasks for the Kafka Connector.
 |integer
-|config    1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
+|autoRestart  1.2+<.<a|Automatic restart of connector and tasks configuration.
+|xref:type-AutoRestart-{context}[`AutoRestart`]
+|config       1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map
-|pause     1.2+<.<a|Whether the connector should be paused. Defaults to false.
+|pause        1.2+<.<a|Whether the connector should be paused. Defaults to false.
+|boolean
+|====
+
+[id='type-AutoRestart-{context}']
+### `AutoRestart` schema reference
+
+Used in: xref:type-KafkaConnectorSpec-{context}[`KafkaConnectorSpec`], xref:type-KafkaMirrorMaker2ConnectorSpec-{context}[`KafkaMirrorMaker2ConnectorSpec`]
+
+xref:type-AutoRestart-schema-{context}[Full list of `AutoRestart` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.AutoRestart.adoc[leveloffset=+1]
+
+[id='type-AutoRestart-schema-{context}']
+==== `AutoRestart` schema properties
+
+
+[options="header"]
+|====
+|Property        |Description
+|enabled  1.2+<.<a|Whether automatic restart for failed connectors and tasks should be enabled or disabled.
 |boolean
 |====
 
@@ -3048,12 +3070,31 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
 |integer
+|autoRestart         1.2+<.<a|The auto restart status.
+|xref:type-AutoRestartStatus-{context}[`AutoRestartStatus`]
 |connectorStatus     1.2+<.<a|The connector status, as reported by the Kafka Connect REST API.
 |map
 |tasksMax            1.2+<.<a|The maximum number of tasks for the Kafka Connector.
 |integer
 |topics              1.2+<.<a|The list of topics used by the Kafka Connector.
 |string array
+|====
+
+[id='type-AutoRestartStatus-{context}']
+### `AutoRestartStatus` schema reference
+
+Used in: xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
+
+
+[options="header"]
+|====
+|Property                     |Description
+|count                 1.2+<.<a|The number of times the connector or task is restarted.
+|integer
+|connectorName         1.2+<.<a|The name of the connector being restarted.
+|string
+|lastRestartTimestamp  1.2+<.<a|The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
+|string
 |====
 
 [id='type-KafkaMirrorMaker2-{context}']
@@ -3187,12 +3228,14 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 
 [options="header"]
 |====
-|Property         |Description
-|tasksMax  1.2+<.<a|The maximum number of tasks for the Kafka Connector.
+|Property            |Description
+|tasksMax     1.2+<.<a|The maximum number of tasks for the Kafka Connector.
 |integer
-|config    1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
+|config       1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map
-|pause     1.2+<.<a|Whether the connector should be paused. Defaults to false.
+|autoRestart  1.2+<.<a|Automatic restart of connector and tasks configuration.
+|xref:type-AutoRestart-{context}[`AutoRestart`]
+|pause        1.2+<.<a|Whether the connector should be paused. Defaults to false.
 |boolean
 |====
 
@@ -3204,20 +3247,22 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 
 [options="header"]
 |====
-|Property                   |Description
-|conditions          1.2+<.<a|List of status conditions.
+|Property                    |Description
+|conditions           1.2+<.<a|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
+|observedGeneration   1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
 |integer
-|url                 1.2+<.<a|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
+|url                  1.2+<.<a|The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
 |string
-|connectorPlugins    1.2+<.<a|The list of connector plugins available in this Kafka Connect deployment.
+|autoRestartStatuses  1.2+<.<a|List of MirrorMaker 2.0 connector auto restart statuses.
+|xref:type-AutoRestartStatus-{context}[`AutoRestartStatus`] array
+|connectorPlugins     1.2+<.<a|The list of connector plugins available in this Kafka Connect deployment.
 |xref:type-ConnectorPlugin-{context}[`ConnectorPlugin`] array
-|connectors          1.2+<.<a|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
+|connectors           1.2+<.<a|List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API.
 |map array
-|labelSelector       1.2+<.<a|Label selector for pods providing this resource.
+|labelSelector        1.2+<.<a|Label selector for pods providing this resource.
 |string
-|replicas            1.2+<.<a|The current number of pods being used to provide this resource.
+|replicas             1.2+<.<a|The current number of pods being used to provide this resource.
 |integer
 |====
 

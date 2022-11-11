@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -509,6 +510,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         .compose(conditions ->
                             apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port, connectorName)
                                 .compose(createConnectorStatusAndConditions(conditions)))
+                        .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
                     LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
@@ -523,6 +525,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
                     return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
                         .compose(createConnectorStatusAndConditions())
+                        .compose(status -> autoRestartFailedConnectorAndTasks(reconciliation, host, apiClient, connectorName, connectorSpec, status, resource))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
                     return Future.failedFuture(error);
@@ -578,10 +581,68 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    private  Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
+        JsonObject statusResultJson = new JsonObject(status.statusResult);
+        if (connectorSpec.getAutoRestart() != null && connectorSpec.getAutoRestart().isEnabled()) {
+            return getPreviousKafkaConnectorStatus(connectorOperator, resource)
+                 .compose(previousStatus -> {
+                     if (previousStatus == null) {
+                         previousStatus = new KafkaConnectorStatus();
+                     }
+                     return Future.succeededFuture(previousStatus.getAutoRestart());
+                 })
+                 .compose(previousAutoRestartStatus -> {
+                     if (shouldAutoRestart(previousAutoRestartStatus, statusResultJson)) {
+                         LOGGER.debugCr(reconciliation, "Auto restarting connector {}", connectorName);
+                         return apiClient.restart(host, port, connectorName, true, true)
+                             .compose(
+                                 statusResult -> {
+                                     status.statusResult = statusResult;
+                                     status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
+                                     return  Future.succeededFuture(status);
+                                 },
+                                 throwable -> {
+                                     status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
+                                     String message = "Failed to auto restart for the " + status.autoRestart.getCount() + " time(s) connector  " + connectorName + ". " + throwable.getMessage();
+                                     LOGGER.warnCr(reconciliation, message);
+                                     return Future.succeededFuture(status);
+                                 });
+                     } else {
+                         // keep previous auto restart status
+                         status.autoRestart = previousAutoRestartStatus;
+                         return Future.succeededFuture(status);
+                     }
+                 });
+        } else {
+            return Future.succeededFuture(status);
+        }
+    }
+
+    /**
+     * Connector or tasks failed should only restart at minute 0, 2, 6, 12, 20 and 30
+     * @param autoRestartStatus
+     * @return true if the connector
+     */
+    boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
+        if (connectorHasFailed(statusResult) || failedTaskIds(statusResult).size() > 0) {
+            if (autoRestartStatus == null) {
+                return true;
+            }
+            var count =  autoRestartStatus.getCount();
+            var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
+
+            // n^2 + n
+            var nextRestart = count * count + count;
+
+            return count <  7 &&  minutesSinceLastRestart  >= nextRestart;
+        }
+        return false;
+    }
+
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
             LOGGER.debugCr(reconciliation, "Restarting connector {}", connectorName);
-            return apiClient.restart(host, port, connectorName)
+            return apiClient.restart(host, port, connectorName, false, false)
                     .compose(ignored -> removeRestartAnnotation(reconciliation, resource)
                         .compose(v -> Future.succeededFuture(conditions)),
                         throwable -> {
@@ -687,19 +748,21 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Map<String, Object> statusResult;
         List<String> topics;
         List<Condition> conditions;
+        AutoRestartStatus autoRestart;
 
-        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<String> topics, List<Condition> conditions) {
+        ConnectorStatusAndConditions(Map<String, Object> statusResult, List<String> topics, List<Condition> conditions, AutoRestartStatus autoRestart) {
             this.statusResult = statusResult;
             this.topics = topics;
             this.conditions = conditions;
+            this.autoRestart = autoRestart;
         }
 
         ConnectorStatusAndConditions(Map<String, Object> statusResult, List<Condition> conditions) {
-            this(statusResult, Collections.emptyList(), conditions);
+            this(statusResult, Collections.emptyList(), conditions, new AutoRestartStatus());
         }
 
         ConnectorStatusAndConditions(Map<String, Object> statusResult) {
-            this(statusResult, Collections.emptyList(), Collections.emptyList());
+            this(statusResult, Collections.emptyList(), Collections.emptyList(), new AutoRestartStatus());
         }
     }
 
@@ -712,7 +775,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     Function<List<String>, Future<ConnectorStatusAndConditions>> updateConnectorStatusAndConditions(ConnectorStatusAndConditions status) {
-        return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions));
+        return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions, status.autoRestart));
     }
 
     public Set<Condition> validate(Reconciliation reconciliation, KafkaConnector resource) {
@@ -736,6 +799,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Map<String, Object> statusResult = null;
         List<String> topics = new ArrayList<>();
         List<Condition> conditions = new ArrayList<>();
+        AutoRestartStatus autoRestart = null;
 
         Future<Void> connectorReadiness = Future.succeededFuture();
 
@@ -750,6 +814,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             }
             topics = connectorStatus.topics.stream().sorted().collect(Collectors.toList());
             connectorStatus.conditions.forEach(condition -> conditions.add(condition));
+            autoRestart = connectorStatus.autoRestart;
         }
 
         Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, connector);
@@ -760,6 +825,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             status.setConnectorStatus(statusResult);
             status.setTasksMax(getActualTaskCount(connector, statusResult));
             status.setTopics(topics);
+            status.setAutoRestart(autoRestart);
         } else {
             status.setObservedGeneration(connector.getStatus() != null ? connector.getStatus().getObservedGeneration() : 0);
             conditions.add(StatusUtils.getPausedCondition());
@@ -822,6 +888,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         return connectorConfigJson.put("connector.class", spec.getClassName());
+    }
+
+    protected Future<KafkaConnectorStatus> getPreviousKafkaConnectorStatus(CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> resourceOperator,
+                                                           CustomResource resource) {
+        return resourceOperator
+            .getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName())
+            .compose(getRes -> Future.succeededFuture(getRes.getStatus()));
     }
 
     /**

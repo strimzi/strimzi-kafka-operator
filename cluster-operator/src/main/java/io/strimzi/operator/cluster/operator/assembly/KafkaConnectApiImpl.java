@@ -554,16 +554,17 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<Void> restart(String host, int port, String connectorName) {
-        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/restart");
+    public Future<Map<String, Object>> restart(String host, int port, String connectorName, boolean includeTasks, boolean onlyFailed) {
+        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/restart?includeTasks=" + includeTasks + "&onlyFailed=" + onlyFailed);
     }
 
     @Override
     public Future<Void> restartTask(String host, int port, String connectorName, int taskID) {
-        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/tasks/" + taskID + "/restart");
+        return restartConnectorOrTask(host, port, "/connectors/" + connectorName + "/tasks/" + taskID + "/restart")
+            .compose(result -> Future.succeededFuture());
     }
 
-    private Future<Void> restartConnectorOrTask(String host, int port, String path) {
+    private Future<Map<String, Object>> restartConnectorOrTask(String host, int port, String path) {
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.request(HttpMethod.POST, port, host, path, request -> {
                 if (request.succeeded()) {
@@ -571,9 +572,18 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                             .putHeader("Accept", "application/json");
                     request.result().send(response -> {
                         if (response.succeeded()) {
-                            if (response.result().statusCode() == 204) {
+                            if (response.result().statusCode() == 202) {
                                 response.result().bodyHandler(body -> {
-                                    result.complete();
+                                    try {
+                                        var status = mapper.readValue(body.getBytes(), TREE_TYPE);
+                                        result.complete(status);
+                                    } catch (IOException e) {
+                                        result.fail(new ConnectRestException(response.result(), "Failed to parse restart status response", e));
+                                    }
+                                });
+                            } else if (response.result().statusCode() == 204) {
+                                response.result().bodyHandler(body -> {
+                                    result.complete(null);
                                 });
                             } else {
                                 result.fail("Unexpected status code " + response.result().statusCode()

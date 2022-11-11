@@ -8,6 +8,8 @@ metadata:
 spec:
   class: "org.apache.kafka.connect.file.FileStreamSourceConnector"
   tasksMax: 2
+  autoRestart:
+    enabled: true
   config:
     file: "/home/source/test.source.txt"
     topic: "test.topic"

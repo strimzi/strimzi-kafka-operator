@@ -9,6 +9,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -72,7 +73,7 @@ public class TestingConnector extends SourceConnector {
             sleep(taskStartTime);
             if (getBoolean(map, TASK_FAIL_ON_START)) {
                 LOGGER.infoOp("Failing task {}", this);
-                throw new RuntimeException("Task failed to start");
+                throw new ConnectException("Task failed to start");
             }
             LOGGER.infoOp("Started task {}", this);
         }

@@ -178,7 +178,7 @@ public class KafkaConnectApiIT {
             .compose(ignored -> client.resume("localhost", port, "test"))
             .onComplete(context.succeedingThenComplete())
 
-            .compose(ignored -> client.restart("localhost", port, "test"))
+            .compose(ignored -> client.restart("localhost", port, "test", true, true))
             .onComplete(context.succeedingThenComplete())
 
             .compose(ignored -> client.restartTask("localhost", port, "test", 0))
