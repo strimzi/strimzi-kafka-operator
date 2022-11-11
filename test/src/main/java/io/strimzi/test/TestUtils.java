@@ -8,10 +8,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -22,7 +20,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.vertx.core.VertxException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,8 +37,6 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -55,11 +50,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
@@ -113,7 +105,7 @@ public final class TestUtils {
 
     /**
      * Poll the given {@code ready} function every {@code pollIntervalMs} milliseconds until it returns true,
-     * or throw a WaitException if it doesn't returns true within {@code timeoutMs} milliseconds.
+     * or throw a WaitException if it doesn't return true within {@code timeoutMs} milliseconds.
      * @return The remaining time left until timeout occurs
      * (helpful if you have several calls which need to share a common timeout),
      * */
@@ -195,7 +187,7 @@ public final class TestUtils {
     public static String getFileAsString(String filePath) {
         try {
             LOGGER.info(filePath);
-            return new String(Files.readAllBytes(Paths.get(filePath)), "UTF-8");
+            return Files.readString(Paths.get(filePath));
         } catch (IOException e) {
             LOGGER.info("File with path {} not found", filePath);
         }
@@ -214,10 +206,8 @@ public final class TestUtils {
             if (url == null) {
                 return null;
             } else {
-                return new String(
-                        Files.readAllBytes(Paths.get(
-                                url.toURI())),
-                        StandardCharsets.UTF_8);
+                return Files.readString(Paths.get(
+                        url.toURI()));
             }
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
@@ -232,9 +222,9 @@ public final class TestUtils {
     public static String readResource(InputStream stream) {
         StringBuilder textBuilder = new StringBuilder();
         try (Reader reader = new BufferedReader(new InputStreamReader(
-                stream, Charset.forName(StandardCharsets.UTF_8.name()))
+                stream, StandardCharsets.UTF_8)
         )) {
-            int character = 0;
+            int character;
             while ((character = reader.read()) != -1) {
                 textBuilder.append((char) character);
             }
@@ -249,26 +239,11 @@ public final class TestUtils {
             if (file == null) {
                 return null;
             } else {
-                return new String(
-                        Files.readAllBytes(file.toPath()),
-                        StandardCharsets.UTF_8);
+                return Files.readString(file.toPath());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Assert that the given actual string is the same as content of the
-     * the classpath resource resourceName.
-     * @param cls The class relative to which the resource will be loaded.
-     * @param resourceName The name of the resource
-     * @param actual The actual
-     * @throws IOException
-     */
-    public static void assertResourceMatch(Class<?> cls, String resourceName, String actual) throws IOException {
-        String r = readResource(cls, resourceName);
-        assertThat(actual, is(r));
     }
 
     @SafeVarargs
@@ -307,18 +282,6 @@ public final class TestUtils {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public static String fromYamlToJson(String yaml) {
-        try {
-            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-            Object obj = yamlReader.readValue(yaml, Object.class);
-
-            ObjectMapper jsonWriter = new ObjectMapper();
-            return jsonWriter.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException(e);
         }
     }
 
@@ -369,22 +332,6 @@ public final class TestUtils {
         }
     }
 
-    /** @deprecated you should be using yaml, no json */
-    @Deprecated
-    public static <T> T fromJson(String json, Class<T> c) {
-        if (json == null) {
-            return null;
-        }
-        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            return mapper.readValue(json, c);
-        } catch (JsonMappingException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static String toJsonString(Object instance) {
         ObjectMapper mapper = new ObjectMapper()
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -398,10 +345,6 @@ public final class TestUtils {
     /** Map Streams utility methods */
     public static <K, V> Map.Entry<K, V> entry(K key, V value) {
         return new AbstractMap.SimpleEntry<>(key, value);
-    }
-
-    public static <K, U> Collector<Map.Entry<K, U>, ?, Map<K, U>> entriesToMap() {
-        return Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue);
     }
 
     /** Method to create and write file */
@@ -433,9 +376,11 @@ public final class TestUtils {
     /**
      * Changes the {@code subject} of the RoleBinding in the given YAML resource to be the
      * {@code strimzi-cluster-operator} {@code ServiceAccount} in the given namespace.
-     * @param roleBindingFile
-     * @param namespace
-     * @return role
+     *
+     * @param roleBindingFile   The RoleBinding YAML file to load and change
+     * @param namespace         Namespace of the service account which should be the subject of this RoleBinding
+     *
+     * @return Modified RoleBinding resource YAML
      */
     public static String changeRoleBindingSubject(File roleBindingFile, String namespace) {
         YAMLMapper mapper = new YAMLMapper();
@@ -446,18 +391,6 @@ public final class TestUtils {
             subject.put("kind", "ServiceAccount")
                     .put("name", "strimzi-cluster-operator")
                     .put("namespace", namespace);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String setMetadataNamespace(File roleBindingFile, String namespace) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            JsonNode node = mapper.readTree(roleBindingFile);
-            ObjectNode metadata = (ObjectNode) node.get("metadata");
-            metadata.put("namespace", namespace);
             return mapper.writeValueAsString(node);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -488,42 +421,6 @@ public final class TestUtils {
             return Collections.unmodifiableMap(map);
         } else {
             return Collections.emptyMap();
-        }
-    }
-
-    /**
-     * Repeat request n-times in a row in case of call failed
-     *
-     * @param retry count of remaining retries
-     * @param fn    request function
-     * @return The result of the successful call to {@code fn}.
-     */
-    public static <T> T doRequestTillSuccess(int retry, Callable<T> fn, Optional<Runnable> reconnect) throws Exception {
-        try {
-            return fn.call();
-        } catch (Exception ex) {
-            if (ex.getCause() instanceof VertxException && ex.getCause().getMessage().contains("Connection was closed")) {
-                if (reconnect.isPresent()) {
-                    LOGGER.warn("connection was closed, trying to reconnect...");
-                    reconnect.get().run();
-                }
-            }
-            if ((ex.getCause() instanceof UnknownHostException || ex.getCause() instanceof IllegalStateException) && retry > 0) {
-                try {
-                    LOGGER.info("{} remaining iterations", retry);
-                    return doRequestTillSuccess(retry - 1, fn, reconnect);
-                } catch (Exception ex2) {
-                    throw ex2;
-                }
-            } else {
-                LOGGER.info(ex.getClass().getName());
-                if (ex.getCause() != null) {
-                    ex.getCause().printStackTrace();
-                } else {
-                    ex.printStackTrace();
-                }
-                throw ex;
-            }
         }
     }
 }

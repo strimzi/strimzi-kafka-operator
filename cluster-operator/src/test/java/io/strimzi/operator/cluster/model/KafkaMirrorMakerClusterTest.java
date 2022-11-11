@@ -84,8 +84,8 @@ public class KafkaMirrorMakerClusterTest {
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
 
-    private final String producerConfigurationJson = "{\"foo\":\"bar\"}";
-    private final String consumerConfigurationJson = "{\"foo\":\"buz\"}";
+    private final String producerConfigurationJson = "foo: bar";
+    private final String consumerConfigurationJson = "foo: buz";
     private final String defaultProducerConfiguration = "";
     private final String defaultConsumerConfiguration = "";
     private final String expectedProducerConfiguration = "foo=bar" + LINE_SEPARATOR;
@@ -102,7 +102,7 @@ public class KafkaMirrorMakerClusterTest {
     private final KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
             .withBootstrapServers(producerBootstrapServers)
             .withAbortOnSendFailure(abortOnSendFailure)
-            .withConfig((Map<String, Object>) TestUtils.fromJson(producerConfigurationJson, Map.class))
+            .withConfig((Map<String, Object>) TestUtils.fromYamlString(producerConfigurationJson, Map.class))
             .build();
 
     private final KafkaMirrorMakerConsumerSpec consumer = new KafkaMirrorMakerConsumerSpecBuilder()
@@ -110,7 +110,7 @@ public class KafkaMirrorMakerClusterTest {
             .withGroupId(groupId)
             .withNumStreams(numStreams)
             .withOffsetCommitInterval(offsetCommitInterval)
-            .withConfig((Map<String, Object>) TestUtils.fromJson(consumerConfigurationJson, Map.class))
+            .withConfig((Map<String, Object>) TestUtils.fromYamlString(consumerConfigurationJson, Map.class))
             .build();
 
     private final KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(ResourceUtils.createEmptyKafkaMirrorMaker(namespace, cluster))

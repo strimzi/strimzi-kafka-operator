@@ -117,7 +117,7 @@ public class KafkaConnectClusterTest {
     private final String metricsCMName = "metrics-cm";
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
-    private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
 
@@ -135,7 +135,7 @@ public class KafkaConnectClusterTest {
 
     private final KafkaConnect resource = new KafkaConnectBuilder(ResourceUtils.createEmptyKafkaConnect(namespace, clusterName))
             .withNewSpec()
-                .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+                .withConfig((Map<String, Object>) TestUtils.fromYamlString(configurationJson, Map.class))
                 .withImage(image)
                 .withReplicas(replicas)
                 .withReadinessProbe(new Probe(healthDelay, healthTimeout))

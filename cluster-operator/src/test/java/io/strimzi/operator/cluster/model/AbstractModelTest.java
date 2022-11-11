@@ -55,17 +55,16 @@ public class AbstractModelTest {
 
     @ParallelTest
     public void testJvmPerformanceOptions() {
-        JvmOptions opts = TestUtils.fromJson("{}", JvmOptions.class);
+        JvmOptions opts = TestUtils.fromYamlString("{}", JvmOptions.class);
 
         assertThat(getPerformanceOptions(opts), is(nullValue()));
 
-        opts = TestUtils.fromJson("{" +
-                "    \"-XX\":" +
-                "            {\"key1\": \"value1\"," +
-                "            \"key2\": \"true\"," +
-                "            \"key3\": false," +
-                "            \"key4\": 10}" +
-                "}", JvmOptions.class);
+        opts = TestUtils.fromYamlString("-XX:\n" +
+                                        "  key1: value1\n" +
+                                        "  key2: true\n" +
+                                        "  key3: false\n" +
+                                        "  key4: 10\n",
+                JvmOptions.class);
 
         assertThat(getPerformanceOptions(opts), is("-XX:key1=value1 -XX:+key2 -XX:-key3 -XX:key4=10"));
     }

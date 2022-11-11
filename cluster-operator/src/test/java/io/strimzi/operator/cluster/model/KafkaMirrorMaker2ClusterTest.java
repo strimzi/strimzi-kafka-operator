@@ -107,7 +107,7 @@ public class KafkaMirrorMaker2ClusterTest {
     private final String metricsCMName = "metrics-cm";
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
-    private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
@@ -130,7 +130,7 @@ public class KafkaMirrorMaker2ClusterTest {
     private final KafkaMirrorMaker2ClusterSpec targetCluster = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(targetClusterAlias)
             .withBootstrapServers(bootstrapServers)
-            .withConfig((Map<String, Object>) TestUtils.fromJson(configurationJson, Map.class))
+            .withConfig((Map<String, Object>) TestUtils.fromYamlString(configurationJson, Map.class))
             .build();
 
     private final KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, clusterName))
