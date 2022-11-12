@@ -18,11 +18,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class KafkaJmxOptionsTest {
     @Test
     public void testAuthentication() {
-        KafkaJmxOptions opts = TestUtils.fromJson("{" +
-                "\"authentication\": {" +
-                    "\"type\": \"password\"" +
-                    "}" +
-                "}", KafkaJmxOptions.class);
+        KafkaJmxOptions opts = TestUtils.fromYamlString(
+                "authentication:\n" +
+                "  type: password",
+                KafkaJmxOptions.class);
 
         assertThat(opts.getAuthentication(),  is(notNullValue()));
         assertThat(opts.getAuthentication().getType(),  is(KafkaJmxAuthenticationPassword.TYPE_PASSWORD));
@@ -30,7 +29,7 @@ public class KafkaJmxOptionsTest {
 
     @Test
     public void testNoJmxOpts() {
-        KafkaJmxOptions opts = TestUtils.fromJson("{}", KafkaJmxOptions.class);
+        KafkaJmxOptions opts = TestUtils.fromYamlString("{}", KafkaJmxOptions.class);
 
         assertThat(opts.getAuthentication(),  is(nullValue()));
         assertThat(opts.getAdditionalProperties(),  is(Collections.emptyMap()));

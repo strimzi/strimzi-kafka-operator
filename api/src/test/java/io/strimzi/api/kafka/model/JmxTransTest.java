@@ -15,17 +15,14 @@ import static org.hamcrest.Matchers.hasSize;
 public class JmxTransTest {
     @Test
     public void testQueries() {
-        JmxTransSpec opts = TestUtils.fromJson("{" +
-                "\"kafkaQueries\": [{" +
-                        "\"targetMBean\": \"targetMBean1\"," +
-                        "\"attributes\": [\"attribute0\", \"attribute1\"]," +
-                        "\"outputs\": [\"output0\", \"output1\"]" +
-                    "}, {" +
-                        "\"targetMBean\": \"targetMBean2\"," +
-                        "\"attributes\": [\"attribute2\", \"attribute3\"]," +
-                        "\"outputs\": [\"output2\", \"output3\"]" +
-                    "}]" +
-                "}", JmxTransSpec.class);
+        JmxTransSpec opts = TestUtils.fromYamlString("kafkaQueries:\n" +
+                                                     "  - targetMBean: targetMBean1\n" +
+                                                     "    attributes: [attribute0, attribute1]\n" +
+                                                     "    outputs: [output0, output1]\n" +
+                                                     "  - targetMBean: targetMBean2\n" +
+                                                     "    attributes: [attribute2, attribute3]\n" +
+                                                     "    outputs: [output2, output3]",
+                JmxTransSpec.class);
 
         assertThat(opts, is(notNullValue()));
         assertThat(opts.getKafkaQueries(), hasSize(2));
@@ -47,19 +44,16 @@ public class JmxTransTest {
 
     @Test
     public void testOutputDefinition() {
-        JmxTransSpec opts = TestUtils.fromJson("{" +
-                "\"outputDefinitions\": [{" +
-                        "\"outputType\": \"targetOutputType\"," +
-                        "\"host\": \"targetHost\"," +
-                        "\"port\": 9999," +
-                        "\"flushDelayInSeconds\": 1," +
-                        "\"typeNames\": [\"typeName0\", \"typeName1\"]," +
-                        "\"name\": \"targetName\"" +
-                    "}, {" +
-                        "\"outputType\": \"targetOutputType\"," +
-                        "\"name\": \"name1\"" +
-                    "}]" +
-                "}", JmxTransSpec.class);
+        JmxTransSpec opts = TestUtils.fromYamlString("outputDefinitions:\n" +
+                                                     "  - outputType: targetOutputType\n" +
+                                                     "    host: targetHost\n" +
+                                                     "    port: 9999\n" +
+                                                     "    flushDelayInSeconds: 1\n" +
+                                                     "    typeNames: [typeName0, typeName1]\n" +
+                                                     "    name: targetName\n" +
+                                                     "  - outputType: targetOutputType\n" +
+                                                     "    name: name1",
+                JmxTransSpec.class);
 
         assertThat(opts, is(notNullValue()));
         assertThat(opts.getOutputDefinitions(), hasSize(2));
@@ -78,9 +72,7 @@ public class JmxTransTest {
 
     @Test
     public void testUseCustomImage() {
-        JmxTransSpec opts = TestUtils.fromJson("{" +
-                "\"image\": \"testImage\"" +
-                "}", JmxTransSpec.class);
+        JmxTransSpec opts = TestUtils.fromYamlString("image: testImage", JmxTransSpec.class);
 
         assertThat(opts, is(notNullValue()));
         assertThat(opts.getImage(), is("testImage"));
