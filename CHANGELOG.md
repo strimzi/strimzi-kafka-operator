@@ -2,7 +2,7 @@
 
 ## 0.33.0
 
-* n/a
+* Support for automatically restarting failed Connect or Mirror Maker 2 connectors
 
 ## 0.32.0
 
