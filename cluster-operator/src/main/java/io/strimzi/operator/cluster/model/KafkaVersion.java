@@ -45,7 +45,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
 
         YAMLMapper mapper = new YAMLMapper();
 
-        List<KafkaVersion> kafkaVersions = mapper.readValue(reader, new TypeReference<List<KafkaVersion>>() { });
+        List<KafkaVersion> kafkaVersions = mapper.readValue(reader, new TypeReference<>() { });
 
         KafkaVersion defaultVersion = null;
 
@@ -170,12 +170,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             return result;
         }
 
-        public Set<String> allVersions() {
-            return new TreeSet<>(map.keySet());
-        }
-
         public Set<String> supportedVersions() {
-            return new TreeSet<>(map.keySet().stream().filter(version -> map.get(version).isSupported).collect(Collectors.toSet()));
+            return map.keySet().stream().filter(version -> map.get(version).isSupported).collect(Collectors.toCollection(TreeSet::new));
         }
 
         public Set<String> supportedVersionsForFeature(String feature) {
@@ -193,12 +189,12 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 if (crVersion == null) {
                     image = images.get(defaultVersion().version());
                     if (image == null) {
-                        throw new NoImageException("No image for default version " + defaultVersion() + " in " + images.toString());
+                        throw new NoImageException("No image for default version " + defaultVersion() + " in " + images);
                     }
                 } else {
                     image = images.get(crVersion);
                     if (image == null) {
-                        throw new NoImageException("No image for version " + crVersion + " in " + images.toString());
+                        throw new NoImageException("No image for version " + crVersion + " in " + images);
                     }
                 }
             } else {
@@ -455,16 +451,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         return compareDottedVersions(this.version, o.version);
     }
 
-    /** Compares this version to a supplied version string.
-     * @param version the version string to be compared
-     * @return Zero if the supplied versions matches this version;
-     * -1 if this version is less than the supplied version;
-     * +1 if this version is greater than the supplied version.
-     */
-    public int compareVersion(String version) {
-        return compareDottedVersions(this.version, version);
-    }
-
     /**
      * Compare two decimal version strings, e.g. 1.10.1 &gt; 1.9.2
      * @param version1 The first version.
@@ -479,12 +465,9 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
             int x = Integer.parseInt(components[i]);
             int y = Integer.parseInt(otherComponents[i]);
-            if (x == y) {
-                continue;
-            } else if (x < y) {
-                return -1;
-            } else {
-                return 1;
+            int compared = Integer.compare(x, y);
+            if (compared != 0) {
+                return compared;
             }
         }
         // mismatch was not found, but the versions are of different length, e.g. 2.8 and 2.8.0
