@@ -203,11 +203,11 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: _PUBLIC-KEY-OF-THE-CLIENT-CA_
-  user.crt: _USER-CERTIFICATE-CONTAINING-PUBLIC-KEY-OF-USER_
-  user.key: _PRIVATE-KEY-OF-USER_
-  user.p12: _P12-ARCHIVE-FILE-STORING-CERTIFICATES-AND-KEYS_
-  user.password: _PASSWORD-PROTECTING-P12-ARCHIVE_
+  ca.crt: # Public key of the client CA
+  user.crt: # User certificate that contains the public key of the user
+  user.key: # Private key of the user
+  user.p12: # PKCS #12 archive file for storing certificates and keys
+  user.password: # Password for protecting the PKCS #12 archive file
 ----
 
 . Extract the cluster CA certificate from the `_<cluster_name>_-cluster-ca-cert` secret of the Kafka cluster.
