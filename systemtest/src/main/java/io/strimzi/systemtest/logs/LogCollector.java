@@ -205,7 +205,7 @@ public class LogCollector {
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
         // Tracing pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
-        } else if (pod.getMetadata().getName().contains("jaeger")) {
+        } else if (pod.getMetadata().getName().contains("jaeger") || pod.getMetadata().getName().contains("cert-manager")) {
             LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger Pods: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
                 containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));

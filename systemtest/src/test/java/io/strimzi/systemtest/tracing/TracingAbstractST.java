@@ -36,6 +36,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -555,6 +556,9 @@ public abstract class TracingAbstractST extends AbstractST {
 
     private void deployJaegerContent(ExtensionContext extensionContext) throws IOException {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+
+        // create namespace `cert-manager` and add it to stack, to collect logs from it
+        cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), CERT_MANAGER_NAMESPACE);
 
         LOGGER.info("Deploying CertManager from {}", certManagerPath);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick
