@@ -100,9 +100,18 @@ public class SystemTestCertManager {
                 .withSubjectDn(STRIMZI_INTERMEDIATE_CA)
                 .build();
     }
+
     public static SystemTestCertAndKey generateStrimziCaCertAndKey(SystemTestCertAndKey rootCert, String subjectDn) {
         return strimziCaCertBuilder(rootCert)
                 .withSubjectDn(subjectDn)
+                .build();
+    }
+
+    public static SystemTestCertAndKey generateEndEntityCertAndKey(final SystemTestCertAndKey intermediateCert,
+                                                                   final ASN1Encodable[] sansNames) {
+        return endEntityCertBuilder(intermediateCert)
+                .withSubjectDn(STRIMZI_END_SUBJECT)
+                .withSanDnsNames(sansNames)
                 .build();
     }
 

@@ -419,7 +419,6 @@ public class KafkaClients extends BaseClients {
 
         this.setAdditionalConfig(this.getAdditionalConfig() +
             // scram-sha
-            "ssl.endpoint.identification.algorithm=\n" +
             "sasl.mechanism=SCRAM-SHA-512\n" +
             "security.protocol=" + securityProtocol + "\n" +
             "sasl.jaas.config=" + saslJaasConfigDecrypted);
@@ -427,7 +426,6 @@ public class KafkaClients extends BaseClients {
 
     final protected void configureTls() {
         this.setAdditionalConfig(this.getAdditionalConfig() +
-            "ssl.endpoint.identification.algorithm=\n" +
             "sasl.mechanism=GSSAPI\n" +
             "security.protocol=" + SecurityProtocol.SSL + "\n");
     }
