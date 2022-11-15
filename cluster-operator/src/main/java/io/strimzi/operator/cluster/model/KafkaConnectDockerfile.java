@@ -143,17 +143,17 @@ public class KafkaConnectDockerfile {
      * @param plugins       List of plugins which should be added to the container image
      */
     private void connectorPluginsPreStage(PrintWriter writer, List<Plugin> plugins) {
-        Map<String, List<MavenArtifact>> artifactMap = plugins.stream().collect(Collectors.toMap(plugin -> plugin.getName(),
+        Map<String, List<MavenArtifact>> artifactMap = plugins.stream().collect(Collectors.toMap(Plugin::getName,
             plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact).map(artifact -> (MavenArtifact) artifact).collect(Collectors.toList())));
         artifactMap.entrySet().removeIf(plugin -> plugin.getValue().isEmpty());
 
         if (artifactMap.size() > 0) {
             writer.println("FROM " + mavenBuilder + " AS downloadArtifacts");
-            artifactMap.entrySet().forEach(plugin -> {
-                plugin.getValue().forEach(mvn -> {
+            artifactMap.forEach((plugin, mvnList) ->
+                mvnList.forEach(mvn -> {
                     String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(mvn.getRepository());
                     String artifactHash = Util.hashStub(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
-                    String artifactDir = plugin.getKey() + "/" + artifactHash;
+                    String artifactDir = plugin + "/" + artifactHash;
 
                     Cmd cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
                             .andRun("mvn", "dependency:copy-dependencies",
@@ -163,8 +163,8 @@ public class KafkaConnectDockerfile {
                                     assembleResourceUrl(repo, mvn, "jar"));
                     writer.append("RUN ").println(cmd);
                     writer.println();
-                });
-            });
+                })
+            );
         }
     }
 
