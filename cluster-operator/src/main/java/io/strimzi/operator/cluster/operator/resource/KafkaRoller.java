@@ -208,7 +208,7 @@ public class KafkaRoller {
                     return;
                 }
                 // Order the podNames unready first otherwise repeated reconciliations might each restart a pod
-                // only for it not to become ready and thus dkokrive the cluster to a worse state.
+                // only for it not to become ready and thus drive the cluster to a worse state.
                 pods.add(Readiness.isPodReady(pod) ? pods.size() : 0, new PodRef(podList.get(podIndex), ModelUtils.idOfPod(podList.get(podIndex))));
             }
 
