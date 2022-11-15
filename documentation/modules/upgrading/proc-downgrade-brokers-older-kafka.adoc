@@ -7,16 +7,16 @@
 = Downgrading Kafka brokers and client applications
 
 [role="_abstract"]
-This procedure describes how you can downgrade a Strimzi Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
+Downgrade a Strimzi Kafka cluster to a lower (previous) version of Kafka, such as downgrading from {KafkaVersionHigher} to {KafkaVersionLower}.
 
 .Prerequisites
 
-Before you downgrade the Strimzi Kafka cluster, check the following for the `Kafka` resource:
+* The Cluster Operator is up and running.
+* Before you downgrade the Strimzi Kafka cluster, check the following for the `Kafka` resource:
 
-* IMPORTANT: xref:con-target-downgrade-version-{context}[Compatibility of Kafka versions].
-* The Cluster Operator, which supports both versions of Kafka, is up and running.
-* The `Kafka.spec.kafka.config` does not contain options that are not supported by the Kafka version being downgraded to.
-* The `Kafka.spec.kafka.config` has a `log.message.format.version` and `inter.broker.protocol.version` that is supported by the Kafka version being downgraded to.
+** IMPORTANT: xref:con-target-downgrade-version-{context}[Compatibility of Kafka versions].
+** `Kafka.spec.kafka.config` does not contain options that are not supported by the Kafka version being downgraded to.
+** `Kafka.spec.kafka.config` has a `log.message.format.version` and `inter.broker.protocol.version` that is supported by the Kafka version being downgraded to.
 +
 From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
 

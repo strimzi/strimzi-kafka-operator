@@ -6,21 +6,16 @@
 
 = Upgrading Kafka brokers and client applications
 
-This procedure describes how to upgrade a Strimzi Kafka cluster to the latest supported Kafka version.
-
-Compared to your current Kafka version, the new version might support a higher _log message format version_ or _inter-broker protocol version_, or both.
-Follow the steps to upgrade these versions, if required.
-For more information, see xref:ref-kafka-versions-{context}[].
+[role="_abstract"]
+Upgrade a Strimzi Kafka cluster to the latest supported Kafka version and _inter-broker protocol version_.
 
 You should also choose a xref:con-strategies-for-upgrading-clients-{context}[strategy for upgrading clients].
 Kafka clients are upgraded in step 6 of this procedure.
 
 .Prerequisites
 
-For the `Kafka` resource to be upgraded, check that:
-
-* The Cluster Operator, which supports both versions of Kafka, is up and running.
-* The `Kafka.spec.kafka.config` does _not_ contain options that are not supported in the new Kafka version.
+* The Cluster Operator is up and running.
+* Before you upgrade the Strimzi Kafka cluster, check that the `Kafka.spec.kafka.config` properties of the `Kafka` resource do _not_ contain configuration options that are not supported in the new Kafka version.
 
 .Procedure
 
@@ -151,6 +146,4 @@ IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to 
 * The Kafka cluster and clients are now using the new Kafka version.
 * The brokers are configured to send messages using the inter-broker protocol version and message format version of the new version of Kafka.
 
-Following the Kafka upgrade, if required, you can:
-
-* xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[Upgrade consumers to use the incremental cooperative rebalance protocol]
+Following the Kafka upgrade, if required, you can xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[upgrade consumers to use the incremental cooperative rebalance protocol].
