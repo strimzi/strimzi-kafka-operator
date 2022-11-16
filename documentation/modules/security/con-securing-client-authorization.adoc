@@ -6,12 +6,12 @@
 = User authorization
 
 [role="_abstract"]
-Use the `KafkaUser` custom resource to configure an authorization mechanism for clients that require access to a Kafka cluster. 
-Configure user authorization using the `authorization` property in `KafkaUser.spec`.
-Enable an authorization mechanism using the `type` field.
+Use the `KafkaUser` custom resource to configure authorization rules for users (clients) that require access to a Kafka cluster. 
+Configure the rules using the `authorization` property in `KafkaUser.spec`.
+By specifying a `type`, you control what rules are used.
 
 To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec.authorization`.
-The simple authorization will use the Kafka Admin API to manage the ACL rules inside your Kafka cluster.
+The simple authorization uses the Kafka Admin API to manage the ACL rules inside your Kafka cluster.
 Whether ACL management in the User Operator is enabled or not depends on your authorization configuration in the Kafka cluster.
 
 * For simple authorization, ACL management is always enabled.
