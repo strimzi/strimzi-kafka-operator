@@ -22,7 +22,7 @@ metadata:
     heritage: {{ $root.Release.Service }}
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.serviceAccount }}
+    name: strimzi-cluster-operator
     namespace: {{ $root.Release.Namespace }}
 roleRef:
   kind: ClusterRole

@@ -11,7 +11,7 @@ metadata:
     heritage: {{ .Release.Service }}
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.serviceAccount }}
+    name: strimzi-cluster-operator
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole

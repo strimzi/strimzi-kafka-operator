@@ -14,7 +14,7 @@ metadata:
 # This must be done to avoid escalating privileges which would be blocked by Kubernetes.
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.serviceAccount }}
+    name: strimzi-cluster-operator
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole

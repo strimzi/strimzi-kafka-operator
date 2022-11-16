@@ -43,7 +43,6 @@ priorityClassName: ""
 
 podSecurityContext: {}
 securityContext: {}
-serviceAccount: "strimzi-cluster-operator"
 
 # Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
 # repository name with your registry URL.
