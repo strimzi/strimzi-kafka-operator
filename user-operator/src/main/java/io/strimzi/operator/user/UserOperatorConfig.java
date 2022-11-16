@@ -19,7 +19,7 @@ import java.util.Properties;
  * Cluster Operator configuration
  */
 public class UserOperatorConfig {
-
+    // Environment variable names
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_LABELS = "STRIMZI_LABELS";
@@ -37,7 +37,15 @@ public class UserOperatorConfig {
     public static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
     public static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
     public static final String STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
+    public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
+    public static final String STRIMZI_WORK_QUEUE_SIZE = "STRIMZI_WORK_QUEUE_SIZE";
+    public static final String STRIMZI_CONTROLLER_THREAD_POOL_SIZE = "STRIMZI_CONTROLLER_THREAD_POOL_SIZE";
+    public static final String STRIMZI_CACHE_REFRESH_INTERVAL_MS = "STRIMZI_CACHE_REFRESH_INTERVAL_MS";
+    public static final String STRIMZI_BATCH_QUEUE_SIZE = "STRIMZI_BATCH_QUEUE_SIZE";
+    public static final String STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE = "STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE";
+    public static final String STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS = "STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS";
 
+    // Default values
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
     public static final String DEFAULT_SECRET_PREFIX = "";
@@ -46,6 +54,13 @@ public class UserOperatorConfig {
     public static final boolean DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED = true;
     // Defaults to false for backwards compatibility in standalone UO deployments
     public static final boolean DEFAULT_STRIMZI_KRAFT_ENABLED = false;
+    public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    public static final int DEFAULT_WORK_QUEUE_SIZE = 1024;
+    public static final int DEFAULT_CONTROLLER_THREAD_POOL_SIZE = 50;
+    public static final long DEFAULT_CACHE_REFRESH_INTERVAL_MS = 15_000L;
+    public static final int DEFAULT_BATCH_QUEUE_SIZE = 1024;
+    public static final int DEFAULT_BATCH_MAXIMUM_BLOCK_SIZE = 100;
+    public static final int DEFAULT_BATCH_MAXIMUM_BLOCK_TIME_MS = 100;
 
     private final String namespace;
     private final long reconciliationIntervalMs;
@@ -64,6 +79,13 @@ public class UserOperatorConfig {
     private final int scramPasswordLength;
     private final List<String> maintenanceWindows;
     private final Properties kafkaAdminClientConfiguration;
+    private final long operationTimeoutMs;
+    private final int workQueueSize;
+    private final int controllerThreadPoolSize;
+    private final long cacheRefresh;
+    private final int batchQueueSize;
+    private final int batchMaxBlockSize;
+    private final int batchMaxBlockTime;
 
     /**
      * Constructor
@@ -85,6 +107,13 @@ public class UserOperatorConfig {
      * @param scramPasswordLength Length used for the Scram-Sha Password
      * @param maintenanceWindows Lit of maintenance windows
      * @param kafkaAdminClientConfiguration Additional configuration for the Kafka Admin Client
+     * @param operationTimeoutMs Timeout for internal operations specified in milliseconds
+     * @param workQueueSize Indicates the size of the StrimziPodSetController work queue
+     * @param controllerThreadPoolSize Size of the pool of the controller threads used to reconcile the users
+     * @param cacheRefresh Refresh interval for the cache storing the resources from the Kafka Admin API
+     * @param batchQueueSize Maximal queue for requests when micro-batching the Kafka Admin API requests
+     * @param batchMaxBlockSize Maximal batch size for micro-batching the Kafka Admin API requests
+     * @param batchMaxBlockTime Maximal batch time for micro-batching the Kafka Admin API requests
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public UserOperatorConfig(String namespace,
@@ -103,7 +132,15 @@ public class UserOperatorConfig {
                               int clientsCaRenewalDays,
                               int scramPasswordLength,
                               List<String> maintenanceWindows,
-                              Properties kafkaAdminClientConfiguration
+                              Properties kafkaAdminClientConfiguration,
+                              long operationTimeoutMs,
+                              int workQueueSize,
+                              int controllerThreadPoolSize,
+                              long cacheRefresh,
+                              int batchQueueSize,
+                              int batchMaxBlockSize,
+                              int batchMaxBlockTime
+
     ) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
@@ -122,6 +159,13 @@ public class UserOperatorConfig {
         this.scramPasswordLength = scramPasswordLength;
         this.maintenanceWindows = maintenanceWindows;
         this.kafkaAdminClientConfiguration = kafkaAdminClientConfiguration;
+        this.operationTimeoutMs = operationTimeoutMs;
+        this.workQueueSize = workQueueSize;
+        this.controllerThreadPoolSize = controllerThreadPoolSize;
+        this.cacheRefresh = cacheRefresh;
+        this.batchQueueSize = batchQueueSize;
+        this.batchMaxBlockSize = batchMaxBlockSize;
+        this.batchMaxBlockTime = batchMaxBlockTime;
     }
 
     /**
@@ -137,17 +181,19 @@ public class UserOperatorConfig {
             throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         }
 
-        long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-        String reconciliationIntervalEnvVar = map.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
-        if (reconciliationIntervalEnvVar != null) {
-            reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
-        }
-
-        int scramPasswordLength = DEFAULT_SCRAM_SHA_PASSWORD_LENGTH;
-        String scramPasswordLengthEnvVar = map.get(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH);
-        if (scramPasswordLengthEnvVar != null) {
-            scramPasswordLength = Integer.parseInt(scramPasswordLengthEnvVar);
-        }
+        long reconciliationInterval = getLongProperty(map, STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, DEFAULT_FULL_RECONCILIATION_INTERVAL_MS);
+        int scramPasswordLength = getIntProperty(map, STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, DEFAULT_SCRAM_SHA_PASSWORD_LENGTH);
+        boolean aclsAdminApiSupported = getBooleanProperty(map, UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED);
+        boolean kraftEnabled = getBooleanProperty(map, UserOperatorConfig.STRIMZI_KRAFT_ENABLED, UserOperatorConfig.DEFAULT_STRIMZI_KRAFT_ENABLED);
+        int clientsCaValidityDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
+        int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
+        long operationTimeout = getLongProperty(map, STRIMZI_OPERATION_TIMEOUT_MS, DEFAULT_OPERATION_TIMEOUT_MS);
+        int workQueueSize = getIntProperty(map, STRIMZI_WORK_QUEUE_SIZE, DEFAULT_WORK_QUEUE_SIZE);
+        int controllerThreadPoolSize = getIntProperty(map, STRIMZI_CONTROLLER_THREAD_POOL_SIZE, DEFAULT_CONTROLLER_THREAD_POOL_SIZE);
+        long cacheRefresh = getLongProperty(map, STRIMZI_CACHE_REFRESH_INTERVAL_MS, DEFAULT_CACHE_REFRESH_INTERVAL_MS);
+        int batchQueueSize = getIntProperty(map, STRIMZI_BATCH_QUEUE_SIZE, DEFAULT_BATCH_QUEUE_SIZE);
+        int batchMaxBlockSize = getIntProperty(map, STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE, DEFAULT_BATCH_MAXIMUM_BLOCK_SIZE);
+        int batchMaxBlockTime = getIntProperty(map, STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS, DEFAULT_BATCH_MAXIMUM_BLOCK_TIME_MS);
 
         String kafkaBootstrapServers = DEFAULT_KAFKA_BOOTSTRAP_SERVERS;
         String kafkaBootstrapServersEnvVar = map.get(UserOperatorConfig.STRIMZI_KAFKA_BOOTSTRAP_SERVERS);
@@ -186,13 +232,6 @@ public class UserOperatorConfig {
             secretPrefix = DEFAULT_SECRET_PREFIX;
         }
 
-        boolean aclsAdminApiSupported = getBooleanProperty(map, UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED);
-        boolean kraftEnabled = getBooleanProperty(map, UserOperatorConfig.STRIMZI_KRAFT_ENABLED, UserOperatorConfig.DEFAULT_STRIMZI_KRAFT_ENABLED);
-
-        int clientsCaValidityDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
-
-        int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
-
         List<String> maintenanceWindows = parseMaintenanceTimeWindows(map.get(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS));
 
         Properties kafkaAdminClientConfiguration = parseKafkaAdminClientConfiguration(map.get(UserOperatorConfig.STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION));
@@ -200,7 +239,8 @@ public class UserOperatorConfig {
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, labels,
                 caCertSecretName, caKeySecretName, clusterCaCertSecretName, euoKeySecretName, caNamespace, secretPrefix,
                 aclsAdminApiSupported, kraftEnabled, clientsCaValidityDays, clientsCaRenewalDays,
-                scramPasswordLength, maintenanceWindows, kafkaAdminClientConfiguration);
+                scramPasswordLength, maintenanceWindows, kafkaAdminClientConfiguration, operationTimeout, workQueueSize,
+                controllerThreadPoolSize, cacheRefresh, batchQueueSize, batchMaxBlockSize, batchMaxBlockTime);
     }
 
     /**
@@ -251,6 +291,24 @@ public class UserOperatorConfig {
         String value = map.get(name);
         if (value != null) {
             return Integer.parseInt(value);
+        } else {
+            return defaultVal;
+        }
+    }
+
+    /**
+     * Extracts the long type environment variable from the Map.
+     *
+     * @param map           Map with environment variables
+     * @param name          Name of the environment variable which should be extracted
+     * @param defaultVal    Default value which should be used when the environment variable is not set
+     *
+     * @return              The int value for the environment variable
+     */
+    private static long getLongProperty(Map<String, String> map, String name, long defaultVal) {
+        String value = map.get(name);
+        if (value != null) {
+            return Long.parseLong(value);
         } else {
             return defaultVal;
         }
@@ -398,6 +456,55 @@ public class UserOperatorConfig {
         return kafkaAdminClientConfiguration;
     }
 
+    /**
+     * @return  The timeout after which operations are considered as failed
+     */
+    public long getOperationTimeoutMs() {
+        return operationTimeoutMs;
+    }
+
+    /**
+     * @return  The size of the User Controller work queue
+     */
+    public int getWorkQueueSize() {
+        return workQueueSize;
+    }
+
+    /**
+     * @return  Size of the pool of the controller threads used to reconcile the users
+     */
+    public int getControllerThreadPoolSize() {
+        return controllerThreadPoolSize;
+    }
+
+    /**
+     * @return  Refresh interval for the cache storing the resources from the Kafka Admin API
+     */
+    public long getCacheRefresh() {
+        return cacheRefresh;
+    }
+
+    /**
+     * @return  Maximal queue for requests when micro-batching the Kafka Admin API requests
+     */
+    public int getBatchQueueSize() {
+        return batchQueueSize;
+    }
+
+    /**
+     * @return  Maximal batch size for micro-batching the Kafka Admin API requests
+     */
+    public int getBatchMaxBlockSize() {
+        return batchMaxBlockSize;
+    }
+
+    /**
+     * @return  Maximal batch time for micro-batching the Kafka Admin API requests
+     */
+    public int getBatchMaxBlockTime() {
+        return batchMaxBlockTime;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -417,6 +524,13 @@ public class UserOperatorConfig {
                 ",scramPasswordLength=" + scramPasswordLength +
                 ",maintenanceWindows=" + maintenanceWindows +
                 ",kafkaAdminClientConfiguration=" + kafkaAdminClientConfiguration +
+                ",operationTimeoutMs=" + operationTimeoutMs +
+                ",workQueueSize=" + workQueueSize +
+                ",controllerThreadPoolSize=" + controllerThreadPoolSize +
+                ",cacheRefresh=" + cacheRefresh +
+                ",batchQueueSize=" + batchQueueSize +
+                ",batchMaxBlockSize=" + batchMaxBlockSize +
+                ",batchMaxBlockTime=" + batchMaxBlockTime +
                 ")";
     }
 }

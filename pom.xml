@@ -125,6 +125,8 @@
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
         <opentelemetry.alpha-version>1.18.0-alpha</opentelemetry.alpha-version>
+        <jetty.version>9.4.48.v20220622</jetty.version>
+        <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.11.0</strimzi-oauth.version>
         <netty.version>4.1.77.Final</netty.version>
         <micrometer.version>1.9.5</micrometer.version>
@@ -823,6 +825,16 @@
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-engine</artifactId>
                 <version>${junit.platform.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax-servlet.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

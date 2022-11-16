@@ -8,13 +8,11 @@ import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.user.ResourceUtils;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.CreateAclsResult;
@@ -30,10 +28,7 @@ import org.apache.kafka.common.resource.ResourcePattern;
 import org.apache.kafka.common.resource.ResourcePatternFilter;
 import org.apache.kafka.common.resource.ResourceType;
 import org.apache.kafka.common.security.auth.KafkaPrincipal;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Collection;
@@ -41,38 +36,29 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 public class SimpleAclOperatorTest {
-    protected static Vertx vertx;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
-
     @Test
-    public void testGetAllUsers(VertxTestContext context)  {
+    public void testGetAllUsers() throws ExecutionException, InterruptedException {
         Admin mockAdminClient = mock(AdminClient.class);
-        SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAdminClient);
 
         ResourcePattern res1 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
         ResourcePattern res2 = new ResourcePattern(ResourceType.GROUP, "my-group", PatternType.LITERAL);
@@ -98,18 +84,14 @@ public class SimpleAclOperatorTest {
 
         assertDoesNotThrow(() -> mockDescribeAcls(mockAdminClient, AclBindingFilter.ANY, aclBindings));
 
-        Checkpoint async = context.checkpoint();
-        aclOp.getAllUsers()
-                .onComplete(context.succeeding(users -> context.verify(() -> {
-                    assertThat(users, is(new HashSet<>(asList("foo", "bar", "baz"))));
-                    async.flag();
-                })));
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        Set<String> users = aclOp.getAllUsers().toCompletableFuture().get();
+        assertThat(users, is(new HashSet<>(asList("foo", "bar", "baz"))));
     }
 
     @Test
-    public void testReconcileInternalCreateAddsAclsToAuthorizer(VertxTestContext context) {
+    public void testReconcileInternalCreateAddsAclsToAuthorizer() throws ExecutionException, InterruptedException {
         Admin mockAdminClient = mock(AdminClient.class);
-        SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAdminClient);
 
         ResourcePattern resource1 = new ResourcePattern(ResourceType.CLUSTER, "kafka-cluster", PatternType.LITERAL);
         ResourcePattern resource2 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
@@ -134,26 +116,25 @@ public class SimpleAclOperatorTest {
             mockCreateAcls(mockAdminClient, aclBindingsCaptor);
         });
 
-        Checkpoint async = context.checkpoint();
-        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
-                .onComplete(context.succeeding(rr -> context.verify(() -> {
-                    Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
-                    assertThat(capturedAclBindings, hasSize(3));
-                    assertThat(capturedAclBindings, hasItems(describeAclBinding, readAclBinding, writeAclBinding));
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
+                .toCompletableFuture().get();
 
-                    Set<ResourcePattern> capturedResourcePatterns =
-                            capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
-                    assertThat(capturedResourcePatterns, hasSize(2));
-                    assertThat(capturedResourcePatterns, hasItems(resource1, resource2));
+        assertThat(result, is(notNullValue()));
+        assertThat(result.toString(), is("CREATED"));
 
-                    async.flag();
-                })));
+        Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
+        assertThat(capturedAclBindings, hasSize(3));
+        assertThat(capturedAclBindings, hasItems(describeAclBinding, readAclBinding, writeAclBinding));
+
+        Set<ResourcePattern> capturedResourcePatterns = capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
+        assertThat(capturedResourcePatterns, hasSize(2));
+        assertThat(capturedResourcePatterns, hasItems(resource1, resource2));
     }
 
     @Test
-    public void testReconcileInternalUpdateCreatesNewAclsAndDeletesOldAcls(VertxTestContext context) {
+    public void testReconcileInternalUpdateCreatesNewAclsAndDeletesOldAcls() throws ExecutionException, InterruptedException {
         Admin mockAdminClient = mock(AdminClient.class);
-        SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAdminClient);
 
         ResourcePattern resource1 = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
         ResourcePattern resource2 = new ResourcePattern(ResourceType.TOPIC, "my-topic2", PatternType.LITERAL);
@@ -173,37 +154,34 @@ public class SimpleAclOperatorTest {
             mockDeleteAcls(mockAdminClient, Collections.singleton(readAclBinding), aclBindingFiltersCaptor);
         });
 
-        Checkpoint async = context.checkpoint();
-        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet(asList(rule1)))
-                .onComplete(context.succeeding(rr -> context.verify(() -> {
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", Set.of(rule1))
+                .toCompletableFuture().get();
 
-                    // Create Write rule for resource 2
-                    Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
-                    assertThat(capturedAclBindings, hasSize(1));
-                    assertThat(capturedAclBindings, hasItem(writeAclBinding));
-                    Set<ResourcePattern> capturedResourcePatterns =
-                            capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
-                    assertThat(capturedResourcePatterns, hasSize(1));
-                    assertThat(capturedResourcePatterns, hasItem(resource2));
+        assertThat(result, is(notNullValue()));
+        assertThat(result.toString(), is("PATCH"));
 
-                    // Delete read rule for resource 1
-                    Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
-                    assertThat(capturedAclBindingFilters, hasSize(1));
-                    assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
+        // Create Write rule for resource 2
+        Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
+        assertThat(capturedAclBindings, hasSize(1));
+        assertThat(capturedAclBindings, hasItem(writeAclBinding));
+        Set<ResourcePattern> capturedResourcePatterns = capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
+        assertThat(capturedResourcePatterns, hasSize(1));
+        assertThat(capturedResourcePatterns, hasItem(resource2));
 
-                    Set<ResourcePatternFilter> capturedResourcePatternFilters =
-                            capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
-                    assertThat(capturedResourcePatternFilters, hasSize(1));
-                    assertThat(capturedResourcePatternFilters, hasItem(resource1.toFilter()));
+        // Delete read rule for resource 1
+        Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
+        assertThat(capturedAclBindingFilters, hasSize(1));
+        assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
 
-                    async.flag();
-                })));
+        Set<ResourcePatternFilter> capturedResourcePatternFilters = capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
+        assertThat(capturedResourcePatternFilters, hasSize(1));
+        assertThat(capturedResourcePatternFilters, hasItem(resource1.toFilter()));
     }
 
     @Test
-    public void testReconcileInternalDelete(VertxTestContext context) {
+    public void testReconcileInternalDelete() throws ExecutionException, InterruptedException {
         Admin mockAdminClient = mock(AdminClient.class);
-        SimpleAclOperator aclOp = new SimpleAclOperator(vertx, mockAdminClient);
 
         ResourcePattern resource = new ResourcePattern(ResourceType.TOPIC, "my-topic", PatternType.LITERAL);
 
@@ -216,31 +194,26 @@ public class SimpleAclOperatorTest {
             mockDeleteAcls(mockAdminClient, Collections.singleton(readAclBinding), aclBindingFiltersCaptor);
         });
 
-        Checkpoint async = context.checkpoint();
-        aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", null)
-                .onComplete(context.succeeding(rr -> context.verify(() -> {
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", null)
+                .toCompletableFuture().get();
 
-                    Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
-                    assertThat(capturedAclBindingFilters, hasSize(1));
-                    assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
+        assertThat(result, is(notNullValue()));
+        assertThat(result.toString(), is("DELETED"));
 
-                    Set<ResourcePatternFilter> capturedResourcePatternFilters =
-                            capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
-                    assertThat(capturedResourcePatternFilters, hasSize(1));
-                    assertThat(capturedResourcePatternFilters, hasItem(resource.toFilter()));
+        Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
+        assertThat(capturedAclBindingFilters, hasSize(1));
+        assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
 
-                    async.flag();
-                })));
+        Set<ResourcePatternFilter> capturedResourcePatternFilters = capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
+        assertThat(capturedResourcePatternFilters, hasSize(1));
+        assertThat(capturedResourcePatternFilters, hasItem(resource.toFilter()));
     }
 
-    private void mockDescribeAcls(Admin mockAdminClient, AclBindingFilter aclBindingFilter, Collection<AclBinding> aclBindings) {
+    private void mockDescribeAcls(Admin mockAdminClient, AclBindingFilter aclBindingFilter, Collection<AclBinding> aclBindings) throws ExecutionException, InterruptedException, TimeoutException {
         DescribeAclsResult result = mock(DescribeAclsResult.class);
         KafkaFuture<Collection<AclBinding>> future = mock(KafkaFuture.class);
-        when(future.whenComplete(any())).thenAnswer(invocation -> {
-            KafkaFuture.BiConsumer consumer = invocation.getArgument(0);
-            consumer.accept(aclBindings, null);
-            return null;
-        });
+        when(future.get(anyLong(), any())).thenReturn(aclBindings);
         when(result.values()).thenReturn(future);
         when(mockAdminClient.describeAcls(aclBindingFilter != null ? aclBindingFilter : any())).thenReturn(result);
     }
@@ -248,11 +221,7 @@ public class SimpleAclOperatorTest {
     private void mockCreateAcls(Admin mockAdminClient, ArgumentCaptor<Collection<AclBinding>> aclBindingsCaptor) {
         CreateAclsResult result = mock(CreateAclsResult.class);
         KafkaFuture<Void> future = mock(KafkaFuture.class);
-        when(future.whenComplete(any())).thenAnswer(invocation -> {
-            KafkaFuture.BiConsumer consumer = invocation.getArgument(0);
-            consumer.accept(null, null);
-            return null;
-        });
+        when(future.toCompletionStage()).thenReturn(CompletableFuture.completedStage(null));
         when(result.all()).thenReturn(future);
         when(mockAdminClient.createAcls(aclBindingsCaptor.capture())).thenReturn(result);
     }
@@ -260,11 +229,7 @@ public class SimpleAclOperatorTest {
     private void mockDeleteAcls(Admin mockAdminClient, Collection<AclBinding> aclBindings, ArgumentCaptor<Collection<AclBindingFilter>> aclBindingFiltersCaptor) {
         DeleteAclsResult result = mock(DeleteAclsResult.class);
         KafkaFuture<Collection<AclBinding>> future = mock(KafkaFuture.class);
-        when(future.whenComplete(any())).thenAnswer(invocation -> {
-            KafkaFuture.BiConsumer consumer = invocation.getArgument(0);
-            consumer.accept(aclBindings, null);
-            return null;
-        });
+        when(future.toCompletionStage()).thenReturn(CompletableFuture.completedStage(aclBindings));
         when(result.all()).thenReturn(future);
         when(mockAdminClient.deleteAcls(aclBindingFiltersCaptor.capture())).thenReturn(result);
     }

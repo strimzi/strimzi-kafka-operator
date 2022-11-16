@@ -4,104 +4,202 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.KafkaUserList;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
-import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ResourceDiff;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 import java.time.Clock;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
 /**
  * Operator for a Kafka Users.
  */
-public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec, KafkaUserStatus,
-        CrdOperator<KubernetesClient, KafkaUser, KafkaUserList>> {
+public class KafkaUserOperator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
 
-    private final SecretOperator secretOperations;
-    private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
+    private final KubernetesClient client;
+    private final SimpleAclOperator aclOperations;
     private final ScramCredentialsOperator scramCredentialsOperator;
     private final QuotasOperator quotasOperator;
     private final UserOperatorConfig config;
     private final PasswordGenerator passwordGenerator;
+    private final LabelSelector selector;
 
     /**
      * Creates the instance of KafkaUserOperator
      *
-     * @param vertx The Vertx instance.
-     * @param certManager For managing certificates.
-     * @param crdOperator For operating on Custom Resources.
-     * @param secretOperations For operating on Secrets.
+     * @param config                   User operator configuration
+     * @param client                   Kubernetes client
+     * @param certManager              For managing certificates.
      * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
-     * @param quotasOperator For operating on Kafka User quotas.
-     * @param aclOperations For operating on ACLs.
-     * @param config User operator configuration
+     * @param quotasOperator           For operating on Kafka User quotas.
+     * @param aclOperations            For operating on ACLs.
      */
-    public KafkaUserOperator(Vertx vertx,
-                             CertManager certManager,
-                             CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> crdOperator,
-                             SecretOperator secretOperations,
-                             ScramCredentialsOperator scramCredentialsOperator,
-                             QuotasOperator quotasOperator,
-                             SimpleAclOperator aclOperations,
-                             UserOperatorConfig config) {
-        super(vertx, "KafkaUser", crdOperator, new MicrometerMetricsProvider(), config.getLabels());
+    public KafkaUserOperator(
+            UserOperatorConfig config,
+            KubernetesClient client,
+            CertManager certManager,
+            ScramCredentialsOperator scramCredentialsOperator,
+            QuotasOperator quotasOperator,
+            SimpleAclOperator aclOperations
+    ) {
         this.certManager = certManager;
-        this.secretOperations = secretOperations;
+        this.client = client;
         this.scramCredentialsOperator = scramCredentialsOperator;
         this.quotasOperator = quotasOperator;
         this.aclOperations = aclOperations;
         this.config = config;
+
+        this.selector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? new LabelSelector() : new LabelSelector(null, config.getLabels().toMap());
         this.passwordGenerator = new PasswordGenerator(this.config.getScramPasswordLength());
     }
 
-    @Override
-    public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-        return CompositeFuture.
-                join(super.allResourceNames(namespace),
-                        config.isAclsAdminApiSupported() ? aclOperations.getAllUsers() : Future.succeededFuture(Set.of()),
-                        quotasOperator.getAllUsers(),
-                        config.isKraftEnabled() ? Future.succeededFuture(List.of()) : scramCredentialsOperator.getAllUsers() // SCRAM-SHA authentication is currently not supported when KRaft is used
-                ).map(compositeFuture -> {
-                    Set<NamespaceAndName> names = compositeFuture.resultAt(0);
-                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(1)));
-                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(2)));
-                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(3)));
-                    return names;
+    /**
+     * Gets all usernames which should be reconciled. They are collected from the Kubernetes resources as well as from
+     * the Kafka itself (based on existing ACLs, Quotas or SCRAM-SHA credentials). Querying the users also from Kafka
+     * is important to ensure proper deletion.
+     *
+     * @param namespace     Namespace where to look for the users
+     *
+     * @return  Set with Users and their namespaces
+     */
+    public CompletionStage<Set<NamespaceAndName>> getAllUsers(String namespace) {
+        // Get all users from KafkaUser resources
+        CompletionStage<Set<String>> kafkaUsers = getAllKafkaUserUsernames(namespace);
+
+        // Get the quota users
+        CompletionStage<Set<String>> quotaUsers = quotasOperator.getAllUsers();
+
+        // Get the ACL users
+        CompletionStage<Set<String>> aclUsers;
+        if (config.isAclsAdminApiSupported())   {
+            aclUsers = aclOperations.getAllUsers();
+        } else {
+            aclUsers = CompletableFuture.completedFuture(Set.of());
+        }
+
+        // Get the SCRAM-SHA users
+        CompletionStage<List<String>> scramUsers;
+        if (!config.isKraftEnabled()) {
+            scramUsers = scramCredentialsOperator.getAllUsers();
+        } else {
+            scramUsers = CompletableFuture.completedFuture(List.of());
+        }
+
+        return CompletableFuture.allOf(kafkaUsers.toCompletableFuture(), quotaUsers.toCompletableFuture(), aclUsers.toCompletableFuture(), scramUsers.toCompletableFuture())
+                .thenApplyAsync(i -> {
+                    Set<String> usernames = new HashSet<>();
+
+                    // These CompletionStages should be complete since we were waiting for them in allOf above. So we can just getNow() the results.
+                    usernames.addAll(kafkaUsers.toCompletableFuture().getNow(Set.of()));
+                    usernames.addAll(quotaUsers.toCompletableFuture().getNow(Set.of()));
+                    usernames.addAll(aclUsers.toCompletableFuture().getNow(Set.of()));
+                    usernames.addAll(scramUsers.toCompletableFuture().getNow(List.of()));
+
+                    return toResourceRef(namespace, usernames);
                 });
     }
 
-    List<NamespaceAndName> toResourceRef(String namespace, Collection<String> names) {
+    /**
+     * Utility method to get all usernames based on the KafkaUser Kubernetes resources
+     *
+     * @param namespace     Namespace where to look for the users
+     *
+     * @return  Set of KafkaUser resource names
+     */
+    private CompletionStage<Set<String>> getAllKafkaUserUsernames(String namespace)  {
+        return CompletableFuture
+                .supplyAsync(() -> Crds.kafkaUserOperation(client)
+                        .inNamespace(namespace)
+                        .withLabelSelector(selector)
+                        .list()
+                        .getItems()
+                        .stream()
+                        .map(resource -> resource.getMetadata().getName())
+                        .collect(Collectors.toSet()));
+    }
+
+    /**
+     * Utility method to convert collection of usernames to a collection of NamespaceAndName resources.
+     *
+     * @param namespace Namespace where these users exist
+     * @param names     Name of the user
+     *
+     * @return  Collection with the corresponding NamespaceAndName resources
+     */
+    private static Set<NamespaceAndName> toResourceRef(String namespace, Collection<String> names) {
         return names.stream()
                 .map(name -> new NamespaceAndName(namespace, name))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Reconciles the KafkaUser for creation, update or deletion
+     *
+     * @param reconciliation    Unique identification for the reconciliation
+     * @param kafkaUser         KafkaUser resources with the desired user configuration.
+     * @param userSecret        Secret with credentials for the user
+     *
+     * @return  CompletionStage which completes when the reconciliation is done
+     */
+    public CompletionStage<KafkaUserStatus> reconcile(Reconciliation reconciliation, KafkaUser kafkaUser, Secret userSecret)  {
+        if (kafkaUser != null)  {
+            // Create or update
+            return createOrUpdate(reconciliation, kafkaUser, userSecret);
+        } else {
+            // Delete the user from everywhere with both the TLS and SCRAM-SHa name variants
+            return delete(reconciliation).thenApplyAsync(i -> null);
+        }
+    }
+
+    /**
+     * Deletes the user
+     *
+     * @param reconciliation    Reconciliation marker
+     *
+     * @return A CompletionStage
+     */
+    private CompletionStage<Void> delete(Reconciliation reconciliation) {
+        String namespace = reconciliation.namespace();
+        String user = reconciliation.name();
+
+        LOGGER.debugCr(reconciliation, "Deleting User {} from namespace {}", user, namespace);
+
+        // Delete everything what can be deleted
+        return CompletableFuture.allOf(
+                CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.getSecretPrefix(), user)).delete()),
+                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                !config.isKraftEnabled() ? scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture(),
+                quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture()
+        );
     }
 
     /**
@@ -109,41 +207,41 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * should not assume that any resources are in any particular state (e.g. that the absence on
      * one resource means that all resources need to be created).
      *
-     * @param reconciliation Unique identification for the reconciliation
-     * @param resource KafkaUser resources with the desired user configuration.
-     * @return a Future
+     * @param reconciliation    Unique identification for the reconciliation
+     * @param kafkaUser         KafkaUser resources with the desired user configuration.
+     * @param userSecret        Secret with credentials for the user
+     *
+     * @return a CompletionStage
      */
-    @Override
-    protected Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
+    private CompletionStage<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser kafkaUser, Secret userSecret) {
         KafkaUserModel user;
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix(), config.isAclsAdminApiSupported(), config.isKraftEnabled());
+            user = KafkaUserModel.fromCrd(kafkaUser, config.getSecretPrefix(), config.isAclsAdminApiSupported(), config.isKraftEnabled());
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
-            StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, Future.failedFuture(e));
-            return Future.failedFuture(new ReconciliationException(userStatus, e));
+            StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, e);
+            return CompletableFuture.failedFuture(new ReconciliationException(userStatus, e));
         }
 
-        Promise<KafkaUserStatus> handler = Promise.promise();
+        // Makes sure the credentials are up-to-date. (This just updates the information inside the KafkaUserModel.
+        // It does not generate the secret or update the password in Kafka. That happens only later.)
+        maybeGenerateCredentials(reconciliation, user, userSecret);
 
-        secretOperations.getAsync(reconciliation.namespace(), user.getSecretName())
-                .compose(userSecret -> maybeGenerateCredentials(reconciliation, user, userSecret))
-                .compose(ignore -> reconcileCredentialsQuotasAndAcls(reconciliation, user, userStatus))
-                .onComplete(reconciliationResult -> {
-                    StatusUtils.setStatusConditionAndObservedGeneration(resource, userStatus, reconciliationResult.mapEmpty());
-                    userStatus.setUsername(user.getUserName());
-
-                    if (reconciliationResult.succeeded())   {
-                        handler.complete(userStatus);
+        // Reconcile the user: update everything in Kafka and in the Secret
+        return reconcileCredentialsQuotasAndAcls(reconciliation, user, userSecret, userStatus)
+                .handleAsync((i, e) -> {
+                    if (e != null)  {
+                        throw new CompletionException(e);
                     } else {
-                        handler.fail(new ReconciliationException(userStatus, reconciliationResult.cause()));
+                        StatusUtils.setStatusConditionAndObservedGeneration(kafkaUser, userStatus, (Throwable) null);
+                        userStatus.setUsername(user.getUserName());
+                        return (Void) null;
                     }
-                });
-
-        return handler.future();
+                })
+                .thenApplyAsync(i -> userStatus);
     }
 
     /**
@@ -153,17 +251,13 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @param reconciliation    Unique identification for the reconciliation
      * @param user              Model describing the KafkaUser
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
-     *
-     * @return                  Future describing the result
      */
-    private Future<Void> maybeGenerateCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret)   {
+    private void maybeGenerateCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret)   {
         // Generates the password or user certificate
         if (user.isScramUser()) {
-            return maybeGenerateScramCredentials(reconciliation, user, userSecret);
+            maybeGenerateScramCredentials(reconciliation, user, userSecret);
         } else if (user.isTlsUser())    {
-            return maybeGenerateTlsCredentials(reconciliation, user, userSecret);
-        } else {
-            return Future.succeededFuture();
+            maybeGenerateTlsCredentials(reconciliation, user, userSecret);
         }
     }
 
@@ -173,28 +267,24 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @param reconciliation    Unique identification for the reconciliation
      * @param user              Model describing the KafkaUser
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
-     *
-     * @return                  Future describing the result
      */
-    private Future<Void> maybeGenerateScramCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret)   {
-        if (user.isUserWithDesiredPassword())   {
-            // User is a SCRAM-SHA-512 user and requested some specific password
-            return secretOperations.getAsync(reconciliation.namespace(), user.desiredPasswordSecretName())
-                    .compose(desiredPasswordSecret -> {
-                        user.maybeGeneratePassword(
-                                reconciliation,
-                                passwordGenerator,
-                                userSecret,
-                                desiredPasswordSecret
-                        );
+    private void maybeGenerateScramCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret)   {
+        Secret desiredPasswordSecret = null;
 
-                        return Future.succeededFuture();
-                    });
-        } else {
-            // User is a SCRAM-SHA-512 user and the password should be generated
-            user.maybeGeneratePassword(reconciliation, passwordGenerator, userSecret, null);
-            return Future.succeededFuture();
+        if (user.isUserWithDesiredPassword())   {
+            // User is a SCRAM-SHA-512 user and requested some specific password instead of generating a random password
+            desiredPasswordSecret = client.secrets().inNamespace(reconciliation.namespace()).withName(user.desiredPasswordSecretName()).get();
+            if (desiredPasswordSecret == null) {
+                throw new InvalidResourceException("Secret " + config.getCaCertSecretName() + " in namespace " + config.getCaNamespace() + " with requested password not found");
+            }
         }
+
+        user.maybeGeneratePassword(
+                reconciliation,
+                passwordGenerator,
+                userSecret,
+                desiredPasswordSecret
+        );
     }
 
     /**
@@ -203,33 +293,30 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @param reconciliation    Unique identification for the reconciliation
      * @param user              Model describing the KafkaUser
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
-     *
-     * @return                  Future describing the result
      */
-    private Future<Void> maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret)   {
-        Future<Secret> caCertFuture = secretOperations.getAsync(config.getCaNamespace(), config.getCaCertSecretName());
-        Future<Secret> caKeyFuture = secretOperations.getAsync(config.getCaNamespace(), config.getCaKeySecretName());
+    private void maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret) {
+        Secret caCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getCaCertSecretName()).get();
+        if (caCert == null) {
+            throw new InvalidConfigurationException("CA certificate secret " + config.getCaCertSecretName() + " in namespace " + config.getCaNamespace() + " not found");
+        }
 
-        return CompositeFuture.join(caCertFuture, caKeyFuture)
-                .compose(caSecrets -> {
-                    Secret clientsCaCertSecret = caSecrets.resultAt(0);
-                    Secret clientsCaKeySecret = caSecrets.resultAt(1);
+        Secret caKey = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getCaKeySecretName()).get();
+        if (caKey == null) {
+            throw new InvalidConfigurationException("CA certificate secret " + config.getCaKeySecretName() + " in namespace " + config.getCaNamespace() + " not found");
+        }
 
-                    user.maybeGenerateCertificates(
-                            reconciliation,
-                            certManager,
-                            passwordGenerator,
-                            clientsCaCertSecret,
-                            clientsCaKeySecret,
-                            userSecret,
-                            config.getClientsCaValidityDays(),
-                            config.getClientsCaRenewalDays(),
-                            config.getMaintenanceWindows(),
-                            Clock.systemUTC()
-                    );
-
-                    return Future.succeededFuture();
-                });
+        user.maybeGenerateCertificates(
+                reconciliation,
+                certManager,
+                passwordGenerator,
+                caCert,
+                caKey,
+                userSecret,
+                config.getClientsCaValidityDays(),
+                config.getClientsCaRenewalDays(),
+                config.getMaintenanceWindows(),
+                Clock.systemUTC()
+        );
     }
 
     /**
@@ -237,11 +324,12 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      *
      * @param reconciliation    Unique identification for the reconciliation
      * @param user              Model describing the KafkaUser
+     * @param userSecret        Current user secret
      * @param userStatus        Status subresource of the KafkaUser custom resource
      *
-     * @return                  Future describing the result
+     * @return                  CompletionStage describing the result
      */
-    private CompositeFuture reconcileCredentialsQuotasAndAcls(Reconciliation reconciliation, KafkaUserModel user, KafkaUserStatus userStatus)   {
+    private CompletionStage<Void> reconcileCredentialsQuotasAndAcls(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret, KafkaUserStatus userStatus)   {
         Set<SimpleAclRule> tlsAcls = null;
         Set<SimpleAclRule> scramOrNoneAcls = null;
         KafkaUserQuotas tlsQuotas = null;
@@ -256,34 +344,41 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         }
 
         // Reconcile the user SCRAM-SHA-512 credentials
-        Future<ReconcileResult<String>> scramCredentialsFuture;
+        CompletionStage<ReconcileResult<String>> scramCredentialsFuture;
         if (config.isKraftEnabled()) {
             // SCRAM-SHA authentication is currently not supported when KRaft is used
-            scramCredentialsFuture = Future.succeededFuture(ReconcileResult.noop(null));
+            scramCredentialsFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
         } else {
             scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
         }
 
         // Quotas need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
-        Future<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas);
-        Future<ReconcileResult<KafkaUserQuotas>> quotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneQuotas);
+        CompletionStage<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas);
+        CompletionStage<ReconcileResult<KafkaUserQuotas>> quotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneQuotas);
 
         // Reconcile the user secret generated by the user operator with the credentials
-        Future<ReconcileResult<Secret>> userSecretFuture = reconcileUserSecret(reconciliation, user, userStatus);
+        CompletionStage<ReconcileResult<Secret>> userSecretFuture = reconcileUserSecret(reconciliation, user, userSecret, userStatus);
 
         // ACLs need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
-        Future<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture;
-        Future<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
+        CompletionStage<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture;
+        CompletionStage<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
 
         if (config.isAclsAdminApiSupported()) {
             aclsTlsUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
             aclsScramUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
         } else {
-            aclsTlsUserFuture = Future.succeededFuture(ReconcileResult.noop(null));
-            aclsScramUserFuture = Future.succeededFuture(ReconcileResult.noop(null));
+            aclsTlsUserFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
+            aclsScramUserFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
         }
 
-        return CompositeFuture.join(scramCredentialsFuture, tlsQuotasFuture, quotasFuture, aclsTlsUserFuture, aclsScramUserFuture, userSecretFuture);
+        return CompletableFuture.allOf(
+                scramCredentialsFuture.toCompletableFuture(),
+                tlsQuotasFuture.toCompletableFuture(),
+                quotasFuture.toCompletableFuture(),
+                aclsTlsUserFuture.toCompletableFuture(),
+                aclsScramUserFuture.toCompletableFuture(),
+                userSecretFuture.toCompletableFuture()
+        );
     }
 
     /**
@@ -291,63 +386,48 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      *
      * @param reconciliation    Unique identification for the reconciliation
      * @param user              Model describing the KafkaUser
+     * @param currentSecret     The current user secret
      * @param userStatus        Status subresource of the KafkaUser custom resource
      *
-     * @return                  Future describing the result
+     * @return                  CompletionStage describing the result
      */
-    private Future<ReconcileResult<Secret>> reconcileUserSecret(Reconciliation reconciliation, KafkaUserModel user, KafkaUserStatus userStatus) {
-        Secret desiredSecret = user.generateSecret();
+    private CompletionStage<ReconcileResult<Secret>> reconcileUserSecret(Reconciliation reconciliation, KafkaUserModel user, Secret currentSecret, KafkaUserStatus userStatus) {
+        return CompletableFuture.supplyAsync(() -> {
+            String namespace = reconciliation.namespace();
+            String name = user.getSecretName();
+            Secret desiredSecret = user.generateSecret();
 
-        return secretOperations.reconcile(reconciliation, reconciliation.namespace(), user.getSecretName(), desiredSecret).compose(ar -> {
-            if (desiredSecret != null) {
-                userStatus.setSecret(desiredSecret.getMetadata().getName());
+            if (desiredSecret != null)  {
+                if (currentSecret != null)  {
+                    // Both secrets exist => if they differ we patch them, if not we just continue
+                    if (new ResourceDiff<>(reconciliation, "Secret", name, currentSecret, desiredSecret, ResourceDiff.DEFAULT_IGNORABLE_PATHS).isEmpty()) {
+                        // Secrets are identical
+                        LOGGER.debugCr(reconciliation, "Secret {}/{} exist, and is identical", namespace, name);
+                        userStatus.setSecret(desiredSecret.getMetadata().getName());
+                        return ReconcileResult.noop(desiredSecret);
+                    } else {
+                        // Secrets differ
+                        LOGGER.debugCr(reconciliation, "Secret {}/{} exist, patching it", namespace, name);
+                        client.secrets().inNamespace(namespace).resource(desiredSecret).createOrReplace();
+                        userStatus.setSecret(desiredSecret.getMetadata().getName());
+                        return ReconcileResult.patched(desiredSecret);
+                    }
+                } else {
+                    LOGGER.debugCr(reconciliation, "Secret {}/{} does not exist, creating it", namespace, name);
+                    client.secrets().inNamespace(namespace).resource(desiredSecret).createOrReplace();
+                    userStatus.setSecret(desiredSecret.getMetadata().getName());
+                    return ReconcileResult.created(desiredSecret);
+                }
+            } else {
+                if (currentSecret != null)  {
+                    LOGGER.debugCr(reconciliation, "Secret {}/{} exist, deleting it", namespace, name);
+                    client.secrets().inNamespace(namespace).withName(name).delete();
+                    return ReconcileResult.deleted();
+                } else {
+                    LOGGER.debugCr(reconciliation, "Secret {}/{} does not exist, noop", namespace, name);
+                    return ReconcileResult.noop(null);
+                }
             }
-            return Future.succeededFuture(ar);
         });
     }
-
-    /**
-     * Deletes the user
-     *
-     * @param reconciliation    Reconciliation marker
-     *
-     * @return A Future
-     */
-    @Override
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
-        String namespace = reconciliation.namespace();
-        String user = reconciliation.name();
-        LOGGER.debugCr(reconciliation, "Deleting User {} from namespace {}", user, namespace);
-        return CompositeFuture.join(secretOperations.reconcile(reconciliation, namespace, KafkaUserModel.getSecretName(config.getSecretPrefix(), user), null),
-                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
-                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
-                deleteScramCredentials(reconciliation, user)
-                        .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null))
-                        .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)))
-            .map(Boolean.TRUE);
-    }
-
-    /**
-     * Utility method to delete SCRAM-SHA credentials. It checks if the SCRAM-SHA API is available and if it is, it
-     * deletes the credentials. If it is not supported, it just returns success.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param user              Name of the user resource which should be deleted
-     *
-     * @return  Future indicating the deletion result
-     */
-    private Future<ReconcileResult<String>> deleteScramCredentials(Reconciliation reconciliation, String user)    {
-        if (config.isKraftEnabled())   {
-            // SCRAM-SHA authentication is currently not supported when KRaft is used
-            return Future.succeededFuture(ReconcileResult.noop(null));
-        } else {
-            return scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null);
-        }
-    }
-
-    @Override
-    protected KafkaUserStatus createStatus() {
-        return new KafkaUserStatus();
-    }
-
 }

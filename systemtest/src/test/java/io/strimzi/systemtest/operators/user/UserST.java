@@ -41,7 +41,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -115,7 +114,7 @@ class UserST extends AbstractST {
 
         verifyCRStatusCondition(condition,
                 "only up to 64 characters",
-                "InvalidResourceException", "True", NotReady);
+                "ExecutionException", "True", NotReady);
     }
 
     @ParallelTest
@@ -166,16 +165,6 @@ class UserST extends AbstractST {
 
     @Tag(SCALABILITY)
     @IsolatedTest
-    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
-    void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
-    }
-
-    @Tag(SCALABILITY)
-    @IsolatedTest
-    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -192,15 +181,6 @@ class UserST extends AbstractST {
 
     @Tag(SCALABILITY)
     @IsolatedTest
-    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
-    void testBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        createBigAmountOfUsers(extensionContext, userName, "TLS", 100);
-    }
-
-    @Tag(SCALABILITY)
-    @IsolatedTest
-    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
     void testAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 

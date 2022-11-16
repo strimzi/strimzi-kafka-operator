@@ -30,14 +30,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ResourceUtils {
-    public static final Map LABELS = Collections.singletonMap("foo", "bar");
+    public static final Map<String, String> LABELS = Collections.singletonMap("foo", "bar");
     public static final String NAMESPACE = "namespace";
     public static final String NAME = "user";
-    public static final String CA_CERT_NAME = NAME + "-cert";
-    public static final String CA_KEY_NAME = NAME + "-key";
+    public static final String CA_CERT_NAME = "ca-cert";
+    public static final String CA_KEY_NAME = "ca-key";
     public static final String PASSWORD = "my-password";
 
-    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength) {
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength, String secretPrefix) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
@@ -45,23 +45,39 @@ public class ResourceUtils {
         envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
         envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, Boolean.toString(useKRaft));
+
         if (!scramShaPasswordLength.equals("12")) {
             envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
+        }
+
+        if (secretPrefix != null) {
+            envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
         }
 
         return UserOperatorConfig.fromMap(envVars);
     }
 
-    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels) {
-        return createUserOperatorConfig(labels, true, false, "12");
+    public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
+        Map<String, String> envVars = new HashMap<>();
+        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
+        envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
+        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(fullReconciliationInterval));
+        envVars.put(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, Integer.toString(queueSize));
+        envVars.put(UserOperatorConfig.STRIMZI_CONTROLLER_THREAD_POOL_SIZE, Integer.toString(poolSize));
+        envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
+
+        return UserOperatorConfig.fromMap(envVars);
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {
-        return createUserOperatorConfig(Map.of(), true, false, "12");
+        return createUserOperatorConfig(Map.of(), true, false, "12", null);
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {
-        return createUserOperatorConfig(Map.of(), true, false, scramShaPasswordLength);
+        return createUserOperatorConfig(Map.of(), true, false, scramShaPasswordLength, null);
     }
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {
@@ -88,6 +104,10 @@ public class ResourceUtils {
                             .withOperations(AclOperation.DESCRIBE, AclOperation.READ)
                         .endAcl()
                     .endKafkaUserAuthorizationSimple()
+                    .withNewQuotas()
+                        .withConsumerByteRate(1_024 * 1_024)
+                        .withProducerByteRate(1_024 * 1_024)
+                    .endQuotas()
                 .endSpec()
                 .build();
     }
