@@ -261,11 +261,18 @@ props.put(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, "_<user.crt_file_con
 props.put(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, "_<user.key_file_content>_");
 ----
 +
-NOTE: Add the keystore certificate, and the private key directly to the configuration.
+Add the keystore certificate and the private key directly to the configuration.
 Add as a single-line format.
-End each line from the original certificate and key with a `\n` except the last one.
-
-
+Between the `BEGIN CERTIFICATE` and `END CERTIFICATE` delimiters, start with a newline character (`\n`).
+End each line from the original certificate with `\n` too.
++
+.Example
+[source,env,subs="+quotes,attributes"]
+----
+props.put(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, "-----BEGIN CERTIFICATE----- \n__<user_certificate_content_line_1>__\n__<user_certificate_content_line_n>__\n-----END CERTIFICATE---");
+props.put(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, "----BEGIN PRIVATE KEY-----\n__<user_key_content_line_1>__\n__<user_key_content_line_n>__\n-----END PRIVATE KEY-----");
+----
++
 [role="_additional-resources"]
 .Additional resources
 * link:{BookURLUsing}#con-securing-kafka-authentication-str[Listener authentication options^]
