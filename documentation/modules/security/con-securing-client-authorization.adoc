@@ -22,6 +22,9 @@ Whether ACL management in the User Operator is enabled or not depends on your au
   When delegation to the simple authorizer is enabled, the User Operator will enable management of ACL rules as well.
 * For custom authorization using a custom authorization plugin, use the `supportsAdminApi` property in the `.spec.kafka.authorization` configuration of the `Kafka` custom resource to enable or disable the support.
 
+Authorization is cluster-wide.
+The authorization type must match the equivalent configuration in the `Kafka` custom resource.
+
 If ACL management is not enabled, Strimzi rejects a resource if it contains any ACL rules.
 
 If you're using a standalone deployment of the User Operator, ACL management is enabled by default.
