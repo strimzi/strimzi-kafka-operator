@@ -203,11 +203,11 @@ metadata:
     strimzi.io/cluster: my-cluster
 type: Opaque
 data:
-  ca.crt: _PUBLIC-KEY-OF-THE-CLIENT-CA_
-  user.crt: _USER-CERTIFICATE-CONTAINING-PUBLIC-KEY-OF-USER_
-  user.key: _PRIVATE-KEY-OF-USER_
-  user.p12: _P12-ARCHIVE-FILE-STORING-CERTIFICATES-AND-KEYS_
-  user.password: _PASSWORD-PROTECTING-P12-ARCHIVE_
+  ca.crt: _<public_key>_ # Public key of the clients CA
+  user.crt: _<user_certificate>_ # Public key of the user
+  user.key: _<user_private_key>_ # Private key of the user
+  user.p12: _<store>_ # PKCS #12 store for user certificates and keys
+  user.password: _<password_for_store>_ # Protects the PKCS #12 store
 ----
 
 . Extract the cluster CA certificate from the `_<cluster_name>_-cluster-ca-cert` secret of the Kafka cluster.
@@ -232,7 +232,7 @@ kubectl get secret _<user_name>_ -o jsonpath='{.data.user\.key}' | base64 -d > u
 props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "_<hostname>:<port>_");
 ----
 
-. Configure your client with the truststore credentials to authenticate with the Kafka cluster.
+. Configure your client with the truststore credentials to verify the identity of the Kafka cluster.
 +
 Specify the public cluster CA certificate.  
 +

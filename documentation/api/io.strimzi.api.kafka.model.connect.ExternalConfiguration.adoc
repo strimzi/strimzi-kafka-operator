@@ -176,7 +176,7 @@ spec:
 In this example, a `Secret` contains TLS truststore and keystore user credentials in separate files.
 
 .Example Secret with user credentials
-[source,yaml,subs="attributes+"]
+[source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: v1
 kind: Secret
@@ -186,12 +186,12 @@ metadata:
     strimzi.io/kind: KafkaUser
     strimzi.io/cluster: my-cluster
 type: Opaque
-data: <1>
-  ca.crt: # Public key of the client CA
-  user.crt: # User certificate that contains the public key of the user
-  user.key: # Private key of the user
-  user.p12: # PKCS #12 archive file for storing certificates and keys
-  user.password: # Password for protecting the PKCS #12 archive file
+data:
+  ca.crt: _<public_key>_ # Public key of the clients CA
+  user.crt: _<user_certificate>_ # Public key of the user
+  user.key: _<user_private_key>_ # Private key of the user
+  user.p12: _<store>_ # PKCS #12 store for user certificates and keys
+  user.password: _<password_for_store>_ # Protects the PKCS #12 store
 ----
 
 The Secret and the `DirectoryConfigProvider` configuration provider are specified in the Kafka Connect configuration.
