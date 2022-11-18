@@ -530,8 +530,8 @@ public abstract class Ca {
     }
 
     private boolean isNewVersion(Secret secret, String podName) {
-        String store = SecretEntry.getDataForPod(secret,podName,SecretEntry.P12_KEYSTORE);
-        String password = SecretEntry.getDataForPod(secret,podName,SecretEntry.P12_KEYSTORE_PASSWORD);
+        String store = SecretEntry.getDataForPod(secret, podName, SecretEntry.P12_KEYSTORE);
+        String password = SecretEntry.getDataForPod(secret, podName, SecretEntry.P12_KEYSTORE_PASSWORD);
 
         return store != null && !store.isEmpty() && password != null && !password.isEmpty();
     }
