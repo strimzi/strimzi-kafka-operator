@@ -12,11 +12,17 @@ Use namespaces to separate functions.
 
 .Prerequisites
 
-* Installation requires a Kubernetes account with cluster admin credentials.
+* Installation requires a Kubernetes account with privileges to install Custom Resource Definitions and Role Bindings.
+The default install of Minikube has these privileges.
 
 .Procedure
 
-. Log in to the Kubernetes cluster using an account that has cluster admin privileges.
+. Navigate to the directory where you extracted the Strimzi ZIP file.
++
+[source, shell, subs=+quotes ]
+----
+cd strimzi-_<version>_
+----
 
 . Create a new `kafka` namespace for the Strimzi Kafka Cluster Operator.
 +
@@ -43,6 +49,9 @@ sed -i 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBindin
 ----
 sed -i '' 's/namespace: .\*/namespace: kafka/' install/cluster-operator/*RoleBinding*.yaml
 ----
++
+* On Windows, open each file in `install/cluster-operator` directory that has `RoleBinding` in the name and find the key `namespace`.
+Replace the value `myproject` with `kafka`.
 
 . Create a new `my-kafka-project` namespace where you will deploy your Kafka cluster.
 +
@@ -95,9 +104,23 @@ kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-opera
 +
 The commands create role bindings that grant permission for the Cluster Operator to access the Kafka cluster.
 
-. Deploy the CRDs and role-based access control (RBAC) resources to manage the CRDs.
+. Deploy the CRDs, role-based access control (RBAC) resources to manage the CRDs and the deployment to run the Cluster Operator.
 +
 [source, shell, subs=+quotes ]
 ----
 kubectl create -f install/cluster-operator/ -n kafka
+----
+
+. Follow the deployment of the Cluster Operator until it is marked as `Ready`.
++
+[source, shell, subs=+quotes ]
+----
+kubectl get pods -n kafka --watch
+----
++
+You can also follow the Operator's logs:
++
+[source, shell, subs=+quotes ]
+----
+kubectl logs deployment/strimzi-cluster-operator -n kafka -f
 ----
