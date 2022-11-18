@@ -134,11 +134,13 @@ public abstract class TracingAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
 
-//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
-//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-//            JAEGER_KAFKA_STREAMS_SERVICE,
-//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(),
-//            JAEGER_QUERY_SERVICE);
+        // Disabled for OpenTracing, because of issue with Streams API and tracing https://github.com/strimzi/strimzi-kafka-operator/issues/5680
+        if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
+            TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+                JAEGER_KAFKA_STREAMS_SERVICE,
+                storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(),
+                JAEGER_QUERY_SERVICE);
+        }
     }
 
     void doTestProducerConsumerMirrorMaker2Service(final ExtensionContext extensionContext) {
@@ -410,6 +412,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+        resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
 
         ClientUtils.waitForClientsSuccess(
             storageMap.get(extensionContext).getProducerName(),
@@ -419,9 +422,11 @@ public abstract class TracingAbstractST extends AbstractST {
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_PRODUCER_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "To_" + storageMap.get(extensionContext).getTopicName(), JAEGER_QUERY_SERVICE);
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_CONSUMER_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "From_" + storageMap.get(extensionContext).getTopicName(), JAEGER_QUERY_SERVICE);
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_CONNECT_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "From_" + storageMap.get(extensionContext).getTopicName(), JAEGER_QUERY_SERVICE);
-        // TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
-//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_STREAMS_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "From_" + storageMap.get(extensionContext).getTopicName(), JAEGER_QUERY_SERVICE);
-//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_STREAMS_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "To_" + storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString(), JAEGER_QUERY_SERVICE);
+        // Disabled for OpenTracing, because of issue with Streams API and tracing https://github.com/strimzi/strimzi-kafka-operator/issues/5680
+        if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
+            TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_STREAMS_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "From_" + storageMap.get(extensionContext).getTopicName(), JAEGER_QUERY_SERVICE);
+            TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_STREAMS_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), "To_" + storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString(), JAEGER_QUERY_SERVICE);
+        }
     }
 
     void doTestKafkaBridgeService(final ExtensionContext extensionContext) {

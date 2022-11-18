@@ -114,6 +114,7 @@ the documentation for more details.
 | `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
 | `rbac.create`                        | Whether to create RBAC related resources |  `yes`                                                |
 | `serviceAccountCreate`               | Whether to create a serviceaccount |  `yes`                                                      |
+| `serviceAccount`                     | Cluster Operator's service account |  `strimzi-cluster-operator`                                 |
 | `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
 | `jmxtrans.image.registry`            | Override default JmxTrans image registry                   | `nil`                               |
 | `jmxtrans.image.repository`          | Override default JmxTrans image repository                 | `nil`                               |

@@ -9,7 +9,7 @@
 Scale Kafka clusters by adding or removing brokers.
 If a cluster already has topics defined, you also have to reassign partitions.
 
-You use the `kafka-reassign-partitions.sh` tool to reassign partitions.
+Use the `kafka-reassign-partitions.sh` tool to reassign partitions.
 The tool uses a reassignment JSON file that specifies the topics to reassign.
 
 You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.

@@ -20,9 +20,6 @@ JAVA_OPTS="${JAVA_OPTS} -Dvertx.cacheDirBase=/tmp/vertx-cache -Djava.security.eg
 # Enable GC logging for memory tracking
 JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 
-# Deny illegal access option is supported only on Java 9 and higher
-JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
-
 # Exit when we run out of heap memory
 JAVA_OPTS="${JAVA_OPTS} -XX:+ExitOnOutOfMemoryError"
 
