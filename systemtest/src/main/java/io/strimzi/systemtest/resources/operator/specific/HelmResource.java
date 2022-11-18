@@ -75,7 +75,7 @@ public class HelmResource implements SpecificResourceType {
 
         // image tags config
         values.put("defaultImageTag", Environment.STRIMZI_TAG);
-        values.put("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion());
+        values.put("kafkaBridge.image.tag", BridgeUtils.getBridgeVersion());
 
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
