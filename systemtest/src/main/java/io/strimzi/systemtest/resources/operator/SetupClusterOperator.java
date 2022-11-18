@@ -275,6 +275,7 @@ public class SetupClusterOperator {
                 ResourceManager.getInstance().createResource(extensionContext, itemRoleOrBinding);
             }
         } else {
+            LOGGER.info("Install default bindings.");
             this.applyDefaultBindings();
         }
 
@@ -570,7 +571,7 @@ public class SetupClusterOperator {
 
             switch (resourceType) {
                 case Constants.ROLE:
-                    if (this.isRolesAndBindingsManagedByAnUser()) {
+                    if (!this.isRolesAndBindingsManagedByAnUser()) {
                         Role role = TestUtils.configFromYaml(createFile, Role.class);
                         ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
                             .editMetadata()
@@ -580,7 +581,7 @@ public class SetupClusterOperator {
                     }
                     break;
                 case Constants.CLUSTER_ROLE:
-                    if (this.isRolesAndBindingsManagedByAnUser()) {
+                    if (!this.isRolesAndBindingsManagedByAnUser()) {
                         ClusterRole clusterRole = TestUtils.configFromYaml(changeLeaseNameInResourceIfNeeded(createFile.getAbsolutePath()), ClusterRole.class);
                         ResourceManager.getInstance().createResource(extensionContext, clusterRole);
                     }
