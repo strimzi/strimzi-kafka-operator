@@ -1,3 +1,4 @@
+{{- if .Values.rbac.create -}}
 {{- $root := . -}}
 {{- range append .Values.watchNamespaces .Release.Namespace }}
 ---
@@ -28,4 +29,5 @@ roleRef:
   kind: ClusterRole
   name: strimzi-cluster-operator-namespaced
   apiGroup: rbac.authorization.k8s.io
+{{- end }}
 {{- end }}

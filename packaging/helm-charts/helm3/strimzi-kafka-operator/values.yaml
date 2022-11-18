@@ -43,6 +43,9 @@ priorityClassName: ""
 
 podSecurityContext: {}
 securityContext: {}
+rbac:
+  create: yes
+serviceAccountCreate: yes
 serviceAccount: strimzi-cluster-operator
 
 # Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
