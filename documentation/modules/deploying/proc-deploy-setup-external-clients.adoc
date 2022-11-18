@@ -266,7 +266,7 @@ Add as a single-line format.
 Between the `BEGIN CERTIFICATE` and `END CERTIFICATE` delimiters, start with a newline character (`\n`).
 End each line from the original certificate with `\n` too.
 +
-.Example
+.Example keystore configuration
 [source,env,subs="+quotes,attributes"]
 ----
 props.put(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, "-----BEGIN CERTIFICATE----- \n__<user_certificate_content_line_1>__\n__<user_certificate_content_line_n>__\n-----END CERTIFICATE---");
