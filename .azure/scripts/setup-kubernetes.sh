@@ -4,8 +4,8 @@ set -xe
 rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.19.0}
-REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
-REGISTRY_IMAGE_S390X=${REGISTRY_IMAGE_S390X:-"s390x/registry:2.8.0-beta.1"}
+MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
+MINIKUBE_REGISTRY_IMAGE_S390X=${REGISTRY_IMAGE_S390X:-"s390x/registry:2.8.0-beta.1"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
 DEFAULT_MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
@@ -63,9 +63,9 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     touch $HOME/.kube/config
 
     if [ "$ARCH" = "s390x" ]; then
-        docker run -d -p 5000:5000 --name s390x-registry ${REGISTRY_IMAGE_S390X}
+        docker run -d -p 5000:5000 --name s390x-registry ${MINIKUBE_REGISTRY_IMAGE_S390X}
     else
-        docker run -d -p 5000:5000 ${REGISTRY_IMAGE}
+        docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
     fi
 
     export KUBECONFIG=$HOME/.kube/config
