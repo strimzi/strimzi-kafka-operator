@@ -30,6 +30,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -138,6 +139,20 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
 
+        // Mock Secret gets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
+                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                        CLUSTER_NAME,
+                        kafka.getSpec().getKafka().getReplicas(),
+                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
+                        MockCertManager.clusterCaCert(),
+                        MockCertManager.clusterCaKey(),
+                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.certStorePassword()
+                ))
+        );
+
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
                 new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
@@ -177,6 +192,20 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+
+        // Mock Secret gets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
+                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                        CLUSTER_NAME,
+                        KAFKA.getSpec().getKafka().getReplicas(),
+                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
+                        MockCertManager.clusterCaCert(),
+                        MockCertManager.clusterCaKey(),
+                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.certStorePassword()
+                ))
+        );
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -227,6 +256,20 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+
+        // Mock Secret gets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
+                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                        CLUSTER_NAME,
+                        kafka.getSpec().getKafka().getReplicas(),
+                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
+                        MockCertManager.clusterCaCert(),
+                        MockCertManager.clusterCaKey(),
+                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.certStorePassword()
+                ))
+        );
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(

@@ -5,6 +5,7 @@
 package io.strimzi.certs;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 
 /**
@@ -112,5 +113,16 @@ public class CertAndKey {
      */
     public String storePasswordAsBase64String() {
         return Base64.getEncoder().encodeToString(storePassword.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    @Override
+    public String toString() {
+        return "CertAndKey{" +
+                "key=" + Arrays.toString(key) +
+                ", cert=" + Arrays.toString(cert) +
+                ", trustStore=" + Arrays.toString(trustStore) +
+                ", keyStore=" + Arrays.toString(keyStore) +
+                ", storePassword='" + storePassword + '\'' +
+                '}';
     }
 }

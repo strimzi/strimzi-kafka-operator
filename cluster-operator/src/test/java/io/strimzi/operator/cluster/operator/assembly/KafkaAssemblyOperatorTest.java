@@ -49,8 +49,6 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
-import io.strimzi.operator.common.Annotations;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -68,7 +66,7 @@ import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -86,6 +84,8 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -1115,7 +1115,15 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaSecretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                Future.succeededFuture(ResourceUtils.createClusterSecret(clusterNamespace,
+                        clusterName,
+                        updatedKafkaCluster.getReplicas(),
+                        KafkaResources.kafkaSecretName(clusterName),
+                        MockCertManager.clusterCaCert(),
+                        MockCertManager.clusterCaKey(),
+                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.certStorePassword()
+                ))
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.entityTopicOperatorSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()

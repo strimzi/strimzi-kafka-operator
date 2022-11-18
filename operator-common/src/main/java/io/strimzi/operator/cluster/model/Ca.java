@@ -67,6 +67,28 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
 
+    public enum SecretEntry {
+        CRT(".crt"),
+        KEY(".key"),
+        P12_KEYSTORE(".p12"),
+        P12_KEYSTORE_PASSWORD(".password");
+
+        final String suffix;
+
+        private SecretEntry(String suffix) {
+            this.suffix = suffix;
+        }
+
+        public static String getDataForPod(Secret secret, String podName, SecretEntry entry) {
+            return secret.getData().get(getNameForPod(podName, entry));
+        }
+
+        public static String getNameForPod(String podName, SecretEntry entry) {
+            return podName + entry.suffix;
+        }
+
+    }
+
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
 
     private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile(
@@ -454,19 +476,14 @@ public abstract class Ca {
             Subject subject = subjectFn.apply(i);
 
             CertAndKey certAndKey;
-            if (secret.getData().get(podName + ".p12") != null &&
-                    !secret.getData().get(podName + ".p12").isEmpty() &&
-                    secret.getData().get(podName + ".password") != null &&
-                    !secret.getData().get(podName + ".password").isEmpty()) {
 
-                certAndKey = asCertAndKey(secret,
-                        podName + ".key", podName + ".crt",
-                        podName + ".p12", podName + ".password");
+            if (isNewVersion(secret, podName)) {
+                certAndKey = asCertAndKey(secret, podName);
             } else {
                 // coming from an older operator version, the secret exists but without keystore and password
                 certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
-                        Base64.getDecoder().decode(secret.getData().get(podName + ".key")),
-                        Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
+                        Base64.getDecoder().decode(SecretEntry.getDataForPod(secret, podName, SecretEntry.KEY)),
+                        Base64.getDecoder().decode(SecretEntry.getDataForPod(secret, podName, SecretEntry.CRT)));
             }
 
             List<String> reasons = new ArrayList<>(2);
@@ -510,6 +527,20 @@ public abstract class Ca {
         delete(reconciliation, brokerKeyStoreFile);
 
         return certs;
+    }
+
+    private boolean isNewVersion(Secret secret, String podName) {
+        String store = SecretEntry.getDataForPod(secret,podName,SecretEntry.P12_KEYSTORE);
+        String password = SecretEntry.getDataForPod(secret,podName,SecretEntry.P12_KEYSTORE_PASSWORD);
+
+        return store != null && !store.isEmpty() && password != null && !password.isEmpty();
+    }
+
+    public static CertAndKey asCertAndKey(Secret secret, String podName) {
+        return asCertAndKey(secret, SecretEntry.getNameForPod(podName, SecretEntry.KEY),
+                SecretEntry.getNameForPod(podName, SecretEntry.CRT),
+                SecretEntry.getNameForPod(podName, SecretEntry.P12_KEYSTORE),
+                SecretEntry.getNameForPod(podName, SecretEntry.P12_KEYSTORE_PASSWORD));
     }
 
     /**

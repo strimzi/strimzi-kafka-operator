@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -102,6 +103,7 @@ import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -191,6 +193,27 @@ public class ResourceUtils {
                         .withMetricsConfig(metricsConfig)
                     .endZookeeper()
                 .endSpec()
+                .build();
+    }
+
+    public static Secret createClusterSecret(String clusterNamespace, String clusterName, int replicas, String secretName,
+                                             String caCert, String caKey, String caStore, String caStorePassword) {
+        Map<String, String> data = new HashMap<>(replicas * 4);
+        for (int i = 0; i < replicas; i++) {
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.KEY), caKey);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.CRT), caCert);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.P12_KEYSTORE), caStore);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.P12_KEYSTORE_PASSWORD), caStorePassword);
+        }
+        return new SecretBuilder()
+                .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(clusterNamespace)
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0")
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0")
+                    .withLabels(Labels.forStrimziCluster(clusterName).withStrimziKind(Kafka.RESOURCE_KIND).toMap())
+                .endMetadata()
+                .addToData(data)
                 .build();
     }
 
