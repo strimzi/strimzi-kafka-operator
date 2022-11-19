@@ -75,7 +75,7 @@ public class FileUtils {
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public static File downloadYaml(String url) throws IOException {
-        File yamlFile = File.createTempFile("temp-file", ".yaml");
+        File yamlFile = Files.createTempFile("temp-file", ".yaml").toFile();
 
         try (InputStream bais = (InputStream) URI.create(url).toURL().openConnection().getContent();
              BufferedReader br = new BufferedReader(new InputStreamReader(bais, StandardCharsets.UTF_8));
@@ -101,7 +101,7 @@ public class FileUtils {
 
     public static File updateNamespaceOfYamlFile(String pathToOrigin, String namespace) throws IOException {
         byte[] encoded;
-        File yamlFile = File.createTempFile("temp-file", ".yaml");
+        File yamlFile = Files.createTempFile("temp-file", ".yaml").toFile();
 
         try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(yamlFile), StandardCharsets.UTF_8)) {
             encoded = Files.readAllBytes(Paths.get(pathToOrigin));

@@ -44,9 +44,9 @@ public class SecretCertProviderIT {
 
         Base64.Decoder decoder = Base64.getDecoder();
 
-        File key = File.createTempFile("key-", ".key");
-        File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".str");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
+        File store = Files.createTempFile("crt-", ".str").toFile();
 
         ssl.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
@@ -78,8 +78,8 @@ public class SecretCertProviderIT {
 
         Base64.Decoder decoder = Base64.getDecoder();
 
-        File key = File.createTempFile("key-", ".key");
-        File cert = File.createTempFile("crt-", ".crt");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
 
         ssl.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
 
@@ -90,8 +90,8 @@ public class SecretCertProviderIT {
                 null, null,
                 emptyMap(), emptyMap(), ownerReference);
 
-        File addedKey = File.createTempFile("added-key-", ".key");
-        File addedCert = File.createTempFile("added-crt-", ".crt");
+        File addedKey = Files.createTempFile("added-key-", ".key").toFile();
+        File addedCert = Files.createTempFile("added-crt-", ".crt").toFile();
 
         ssl.generateSelfSignedCert(addedKey, addedCert, new Subject.Builder().withCommonName("Test CA").build(), 365);
 

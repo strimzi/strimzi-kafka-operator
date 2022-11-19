@@ -14,6 +14,7 @@ import javax.naming.ldap.LdapName;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -140,7 +141,7 @@ public class SystemTestCertManager {
     }
 
     private static File exportPrivateKeyToPemFile(PrivateKey privateKey) throws IOException {
-        File keyFile = File.createTempFile("key-", ".key");
+        File keyFile = Files.createTempFile("key-", ".key").toFile();
         try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(keyFile, UTF_8))) {
             pemWriter.writeObject(privateKey);
             pemWriter.flush();
@@ -149,7 +150,7 @@ public class SystemTestCertManager {
     }
 
     private static File exportCertsToPemFile(SystemTestCertAndKey... certs) throws IOException {
-        File certFile = File.createTempFile("crt-", ".crt");
+        File certFile = Files.createTempFile("crt-", ".crt").toFile();
         try (JcaPEMWriter pemWriter = new JcaPEMWriter(new FileWriter(certFile, UTF_8))) {
             for (SystemTestCertAndKey certAndKey : certs) {
                 pemWriter.writeObject(certAndKey.getCertificate());

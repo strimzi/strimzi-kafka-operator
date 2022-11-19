@@ -261,9 +261,9 @@ public abstract class Ca {
 
     public CertAndKey addKeyAndCertToKeyStore(String alias, byte[] key, byte[] cert) throws IOException {
 
-        File keyFile = File.createTempFile("tls", "key");
-        File certFile = File.createTempFile("tls", "cert");
-        File keyStoreFile = File.createTempFile("tls", "p12");
+        File keyFile = Files.createTempFile("tls", "key").toFile();
+        File certFile = Files.createTempFile("tls", "cert").toFile();
+        File keyStoreFile = Files.createTempFile("tls", "p12").toFile();
 
         Files.write(keyFile.toPath(), key);
         Files.write(certFile.toPath(), cert);
@@ -324,10 +324,10 @@ public abstract class Ca {
      * @throws IOException If the cert could not be generated.
      */
     public CertAndKey generateSignedCert(String commonName, String organization) throws IOException {
-        File csrFile = File.createTempFile("tls", "csr");
-        File keyFile = File.createTempFile("tls", "key");
-        File certFile = File.createTempFile("tls", "cert");
-        File keyStoreFile = File.createTempFile("tls", "p12");
+        File csrFile = Files.createTempFile("tls", "csr").toFile();
+        File keyFile = Files.createTempFile("tls", "key").toFile();
+        File certFile = Files.createTempFile("tls", "cert").toFile();
+        File keyStoreFile = Files.createTempFile("tls", "p12").toFile();
 
         Subject.Builder subject = new Subject.Builder();
 
@@ -365,10 +365,10 @@ public abstract class Ca {
             replicasInSecret = (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
         }
 
-        File brokerCsrFile = File.createTempFile("tls", "broker-csr");
-        File brokerKeyFile = File.createTempFile("tls", "broker-key");
-        File brokerCertFile = File.createTempFile("tls", "broker-cert");
-        File brokerKeyStoreFile = File.createTempFile("tls", "broker-p12");
+        File brokerCsrFile = Files.createTempFile("tls", "broker-csr").toFile();
+        File brokerKeyFile = Files.createTempFile("tls", "broker-key").toFile();
+        File brokerCertFile = Files.createTempFile("tls", "broker-cert").toFile();
+        File brokerKeyStoreFile = Files.createTempFile("tls", "broker-p12").toFile();
 
         int replicasInNewSecret = Math.min(replicasInSecret, replicas);
         Map<String, CertAndKey> certs = new HashMap<>(replicasInNewSecret);
@@ -870,7 +870,7 @@ public abstract class Ca {
         if (removed.size() > 0) {
             // the certificates removed from the Secret data has tobe removed from the store as well
             try {
-                File trustStoreFile = File.createTempFile("tls", "-truststore");
+                File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
                 Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(newData.get(CA_STORE)));
                 try {
                     String trustStorePassword = new String(Base64.getDecoder().decode(newData.get(CA_STORE_PASSWORD)), StandardCharsets.US_ASCII);
@@ -963,10 +963,10 @@ public abstract class Ca {
 
     private void addCertCaToTrustStore(String alias, Map<String, String> certData) {
         try {
-            File certFile = File.createTempFile("tls", "-cert");
+            File certFile = Files.createTempFile("tls", "-cert").toFile();
             Files.write(certFile.toPath(), Base64.getDecoder().decode(certData.get(CA_CRT)));
             try {
-                File trustStoreFile = File.createTempFile("tls", "-truststore");
+                File trustStoreFile = Files.createTempFile("tls", "-truststore").toFile();
                 if (certData.containsKey(CA_STORE)) {
                     Files.write(trustStoreFile.toPath(), Base64.getDecoder().decode(certData.get(CA_STORE)));
                 }
@@ -992,11 +992,11 @@ public abstract class Ca {
     private void generateCaKeyAndCert(Subject subject, Map<String, String> keyData, Map<String, String> certData) {
         try {
             LOGGER.infoCr(reconciliation, "Generating CA with subject={}", subject);
-            File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
+            File keyFile = Files.createTempFile("tls", subject.commonName() + "-key").toFile();
             try {
-                File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
+                File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
                 try {
-                    File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
+                    File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     String trustStorePassword;
                     // if secret already contains the truststore, we have to reuse it without changing password
                     if (certData.containsKey(CA_STORE)) {
@@ -1038,12 +1038,12 @@ public abstract class Ca {
 
             Base64.Decoder decoder = Base64.getDecoder();
             byte[] bytes = decoder.decode(caKeySecret.getData().get(CA_KEY));
-            File keyFile = File.createTempFile("tls", subject.commonName() + "-key");
+            File keyFile = Files.createTempFile("tls", subject.commonName() + "-key").toFile();
             try {
                 Files.write(keyFile.toPath(), bytes);
-                File certFile = File.createTempFile("tls", subject.commonName() + "-cert");
+                File certFile = Files.createTempFile("tls", subject.commonName() + "-cert").toFile();
                 try {
-                    File trustStoreFile = File.createTempFile("tls", subject.commonName() + "-truststore");
+                    File trustStoreFile = Files.createTempFile("tls", subject.commonName() + "-truststore").toFile();
                     try {
                         String trustStorePassword = passwordGenerator.generate();
                         certManager.renewSelfSignedCert(keyFile, certFile, subject, validityDays);

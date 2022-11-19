@@ -91,8 +91,8 @@ public class MockCruiseControl {
     public static ClientAndServer server(int port) throws IOException {
         ConfigurationProperties.logLevel("WARN");
 
-        File key = File.createTempFile("key-", ".key");
-        File cert = File.createTempFile("crt-", ".crt");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
 
         MockCertManager certManager = new MockCertManager();
         certManager.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
