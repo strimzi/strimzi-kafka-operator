@@ -327,7 +327,7 @@ public class ListenersValidatorTest {
 
         List<String> expectedErrors = asList(
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
-                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
+                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
@@ -405,7 +405,7 @@ public class ListenersValidatorTest {
 
         List<String> expectedErrors = asList(
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
-                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
+                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
@@ -490,7 +490,7 @@ public class ListenersValidatorTest {
 
         List<String> expectedErrors = asList(
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
-                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
+                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
@@ -586,7 +586,7 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(listener1);
 
         List<String> expectedErrors = asList(
-                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
+                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
@@ -739,7 +739,6 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(listener1);
 
         List<String> expectedErrors = asList(
-                "listener " + name + " cannot configure useServiceDnsDomain because it is not internal listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
