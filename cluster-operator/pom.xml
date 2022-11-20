@@ -16,6 +16,11 @@
         </license>
     </licenses>
 
+    <properties>
+        <!-- No Javadocs warnings as errors here => we do not want to fail because of warnings -->
+        <javadoc.fail.on.warnings>false</javadoc.fail.on.warnings>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -108,10 +113,6 @@
             <artifactId>vertx-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>certificate-manager</artifactId>
         </dependency>
@@ -165,11 +166,6 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>connect-json</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

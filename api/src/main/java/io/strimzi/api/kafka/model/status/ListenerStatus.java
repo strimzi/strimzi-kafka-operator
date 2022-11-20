@@ -69,7 +69,7 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
         if (addresses == null || addresses.isEmpty()) {
             bootstrapServers = null;
         } else {
-            bootstrapServers = addresses.stream().map(a -> a.getHost() + ":" + a.getPort()).distinct().collect(Collectors.joining(","));
+            bootstrapServers = addresses.stream().map(a -> a.getHost() + ":" + a.getPort()).distinct().sorted().collect(Collectors.joining(","));
         }
     }
 

@@ -78,7 +78,7 @@ public class OpenSslCertManagerIT {
         X509Certificate x509Certificate1 = loadCertificate(cert);
         assertTrue(selfVerifies(x509Certificate1),
                 "Unexpected self-verification");
-        assertEquals(x509Certificate1.getSubjectDN(), x509Certificate1.getIssuerDN(), "Unexpected self-signedness");
+        assertEquals(x509Certificate1.getSubjectX500Principal(), x509Certificate1.getIssuerX500Principal(), "Unexpected self-signedness");
         assertSubject(sbj, x509Certificate1);
         X509Certificate x509Certificate = x509Certificate1;
         assertEquals(0, x509Certificate.getBasicConstraints(),
@@ -112,7 +112,7 @@ public class OpenSslCertManagerIT {
         X509Certificate x509Certificate = loadCertificate(cert);
         assertTrue(selfVerifies(x509Certificate),
                 "Unexpected self-verification");
-        assertEquals(x509Certificate.getSubjectDN(), x509Certificate.getIssuerDN(), "Expected self-signed certificate");
+        assertEquals(x509Certificate.getSubjectX500Principal(), x509Certificate.getIssuerX500Principal(), "Expected self-signed certificate");
         assertSubject(sbj, x509Certificate);
         assertEquals(0, x509Certificate.getBasicConstraints(),
                 "Expected a certificate with CA:" + true + ", but basic constraints = " + x509Certificate.getBasicConstraints());
@@ -140,7 +140,7 @@ public class OpenSslCertManagerIT {
     private void assertCaCertificate(X509Certificate x509Certificate, boolean expectCa) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
         assertEquals(expectCa, selfVerifies(x509Certificate),
                 "Unexpected self-verification");
-        assertEquals(expectCa, x509Certificate.getIssuerDN().equals(x509Certificate.getSubjectDN()),
+        assertEquals(expectCa, x509Certificate.getIssuerX500Principal().equals(x509Certificate.getSubjectX500Principal()),
                 "Unexpected self-signedness");
         assertEquals(expectCa, x509Certificate.getBasicConstraints() >= 0,
                 "Expected a certificate with CA:" + expectCa + ", but basic constraints = " + x509Certificate.getBasicConstraints());
@@ -158,8 +158,8 @@ public class OpenSslCertManagerIT {
     }
 
     private void assertSubject(Subject sbj, X509Certificate x509Certificate) throws CertificateParsingException {
-        Principal p = x509Certificate.getSubjectDN();
-        assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+        Principal p = x509Certificate.getSubjectX500Principal();
+        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
         assertSubjectAlternativeNames(sbj, x509Certificate);
     }
@@ -176,8 +176,8 @@ public class OpenSslCertManagerIT {
     }
 
     private void assertIssuer(Subject sbj, X509Certificate x509Certificate) {
-        Principal p = x509Certificate.getIssuerDN();
-        assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+        Principal p = x509Certificate.getIssuerX500Principal();
+        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class OpenSslCertManagerIT {
         X509Certificate rootX509 = loadCertificate(rootCert);
         assertTrue(selfVerifies(rootX509),
                 "Unexpected self-verification");
-        assertTrue(rootX509.getIssuerDN().equals(rootX509.getSubjectDN()),
+        assertTrue(rootX509.getIssuerX500Principal().equals(rootX509.getSubjectX500Principal()),
                 "Unexpected self-signed cert");
         assertSubject(rootSubject, rootX509);
         assertEquals(rootPathLen, rootX509.getBasicConstraints(),
@@ -213,7 +213,7 @@ public class OpenSslCertManagerIT {
         ssl.generateIntermediateCaCert(rootKey, rootCert, intermediateSubject, intermediateKey, intermediateCert, notBefore, notAfter, intermediatePathLen);
 
         X509Certificate intermediateX509 = loadCertificate(intermediateCert);
-        assertTrue(intermediateX509.getIssuerDN().equals(rootX509.getSubjectDN()),
+        assertTrue(intermediateX509.getIssuerX500Principal().equals(rootX509.getSubjectX500Principal()),
                 "Unexpected intermediate's issued to be root");
         assertSubject(intermediateSubject, intermediateX509);
         assertEquals(intermediatePathLen, intermediateX509.getBasicConstraints(),
@@ -332,9 +332,9 @@ public class OpenSslCertManagerIT {
 
         c.verify(ca.getPublicKey());
 
-        Principal p = c.getSubjectDN();
+        Principal p = c.getSubjectX500Principal();
 
-        assertThat(String.format("CN=%s, O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
+        assertThat(String.format("CN=%s,O=%s", sbj.commonName(), sbj.organizationName()), is(p.getName()));
 
         if (sbj != null && sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
             final Collection<List<?>> snas = c.getSubjectAlternativeNames();
@@ -383,7 +383,7 @@ public class OpenSslCertManagerIT {
         X509Certificate x509Certificate1 = loadCertificate(originalCert);
         assertTrue(selfVerifies(x509Certificate1),
                 "Unexpected self-verification");
-        assertTrue(x509Certificate1.getIssuerDN().equals(x509Certificate1.getSubjectDN()),
+        assertTrue(x509Certificate1.getIssuerX500Principal().equals(x509Certificate1.getSubjectX500Principal()),
                 "Unexpected self-signedness");
         // subject verification if provided
         if (caSubject != null) {

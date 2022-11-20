@@ -78,6 +78,8 @@ public class SystemTestCertAndKeyBuilder {
         this.keyPair = keyPair;
         this.caCert = caCert;
         if (caCert != null) {
+            // getSubjectDN is deprecated, but BouncyCastle does not seem to work well with getSubjectX500Principal which replaces it
+            // The fix for this issue is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/7698
             this.issuer = new X500Name(caCert.getCertificate().getSubjectDN().getName());
         }
         this.extensions = new ArrayList<>(extensions);

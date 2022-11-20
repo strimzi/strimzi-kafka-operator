@@ -71,18 +71,21 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+
+        <!-- Configures if we should fail on warnings when generating Javadocs -->
+        <javadoc.fail.on.warnings>true</javadoc.fail.on.warnings>
 
         <!-- Maven plugin versions -->
-        <maven.compiler.version>3.8.1</maven.compiler.version>
+        <maven.compiler.version>3.10.1</maven.compiler.version>
         <maven.surefire.version>3.0.0-M7</maven.surefire.version>
         <maven.failsafe.version>3.0.0-M7</maven.failsafe.version>
-        <maven.assembly.version>3.3.0</maven.assembly.version>
-        <maven.shade.version>3.1.0</maven.shade.version>
-        <maven.javadoc.version>3.1.0</maven.javadoc.version>
+        <maven.assembly.version>3.4.2</maven.assembly.version>
+        <maven.shade.version>3.4.1</maven.shade.version>
+        <maven.javadoc.version>3.4.1</maven.javadoc.version>
         <maven.source.version>3.0.1</maven.source.version>
-        <maven.dependency.version>3.1.1</maven.dependency.version>
+        <maven.dependency.version>3.3.0</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
         <maven.checkstyle.version>3.1.2</maven.checkstyle.version>
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
@@ -90,14 +93,14 @@
         <sonatype.nexus.staging.version>1.6.3</sonatype.nexus.staging.version>
         <maven.spotbugs.version>4.5.3.0</maven.spotbugs.version>
         <maven.jacoco.version>0.8.8</maven.jacoco.version>
-        <maven.exec.version>1.6.0</maven.exec.version>
+        <maven.exec.version>3.1.0</maven.exec.version>
         <maven.resources.version>3.1.0</maven.resources.version>
 
         <!-- Build tools -->
         <checkstyle.version>9.2.1</checkstyle.version>
         <spotbugs.version>4.7.2</spotbugs.version>
         <sundrio.version>0.91.1</sundrio.version>
-        <lombok.version>1.18.4</lombok.version>
+        <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
         <fabric8.kubernetes-client.version>6.2.0</fabric8.kubernetes-client.version>
@@ -866,16 +869,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${maven.dependency.version}</version>
-                    <dependencies>
-                        <dependency>
-                            <!-- Override dep to support Java 11,
-                                 can remove this once maven.dependency.version >= 3.1.2
-                                 see https://issues.apache.org/jira/browse/MDEP-613 -->
-                            <groupId>org.apache.maven.shared</groupId>
-                            <artifactId>maven-dependency-analyzer</artifactId>
-                            <version>1.11.1</version>
-                        </dependency>
-                    </dependencies>
                     <executions>
                         <execution>
                             <id>copy-dependencies</id>
@@ -1106,6 +1099,8 @@
                                 <ignoredUnusedDeclaredDependency>io.fabric8:openshift-client</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-clients</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-streams</ignoredUnusedDeclaredDependency>
+                                <!-- Used in Kafka Agent through reflection -->
+                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server-common</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.scala-lang:scala-library</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
@@ -1126,6 +1121,12 @@
                             <ignoredUsedUndeclaredDependencies>
                                 <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
+                            <ignoredNonTestScopedDependencies>
+                                <ignoredNonTestScopedDependency>com.fasterxml.jackson.core:jackson-core</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>org.apache.zookeeper:zookeeper-jute</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>io.fabric8:kubernetes-model-coordination</ignoredNonTestScopedDependency>
+                                <ignoredNonTestScopedDependency>io.fabric8:kubernetes-model-common</ignoredNonTestScopedDependency>
+                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>
@@ -1157,7 +1158,7 @@
                             <sourcepath>${project.build.sourceDirectory}:${project.build.directory}/generated-sources/annotations</sourcepath>
                             <show>public</show>
                             <failOnError>true</failOnError>
-                            <failOnWarnings>true</failOnWarnings>
+                            <failOnWarnings>${javadoc.fail.on.warnings}</failOnWarnings>
                         </configuration>
                     </execution>
                 </executions>
@@ -1269,30 +1270,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>java-version</id>
-            <activation>
-                <property>
-                    <name>env.JAVA_VERSION_BUILD</name>
-                </property>
-            </activation>
-            <properties>
-                <maven.compiler.source>${env.JAVA_VERSION_BUILD}</maven.compiler.source>
-                <maven.compiler.target>${env.JAVA_VERSION_BUILD}</maven.compiler.target>
-            </properties>
-        </profile>
-        <profile>
-            <id>jdk-11-config</id>
-            <activation>
-                <jdk>11</jdk>
-            </activation>
-            <properties>
-                <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-                <maven.compiler.source>11</maven.compiler.source>
-                <maven.compiler.target>11</maven.compiler.target>
-            </properties>
         </profile>
     </profiles>
 </project>

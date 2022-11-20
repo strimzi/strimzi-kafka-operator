@@ -17,6 +17,11 @@
         </license>
     </licenses>
 
+    <properties>
+        <!-- No Javadocs warnings as errors here => we do not want to fail because of warnings -->
+        <javadoc.fail.on.warnings>false</javadoc.fail.on.warnings>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -111,6 +116,7 @@
         <dependency>
             <groupId>io.apicurio</groupId>
             <artifactId>apicurio-registry-common</artifactId>
+            <scope>test</scope>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.protobuf</groupId>

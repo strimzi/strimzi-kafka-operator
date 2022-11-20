@@ -66,17 +66,17 @@ run `brew install bash` to install a compatible version of `bash`. If you wish t
 updated bash run `sudo bash -c 'echo /usr/local/bin/bash >> /etc/shells'` and `chsh -s /usr/local/bin/bash`
 
 The `mvn` tool might install the latest version of OpenJDK during the brew install. For builds on macOS to succeed,
-OpenJDK version 11 needs to be installed. This can be done by running `brew install openjdk@11`. For maven to read the
+OpenJDK version 17 needs to be installed. This can be done by running `brew install openjdk@17`. For maven to read the
 new Java version, you will need to edit the `~/.mavenrc` file and paste the following
-line `export JAVA_HOME=/Library/Java/JavaVirtualMachines/openjdk-11.jdk/Contents/Home`.
+line `export JAVA_HOME=/Library/Java/JavaVirtualMachines/openjdk-17.jdk/Contents/Home`.
 
 You may come across an issue of linking from the above step. To solve this run this command: 
-`sudo ln -sfn /usr/local/opt/openjdk@11/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-11.jdk`.
+`sudo ln -sfn /usr/local/opt/openjdk@17/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-17.jdk`.
 If this throws an error that it cannot find the file or directory, navigate into `/Library/Java/` (or however deep you
-can) and create a new folder named `JavaVirtualMachines` followed by creating a file named `openjdk-11.jdk`. The folder
-structure after everything is said and done should look like `/Library/Java/JavaVirtualMachines/openjdk-11.jdk`. After
+can) and create a new folder named `JavaVirtualMachines` followed by creating a file named `openjdk-17.jdk`. The folder
+structure after everything is said and done should look like `/Library/Java/JavaVirtualMachines/openjdk-17.jdk`. After
 doing that run the command at the beginning again and this should link the file and allow you to use maven with OpenJDK
-version 11.
+version 17.
 
 When running the tests, you may encounter `OpenSSL` related errors for parts that you may not have even worked on, in 
 which case you need to make sure you are using `OpenSSL` and not LibreSSL which comes by default with macOS.
@@ -247,9 +247,9 @@ Commonly used Make targets:
 ### Java versions
 
 To use different Java version for the Maven build, you can specify the environment variable `JAVA_VERSION_BUILD` and set
-it to the desired Java version. For example, for building with Java 11 you can use `export JAVA_VERSION_BUILD=11`.
+it to the desired Java version. For example, for building with Java 17 you can use `export JAVA_VERSION_BUILD=17`.
 
-> *Note*: Strimzi currently developed and tested with Java 11.
+> *Note*: Strimzi currently developed and tested with Java 17.
 
 ### Building Docker images
 
@@ -282,8 +282,8 @@ When building the Docker images you can use an alternative JRE or use an alterna
 #### Alternative Docker image JRE
 
 The docker images can be built with an alternative Java version by setting the environment variable `JAVA_VERSION`. For
-example, to build docker images that have the Java 11 JRE installed use `JAVA_VERSION=11 make docker_build`. If not
-present, the container images will use Java **11** by default.
+example, to build docker images that have the Java 19 JRE installed use `JAVA_VERSION=19 make docker_build`. If not
+present, the container images will use Java **17** by default.
 
 #### Alternative `docker` command
 
