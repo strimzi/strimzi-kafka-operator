@@ -12,7 +12,7 @@ Use namespaces to separate functions.
 
 .Prerequisites
 
-* Installation requires a Kubernetes account with privileges to install Custom Resource Definitions and Role Bindings.
+* Installation requires a Kubernetes account with privileges to install Custom Resource Definitions and role bindings.
 The default install of Minikube has these privileges.
 
 .Procedure
@@ -118,7 +118,7 @@ kubectl create -f install/cluster-operator/ -n kafka
 kubectl get pods -n kafka --watch
 ----
 +
-You can also follow the Operator's logs:
+You can also follow the operator's logs:
 +
 [source, shell, subs=+quotes ]
 ----

@@ -17,7 +17,7 @@ When you create a cluster, the Cluster Operator you deployed when installing Str
 .Procedure
 
 . Log in to the Kubernetes cluster as a non-privileged user.
-If using Minikube you can continue with the same user.
+If using Minikube, you can continue with the same user.
 
 . Create a new `my-cluster` Kafka cluster with one ZooKeeper and one Kafka broker.
 +

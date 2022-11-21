@@ -16,7 +16,7 @@ This task describes how to remove the Kafka cluster and topic, and then how to f
 kubectl -n my-kafka-project delete $(kubectl get strimzi -o name -n my-kafka-project)
 ----
 
-. Once the Kafka cluster has been removed, delete the CRDs, role-based access control (RBAC) resources and the deployment for the Cluster Operator.
+. When the Kafka cluster has been removed, delete the CRDs, role-based access control (RBAC) resources and the deployment for the Cluster Operator.
 +
 [source, shell, subs=+quotes ]
 ----
