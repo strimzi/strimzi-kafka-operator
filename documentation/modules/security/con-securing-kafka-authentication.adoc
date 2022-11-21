@@ -95,6 +95,10 @@ mTLS listener configuration in the `Kafka` resource requires the following:
 * `tls: true` to specify TLS encryption and server authentication
 * `authentication.type: TLS` to specify the client authentication
 
+When a Kafka cluster is created by the Cluster Operator, it creates a new secret with the name `<cluster_name>-cluster-ca-cert`.
+The secret contains a private and public key for mTLS.
+The cluster secret xref:certificates-and-secrets-formats-{context}[provides keys and certificates in PEM and PKCS #12 formats].
+
 NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
 For example, when HTTPS is used between a web browser and a web server, the browser obtains proof of the identity of the web server.
 
