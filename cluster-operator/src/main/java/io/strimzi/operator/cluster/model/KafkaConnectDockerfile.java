@@ -155,8 +155,13 @@ public class KafkaConnectDockerfile {
                     String artifactHash = Util.hashStub(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
                     String artifactDir = plugin + "/" + artifactHash;
 
+                    // For handling custom repositories, we need to write custom Maven settings file
+                    String settingsFile = "/tmp/" + artifactHash + ".xml";
+                    String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + repo + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
+
                     Cmd cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
-                            .andRun("mvn", "dependency:copy-dependencies",
+                            .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
+                            .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
                                     "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
                             .andRun("curl", "-f", "-L", "--create-dirs", "--output",
                                     "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
