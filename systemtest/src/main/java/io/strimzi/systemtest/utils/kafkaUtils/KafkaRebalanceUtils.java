@@ -71,38 +71,48 @@ public class KafkaRebalanceUtils {
         return annotateKafkaRebalanceResource(reconciliation, kubeClient().getNamespace(), resourceName, annotation);
     }
 
+    public static void doRebalancingProcessWithAutoApproval(Reconciliation reconciliation, String namespaceName, String rebalanceName) {
+        doRebalancingProcess(reconciliation, namespaceName, rebalanceName, true);
+    }
+
     public static void doRebalancingProcess(Reconciliation reconciliation, String namespaceName, String rebalanceName) {
+        doRebalancingProcess(reconciliation, namespaceName, rebalanceName, false);
+    }
+
+    public static void doRebalancingProcess(Reconciliation reconciliation, String namespaceName, String rebalanceName, boolean autoApproval) {
         LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
         LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
         LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
 
-        // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
-        if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
-            LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
+        if (!autoApproval) {
+            // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
+            if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
+                LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
 
-            waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.PendingProposal);
+                waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.PendingProposal);
 
-            LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
+                LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
-            waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
-        }
+                waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
+            }
 
-        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
-        LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
-        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
+            LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
+            LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
+            LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
 
-        // using automatic-approval annotation
-        final KafkaRebalance kr = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get();
-        if (kr.getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL) &&
-            kr.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL).equals("true")) {
-            LOGGER.infoCr(reconciliation, "Triggering the rebalance automatically (because Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL is set to true) " +
-                "without an annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
-        } else {
-            LOGGER.infoCr(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
+            // using automatic-approval annotation
+            final KafkaRebalance kr = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get();
+            if (kr.getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL) &&
+                kr.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL).equals("true")) {
+                LOGGER.infoCr(reconciliation, "Triggering the rebalance automatically (because Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL is set to true) " +
+                    "without an annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
+            } else {
+                LOGGER.infoCr(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
-            String response = annotateKafkaRebalanceResource(reconciliation, namespaceName, rebalanceName, KafkaRebalanceAnnotation.approve);
+                String response = annotateKafkaRebalanceResource(reconciliation, namespaceName, rebalanceName, KafkaRebalanceAnnotation.approve);
 
-            LOGGER.infoCr(reconciliation, "Response from the annotation process {}", response);
+                LOGGER.infoCr(reconciliation, "Response from the annotation process {}", response);
+            }
         }
 
         LOGGER.infoCr(reconciliation, "Verifying that annotation triggers the {} state", KafkaRebalanceState.Rebalancing);
