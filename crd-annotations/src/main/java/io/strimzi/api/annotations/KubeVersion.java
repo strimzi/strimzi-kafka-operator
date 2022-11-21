@@ -15,18 +15,24 @@ import static java.lang.Short.parseShort;
  * different Kubernetes versions.
  */
 public class KubeVersion implements Comparable<KubeVersion> {
-
+    /**
+     * Kubernetes 1.11.x
+     */
     public static final KubeVersion V1_11 = new KubeVersion((short) 1, (short) 11);
-    public static final KubeVersion V1_12 = new KubeVersion((short) 1, (short) 12);
-    public static final KubeVersion V1_13 = new KubeVersion((short) 1, (short) 13);
-    public static final KubeVersion V1_14 = new KubeVersion((short) 1, (short) 14);
-    public static final KubeVersion V1_15 = new KubeVersion((short) 1, (short) 15);
-    public static final KubeVersion V1_16 = new KubeVersion((short) 1, (short) 16);
-    public static final KubeVersion V1_17 = new KubeVersion((short) 1, (short) 17);
-    public static final KubeVersion V1_18 = new KubeVersion((short) 1, (short) 18);
-    public static final KubeVersion V1_19 = new KubeVersion((short) 1, (short) 19);
 
+    /**
+     * Kubernetes 1.16.x
+     */
+    public static final KubeVersion V1_16 = new KubeVersion((short) 1, (short) 16);
+
+    /**
+     * Kubernetes range for Kube 1.11 and newer
+     */
     public static final VersionRange<KubeVersion> V1_11_PLUS = KubeVersion.parseRange("1.11+");
+
+    /**
+     * Kubernetes range for Kube 1.16 and newer
+     */
     public static final VersionRange<KubeVersion> V1_16_PLUS = KubeVersion.parseRange("1.16+");
 
     private final short major;
@@ -37,6 +43,13 @@ public class KubeVersion implements Comparable<KubeVersion> {
         this.minor = minor;
     }
 
+    /**
+     * Parses Kubernetes version from String to KubeVersion instance
+     *
+     * @param version   Kubernetes version string which should be parsed
+     *
+     * @return  KubeVersion instance
+     */
     public static KubeVersion parse(String version) {
         Pattern pattern = Pattern.compile("([0-9]+).([0-9]+)");
         Matcher matcher = pattern.matcher(version);
@@ -46,6 +59,13 @@ public class KubeVersion implements Comparable<KubeVersion> {
         return new KubeVersion(parseShort(matcher.group(1)), parseShort(matcher.group(2)));
     }
 
+    /**
+     * Parses range of Kubernetes versions
+     *
+     * @param range     String with the Kubernetes versions range
+     *
+     * @return  Instance of the VersionRange class
+     */
     public static VersionRange<KubeVersion> parseRange(String range) {
         return VersionRange.parse(range, KubeVersion::parse);
     }
@@ -78,10 +98,22 @@ public class KubeVersion implements Comparable<KubeVersion> {
         return major + "." + minor;
     }
 
+    /**
+     * Indicates whether this Kubernetes version support CRDs with schema per version
+     *
+     * @return  True if schema-oer version is supported in CRDs in this Kubernetes versions. False otherwise.
+     */
     public boolean supportsSchemaPerVersion() {
         return this.compareTo(V1_16) >= 0;
     }
 
+    /**
+     * Checks whether all Kubernetes versions in this version range supports schemas per version in CRDs
+     *
+     * @param versionRange  The version range which should be checked
+     *
+     * @return  True if all Kubernetes versions in the range support schemas per version in the CRDs. False otherwise.
+     */
     public static boolean supportsSchemaPerVersion(VersionRange<KubeVersion> versionRange) {
         if (versionRange.isEmpty() || versionRange.isAll()) {
             return false;
@@ -94,7 +126,9 @@ public class KubeVersion implements Comparable<KubeVersion> {
 
     /**
      * Does this version of Kubernetes support the given API version of CustomResourceDefinition?
+     *
      * @param crdApiVersion The CustomResourceDefinition API version
+     *
      * @return Whether this version of Kube has support
      */
     public boolean supportsCrdApiVersion(ApiVersion crdApiVersion) {

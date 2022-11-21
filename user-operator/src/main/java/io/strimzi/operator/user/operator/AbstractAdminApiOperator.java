@@ -39,12 +39,41 @@ public abstract class AbstractAdminApiOperator<T, S extends Collection<String>> 
      */
     public abstract CompletionStage<S> getAllUsers();
 
+    /**
+     * Class used to pass the reconciliation results
+     *
+     * @param <T>   Request type (type of the desired resource)
+     * @param <R>   Response type (type of the repsonse)
+     */
     public static class ReconcileRequest<T, R>    {
+        /**
+         * Reconciliation marker
+         */
         public final Reconciliation reconciliation;
+
+        /**
+         * Name of the user
+         */
         public final String username;
+
+        /**
+         * Desired resource
+         */
         public final T desired;
+
+        /**
+         * Completable future for the reconciliation result
+         */
         public final CompletableFuture<R> result;
 
+        /**
+         * Constructs the reconciliation result
+         *
+         * @param reconciliation    Reconciliation marker
+         * @param username          Name of the user
+         * @param desired           Desired resource
+         * @param result            Completable future for the reconciliation result
+         */
         public ReconcileRequest(Reconciliation reconciliation, String username, T desired, CompletableFuture<R> result) {
             this.reconciliation = reconciliation;
             this.username = username;

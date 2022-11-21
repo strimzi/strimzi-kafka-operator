@@ -6,6 +6,16 @@ package io.strimzi.crdgenerator;
 
 import io.strimzi.crdgenerator.annotations.KubeLink;
 
-public interface Linker {
+/**
+ * Interface for handling links in the documentation generator
+ */
+interface Linker {
+    /**
+     * Generates URL to some specific documentation
+     *
+     * @param kubeLink  Specifies the Kubernetes API which should the link point to
+     *
+     * @return  An HTTP link deep-linking to the Kubernetes documentation
+     */
     String link(KubeLink kubeLink);
 }

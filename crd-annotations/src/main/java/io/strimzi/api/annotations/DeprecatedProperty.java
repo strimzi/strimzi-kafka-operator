@@ -9,10 +9,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to identify a deprecated property in the Strimzi CRDs / API
+ */
 @Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface DeprecatedProperty {
-
     /** @return The API version in which this property is scheduled to be removed. */
     String removalVersion() default "";
 

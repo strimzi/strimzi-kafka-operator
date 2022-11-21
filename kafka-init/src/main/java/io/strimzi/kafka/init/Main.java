@@ -10,12 +10,18 @@ import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * The Main class used to run the init container
+ */
 public class Main {
-
     private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
+    /**
+     * The main method
+     *
+     * @param args  Array with arguments form the command line
+     */
     public static void main(String[] args) {
-
         final String strimziVersion = Main.class.getPackage().getImplementationVersion();
         LOGGER.info("Init-kafka {} is starting", strimziVersion);
         InitWriterConfig config = InitWriterConfig.fromMap(System.getenv());

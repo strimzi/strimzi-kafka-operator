@@ -48,6 +48,9 @@ import org.apache.logging.log4j.Logger;
  * @see "The man page for <code>openssl-req(1)</code>."
  */
 public class OpenSslCertManager implements CertManager {
+    /**
+     * Formatter for the timestamp
+     */
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendValue(ChronoField.YEAR, 4)
             .appendValue(ChronoField.MONTH_OF_YEAR, 2)
@@ -56,15 +59,27 @@ public class OpenSslCertManager implements CertManager {
             .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
             .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
             .appendOffsetId().toFormatter();
+
+    /**
+     * Maximal length of the Subjects CN field
+     */
     public static final int MAXIMUM_CN_LENGTH = 64;
 
     private static final Logger LOGGER = LogManager.getLogger(OpenSslCertManager.class);
     private final Clock clock;
 
+    /**
+     * Constructs the OpenSslCertManager with the system time
+     */
     public OpenSslCertManager() {
         this(Clock.systemUTC());
     }
 
+    /**
+     * Configures the OpenSslCertManager with time passed as a parameter
+     *
+     * @param clock     Clock / Time which should be used by the manager
+     */
     public OpenSslCertManager(Clock clock) {
         this.clock = clock;
     }
@@ -431,6 +446,19 @@ public class OpenSslCertManager implements CertManager {
         generateCert(csrFile, caKey, caCert, crtFile, sbj, notBefore, notAfter);
     }
 
+    /**
+     * Generates a certificate
+     *
+     * @param csrFile       CSR file
+     * @param caKey         Key file of the CA which should sign this certificate
+     * @param caCert        Cert file of the CA which should sign this certificate
+     * @param crtFile       Cert file for the newly generated certificate
+     * @param sbj           Subject of the new certificate
+     * @param notBefore     Not before validity
+     * @param notAfter      Not after validity
+     *
+     * @throws IOException  Thrown when working with files fails
+     */
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, ZonedDateTime notBefore, ZonedDateTime notAfter) throws IOException {
         // Preconditions
         Objects.requireNonNull(csrFile);

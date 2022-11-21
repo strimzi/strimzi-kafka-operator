@@ -10,6 +10,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Defines the description of the field
+ */
 @Repeatable(Description.List.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
@@ -26,6 +29,9 @@ public @interface Description {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
     @interface List {
+        /**
+         * @return  List of descriptions
+         */
         Description[] value();
     }
 

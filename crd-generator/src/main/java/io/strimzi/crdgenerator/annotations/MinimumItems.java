@@ -17,12 +17,25 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface MinimumItems {
+    /**
+     * @return The api versions that this description applies to.
+     **/
     String apiVersions() default "all";
+
+    /**
+     * @return  Minimum number of items in this list / array
+     */
     int value();
 
+    /**
+     * Defines several {@link MinimumItems} annotations on the same element.
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.FIELD})
-    public @interface List {
+    @interface List {
+        /**
+         * @return  List of minimum number of items
+         */
         MinimumItems[] value();
     }
 }

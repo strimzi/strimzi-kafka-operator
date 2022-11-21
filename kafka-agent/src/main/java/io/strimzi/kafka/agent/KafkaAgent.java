@@ -39,6 +39,12 @@ public class KafkaAgent {
     private MetricName sessionStateName;
     private Gauge sessionState;
 
+    /**
+     * Constructor of the KafkaAgent
+     *
+     * @param brokerReadyFile       File which is touched (created) when the broker is ready
+     * @param sessionConnectedFile  File which is touched (created) when the Kafka broker connects successfully to ZooKeeper
+     */
     public KafkaAgent(File brokerReadyFile, File sessionConnectedFile) {
         this.brokerReadyFile = brokerReadyFile;
         this.sessionConnectedFile = sessionConnectedFile;

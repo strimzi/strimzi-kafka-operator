@@ -10,14 +10,13 @@ import java.util.Map;
  * Init Writer configuration
  */
 public class InitWriterConfig {
+    static final String INIT_FOLDER = "INIT_FOLDER";
+    static final String RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
+    static final String NODE_NAME = "NODE_NAME";
+    static final String EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
+    static final String EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
 
-    public static final String INIT_FOLDER = "INIT_FOLDER";
-    public static final String RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
-    public static final String NODE_NAME = "NODE_NAME";
-    public static final String EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    public static final String EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
-
-    public static final String DEFAULT_INIT_FOLDER = "/opt/kafka/init";
+    static final String DEFAULT_INIT_FOLDER = "/opt/kafka/init";
 
     private String nodeName;
     private String rackTopologyKey;
@@ -31,7 +30,7 @@ public class InitWriterConfig {
      * @param map map from which loading configuration parameters
      * @return Rack Writer configuration instance
      */
-    public static InitWriterConfig fromMap(Map<String, String> map) {
+    static InitWriterConfig fromMap(Map<String, String> map) {
 
         String nodeName = map.get(InitWriterConfig.NODE_NAME);
         if (nodeName == null || nodeName.equals("")) {
@@ -53,7 +52,7 @@ public class InitWriterConfig {
         return new InitWriterConfig(nodeName, rackTopologyKey, externalAddress, initFolder, externalAddressType);
     }
 
-    public InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder, String externalAddressType) {
+    InitWriterConfig(String nodeName, String rackTopologyKey, boolean externalAddress, String initFolder, String externalAddressType) {
         this.nodeName = nodeName;
         this.rackTopologyKey = rackTopologyKey;
         this.externalAddress = externalAddress;

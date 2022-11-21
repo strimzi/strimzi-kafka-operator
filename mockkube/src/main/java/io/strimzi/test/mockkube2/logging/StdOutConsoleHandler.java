@@ -13,7 +13,9 @@ import java.util.logging.StreamHandler;
  * is logging
  */
 public class StdOutConsoleHandler extends StreamHandler {
-
+    /**
+     * Constructs the StdOutConsoleHandler
+     */
     public StdOutConsoleHandler() {
         super(System.out, new SimpleFormatter());
     }

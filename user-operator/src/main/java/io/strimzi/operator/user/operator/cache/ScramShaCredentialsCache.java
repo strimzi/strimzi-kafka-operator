@@ -25,6 +25,12 @@ public class ScramShaCredentialsCache extends AbstractCache<Boolean> {
 
     private final Admin adminClient;
 
+    /**
+     * Constructs the Scram-SHA credentials cache
+     *
+     * @param adminClient           Kafka Admin client
+     * @param refreshIntervalMs     Interval in which the cache should be refreshed
+     */
     public ScramShaCredentialsCache(Admin adminClient, long refreshIntervalMs) {
         super("ScramShaCredentials", refreshIntervalMs);
         this.adminClient = adminClient;

@@ -21,28 +21,48 @@ import java.util.Objects;
  *                 {@link Comparable#compareTo(Object)} is consistent with {@link Object#equals(Object)}.
  */
 public class VersionRange<Version extends Comparable<Version>> {
-
+    @SuppressWarnings({ "rawtypes" })
     private static final VersionRange EMPTY = new VersionRange<>(null, null);
     private final Version from;
     private final Version to;
 
     /**
-     * @return The empty version range.
+     * Returns an empty version range
+     *
      * @param <Version> The type of version range.
+     *
+     * @return The empty version range.
      */
     @SuppressWarnings("unchecked")
     public static <Version extends Comparable<Version>> VersionRange<Version> empty() {
         return EMPTY;
     }
 
+    /**
+     * Returns a VersionRange matching all versions
+     *
+     * @param <Version> The type of version range.
+     *
+     * @return  VersionRange matching all versions
+     */
     public static <Version extends Comparable<Version>> VersionRange<Version> all() {
         return new VersionRange<>(null, null);
     }
 
+    /**
+     * Checks whether this version range is empty or not
+     *
+     * @return  Returns true if this version range is empty. Returns false otherwise.
+     */
     public boolean isEmpty() {
         return this == EMPTY;
     }
 
+    /**
+     * Checks whether this version range matches all versions
+     *
+     * @return  Returns true if this version range matches all versions. Returns false otherwise.
+     */
     public boolean isAll() {
         return this.equals(all());
     }
@@ -85,10 +105,12 @@ public class VersionRange<Version extends Comparable<Version>> {
      *     <li>{@code $from-$to} -- matches all versions between the given {@code from} version and {@code to} versions, inclusive.</li>
      * </ul>
      * <p>Obviously this makes assumptions about what constitutes valid syntax for versions, e.g. "empty" cannot be a valid version</p>
-     * @param versionRange
-     * @param parser A parser for versions.
-     * @param <Version>
-     * @return
+     *
+     * @param versionRange  VersionRange String which should be parsed
+     * @param parser        A parser for versions.
+     * @param <Version>     The type of version range.
+     *
+     * @return  Parsed version range
      */
     static <Version extends Comparable<Version>> VersionRange<Version> parse(String versionRange, VersionParser<Version> parser) {
         if ("empty".equals(versionRange)) {
@@ -130,10 +152,20 @@ public class VersionRange<Version extends Comparable<Version>> {
         }
     }
 
+    /**
+     * Returns the lower boundary of the version range
+     *
+     * @return  The lower boundary of the range
+     */
     public Version lower() {
         return from;
     }
 
+    /**
+     * Returns the upper boundary of the version range
+     *
+     * @return  The upper boundary of the range
+     */
     public Version upper() {
         return to;
     }
@@ -142,6 +174,7 @@ public class VersionRange<Version extends Comparable<Version>> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        @SuppressWarnings({ "rawtypes" })
         VersionRange that = (VersionRange) o;
         return Objects.equals(from, that.from) &&
                 Objects.equals(to, that.to);
@@ -152,10 +185,26 @@ public class VersionRange<Version extends Comparable<Version>> {
         return Objects.hash(from, to);
     }
 
+    /**
+     * Checks when the version is part of the version range
+     *
+     * @param apiVersion    API Version which should be checked whether it is in the raneg or not
+     *
+     * @return      True when the range contains the version. False otherwise
+     */
     public boolean contains(Version apiVersion) {
-        return this == EMPTY || apiVersion == null ? false : from == null || from.compareTo(apiVersion) <= 0 && (to == null || to.compareTo(apiVersion) >= 0);
+        return this != EMPTY
+                && apiVersion != null
+                && (from == null || from.compareTo(apiVersion) <= 0 && (to == null || to.compareTo(apiVersion) >= 0));
     }
 
+    /**
+     * Checks whether two version ranges intersect
+     *
+     * @param other     The version range which should be compared with this version range
+     *
+     * @return  Returns true if the version ranges intersect. Returns false otherwise.
+     */
     public boolean intersects(VersionRange<Version> other) {
         if (this == EMPTY) {
             return false;

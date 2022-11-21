@@ -28,6 +28,9 @@ import java.util.Map;
 public abstract class AbstractConnectorSpec extends Spec {
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Forbidden options in the connector configuration
+     */
     public static final String FORBIDDEN_PARAMETERS = "connector.class, tasks.max";
 
     private Integer tasksMax;
@@ -36,40 +39,73 @@ public abstract class AbstractConnectorSpec extends Spec {
 
     private AutoRestart autoRestart;
 
+    /**
+     * @return  Maximal number of tasks
+     */
     @Description("The maximum number of tasks for the Kafka Connector")
     @Minimum(1)
     public Integer getTasksMax() {
         return tasksMax;
     }
 
+    /**
+     * Sets the maximum number of tasks
+     *
+     * @param tasksMax  Maximal number of tasks
+     */
     public void setTasksMax(Integer tasksMax) {
         this.tasksMax = tasksMax;
     }
 
+    /**
+     * @return  Connector configuration
+     */
     @Description("The Kafka Connector configuration. The following properties cannot be set: " + FORBIDDEN_PARAMETERS)
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
     }
+
+    /**
+     * Sets the connector configuration
+     *
+     * @param config    Map with the connector configuration
+     */
     public void setConfig(Map<String, Object> config) {
         this.config = config;
     }
 
+    /**
+     * @return  Flag indicating whether the connector should paused or not
+     */
     @Description("Whether the connector should be paused. Defaults to false.")
     public Boolean getPause() {
         return pause;
     }
 
+    /**
+     * Sets the flag to indicate if the connector should be paused or not
+     *
+     * @param pause     Set to true to request the connector to be paused. False to have it running.
+     */
     public void setPause(Boolean pause) {
         this.pause = pause;
     }
 
+    /**
+     * @return  Auto-restart configuration of this connector
+     */
     @Description("Automatic restart of connector and tasks configuration")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public AutoRestart getAutoRestart() {
         return autoRestart;
     }
 
+    /**
+     * Configures auto-restarting of this connector
+     *
+     * @param autoRestart   Auto-restart configuration
+     */
     public void setAutoRestart(AutoRestart autoRestart) {
         this.autoRestart = autoRestart;
     }

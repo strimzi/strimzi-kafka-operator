@@ -10,6 +10,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation for specifying the minimum value of a field in the Strimzi CRD
+ */
 @Repeatable(Minimum.List.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
@@ -26,6 +29,9 @@ public @interface Minimum {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
+        /**
+         * @return  List of minimum values
+         */
         Minimum[] value();
     }
 }

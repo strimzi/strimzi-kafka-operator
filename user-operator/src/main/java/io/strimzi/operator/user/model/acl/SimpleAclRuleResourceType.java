@@ -11,8 +11,23 @@ package io.strimzi.operator.user.model.acl;
  * TransactionIds and Delegation tokens are currently unsupported.
  */
 public enum SimpleAclRuleResourceType {
+    /**
+     * Topic resource
+     */
     TOPIC,
+
+    /**
+     * Group resource
+     */
     GROUP,
+
+    /**
+     * Cluster resource
+     */
     CLUSTER,
+
+    /**
+     * Transactional ID resource
+     */
     TRANSACTIONAL_ID;
 }

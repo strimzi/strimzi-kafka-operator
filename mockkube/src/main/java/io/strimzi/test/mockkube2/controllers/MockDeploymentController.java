@@ -24,6 +24,11 @@ public class MockDeploymentController extends AbstractMockController {
 
     private Watch watch;
 
+    /**
+     * Constructs the Mock Deployment controller
+     *
+     * @param client    Kubernetes client
+     */
     public MockDeploymentController(KubernetesClient client) {
         super(client);
     }

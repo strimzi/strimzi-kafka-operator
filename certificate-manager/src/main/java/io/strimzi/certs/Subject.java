@@ -21,18 +21,34 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * Can be serialized as JSON.
  */
 public class Subject {
+    /**
+     * Builder class used to build the Subject instance
+     */
     public static class Builder {
-
         private String organizationName;
         private String commonName;
         private Set<String> dnsNames = null;
         private Set<String> ipAddresses = null;
 
+        /**
+         * Sets the Common Name
+         *
+         * @param commonName    Common Name
+         *
+         * @return  This instance of the Subject builder
+         */
         public Builder withCommonName(String commonName) {
             this.commonName = commonName;
             return this;
         }
 
+        /**
+         * Sets the Organization Name
+         *
+         * @param organizationName    Organization Name
+         *
+         * @return  This instance of the Subject builder
+         */
         public Builder withOrganizationName(String organizationName) {
             this.organizationName = organizationName;
             return this;
@@ -98,6 +114,9 @@ public class Subject {
             return this;
         }
 
+        /**
+         * @return  Instance of the Subject class created based on this builder
+         */
         public Subject build() {
             return new Subject(commonName, organizationName, dnsNames, ipAddresses);
         }
@@ -121,16 +140,25 @@ public class Subject {
         this.ipAddresses = ipAddresses == null ? Set.of() : Collections.unmodifiableSet(ipAddresses);
     }
 
+    /**
+     * @return  Organization name
+     */
     @JsonProperty
     public String organizationName() {
         return organizationName;
     }
 
+    /**
+     * @return  Common name
+     */
     @JsonProperty
     public String commonName() {
         return commonName;
     }
 
+    /**
+     * @return  X500Principal based on this subject
+     */
     public X500Principal principal() {
         if (commonName != null) {
             if (organizationName != null) {
@@ -147,11 +175,17 @@ public class Subject {
         }
     }
 
+    /**
+     * @return  Set of DNS names
+     */
     @JsonProperty
     public Set<String> dnsNames() {
         return dnsNames;
     }
 
+    /**
+     * @return  Set of IP addresses
+     */
     @JsonProperty
     public Set<String> ipAddresses() {
         return ipAddresses;
@@ -183,6 +217,9 @@ public class Subject {
                 ')';
     }
 
+    /**
+     * @return  Map with the SANs
+     */
     public Map<String, String> subjectAltNames() {
         Map<String, String> san = new HashMap<>();
         int i = 0;
@@ -196,6 +233,9 @@ public class Subject {
         return san;
     }
 
+    /**
+     * @return  True if any SANs are present. False otherwise.
+     */
     public boolean hasSubjectAltNames() {
         return !dnsNames().isEmpty() || !ipAddresses().isEmpty();
     }

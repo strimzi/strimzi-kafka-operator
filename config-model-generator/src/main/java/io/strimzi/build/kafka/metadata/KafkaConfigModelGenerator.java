@@ -38,11 +38,19 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Generates the Kafka Config Model
+ */
 @SuppressWarnings("unchecked")
 public class KafkaConfigModelGenerator {
-
+    /**
+     * The main method to run the config model generator
+     *
+     * @param args  Arguments
+     *
+     * @throws Exception    Throws an exception if generating the config model fails
+     */
     public static void main(String[] args) throws Exception {
-
         String version = kafkaVersion();
         Map<String, ConfigModel> configs = configs(version);
         ObjectMapper mapper = JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY).build();

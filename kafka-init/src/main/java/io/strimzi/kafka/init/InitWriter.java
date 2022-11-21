@@ -18,8 +18,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Collects and writes the configuration collected in the init container
+ */
 public class InitWriter {
-
     private static final Logger LOGGER = LogManager.getLogger(InitWriter.class);
 
     private KubernetesClient client;
@@ -28,6 +30,12 @@ public class InitWriter {
     protected final static String FILE_RACK_ID = "rack.id";
     protected final static String FILE_EXTERNAL_ADDRESS = "external.address";
 
+    /**
+     * Constructs the InitWriter
+     *
+     * @param client    Kubernetes client
+     * @param config    InitWriter configuration
+     */
     public InitWriter(KubernetesClient client, InitWriterConfig config) {
         this.client = client;
         this.config = config;

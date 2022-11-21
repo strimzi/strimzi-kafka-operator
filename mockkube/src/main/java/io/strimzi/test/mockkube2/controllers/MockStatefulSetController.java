@@ -29,6 +29,11 @@ public class MockStatefulSetController extends AbstractMockController {
     private Watch watch;
     private Watch podWatch;
 
+    /**
+     * Constructs the Mock StatefulSet controller
+     *
+     * @param client    Kubernetes client
+     */
     public MockStatefulSetController(KubernetesClient client) {
         super(client);
     }

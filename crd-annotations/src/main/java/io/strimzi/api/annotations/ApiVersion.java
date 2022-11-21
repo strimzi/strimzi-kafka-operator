@@ -16,26 +16,61 @@ import static java.lang.Short.parseShort;
  * These version numbers are comparable, so {@code v1alpha1 < v1beta1 < v1 < v2alpha1} etc.
  */
 public class ApiVersion implements Comparable<ApiVersion> {
-
+    /**
+     * Describes the API stability - alpha, beta, or stable
+     */
     enum Stability {
         ALPHA,
         BETA,
         STABLE
     }
 
-    public static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
+    /**
+     * API version pattern
+     */
+    private static final Pattern PATTERN = Pattern.compile("v([0-9]+)((alpha|beta)([0-9]+))?");
+
+    /**
+     * API version v1alpha1
+     */
     public static final ApiVersion V1ALPHA1 = parse("v1alpha1");
+
+    /**
+     * API version v1beta1
+     */
     public static final ApiVersion V1BETA1 = parse("v1beta1");
+
+    /**
+     * API version v1beta2
+     */
     public static final ApiVersion V1BETA2 = parse("v1beta2");
+
+    /**
+     * API version v1
+     */
     public static final ApiVersion V1 = parse("v1");
 
+    /**
+     * Version range indicating v1beta2 and higher
+     */
     public static final VersionRange<ApiVersion> V1BETA2_PLUS = parseRange("v1beta2+");
+
+    /**
+     * Version range indicating v1beta1 and higher
+     */
     public static final VersionRange<ApiVersion> V1BETA1_PLUS = parseRange("v1beta1+");
 
     private final short major;
     private final Stability stability;
     private final short minor;
 
+    /**
+     * Constructs a Kubernetes API version object
+     *
+     * @param major         Major version
+     * @param stability     Stability (alpha, beta, ...)
+     * @param minor         Minor version
+     */
     public ApiVersion(short major, Stability stability, short minor) {
         if (major < 0 || minor < 0) {
             throw new RuntimeException();
@@ -49,10 +84,24 @@ public class ApiVersion implements Comparable<ApiVersion> {
         return PATTERN.matcher(apiVersion);
     }
 
-    public static boolean isVersion(String apiVersion) {
+    /**
+     * Checks whether the String is a valid Kubernetes API version
+     *
+     * @param apiVersion    String with the API version
+     *
+     * @return      True if the String is an valid Kubernetes API version. False otherwise
+     */
+    private static boolean isVersion(String apiVersion) {
         return matcher(apiVersion).matches();
     }
 
+    /**
+     * Parse an Kubernetes APi version form String to ApiVersion instance
+     *
+     * @param apiVersion    String with the Kubernetes API version
+     *
+     * @return      ApiVersion instance created from the String
+     */
     public static ApiVersion parse(String apiVersion) {
         Matcher matcher = matcher(apiVersion);
         if (!matcher.matches()) {
@@ -78,6 +127,13 @@ public class ApiVersion implements Comparable<ApiVersion> {
         return new ApiVersion(major, stability, minor);
     }
 
+    /**
+     * Parses a range of Kubernetes API versions from String into VersionRange instance
+     *
+     * @param s     String with the API version range which will be parsed
+     *
+     * @return      Instance of the VersionRange object matching the range passed as an argument
+     */
     public static VersionRange<ApiVersion> parseRange(String s) {
         return VersionRange.parse(s, new VersionRange.VersionParser<ApiVersion>() {
             @Override

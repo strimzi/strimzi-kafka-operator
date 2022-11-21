@@ -26,6 +26,11 @@ public class MockServiceController extends AbstractMockController {
 
     private Watch watch;
 
+    /**
+     * Constructs the Mock Service controller
+     *
+     * @param client    Kubernetes client
+     */
     public MockServiceController(KubernetesClient client) {
         super(client);
     }

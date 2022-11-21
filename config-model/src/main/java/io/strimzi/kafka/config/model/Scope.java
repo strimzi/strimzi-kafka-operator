@@ -4,8 +4,22 @@
  */
 package io.strimzi.kafka.config.model;
 
+/**
+ * Scope of the configuration option
+ */
 public enum Scope {
+    /**
+     * Per-broker option
+     */
     PER_BROKER,
+
+    /**
+     * Cluster-wide option
+     */
     CLUSTER_WIDE,
+
+    /**
+     * Read-only option
+     */
     READ_ONLY
 }

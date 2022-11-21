@@ -46,7 +46,7 @@ import static java.lang.Integer.max;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 
-public class DocGenerator {
+class DocGenerator {
 
     private static final String NL = System.lineSeparator();
     private static final Pattern DOT_AT_THE_END = Pattern.compile(".*[.!?]$", Pattern.DOTALL);

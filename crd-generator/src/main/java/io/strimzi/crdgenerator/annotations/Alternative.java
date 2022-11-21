@@ -15,5 +15,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Alternative {
+    /**
+     * @return  Indicates that these fields are alternatives in all API versions
+     */
     String apiVersion() default "all";
 }

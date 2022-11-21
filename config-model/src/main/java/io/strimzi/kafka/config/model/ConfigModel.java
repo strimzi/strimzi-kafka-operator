@@ -36,14 +36,27 @@ public class ConfigModel {
         return scope;
     }
 
+    /**
+     * Sets the scope of the parameter
+     *
+     * @param scope Scope of the parameter
+     */
     public void setScope(Scope scope) {
         this.scope = scope;
     }
 
+    /**
+     * @return  Type of the parameter
+     */
     public Type getType() {
         return type;
     }
 
+    /**
+     * Sets the type of the parameter
+     *
+     * @param type  Type of the parameter
+     */
     public void setType(Type type) {
         this.type = type;
     }
@@ -55,6 +68,11 @@ public class ConfigModel {
         return minimum;
     }
 
+    /**
+     * Sets the minimum value of the parameter
+     *
+     * @param minimum   Minimum value of the parameter
+     */
     public void setMinimum(Number minimum) {
         this.minimum = minimum;
     }
@@ -66,6 +84,11 @@ public class ConfigModel {
         return maximum;
     }
 
+    /**
+     * Sets the maximum value of the parameter
+     *
+     * @param maximum   Maximum value of the parameter
+     */
     public void setMaximum(Number maximum) {
         this.maximum = maximum;
     }
@@ -77,6 +100,11 @@ public class ConfigModel {
         return items;
     }
 
+    /**
+     * Sets the allowed items for a list parameter
+     *
+     * @param items Allowed items
+     */
     public void setItems(List<String> items) {
         this.items = items;
     }
@@ -88,6 +116,11 @@ public class ConfigModel {
         return values;
     }
 
+    /**
+     * Sets the allowed values of String parameter
+     *
+     * @param values    Allowed values
+     */
     public void setValues(List<String> values) {
         this.values = values;
     }
@@ -99,10 +132,23 @@ public class ConfigModel {
         return pattern;
     }
 
+    /**
+     * Sets the pattern of the parameter
+     *
+     * @param pattern   Pattern
+     */
     public void setPattern(String pattern) {
         this.pattern = pattern;
     }
 
+    /**
+     * Validates the option
+     *
+     * @param configName    Name of the option
+     * @param value         Value of the option
+     *
+     * @return  List of errors found during the validation. Empty if no errors were found.
+     */
     public List<String> validate(String configName, String value) {
         switch (getType()) {
             case BOOLEAN:

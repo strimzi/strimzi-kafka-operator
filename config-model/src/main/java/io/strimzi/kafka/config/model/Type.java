@@ -4,16 +4,53 @@
  */
 package io.strimzi.kafka.config.model;
 
-//@JsonFormat(shape = JsonFormat.Shape.OBJECT)
+/**
+ * Type of the configuration option
+ */
 public enum Type {
+    /**
+     * Boolean option
+     */
     BOOLEAN,
+
+    /**
+     * String option
+     */
     STRING,
+
+    /**
+     * Password option
+     */
     PASSWORD,
+
+    /**
+     * Class option
+     */
     CLASS,
+
+    /**
+     * Short option
+     */
     SHORT,
+
+    /**
+     * Int option
+     */
     INT,
+
+    /**
+     * Long option
+     */
     LONG,
+
+    /**
+     * Double option
+     */
     DOUBLE,
+
+    /**
+     * List option
+     */
     LIST;
 
 }
