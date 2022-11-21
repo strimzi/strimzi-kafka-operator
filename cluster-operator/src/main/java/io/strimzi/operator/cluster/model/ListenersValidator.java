@@ -193,9 +193,9 @@ public class ListenersValidator {
      * @param listener  Listener which needs to be validated
      */
     private static void validateServiceDnsDomain(Set<String> errors, GenericKafkaListener listener) {
-        if (KafkaListenerType.INTERNAL != listener.getType()
+        if (!(KafkaListenerType.INTERNAL.equals(listener.getType()) || KafkaListenerType.CLUSTER_IP.equals(listener.getType()))
                 && listener.getConfiguration().getUseServiceDnsDomain() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure useServiceDnsDomain because it is not internal listener");
+            errors.add("listener " + listener.getName() + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener");
         }
     }
 
