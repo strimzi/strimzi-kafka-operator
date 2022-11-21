@@ -1,0 +1,24 @@
+// Module included in the following assemblies:
+//
+// assembly-evaluation.adoc
+
+[id='proc-uninstall-product-{context}']
+= Uninstalling Strimzi
+
+This task describes how to remove the Kafka cluster and topic, and then how to fully remove Strimzi.
+
+.Procedure
+
+. To remove the Kafka cluster and associated topics, remove all Strimzi Custom Resources in the `my-kafka-project` namespace.
++
+[source, shell, subs=+quotes ]
+----
+kubectl -n my-kafka-project delete $(kubectl get strimzi -o name -n my-kafka-project)
+----
+
+. When the Kafka cluster has been removed, delete the CRDs, role-based access control (RBAC) resources and the deployment for the Cluster Operator.
++
+[source, shell, subs=+quotes ]
+----
+kubectl delete -f install/cluster-operator/ -n kafka
+----

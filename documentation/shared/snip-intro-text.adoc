@@ -1,2 +1,2 @@
 //standard product intro text
-Strimzi simplifies the process of running Apache Kafka in a Kubernetes cluster.
+Strimzi simplifies the process of running link:https://kafka.apache.org/[Apache Kafka^] in a Kubernetes cluster.
