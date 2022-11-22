@@ -40,7 +40,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     private AutoRestart autoRestart;
 
     /**
-     * @return  Maximal number of tasks
+     * @return  Max number of tasks
      */
     @Description("The maximum number of tasks for the Kafka Connector")
     @Minimum(1)
@@ -51,7 +51,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     /**
      * Sets the maximum number of tasks
      *
-     * @param tasksMax  Maximal number of tasks
+     * @param tasksMax  Max number of tasks
      */
     public void setTasksMax(Integer tasksMax) {
         this.tasksMax = tasksMax;
