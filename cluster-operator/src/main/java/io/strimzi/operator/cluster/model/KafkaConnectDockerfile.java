@@ -157,7 +157,7 @@ public class KafkaConnectDockerfile {
 
                     // For handling custom repositories, we need to write custom Maven settings file
                     String settingsFile = "/tmp/" + artifactHash + ".xml";
-                    String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + repo + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
+                    String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + escapeXml(repo) + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
 
                     Cmd cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
                             .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
@@ -482,5 +482,46 @@ public class KafkaConnectDockerfile {
         return Util.hashStub(dockerfile);
     }
 
+    /**
+     * This method escapes some of the basic XML characters. This is used when generating the Maven settings XML file.
+     * This method is not perfect - but for this use case it seems as an easier solution then including something like
+     * Apache Commons as a dependency. Based on https://stackoverflow.com/a/10035382/8607826
+     *
+     * @param text  The text which should be escaped
+     *
+     * @return  Escaped text
+     */
+    private static String escapeXml(String text)   {
+        StringBuilder sb = new StringBuilder();
 
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+
+            switch (c) {
+                case '<':
+                    sb.append("&lt;");
+                    break;
+                case '>':
+                    sb.append("&gt;");
+                    break;
+                case '&':
+                    sb.append("&amp;");
+                    break;
+                case '\"':
+                    sb.append("&quot;");
+                    break;
+                case '\'':
+                    sb.append("&apos;");
+                    break;
+                default:
+                    if (c > 0x7e) {
+                        sb.append("&#").append((int) c).append(";");
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+
+        return sb.toString();
+    }
 }
