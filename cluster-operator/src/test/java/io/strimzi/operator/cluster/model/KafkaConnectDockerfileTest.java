@@ -613,7 +613,7 @@ public class KafkaConnectDockerfileTest {
     @ParallelTest
     public void testMavenDockerfileWithEscapedRepoUrl()   {
         MavenArtifact mvn = new MavenArtifactBuilder()
-                .withRepository("https://my-maven-repository.com/maven2</hack>/repo")
+                .withRepository("https://my-maven-repository.com/maven2</hack>\"/repo")
                 .withGroup("g1")
                 .withArtifact("a1")
                 .withVersion("v1")
@@ -637,10 +637,10 @@ public class KafkaConnectDockerfileTest {
                 "##############################\n" +
                 "\n" +
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
-                "RUN 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://my-maven-repository.com/maven2</hack>/repo/g1/a1/v1/a1-v1.pom' \\\n" +
-                "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://my-maven-repository.com/maven2&lt;/hack&gt;/repo/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/64cebd9c.xml' \\\n" +
+                "RUN 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://my-maven-repository.com/maven2</hack>\"/repo/g1/a1/v1/a1-v1.pom' \\\n" +
+                "      && 'echo' '<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>https://my-maven-repository.com/maven2&lt;/hack&gt;&quot;/repo/</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>' > '/tmp/64cebd9c.xml' \\\n" +
                 "      && 'mvn' 'dependency:copy-dependencies' '-s' '/tmp/64cebd9c.xml' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
-                "      && 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://my-maven-repository.com/maven2</hack>/repo/g1/a1/v1/a1-v1.jar'\n" +
+                "      && 'curl' '-f' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://my-maven-repository.com/maven2</hack>\"/repo/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
                 "\n" +
