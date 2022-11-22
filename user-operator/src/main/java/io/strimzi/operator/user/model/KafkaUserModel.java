@@ -43,10 +43,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Model of the Kafka user which is created based on the KafkaUser custom resource
+ */
 public class KafkaUserModel {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserModel.class.getName());
 
+    /**
+     * Key under which the password is stored in the Kubernetes Secret
+     */
     public static final String KEY_PASSWORD = "password";
+
+    /**
+     * Key under which the SASL configuration is stored in the Kubernetes Secret
+     */
     public static final String KEY_SASL_JAAS_CONFIG = "sasl.jaas.config";
 
     protected final String namespace;
@@ -59,6 +69,9 @@ public class KafkaUserModel {
     protected String scramSha512Password;
     protected Set<SimpleAclRule> simpleAclRules = null;
 
+    /**
+     * Name of the USer Operator used for the Kubernetes labels
+     */
     public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-user-operator";
 
     // Owner Reference information

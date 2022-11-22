@@ -9,8 +9,10 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 
+/**
+ * Configures logging in the Fabric8 Kubernetes Mock
+ */
 public class JulLoggingConfiguration {
-
     /**
      * The MockWebServer underlying fabric8's mockk8s uses JUL for logging, so this allows setting the logging level
      * as desired when running tests, also whether it logs to stdout, or stderr (which is the current behaviour)

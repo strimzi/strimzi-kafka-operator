@@ -36,6 +36,9 @@ public @interface Pattern {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
+        /**
+         * @return  List of patterns
+         */
         Pattern[] value();
     }
 }

@@ -27,6 +27,12 @@ public class QuotasCache extends AbstractCache<KafkaUserQuotas> {
 
     private final Admin adminClient;
 
+    /**
+     * Constructs the Quotas cache
+     *
+     * @param adminClient           Kafka Admin client
+     * @param refreshIntervalMs     Interval in which the cache should be refreshed
+     */
     public QuotasCache(Admin adminClient, long refreshIntervalMs) {
         super("Quotas", refreshIntervalMs);
         this.adminClient = adminClient;

@@ -35,6 +35,14 @@ public class MirrorMakerAgent {
     private final long readinessSleepInterval;
     private final long livenessSleepInterval;
 
+    /**
+     * Constructor of the MirrorMakerAgent
+     *
+     * @param readinessFile             File which is touched (created) when Mirror Maker 1 is ready
+     * @param livenessFile              File which is touched (created) when Mirror Maker 1 is alive
+     * @param readinessSleepInterval    Sleep interval of the readiness check
+     * @param livenessSleepInterval     Sleep interval of the liveness check
+     */
     public MirrorMakerAgent(File readinessFile, File livenessFile, long readinessSleepInterval, long livenessSleepInterval) {
         this.readinessFile = readinessFile;
         this.livenessFile = livenessFile;

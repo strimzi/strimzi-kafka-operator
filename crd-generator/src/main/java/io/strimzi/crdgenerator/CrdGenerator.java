@@ -164,7 +164,7 @@ import static java.util.Collections.emptyMap;
  * >Additional restriction for CRDs</a>
  */
 @SuppressWarnings("ClassFanOutComplexity")
-public class CrdGenerator {
+class CrdGenerator {
     public static final YAMLMapper YAML_MAPPER = new YAMLMapper()
             .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
             .configure(YAMLGenerator.Feature.SPLIT_LINES, false)

@@ -12,6 +12,9 @@ import java.security.cert.CertificateException;
 import java.time.ZonedDateTime;
 import java.util.List;
 
+/**
+ * Manages the certificates
+ */
 public interface CertManager {
     /**
      * Generate a self-signed certificate
@@ -35,9 +38,35 @@ public interface CertManager {
      */
     void renewSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException;
 
+    /**
+     * Generates the Root CA certificate
+     *
+     * @param subject           Subject CA
+     * @param subjectKeyFile    Key file
+     * @param subjectCertFile   Cert file
+     * @param notBefore         Not valid before
+     * @param notAfter          Not valid after
+     * @param pathLength        Maximal length of the CA path
+     *
+     * @throws IOException  If an input or output file cannot be read / written
+     */
     void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile,
                             ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException;
 
+    /**
+     * Generates the Intermediate CA certificate
+     *
+     * @param issuerCaKeyFile   File with the Root CA key
+     * @param issuerCaCertFile  File with the Root CA certificate
+     * @param subject           Subject CA
+     * @param subjectKeyFile    Key file
+     * @param subjectCertFile   Cert file
+     * @param notBefore         Not valid before
+     * @param notAfter          Not valid after
+     * @param pathLength        Maximal length of the CA path
+     *
+     * @throws IOException  If an input or output file cannot be read / written
+     */
     void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
                                     Subject subject,
                                     File subjectKeyFile, File subjectCertFile,

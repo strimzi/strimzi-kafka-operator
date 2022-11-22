@@ -15,10 +15,22 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 public abstract class AbstractMockController {
     protected final KubernetesClient client;
 
+    /**
+     * Constructs the mokc Kubernetes controller
+     *
+     * @param client    Kubernetes client which should be used to mock the controller behavior
+     */
     public AbstractMockController(KubernetesClient client) {
         this.client = client;
     }
 
+    /**
+     * Starts the mock controller
+     */
     abstract public void start();
+
+    /**
+     * Stops the mock controller
+     */
     abstract public void stop();
 }

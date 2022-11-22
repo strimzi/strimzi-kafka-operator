@@ -30,6 +30,12 @@ public class AclCache extends AbstractCache<Set<SimpleAclRule>> {
 
     private final Admin adminClient;
 
+    /**
+     * Constructs the ACL cache
+     *
+     * @param adminClient           Kafka Admin client
+     * @param refreshIntervalMs     Interval in which the cache should be refreshed
+     */
     public AclCache(Admin adminClient, long refreshIntervalMs) {
         super("ACL", refreshIntervalMs);
         this.adminClient = adminClient;

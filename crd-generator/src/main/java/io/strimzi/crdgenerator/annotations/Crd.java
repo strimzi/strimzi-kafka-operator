@@ -34,8 +34,14 @@ public @interface Crd {
          */
         String group();
 
+        /**
+         * @return  The names of this CRD
+         */
         Names names();
 
+        /**
+         * Configures the names of the CRD resource(s)
+         */
         @Target({})
         @interface Names {
             /**
@@ -85,8 +91,19 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface Version {
+            /**
+             * @return  Name of the version
+             */
             String name();
+
+            /**
+             * @return  Specifies if this version is served
+             */
             boolean served();
+
+            /**
+             * @return  Specifies if this version is stored
+             */
             boolean storage();
         }
 
@@ -95,19 +112,31 @@ public @interface Crd {
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         Subresources subresources() default @Subresources(
-                status = {},
-                scale = {}
-                );
+                status = {}
+        );
 
         /**
          * The subresources of a custom resources that this is the definition for.
          * @see <a href="https://v1-11.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#customresourcedefinitionversion-v1beta1-apiextensions">Kubernetes 1.11 API documtation</a>
          */
         @interface Subresources {
+            /**
+             * @return  The status subresource configuration
+             */
             Status[] status();
+
+            /**
+             * @return  The scale subresource configuration (defaults to no scale subresource)
+             */
             Scale[] scale() default {};
 
+            /**
+             * The Status subresource
+             */
             @interface Status {
+                /**
+                 * @return  The API versions in which is the status subresource supported
+                 */
                 String apiVersion() default "all";
             }
 
@@ -116,9 +145,24 @@ public @interface Crd {
              * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#customresourcesubresourcescale-v1beta1-apiextensions-k8s-io">Kubernetes 1.23 API documtation</a>
              */
             @interface Scale {
+                /**
+                 * @return  The API versions in which is the scale subresource supported
+                 */
                 String apiVersion() default "all";
+
+                /**
+                 * @return  The path to the desired replicas field in the spec section of the custom resource
+                 */
                 String specReplicasPath();
+
+                /**
+                 * @return  The path to the actual replicas field in the status section of the custom resource
+                 */
                 String statusReplicasPath();
+
+                /**
+                 * @return  Path to the label selector in the status section of the custom resource
+                 */
                 String labelSelectorPath() default "";
             }
         }
@@ -136,10 +180,13 @@ public @interface Crd {
         @interface AdditionalPrinterColumn {
             /** @return The api version range in which this appears */
             String apiVersion() default "all";
+
             /** @return JSON path into the CR for the value to show */
             String jsonPath();
+
             /** @return The description of the column */
             String description();
+
             /**
              * One of:
              * int32
@@ -153,10 +200,13 @@ public @interface Crd {
              * @return The format
              */
             String format() default "";
+
             /** @return The name of the column */
             String name();
+
             /** @return 0 to show in standard view, greater than zero to show only in wide view */
             int priority() default 0;
+
             /**
              * One of:
              * integer,

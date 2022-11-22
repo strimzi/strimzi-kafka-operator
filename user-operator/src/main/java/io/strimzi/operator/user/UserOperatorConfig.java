@@ -20,47 +20,52 @@ import java.util.Properties;
  */
 public class UserOperatorConfig {
     // Environment variable names
-    public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
-    public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String STRIMZI_LABELS = "STRIMZI_LABELS";
-    public static final String STRIMZI_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
-    public static final String STRIMZI_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
-    public static final String STRIMZI_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
-    public static final String STRIMZI_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
-    public static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
-    public static final String STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    public static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
-    public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
-    public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
-    public static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
-    public static final String STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
-    public static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
-    public static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
-    public static final String STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
-    public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
-    public static final String STRIMZI_WORK_QUEUE_SIZE = "STRIMZI_WORK_QUEUE_SIZE";
-    public static final String STRIMZI_CONTROLLER_THREAD_POOL_SIZE = "STRIMZI_CONTROLLER_THREAD_POOL_SIZE";
-    public static final String STRIMZI_CACHE_REFRESH_INTERVAL_MS = "STRIMZI_CACHE_REFRESH_INTERVAL_MS";
-    public static final String STRIMZI_BATCH_QUEUE_SIZE = "STRIMZI_BATCH_QUEUE_SIZE";
-    public static final String STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE = "STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE";
-    public static final String STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS = "STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS";
+    static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
+    static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    static final String STRIMZI_LABELS = "STRIMZI_LABELS";
+    static final String STRIMZI_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
+    static final String STRIMZI_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
+    static final String STRIMZI_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
+    static final String STRIMZI_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
+    static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
+    static final String STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
+    static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    static final String STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
+    static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
+    static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
+    static final String STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
+    static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
+    static final String STRIMZI_WORK_QUEUE_SIZE = "STRIMZI_WORK_QUEUE_SIZE";
+    static final String STRIMZI_CONTROLLER_THREAD_POOL_SIZE = "STRIMZI_CONTROLLER_THREAD_POOL_SIZE";
+    static final String STRIMZI_CACHE_REFRESH_INTERVAL_MS = "STRIMZI_CACHE_REFRESH_INTERVAL_MS";
+    static final String STRIMZI_BATCH_QUEUE_SIZE = "STRIMZI_BATCH_QUEUE_SIZE";
+    static final String STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE = "STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE";
+    static final String STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS = "STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS";
 
     // Default values
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
-    public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
+    static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+    static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
+    /**
+     * Configures the default prefix of user secrets created by the operator
+     */
     public static final String DEFAULT_SECRET_PREFIX = "";
-    public static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 12;
-    // Defaults to true for backwards compatibility in standalone UO deployments
+    static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 12;
+    /**
+     * Indicates whether the Admin APi can be used to manage ACLs. Defaults to true for backwards compatibility reasons.
+     */
     public static final boolean DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED = true;
     // Defaults to false for backwards compatibility in standalone UO deployments
-    public static final boolean DEFAULT_STRIMZI_KRAFT_ENABLED = false;
-    public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
-    public static final int DEFAULT_WORK_QUEUE_SIZE = 1024;
-    public static final int DEFAULT_CONTROLLER_THREAD_POOL_SIZE = 50;
-    public static final long DEFAULT_CACHE_REFRESH_INTERVAL_MS = 15_000L;
-    public static final int DEFAULT_BATCH_QUEUE_SIZE = 1024;
-    public static final int DEFAULT_BATCH_MAXIMUM_BLOCK_SIZE = 100;
-    public static final int DEFAULT_BATCH_MAXIMUM_BLOCK_TIME_MS = 100;
+    static final boolean DEFAULT_STRIMZI_KRAFT_ENABLED = false;
+    static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    static final int DEFAULT_WORK_QUEUE_SIZE = 1024;
+    static final int DEFAULT_CONTROLLER_THREAD_POOL_SIZE = 50;
+    static final long DEFAULT_CACHE_REFRESH_INTERVAL_MS = 15_000L;
+    static final int DEFAULT_BATCH_QUEUE_SIZE = 1024;
+    static final int DEFAULT_BATCH_MAXIMUM_BLOCK_SIZE = 100;
+    static final int DEFAULT_BATCH_MAXIMUM_BLOCK_TIME_MS = 100;
 
     private final String namespace;
     private final long reconciliationIntervalMs;

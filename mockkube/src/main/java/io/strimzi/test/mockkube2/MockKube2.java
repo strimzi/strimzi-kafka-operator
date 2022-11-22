@@ -43,6 +43,11 @@ public class MockKube2 {
     private final KubernetesClient client;
     private final List<AbstractMockController> controllers = new ArrayList<>();
 
+    /**
+     * Constructs the Kubernetes Mock Kube Server
+     *
+     * @param client    Kubernetes client backed by the Fabric8 Kubernetes Mock Server
+     */
     public MockKube2(KubernetesClient client) {
         this.client = client;
     }
@@ -104,6 +109,11 @@ public class MockKube2 {
         private final KubernetesClient client;
         private final MockKube2 mock;
 
+        /**
+         * Constructs the Kubernetes Mock Kube Builder
+         *
+         * @param client    Kubernetes client backed by the Fabric8 Kubernetes Mock Server
+         */
         public MockKube2Builder(KubernetesClient client) {
             this.client = client;
             this.mock = new MockKube2(client);

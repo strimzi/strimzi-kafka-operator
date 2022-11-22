@@ -30,6 +30,14 @@ public abstract class AbstractBatchReconciler<T> {
     private volatile CountDownLatch batchSize;
     private volatile boolean stop = false;
 
+    /**
+     * Creates the BatchReconciler
+     *
+     * @param name          Name of the reconciler
+     * @param queueSize     Size of the queue for queueing the reconciliation requests
+     * @param maxBatchSize  Maximal size of the batch
+     * @param maxBatchTime  Maximal time to wait before batch is executed
+     */
     public AbstractBatchReconciler(String name, int queueSize, int maxBatchSize, int maxBatchTime) {
         if (maxBatchSize > queueSize)   {
             throw new IllegalArgumentException("Maximum batch size cannot be bigger than queue size");
@@ -49,6 +57,13 @@ public abstract class AbstractBatchReconciler<T> {
      */
     protected abstract void reconcile(Collection<T> items);
 
+    /**
+     * Enqueues a reconciliation request
+     *
+     * @param item  Reconciliation request which should be enqueued
+     *
+     * @throws InterruptedException Thrown when interrupted while enqueuing the resource
+     */
     public void enqueue(T item) throws InterruptedException {
         queue.put(item);
 

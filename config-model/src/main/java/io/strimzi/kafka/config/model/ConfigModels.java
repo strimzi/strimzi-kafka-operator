@@ -20,6 +20,11 @@ public class ConfigModels {
         return version;
     }
 
+    /**
+     * Sets the version of the Kafka broker
+     *
+     * @param version   Kafka broker version
+     */
     public void setVersion(String version) {
         this.version = version;
     }
@@ -31,6 +36,11 @@ public class ConfigModels {
         return configs;
     }
 
+    /**
+     * Sets the configuration parameters
+     *
+     * @param configs   Config parameters
+     */
     public void setConfigs(Map<String, ConfigModel> configs) {
         this.configs = configs;
     }

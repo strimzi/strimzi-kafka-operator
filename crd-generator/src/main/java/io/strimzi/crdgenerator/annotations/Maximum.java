@@ -10,11 +10,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation for specifying the maximum value of a field in the Strimzi CRD
+ */
 @Repeatable(Maximum.List.class)
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface Maximum {
-
     /** @return In inclusive maximum */
     int value();
 
@@ -27,6 +29,9 @@ public @interface Maximum {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.FIELD})
     @interface List {
+        /**
+         * @return  List of maximal values
+         */
         Maximum[] value();
     }
 }
