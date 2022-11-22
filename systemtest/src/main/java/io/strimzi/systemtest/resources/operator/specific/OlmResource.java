@@ -211,7 +211,7 @@ public class OlmResource implements SpecificResourceType {
                     " patch installplan " + nonUsedInstallPlan + " --type json  --patch '[{\"op\": \"add\", \"path\": \"/spec/approved\", \"value\": true}]' -n " + KubeClusterResource.getInstance().getNamespace();
 
             InputStream inputStream = new ByteArrayInputStream(dynamicScriptContent.getBytes(Charset.defaultCharset()));
-            File patchScript = File.createTempFile("installplan_patch",  ".sh");
+            File patchScript = Files.createTempFile("installplan_patch", ".sh").toFile();
             Files.copy(inputStream, patchScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             Exec.exec("bash", patchScript.getAbsolutePath());
@@ -246,7 +246,7 @@ public class OlmResource implements SpecificResourceType {
      */
     private static void createOperatorGroup(String namespace) {
         try {
-            File operatorGroupFile = File.createTempFile("operatorgroup", ".yaml");
+            File operatorGroupFile = Files.createTempFile("operatorgroup", ".yaml").toFile();
             InputStream groupInputStream = OlmResource.class.getClassLoader().getResourceAsStream("olm/operator-group.yaml");
             String operatorGroup = TestUtils.readResource(groupInputStream);
             TestUtils.writeFile(operatorGroupFile.getAbsolutePath(), operatorGroup.replace("${OPERATOR_NAMESPACE}", namespace));

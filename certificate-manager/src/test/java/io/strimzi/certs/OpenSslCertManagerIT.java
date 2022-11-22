@@ -67,9 +67,9 @@ public class OpenSslCertManagerIT {
     @Test
     public void testGenerateRootCaCertWithDays() throws Exception {
 
-        File key = File.createTempFile("key-", ".key");
-        File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".p12");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
+        File store = Files.createTempFile("crt-", ".p12").toFile();
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
         ((Cmd) () -> ssl.generateSelfSignedCert(key, cert, sbj, 365)).exec();
@@ -97,9 +97,9 @@ public class OpenSslCertManagerIT {
 
     @Test
     public void testGenerateRootCaCertWithDates() throws Exception {
-        File key = File.createTempFile("key-", ".key");
-        File cert = File.createTempFile("crt-", ".crt");
-        File store = File.createTempFile("crt-", ".p12");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
+        File store = Files.createTempFile("crt-", ".p12").toFile();
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
 
         Instant now = Instant.now();
@@ -183,10 +183,10 @@ public class OpenSslCertManagerIT {
     @Test
     public void testGenerateIntermediateCaCertWithDates() throws Exception {
 
-        File rootKey = File.createTempFile("key-", ".key");
-        File rootCert = File.createTempFile("crt-", ".crt");
-        File intermediateKey = File.createTempFile("key-", ".key");
-        File intermediateCert = File.createTempFile("crt-", ".crt");
+        File rootKey = Files.createTempFile("key-", ".key").toFile();
+        File rootCert = Files.createTempFile("crt-", ".crt").toFile();
+        File intermediateKey = Files.createTempFile("key-", ".key").toFile();
+        File intermediateCert = Files.createTempFile("crt-", ".crt").toFile();
         Subject rootSubject = new Subject.Builder().withCommonName("RootCn").withOrganizationName("MyOrganization").build();
 
         // Generate a root cert
@@ -221,15 +221,15 @@ public class OpenSslCertManagerIT {
         assertEquals(notBefore.toInstant(), intermediateX509.getNotBefore().toInstant());
         assertEquals(notAfter.toInstant(), intermediateX509.getNotAfter().toInstant());
 
-        File leafKey = File.createTempFile("key-", ".key");
-        File csr = File.createTempFile("csr-", ".csr");
+        File leafKey = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
         Subject subject = new Subject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
                 .addDnsName("example2.com").build();
 
-        File leafCert = File.createTempFile("crt-", ".crt");
+        File leafCert = Files.createTempFile("crt-", ".crt").toFile();
 
         doGenerateSignedCert(intermediateKey, intermediateCert, intermediateSubject, leafKey, csr, leafCert, null, "123456", subject);
 
@@ -262,16 +262,16 @@ public class OpenSslCertManagerIT {
         Path path = Files.createTempDirectory(OpenSslCertManagerIT.class.getSimpleName());
         path.toFile().deleteOnExit();
         long fileCount = Files.list(path).count();
-        File caKey = File.createTempFile("ca-key-", ".key");
-        File caCert = File.createTempFile("ca-crt-", ".crt");
-        File store = File.createTempFile("store-", ".p12");
+        File caKey = Files.createTempFile("ca-key-", ".key").toFile();
+        File caCert = Files.createTempFile("ca-crt-", ".crt").toFile();
+        File store = Files.createTempFile("store-", ".p12").toFile();
 
         Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
-        File key = File.createTempFile("key-", ".key");
-        File csr = File.createTempFile("csr-", ".csr");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
         Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
-        File cert = File.createTempFile("crt-", ".crt");
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
@@ -289,21 +289,21 @@ public class OpenSslCertManagerIT {
     @Test
     public void testGenerateClientCertWithSubjectAndAltNames() throws Exception {
 
-        File caKey = File.createTempFile("ca-key-", ".key");
-        File caCert = File.createTempFile("ca-crt-", ".crt");
-        File store = File.createTempFile("store-", ".p12");
+        File caKey = Files.createTempFile("ca-key-", ".key").toFile();
+        File caCert = Files.createTempFile("ca-crt-", ".crt").toFile();
+        File store = Files.createTempFile("store-", ".p12").toFile();
 
         Subject caSbj = new Subject.Builder().withCommonName("CACommonName").withOrganizationName("CAOrganizationName").build();
 
-        File key = File.createTempFile("key-", ".key");
-        File csr = File.createTempFile("csr-", ".csr");
+        File key = Files.createTempFile("key-", ".key").toFile();
+        File csr = Files.createTempFile("csr-", ".csr").toFile();
         Subject subject = new Subject.Builder()
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
                 .addDnsName("example2.com").build();
 
-        File cert = File.createTempFile("crt-", ".crt");
+        File cert = Files.createTempFile("crt-", ".crt").toFile();
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
         doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", subject);
@@ -373,9 +373,9 @@ public class OpenSslCertManagerIT {
 
     public void doRenewSelfSignedCertWithSubject(Subject caSubject) throws Exception {
         // First generate a self-signed cert
-        File caKey = File.createTempFile("key-", ".key");
-        File originalCert = File.createTempFile("crt-", ".crt");
-        File originalStore = File.createTempFile("crt-", ".p12");
+        File caKey = Files.createTempFile("key-", ".key").toFile();
+        File originalCert = Files.createTempFile("crt-", ".crt").toFile();
+        File originalStore = Files.createTempFile("crt-", ".p12").toFile();
 
         ((Cmd) () -> ssl.generateSelfSignedCert(caKey, originalCert, caSubject, 365)).exec();
         ssl.addCertToTrustStore(originalCert, "ca", originalStore, "123456");
@@ -399,9 +399,9 @@ public class OpenSslCertManagerIT {
         }
 
         // generate a client cert
-        File clientKey = File.createTempFile("client-", ".key");
-        File csr = File.createTempFile("client-", ".csr");
-        File clientCert = File.createTempFile("client-", ".crt");
+        File clientKey = Files.createTempFile("client-", ".key").toFile();
+        File csr = Files.createTempFile("client-", ".csr").toFile();
+        File clientCert = Files.createTempFile("client-", ".crt").toFile();
         Subject clientSubject = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
         ssl.generateCsr(clientKey, csr, clientSubject);
 
@@ -411,8 +411,8 @@ public class OpenSslCertManagerIT {
         originalStore.delete();
 
         // Generate a renewed CA certificate
-        File newCert = File.createTempFile("crt-", ".crt");
-        File newStore = File.createTempFile("crt-", ".p12");
+        File newCert = Files.createTempFile("crt-", ".crt").toFile();
+        File newStore = Files.createTempFile("crt-", ".p12").toFile();
         ssl.renewSelfSignedCert(caKey, newCert, caSubject, 365);
         // TODO should assert that originalCert actually was changed
         ssl.addCertToTrustStore(newCert, "ca", newStore, "123456");
@@ -440,17 +440,17 @@ public class OpenSslCertManagerIT {
         Subject caSubject = new Subject.Builder().withCommonName("MyRootCa").withOrganizationName("MyOrganization").build();
 
         // First generate the CA
-        File caKey = File.createTempFile("ca-", ".key");
-        File caCert = File.createTempFile("ca-", ".crt");
-        File caStore = File.createTempFile("ca-", ".p12");
+        File caKey = Files.createTempFile("ca-", ".key").toFile();
+        File caCert = Files.createTempFile("ca-", ".crt").toFile();
+        File caStore = Files.createTempFile("ca-", ".p12").toFile();
 
         ssl.generateSelfSignedCert(caKey, caCert, caSubject, 365);
         ssl.addCertToTrustStore(caCert, "ca", caStore, "123456");
 
         // generate a server cert with the SANs
-        File serverKey = File.createTempFile("client-", ".key");
-        File serverCsr = File.createTempFile("client-", ".serverCsr");
-        File serverCert = File.createTempFile("client-", ".crt");
+        File serverKey = Files.createTempFile("client-", ".key").toFile();
+        File serverCsr = Files.createTempFile("client-", ".serverCsr").toFile();
+        File serverCert = Files.createTempFile("client-", ".crt").toFile();
 
         Subject clientSubject = new Subject.Builder()
                 .withCommonName("MyCommonName")

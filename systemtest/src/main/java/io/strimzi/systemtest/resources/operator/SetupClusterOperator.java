@@ -44,6 +44,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -471,7 +472,10 @@ public class SetupClusterOperator {
 
         if (leaseEnvVar != null && resourceEntry != null) {
             try {
-                File tmpFile = File.createTempFile(yamlPath.replace(Constants.STRIMZI_DEPLOYMENT_NAME + ".yaml", leaseEnvVar.getValue()), "yaml");
+                String[] path = yamlPath.split("/");
+                String fileName = path[path.length - 1].replace(Constants.STRIMZI_DEPLOYMENT_NAME, leaseEnvVar.getValue()).replace(".yaml", "");
+                File tmpFile = Files.createTempFile(fileName, "yaml").toFile();
+
                 String tmpFileContent;
                 final String resourceName = leaseEnvVar.getValue() + "-leader-election";
 
@@ -595,7 +599,7 @@ public class SetupClusterOperator {
                 // change ClusterRole to Role
                 fileNameArr[1] = "Role";
                 final String changeFileName = Arrays.stream(fileNameArr).map(item -> "-" + item).collect(Collectors.joining()).substring(1);
-                File tmpFile = File.createTempFile(changeFileName.replace(".yaml", ""), ".yaml");
+                File tmpFile = Files.createTempFile(changeFileName.replace(".yaml", ""), ".yaml").toFile();
                 TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
                 LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
 

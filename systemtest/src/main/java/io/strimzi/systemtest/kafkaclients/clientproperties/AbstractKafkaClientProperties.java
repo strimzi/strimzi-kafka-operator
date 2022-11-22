@@ -162,7 +162,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
                     !properties.getProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG).equals("SASL_" + CommonClientConfigs.DEFAULT_SECURITY_PROTOCOL)
                 ) {
                     Secret clusterCaCertSecret = kubeClient().getSecret(namespaceName, caSecretName);
-                    File tsFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".truststore");
+                    File tsFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".truststore").toFile();
                     tsFile.deleteOnExit();
                     KeyStore ts = KeyStore.getInstance(TRUSTSTORE_TYPE_CONFIG);
                     String tsPassword = "foo";
@@ -262,16 +262,16 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private static File createKeystore(byte[] ca, byte[] cert, byte[] key, String password) throws IOException, InterruptedException {
 
-        File caFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt");
+        File caFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt").toFile();
         caFile.deleteOnExit();
         Files.write(caFile.toPath(), ca);
-        File certFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt");
+        File certFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".crt").toFile();
         certFile.deleteOnExit();
         Files.write(certFile.toPath(), cert);
-        File keyFile = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".key");
+        File keyFile = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".key").toFile();
         keyFile.deleteOnExit();
         Files.write(keyFile.toPath(), key);
-        File keystore = File.createTempFile(AbstractKafkaClientProperties.class.getName(), ".keystore");
+        File keystore = Files.createTempFile(AbstractKafkaClientProperties.class.getName(), ".keystore").toFile();
         keystore.delete(); // Note horrible race condition, but this is only for testing
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1
         // The following code is needed to avoid race-condition which we see from time to time
@@ -302,7 +302,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
             LOGGER.info("Keycloak cert is:{}\n", keycloakCertificateData);
 
             LOGGER.info("Creating keycloak.crt file");
-            File keycloakCertFile = File.createTempFile("keycloak", ".crt");
+            File keycloakCertFile = Files.createTempFile("keycloak", ".crt").toFile();
             Files.write(keycloakCertFile.toPath(), keycloakCertificateData.getBytes(StandardCharsets.UTF_8));
 
             LOGGER.info("Importing keycloak certificate {} to truststore", keycloakCertFile.getAbsolutePath());

@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -99,7 +100,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
         operation().inNamespace(NAMESPACE).withName(resourceName).patch(changedTopic);
         assertStatusReady(topicName);
 
-        File file = File.createTempFile(getClass().getSimpleName(), ".json");
+        File file = Files.createTempFile(getClass().getSimpleName(), ".json").toFile();
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode root = new ObjectNode(mapper.getNodeFactory());
         root.put("version", 1)

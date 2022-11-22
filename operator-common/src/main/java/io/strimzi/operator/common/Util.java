@@ -230,7 +230,7 @@ public class Util {
     public static File createFileStore(String prefix, String suffix, byte[] bytes) {
         File f = null;
         try {
-            f = File.createTempFile(prefix, suffix);
+            f = Files.createTempFile(prefix, suffix).toFile();
             f.deleteOnExit();
             try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
                 os.write(bytes);
@@ -286,7 +286,7 @@ public class Util {
     private static File store(String prefix, String suffix, KeyStore trustStore, char[] password) throws Exception {
         File f = null;
         try {
-            f = File.createTempFile(prefix, suffix);
+            f = Files.createTempFile(prefix, suffix).toFile();
             f.deleteOnExit();
             try (OutputStream os = new BufferedOutputStream(new FileOutputStream(f))) {
                 trustStore.store(os, password);
