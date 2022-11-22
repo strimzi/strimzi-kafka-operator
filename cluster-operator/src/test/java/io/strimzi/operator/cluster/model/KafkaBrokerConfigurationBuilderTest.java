@@ -277,7 +277,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
                 "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
                 "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
-                "strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG\n" +
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=\n" +
                 "strimzi.authorization.grants.refresh.period.seconds=120\n" +
                 "strimzi.authorization.grants.refresh.pool.size=10\n" +
@@ -312,7 +311,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
                 "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
                 "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
-                "strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG\n" +
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS\n" +
                 "strimzi.authorization.read.timeout.seconds=30\n" +
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
@@ -559,7 +557,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -592,7 +589,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -664,7 +660,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -701,7 +696,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -741,7 +735,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -784,7 +777,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:PLAINTEXT",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -823,7 +815,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=SCRAM-SHA-512"));
@@ -862,7 +853,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.tls-9093.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.tls-9093.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -904,7 +894,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.tls-9093.ssl.client.auth=required",
                 "listener.name.tls-9093.ssl.truststore.location=/tmp/kafka/clients.truststore.p12",
@@ -955,7 +944,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.tls-9093.ssl.keystore.location=/tmp/kafka/custom-tls-9093.keystore.p12",
                 "listener.name.tls-9093.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -995,7 +983,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1037,7 +1024,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.client.auth=required",
                 "listener.name.external-9094.ssl.truststore.location=/tmp/kafka/clients.truststore.p12",
@@ -1083,7 +1069,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;",
                 "listener.name.external-9094.sasl.enabled.mechanisms=SCRAM-SHA-512",
@@ -1132,7 +1117,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/custom-external-9094.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1172,7 +1156,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1215,7 +1198,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1255,7 +1237,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -1292,7 +1273,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1332,7 +1312,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -1372,7 +1351,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -1421,7 +1399,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1470,7 +1447,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1519,7 +1495,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
     }
 
@@ -1571,7 +1546,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
@@ -1629,7 +1603,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
                 "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
@@ -1673,7 +1646,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.config.id=\"PLAIN-9092\";",
@@ -1727,7 +1699,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.jwks.endpoint.uri=\"https://jwks\" oauth.username.claim=\"preferred_username\" oauth.ssl.endpoint.identification.algorithm=\"\" oauth.config.id=\"PLAIN-9092\" oauth.ssl.truststore.location=\"/tmp/kafka/oauth-plain-9092.truststore.p12\" oauth.ssl.truststore.password=\"${CERTS_STORE_PASSWORD}\" oauth.ssl.truststore.type=\"PKCS12\";",
@@ -1779,7 +1750,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
                 "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.client.id=\"my-oauth-client\" oauth.valid.issuer.uri=\"https://valid-issuer\" oauth.check.audience=\"true\" oauth.custom.claim.check=\"'kafka-user' in @.roles.client-roles.kafka\" oauth.introspection.endpoint.uri=\"https://intro\" oauth.config.id=\"PLAIN-9092\" oauth.client.secret=\"${STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET}\";",
@@ -1981,7 +1951,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
-                "ssl.secure.random.implementation=SHA1PRNG",
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "listener.name.custom-listener-9092.sasl.enabled.mechanisms=oauthbearer",
                 "listener.name.custom-listener-9092.oauthbearer.sasl.client.callback.handler.class=client.class",

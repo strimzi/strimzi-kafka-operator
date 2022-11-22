@@ -341,7 +341,6 @@ public class KafkaBrokerConfigurationBuilder {
 
         writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
         writer.println("sasl.enabled.mechanisms=");
-        writer.println("ssl.secure.random.implementation=SHA1PRNG");
         writer.println("ssl.endpoint.identification.algorithm=HTTPS");
         writer.println();
 
@@ -686,7 +685,6 @@ public class KafkaBrokerConfigurationBuilder {
                 writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
                 writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
                 writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
-                writer.println("strimzi.authorization.ssl.secure.random.implementation=SHA1PRNG");
                 String endpointIdentificationAlgorithm = keycloakAuthz.isDisableTlsHostnameVerification() ? "" : "HTTPS";
                 writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
             }
