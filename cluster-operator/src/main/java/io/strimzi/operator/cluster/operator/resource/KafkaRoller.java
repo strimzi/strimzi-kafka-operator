@@ -209,7 +209,7 @@ public class KafkaRoller {
                 }
                 // Order the podNames unready first otherwise repeated reconciliations might each restart a pod
                 // only for it not to become ready and thus drive the cluster to a worse state.
-                pods.add(Readiness.isPodReady(pod) ? pods.size() : 0, new PodRef(podList.get(podIndex), ModelUtils.idOfPod(podList.get(podIndex))));
+                pods.add(podOperations.isReady(namespace, podList.get(podIndex)) ? pods.size() : 0, new PodRef(podList.get(podIndex), ModelUtils.idOfPod(podList.get(podIndex))));
             }
 
             LOGGER.debugCr(reconciliation, "Initial order for rolling restart {}", pods);

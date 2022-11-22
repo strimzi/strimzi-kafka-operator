@@ -55,8 +55,7 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -541,25 +540,30 @@ public class KafkaRollerTest {
     private PodOperator mockPodOps(Function<Integer, Future<Void>> readiness) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
-            invocation -> {
-                String podName = invocation.getArgument(1);
-                Future<Void> ready = readiness.apply(podName2Number(podName));
-                return new PodBuilder()
+                invocation -> new PodBuilder()
                         .withNewMetadata()
-                            .withNamespace(invocation.getArgument(0))
-                            .withName(podName)
+                        .withNamespace(invocation.getArgument(0))
+                        .withName(invocation.getArgument(1))
                         .endMetadata()
-                        .withNewStatus()
-                            .addNewCondition()
-                                .withType("Ready").withStatus(ready.succeeded() ? "True" : "False")
-                            .endCondition()
-                        .endStatus()
-                        .build();
-            }
+                        .build()
         );
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
             String podName = invocationOnMock.getArgument(2);
             return readiness.apply(podName2Number(podName));
+        });
+
+        when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock ->  {
+            String podName = invocationOnMock.getArgument(1);
+            Future<Void> ready = readiness.apply(podName2Number(podName));
+            if (ready.succeeded()) {
+                return true;
+            } else {
+                if (ready.cause() instanceof TimeoutException) {
+                    return false;
+                } else {
+                    throw ready.cause();
+                }
+            }
         });
         return podOps;
     }

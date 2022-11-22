@@ -4,17 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodCondition;
-import io.fabric8.kubernetes.api.model.PodStatus;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
@@ -448,9 +438,9 @@ public class KafkaAssemblyOperatorTest {
                     .endMetadata()
                     .withNewSpec()
                         .withPods(PodSetUtils.podsToMaps(List.of(
-                                createReadyPod(kafkaNamespace, kafkaName + "-kafka-0"),
-                                createReadyPod(kafkaNamespace, kafkaName + "-kafka-1"),
-                                createReadyPod(kafkaNamespace, kafkaName + "-kafka-2"))))
+                                createPod(kafkaNamespace, kafkaName + "-kafka-0"),
+                                createPod(kafkaNamespace, kafkaName + "-kafka-1"),
+                                createPod(kafkaNamespace, kafkaName + "-kafka-2"))))
                     .endSpec()
                     .build();
             podSetRef.set(sps);
@@ -1257,25 +1247,19 @@ public class KafkaAssemblyOperatorTest {
 
     private static Answer<Pod> readyPod() {
         return invocationOnMock -> {
-            String nameSpace = invocationOnMock.getArgument(0);
+            String namespace = invocationOnMock.getArgument(0);
             String name = invocationOnMock.getArgument(1);
-            return createReadyPod(nameSpace, name);
+            return createPod(namespace, name);
         };
     }
 
-    private static Pod createReadyPod(String nameSpace, String name) {
-        Pod pod = new Pod();
-        PodStatus status = new PodStatus();
-        PodCondition e = new PodCondition();
-        e.setType("Ready");
-        e.setStatus("True");
-        status.getConditions().add(e);
-        pod.setStatus(status);
-        ObjectMeta metadata = new ObjectMeta();
-        pod.setMetadata(metadata);
-        metadata.setName(name);
-        metadata.setNamespace(nameSpace);
-        return pod;
+    private static Pod createPod(String namespace, String name) {
+        return new PodBuilder()
+                .withNewMetadata()
+                    .withNamespace(namespace)
+                    .withName(name)
+                .endMetadata()
+                .build();
     }
 
     @SuppressWarnings("unchecked")
