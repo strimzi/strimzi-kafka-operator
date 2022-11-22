@@ -472,7 +472,10 @@ public class SetupClusterOperator {
 
         if (leaseEnvVar != null && resourceEntry != null) {
             try {
-                File tmpFile = Files.createTempFile(yamlPath.replace(Constants.STRIMZI_DEPLOYMENT_NAME + ".yaml", leaseEnvVar.getValue()), "yaml").toFile();
+                String[] path = yamlPath.split("/");
+                String fileName = path[path.length - 1].replace(Constants.STRIMZI_DEPLOYMENT_NAME, leaseEnvVar.getValue()).replace(".yaml", "");
+                File tmpFile = Files.createTempFile(fileName, "yaml").toFile();
+
                 String tmpFileContent;
                 final String resourceName = leaseEnvVar.getValue() + "-leader-election";
 
