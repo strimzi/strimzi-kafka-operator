@@ -5,7 +5,6 @@ rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.19.0}
 MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
-MINIKUBE_REGISTRY_IMAGE_S390X=${REGISTRY_IMAGE_S390X:-"s390x/registry:2.8.0-beta.1"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
 DEFAULT_MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
@@ -62,11 +61,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     mkdir $HOME/.kube || true
     touch $HOME/.kube/config
 
-    if [ "$ARCH" = "s390x" ]; then
-        docker run -d -p 5000:5000 --name s390x-registry ${MINIKUBE_REGISTRY_IMAGE_S390X}
-    else
-        docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
-    fi
+	docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
 
     export KUBECONFIG=$HOME/.kube/config
     # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
