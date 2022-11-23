@@ -96,9 +96,9 @@ mTLS listener configuration in the `Kafka` resource requires the following:
 * `authentication.type: tls` to specify the client authentication
 
 When a Kafka cluster is created by the Cluster Operator, it creates a new secret with the name `<cluster_name>-cluster-ca-cert`.
-The secret contains a public CA certificate.
-The public CA certificate is in xref:certificates-and-secrets-formats-{context}[PEM and PKCS #12 format].
-To verify a Kafka cluster, you add the public CA certificate to the truststore in your client configuration.
+The secret contains a CA certificate.
+The CA certificate is in xref:certificates-and-secrets-formats-{context}[PEM and PKCS #12 format].
+To verify a Kafka cluster, you add the CA certificate to the truststore in your client configuration.
 To verify the client, you add user credentials to keystore in your client configuration.
 For more information on configuring a client for mTLS, see xref:[con-securing-client-authentication-str].
 
