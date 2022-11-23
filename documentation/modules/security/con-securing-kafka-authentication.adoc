@@ -99,7 +99,7 @@ When a Kafka cluster is created by the Cluster Operator, it creates a new secret
 The secret contains a CA certificate.
 The CA certificate is in xref:certificates-and-secrets-formats-{context}[PEM and PKCS #12 format].
 To verify a Kafka cluster, you add the CA certificate to the truststore in your client configuration.
-To verify the client, you add user credentials to keystore in your client configuration.
+To verify a client, you add a user certificate and key to the keystore in your client configuration.
 For more information on configuring a client for mTLS, see xref:[con-securing-client-authentication-str].
 
 NOTE: TLS authentication is more commonly one-way, with one party authenticating the identity of another.
