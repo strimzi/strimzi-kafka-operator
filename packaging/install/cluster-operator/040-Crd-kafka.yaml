@@ -5399,7 +5399,7 @@ spec:
                                 type: object
                                 description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                             description: Metadata applied to the resource.
-                        description: Template for the JMX Trans service account.
+                        description: Template for the JmxTrans service account.
                     description: Template for JmxTrans resources.
                 required:
                 - outputDefinitions

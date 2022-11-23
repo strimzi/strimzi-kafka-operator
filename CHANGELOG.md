@@ -7,6 +7,11 @@
 * Use Java 17 as the runtime for all containers
 * Upgrade Vert.x to 4.3.5
 
+### Changes, deprecations and removals
+
+* Support for JmxTrans in Strimzi is deprecated. 
+  It is currently planned to be removed in Strimzi 0.35.0.
+
 ## 0.32.0
 
 * Add support for Kafka 3.3.1 and remove support for Kafka 3.1.0, 3.1.1, and 3.1.2
