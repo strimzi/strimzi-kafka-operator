@@ -46,7 +46,7 @@ public class ResourceUtils {
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
         envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, Boolean.toString(useKRaft));
 
-        if (!scramShaPasswordLength.equals("12")) {
+        if (!scramShaPasswordLength.equals("32")) {
             envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
         }
 
@@ -73,7 +73,7 @@ public class ResourceUtils {
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {
-        return createUserOperatorConfig(Map.of(), true, false, "12", null);
+        return createUserOperatorConfig(Map.of(), true, false, "32", null);
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {

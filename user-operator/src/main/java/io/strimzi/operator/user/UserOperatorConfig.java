@@ -52,7 +52,7 @@ public class UserOperatorConfig {
      * Configures the default prefix of user secrets created by the operator
      */
     public static final String DEFAULT_SECRET_PREFIX = "";
-    static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 12;
+    static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 32;
     /**
      * Indicates whether the Admin APi can be used to manage ACLs. Defaults to true for backwards compatibility reasons.
      */
