@@ -101,13 +101,13 @@ public class KafkaUtils {
         });
     }
 
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message, long timeout) {
-        TestUtils.waitFor("Kafka Status with message [" + message + "]",
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern, long timeout) {
+        TestUtils.waitFor("Kafka Status with message [" + pattern + "]",
             Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     String conditionMessage = condition.getMessage();
-                    if (conditionMessage.matches(message)) {
+                    if (conditionMessage.matches(pattern)) {
                         return true;
                     }
                 }
@@ -115,8 +115,8 @@ public class KafkaUtils {
             });
     }
 
-    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String message) {
-        waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, message, Constants.GLOBAL_STATUS_TIMEOUT);
+    public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern) {
+        waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, pattern, Constants.GLOBAL_STATUS_TIMEOUT);
     }
 
     public static void waitForZkMntr(String namespaceName, String clusterName, Pattern pattern, int... podIndexes) {
