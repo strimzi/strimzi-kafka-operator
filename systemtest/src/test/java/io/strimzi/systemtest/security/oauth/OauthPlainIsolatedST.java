@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -24,6 +26,8 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
+import io.strimzi.systemtest.metrics.MetricsCollector;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -31,6 +35,7 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
@@ -51,6 +56,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -64,6 +72,7 @@ import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
@@ -718,6 +727,33 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
+    @ParallelTest
+    void testOAuthKafkaMetrics(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+        List<String> expectedMetrics = Arrays.asList("strimzi_oauth_http_requests_maxtimems", "strimzi_oauth_http_requests_mintimems",
+            "strimzi_oauth_http_requests_avgtimems", "strimzi_oauth_http_requests_totaltimems", "strimzi_oauth_http_requests_count");
+
+        // Collect metrics and verify
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+
+        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withScraperPodName(scraperName)
+            .withComponentName(oauthClusterName)
+            .withComponentType(ComponentType.Kafka)
+            .build();
+
+        metricsCollector.collectMetricsFromPods();
+        Collection<String> resultMetrics = metricsCollector.getCollectedData().values();
+
+        for (String result : resultMetrics) {
+            for (String expectedMetric : expectedMetrics) {
+                assertTrue(result.contains(expectedMetric));
+            }
+        }
+    }
+
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
         super.setupCoAndKeycloak(extensionContext, clusterOperator.getDeploymentNamespace());
@@ -727,12 +763,24 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         keycloakInstance.setRealm("internal", false);
 
+        // This was done due to different pattern used for oauth metrics
+        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(TestUtils.USER_PATH + "/src/test/resources/oauth2/oauth-metrics.yaml", "kafka-metrics");
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(kafkaMetricsCm).createOrReplace();
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                    .withNewValueFrom()
+                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                        .withName("kafka-metrics")
+                        .withKey("metrics-config.yml")
+                        .build())
+                    .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
                     .withListeners(new GenericKafkaListenerBuilder()
                                 .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
@@ -748,6 +796,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                                     .withGroupsClaim(GROUPS_CLAIM)
                                     .withGroupsClaimDelimiter(GROUPS_CLAIM_DELIMITER)
+                                    .withEnableMetrics()
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build(),
                             new GenericKafkaListenerBuilder()
