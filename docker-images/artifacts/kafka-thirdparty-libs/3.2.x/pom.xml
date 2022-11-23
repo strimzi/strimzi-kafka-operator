@@ -384,12 +384,12 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- This is used to override CVE-2022-25857 => should be removed once jackson-dataformat-yaml uses it out of the box -->
+        <!-- This is used to override CVE-2022-25857 and CVE-2022-41854 => should be removed once jackson-dataformat-yaml uses it out of the box -->
         <!-- https://github.com/strimzi/strimzi-kafka-operator/issues/7261 covers the removal of this override -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.32</version>
+            <version>1.33</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
