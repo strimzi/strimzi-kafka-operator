@@ -3,7 +3,7 @@
 // assembly-security.adoc
 
 [id='proc-installing-certs-per-listener-{context}']
-= Providing your own Kafka listener certificates for TLS authentication
+= Providing your own Kafka listener certificates for TLS encryption
 
 [role="_abstract"]
 Listeners provide client access to Kafka brokers.
