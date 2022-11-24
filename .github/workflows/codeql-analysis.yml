@@ -43,11 +43,12 @@ jobs:
           curl -L https://github.com/mikefarah/yq/releases/download/v4.2.1/yq_linux_amd64 > yq && chmod +x yq
           sudo cp -v yq /usr/bin/
 
-    # Setup OpenJDK 11
-    - name: Setup java
-      uses: joschi/setup-jdk@v2
+    # Setup OpenJDK 17
+    - uses: actions/setup-java@v2
       with:
-        java-version: 11
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'maven'
 
     # Setup Maven cache
     - name: Cache local Maven repository

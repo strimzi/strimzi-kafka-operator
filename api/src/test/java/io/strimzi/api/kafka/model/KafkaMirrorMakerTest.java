@@ -9,6 +9,7 @@ package io.strimzi.api.kafka.model;
  *
  * 1. we get a correct tree of POJOs when reading a JSON/YAML `KafkaMirrorMaker` resource.
  */
+@SuppressWarnings("deprecation")
 public class KafkaMirrorMakerTest extends AbstractCrdTest<KafkaMirrorMaker> {
 
     public KafkaMirrorMakerTest() {

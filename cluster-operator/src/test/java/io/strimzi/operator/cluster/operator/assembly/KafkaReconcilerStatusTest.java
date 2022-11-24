@@ -294,14 +294,13 @@ public class KafkaReconcilerStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getName(), is("external"));
             assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("5.124.16.8:31234,55.36.78.115:31234,50.35.18.119:31234"));
+            assertThat(status.getListeners().get(0).getBootstrapServers(), is("5.124.16.8:31234,50.35.18.119:31234,55.36.78.115:31234"));
             assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("5.124.16.8"));
-            assertThat(status.getListeners().get(0).getAddresses().get(1).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(1).getHost(), is("55.36.78.115"));
-            assertThat(status.getListeners().get(0).getAddresses().get(2).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(2).getHost(), is("50.35.18.119"));
+
+            // Assert the listener addresses independently on their order
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "55.36.78.115".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "50.35.18.119".equals(a.getHost())), is(true));
 
             async.flag();
         }));
@@ -400,14 +399,13 @@ public class KafkaReconcilerStatusTest {
             assertThat(status.getListeners().size(), is(1));
             assertThat(status.getListeners().get(0).getName(), is("external"));
             assertThat(status.getListeners().get(0).getType(), is("external"));
-            assertThat(status.getListeners().get(0).getBootstrapServers(), is("my-address-0:31234,5.124.16.8:31234,my-address-1:31234"));
+            assertThat(status.getListeners().get(0).getBootstrapServers(), is("5.124.16.8:31234,my-address-0:31234,my-address-1:31234"));
             assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("my-address-0"));
-            assertThat(status.getListeners().get(0).getAddresses().get(1).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(1).getHost(), is("5.124.16.8"));
-            assertThat(status.getListeners().get(0).getAddresses().get(2).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(2).getHost(), is("my-address-1"));
+
+            // Assert the listener addresses independently on their order
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "my-address-0".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "my-address-1".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "5.124.16.8".equals(a.getHost())), is(true));
 
             async.flag();
         }));
@@ -498,12 +496,11 @@ public class KafkaReconcilerStatusTest {
             assertThat(status.getListeners().get(0).getType(), is("external"));
             assertThat(status.getListeners().get(0).getBootstrapServers(), is("node-0.my-kube:31234,node-1.my-kube:31234,node-3.my-kube:31234"));
             assertThat(status.getListeners().get(0).getAddresses().size(), is(3));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(0).getHost(), is("node-0.my-kube"));
-            assertThat(status.getListeners().get(0).getAddresses().get(1).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(1).getHost(), is("node-1.my-kube"));
-            assertThat(status.getListeners().get(0).getAddresses().get(2).getPort(), is(31234));
-            assertThat(status.getListeners().get(0).getAddresses().get(2).getHost(), is("node-3.my-kube"));
+
+            // Assert the listener addresses independently on their order
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-0.my-kube".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-1.my-kube".equals(a.getHost())), is(true));
+            assertThat(status.getListeners().get(0).getAddresses().stream().anyMatch(a -> a.getPort() == 31234 && "node-3.my-kube".equals(a.getHost())), is(true));
 
             async.flag();
         }));

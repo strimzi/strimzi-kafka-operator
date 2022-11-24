@@ -273,7 +273,7 @@ public class Util {
 
             int aliasIndex = 0;
             for (X509Certificate certificate : certificates) {
-                trustStore.setEntry(certificate.getSubjectDN().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
+                trustStore.setEntry(certificate.getSubjectX500Principal().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
                 aliasIndex++;
             }
 

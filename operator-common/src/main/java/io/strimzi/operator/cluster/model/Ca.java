@@ -890,7 +890,7 @@ public abstract class Ca {
     public boolean certNeedsRenewal(X509Certificate cert)  {
         Instant notAfter = cert.getNotAfter().toInstant();
         Instant renewalPeriodBegin = notAfter.minus(renewalDays, ChronoUnit.DAYS);
-        LOGGER.traceCr(reconciliation, "Certificate {} expires on {} renewal period begins on {}", cert.getSubjectDN(), notAfter, renewalPeriodBegin);
+        LOGGER.traceCr(reconciliation, "Certificate {} expires on {} renewal period begins on {}", cert.getSubjectX500Principal(), notAfter, renewalPeriodBegin);
         return this.clock.instant().isAfter(renewalPeriodBegin);
     }
 
