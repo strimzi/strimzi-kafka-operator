@@ -47,7 +47,8 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
             + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers,"
             + "node.id, process.roles, controller."; // KRaft options
 
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, sasl.server.max.receive.size,"
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "zookeeper.connection.timeout.ms, sasl.server.max.receive.size,"
+            + "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation,"
             + "cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,"
             + "cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,"
             + "cruise.control.metrics.topic.min.insync.replicas,"

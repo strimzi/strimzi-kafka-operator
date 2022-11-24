@@ -7,6 +7,12 @@
 * Use Java 17 as the runtime for all containers
 * Upgrade Vert.x to 4.3.5
 
+### Changes, deprecations and removals
+
+* In previous versions, the `ssl.secure.random.implementation` option in Kafka brokers was always set to `SHA1PRNG`.
+  From Strimzi 0.33 on, it is using the default SecureRandom implementation from the Java Runtime.
+  If you want to keep using `SHA1PRNG` as your SecureRandom, you can configure it in `.spec.kafka.config` in your `Kafka` custom resource.
+
 ## 0.32.0
 
 * Add support for Kafka 3.3.1 and remove support for Kafka 3.1.0, 3.1.1, and 3.1.2
