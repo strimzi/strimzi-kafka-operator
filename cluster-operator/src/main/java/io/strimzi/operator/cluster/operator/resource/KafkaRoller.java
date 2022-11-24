@@ -35,7 +35,6 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -201,12 +200,6 @@ public class KafkaRoller {
             List<PodRef> pods = new ArrayList<>(podList.size());
 
             for (int podIndex = 0; podIndex < podList.size(); podIndex++) {
-                // Precondition: We expect the STS or SPS controller to have created the pod
-                var pod = podOperations.get(namespace, podList.get(podIndex));
-                if (pod == null) {
-                    result.fail(new KafkaRollerPreconditionFailedException("Pod doesn't exist. There seems to be some problem with the creation of pod by StatefulSets/StrimziPodSets controller"));
-                    return;
-                }
                 // Order the podNames unready first otherwise repeated reconciliations might each restart a pod
                 // only for it not to become ready and thus drive the cluster to a worse state.
                 pods.add(podOperations.isReady(namespace, podList.get(podIndex)) ? pods.size() : 0, new PodRef(podList.get(podIndex), ModelUtils.idOfPod(podList.get(podIndex))));
@@ -336,6 +329,10 @@ public class KafkaRoller {
         Pod pod;
         try {
             pod = podOperations.get(namespace, podRef.getPodName());
+            if (pod == null) {
+                LOGGER.debugCr(reconciliation, "Pod {} doesn't exist. There seems to be some problem with the creation of pod by StatefulSets/StrimziPodSets controller", podRef.getPodName());
+                return;
+            }
         } catch (KubernetesClientException e) {
             throw new UnforceableProblem("Error getting pod " + podRef.getPodName(), e);
         }
