@@ -18,6 +18,9 @@
       - name: STRIMZI_SCRAM_SHA_PASSWORD_LENGTH
         value: "12"
   ```
+* In previous versions, the `ssl.secure.random.implementation` option in Kafka brokers was always set to `SHA1PRNG`.
+  From Strimzi 0.33 on, it is using the default SecureRandom implementation from the Java Runtime.
+  If you want to keep using `SHA1PRNG` as your SecureRandom, you can configure it in `.spec.kafka.config` in your `Kafka` custom resource.
 
 ## 0.32.0
 
