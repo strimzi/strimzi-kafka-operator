@@ -544,8 +544,8 @@ public class KafkaRollerTest {
         when(podOps.get(any(), any())).thenAnswer(
                 invocation -> new PodBuilder()
                         .withNewMetadata()
-                        .withNamespace(invocation.getArgument(0))
-                        .withName(invocation.getArgument(1))
+                            .withNamespace(invocation.getArgument(0))
+                            .withName(invocation.getArgument(1))
                         .endMetadata()
                         .build()
         );
