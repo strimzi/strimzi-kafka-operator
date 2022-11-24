@@ -347,6 +347,7 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
+    @SuppressWarnings("deprecation") // Suppress deprecated JMX Trans
     public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");

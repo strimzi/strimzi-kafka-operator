@@ -35,7 +35,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-CertificateAuthority-{context}[`CertificateAuthority`]
 |cruiseControl           1.2+<.<a|Configuration for Cruise Control deployment. Deploys a Cruise Control instance when specified.
 |xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
-|jmxTrans                1.2+<.<a|Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub].
+|jmxTrans                1.2+<.<a|**The `jmxTrans` property has been deprecated.** JMXTrans is deprecated and will be removed in Strimzi 0.35.0 Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub].
 |xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |kafkaExporter           1.2+<.<a|Configuration of the Kafka Exporter. Kafka Exporter can provide additional metrics, for example lag of consumer group at topic/partition.
 |xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
@@ -1497,7 +1497,7 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |container       1.2+<.<a|Template for JmxTrans container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount  1.2+<.<a|Template for the JMX Trans service account.
+|serviceAccount  1.2+<.<a|Template for the JmxTrans service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 

@@ -9,7 +9,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -93,12 +95,16 @@ public class KafkaSpec extends Spec {
         return maintenanceTimeWindows;
     }
 
+    @Deprecated
+    @DeprecatedProperty(description = "JMXTrans is deprecated and will be removed in Strimzi 0.35.0")
+    @PresentInVersions("v1alpha1-v1beta2")
     @Description("Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. " +
             "For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub]")
     public JmxTransSpec getJmxTrans() {
         return jmxTrans;
     }
 
+    @Deprecated
     public void setJmxTrans(JmxTransSpec jmxTrans) {
         this.jmxTrans = jmxTrans;
     }

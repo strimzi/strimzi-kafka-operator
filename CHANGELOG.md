@@ -21,6 +21,8 @@
 * In previous versions, the `ssl.secure.random.implementation` option in Kafka brokers was always set to `SHA1PRNG`.
   From Strimzi 0.33 on, it is using the default SecureRandom implementation from the Java Runtime.
   If you want to keep using `SHA1PRNG` as your SecureRandom, you can configure it in `.spec.kafka.config` in your `Kafka` custom resource.
+* Support for JmxTrans in Strimzi is deprecated. 
+  It is currently planned to be removed in Strimzi 0.35.0.
 
 ## 0.32.0
 

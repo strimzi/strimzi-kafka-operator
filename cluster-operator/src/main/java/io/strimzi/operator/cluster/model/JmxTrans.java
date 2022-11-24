@@ -52,6 +52,7 @@ import java.util.Map;
  * Class for handling JmxTrans configuration passed by the user. Used to get the resources needed to create the
  * JmxTrans deployment including: config map, deployment, and service accounts.
  */
+@SuppressWarnings("deprecation") // JMX Trans is deprecated
 public class JmxTrans extends AbstractModel {
     private static final String APPLICATION_NAME = "jmx-trans";
 
