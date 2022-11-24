@@ -261,12 +261,12 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not ClusterIP, Ingress or Route based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
                 "listener " + name + " cannot configure bootstrap.labels because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not ClusterIP, Ingress or Route based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].annotations because it is not LoadBalancer, NodePort, Route, Ingress or ClusterIP based listener",
@@ -329,8 +329,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
+                "listener " + name + " cannot configure bootstrap.host because it is not ClusterIP, Ingress or Route based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not ClusterIP, Ingress or Route based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
@@ -408,9 +408,9 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure bootstrap.host because it is not ClusterIP, Ingress or Route based listener",
                 "listener " + name + " cannot configure bootstrap.loadBalancerIP because it is not LoadBalancer based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not ClusterIP, Ingress or Route based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener"
         );
 
@@ -748,8 +748,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
-                "listener " + name + " cannot configure bootstrap.host because it is not Route ot Ingress based listener",
-                "listener " + name + " cannot configure brokers[].host because it is not Route ot Ingress based listener"
+                "listener " + name + " cannot configure bootstrap.host because it is not ClusterIP, Ingress or Route based listener",
+                "listener " + name + " cannot configure brokers[].host because it is not ClusterIP, Ingress or Route based listener"
         );
 
         assertThat(ListenersValidator.validateAndGetErrorMessages(2, listeners), containsInAnyOrder(expectedErrors.toArray()));

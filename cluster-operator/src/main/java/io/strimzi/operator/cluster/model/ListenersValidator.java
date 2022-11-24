@@ -187,7 +187,7 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that useServiceDnsDomain is used only with internal type listener
+     * Validates that useServiceDnsDomain is used only with internal or cluster-ip type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
@@ -307,15 +307,15 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that bootstrap.host is used only with Route or Ingress type listener
+     * Validates that bootstrap.host is used only with ClusterIP, Ingress or Route type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      */
     private static void validateBootstrapHost(Set<String> errors, GenericKafkaListener listener) {
-        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
+        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()) && !KafkaListenerType.CLUSTER_IP.equals(listener.getType()))
                 && listener.getConfiguration().getBootstrap().getHost() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not Route ot Ingress based listener");
+            errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not ClusterIP, Ingress or Route based listener");
         }
     }
 
@@ -347,8 +347,8 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that bootstrap.annotations and bootstrap.labels are used only with LoadBalancer, NodePort, Route, or
-     * Ingress type listener
+     * Validates that bootstrap.annotations and bootstrap.labels are used only with LoadBalancer, NodePort, Route,
+     * Ingress, or ClusterIP type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
@@ -372,16 +372,16 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that brokers[].host is used only with Route or Ingress type listener
+     * Validates that brokers[].host is used only with ClusterIP, Ingress or Route type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      * @param broker    Broker configuration which needs to be validated
      */
     private static void validateBrokerHost(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
-        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
+        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()) && !KafkaListenerType.CLUSTER_IP.equals(listener.getType()))
                 && broker.getHost() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not Route ot Ingress based listener");
+            errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not ClusterIP, Ingress or Route based listener");
         }
     }
 
@@ -415,8 +415,8 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that brokers[].annotations and brokers[].labels are used only with LoadBalancer, NodePort, Route or
-     * Ingress type listener
+     * Validates that brokers[].annotations and brokers[].labels are used only with LoadBalancer, NodePort, Route,
+     * Ingress, or ClusterIP type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
