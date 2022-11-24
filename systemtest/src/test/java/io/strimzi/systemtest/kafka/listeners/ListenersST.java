@@ -282,7 +282,7 @@ public class ListenersST extends AbstractST {
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final int passwordLength = 25;
+        final int passwordLength = 50;
 
         // Use a Kafka with plain listener disabled
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)

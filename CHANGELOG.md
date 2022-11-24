@@ -9,6 +9,15 @@
 
 ### Changes, deprecations and removals
 
+* The default length of any new SCRAM-SHA-512 passwords will be 32 characters instead of 12 characters used in the previous Strimzi versions.
+  Existing passwords will not be affected by this change until they are regenerated (for example because the user secret is deleted).
+  If you want to keep using the original password length, you can set it using the `STRIMZI_SCRAM_SHA_PASSWORD_LENGTH` environment variable in `.spec.entityOperator.template.userOperatorContainer.env` in the `Kafka` custom resource or in the `Deployment` of the standalone User Operator.
+  ```yaml
+  userOperatorContainer:
+    env:
+      - name: STRIMZI_SCRAM_SHA_PASSWORD_LENGTH
+        value: "12"
+  ```
 * In previous versions, the `ssl.secure.random.implementation` option in Kafka brokers was always set to `SHA1PRNG`.
   From Strimzi 0.33 on, it is using the default SecureRandom implementation from the Java Runtime.
   If you want to keep using `SHA1PRNG` as your SecureRandom, you can configure it in `.spec.kafka.config` in your `Kafka` custom resource.
