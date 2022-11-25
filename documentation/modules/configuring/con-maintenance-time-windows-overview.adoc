@@ -9,7 +9,7 @@ In most cases, the Cluster Operator only updates your Kafka or ZooKeeper cluster
 This enables you to plan when to apply changes to a `Kafka` resource to minimize the impact on Kafka client applications.
 
 However, some updates to your Kafka and ZooKeeper clusters can happen without any corresponding change to the `Kafka` resource.
-For example, the Cluster Operator will need to perform a rolling restart if a CA (Certificate Authority) certificate that it manages is close to expiry.
+For example, the Cluster Operator will need to perform a rolling restart if a CA (certificate authority) certificate that it manages is close to expiry.
 
 While a rolling restart of the pods should not affect _availability_ of the service (assuming correct broker and topic configurations), it could affect _performance_ of the Kafka client applications.
 Maintenance time windows allow you to schedule such spontaneous rolling updates of your Kafka and ZooKeeper clusters to start at a convenient time.

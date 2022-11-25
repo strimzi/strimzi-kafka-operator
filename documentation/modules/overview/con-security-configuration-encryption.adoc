@@ -25,8 +25,8 @@ for communication between Kafka clients and Kafka brokers, and inter-cluster com
 
 Strimzi uses _Secrets_ to store the certificates and private keys required for mTLS in PEM and PKCS #12 format.
 
-A TLS Certificate Authority (CA) issues certificates to authenticate the identity of a component.
+A TLS CA (certificate authority) issues certificates to authenticate the identity of a component.
 Strimzi verifies the certificates for the components against the CA certificate.
 
-* Strimzi components are verified against the _cluster CA_ Certificate Authority (CA)
-* Kafka clients are verified against the _clients CA_ Certificate Authority (CA)
+* Strimzi components are verified against the _cluster CA_ CA
+* Kafka clients are verified against the _clients CA_ CA
