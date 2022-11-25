@@ -96,8 +96,8 @@ spec:
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
-<3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs new user certificates for mTLS authentication.
-<4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the Certificate Authority that signs new user certificates for mTLS authentication.
+<3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the CA (certificate authority) that signs new user certificates for mTLS authentication.
+<4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the CA that signs new user certificates for mTLS authentication.
 <5> The label to identify the `KafkaUser` resources managed by the User Operator.
 This does not have to be the name of the Kafka cluster.
 It can be the label assigned to the `KafkaUser` resource.
@@ -115,9 +115,9 @@ The default is `50`.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <10> Enables garbage collection (GC) logging.
 The default is `true`.
-<11> The validity period for the Certificate Authority.
+<11> The validity period for the CA.
 The default is `365` days.
-<12> The renewal period for the Certificate Authority. The renewal period is measured backwards from the expiry date of the current certificate.
+<12> The renewal period for the CA. The renewal period is measured backwards from the expiry date of the current certificate.
 The default is `30` days to initiate certificate renewal before the old certificates expire.
 <13> (Optional) The Java options used by the JVM running the User Operator
 <14> (Optional) The debugging (`-D`) options set for the User Operator
@@ -143,7 +143,7 @@ env:
     value: my-cluster-entity-operator-certs
 # ..."
 ----
-<1> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs Kafka broker certificates.
+<1> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the CA that signs Kafka broker certificates.
 <2> The Kubernetes `Secret` that contains the keystore (`entity-operator.p12`) with the private key and certificate for mTLS authentication against the Kafka cluster.
 The `Secret` must also contain the password (`entity-operator.password`) for accessing the keystore.
 
