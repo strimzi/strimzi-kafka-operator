@@ -6,9 +6,11 @@
 = Disabling FIPS mode
 
 [role="_abstract"]
-If you want, you can also disable the FIPS mode by setting the `FIPS_MODE` environment variable to `disabled` in the deployment configuration for the Cluster Operator.
-With disabled FIPS mode, Strimzi will automatically disable FIPS in the OPenJDK in all components.
-Such Strimzi deployment won't be FIPS compliant, and the Strimzi operators as well as all of its operands will be running in the same way as if they were running on an Kubernetes cluster without FIPS enabled.
+Strimzi automatically switches to FIPS mode when running on a FIPS-enabled Kubernetes cluster.
+Disable FIPS mode by setting the `FIPS_MODE` environment variable to `disabled` in the deployment configuration for the Cluster Operator.
+With FIPS mode disabled, Strimzi automatically disables FIPS in the OpenJDK for all components.
+With FIPS mode disabled, Strimzi is not FIPS compliant.
+The Strimzi operators, as well as all operands, run in the same way as if they were running on an Kubernetes cluster without FIPS enabled.
 
 .Procedure
 
