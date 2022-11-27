@@ -193,7 +193,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
                 Map<String, String> annotations = new HashMap<>();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH,
                                                          Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
                 annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
                 assertThat(dc, is(connect.generateDeployment(annotations, true, null, null)));
@@ -463,7 +463,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 String dynamicallyUnmodifiableEntries = Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration);
                 String hashedLoggingConf = Util.hashStub(dynamicallyUnmodifiableEntries);
                 Map<String, String> annotations = new HashMap<>();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH,
                                                          hashedLoggingConf);
                 annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
 

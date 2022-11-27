@@ -11,8 +11,16 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operator for managing Pod Disruption Budgets
+ */
 public class PodDisruptionBudgetOperator extends AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
-
+    /**
+     * Constructs the PDB operator
+     *
+     * @param vertx     Vert.x instance
+     * @param client    Kubernetes client
+     */
     public PodDisruptionBudgetOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "PodDisruptionBudget");
     }

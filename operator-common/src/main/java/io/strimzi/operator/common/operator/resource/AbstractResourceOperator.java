@@ -47,6 +47,10 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
+    /**
+     * Marker for indication "all namesapces" => this is used for example when creating watches to create a cluster
+     * wide watch.
+     */
     public final static String ANY_NAMESPACE = "*";
 
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
@@ -377,6 +381,14 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         return resourceSupport.listAsync(x);
     }
 
+    /**
+     * Asynchronously lists the resource with the given {@code selector} in the given {@code namespace}.
+     *
+     * @param namespace     Namespace where the resources should be listed
+     * @param selector      Label selector for selecting only some of the resources
+     *
+     * @return A Future with a list of matching resources.
+     */
     public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
         FilterWatchListDeletable<T, L, R> x;
 

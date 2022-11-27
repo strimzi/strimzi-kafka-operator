@@ -12,6 +12,9 @@ import io.strimzi.api.kafka.model.status.Status;
  * the custom resource.
  */
 public class ReconciliationException extends Exception {
+    /**
+     * Status of the custom resource
+     */
     private final Status status;
 
     /**

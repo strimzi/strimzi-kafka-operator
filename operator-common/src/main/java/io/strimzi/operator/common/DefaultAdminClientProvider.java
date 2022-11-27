@@ -12,6 +12,9 @@ import org.apache.kafka.common.config.SslConfigs;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
+/**
+ * Provides the default KAfka Admin client
+ */
 public class DefaultAdminClientProvider implements AdminClientProvider {
     @Override
     public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {

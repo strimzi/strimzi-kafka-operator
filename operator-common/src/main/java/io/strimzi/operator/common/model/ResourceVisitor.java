@@ -18,10 +18,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Resource visitor used to validate resources
+ */
 public class ResourceVisitor {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceVisitor.class);
 
+    /**
+     * Interface defining the visitor
+     */
     public interface Visitor {
         /**
          * Called when a property is visited.
@@ -36,6 +41,7 @@ public class ResourceVisitor {
                                  Method method, Property<Method> property, Object propertyValue) {
             visitProperty(reconciliation, path, owner, method, property, propertyValue);
         }
+
         /**
          * Called when a field property is visited.
          * @param reconciliation The reconciliation
@@ -72,6 +78,15 @@ public class ResourceVisitor {
         void visitObject(Reconciliation reconciliation, List<String> path, Object object);
     }
 
+    /**
+     * Visits a field int he resource
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          Resource which should be visited
+     * @param visitor           Visitor class
+     *
+     * @param <T>               Type of the resource which is being validated
+     */
     public static <T extends HasMetadata> void visit(Reconciliation reconciliation, T resource, Visitor visitor) {
         ArrayList<String> path = new ArrayList<>();
         try {
@@ -168,8 +183,28 @@ public class ResourceVisitor {
         }
     }
 
+    /**
+     * Property interface
+     *
+     * @param <M>   Type of the member
+     */
     public interface Property<M extends Member> {
+        /**
+         * Name of the property
+         *
+         * @param i     Identifier of the property
+         *
+         * @return  Name of the property
+         */
         String propertyName(M i);
+
+        /**
+         * Type of the property
+         *
+         * @param i     Identifier of the property
+         *
+         * @return  Type of the property
+         */
         Class<?> type(M i);
     }
 

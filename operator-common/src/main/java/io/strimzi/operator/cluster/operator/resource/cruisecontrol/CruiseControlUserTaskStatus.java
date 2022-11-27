@@ -16,10 +16,24 @@ import java.util.Map;
  *  https://github.com/linkedin/cruise-control/blob/master/cruise-control/src/main/java/com/linkedin/kafka/cruisecontrol/servlet/UserTaskManager.java
  */
 public enum CruiseControlUserTaskStatus {
-
+    /**
+     * Active
+     */
     ACTIVE("Active"),
+
+    /**
+     * In exceution
+     */
     IN_EXECUTION("InExecution"),
+
+    /**
+     * Completed
+     */
     COMPLETED("Completed"),
+
+    /**
+     * Completed with error
+     */
     COMPLETED_WITH_ERROR("CompletedWithError");
 
     private String status;
@@ -32,6 +46,11 @@ public enum CruiseControlUserTaskStatus {
         }
     }
 
+    /**
+     * Creates the Enum from String
+     *
+     * @param status  String with the status
+     */
     CruiseControlUserTaskStatus(String status) {
         this.status = status;
     }
@@ -41,6 +60,13 @@ public enum CruiseControlUserTaskStatus {
         return status;
     }
 
+    /**
+     * Finds the task status based on the URL
+     *
+     * @param url   The URL of the task
+     *
+     * @return  The user task status
+     */
     public static CruiseControlUserTaskStatus lookup(String url) {
         return LOOKUP.get(url);
     }

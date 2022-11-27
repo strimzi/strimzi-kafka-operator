@@ -17,10 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * which are used to provide consistent context for logging.</p>
  */
 public class Reconciliation {
-
     private static final AtomicInteger IDS = new AtomicInteger();
 
-    /* test */ public static final Reconciliation DUMMY_RECONCILIATION = new Reconciliation("test", "kind", "namespace", "name");
+    /**
+     * Dummy reconciliation marker used in tests
+     */
+    public static final Reconciliation DUMMY_RECONCILIATION = new Reconciliation("test", "kind", "namespace", "name");
 
     private final String trigger;
     private final String kind;
@@ -29,31 +31,52 @@ public class Reconciliation {
     private final int id;
     private final Marker marker;
 
-    public Reconciliation(String trigger, String kind, String namespace, String assemblyName) {
+    /**
+     * Constructs the reconciliation marker
+     *
+     * @param trigger       Trigger of the reconciliation
+     * @param kind          Kind of the resource
+     * @param namespace     Namespace of the resource
+     * @param name  Name of the resource
+     */
+    public Reconciliation(String trigger, String kind, String namespace, String name) {
         this.trigger = trigger;
         this.kind = kind;
         this.namespace = namespace;
-        this.name = assemblyName;
+        this.name = name;
         this.id = IDS.getAndIncrement();
         this.marker = MarkerManager.getMarker(this.kind + "(" + this.namespace + "/" + this.name + ")");
     }
 
+    /**
+     * @return  Kind of the reconciled resource
+     */
     public String kind() {
         return kind;
     }
 
+    /**
+     * @return  Namespace of the reconcilied resource
+     */
     public String namespace() {
         return namespace;
     }
 
+    /**
+     * @return  Name of the reconciled resource
+     */
     public String name() {
         return name;
     }
 
+    /**
+     * @return  The logging marker
+     */
     public Marker getMarker() {
         return marker;
     }
 
+    @Override
     public String toString() {
         return "Reconciliation #" + id + "(" + trigger + ") " + kind() + "(" + namespace() + "/" + name() + ")";
     }

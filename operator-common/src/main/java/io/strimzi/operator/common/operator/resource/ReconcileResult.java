@@ -6,8 +6,12 @@ package io.strimzi.operator.common.operator.resource;
 
 import java.util.Optional;
 
+/**
+ * Indicates reconciliation result
+ *
+ * @param <R>   Resource type for which the result is being indicated
+ */
 public abstract class ReconcileResult<R> {
-
     @SuppressWarnings("unchecked")
     private static final ReconcileResult DELETED = new ReconcileResult(Optional.empty()) {
         @Override
@@ -16,6 +20,11 @@ public abstract class ReconcileResult<R> {
         }
     };
 
+    /**
+     * Nothing was changed during the reocnciliation
+     *
+     * @param <R>   Resource type for which the result is being indicated
+     */
     public static class Noop<R> extends ReconcileResult<R> {
         private Noop(R resource) {
             super(Optional.ofNullable(resource));
@@ -27,7 +36,11 @@ public abstract class ReconcileResult<R> {
         }
     }
 
-
+    /**
+     * The resource was created during the reconciliation
+     *
+     * @param <R>   Resource type for which the result is being indicated
+     */
     public static class Created<R> extends ReconcileResult<R> {
         private Created(R resource) {
             super(Optional.of(resource));
@@ -39,8 +52,12 @@ public abstract class ReconcileResult<R> {
         }
     }
 
+    /**
+     * the resource was modified during the reconciliation
+     *
+     * @param <R>   Resource type for which the result is being indicated
+     */
     public static class Patched<R> extends ReconcileResult<R> {
-
         private Patched(R resource) {
             super(Optional.of(resource));
         }
@@ -97,10 +114,16 @@ public abstract class ReconcileResult<R> {
         this.resource = resource;
     }
 
+    /**
+     * @return  The resource which was reconciled as an Optional instance
+     */
     public Optional<R> resourceOpt() {
         return this.resource;
     }
 
+    /**
+     * @return  The resource which was reconciled
+     */
     public R resource() {
         return resourceOpt().orElseThrow(() -> new RuntimeException("Resource was concurrently deleted"));
     }

@@ -12,14 +12,22 @@ import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
 
 import java.util.regex.Pattern;
 
+/**
+ * Diffs status section of a custom resource
+ */
 public class StatusDiff extends AbstractJsonDiff {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatusDiff.class.getName());
-
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/conditions/[0-9]+/lastTransitionTime)$");
 
     private final boolean isEmpty;
 
+    /**
+     * Constructs the status diff
+     *
+     * @param current   Current status
+     * @param desired   Desired status
+     */
     public StatusDiff(Status current, Status desired) {
         JsonNode source = PATCH_MAPPER.valueToTree(current == null ? "{}" : current);
         JsonNode target = PATCH_MAPPER.valueToTree(desired == null ? "{}" : desired);

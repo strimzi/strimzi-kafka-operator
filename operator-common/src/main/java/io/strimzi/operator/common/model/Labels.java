@@ -22,8 +22,14 @@ import static java.util.Collections.unmodifiableMap;
  * An immutable set of labels
  */
 public class Labels {
-
+    /**
+     * Strimzi domain used for the Strimzi labels
+     */
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
+
+    /**
+     * Kubernetes domain used for Kubernetes labels
+     */
     public static final String KUBERNETES_DOMAIN = "app.kubernetes.io/";
 
     /**
@@ -66,6 +72,10 @@ public class Labels {
      * controls
      */
     public static final String STRIMZI_CONTROLLER_LABEL = STRIMZI_DOMAIN + "controller";
+
+    /**
+     * Indicates the name of the controller
+     */
     public static final String STRIMZI_CONTROLLER_NAME_LABEL = STRIMZI_DOMAIN + "controller-name";
 
     /**
@@ -93,6 +103,10 @@ public class Labels {
      * https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/#labels
      */
     public static final String KUBERNETES_PART_OF_LABEL = KUBERNETES_DOMAIN + "part-of";
+
+    /**
+     * Indicates the application name
+     */
     public static final String APPLICATION_NAME = "strimzi";
 
     /**

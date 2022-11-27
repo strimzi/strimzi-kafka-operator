@@ -21,12 +21,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Validation visitor
+ */
 public class ValidationVisitor implements ResourceVisitor.Visitor {
     private final ReconciliationLogger logger;
     private final HasMetadata resource;
     private final Set<Condition> warningConditions;
     private final String transitionTime = StatusUtils.iso8601Now();
 
+    /**
+     * Constructs the validation visitor
+     *
+     * @param resource              Kubernetes resource
+     * @param logger                Reconciliation logger
+     * @param warningConditions     Warning conditions with validation warnings
+     */
     public ValidationVisitor(HasMetadata resource, ReconciliationLogger logger, Set<Condition> warningConditions) {
         this.resource = resource;
         this.logger = logger;

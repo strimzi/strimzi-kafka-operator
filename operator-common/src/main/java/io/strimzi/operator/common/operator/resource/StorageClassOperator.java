@@ -11,9 +11,11 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operator for managing storage classes
+ */
 public class StorageClassOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
         StorageClass, StorageClassList, Resource<StorageClass>> {
-
     /**
      * Constructor.
      *
@@ -24,7 +26,6 @@ public class StorageClassOperator extends AbstractNonNamespacedResourceOperator<
     public StorageClassOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "StorageClass");
     }
-
 
     @Override
     protected NonNamespaceOperation<StorageClass, StorageClassList,

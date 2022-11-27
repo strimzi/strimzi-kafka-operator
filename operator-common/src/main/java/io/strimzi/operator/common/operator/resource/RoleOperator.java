@@ -11,12 +11,14 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operator for managing Roles
+ */
 public class RoleOperator extends AbstractResourceOperator<
         KubernetesClient,
         Role,
         RoleList,
         Resource<Role>> {
-
     /**
      * Constructor
      * @param vertx The Vertx instance

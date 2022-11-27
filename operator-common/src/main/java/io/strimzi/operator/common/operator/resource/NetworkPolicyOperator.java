@@ -13,6 +13,9 @@ import io.vertx.core.Vertx;
 
 import java.util.regex.Pattern;
 
+/**
+ * Operator for managing network policies
+ */
 public class NetworkPolicyOperator extends AbstractResourceOperator<KubernetesClient, NetworkPolicy, NetworkPolicyList, Resource<NetworkPolicy>> {
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
@@ -23,6 +26,12 @@ public class NetworkPolicyOperator extends AbstractResourceOperator<KubernetesCl
                     "|/spec/policyTypes" +
                     "|/status)$");
 
+    /**
+     * Constructs the Network Policy Operator
+     *
+     * @param vertx     Vert.x instance
+     * @param client    Kubernetes client
+     */
     public NetworkPolicyOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, "NetworkPolicy");
     }

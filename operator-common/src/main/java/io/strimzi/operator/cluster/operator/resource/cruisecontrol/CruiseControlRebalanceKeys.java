@@ -9,22 +9,51 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
  * rebalance endpoint.
  */
 public enum CruiseControlRebalanceKeys {
-
+    /**
+     * Summary
+     */
     SUMMARY("summary"),
+
+    /**
+     * Original response
+     */
     ORIGINAL_RESPONSE("originalResponse"),
+
+    /**
+     * Load before optimization
+     */
     LOAD_BEFORE_OPTIMIZATION("loadBeforeOptimization"),
+
+    /**
+     * Load after optimization
+     */
     LOAD_AFTER_OPTIMIZATION("loadAfterOptimization"),
+
+    /**
+     * Brokers
+     */
     BROKERS("brokers"),
+
+    /**
+     * Broker
+     */
     BROKER_ID("Broker");
 
     private String key;
 
+    /**
+     * Creates the Enum from String
+     *
+     * @param key  String with the key
+     */
     CruiseControlRebalanceKeys(String key) {
         this.key = key;
     }
 
+    /**
+     * @return  The key as a String
+     */
     public String getKey() {
         return key;
     }
-
 }

@@ -4,19 +4,16 @@
  */
 package io.strimzi.operator.cluster.model;
 
+/**
+ * Exception indicating the a resource does not exist
+ */
 public class NoSuchResourceException extends RuntimeException {
-    public NoSuchResourceException() {
-    }
-
+    /**
+     * Constructor
+     *
+     * @param message   Error message
+     */
     public NoSuchResourceException(String message) {
         super(message);
-    }
-
-    public NoSuchResourceException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public NoSuchResourceException(Throwable cause) {
-        super(cause);
     }
 }
