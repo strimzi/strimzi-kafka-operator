@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -25,6 +26,7 @@ import static io.strimzi.systemtest.Constants.TRACING;
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
+@Disabled
 public class OpenTelemetryST extends TracingAbstractST {
 
     @Override
