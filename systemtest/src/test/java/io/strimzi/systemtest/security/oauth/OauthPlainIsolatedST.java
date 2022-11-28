@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
@@ -82,6 +83,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     private final String oauthClusterName = "oauth-cluster-plain-name";
     private final String customClaimListenerPort = "9099";
+    private final List<String> expectedOauthMetrics = Arrays.asList("strimzi_oauth_http_requests_maxtimems", "strimzi_oauth_http_requests_mintimems",
+        "strimzi_oauth_http_requests_avgtimems", "strimzi_oauth_http_requests_totaltimems", "strimzi_oauth_http_requests_count");
 
     @Description(
             "As an oauth producer, I should be able to produce messages to the kafka broker\n" +
@@ -302,6 +305,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewKafkaClientAuthenticationOAuth()
+                    .withEnableMetrics()
                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .withClientId("kafka-connect")
                     .withNewClientSecret()
@@ -730,8 +734,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
     @ParallelTest
     void testOAuthKafkaMetrics(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
-        List<String> expectedMetrics = Arrays.asList("strimzi_oauth_http_requests_maxtimems", "strimzi_oauth_http_requests_mintimems",
-            "strimzi_oauth_http_requests_avgtimems", "strimzi_oauth_http_requests_totaltimems", "strimzi_oauth_http_requests_count");
 
         // Collect metrics and verify
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
@@ -745,10 +747,206 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build();
 
         metricsCollector.collectMetricsFromPods();
-        Collection<String> resultMetrics = metricsCollector.getCollectedData().values();
+        checkOauthMetrics(metricsCollector.getCollectedData().values());
+    }
 
+    @ParallelTest
+    void testOAuthKafkaBridgeMetrics(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
+            .editMetadata()
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+            .endMetadata()
+            .editSpec()
+                .withAuthentication(
+                    new KafkaClientAuthenticationOAuthBuilder()
+                    .withEnableMetrics(true)
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .withClientId("kafka-bridge")
+                    .withNewClientSecret()
+                    .withSecretName(BRIDGE_OAUTH_SECRET)
+                    .withKey(OAUTH_KEY)
+                    .endClientSecret()
+                    .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                    .withReadTimeoutSeconds(READ_TIMEOUT_S)
+                    .build())
+            .endSpec()
+            .build());
+
+        // Collect metrics and verify
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+
+        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withScraperPodName(scraperName)
+            .withComponentName(oauthClusterName)
+            .withComponentType(ComponentType.KafkaBridge)
+            .build();
+
+        metricsCollector.collectMetricsFromPods();
+        checkOauthMetrics(metricsCollector.getCollectedData().values());
+    }
+
+    @ParallelTest
+    void testOAuthKafkaConnectMetrics(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithMetrics(oauthClusterName, oauthClusterName, 1)
+            .editMetadata()
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+            .endMetadata()
+            .editOrNewSpec()
+                .withReplicas(1)
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withNewKafkaClientAuthenticationOAuth()
+                    .withEnableMetrics()
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .withClientId("kafka-connect")
+                    .withNewClientSecret()
+                        .withSecretName(CONNECT_OAUTH_SECRET)
+                        .withKey(OAUTH_KEY)
+                    .endClientSecret()
+                    .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                    .withReadTimeoutSeconds(READ_TIMEOUT_S)
+                .endKafkaClientAuthenticationOAuth()
+            .endSpec()
+            .build();
+
+        // This is required to be able to remove the TLS setting, the builder cannot remove it
+        connect.getSpec().setTls(null);
+
+        resourceManager.createResource(extensionContext, connect);
+
+        // Collect metrics and verify
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+
+        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withScraperPodName(scraperName)
+            .withComponentName(oauthClusterName)
+            .withComponentType(ComponentType.KafkaConnect)
+            .build();
+
+        metricsCollector.collectMetricsFromPods();
+        checkOauthMetrics(metricsCollector.getCollectedData().values());
+    }
+
+    @ParallelTest
+    void testOAuthKafkaMirrorMaker2Metrics(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
+        String kafkaSourceClusterName = oauthClusterName;
+        String kafkaTargetClusterName = clusterName + "-target";
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
+            .editMetadata()
+            .withNamespace(clusterOperator.getDeploymentNamespace())
+            .endMetadata()
+            .editSpec()
+            .editKafka()
+            .withListeners(new GenericKafkaListenerBuilder()
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                    .withPort(9092)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(false)
+                    .withNewKafkaListenerAuthenticationOAuth()
+                        .withEnableMetrics(true)
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                    .endKafkaListenerAuthenticationOAuth()
+                    .build(),
+                new GenericKafkaListenerBuilder()
+                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                    .withPort(9094)
+                    .withType(KafkaListenerType.NODEPORT)
+                    .withTls(false)
+                    .withNewKafkaListenerAuthenticationOAuth()
+                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                    .endKafkaListenerAuthenticationOAuth()
+                    .build())
+            .endKafka()
+            .endSpec()
+            .build());
+
+        // Deploy Mirror Maker 2.0 with oauth
+        KafkaMirrorMaker2ClusterSpec sourceClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
+            .withAlias(kafkaSourceClusterName)
+            .withConfig(connectorConfig)
+            .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaSourceClusterName))
+            .withNewKafkaClientAuthenticationOAuth()
+            .withEnableMetrics(true)
+            .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withClientId("kafka-mirror-maker-2")
+            .withNewClientSecret()
+            .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
+            .withKey(OAUTH_KEY)
+            .endClientSecret()
+            .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+            .withReadTimeoutSeconds(READ_TIMEOUT_S)
+            .endKafkaClientAuthenticationOAuth()
+            .build();
+
+        KafkaMirrorMaker2ClusterSpec targetClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
+            .withAlias(kafkaTargetClusterName)
+            .withConfig(connectorConfig)
+            .withBootstrapServers(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
+            .withNewKafkaClientAuthenticationOAuth()
+            .withEnableMetrics(true)
+            .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withClientId("kafka-mirror-maker-2")
+            .withNewClientSecret()
+            .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
+            .withKey(OAUTH_KEY)
+            .endClientSecret()
+            .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+            .withReadTimeoutSeconds(READ_TIMEOUT_S)
+            .endKafkaClientAuthenticationOAuth()
+            .build();
+
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(oauthClusterName, kafkaTargetClusterName, kafkaSourceClusterName, 1, clusterOperator.getDeploymentNamespace(), clusterOperator.getDeploymentNamespace())
+            .editMetadata()
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+            .endMetadata()
+            .editSpec()
+                .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
+                .editFirstMirror()
+                    .withSourceCluster(kafkaSourceClusterName)
+                .endMirror()
+            .endSpec()
+            .build());
+
+        // Collect metrics and verify
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+
+        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withScraperPodName(scraperName)
+            .withComponentName(oauthClusterName)
+            .withComponentType(ComponentType.KafkaMirrorMaker2)
+            .build();
+
+        metricsCollector.collectMetricsFromPods();
+        checkOauthMetrics(metricsCollector.getCollectedData().values());
+    }
+
+    void checkOauthMetrics(Collection<String> resultMetrics){
         for (String result : resultMetrics) {
-            for (String expectedMetric : expectedMetrics) {
+            LOGGER.info("Result metrics {}", result);
+            for (String expectedMetric : expectedOauthMetrics) {
+                LOGGER.info("Searching result metrics, expecting {}", expectedMetric);
                 assertTrue(result.contains(expectedMetric));
             }
         }
@@ -767,20 +965,9 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(TestUtils.USER_PATH + "/src/test/resources/oauth2/oauth-metrics.yaml", "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(kafkaMetricsCm).createOrReplace();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 3)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(oauthClusterName, clusterOperator.getDeploymentNamespace(), 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewJmxPrometheusExporterMetricsConfig()
-                    .withNewValueFrom()
-                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                        .withName("kafka-metrics")
-                        .withKey("metrics-config.yml")
-                        .build())
-                    .endValueFrom()
-                    .endJmxPrometheusExporterMetricsConfig()
                     .withListeners(new GenericKafkaListenerBuilder()
                                 .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
@@ -796,7 +983,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                                     .withGroupsClaim(GROUPS_CLAIM)
                                     .withGroupsClaimDelimiter(GROUPS_CLAIM_DELIMITER)
-                                    .withEnableMetrics()
+                                    .withEnableMetrics(true)
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build(),
                             new GenericKafkaListenerBuilder()
