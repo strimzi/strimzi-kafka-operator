@@ -542,17 +542,18 @@ public class KafkaRollerTest {
     private PodOperator mockPodOps(Function<Integer, Future<Void>> readiness) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
-            invocation -> new PodBuilder()
-                    .withNewMetadata()
-                        .withNamespace(invocation.getArgument(0))
-                        .withName(invocation.getArgument(1))
-                    .endMetadata()
-                .build()
+                invocation -> new PodBuilder()
+                        .withNewMetadata()
+                            .withNamespace(invocation.getArgument(0))
+                            .withName(invocation.getArgument(1))
+                        .endMetadata()
+                        .build()
         );
         when(podOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenAnswer(invocationOnMock ->  {
             String podName = invocationOnMock.getArgument(2);
             return readiness.apply(podName2Number(podName));
         });
+
         when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock ->  {
             String podName = invocationOnMock.getArgument(1);
             Future<Void> ready = readiness.apply(podName2Number(podName));

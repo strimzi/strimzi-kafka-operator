@@ -204,6 +204,7 @@ public class KafkaRoller {
                 // only for it not to become ready and thus drive the cluster to a worse state.
                 pods.add(podOperations.isReady(namespace, podList.get(podIndex)) ? pods.size() : 0, new PodRef(podList.get(podIndex), ModelUtils.idOfPod(podList.get(podIndex))));
             }
+
             LOGGER.debugCr(reconciliation, "Initial order for rolling restart {}", pods);
             List<Future> futures = new ArrayList<>(podList.size());
             for (PodRef podRef: pods) {
@@ -328,6 +329,10 @@ public class KafkaRoller {
         Pod pod;
         try {
             pod = podOperations.get(namespace, podRef.getPodName());
+            if (pod == null) {
+                LOGGER.debugCr(reconciliation, "Pod {} doesn't exist. There seems to be some problem with the creation of pod by StatefulSets/StrimziPodSets controller", podRef.getPodName());
+                return;
+            }
         } catch (KubernetesClientException e) {
             throw new UnforceableProblem("Error getting pod " + podRef.getPodName(), e);
         }
