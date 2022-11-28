@@ -733,11 +733,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     @ParallelTest
     void testOAuthKafkaMetrics(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         // Collect metrics and verify
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
-        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -752,7 +752,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     @ParallelTest
     void testOAuthKafkaBridgeMetrics(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
             .editMetadata()
@@ -791,7 +791,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     @ParallelTest
     void testOAuthKafkaConnectMetrics(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithMetrics(oauthClusterName, oauthClusterName, 1)
             .editMetadata()
@@ -821,7 +821,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         // Collect metrics and verify
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
-        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -836,12 +836,12 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     @ParallelTest
     void testOAuthKafkaMirrorMaker2Metrics(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        String kafkaSourceClusterName = oauthClusterName;
-        String kafkaTargetClusterName = clusterName + "-target";
+        final String kafkaSourceClusterName = oauthClusterName;
+        final String kafkaTargetClusterName = clusterName + "-target";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
             .editMetadata()
@@ -929,7 +929,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         // Collect metrics and verify
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
-        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -943,9 +943,9 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
     }
 
     void checkOauthMetrics(Collection<String> resultMetrics){
-        for (String result : resultMetrics) {
+        for (final String result : resultMetrics) {
             LOGGER.info("Result metrics {}", result);
-            for (String expectedMetric : expectedOauthMetrics) {
+            for (final String expectedMetric : expectedOauthMetrics) {
                 LOGGER.info("Searching result metrics, expecting {}", expectedMetric);
                 assertTrue(result.contains(expectedMetric));
             }
@@ -960,10 +960,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         final String audienceListener = "audlistnr";
 
         keycloakInstance.setRealm("internal", false);
-
-        // This was done due to different pattern used for oauth metrics
-        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(TestUtils.USER_PATH + "/src/test/resources/oauth2/oauth-metrics.yaml", "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(kafkaMetricsCm).createOrReplace();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(oauthClusterName, clusterOperator.getDeploymentNamespace(), 3, 3)
             .editSpec()
