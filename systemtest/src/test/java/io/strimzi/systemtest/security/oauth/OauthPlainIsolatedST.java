@@ -739,7 +739,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+        final MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(scraperName)
             .withComponentName(oauthClusterName)
@@ -776,9 +776,9 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         // Collect metrics and verify
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
-        String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
+        final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+        final MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(scraperName)
             .withComponentName(oauthClusterName)
@@ -823,7 +823,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+        final MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(scraperName)
             .withComponentName(oauthClusterName)
@@ -931,7 +931,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
         final String scraperName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+        final MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withScraperPodName(scraperName)
             .withComponentName(oauthClusterName)
