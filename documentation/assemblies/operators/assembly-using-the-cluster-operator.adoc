@@ -20,5 +20,5 @@ include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]
 include::../../modules/operators/proc-configuring-proxy-config-cluster-operator.adoc[leveloffset=+1]
 //Enabling leader election
 include::../../assemblies/operators/assembly-using-multiple-cluster-operators.adoc[leveloffset=+1]
-// Configuring FIPS mode from Cluster Operator
-include::../../modules/operators/proc-configuring-fips-mode-cluster-operator.adoc[leveloffset=+1]
+// FIPS Support
+include::../../assemblies/operators/assembly-fips-support.adoc[leveloffset=+1]

@@ -1,0 +1,53 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='proc-disabling-fips-mode-cluster-operator-{context}']
+= Disabling FIPS mode
+
+[role="_abstract"]
+Strimzi automatically switches to FIPS mode when running on a FIPS-enabled Kubernetes cluster.
+Disable FIPS mode by setting the `FIPS_MODE` environment variable to `disabled` in the deployment configuration for the Cluster Operator.
+With FIPS mode disabled, Strimzi automatically disables FIPS in the OpenJDK for all components.
+With FIPS mode disabled, Strimzi is not FIPS compliant.
+The Strimzi operators, as well as all operands, run in the same way as if they were running on an Kubernetes cluster without FIPS enabled.
+
+.Procedure
+
+. To disable the FIPS mode in the Cluster Operator, update its `Deployment` configuration (`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`) and add the `FIPS_MODE` environment variable.
++
+--
+.Example FIPS configuration for the Cluster Operator
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  # ...
+  template:
+    spec:
+      serviceAccountName: strimzi-cluster-operator
+      containers:
+        # ...
+        env:
+        # ...
+        - name: "FIPS_MODE"
+          value: "disabled" # <1>
+  # ...
+----
+<1> Disables the FIPS mode.
+--
++
+Alternatively, edit the `Deployment` directly:
++
+[source,shell,subs=+quotes]
+----
+kubectl edit deployment strimzi-cluster-operator
+----
+
+. If you updated the YAML file instead of editing the `Deployment` directly, apply the changes:
++
+[source,shell,subs=+quotes]
+----
+kubectl apply -f install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+----

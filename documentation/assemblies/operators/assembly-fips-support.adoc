@@ -1,0 +1,27 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='assembly-fips-support-{context}']
+= FIPS support
+
+[role="_abstract"]
+Federal Information Processing Standards (FIPS) are standards for computer security and interoperability.
+When running Strimzi on a FIPS-enabled Kubernetes cluster, the OpenJDK used in Strimzi container images automatically switches to FIPS mode.
+From version 0.33, Strimzi can run on FIPS-enabled Kubernetes clusters without any changes or special configuration.
+It uses only the FIPS-compliant security libraries from the OpenJDK.
+
+.Minimum password length
+When running in the FIPS mode, SCRAM-SHA-512 passwords need to be at least 32 characters long.
+From Strimzi 0.33, the default password length in Strimzi User Operator is set to 32 characters as well.
+If you have a Kafka cluster with custom configuration that uses a password length that is less than 32 characters, you need to update your configuration.
+If you have any users with passwords shorter than 32 characters, you need to regenerate a password with the required length.
+You can do that, for example, by deleting the user secret and waiting for the User Operator to create a new password with the appropriate length.
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:https://www.nist.gov/standardsgov/compliance-faqs-federal-information-processing-standards-fips[What are Federal Information Processing Standards (FIPS)^]
+
+// Configuring Cluster Operator replicas
+include::../../modules/operators/proc-disabling-fips-mode-cluster-operator.adoc[leveloffset=+1]
