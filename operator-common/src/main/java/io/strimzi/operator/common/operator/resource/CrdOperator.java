@@ -21,6 +21,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+/**
+ * Operator for managing CRD resources
+ *
+ * @param <C> The type of client used to interact with kubernetes.
+ * @param <T> The custom resource type.
+ * @param <L> The list variant of the custom resource type.
+ */
 @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
         justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
@@ -46,7 +53,6 @@ public class CrdOperator<C extends KubernetesClient,
         this.cls = cls;
         this.listCls = listCls;
     }
-
 
     @Override
     protected MixedOperation<T, L, Resource<T>> operation() {
@@ -80,6 +86,14 @@ public class CrdOperator<C extends KubernetesClient,
         return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
+    /**
+     * Patches custom resource asynchronously
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          Desired resource
+     *
+     * @return  Future which completes when the resource is patched
+     */
     public Future<T> patchAsync(Reconciliation reconciliation, T resource) {
         Promise<T> blockingPromise = Promise.promise();
 
@@ -99,6 +113,14 @@ public class CrdOperator<C extends KubernetesClient,
         return blockingPromise.future();
     }
 
+    /**
+     * Updates custom resource status asynchronously
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          Desired resource with the updated statis
+     *
+     * @return  Future which completes when the status is patched
+     */
     public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
         Promise<T> blockingPromise = Promise.promise();
 

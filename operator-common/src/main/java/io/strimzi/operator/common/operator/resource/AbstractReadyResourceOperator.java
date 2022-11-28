@@ -38,6 +38,17 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
         super(vertx, client, resourceKind);
     }
 
+    /**
+     * Waits for resource to get ready
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param namespace         Namespace of the resource
+     * @param name              Name of the resource
+     * @param pollIntervalMs    How often should it poll for readiness
+     * @param timeoutMs         How long should it wait for the resource to get ready
+     *
+     * @return  A future which completes when the resource is ready or times out
+     */
     public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isReady);
     }

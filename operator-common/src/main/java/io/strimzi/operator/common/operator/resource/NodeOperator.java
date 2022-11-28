@@ -11,9 +11,11 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
+/**
+ * Operator for managing nodes
+ */
 public class NodeOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
         Node, NodeList, Resource<Node>> {
-
     /**
      * Constructor.
      *

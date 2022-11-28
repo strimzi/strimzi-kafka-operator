@@ -33,6 +33,13 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
         this(vertx, client, new PodOperator(vertx, client));
     }
 
+    /**
+     * Constructor
+     *
+     * @param vertx             Vert.x instance
+     * @param client            Kubernetes client
+     * @param podOperations     Pod Operator for managing pods
+     */
     public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
         super(vertx, client, "Deployment");
         this.podOperations = podOperations;

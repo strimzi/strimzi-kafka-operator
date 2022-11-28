@@ -30,7 +30,14 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractScalableResourceOperator.class);
 
+    /**
+     * Annotation key for indicating the resource generation
+     */
     public static final String ANNO_STRIMZI_IO_GENERATION = Annotations.STRIMZI_DOMAIN + "generation";
+
+    /**
+     * Annotation key for deleting both a Pod and a related PVC
+     */
     public static final String ANNO_STRIMZI_IO_DELETE_POD_AND_PVC = Annotations.STRIMZI_DOMAIN + "delete-pod-and-pvc";
 
     /**

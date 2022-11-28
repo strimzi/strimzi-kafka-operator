@@ -27,7 +27,6 @@ import java.util.Set;
  * An operator instance is not bound to a particular namespace. Rather the namespace is passed as a parameter.
  */
 public interface Operator {
-
     /**
      * The Kubernetes kind of the resource "consumed" by this operator
      * @return The kind.
@@ -66,6 +65,14 @@ public interface Operator {
         });
     }
 
+    /**
+     * Reconciles a set of resources
+     *
+     * @param trigger       The cause of this reconciliation (for logging).
+     * @param desiredNames  Set of resources which should be reconciled
+     * @param namespace     The namespace to reconcile, or {@code *} to reconcile across all namespaces.
+     * @param handler       Handler called on completion.
+     */
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
         if (namespace.equals("*")) {
             metrics().resetResourceAndPausedResourceCounters();

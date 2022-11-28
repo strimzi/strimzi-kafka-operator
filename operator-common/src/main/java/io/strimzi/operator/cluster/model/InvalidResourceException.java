@@ -4,19 +4,41 @@
  */
 package io.strimzi.operator.cluster.model;
 
+/**
+ * Exception thrown when the custom resource is invalid
+ */
 public class InvalidResourceException extends RuntimeException {
+    /**
+     * Constructor
+     */
     public InvalidResourceException() {
         super();
     }
 
+    /**
+     * Constructor
+     *
+     * @param s Message describing the issue
+     */
     public InvalidResourceException(String s) {
         super(s);
     }
 
+    /**
+     * Constructor
+     *
+     * @param cause Cause of the issue
+     */
     public InvalidResourceException(Throwable cause) {
         super(cause);
     }
 
+    /**
+     * Constructor
+     *
+     * @param message   Message describing the issue
+     * @param cause     Cause of the issue
+     */
     public InvalidResourceException(String message, Throwable cause) {
         super(message, cause);
     }

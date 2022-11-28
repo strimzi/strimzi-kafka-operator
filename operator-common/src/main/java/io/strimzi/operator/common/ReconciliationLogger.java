@@ -23,6 +23,10 @@ import org.apache.logging.log4j.util.Supplier;
  */
 public class ReconciliationLogger implements Serializable {
     private static final long serialVersionUID = 258810740149174L;
+
+    /**
+     * Wrapped logger which we extend
+     */
     private final ExtendedLoggerWrapper logger;
 
     private static final String FQCN = ReconciliationLogger.class.getName();
@@ -8412,26 +8416,44 @@ public class ReconciliationLogger implements Serializable {
         logger.logIfEnabled(FQCN, ALL, reconciliation.getMarker(), msgSupplier, t);
     }
 
+    /**
+     * @return  True if fatal logging is enabled. False otherwise.
+     */
     public boolean isFatalEnabled() {
         return logger.isFatalEnabled();
     }
 
+    /**
+     * @return  True if error logging is enabled. False otherwise.
+     */
     public boolean isErrorEnabled() {
         return logger.isErrorEnabled();
     }
 
+    /**
+     * @return  True if warning logging is enabled. False otherwise.
+     */
     public boolean isWarnEnabled() {
         return logger.isWarnEnabled();
     }
 
+    /**
+     * @return  True if info logging is enabled. False otherwise.
+     */
     public boolean isInfoEnabled() {
         return logger.isInfoEnabled();
     }
 
+    /**
+     * @return  True if debug logging is enabled. False otherwise.
+     */
     public boolean isDebugEnabled() {
         return logger.isDebugEnabled();
     }
 
+    /**
+     * @return  True if trace logging is enabled. False otherwise.
+     */
     public boolean isTraceEnabled() {
         return logger.isTraceEnabled();
     }

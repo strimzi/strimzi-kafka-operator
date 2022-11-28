@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
  * Operations for {@code Service}s.
  */
 public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceOperator.class);
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
@@ -197,6 +196,17 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
         return internalDelete(reconciliation, namespace, name, true);
     }
 
+    /**
+     * Waits for endpoint readiness
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param namespace             Namespace
+     * @param name                  Name
+     * @param pollInterval          Interval in which it will poll for the readiness
+     * @param operationTimeoutMs    How long to wait for the endpoint to be ready
+     *
+     * @return  Future which completes when the endpoint is ready
+     */
     public Future<Void> endpointReadiness(Reconciliation reconciliation, String namespace, String name, long pollInterval, long operationTimeoutMs) {
         return endpointOperations.readiness(reconciliation, namespace, name, pollInterval, operationTimeoutMs);
     }

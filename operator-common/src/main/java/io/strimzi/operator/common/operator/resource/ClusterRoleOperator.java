@@ -15,9 +15,11 @@ import io.vertx.core.Vertx;
 
 import java.io.IOException;
 
+/**
+ * Operator for managing Cluster Roles
+ */
 public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<KubernetesClient,
         ClusterRole, ClusterRoleList, Resource<ClusterRole>> {
-
     /**
      * Constructor.
      * @param vertx The Vertx instance.
@@ -33,6 +35,13 @@ public class ClusterRoleOperator extends AbstractNonNamespacedResourceOperator<K
         return client.rbac().clusterRoles();
     }
 
+    /**
+     * Converts YAML from String into the ClusterRole object
+     *
+     * @param yaml  YAML with the Cluster Role definition
+     *
+     * @return  Cluster Role instance based on the provided YAML
+     */
     public static ClusterRole convertYamlToClusterRole(String yaml) {
         try {
             ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());

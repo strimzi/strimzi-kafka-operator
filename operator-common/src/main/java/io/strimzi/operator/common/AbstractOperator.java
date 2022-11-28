@@ -72,6 +72,10 @@ public abstract class AbstractOperator<
 
     private static final long PROGRESS_WARNING = 60_000L;
     protected static final int LOCK_TIMEOUT_MS = 10000;
+
+    /**
+     * Prefix used for metrics provided by Strimzi operators
+     */
     public static final String METRICS_PREFIX = "strimzi.";
 
     protected final Vertx vertx;
@@ -475,6 +479,13 @@ public abstract class AbstractOperator<
         return async(vertx, () -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
     }
 
+    /**
+     * Recreates a Kubernetes watch
+     *
+     * @param namespace Namespace which should be watched
+     *
+     * @return  Consumer for a Watched exception
+     */
     public Consumer<WatcherException> recreateWatch(String namespace) {
         Consumer<WatcherException> kubernetesClientExceptionConsumer = new Consumer<WatcherException>() {
             @Override

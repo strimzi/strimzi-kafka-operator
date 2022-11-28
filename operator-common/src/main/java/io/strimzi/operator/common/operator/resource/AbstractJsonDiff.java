@@ -10,6 +10,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import io.fabric8.kubernetes.client.utils.Serialization;
 
+/**
+ * Abstract class for diffing Json and YAML resources
+ */
 public abstract class AbstractJsonDiff {
     // use SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS just for better human readability in the logs
     @SuppressWarnings("deprecation") // Suppress deprecated warning of SerializationFeature.WRITE_EMPTY_JSON_ARRAYS which currently does not have proper alternative

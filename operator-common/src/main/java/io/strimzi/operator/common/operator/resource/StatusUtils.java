@@ -27,6 +27,9 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * Utility methods for working with status sections of custom resources
+ */
 public class StatusUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StatusUtils.class);
 
@@ -68,10 +71,28 @@ public class StatusUtils {
         return ChronoUnit.MINUTES.between(date, ZonedDateTime.now(ZoneOffset.UTC));
     }
 
+    /**
+     * Creates condition from an exception
+     *
+     * @param type      Type of the condition
+     * @param status    Status message
+     * @param error     Exception used to build the condition
+     *
+     * @return  New condition based on the exception
+     */
     public static Condition buildConditionFromException(String type, String status, Throwable error) {
         return buildCondition(type, status, error);
     }
 
+    /**
+     * Creates condition
+     *
+     * @param type      Type of the condition
+     * @param status    Status message
+     * @param error     Exception used to build the condition
+     *
+     * @return  New condition
+     */
     public static Condition buildCondition(String type, String status, Throwable error) {
         Condition readyCondition;
         if (error == null) {
@@ -92,10 +113,27 @@ public class StatusUtils {
         return readyCondition;
     }
 
+    /**
+     * Creates a new warning type condition
+     *
+     * @param reason    Reason for the condition
+     * @param message   Message of the condition
+     *
+     * @return  New warning type condition
+     */
     public static Condition buildWarningCondition(String reason, String message) {
         return buildWarningCondition(reason, message, iso8601Now());
     }
 
+    /**
+     * Creates a new warning type condition
+     *
+     * @param reason            Reason for the condition
+     * @param message           Message of the condition
+     * @param transitionTime    Transition time
+     *
+     * @return  New warning type condition
+     */
     public static Condition buildWarningCondition(String reason, String message, String transitionTime) {
         return new ConditionBuilder()
                 .withLastTransitionTime(transitionTime)
@@ -106,6 +144,13 @@ public class StatusUtils {
                 .build();
     }
 
+    /**
+     * Builds new rebalance condition
+     *
+     * @param type  Type of the condition
+     *
+     * @return  New rebalance condition
+     */
     public static Condition buildRebalanceCondition(String type) {
         return new ConditionBuilder()
                 .withLastTransitionTime(iso8601Now())
@@ -114,14 +159,49 @@ public class StatusUtils {
                 .build();
     }
 
+    /**
+     * Sets a status with conditions and observed generation in a resource
+     *
+     * @param resource  Current custom resource
+     * @param status    Desired status
+     * @param result    Reconciliation result to add to the status
+     *
+     * @param <R>   Type of the custom resource
+     * @param <P>   Type of the custom resource spec
+     * @param <S>   Type of the custom resource status
+     */
     public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
         setStatusConditionAndObservedGeneration(resource, status, result.cause());
     }
 
+    /**
+     * Sets a status with conditions and observed generation in a resource
+     *
+     * @param resource  Current custom resource
+     * @param status    Desired status
+     * @param error     Reconciliation error
+     *
+     * @param <R>   Type of the custom resource
+     * @param <P>   Type of the custom resource spec
+     * @param <S>   Type of the custom resource status
+     */
     public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
         setStatusConditionAndObservedGeneration(resource, status, error == null ? "Ready" : "NotReady", "True", error);
     }
 
+    /**
+     * Sets a status with conditions and observed generation in a resource
+     *
+     * @param resource          Current custom resource
+     * @param status            Desired status
+     * @param type              Type of the error
+     * @param conditionStatus   Condition status
+     * @param error             Reconciliation error
+     *
+     * @param <R>   Type of the custom resource
+     * @param <P>   Type of the custom resource spec
+     * @param <S>   Type of the custom resource status
+     */
     public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus, Throwable error) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
@@ -130,10 +210,33 @@ public class StatusUtils {
         status.setConditions(Collections.singletonList(readyCondition));
     }
 
+    /**
+     * Sets a status with conditions and observed generation in a resource
+     *
+     * @param resource  Current custom resource
+     * @param status    Desired status
+     * @param type      Type of the error
+     * @param error     Reconciliation error
+     *
+     * @param <R>   Type of the custom resource
+     * @param <P>   Type of the custom resource spec
+     * @param <S>   Type of the custom resource status
+     */
     public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, Throwable error) {
         setStatusConditionAndObservedGeneration(resource, status, type, "True", error);
     }
 
+    /**
+     * Sets a status with conditions and observed generation in a resource
+     *
+     * @param resource  Current custom resource
+     * @param status    Desired status
+     * @param condition Condition to add to the status
+     *
+     * @param <R>   Type of the custom resource
+     * @param <P>   Type of the custom resource spec
+     * @param <S>   Type of the custom resource status
+     */
     public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Condition condition) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
@@ -141,6 +244,9 @@ public class StatusUtils {
         status.setConditions(Collections.singletonList(condition));
     }
 
+    /**
+     * @return  Creates a paused reconciliation condition
+     */
     public static Condition getPausedCondition() {
         return new ConditionBuilder()
                 .withLastTransitionTime(StatusUtils.iso8601Now())

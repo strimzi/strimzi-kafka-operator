@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Utils for working with nodes
+ */
 public class NodeUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(NodeUtils.class);
 

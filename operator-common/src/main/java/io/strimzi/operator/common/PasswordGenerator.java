@@ -15,7 +15,6 @@ public class PasswordGenerator {
     private final String firstCharacterAlphabet;
     private final String alphabet;
 
-
     /**
      * Constructor to initialize the PasswordGenerator with alphabets and password length.
      * It distinguishes between the alphabet for the first character of the password and the rest.
@@ -31,6 +30,11 @@ public class PasswordGenerator {
         this.alphabet = alphabet;
     }
 
+    /**
+     * Constructs the Password Generator with default alphabet
+     *
+     * @param length    Length of the generated passwords
+     */
     public PasswordGenerator(int length) {
         this(length, "abcdefghijklmnopqrstuvwxyz" +
                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ",

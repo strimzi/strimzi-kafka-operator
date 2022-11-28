@@ -16,15 +16,49 @@ import java.util.stream.Collectors;
  * KafkaRebalance status.
  */
 public enum CruiseControlLoadParameters {
-
+    /**
+     * Leaders parameter
+     */
     LEADERS("Leaders", "leaders", "int"),
+
+    /**
+     * Replicas parameter
+     */
     REPLICAS("Replicas", "replicas", "int"),
+
+    /**
+     * CPU percentage parameter
+     */
     CPU_PERCENTAGE("CpuPct", "cpuPercentage", "double"),
+
+    /**
+     * Disk percentage parameter
+     */
     DISK_PERCENTAGE("DiskPct", "diskUsedPercentage", "double"),
+
+    /**
+     * Disk size parameter
+     */
     DISK_MB("DiskMB", "diskUsedMB", "double"),
+
+    /**
+     * Outgoing network capactiy
+     */
     NETWORK_OUT_RATE("NwOutRate", "networkOutRateKB", "double"),
+
+    /**
+     * Leader inbound network rate
+     */
     LEADER_NETWORK_IN_RATE("LeaderNwInRate", "leaderNetworkInRateKB", "double"),
+
+    /**
+     * Follower inbound network rate
+     */
     FOLLOWER_NETWORK_IN_RATE("FollowerNwInRate", "followerNetworkInRateKB", "double"),
+
+    /**
+     * Potential maximum outgoing network rate
+     */
     POTENTIAL_MAX_NETWORK_OUT_RATE("PnwOutRate", "potentialMaxNetworkOutRateKB", "double");
 
     /** The key used in the load JSON object returned by Cruise Control. */
@@ -34,21 +68,34 @@ public enum CruiseControlLoadParameters {
     /** The type of value stored in the relevant field. */
     private String type;
 
+    /**
+     * Constructs an Enum with Cruise Control parameter
+     *
+     * @param cruiseControlKey          Key of the parameter
+     * @param kafkaRebalanceStatusKey   Status key of the parameter
+     * @param type                      Type of the parameter
+     */
     CruiseControlLoadParameters(String cruiseControlKey, String kafkaRebalanceStatusKey, String type) {
         this.cruiseControlKey = cruiseControlKey;
         this.kafkaRebalanceStatusKey = kafkaRebalanceStatusKey;
         this.type = type;
     }
 
+    /**
+     * @return  The parameter key
+     */
     public String getCruiseControlKey() {
         return cruiseControlKey;
     }
 
+    /**
+     * @return  The status key
+     */
     public String getKafkaRebalanceStatusKey() {
         return kafkaRebalanceStatusKey;
     }
 
-    public String getType() {
+    private String getType() {
         return type;
     }
 
@@ -58,10 +105,16 @@ public enum CruiseControlLoadParameters {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @return  List with all integer parameters
+     */
     public static List<CruiseControlLoadParameters> getIntegerParameters() {
         return filterByType("int");
     }
 
+    /**
+     * @return  List with all double parameters
+     */
     public static List<CruiseControlLoadParameters> getDoubleParameters() {
         return filterByType("double");
     }

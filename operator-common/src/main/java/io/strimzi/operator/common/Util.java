@@ -69,10 +69,23 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * Class with various utility methods
+ */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class Util {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
+    /**
+     * Executes blocking code asynchronously
+     *
+     * @param vertx     Vert.x instance
+     * @param supplier  Supplier with the blocking code
+     *
+     * @return  Future for returning the result
+     *
+     * @param <T>   Type of the result
+     */
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
         Promise<T> result = Promise.promise();
         vertx.executeBlocking(
@@ -170,7 +183,13 @@ public class Util {
         return promise.future();
     }
 
-    // Wrapper to minimise usage of raw types in code using composite futures
+    /**
+     * Wrapper to minimise usage of raw types in code using composite futures
+     *
+     * @param futures   List of futures
+     *
+     * @return  Composite future based on a list of futures
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static CompositeFuture compositeFuture(List<?> futures) {
         return CompositeFuture.join((List<Future>) futures);
@@ -376,10 +395,17 @@ public class Util {
         return merged;
     }
 
-    public static <T> Future<T> kafkaFutureToVertxFuture(Vertx vertx, KafkaFuture<T> kf) {
-        return kafkaFutureToVertxFuture(null, vertx, kf);
-    }
-
+    /**
+     * Converts Kafka Future to VErt.x future
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param vertx             Vert.x instnce
+     * @param kf                Kafka future
+     *
+     * @return  Vert.x future based on the Kafka future
+     *
+     * @param <T>   Return type of the future
+     */
     public static <T> Future<T> kafkaFutureToVertxFuture(Reconciliation reconciliation, Vertx vertx, KafkaFuture<T> kf) {
         Promise<T> promise = Promise.promise();
         if (kf != null) {
@@ -404,18 +430,46 @@ public class Util {
         }
     }
 
+    /**
+     * Created config resource instance
+     *
+     * @param podId Pod ID
+     *
+     * @return  Config resource
+     */
     public static ConfigResource getBrokersConfig(int podId) {
         return Util.getBrokersConfig(Integer.toString(podId));
     }
 
+    /**
+     * Created config resource instance
+     *
+     * @param podId Pod ID
+     *
+     * @return  Config resource
+     */
     public static ConfigResource getBrokersLogging(int podId) {
         return Util.getBrokersLogging(Integer.toString(podId));
     }
 
+    /**
+     * Created config resource instance
+     *
+     * @param podId Pod ID
+     *
+     * @return  Config resource
+     */
     public static ConfigResource getBrokersConfig(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
     }
 
+    /**
+     * Created config resource instance
+     *
+     * @param podId Pod ID
+     *
+     * @return  Config resource
+     */
     public static ConfigResource getBrokersLogging(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER_LOGGER, podId);
     }
@@ -513,6 +567,15 @@ public class Util {
         }
     }
 
+    /**
+     * Gets a config map with external logging configuration
+     *
+     * @param configMapOperations   Config Map operator
+     * @param namespace             Namespace of operand which uses the logging
+     * @param logging               Logging configuration from the CR
+     *
+     * @return  Future with the external logging Config Map
+     */
     public static Future<ConfigMap> getExternalLoggingCm(ConfigMapOperator configMapOperations, String namespace, ExternalLogging logging) {
         Future<ConfigMap> loggingCmFut;
         if (logging.getValueFrom() != null
@@ -595,6 +658,17 @@ public class Util {
         return Future.succeededFuture(0);
     }
 
+    /**
+     * Creates a Metrics and Logging holder based on the operand logging configuration
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param configMapOperations   ConfigMap operator
+     * @param namespace             Namespace of the operand and Config Maps
+     * @param logging               Logging configuration
+     * @param metricsConfigInCm     Metrics configuration
+     *
+     * @return  Future with the metrics and logging configuration holder
+     */
     public static Future<MetricsAndLogging> metricsAndLogging(Reconciliation reconciliation,
                                                               ConfigMapOperator configMapOperations,
                                                               String namespace,
@@ -640,6 +714,11 @@ public class Util {
         return true;
     }
 
+    /**
+     * Deleted a file from the filesystem
+     *
+     * @param key   Path to the file which should be deleted
+     */
     public static void delete(Path key) {
         if (key != null) {
             try {

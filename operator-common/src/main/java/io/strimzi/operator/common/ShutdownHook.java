@@ -26,10 +26,21 @@ public class ShutdownHook implements Runnable {
     private Vertx vertx;
     private long timeoutMs;
 
+    /**
+     * Constructs the shutdown hook
+     *
+     * @param vertx     Vert.x instance
+     */
     public ShutdownHook(Vertx vertx) {
         this(vertx, 120_000);
     }
 
+    /**
+     * Constructs the shutdown hook
+     *
+     * @param vertx         Vert.x instance
+     * @param timeoutMs     Timeout in milliseconds
+     */
     public ShutdownHook(Vertx vertx, long timeoutMs) {
         this.vertx = requireNonNull(vertx, "Vertx can't be null");
         this.timeoutMs = timeoutMs;

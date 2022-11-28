@@ -16,6 +16,14 @@ import io.vertx.core.Vertx;
 
 import java.util.Optional;
 
+/**
+ * Abstract class for resources which can be watched.
+ *
+ * @param <C> The type of client used to interact with kubernetes.
+ * @param <T> The Kubernetes resource type.
+ * @param <L> The list variant of the Kubernetes resource type.
+ * @param <R> The resource operations.
+ */
 public abstract class AbstractWatchableResourceOperator<
         C extends KubernetesClient,
         T extends HasMetadata,
@@ -41,6 +49,14 @@ public abstract class AbstractWatchableResourceOperator<
         return operation().inNamespace(namespace).watch(watcher);
     }
 
+    /**
+     * Creates a resource watch
+     *
+     * @param namespace     Namespace which should be watched
+     * @param watcher       The Watcher object which will handle the events from the watch
+     *
+     * @return  A Kubernetes watch instance
+     */
     public Watch watch(String namespace, Watcher<T> watcher) {
         if (ANY_NAMESPACE.equals(namespace))    {
             return watchInAnyNamespace(watcher);
@@ -49,6 +65,15 @@ public abstract class AbstractWatchableResourceOperator<
         }
     }
 
+    /**
+     * Creates a resource watch using a label selector
+     *
+     * @param namespace     Namespace which should be watched
+     * @param selector      Label selector for watching only some resources
+     * @param watcher       The Watcher object which will handle the events from the watch
+     *
+     * @return  A Kubernetes watch instance
+     */
     public Watch watch(String namespace, Optional<LabelSelector> selector, Watcher<T> watcher) {
         FilterWatchListDeletable<T, L, R> operation
                 = ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);

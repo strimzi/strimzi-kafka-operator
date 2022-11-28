@@ -8,10 +8,18 @@ package io.strimzi.operator.common.operator.resource;
  * Thrown to indicate that timeout has been exceeded.
  */
 public class TimeoutException extends RuntimeException {
+    /**
+     * Constructs the TimeoutException
+     */
     public TimeoutException() {
         super();
     }
 
+    /**
+     * Constructs the timeout exception
+     *
+     * @param message   Error message
+     */
     public TimeoutException(String message) {
         super(message);
     }

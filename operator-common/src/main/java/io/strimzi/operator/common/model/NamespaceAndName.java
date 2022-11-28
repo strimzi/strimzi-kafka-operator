@@ -4,19 +4,34 @@
  */
 package io.strimzi.operator.common.model;
 
+/**
+ * Namespace and name holder used to identify a Kubernetes object in a single name
+ */
 public class NamespaceAndName {
     private final String namespace;
     private final String name;
 
+    /**
+     * Constructor
+     *
+     * @param namespace     Namespace
+     * @param name          NAme
+     */
     public NamespaceAndName(String namespace, String name)   {
         this.namespace = namespace;
         this.name = name;
     }
 
+    /**
+     * @return  Namespace
+     */
     public String getNamespace() {
         return namespace;
     }
 
+    /**
+     * @return  NAme
+     */
     public String getName() {
         return name;
     }

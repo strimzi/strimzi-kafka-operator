@@ -30,6 +30,14 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     private boolean images = false;
     private KubernetesVersion kubernetesVersion;
 
+    /**
+     * Creates a PlatformFeaturesAvailability instance
+     *
+     * @param vertx     Vert.x instance
+     * @param client    Kubernetes client
+     *
+     * @return  Instance of PlatformFeaturesAvailability
+     */
     public static Future<PlatformFeaturesAvailability> create(Vertx vertx, KubernetesClient client) {
         Promise<PlatformFeaturesAvailability> pfaPromise = Promise.promise();
 
@@ -196,6 +204,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         this.kubernetesVersion = kubernetesVersion;
     }
 
+    /**
+     * @return  True if OpenShift Routes are supported on this cluster
+     */
     public boolean hasRoutes() {
         return routes;
     }
@@ -204,6 +215,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         this.routes = routes;
     }
 
+    /**
+     * @return  True if OpenShift Builds are supported on this cluster
+     */
     public boolean hasBuilds() {
         return builds;
     }
@@ -212,6 +226,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         this.builds = builds;
     }
 
+    /**
+     * @return  True if OpenShift ImageStreams are supported on this cluster
+     */
     public boolean hasImages() {
         return images;
     }
@@ -220,6 +237,9 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         this.images = images;
     }
 
+    /**
+     * @return  True if OpenShift S2I (Builds and Images) are supported on this cluster
+     */
     public boolean supportsS2I() {
         return hasBuilds() && hasImages();
     }
