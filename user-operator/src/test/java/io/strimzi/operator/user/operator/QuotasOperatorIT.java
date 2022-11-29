@@ -19,9 +19,9 @@ import java.util.concurrent.ExecutionException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class QuotasOperatorIT extends AbstractAdminApiOperatorIT<KafkaUserQuotas, Set<String>> {
+public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<String>> {
     @Override
-    AbstractAdminApiOperator<KafkaUserQuotas, Set<String>> operator() {
+    AdminApiOperator<KafkaUserQuotas, Set<String>> operator() {
         return new QuotasOperator(adminClient, ResourceUtils.createUserOperatorConfig());
     }
 

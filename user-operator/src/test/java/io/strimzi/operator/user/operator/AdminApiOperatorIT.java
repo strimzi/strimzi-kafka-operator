@@ -30,8 +30,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 @Timeout(10)
-public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>> {
-    protected static final Logger LOGGER = LogManager.getLogger(AbstractAdminApiOperatorIT.class);
+public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
+    protected static final Logger LOGGER = LogManager.getLogger(AdminApiOperatorIT.class);
 
     public static final String SCRAM_USERNAME = "my-user";
     public static final String TLS_USERNAME = "CN=my-user";
@@ -63,7 +63,7 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
         kafkaContainer.stop();
     }
 
-    abstract AbstractAdminApiOperator<T, S> operator();
+    abstract AdminApiOperator<T, S> operator();
     abstract T getOriginal();
     abstract T getModified();
     abstract T get(String username);
@@ -112,7 +112,7 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
      * @param username   Username
      */
     public void testCreateModifyDelete(String username) throws ExecutionException, InterruptedException {
-        AbstractAdminApiOperator<T, S> op = operator();
+        AdminApiOperator<T, S> op = operator();
 
         T newResource = getOriginal();
         T modResource = getModified();

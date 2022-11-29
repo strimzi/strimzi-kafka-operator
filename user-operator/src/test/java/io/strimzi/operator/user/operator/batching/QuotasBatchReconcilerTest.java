@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterClientQuotasResult;
 import org.apache.kafka.common.KafkaFuture;
@@ -72,10 +72,10 @@ public class QuotasBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<ClientQuotaAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_ALTERATION, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_ALTERATION, myUserFuture));
 
             CompletableFuture<ReconcileResult<ClientQuotaAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2_ALTERATION, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2_ALTERATION, myUser2Future));
 
             // Wait for completion
             ReconcileResult<ClientQuotaAlteration> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);
@@ -123,10 +123,10 @@ public class QuotasBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<ClientQuotaAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_ALTERATION, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_ALTERATION, myUserFuture));
 
             CompletableFuture<ReconcileResult<ClientQuotaAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2_ALTERATION, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2_ALTERATION, myUser2Future));
 
             // Wait for completion
             ExecutionException myUserException = assertThrows(ExecutionException.class, () -> myUserFuture.get(1_000, TimeUnit.MILLISECONDS));
@@ -171,10 +171,10 @@ public class QuotasBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<ClientQuotaAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_ALTERATION, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_ALTERATION, myUserFuture));
 
             CompletableFuture<ReconcileResult<ClientQuotaAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2_ALTERATION, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2_ALTERATION, myUser2Future));
 
             // Wait for completion
             ReconcileResult<ClientQuotaAlteration> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);

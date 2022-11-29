@@ -44,9 +44,9 @@ public class KafkaUserOperator {
 
     private final CertManager certManager;
     private final KubernetesClient client;
-    private final SimpleAclOperator aclOperations;
-    private final ScramCredentialsOperator scramCredentialsOperator;
-    private final QuotasOperator quotasOperator;
+    private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperations;
+    private final AdminApiOperator<String, List<String>> scramCredentialsOperator;
+    private final AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator;
     private final UserOperatorConfig config;
     private final PasswordGenerator passwordGenerator;
     private final LabelSelector selector;
@@ -65,9 +65,9 @@ public class KafkaUserOperator {
             UserOperatorConfig config,
             KubernetesClient client,
             CertManager certManager,
-            ScramCredentialsOperator scramCredentialsOperator,
-            QuotasOperator quotasOperator,
-            SimpleAclOperator aclOperations
+            AdminApiOperator<String, List<String>> scramCredentialsOperator,
+            AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator,
+            AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperations
     ) {
         this.certManager = certManager;
         this.client = client;

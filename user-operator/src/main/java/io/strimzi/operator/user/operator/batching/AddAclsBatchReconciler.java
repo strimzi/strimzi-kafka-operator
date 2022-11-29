@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateAclsResult;
 import org.apache.kafka.common.KafkaFuture;
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Micro-batching reconciler for creating new ACL rules using the Kafka Admin API.
  */
-public class AddAclsBatchReconciler extends AbstractBatchReconciler<AbstractAdminApiOperator.ReconcileRequest<Collection<AclBinding>, ReconcileResult<Collection<AclBinding>>>> {
+public class AddAclsBatchReconciler extends AbstractBatchReconciler<AdminApiOperator.ReconcileRequest<Collection<AclBinding>, ReconcileResult<Collection<AclBinding>>>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AddAclsBatchReconciler.class);
 
     private final Admin adminClient;
@@ -45,7 +45,7 @@ public class AddAclsBatchReconciler extends AbstractBatchReconciler<AbstractAdmi
      * @param items Batch of requests which should be executed
      */
     @Override
-    protected void reconcile(Collection<AbstractAdminApiOperator.ReconcileRequest<Collection<AclBinding>, ReconcileResult<Collection<AclBinding>>>> items) {
+    protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<Collection<AclBinding>, ReconcileResult<Collection<AclBinding>>>> items) {
         List<AclBinding> aclBindings = new ArrayList<>();
         items.forEach(req -> aclBindings.addAll(req.desired));
 

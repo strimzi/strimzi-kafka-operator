@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.DeleteAclsResult;
 import org.apache.kafka.common.KafkaFuture;
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Micro-batching reconciler for deleting ACL rules using the Kafka Admin API.
  */
-public class DeleteAclsBatchReconciler extends AbstractBatchReconciler<AbstractAdminApiOperator.ReconcileRequest<Collection<AclBindingFilter>, ReconcileResult<Collection<AclBindingFilter>>>> {
+public class DeleteAclsBatchReconciler extends AbstractBatchReconciler<AdminApiOperator.ReconcileRequest<Collection<AclBindingFilter>, ReconcileResult<Collection<AclBindingFilter>>>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(DeleteAclsBatchReconciler.class);
 
     private final Admin adminClient;
@@ -45,7 +45,7 @@ public class DeleteAclsBatchReconciler extends AbstractBatchReconciler<AbstractA
      * @param items Batch of requests which should be executed
      */
     @Override
-    protected void reconcile(Collection<AbstractAdminApiOperator.ReconcileRequest<Collection<AclBindingFilter>, ReconcileResult<Collection<AclBindingFilter>>>> items) {
+    protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<Collection<AclBindingFilter>, ReconcileResult<Collection<AclBindingFilter>>>> items) {
         List<AclBindingFilter> aclFilters = new ArrayList<>();
         items.forEach(req -> aclFilters.addAll(req.desired));
 
