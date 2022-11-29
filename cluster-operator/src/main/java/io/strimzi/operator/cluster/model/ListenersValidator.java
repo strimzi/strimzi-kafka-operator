@@ -315,7 +315,7 @@ public class ListenersValidator {
     private static void validateBootstrapHost(Set<String> errors, GenericKafkaListener listener) {
         if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
                 && listener.getConfiguration().getBootstrap().getHost() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not Route ot Ingress based listener");
+            errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not Route or Ingress based listener");
         }
     }
 
@@ -381,7 +381,7 @@ public class ListenersValidator {
     private static void validateBrokerHost(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
         if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
                 && broker.getHost() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not Route ot Ingress based listener");
+            errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not Route or Ingress based listener");
         }
     }
 
