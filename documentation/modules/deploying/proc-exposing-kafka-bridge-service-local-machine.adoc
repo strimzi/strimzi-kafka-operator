@@ -21,7 +21,7 @@ kubectl get pods -o name
 pod/kafka-consumer
 # ...
 pod/my-bridge-bridge-7cbd55496b-nclrt
-pod/my-cluster-operator-<version>-5886bccd9c-4nsxc
+pod/strimzi-cluster-operator-<version>-5886bccd9c-4nsxc
 ----
 
 . Connect to the Kafka Bridge pod on port `8080`:
