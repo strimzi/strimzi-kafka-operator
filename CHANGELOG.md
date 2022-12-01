@@ -24,6 +24,11 @@
   If you want to keep using `SHA1PRNG` as your SecureRandom, you can configure it in `.spec.kafka.config` in your `Kafka` custom resource.
 * Support for JmxTrans in Strimzi is deprecated. 
   It is currently planned to be removed in Strimzi 0.35.0.
+* The `type: jaeger` tracing support based on Jaeger clients and OpenTracing API was deprecated in Strimzi 0.31.
+  The Jaeger clients are retired and the OpenTracing project is archived, we cannot guarantee their support for future Kafka versions anymore.
+  In Strimzi 0.32 and 0.33, we added support for OpenTelemetry tracing as a replacement.
+  If possible, we will maintain the support for `type: jaeger` tracing until June 2023 and remove it afterwards.
+  Please migrate to OpenTelemetry as soon as possible.
 
 ## 0.32.0
 
