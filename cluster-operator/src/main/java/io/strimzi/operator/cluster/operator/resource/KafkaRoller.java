@@ -179,6 +179,7 @@ public class KafkaRoller {
             try {
                 this.allClient = adminClient(IntStream.range(0, podList.size()).boxed().collect(Collectors.toList()), false);
             } catch (ForceableProblem | FatalProblem e) {
+                LOGGER.warnCr(reconciliation, "Failed to create adminClient.", e);
                 return false;
             }
         }
