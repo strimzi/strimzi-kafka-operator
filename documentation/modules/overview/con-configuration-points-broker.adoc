@@ -7,7 +7,7 @@
 
 A kafka cluster comprises one or more brokers.
 For producers and consumers to be able to access topics within the brokers, Kafka configuration must define how data is stored in the cluster, and how the data is accessed.
-You can configure a Kafka cluster to run with multiple broker nodes across _racks_.
+You can configure a Kafka cluster to run with multiple broker nodes across racks.
 
 Storage::
 Kafka and ZooKeeper store data on disks.
@@ -59,7 +59,16 @@ For example, you can use the listener with a custom Ingress controller or the Ku
 
 If you are using xref:security-configuration-authentication_{context}[OAuth 2.0 for token-based authentication], you can configure listeners to use the authorization server.
 
-Rack awareness:: Rack awareness is a configuration feature that distributes Kafka broker pods and topic replicas across _racks_, which represent data centers or racks in data centers, or availability zones.
+Rack awareness:: Racks represent data centers, or racks in data centers, or availability zones.
+Configure rack awareness to distribute Kafka broker pods and topic replicas across racks.
+Enable rack awareness using the `rack` property to specify a `topologyKey`.
+The `topologyKey` identifies the rack.  
+Strimzi assigns a rack ID to each Kafka broker.
+Strimzi uses the IDs to spread partition replicas across racks.
+You can also specify the `RackAwareReplicaSelector` selector plugin to use with rack awareness. 
+The plugin matches the rack IDs of brokers and consumers, so that messages are consumed from the closest replica. 
+To use the the plugin, consumers must also have rack awareness enabled. 
+You can enable rack awareness in Kafka Connect, MirrorMaker 2.0, and the Kafka Bridge.   
 
 [discrete]
 == Example YAML showing Kafka configuration
@@ -92,5 +101,7 @@ spec:
     # ...
     rack:
       topologyKey: topology.kubernetes.io/zone
+    config:
+      replica.selector.class: org.apache.kafka.common.replica.RackAwareReplicaSelector
     # ...
 ----

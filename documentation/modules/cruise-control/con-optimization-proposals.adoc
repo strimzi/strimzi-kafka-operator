@@ -7,7 +7,7 @@
 = Optimization proposals overview
 
 [role="_abstract"]
-You use the `KafkaRebalance` resource to generate and apply the changes suggested in optimization proposals.  
+Configure a `KafkaRebalance` resource to generate optimization proposals and apply the suggested changes.  
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers.
 
 Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:property-cruise-control-broker-capacity-reference[capacity limits on broker resources].
