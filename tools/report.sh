@@ -216,66 +216,6 @@ for RES in "${CLUSTER_RESOURCES[@]}"; do
   get_nonnamespaced_yamls "$RES"
 done
 
-get_pod_logs() {
-  local pod="$1"
-  local con="${2-}"
-  if [[ -n $pod ]]; then
-    local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
-    local count && count=$(echo "$names" | wc -w)
-    local logs
-    if [[ "$count" -eq 1 ]]; then
-      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log; fi
-      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log.0; fi
-    fi
-    if [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
-      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod"-"$con".log; fi
-      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod"-"$con".log.0; fi
-    fi
-  fi
-}
-
-echo "podlogs"
-mkdir -p "$OUT_DIR"/reports/podlogs
-mkdir -p "$OUT_DIR"/reports/configs
-PODS=$($KUBE_CLIENT get po -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
-readonly PODS
-for POD in $PODS; do
-  echo "    $POD"
-  if [[ "$POD" =~ .*-zookeeper-[0-9]+ ]]; then
-    get_pod_logs "$POD" zookeeper
-    get_pod_logs "$POD" tls-sidecar
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
-      cat /tmp/zookeeper.properties > "$OUT_DIR"/reports/configs/"$POD".cfg
-  elif [[ "$POD" =~ .*-kafka-[0-9]+ ]]; then
-    get_pod_logs "$POD" kafka
-    get_pod_logs "$POD" tls-sidecar
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c kafka -- \
-      cat /tmp/strimzi.properties > "$OUT_DIR"/reports/configs/"$POD".cfg
-  elif [[ "$POD" == *"-entity-operator-"* ]]; then
-    get_pod_logs "$POD" topic-operator
-    get_pod_logs "$POD" user-operator
-    get_pod_logs "$POD" tls-sidecar
-  elif [[ "$POD" == *"-kafka-exporter-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-bridge-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-connect-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-mirrormaker2-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-cruise-control-"* ]]; then
-    get_pod_logs "$POD" cruise-control
-    get_pod_logs "$POD" tls-sidecar
-  fi
-done
-
 echo "clusteroperator"
 CO_DEPLOY=$($KUBE_CLIENT get deploy strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found) && readonly CO_DEPLOY
 if [[ -n $CO_DEPLOY ]]; then
@@ -346,6 +286,68 @@ if [[ -n $EVENTS ]]; then
   mkdir -p "$OUT_DIR"/reports/events
   echo "$EVENTS" > "$OUT_DIR"/reports/events/events.txt
 fi
+
+get_pod_logs() {
+  local pod="$1"
+  local con="${2-}"
+  if [[ -n $pod ]]; then
+    local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
+    local count && count=$(echo "$names" | wc -w)
+    local logs
+    if [[ "$count" -eq 1 ]]; then
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log; fi
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log.0; fi
+    fi
+    if [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod"-"$con".log; fi
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod"-"$con".log.0; fi
+    fi
+  fi
+}
+
+echo "podlogs"
+mkdir -p "$OUT_DIR"/reports/podlogs
+mkdir -p "$OUT_DIR"/reports/configs
+PODS=$($KUBE_CLIENT get po -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+readonly PODS
+for POD in $PODS; do
+  echo "    $POD"
+  if [[ "$POD" =~ .*-zookeeper-[0-9]+ ]]; then
+    get_pod_logs "$POD" zookeeper
+    get_pod_logs "$POD" tls-sidecar
+    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
+      cat /tmp/zookeeper.properties > "$OUT_DIR"/reports/configs/"$POD".cfg \
+      2>/dev/null||true
+  elif [[ "$POD" =~ .*-kafka-[0-9]+ ]]; then
+    get_pod_logs "$POD" kafka
+    get_pod_logs "$POD" tls-sidecar
+    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c kafka -- \
+      cat /tmp/strimzi.properties > "$OUT_DIR"/reports/configs/"$POD".cfg \
+      2>/dev/null||true
+  elif [[ "$POD" == *"-entity-operator-"* ]]; then
+    get_pod_logs "$POD" topic-operator
+    get_pod_logs "$POD" user-operator
+    get_pod_logs "$POD" tls-sidecar
+  elif [[ "$POD" == *"-kafka-exporter-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-bridge-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-connect-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-mirrormaker2-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-cruise-control-"* ]]; then
+    get_pod_logs "$POD" cruise-control
+    get_pod_logs "$POD" tls-sidecar
+  fi
+done
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")"
 OLD_DIR="$(pwd)"
