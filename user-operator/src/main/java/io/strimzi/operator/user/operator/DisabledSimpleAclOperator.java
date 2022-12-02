@@ -9,6 +9,7 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -28,11 +29,11 @@ public class DisabledSimpleAclOperator implements AdminApiOperator<Set<SimpleAcl
 
     @Override
     public CompletionStage<ReconcileResult<Set<SimpleAclRule>>> reconcile(Reconciliation reconciliation, String username, Set<SimpleAclRule> desired) {
-        throw new UnsupportedOperationException("DisabledSimpleAclOperator cannot be used to reconcile users");
+        return CompletableFuture.failedFuture(new UnsupportedOperationException("DisabledSimpleAclOperator cannot be used to reconcile users"));
     }
 
     @Override
     public CompletionStage<Set<String>> getAllUsers() {
-        throw new UnsupportedOperationException("DisabledSimpleAclOperator cannot be used to get list of all users");
+        return CompletableFuture.failedFuture(new UnsupportedOperationException("DisabledSimpleAclOperator cannot be used to get list of all users"));
     }
 }

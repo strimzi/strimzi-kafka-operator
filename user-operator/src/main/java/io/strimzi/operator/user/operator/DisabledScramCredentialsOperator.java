@@ -8,6 +8,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -27,11 +28,11 @@ public class DisabledScramCredentialsOperator implements AdminApiOperator<String
 
     @Override
     public CompletionStage<ReconcileResult<String>> reconcile(Reconciliation reconciliation, String username, String desired) {
-        throw new UnsupportedOperationException("DisabledScramCredentialsOperator cannot be used to reconcile users");
+        return CompletableFuture.failedFuture(new UnsupportedOperationException("DisabledScramCredentialsOperator cannot be used to reconcile users"));
     }
 
     @Override
     public CompletionStage<List<String>> getAllUsers() {
-        throw new UnsupportedOperationException("DisabledScramCredentialsOperator cannot be used to get list of all users");
+        return CompletableFuture.failedFuture(new UnsupportedOperationException("DisabledScramCredentialsOperator cannot be used to get list of all users"));
     }
 }
