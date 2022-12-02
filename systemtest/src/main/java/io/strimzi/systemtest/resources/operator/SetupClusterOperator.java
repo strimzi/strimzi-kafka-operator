@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
+import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBuilder;
@@ -605,6 +607,16 @@ public class SetupClusterOperator {
                             .withNamespace(namespace)
                         .endMetadata()
                         .build());
+                    break;
+                case Constants.LEASE:
+                    // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
+                    // dependency on Jackson Datatype JSR310 to decode the Lease resource
+                    Lease lease = kubeClient().getClient().leases().load(createFile).get();
+                    ResourceManager.getInstance().createResource(extensionContext, new LeaseBuilder(lease)
+                            .editMetadata()
+                                .withNamespace(namespace)
+                            .endMetadata()
+                            .build());
                     break;
                 case Constants.CUSTOM_RESOURCE_DEFINITION_SHORT:
                     CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
