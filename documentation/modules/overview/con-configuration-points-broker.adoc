@@ -62,9 +62,9 @@ If you are using xref:security-configuration-authentication_{context}[OAuth 2.0 
 Rack awareness:: Racks represent data centers, or racks in data centers, or availability zones.
 Configure rack awareness to distribute Kafka broker pods and topic replicas across racks.
 Enable rack awareness using the `rack` property to specify a `topologyKey`.
-The `topologyKey` identifies the rack.  
+The `topologyKey` is the name of the label assigned to Kubernetes worker nodes, which identifies the rack.  
 Strimzi assigns a rack ID to each Kafka broker.
-Strimzi uses the IDs to spread partition replicas across racks.
+Kafka brokers use the IDs to spread partition replicas across racks.
 You can also specify the `RackAwareReplicaSelector` selector plugin to use with rack awareness. 
 The plugin matches the rack IDs of brokers and consumers, so that messages are consumed from the closest replica. 
 To use the the plugin, consumers must also have rack awareness enabled. 
