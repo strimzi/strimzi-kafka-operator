@@ -22,6 +22,8 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.user.operator.DisabledScramCredentialsOperator;
+import io.strimzi.operator.user.operator.DisabledSimpleAclOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.strimzi.operator.user.operator.QuotasOperator;
 import io.strimzi.operator.user.operator.ScramCredentialsOperator;
@@ -72,9 +74,9 @@ public class Main {
                 config,
                 client,
                 new OpenSslCertManager(),
-                new ScramCredentialsOperator(adminClient, config),
+                config.isKraftEnabled() ? new DisabledScramCredentialsOperator() : new ScramCredentialsOperator(adminClient, config),
                 new QuotasOperator(adminClient, config),
-                new SimpleAclOperator(adminClient, config)
+                config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config) : new DisabledSimpleAclOperator()
         );
 
         MetricsProvider metricsProvider = createMetricsProvider();

@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterUserScramCredentialsResult;
 import org.apache.kafka.clients.admin.UserScramCredentialAlteration;
@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * Micro-batching reconciler for patching SCRAM-SHA credentials using the Kafka Admin API.
  */
-public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<AbstractAdminApiOperator.ReconcileRequest<UserScramCredentialAlteration, ReconcileResult<UserScramCredentialAlteration>>> {
+public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<AdminApiOperator.ReconcileRequest<UserScramCredentialAlteration, ReconcileResult<UserScramCredentialAlteration>>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ScramShaCredentialsBatchReconciler.class);
 
     private final Admin adminClient;
@@ -46,7 +46,7 @@ public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<
      * @param items Batch of requests which should be executed
      */
     @Override
-    protected void reconcile(Collection<AbstractAdminApiOperator.ReconcileRequest<UserScramCredentialAlteration, ReconcileResult<UserScramCredentialAlteration>>> items) {
+    protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<UserScramCredentialAlteration, ReconcileResult<UserScramCredentialAlteration>>> items) {
         List<UserScramCredentialAlteration> alterations = new ArrayList<>();
         items.forEach(req -> alterations.add(req.desired));
 

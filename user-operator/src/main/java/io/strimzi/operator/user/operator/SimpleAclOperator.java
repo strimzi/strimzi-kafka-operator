@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * SimpleAclOperator is responsible for managing the authorization rules in Apache Kafka.
  */
-public class SimpleAclOperator extends AbstractAdminApiOperator<Set<SimpleAclRule>, Set<String>> {
+public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(SimpleAclOperator.class.getName());
     private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
@@ -54,12 +54,10 @@ public class SimpleAclOperator extends AbstractAdminApiOperator<Set<SimpleAclRul
         this.addReconciler = new AddAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
         this.deleteReconciler = new DeleteAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
 
-        if (config.isAclsAdminApiSupported()) {
-            // Start the cache and reconcilers => We start them only if ACLs Admin APIs are enabled
-            this.cache.start();
-            this.addReconciler.start();
-            this.deleteReconciler.start();
-        }
+        // Start the cache and reconcilers
+        this.cache.start();
+        this.addReconciler.start();
+        this.deleteReconciler.start();
     }
 
     /**

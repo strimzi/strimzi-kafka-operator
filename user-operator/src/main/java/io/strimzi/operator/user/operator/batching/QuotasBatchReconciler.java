@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterClientQuotasResult;
 import org.apache.kafka.common.KafkaFuture;
@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * Micro-batching reconciler for patching Kafka quotas using the Kafka Admin API.
  */
-public class QuotasBatchReconciler extends AbstractBatchReconciler<AbstractAdminApiOperator.ReconcileRequest<ClientQuotaAlteration, ReconcileResult<ClientQuotaAlteration>>> {
+public class QuotasBatchReconciler extends AbstractBatchReconciler<AdminApiOperator.ReconcileRequest<ClientQuotaAlteration, ReconcileResult<ClientQuotaAlteration>>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(QuotasBatchReconciler.class);
 
     private final Admin adminClient;
@@ -45,7 +45,7 @@ public class QuotasBatchReconciler extends AbstractBatchReconciler<AbstractAdmin
      * @param items Batch of requests which should be executed
      */
     @Override
-    protected void reconcile(Collection<AbstractAdminApiOperator.ReconcileRequest<ClientQuotaAlteration, ReconcileResult<ClientQuotaAlteration>>> items) {
+    protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<ClientQuotaAlteration, ReconcileResult<ClientQuotaAlteration>>> items) {
         List<ClientQuotaAlteration> quotas = new ArrayList<>();
         items.forEach(req -> quotas.add(req.desired));
 

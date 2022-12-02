@@ -29,7 +29,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * ScramCredentialsOperator is responsible for managing the SCRAM-SHA credentials in Apache Kafka.
  */
-public class ScramCredentialsOperator extends AbstractAdminApiOperator<String, List<String>> {
+public class ScramCredentialsOperator implements AdminApiOperator<String, List<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ScramCredentialsOperator.class.getName());
     private final static int ITERATIONS = 4096;
     private final static ScramMechanism SCRAM_MECHANISM = ScramMechanism.SCRAM_SHA_512;
@@ -53,11 +53,9 @@ public class ScramCredentialsOperator extends AbstractAdminApiOperator<String, L
         // Create micro-batching reconciler for updating the SCRAM-SHA credentials
         this.patchReconciler = new ScramShaCredentialsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
 
-        if (!config.isKraftEnabled()) {
-            // Start the cache and reconcilers => we start them only outside of KRaft where SCRAM-SHA is not supported
-            this.cache.start();
-            this.patchReconciler.start();
-        }
+        // Start the cache and reconcilers
+        this.cache.start();
+        this.patchReconciler.start();
     }
 
     /**

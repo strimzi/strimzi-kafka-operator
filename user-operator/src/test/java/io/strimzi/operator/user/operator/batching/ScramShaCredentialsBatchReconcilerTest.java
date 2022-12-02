@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterUserScramCredentialsResult;
 import org.apache.kafka.clients.admin.ScramCredentialInfo;
@@ -66,10 +66,10 @@ public class ScramShaCredentialsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
 
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
 
             // Wait for completion
             ReconcileResult<UserScramCredentialAlteration> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);
@@ -117,10 +117,10 @@ public class ScramShaCredentialsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
 
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
 
             // Wait for completion
             ExecutionException myUserException = assertThrows(ExecutionException.class, () -> myUserFuture.get(1_000, TimeUnit.MILLISECONDS));
@@ -165,10 +165,10 @@ public class ScramShaCredentialsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
 
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
 
             // Wait for completion
             ReconcileResult<UserScramCredentialAlteration> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);
@@ -216,10 +216,10 @@ public class ScramShaCredentialsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", MY_USER_1, myUserFuture));
 
             CompletableFuture<ReconcileResult<UserScramCredentialAlteration>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", MY_USER_2, myUser2Future));
 
             // Wait for completion
             ReconcileResult<UserScramCredentialAlteration> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);

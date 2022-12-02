@@ -12,32 +12,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /**
- * Abstract operator using the Kafka Admin API
+ * Interface for operators using the Kafka Admin API
  */
-public abstract class AbstractAdminApiOperator<T, S extends Collection<String>> {
-    /**
-     * Constructor
-     */
-    public AbstractAdminApiOperator()  {
-        // Nothing to do
-    }
-
+public interface AdminApiOperator<T, S extends Collection<String>> {
     /**
      * Reconcile using Kafka Admin API
      *
      * @param reconciliation The reconciliation
-     * @param username  User name of the reconciled user. When using TLS client auth, the username should be already in the Kafka format, e.g. CN=my-user
+     * @param username  Username of the reconciled user. When using TLS client auth, the username should be already in the Kafka format, e.g. CN=my-user
      * @param desired   The desired object
      * @return the Future with reconcile result
      */
-    public abstract CompletionStage<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String username, T desired);
+    CompletionStage<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String username, T desired);
 
     /**
      * Returns set with all usernames which have some value set right now
      *
      * @return The set with all usernames which have some value set right now
      */
-    public abstract CompletionStage<S> getAllUsers();
+    CompletionStage<S> getAllUsers();
 
     /**
      * Class used to pass the reconciliation results
@@ -45,7 +38,7 @@ public abstract class AbstractAdminApiOperator<T, S extends Collection<String>> 
      * @param <T>   Request type (type of the desired resource)
      * @param <R>   Response type (type of the repsonse)
      */
-    public static class ReconcileRequest<T, R>    {
+    class ReconcileRequest<T, R>    {
         /**
          * Reconciliation marker
          */

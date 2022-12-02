@@ -28,7 +28,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * KafkaUserQuotasOperator is responsible for managing quotas in Apache Kafka
  */
-public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Set<String>> {
+public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(QuotasOperator.class.getName());
 
     private final QuotasBatchReconciler patchReconciler;
