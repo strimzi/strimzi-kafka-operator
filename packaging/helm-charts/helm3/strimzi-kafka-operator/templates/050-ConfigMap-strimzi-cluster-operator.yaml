@@ -4,7 +4,11 @@ metadata:
   name: {{ .Values.logConfigMap }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: strimzi
+    app: {{ template "strimzi.name" . }}
+    chart: {{ template "strimzi.chart" . }}
+    component: logging-config-map
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
 data:
   log4j2.properties: |
     {{- if .Values.logConfiguration }}
