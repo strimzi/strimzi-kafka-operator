@@ -4,7 +4,6 @@ Cruise Control is an open source system that supports the following Kafka operat
 
 * Monitoring cluster workload
 * Rebalancing a cluster based on predefined constraints
-* Detecting and fixing anomalies.
 
 The operations help with running a more balanced Kafka cluster that uses broker pods more efficiently.
 
