@@ -33,6 +33,16 @@ public interface AdminApiOperator<T, S extends Collection<String>> {
     CompletionStage<S> getAllUsers();
 
     /**
+     * Starts the API Operator - this is used for example to start the Cache and BatchReconcilers
+     */
+    void start();
+
+    /**
+     * Stops the Admin API Operator - this is used for example to stop the Cache and BatchReconcilers
+     */
+    void stop();
+
+    /**
      * Class used to pass the reconciliation results
      *
      * @param <T>   Request type (type of the desired resource)

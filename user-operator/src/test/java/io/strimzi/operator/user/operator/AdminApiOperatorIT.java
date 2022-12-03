@@ -113,64 +113,69 @@ public abstract class AdminApiOperatorIT<T, S extends Collection<String>> {
      */
     public void testCreateModifyDelete(String username) throws ExecutionException, InterruptedException {
         AdminApiOperator<T, S> op = operator();
+        op.start();
 
-        T newResource = getOriginal();
-        T modResource = getModified();
+        try {
+            T newResource = getOriginal();
+            T modResource = getModified();
 
-        // Get all users => should be empty
-        LOGGER.info("Checking empty list without users");
-        CompletionStage<S> allUsers = op.getAllUsers();
-        S userList = allUsers.toCompletableFuture().get();
-        LOGGER.info("Found users. {}", userList);
-        assertThat(userList.isEmpty(), is(true));
+            // Get all users => should be empty
+            LOGGER.info("Checking empty list without users");
+            CompletionStage<S> allUsers = op.getAllUsers();
+            S userList = allUsers.toCompletableFuture().get();
+            LOGGER.info("Found users. {}", userList);
+            assertThat(userList.isEmpty(), is(true));
 
-        // Create new user => should be created
-        LOGGER.info("Checking user creation");
-        CompletionStage<ReconcileResult<T>> reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, newResource);
-        ReconcileResult<T> reconcileResult = reconcile.toCompletableFuture().get();
-        assertThat(reconcileResult.toString(), is(createPatches() ? "PATCH" : "CREATED"));
-        T created = get(username);
-        assertThat(created, is(notNullValue()));
-        assertResources(newResource, created);
+            // Create new user => should be created
+            LOGGER.info("Checking user creation");
+            CompletionStage<ReconcileResult<T>> reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, newResource);
+            ReconcileResult<T> reconcileResult = reconcile.toCompletableFuture().get();
+            assertThat(reconcileResult.toString(), is(createPatches() ? "PATCH" : "CREATED"));
+            T created = get(username);
+            assertThat(created, is(notNullValue()));
+            assertResources(newResource, created);
 
-        // Get all users => should have the new user listed now
-        LOGGER.info("Checking user list => now with a users");
-        allUsers = op.getAllUsers();
-        userList = allUsers.toCompletableFuture().get();
-        LOGGER.info("Found users. {}", userList);
-        assertThat(userList, contains(KafkaUserModel.decodeUsername(username)));
+            // Get all users => should have the new user listed now
+            LOGGER.info("Checking user list => now with a users");
+            allUsers = op.getAllUsers();
+            userList = allUsers.toCompletableFuture().get();
+            LOGGER.info("Found users. {}", userList);
+            assertThat(userList, contains(KafkaUserModel.decodeUsername(username)));
 
-        // Modify user => should be modified
-        LOGGER.info("Checking user modification");
-        reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, modResource);
-        reconcileResult = reconcile.toCompletableFuture().get();
-        assertThat(reconcileResult.toString(), is("PATCH"));
-        T modified = get(username);
-        assertThat(modified, is(notNullValue()));
-        assertResources(modResource, modified);
+            // Modify user => should be modified
+            LOGGER.info("Checking user modification");
+            reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, modResource);
+            reconcileResult = reconcile.toCompletableFuture().get();
+            assertThat(reconcileResult.toString(), is("PATCH"));
+            T modified = get(username);
+            assertThat(modified, is(notNullValue()));
+            assertResources(modResource, modified);
 
-        // Delete user => should be deleted
-        LOGGER.info("Checking user deletion");
-        reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
-        reconcileResult = reconcile.toCompletableFuture().get();
-        assertThat(reconcileResult.toString(), is("DELETED"));
-        T deleted = get(username);
-        assertThat(deleted, is(nullValue()));
+            // Delete user => should be deleted
+            LOGGER.info("Checking user deletion");
+            reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
+            reconcileResult = reconcile.toCompletableFuture().get();
+            assertThat(reconcileResult.toString(), is("DELETED"));
+            T deleted = get(username);
+            assertThat(deleted, is(nullValue()));
 
-        // Get all users => should be empty again
-        LOGGER.info("Checking empty list after deletion");
-        allUsers = op.getAllUsers();
-        userList = allUsers.toCompletableFuture().get();
-        LOGGER.info("Found users. {}", userList);
-        assertThat(userList.isEmpty(), is(true));
+            // Get all users => should be empty again
+            LOGGER.info("Checking empty list after deletion");
+            allUsers = op.getAllUsers();
+            userList = allUsers.toCompletableFuture().get();
+            LOGGER.info("Found users. {}", userList);
+            assertThat(userList.isEmpty(), is(true));
 
-        // Deleting deleted user user => should be noop
-        LOGGER.info("Checking deletion of non-existent user");
-        reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
-        reconcileResult = reconcile.toCompletableFuture().get();
-        assertThat(reconcileResult.toString(), is("NOOP"));
-        deleted = get(username);
-        assertThat(deleted, is(nullValue()));
+            // Deleting deleted user user => should be noop
+            LOGGER.info("Checking deletion of non-existent user");
+            reconcile = op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null);
+            reconcileResult = reconcile.toCompletableFuture().get();
+            assertThat(reconcileResult.toString(), is("NOOP"));
+            deleted = get(username);
+            assertThat(deleted, is(nullValue()));
+        } finally {
+            op.stop();
+        }
     }
 
     // In some cases, the creation returns PATCH as reconcile result instead of CREATED

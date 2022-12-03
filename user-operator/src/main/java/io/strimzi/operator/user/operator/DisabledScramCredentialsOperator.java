@@ -35,4 +35,14 @@ public class DisabledScramCredentialsOperator implements AdminApiOperator<String
     public CompletionStage<List<String>> getAllUsers() {
         return CompletableFuture.failedFuture(new UnsupportedOperationException("DisabledScramCredentialsOperator cannot be used to get list of all users"));
     }
+
+    @Override
+    public void start() {
+        // Nothing to do
+    }
+
+    @Override
+    public void stop() {
+        // Nothing to do
+    }
 }

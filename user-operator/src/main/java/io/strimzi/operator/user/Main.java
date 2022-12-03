@@ -92,8 +92,9 @@ public class Main {
         // Create the health check and metrics server
         HealthCheckAndMetricsServer healthCheckAndMetricsServer = new HealthCheckAndMetricsServer(controller, metricsProvider);
 
-        // Start health check server and the controller
+        // Start health check server, KafkaUser operator and the controller
         healthCheckAndMetricsServer.start();
+        kafkaUserOperator.start();
         controller.start();
 
         // Register shutdown hooks
@@ -101,6 +102,9 @@ public class Main {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             LOGGER.info("Requesting controller to stop");
             controller.stop();
+
+            LOGGER.info("Requesting KafkaUser operator to stop");
+            kafkaUserOperator.stop();
 
             LOGGER.info("Requesting controller to stop");
             healthCheckAndMetricsServer.stop();
