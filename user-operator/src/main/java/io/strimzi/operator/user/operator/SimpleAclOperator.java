@@ -53,11 +53,6 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
         // Create micro-batching reconcilers for managing the ACLs
         this.addReconciler = new AddAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
         this.deleteReconciler = new DeleteAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
-
-        // Start the cache and reconcilers
-        this.cache.start();
-        this.addReconciler.start();
-        this.deleteReconciler.start();
     }
 
     /**
@@ -91,6 +86,37 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
                         }
                     }
                 });
+    }
+
+
+    /**
+     * Starts the Cache and the patch reconciler
+     */
+    @Override
+    public void start() {
+        cache.start();
+        addReconciler.start();
+        deleteReconciler.start();
+    }
+
+    /**
+     * Stops the Cache and the patch reconciler
+     */
+    @Override
+    public void stop() {
+        cache.stop();
+
+        try {
+            addReconciler.stop();
+        } catch (InterruptedException e) {
+            LOGGER.warnOp("Interrupted while stopping ACL AddReconciler");
+        }
+
+        try {
+            deleteReconciler.stop();
+        } catch (InterruptedException e) {
+            LOGGER.warnOp("Interrupted while stopping ACL DeleteReconciler");
+        }
     }
 
     /**

@@ -85,8 +85,14 @@ public class SimpleAclOperatorTest {
         assertDoesNotThrow(() -> mockDescribeAcls(mockAdminClient, AclBindingFilter.ANY, aclBindings));
 
         SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
-        Set<String> users = aclOp.getAllUsers().toCompletableFuture().get();
-        assertThat(users, is(new HashSet<>(asList("foo", "bar", "baz"))));
+        aclOp.start();
+
+        try {
+            Set<String> users = aclOp.getAllUsers().toCompletableFuture().get();
+            assertThat(users, is(new HashSet<>(asList("foo", "bar", "baz"))));
+        } finally {
+            aclOp.stop();
+        }
     }
 
     @Test
@@ -117,19 +123,25 @@ public class SimpleAclOperatorTest {
         });
 
         SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
-        ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
-                .toCompletableFuture().get();
+        aclOp.start();
 
-        assertThat(result, is(notNullValue()));
-        assertThat(result.toString(), is("CREATED"));
+        try {
+            ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", new LinkedHashSet<>(asList(resource2ReadRule, resource2WriteRule, resource1DescribeRule)))
+                    .toCompletableFuture().get();
 
-        Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
-        assertThat(capturedAclBindings, hasSize(3));
-        assertThat(capturedAclBindings, hasItems(describeAclBinding, readAclBinding, writeAclBinding));
+            assertThat(result, is(notNullValue()));
+            assertThat(result.toString(), is("CREATED"));
 
-        Set<ResourcePattern> capturedResourcePatterns = capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
-        assertThat(capturedResourcePatterns, hasSize(2));
-        assertThat(capturedResourcePatterns, hasItems(resource1, resource2));
+            Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
+            assertThat(capturedAclBindings, hasSize(3));
+            assertThat(capturedAclBindings, hasItems(describeAclBinding, readAclBinding, writeAclBinding));
+
+            Set<ResourcePattern> capturedResourcePatterns = capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
+            assertThat(capturedResourcePatterns, hasSize(2));
+            assertThat(capturedResourcePatterns, hasItems(resource1, resource2));
+        } finally {
+            aclOp.stop();
+        }
     }
 
     @Test
@@ -155,28 +167,34 @@ public class SimpleAclOperatorTest {
         });
 
         SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
-        ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", Set.of(rule1))
-                .toCompletableFuture().get();
+        aclOp.start();
 
-        assertThat(result, is(notNullValue()));
-        assertThat(result.toString(), is("PATCH"));
+        try {
+            ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", Set.of(rule1))
+                    .toCompletableFuture().get();
 
-        // Create Write rule for resource 2
-        Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
-        assertThat(capturedAclBindings, hasSize(1));
-        assertThat(capturedAclBindings, hasItem(writeAclBinding));
-        Set<ResourcePattern> capturedResourcePatterns = capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
-        assertThat(capturedResourcePatterns, hasSize(1));
-        assertThat(capturedResourcePatterns, hasItem(resource2));
+            assertThat(result, is(notNullValue()));
+            assertThat(result.toString(), is("PATCH"));
 
-        // Delete read rule for resource 1
-        Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
-        assertThat(capturedAclBindingFilters, hasSize(1));
-        assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
+            // Create Write rule for resource 2
+            Collection<AclBinding> capturedAclBindings = aclBindingsCaptor.getValue();
+            assertThat(capturedAclBindings, hasSize(1));
+            assertThat(capturedAclBindings, hasItem(writeAclBinding));
+            Set<ResourcePattern> capturedResourcePatterns = capturedAclBindings.stream().map(AclBinding::pattern).collect(Collectors.toSet());
+            assertThat(capturedResourcePatterns, hasSize(1));
+            assertThat(capturedResourcePatterns, hasItem(resource2));
 
-        Set<ResourcePatternFilter> capturedResourcePatternFilters = capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
-        assertThat(capturedResourcePatternFilters, hasSize(1));
-        assertThat(capturedResourcePatternFilters, hasItem(resource1.toFilter()));
+            // Delete read rule for resource 1
+            Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
+            assertThat(capturedAclBindingFilters, hasSize(1));
+            assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
+
+            Set<ResourcePatternFilter> capturedResourcePatternFilters = capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
+            assertThat(capturedResourcePatternFilters, hasSize(1));
+            assertThat(capturedResourcePatternFilters, hasItem(resource1.toFilter()));
+        } finally {
+            aclOp.stop();
+        }
     }
 
     @Test
@@ -195,19 +213,25 @@ public class SimpleAclOperatorTest {
         });
 
         SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
-        ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", null)
-                .toCompletableFuture().get();
+        aclOp.start();
 
-        assertThat(result, is(notNullValue()));
-        assertThat(result.toString(), is("DELETED"));
+        try {
+            ReconcileResult<Set<SimpleAclRule>> result = aclOp.reconcile(Reconciliation.DUMMY_RECONCILIATION, "CN=foo", null)
+                    .toCompletableFuture().get();
 
-        Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
-        assertThat(capturedAclBindingFilters, hasSize(1));
-        assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
+            assertThat(result, is(notNullValue()));
+            assertThat(result.toString(), is("DELETED"));
 
-        Set<ResourcePatternFilter> capturedResourcePatternFilters = capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
-        assertThat(capturedResourcePatternFilters, hasSize(1));
-        assertThat(capturedResourcePatternFilters, hasItem(resource.toFilter()));
+            Collection<AclBindingFilter> capturedAclBindingFilters = aclBindingFiltersCaptor.getValue();
+            assertThat(capturedAclBindingFilters, hasSize(1));
+            assertThat(capturedAclBindingFilters, hasItem(readAclBinding.toFilter()));
+
+            Set<ResourcePatternFilter> capturedResourcePatternFilters = capturedAclBindingFilters.stream().map(AclBindingFilter::patternFilter).collect(Collectors.toSet());
+            assertThat(capturedResourcePatternFilters, hasSize(1));
+            assertThat(capturedResourcePatternFilters, hasItem(resource.toFilter()));
+        } finally {
+            aclOp.stop();
+        }
     }
 
     private void mockDescribeAcls(Admin mockAdminClient, AclBindingFilter aclBindingFilter, Collection<AclBinding> aclBindings) throws ExecutionException, InterruptedException, TimeoutException {

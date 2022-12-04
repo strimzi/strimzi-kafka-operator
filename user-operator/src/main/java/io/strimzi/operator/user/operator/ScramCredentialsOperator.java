@@ -52,10 +52,6 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
 
         // Create micro-batching reconciler for updating the SCRAM-SHA credentials
         this.patchReconciler = new ScramShaCredentialsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
-
-        // Start the cache and reconcilers
-        this.cache.start();
-        this.patchReconciler.start();
     }
 
     /**
@@ -122,6 +118,30 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
                     }
                 }
             });
+        }
+    }
+
+
+    /**
+     * Starts the Cache and the patch reconciler
+     */
+    @Override
+    public void start() {
+        cache.start();
+        patchReconciler.start();
+    }
+
+    /**
+     * Stops the Cache and the patch reconciler
+     */
+    @Override
+    public void stop() {
+        cache.stop();
+
+        try {
+            patchReconciler.stop();
+        } catch (InterruptedException e) {
+            LOGGER.warnOp("Interrupted while stopping ScramShaCredentials PatchReconciler");
         }
     }
 

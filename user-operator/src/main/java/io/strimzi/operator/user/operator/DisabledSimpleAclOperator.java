@@ -36,4 +36,14 @@ public class DisabledSimpleAclOperator implements AdminApiOperator<Set<SimpleAcl
     public CompletionStage<Set<String>> getAllUsers() {
         return CompletableFuture.failedFuture(new UnsupportedOperationException("DisabledSimpleAclOperator cannot be used to get list of all users"));
     }
+
+    @Override
+    public void start() {
+        // Nothing to do
+    }
+
+    @Override
+    public void stop() {
+        // Nothing to do
+    }
 }
