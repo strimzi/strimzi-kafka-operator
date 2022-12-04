@@ -2,6 +2,7 @@
 
 ## 0.33.0
 
+* Support loadBalancerClass attribute in service with type loadBalancer
 * Support for automatically restarting failed Connect or Mirror Maker 2 connectors
 * Redesign of Strimzi User Operator to improve its scalability
 * Use Java 17 as the runtime for all containers and language level for all modules except `api`, `crd-generator`, `crd-annotations`, and `test`
