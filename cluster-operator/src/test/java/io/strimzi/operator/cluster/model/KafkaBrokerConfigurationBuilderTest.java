@@ -1367,7 +1367,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INGRESS)
                 .withTls(true)
                 .withNewConfiguration()
-                    .withIngressClass("nginx-ingress")
+                    .withControllerClass("nginx-ingress")
                     .withNewBootstrap()
                         .withHost("bootstrap.mytld.com")
                     .endBootstrap()

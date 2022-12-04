@@ -363,7 +363,7 @@ spec:
                               description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
                             class:
                               type: string
-                              description: "Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used."
+                              description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
                             finalizers:
                               type: array
                               items:

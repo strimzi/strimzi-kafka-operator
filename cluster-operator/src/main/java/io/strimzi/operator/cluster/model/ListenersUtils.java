@@ -662,14 +662,14 @@ public class ListenersUtils {
     }
 
     /**
-     * Finds ingress class
+     * Finds controller class which mean ingress class or loadbalancer class
      *
-     * @param listener  Listener for which the ingress class should be found
-     * @return          Ingress class or null if not specified
+     * @param listener  Listener for which the controller class should be found
+     * @return          Controller class or null if not specified
      */
-    public static String ingressClass(GenericKafkaListener listener)    {
+    public static String controllerClass(GenericKafkaListener listener)    {
         if (listener.getConfiguration() != null) {
-            return listener.getConfiguration().getIngressClass();
+            return listener.getConfiguration().getControllerClass();
         } else {
             return null;
         }

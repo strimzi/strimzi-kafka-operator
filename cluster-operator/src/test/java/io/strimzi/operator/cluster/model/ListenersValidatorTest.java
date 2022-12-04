@@ -214,7 +214,7 @@ public class ListenersValidatorTest {
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
                 .withNewConfiguration()
-                    .withIngressClass("my-ingress")
+                    .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
@@ -256,7 +256,7 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(listener1);
 
         List<String> expectedErrors = asList(
-                "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
+                "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
@@ -287,7 +287,7 @@ public class ListenersValidatorTest {
                 .withPort(9092)
                 .withType(KafkaListenerType.LOADBALANCER)
                 .withNewConfiguration()
-                    .withIngressClass("my-ingress")
+                    .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
@@ -326,7 +326,6 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(listener1);
 
         List<String> expectedErrors = asList(
-                "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure preferredAddressType because it is not NodePort based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
@@ -365,7 +364,7 @@ public class ListenersValidatorTest {
                 .withPort(9092)
                 .withType(KafkaListenerType.NODEPORT)
                 .withNewConfiguration()
-                    .withIngressClass("my-ingress")
+                    .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
@@ -404,7 +403,7 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(listener1);
 
         List<String> expectedErrors = asList(
-                "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
+                "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure finalizers because it is not LoadBalancer based listener",
@@ -447,7 +446,7 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.ROUTE)
                 .withTls(true)
                 .withNewConfiguration()
-                    .withIngressClass("my-ingress")
+                    .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
@@ -489,7 +488,7 @@ public class ListenersValidatorTest {
         List<GenericKafkaListener> listeners = asList(listener1);
 
         List<String> expectedErrors = asList(
-                "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
+                "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
                 "listener " + name + " cannot configure useServiceDnsDomain because it is not internal or cluster-ip listener",
                 "listener " + name + " cannot configure externalTrafficPolicy because it is not LoadBalancer or NodePort based listener",
                 "listener " + name + " cannot configure loadBalancerSourceRanges because it is not LoadBalancer based listener",
@@ -547,7 +546,7 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.INGRESS)
                 .withTls(true)
                 .withNewConfiguration()
-                    .withIngressClass("my-ingress")
+                    .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
@@ -700,7 +699,7 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(true)
                 .withNewConfiguration()
-                .withIngressClass("my-ingress")
+                .withControllerClass("my-ingress")
                 .withUseServiceDnsDomain(true)
                 .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                 .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
@@ -747,7 +746,7 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure bootstrap.nodePort because it is not NodePort based listener",
                 "listener " + name + " cannot configure brokers[].loadBalancerIP because it is not LoadBalancer based listener",
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener",
-                "listener " + name + " cannot configure ingressClass because it is not Ingress based listener",
+                "listener " + name + " cannot configure class because it is not an Ingress or LoadBalancer based listener",
                 "listener " + name + " cannot configure bootstrap.host because it is not Route or Ingress based listener",
                 "listener " + name + " cannot configure brokers[].host because it is not Route or Ingress based listener"
         );
