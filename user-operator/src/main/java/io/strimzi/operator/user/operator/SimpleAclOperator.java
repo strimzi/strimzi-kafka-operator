@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 
 /**
  * SimpleAclOperator is responsible for managing the authorization rules in Apache Kafka.
@@ -39,14 +40,18 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
     private final AddAclsBatchReconciler addReconciler;
     private final DeleteAclsBatchReconciler deleteReconciler;
     private final AclCache cache;
+    private final ExecutorService executor;
 
     /**
      * Constructor
      *
      * @param adminClient   Kafka Admin client instance
      * @param config        User operator configuration
+     * @param executor      Shared executor for executing async operations
      */
-    public SimpleAclOperator(Admin adminClient, UserOperatorConfig config) {
+    public SimpleAclOperator(Admin adminClient, UserOperatorConfig config, ExecutorService executor) {
+        this.executor = executor;
+
         // Create cache for querying the ACLs locally
         this.cache = new AclCache(adminClient, config.getCacheRefresh());
 
@@ -66,28 +71,26 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
      */
     @Override
     public CompletionStage<ReconcileResult<Set<SimpleAclRule>>> reconcile(Reconciliation reconciliation, String username, Set<SimpleAclRule> desired) {
-        return getAsync(reconciliation, username)
-                .thenApplyAsync(current -> {
-                    if (desired == null || desired.isEmpty()) {
-                        if (current.size() == 0)    {
-                            LOGGER.debugCr(reconciliation, "No expected Acl rules and no existing Acl rules -> NoOp");
-                            return ReconcileResult.noop(desired);
-                        } else {
-                            LOGGER.debugCr(reconciliation, "No expected Acl rules, but {} existing Acl rules -> Deleting rules", current.size());
-                            return internalDelete(reconciliation, username, current).toCompletableFuture().join();
-                        }
-                    } else {
-                        if (current.isEmpty())  {
-                            LOGGER.debugCr(reconciliation, "{} expected Acl rules, but no existing Acl rules -> Adding rules", desired.size());
-                            return internalCreate(reconciliation, username, desired).toCompletableFuture().join();
-                        } else  {
-                            LOGGER.debugCr(reconciliation, "{} expected Acl rules and {} existing Acl rules -> Reconciling rules", desired.size(), current.size());
-                            return internalUpdate(reconciliation, username, desired, current).toCompletableFuture().join();
-                        }
-                    }
-                });
-    }
+        Set<SimpleAclRule> current = cache.getOrDefault(username, Set.of());
 
+        if (desired == null || desired.isEmpty()) {
+            if (current.size() == 0)    {
+                LOGGER.debugCr(reconciliation, "No expected Acl rules and no existing Acl rules -> NoOp");
+                return CompletableFuture.completedFuture(ReconcileResult.noop(desired));
+            } else {
+                LOGGER.debugCr(reconciliation, "No expected Acl rules, but {} existing Acl rules -> Deleting rules", current.size());
+                return internalDelete(reconciliation, username, current);
+            }
+        } else {
+            if (current.isEmpty())  {
+                LOGGER.debugCr(reconciliation, "{} expected Acl rules, but no existing Acl rules -> Adding rules", desired.size());
+                return internalCreate(reconciliation, username, desired);
+            } else  {
+                LOGGER.debugCr(reconciliation, "{} expected Acl rules and {} existing Acl rules -> Reconciling rules", desired.size(), current.size());
+                return internalUpdate(reconciliation, username, desired, current);
+            }
+        }
+    }
 
     /**
      * Starts the Cache and the patch reconciler
@@ -141,7 +144,7 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
                         cache.put(username, desired); // Update cache
                         return ReconcileResult.created(desired);
                     }
-                });
+                }, executor);
     }
 
     /**
@@ -210,7 +213,7 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
                         cache.put(username, desired); // Update cache
                         return ReconcileResult.patched(desired);
                     }
-                });
+                }, executor);
     }
 
     /**
@@ -272,7 +275,7 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
                         cache.remove(username); // Update cache
                         return ReconcileResult.deleted();
                     }
-                });
+                }, executor);
     }
 
     /**
@@ -299,19 +302,6 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
         }
 
         return future;
-    }
-
-    /**
-     * Returns Set of ACLs applying to single user.
-     *
-     * @param reconciliation The reconciliation
-     * @param username  Name of the user.
-     *
-     * @return The Set of ACLs applying to single user.
-     */
-    private CompletionStage<Set<SimpleAclRule>> getAsync(Reconciliation reconciliation, String username)   {
-        LOGGER.debugCr(reconciliation, "Searching for ACL rules of user {}", username);
-        return CompletableFuture.completedFuture(cache.getOrDefault(username, Set.of()));
     }
 
     /**

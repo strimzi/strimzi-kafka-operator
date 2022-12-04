@@ -33,6 +33,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.security.Security;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The main class of the Strimzi User Operator
@@ -70,13 +72,15 @@ public class Main {
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
         Admin adminClient = createAdminClient(config, client, new DefaultAdminClientProvider());
+        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), r -> new Thread(r, "operator-thread-pool"));
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
                 client,
                 new OpenSslCertManager(),
-                config.isKraftEnabled() ? new DisabledScramCredentialsOperator() : new ScramCredentialsOperator(adminClient, config),
-                new QuotasOperator(adminClient, config),
-                config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config) : new DisabledSimpleAclOperator()
+                config.isKraftEnabled() ? new DisabledScramCredentialsOperator() : new ScramCredentialsOperator(adminClient, config, kafkaUserOperatorExecutor),
+                new QuotasOperator(adminClient, config, kafkaUserOperatorExecutor),
+                config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config, kafkaUserOperatorExecutor) : new DisabledSimpleAclOperator(),
+                kafkaUserOperatorExecutor
         );
 
         MetricsProvider metricsProvider = createMetricsProvider();
@@ -105,6 +109,7 @@ public class Main {
 
             LOGGER.info("Requesting KafkaUser operator to stop");
             kafkaUserOperator.stop();
+            kafkaUserOperatorExecutor.shutdownNow(); // We do not wait for termination
 
             LOGGER.info("Requesting controller to stop");
             healthCheckAndMetricsServer.stop();

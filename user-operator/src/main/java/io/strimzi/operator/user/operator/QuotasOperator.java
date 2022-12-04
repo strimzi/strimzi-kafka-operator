@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 
 /**
  * KafkaUserQuotasOperator is responsible for managing quotas in Apache Kafka
@@ -33,14 +34,18 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
 
     private final QuotasBatchReconciler patchReconciler;
     private final QuotasCache cache;
+    private final ExecutorService executor;
 
     /**
      * Constructor
      *
      * @param adminClient   Kafka Admin client instance
      * @param config        User operator configuration
+     * @param executor      Shared executor for executing async operations
      */
-    public QuotasOperator(Admin adminClient, UserOperatorConfig config) {
+    public QuotasOperator(Admin adminClient, UserOperatorConfig config, ExecutorService executor) {
+        this.executor = executor;
+
         // Create cache for querying the Quotas locally
         this.cache = new QuotasCache(adminClient, config.getCacheRefresh());
 
@@ -59,31 +64,28 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
      */
     @Override
     public CompletionStage<ReconcileResult<KafkaUserQuotas>> reconcile(Reconciliation reconciliation, String username, KafkaUserQuotas desired) {
-        return getAsync(reconciliation, username)
-                .handleAsync((current, error) -> {
-                    if (error != null)  {
-                        throw new CompletionException(error);
-                    } else if (desired == null) {
-                        if (current == null)    {
-                            LOGGER.debugCr(reconciliation, "No expected quotas and no existing quotas -> NoOp");
-                            return ReconcileResult.noop(null);
-                        } else {
-                            LOGGER.debugCr(reconciliation, "No expected quotas, but {} existing quotas -> Deleting quotas", current);
-                            return internalDelete(reconciliation, username).toCompletableFuture().join();
-                        }
-                    } else {
-                        if (current == null)  {
-                            LOGGER.debugCr(reconciliation, "{} expected quotas, but no existing quotas -> Adding quotas", desired);
-                            return internalUpsert(reconciliation, username, desired).toCompletableFuture().join();
-                        } else if (!QuotaUtils.quotasEquals(current, desired)) {
-                            LOGGER.debugCr(reconciliation, "{} expected quotas and {} existing quotas differ -> Reconciling quotas", desired, current);
-                            return internalUpsert(reconciliation, username, desired).toCompletableFuture().join();
-                        } else {
-                            LOGGER.debugCr(reconciliation, "{} expected quotas are the same as existing quotas -> NoOp", desired);
-                            return ReconcileResult.noop(desired);
-                        }
-                    }
-                });
+        KafkaUserQuotas current = cache.get(username);
+
+        if (desired == null) {
+            if (current == null)    {
+                LOGGER.debugCr(reconciliation, "No expected quotas and no existing quotas -> NoOp");
+                return CompletableFuture.completedFuture(ReconcileResult.noop(null));
+            } else {
+                LOGGER.debugCr(reconciliation, "No expected quotas, but {} existing quotas -> Deleting quotas", current);
+                return internalDelete(reconciliation, username);
+            }
+        } else {
+            if (current == null)  {
+                LOGGER.debugCr(reconciliation, "{} expected quotas, but no existing quotas -> Adding quotas", desired);
+                return internalUpsert(reconciliation, username, desired);
+            } else if (!QuotaUtils.quotasEquals(current, desired)) {
+                LOGGER.debugCr(reconciliation, "{} expected quotas and {} existing quotas differ -> Reconciling quotas", desired, current);
+                return internalUpsert(reconciliation, username, desired);
+            } else {
+                LOGGER.debugCr(reconciliation, "{} expected quotas are the same as existing quotas -> NoOp", desired);
+                return CompletableFuture.completedFuture(ReconcileResult.noop(desired));
+            }
+        }
     }
 
     /**
@@ -130,7 +132,7 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
                         cache.remove(username); // Update the cache
                         return ReconcileResult.deleted();
                     }
-                });
+                }, executor);
     }
 
     /**
@@ -156,7 +158,7 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
 
                         return ReconcileResult.patched(desired);
                     }
-                });
+                }, executor);
     }
 
     /**
@@ -180,19 +182,6 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
         }
 
         return future;
-    }
-
-    /**
-     * Retrieves the quotas for the given user.
-     *
-     * @param reconciliation The reconciliation
-     * @param username Name of the user
-     *
-     * @return the CompletionStage with reconcile result
-     */
-    private CompletionStage<KafkaUserQuotas> getAsync(Reconciliation reconciliation, String username) {
-        LOGGER.debugCr(reconciliation, "Getting quotas for user {}", username);
-        return CompletableFuture.completedFuture(cache.get(username));
     }
 
     /**

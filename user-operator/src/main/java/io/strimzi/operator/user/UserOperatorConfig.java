@@ -44,6 +44,7 @@ public class UserOperatorConfig {
     static final String STRIMZI_BATCH_QUEUE_SIZE = "STRIMZI_BATCH_QUEUE_SIZE";
     static final String STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE = "STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE";
     static final String STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS = "STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS";
+    static final String STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE";
 
     // Default values
     static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
@@ -66,6 +67,7 @@ public class UserOperatorConfig {
     static final int DEFAULT_BATCH_QUEUE_SIZE = 1024;
     static final int DEFAULT_BATCH_MAXIMUM_BLOCK_SIZE = 100;
     static final int DEFAULT_BATCH_MAXIMUM_BLOCK_TIME_MS = 100;
+    static final int DEFAULT_USER_OPERATIONS_THREAD_POOL_SIZE = 4;
 
     private final String namespace;
     private final long reconciliationIntervalMs;
@@ -91,6 +93,7 @@ public class UserOperatorConfig {
     private final int batchQueueSize;
     private final int batchMaxBlockSize;
     private final int batchMaxBlockTime;
+    private final int userOperationsThreadPoolSize;
 
     /**
      * Constructor
@@ -119,6 +122,8 @@ public class UserOperatorConfig {
      * @param batchQueueSize Maximal queue for requests when micro-batching the Kafka Admin API requests
      * @param batchMaxBlockSize Maximal batch size for micro-batching the Kafka Admin API requests
      * @param batchMaxBlockTime Maximal batch time for micro-batching the Kafka Admin API requests
+     * @param userOperationsThreadPoolSize Size of the thread pool for user operations done by KafkaUserOperator and
+     *                                     the classes used by it
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public UserOperatorConfig(String namespace,
@@ -144,8 +149,8 @@ public class UserOperatorConfig {
                               long cacheRefresh,
                               int batchQueueSize,
                               int batchMaxBlockSize,
-                              int batchMaxBlockTime
-
+                              int batchMaxBlockTime,
+                              int userOperationsThreadPoolSize
     ) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
@@ -171,6 +176,7 @@ public class UserOperatorConfig {
         this.batchQueueSize = batchQueueSize;
         this.batchMaxBlockSize = batchMaxBlockSize;
         this.batchMaxBlockTime = batchMaxBlockTime;
+        this.userOperationsThreadPoolSize = userOperationsThreadPoolSize;
     }
 
     /**
@@ -199,6 +205,7 @@ public class UserOperatorConfig {
         int batchQueueSize = getIntProperty(map, STRIMZI_BATCH_QUEUE_SIZE, DEFAULT_BATCH_QUEUE_SIZE);
         int batchMaxBlockSize = getIntProperty(map, STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE, DEFAULT_BATCH_MAXIMUM_BLOCK_SIZE);
         int batchMaxBlockTime = getIntProperty(map, STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS, DEFAULT_BATCH_MAXIMUM_BLOCK_TIME_MS);
+        int userOperationsThreadPoolSize = getIntProperty(map, STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE, DEFAULT_USER_OPERATIONS_THREAD_POOL_SIZE);
 
         String kafkaBootstrapServers = DEFAULT_KAFKA_BOOTSTRAP_SERVERS;
         String kafkaBootstrapServersEnvVar = map.get(UserOperatorConfig.STRIMZI_KAFKA_BOOTSTRAP_SERVERS);
@@ -245,7 +252,8 @@ public class UserOperatorConfig {
                 caCertSecretName, caKeySecretName, clusterCaCertSecretName, euoKeySecretName, caNamespace, secretPrefix,
                 aclsAdminApiSupported, kraftEnabled, clientsCaValidityDays, clientsCaRenewalDays,
                 scramPasswordLength, maintenanceWindows, kafkaAdminClientConfiguration, operationTimeout, workQueueSize,
-                controllerThreadPoolSize, cacheRefresh, batchQueueSize, batchMaxBlockSize, batchMaxBlockTime);
+                controllerThreadPoolSize, cacheRefresh, batchQueueSize, batchMaxBlockSize, batchMaxBlockTime,
+                userOperationsThreadPoolSize);
     }
 
     /**
@@ -510,6 +518,13 @@ public class UserOperatorConfig {
         return batchMaxBlockTime;
     }
 
+    /**
+     * @return Size of the thread pool for user operations done by KafkaUserOperator and the classes used by it
+     */
+    public int getUserOperationsThreadPoolSize() {
+        return userOperationsThreadPoolSize;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -536,6 +551,7 @@ public class UserOperatorConfig {
                 ",batchQueueSize=" + batchQueueSize +
                 ",batchMaxBlockSize=" + batchMaxBlockSize +
                 ",batchMaxBlockTime=" + batchMaxBlockTime +
+                ",userOperationsThreadPoolSize=" + userOperationsThreadPoolSize +
                 ")";
     }
 }

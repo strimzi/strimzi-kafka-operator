@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -29,7 +30,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, Set<String>> {
     @Override
     AdminApiOperator<Set<SimpleAclRule>, Set<String>> operator() {
-        return new SimpleAclOperator(adminClient, ResourceUtils.createUserOperatorConfig());
+        return new SimpleAclOperator(adminClient, ResourceUtils.createUserOperatorConfig(), Executors.newSingleThreadExecutor());
     }
 
     @Override
