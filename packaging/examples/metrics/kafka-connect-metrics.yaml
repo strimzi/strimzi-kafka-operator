@@ -144,7 +144,7 @@ data:
       name: kafka_connect_worker_rebalance_$1
       help: "Kafka Connect JMX metric rebalance information"
       type: GAUGE
-    
+
     # OAuth Metrics
     # WARNING: Make sure that the ordering of the attributes is the same as in MBean names
     - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+), (.+)=(.+)><>(count|totalTimeMs):"

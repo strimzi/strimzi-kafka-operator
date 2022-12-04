@@ -31,6 +31,10 @@ public class KafkaMirrorMaker2Templates {
         return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, tlsListener);
     }
 
+    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas) {
+        return kafkaMirrorMaker2WithMetrics(name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, null, null);
+    }
+
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, String sourceNs, String targetNs) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");

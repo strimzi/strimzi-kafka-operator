@@ -51,6 +51,11 @@ public class KafkaConnectTemplates {
         return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, clusterName, kafkaConnectReplicas);
     }
 
+    public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String name, String namespaceName, String clusterName, int replicas) {
+        createOrReplaceConnectMetrics();
+        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+    }
+
     public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String name, String clusterName, int replicas) {
         createOrReplaceConnectMetrics();
         return kafkaConnectWithFilePlugin(name, ResourceManager.kubeClient().getNamespace(), clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
