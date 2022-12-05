@@ -44,9 +44,9 @@ public class KafkaUserOperator {
 
     private final CertManager certManager;
     private final KubernetesClient client;
-    private final SimpleAclOperator aclOperations;
-    private final ScramCredentialsOperator scramCredentialsOperator;
-    private final QuotasOperator quotasOperator;
+    private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator;
+    private final AdminApiOperator<String, List<String>> scramCredentialsOperator;
+    private final AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator;
     private final UserOperatorConfig config;
     private final PasswordGenerator passwordGenerator;
     private final LabelSelector selector;
@@ -59,25 +59,43 @@ public class KafkaUserOperator {
      * @param certManager              For managing certificates.
      * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
      * @param quotasOperator           For operating on Kafka User quotas.
-     * @param aclOperations            For operating on ACLs.
+     * @param aclOperator            For operating on ACLs.
      */
     public KafkaUserOperator(
             UserOperatorConfig config,
             KubernetesClient client,
             CertManager certManager,
-            ScramCredentialsOperator scramCredentialsOperator,
-            QuotasOperator quotasOperator,
-            SimpleAclOperator aclOperations
+            AdminApiOperator<String, List<String>> scramCredentialsOperator,
+            AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator,
+            AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator
     ) {
         this.certManager = certManager;
         this.client = client;
         this.scramCredentialsOperator = scramCredentialsOperator;
         this.quotasOperator = quotasOperator;
-        this.aclOperations = aclOperations;
+        this.aclOperator = aclOperator;
         this.config = config;
 
         this.selector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? new LabelSelector() : new LabelSelector(null, config.getLabels().toMap());
         this.passwordGenerator = new PasswordGenerator(this.config.getScramPasswordLength());
+    }
+
+    /**
+     * Starts the KafkaUserOperator and the Kafka Admin API operators
+     */
+    public void start() {
+        quotasOperator.start();
+        aclOperator.start();
+        scramCredentialsOperator.start();
+    }
+
+    /**
+     * Stops the KafkaUserOperator and the Kafka Admin API operators
+     */
+    public void stop() {
+        quotasOperator.stop();
+        aclOperator.stop();
+        scramCredentialsOperator.stop();
     }
 
     /**
@@ -99,7 +117,7 @@ public class KafkaUserOperator {
         // Get the ACL users
         CompletionStage<Set<String>> aclUsers;
         if (config.isAclsAdminApiSupported())   {
-            aclUsers = aclOperations.getAllUsers();
+            aclUsers = aclOperator.getAllUsers();
         } else {
             aclUsers = CompletableFuture.completedFuture(Set.of());
         }
@@ -194,8 +212,8 @@ public class KafkaUserOperator {
         // Delete everything what can be deleted
         return CompletableFuture.allOf(
                 CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.getSecretPrefix(), user)).delete()),
-                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
-                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 !config.isKraftEnabled() ? scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture(),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture()
@@ -364,8 +382,8 @@ public class KafkaUserOperator {
         CompletionStage<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
 
         if (config.isAclsAdminApiSupported()) {
-            aclsTlsUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
-            aclsScramUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
+            aclsTlsUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
+            aclsScramUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
         } else {
             aclsTlsUserFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
             aclsScramUserFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));

@@ -32,7 +32,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * SimpleAclOperator is responsible for managing the authorization rules in Apache Kafka.
  */
-public class SimpleAclOperator extends AbstractAdminApiOperator<Set<SimpleAclRule>, Set<String>> {
+public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(SimpleAclOperator.class.getName());
     private static final List<String> IGNORED_USERS = Arrays.asList("*", "ANONYMOUS");
 
@@ -53,13 +53,6 @@ public class SimpleAclOperator extends AbstractAdminApiOperator<Set<SimpleAclRul
         // Create micro-batching reconcilers for managing the ACLs
         this.addReconciler = new AddAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
         this.deleteReconciler = new DeleteAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
-
-        if (config.isAclsAdminApiSupported()) {
-            // Start the cache and reconcilers => We start them only if ACLs Admin APIs are enabled
-            this.cache.start();
-            this.addReconciler.start();
-            this.deleteReconciler.start();
-        }
     }
 
     /**
@@ -93,6 +86,37 @@ public class SimpleAclOperator extends AbstractAdminApiOperator<Set<SimpleAclRul
                         }
                     }
                 });
+    }
+
+
+    /**
+     * Starts the Cache and the patch reconciler
+     */
+    @Override
+    public void start() {
+        cache.start();
+        addReconciler.start();
+        deleteReconciler.start();
+    }
+
+    /**
+     * Stops the Cache and the patch reconciler
+     */
+    @Override
+    public void stop() {
+        cache.stop();
+
+        try {
+            addReconciler.stop();
+        } catch (InterruptedException e) {
+            LOGGER.warnOp("Interrupted while stopping ACL AddReconciler");
+        }
+
+        try {
+            deleteReconciler.stop();
+        } catch (InterruptedException e) {
+            LOGGER.warnOp("Interrupted while stopping ACL DeleteReconciler");
+        }
     }
 
     /**

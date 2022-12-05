@@ -59,8 +59,8 @@ spec:
       env:
         - name: OTEL_SERVICE_NAME
           value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
   tracing:
     type: opentelemetry
   #...
@@ -80,8 +80,8 @@ spec:
       env:
         - name: OTEL_SERVICE_NAME
           value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
   tracing:
     type: opentelemetry
 #...
@@ -101,8 +101,8 @@ spec:
       env:
         - name: OTEL_SERVICE_NAME
           value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
   tracing:
     type: opentelemetry
 #...
@@ -122,8 +122,8 @@ spec:
       env:
         - name: OTEL_SERVICE_NAME
           value: my-otel-service
-        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: "http://jaeger-host:14250"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
   tracing:
     type: opentelemetry
 #...

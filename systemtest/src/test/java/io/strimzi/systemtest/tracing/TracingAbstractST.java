@@ -56,7 +56,7 @@ import static io.strimzi.systemtest.Constants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_OTLP_URL;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_CONSUMER_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_KAFKA_BRIDGE_SERVICE;
@@ -200,8 +200,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_AGENT_HOST)
                         .endEnv()
                         .addNewEnv()
-                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                            .withValue(JAEGER_COLLECTOR_URL)
+                            .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_OTLP_URL)
                         .endEnv()
                         .addNewEnv()
                             .withName("JAEGER_SAMPLER_TYPE")
@@ -291,8 +291,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_AGENT_HOST)
                         .endEnv()
                         .addNewEnv()
-                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                            .withValue(JAEGER_COLLECTOR_URL)
+                            .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_OTLP_URL)
                         .endEnv()
                         .addNewEnv()
                             .withName("JAEGER_SAMPLER_TYPE")
@@ -369,8 +369,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_AGENT_HOST)
                         .endEnv()
                         .addNewEnv()
-                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                            .withValue(JAEGER_COLLECTOR_URL)
+                            .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_OTLP_URL)
                         .endEnv()
                         .addNewEnv()
                             .withName("JAEGER_SAMPLER_TYPE")
@@ -446,8 +446,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_AGENT_HOST)
                         .endEnv()
                         .addNewEnv()
-                            .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                            .withValue(JAEGER_COLLECTOR_URL)
+                            .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
+                            .withValue(JAEGER_COLLECTOR_OTLP_URL)
                         .endEnv()
                         .addNewEnv()
                             .withName("JAEGER_SAMPLER_TYPE")
@@ -459,7 +459,7 @@ public abstract class TracingAbstractST extends AbstractST {
                         .endEnv()
                         .addNewEnv()
                             .withName("OTEL_TRACES_EXPORTER")
-                            .withValue("jaeger")
+                            .withValue("otlp")
                         .endEnv()
                     .endBridgeContainer()
                 .endTemplate()
@@ -507,8 +507,8 @@ public abstract class TracingAbstractST extends AbstractST {
                         .withValue(JAEGER_AGENT_HOST)
                     .endEnv()
                     .addNewEnv()
-                        .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
-                        .withValue(JAEGER_COLLECTOR_URL)
+                        .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
+                        .withValue(JAEGER_COLLECTOR_OTLP_URL)
                     .endEnv()
                     .addNewEnv()
                         .withName("JAEGER_SAMPLER_TYPE")
@@ -517,6 +517,10 @@ public abstract class TracingAbstractST extends AbstractST {
                     .addNewEnv()
                         .withName("JAEGER_SAMPLER_PARAM")
                         .withValue(JAEGER_SAMPLER_PARAM)
+                    .endEnv()
+                    .addNewEnv()
+                        .withName("OTEL_TRACES_EXPORTER")
+                        .withValue("otlp")
                     .endEnv()
                 .endBridgeContainer()
             .endTemplate()

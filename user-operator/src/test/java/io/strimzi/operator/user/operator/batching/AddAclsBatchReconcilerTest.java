@@ -6,7 +6,7 @@ package io.strimzi.operator.user.operator.batching;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.user.operator.AbstractAdminApiOperator;
+import io.strimzi.operator.user.operator.AdminApiOperator;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateAclsResult;
 import org.apache.kafka.common.KafkaFuture;
@@ -87,13 +87,13 @@ public class AddAclsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", List.of(MY_USER_READ, MY_USER_WRITE), myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", List.of(MY_USER_READ, MY_USER_WRITE), myUserFuture));
 
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", List.of(MY_USER_2_READ, MY_USER_2_WRITE), myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", List.of(MY_USER_2_READ, MY_USER_2_WRITE), myUser2Future));
 
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUser3Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user3", List.of(MY_USER_3_READ), myUser3Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user3", List.of(MY_USER_3_READ), myUser3Future));
 
             // Wait for completion
             ReconcileResult<Collection<AclBinding>> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);
@@ -149,10 +149,10 @@ public class AddAclsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", List.of(MY_USER_READ, MY_USER_WRITE), myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", List.of(MY_USER_READ, MY_USER_WRITE), myUserFuture));
 
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", List.of(MY_USER_2_READ, MY_USER_2_WRITE), myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", List.of(MY_USER_2_READ, MY_USER_2_WRITE), myUser2Future));
 
             // Wait for completion
             ExecutionException myUserException = assertThrows(ExecutionException.class, () -> myUserFuture.get(1_000, TimeUnit.MILLISECONDS));
@@ -200,10 +200,10 @@ public class AddAclsBatchReconcilerTest {
         try {
             // Enqueue reconciliations
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUserFuture = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", List.of(MY_USER_READ, MY_USER_WRITE), myUserFuture));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user", List.of(MY_USER_READ, MY_USER_WRITE), myUserFuture));
 
             CompletableFuture<ReconcileResult<Collection<AclBinding>>> myUser2Future = new CompletableFuture<>();
-            reconciler.enqueue(new AbstractAdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", List.of(MY_USER_2_READ, MY_USER_2_WRITE), myUser2Future));
+            reconciler.enqueue(new AdminApiOperator.ReconcileRequest<>(Reconciliation.DUMMY_RECONCILIATION, "my-user2", List.of(MY_USER_2_READ, MY_USER_2_WRITE), myUser2Future));
 
             // Wait for completion
             ReconcileResult<Collection<AclBinding>> myUserResult = myUserFuture.get(1_000, TimeUnit.MILLISECONDS);

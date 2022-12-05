@@ -28,7 +28,7 @@ import java.util.concurrent.CompletionStage;
 /**
  * KafkaUserQuotasOperator is responsible for managing quotas in Apache Kafka
  */
-public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Set<String>> {
+public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<String>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(QuotasOperator.class.getName());
 
     private final QuotasBatchReconciler patchReconciler;
@@ -46,10 +46,6 @@ public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Se
 
         // Create micro-batching reconcilers for managing the quotas
         this.patchReconciler = new QuotasBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
-
-        // Start the cache and reconcilers
-        this.cache.start();
-        this.patchReconciler.start();
     }
 
     /**
@@ -88,6 +84,29 @@ public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Se
                         }
                     }
                 });
+    }
+
+    /**
+     * Starts the Cache and the patch reconciler
+     */
+    @Override
+    public void start() {
+        cache.start();
+        patchReconciler.start();
+    }
+
+    /**
+     * Stops the Cache and the patch reconciler
+     */
+    @Override
+    public void stop() {
+        cache.stop();
+
+        try {
+            patchReconciler.stop();
+        } catch (InterruptedException e) {
+            LOGGER.warnOp("Interrupted while stopping Quotas PatchReconciler");
+        }
     }
 
     /**

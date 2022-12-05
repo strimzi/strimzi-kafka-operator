@@ -73,7 +73,7 @@ public class KafkaUserOperatorMockTest {
     private ArgumentCaptor<KafkaUserQuotas> quotasCaptor;
 
     @BeforeEach
-    private void beforeEach() {
+    public void beforeEach() {
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaUserCrd()
@@ -135,7 +135,7 @@ public class KafkaUserOperatorMockTest {
     }
 
     @AfterEach
-    private void afterEach() {
+    public void afterEach() {
         mockKube.stop();
     }
 
@@ -1586,5 +1586,25 @@ public class KafkaUserOperatorMockTest {
 
         Set<String> usernames = users.stream().map(NamespaceAndName::getName).collect(Collectors.toSet());
         assertThat(usernames, is(Set.of("quotas-user-2", "quotas-user-1", "cr-user-2", "cr-user-1", "acl-user-1", "acl-user-2")));
+    }
+
+    @Test
+    public void testReconciliationFailsWithDisabledAclOperator() {
+        KafkaUser user = ResourceUtils.createKafkaUserTls();
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, new DisabledSimpleAclOperator());
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
+
+        ExecutionException e = assertThrows(ExecutionException.class, () -> futureResult.toCompletableFuture().get());
+        assertThat(e.getCause().getMessage(), containsString("DisabledSimpleAclOperator cannot be used to reconcile users"));
+    }
+
+    @Test
+    public void testReconciliationFailsWithDisabledScramShaOperator() {
+        KafkaUser user = ResourceUtils.createKafkaUserScramSha();
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, new DisabledScramCredentialsOperator(), quotasOps, aclOps);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
+
+        ExecutionException e = assertThrows(ExecutionException.class, () -> futureResult.toCompletableFuture().get());
+        assertThat(e.getCause().getMessage(), containsString("DisabledScramCredentialsOperator cannot be used to reconcile users"));
     }
 }

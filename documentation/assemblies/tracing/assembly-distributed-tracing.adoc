@@ -21,7 +21,7 @@ Tracing is not supported for Kafka brokers.
 You enable and configure tracing for these components through their custom resources. 
 You enable tracing by specifying a tracing type using the `spec.tracing.type` property:
 
-* `opentelemetry` for OpenTelemetry with the Jaeger Exporter
+* `opentelemetry` for OpenTelemetry with the OTLP Exporter
 * `jaeger` for OpenTracing with Jaeger
 
 You add tracing configuration using `spec.template` properties. 

@@ -7,6 +7,7 @@
 * Use Java 17 as the runtime for all containers and language level for all modules except `api`, `crd-generator`, `crd-annotations`, and `test`
 * Improved FIPS (Federal Information Processing Standards) support
 * Upgrade Vert.x to 4.3.5
+* Moved from using the Jaeger exporter to OTLP exporter by default
 
 ### Changes, deprecations and removals
 
@@ -25,10 +26,14 @@
 * Support for JmxTrans in Strimzi is deprecated. 
   It is currently planned to be removed in Strimzi 0.35.0.
 * Support for `type: jaeger` tracing based on Jaeger clients and OpenTracing API was deprecated in the Strimzi 0.31 release.
-As the Jaeger clients are retired and the OpenTracing project is archived, we cannot guarantee their support for future versions.
+  As the Jaeger clients are retired and the OpenTracing project is archived, we cannot guarantee their support for future versions.
   In Strimzi 0.32 and 0.33, we added support for OpenTelemetry tracing as a replacement.
   If possible, we will maintain the support for `type: jaeger` tracing until June 2023 and remove it afterwards.
   Please migrate to OpenTelemetry as soon as possible.
+* When OpenTelemetry is enabled for tracing, starting from this release, the operator configures the OTLP exporter instead of the Jaeger one by default.
+  The Jaeger exporter is even not included in the Kafka images anymore, so if you want to use it you have to add the binary by yourself.
+  The `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable has to be used instead of the `OTEL_EXPORTER_JAEGER_ENDPOINT` in order to specify the OTLP endpoint to send traces to.
+  If you are using Jaeger as the backend system for tracing, you need to have 1.35 release at least which is the first one exposing an OLTP endpoint.
 
 ## 0.32.0
 

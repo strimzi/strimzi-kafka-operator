@@ -33,7 +33,7 @@ In each client application add the dependencies for the tracer:
 </dependency>
 <dependency>
   <groupId>io.opentelemetry</groupId>
-  <artifactId>opentelemetry-exporter-jaeger</artifactId>
+  <artifactId>opentelemetry-exporter-otlp</artifactId>
   <version>{OpenTelemetryVersion}</version>
 </dependency>
 ----

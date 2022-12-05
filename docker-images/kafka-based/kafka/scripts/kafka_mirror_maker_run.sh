@@ -73,8 +73,8 @@ if [ "$STRIMZI_TRACING" = "jaeger" ] || [ "$STRIMZI_TRACING" = "opentelemetry" ]
     KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=$STRIMZI_TRACING"
     export KAFKA_OPTS
     if [ "$STRIMZI_TRACING" = "opentelemetry" ] && [ -z "$OTEL_TRACES_EXPORTER" ]; then
-      # auto-set Jaeger exporter
-      export OTEL_TRACES_EXPORTER="jaeger"
+      # auto-set OTLP exporter
+      export OTEL_TRACES_EXPORTER="otlp"
     fi
 fi
 

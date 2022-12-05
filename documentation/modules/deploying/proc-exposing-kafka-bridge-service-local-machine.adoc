@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-bridge-quickstart.adoc
+// assembly-deploy-kafka-bridge.adoc
 
 [id='proc-exposing-kafka-bridge-service-local-machine-{context}']
 = Exposing the Kafka Bridge service to your local machine
@@ -20,15 +20,14 @@ kubectl get pods -o name
 
 pod/kafka-consumer
 # ...
-pod/quickstart-bridge-589d78784d-9jcnr
-pod/strimzi-cluster-operator-76bcf9bc76-8dnfm
+pod/my-bridge-bridge-7cbd55496b-nclrt
 ----
 
 . Connect to the Kafka Bridge pod on port `8080`:
 +
 [source,shell,subs=attributes+]
 ----
-kubectl port-forward pod/quickstart-bridge-589d78784d-9jcnr 8080:8080 &
+kubectl port-forward pod/my-bridge-bridge-7cbd55496b-nclrt 8080:8080 &
 ----
 +
 NOTE: If port 8080 on your local machine is already in use, use an alternative HTTP port, such as `8008`.

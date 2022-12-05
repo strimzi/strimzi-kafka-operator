@@ -26,9 +26,9 @@ import java.util.concurrent.ExecutionException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 
-public class SimpleAclOperatorIT extends AbstractAdminApiOperatorIT<Set<SimpleAclRule>, Set<String>> {
+public class SimpleAclOperatorIT extends AdminApiOperatorIT<Set<SimpleAclRule>, Set<String>> {
     @Override
-    AbstractAdminApiOperator<Set<SimpleAclRule>, Set<String>> operator() {
+    AdminApiOperator<Set<SimpleAclRule>, Set<String>> operator() {
         return new SimpleAclOperator(adminClient, ResourceUtils.createUserOperatorConfig());
     }
 

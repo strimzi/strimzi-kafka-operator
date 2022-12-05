@@ -6,7 +6,7 @@
 = Introducing a different OpenTelemetry tracing system
 
 [role="_abstract"]
-Instead of the default Jaeger system, you can specify other tracing systems that are supported by OpenTelemetry.
+Instead of the default OTLP system, you can specify other tracing systems that are supported by OpenTelemetry.
 You do this by adding the required artifacts to the Kafka image provided with Strimzi.
 Any required implementation specific environment variables must also be set.
 You then enable the new tracing implementation using the `OTEL_TRACES_EXPORTER` environment variable.
