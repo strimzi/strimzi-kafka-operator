@@ -133,6 +133,8 @@ spec:
     logging: debug <5>
     enableSaramaLogging: true <6>
     template: <7>
+      deployment:
+        deploymentStrategy: RollingUpdate <8>
       pod:
         metadata:
           labels:
@@ -143,10 +145,10 @@ spec:
           runAsUser: 1000001
           fsGroup: 0
         terminationGracePeriodSeconds: 120
-    readinessProbe: <8>
+    readinessProbe: <9>
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    livenessProbe: <9>
+    livenessProbe: <10>
       initialDelaySeconds: 15
       timeoutSeconds: 5
 # ...
@@ -158,8 +160,9 @@ spec:
 <5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
 <6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
 <7> link:{BookURLUsing}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
-<8> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
-<9> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
+<8> link:{BookURLUsing}#con-common-deployment-strategy-reference[Deployment strategy type].
+<9> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
+<10> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
 
 NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 
