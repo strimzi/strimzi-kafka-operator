@@ -67,6 +67,20 @@ public class ClusterOperator extends AbstractVerticle {
     @SuppressWarnings("unused")
     private WorkerExecutor sharedWorkerExecutor;
 
+    /**
+     * Constructor
+     *
+     * @param namespace                             Namespace which this operator instance manages
+     * @param config                                Cluster Operator configuration
+     * @param client                                Kubernetes client
+     * @param kafkaAssemblyOperator                 Kafka operator
+     * @param kafkaConnectAssemblyOperator          KafkaConnect operator
+     * @param kafkaMirrorMakerAssemblyOperator      KafkaMirrorMaker operator
+     * @param kafkaMirrorMaker2AssemblyOperator     KafkaMirrorMaker2 operator
+     * @param kafkaBridgeAssemblyOperator           KafkaBridge operator
+     * @param kafkaRebalanceAssemblyOperator        KafkaRebalance operator
+     * @param resourceOperatorSupplier              Resource operator supplier
+     */
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
                            KubernetesClient client,
@@ -132,7 +146,7 @@ public class ClusterOperator extends AbstractVerticle {
                 .onComplete(start);
     }
 
-    public Future<Void> maybeStartStrimziPodSetController() {
+    private Future<Void> maybeStartStrimziPodSetController() {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
@@ -184,6 +198,13 @@ public class ClusterOperator extends AbstractVerticle {
         }
     }
 
+    /**
+     * Name of the secret with the Cluster Operator certificates for connecting to the cluster
+     *
+     * @param cluster   Name of the Kafka cluster
+     *
+     * @return  Name of the Cluster Operator certificate secret
+     */
     public static String secretName(String cluster) {
         return cluster + CERTS_SUFFIX;
     }

@@ -28,14 +28,24 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+/**
+ * Utils for working with different authentication types
+ */
 public class AuthenticationUtils {
-
-    public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
-    public static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
+    /**
+     * Key for a SASL username
+     */
     public static final String SASL_USERNAME = "SASL_USERNAME";
-    public static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
+
+    /**
+     * Key for a SASL mechanism
+     */
     public static final String SASL_MECHANISM = "SASL_MECHANISM";
-    public static final String OAUTH_CONFIG = "OAUTH_CONFIG";
+
+    private static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
+    private static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
+    private static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
+    private static final String OAUTH_CONFIG = "OAUTH_CONFIG";
 
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
@@ -75,7 +85,6 @@ public class AuthenticationUtils {
     }
 
     private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
-
         boolean accessTokenCase = auth.getAccessToken() != null;
         boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
         boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;

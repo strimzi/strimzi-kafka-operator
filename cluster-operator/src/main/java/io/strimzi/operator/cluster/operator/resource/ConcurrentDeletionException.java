@@ -8,16 +8,12 @@ package io.strimzi.operator.cluster.operator.resource;
  * Thrown for exceptional circumstances when deleting already deleted (at that time) resource.
  */
 public class ConcurrentDeletionException extends RuntimeException {
-    public ConcurrentDeletionException() {
-        super();
-    }
+    /**
+     * Constructor
+     *
+     * @param s     Error message
+     */
     public ConcurrentDeletionException(String s) {
         super(s);
-    }
-    public ConcurrentDeletionException(Throwable cause) {
-        super(cause);
-    }
-    public ConcurrentDeletionException(String message, Throwable cause) {
-        super(message, cause);
     }
 }

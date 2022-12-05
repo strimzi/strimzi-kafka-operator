@@ -11,8 +11,19 @@ package io.strimzi.operator.cluster.model;
  * - IfNotPresent
  */
 public enum ImagePullPolicy {
+    /**
+     * Always pull the container image
+     */
     ALWAYS("Always"),
+
+    /**
+     * Pull the container image when it is not present
+     */
     IFNOTPRESENT("IfNotPresent"),
+
+    /**
+     * Never pull the container image
+     */
     NEVER("Never");
 
     private final String imagePullPolicy;
@@ -21,6 +32,7 @@ public enum ImagePullPolicy {
         this.imagePullPolicy = imagePullPolicy;
     }
 
+    @Override
     public String toString()    {
         return imagePullPolicy;
     }

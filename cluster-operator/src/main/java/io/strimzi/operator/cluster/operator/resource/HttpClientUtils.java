@@ -12,8 +12,10 @@ import io.vertx.core.http.HttpClientOptions;
 
 import java.util.function.BiConsumer;
 
+/**
+ * Utils for creating Http client and working with them
+ */
 public class HttpClientUtils {
-
     /**
      * Perform the given operation, which completes the promise, using an HTTP client instance,
      * after which the client is closed and the future for the promise returned.
@@ -37,5 +39,4 @@ public class HttpClientUtils {
                 return Future.failedFuture(error);
             });
     }
-
 }

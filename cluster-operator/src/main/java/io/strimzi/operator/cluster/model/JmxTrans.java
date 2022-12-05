@@ -48,7 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
+/**
  * Class for handling JmxTrans configuration passed by the user. Used to get the resources needed to create the
  * JmxTrans deployment including: config map, deployment, and service accounts.
  */
@@ -58,17 +58,24 @@ public class JmxTrans extends AbstractModel {
 
     // Configuration defaults
     private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
-    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(15).build();
+    private static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(15).build();
     private static final io.strimzi.api.kafka.model.Probe DEFAULT_JMX_TRANS_PROBE = new io.strimzi.api.kafka.model.ProbeBuilder()
             .withInitialDelaySeconds(JmxTransSpec.DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(JmxTransSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .build();
 
     // Configuration for mounting `config.json` to be used as Config during run time of the JmxTrans
+    /**
+     * Key under which the JMX Trans configuration is stored in the Config Map
+     */
     public static final String JMXTRANS_CONFIGMAP_KEY = "config.json";
-    public static final String JMXTRANS_VOLUME_NAME = "jmx-config";
+    /* test */ static final String JMXTRANS_VOLUME_NAME = "jmx-config";
+
+    /**
+     * JMX Trans Config Map revision used to trigger rolling update of JMX Trans when the configuration changes
+     */
     public static final String ANNO_JMXTRANS_CONFIG_MAP_HASH = Annotations.STRIMZI_DOMAIN + "config-map-revision";
-    public static final String JMX_FILE_PATH = "/var/lib/jmxtrans";
+    /* test */ static final String JMX_FILE_PATH = "/var/lib/jmxtrans";
 
     protected static final String ENV_VAR_JMXTRANS_LOGGING_LEVEL = "JMXTRANS_LOGGING_LEVEL";
 
@@ -174,6 +181,14 @@ public class JmxTrans extends AbstractModel {
         }
     }
 
+    /**
+     * Generates the JMX Trans deployment
+     *
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  Image pull secrets
+     *
+     * @return  Kubernetes Deployment with the JMX Trans
+     */
     public Deployment generateDeployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
@@ -302,7 +317,7 @@ public class JmxTrans extends AbstractModel {
         return createConfigMap(JmxTransResources.configMapName(cluster), data);
     }
 
-    public List<Volume> getVolumes() {
+    private List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>(2);
 
         volumes.add(createTempDirVolume());

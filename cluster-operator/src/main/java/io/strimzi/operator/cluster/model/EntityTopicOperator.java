@@ -47,24 +47,24 @@ public class EntityTopicOperator extends AbstractModel {
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // Topic Operator configuration keys
-    public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
-    public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
-    public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
-    public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
-    public static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
+    /* test */ static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
+    /* test */ static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    /* test */ static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
+    /* test */ static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
+    /* test */ static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    /* test */ static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    /* test */ static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    /* test */ static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
 
-    public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    /* test */ static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
 
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
 
     // Volume name of the temporary volume used by the TO container
     // Because the container shares the pod with other containers, it needs to have unique name
-    /*test*/ static final String TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-to-tmp";
+    /* test */ static final String TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-to-tmp";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     /* test */ String kafkaBootstrapServers;
@@ -195,7 +195,7 @@ public class EntityTopicOperator extends AbstractModel {
         return varList;
     }
 
-    public List<Volume> getVolumes() {
+    protected List<Volume> getVolumes() {
         return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
@@ -211,6 +211,14 @@ public class EntityTopicOperator extends AbstractModel {
         return KafkaResources.entityOperatorDeploymentName(cluster);
     }
 
+    /**
+     * Generates the Topic Operator Role Binding
+     *
+     * @param namespace         Namespace where the Topic Operator is deployed
+     * @param watchedNamespace  Namespace which the Topic Operator is watching
+     *
+     * @return  Role Binding for the Topic Operator
+     */
     public RoleBinding generateRoleBindingForRole(String namespace, String watchedNamespace) {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")

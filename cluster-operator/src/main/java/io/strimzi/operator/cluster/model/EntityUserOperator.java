@@ -48,22 +48,23 @@ public class EntityUserOperator extends AbstractModel {
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // User Operator configuration keys
-    public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
-    public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
-    public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
-    public static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
-    public static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
-    public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
-    public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
-    public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
-    public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
-    public static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
-    public static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
-    public static final String ENV_VAR_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
-    public static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
+    /* test */ static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
+    /* test */ static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    /* test */ static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
+    /* test */ static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    /* test */ static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
+    /* test */ static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
+    /* test */ static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
+    /* test */ static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
+    /* test */ static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
+    /* test */ static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
+    /* test */ static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
+    /* test */ static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
+    /* test */ static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    /* test */ static final String ENV_VAR_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
+    /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
+
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Volume name of the temporary volume used by the UO container
@@ -225,7 +226,7 @@ public class EntityUserOperator extends AbstractModel {
         return varList;
     }
 
-    public List<Volume> getVolumes() {
+    protected List<Volume> getVolumes() {
         return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
@@ -241,6 +242,14 @@ public class EntityUserOperator extends AbstractModel {
         return KafkaResources.entityOperatorDeploymentName(cluster);
     }
 
+    /**
+     * Generates the User Operator Role Binding
+     *
+     * @param namespace         Namespace where the User Operator is deployed
+     * @param watchedNamespace  Namespace which the User Operator is watching
+     *
+     * @return  Role Binding for the User Operator
+     */
     public RoleBinding generateRoleBindingForRole(String namespace, String watchedNamespace) {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
@@ -269,11 +278,11 @@ public class EntityUserOperator extends AbstractModel {
         return rb;
     }
 
-    public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
+    protected void setContainerEnvVars(List<ContainerEnvVar> envVars) {
         templateContainerEnvVars = envVars;
     }
 
-    public void setContainerSecurityContext(SecurityContext securityContext) {
+    protected void setContainerSecurityContext(SecurityContext securityContext) {
         templateContainerSecurityContext = securityContext;
     }
 

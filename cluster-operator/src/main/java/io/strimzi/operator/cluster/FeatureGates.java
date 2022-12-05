@@ -14,7 +14,7 @@ import static java.util.Arrays.asList;
  * Class for handling the configuration of feature gates
  */
 public class FeatureGates {
-    public static final FeatureGates NONE = new FeatureGates("");
+    /* test */ static final FeatureGates NONE = new FeatureGates("");
 
     private static final String USE_STRIMZI_POD_SETS = "UseStrimziPodSets";
     private static final String USE_KRAFT = "UseKRaft";

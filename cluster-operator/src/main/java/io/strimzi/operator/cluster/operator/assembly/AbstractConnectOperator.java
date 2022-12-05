@@ -94,6 +94,16 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_TASK;
 import static java.util.Collections.emptyMap;
 
+/**
+ * Abstract operator for managing Connect based resources (Connect and Mirror Maker 2)
+ *
+ * @param <C>   Kubernetes client type
+ * @param <T>   Custom Resource type
+ * @param <L>   Custom Resource List type
+ * @param <R>   Custom Resource "Resource" type
+ * @param <P>   Custom Resource Spec type
+ * @param <S>   Custom Resource Status type
+ */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:CyclomaticComplexity"})
 public abstract class AbstractConnectOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
         L extends DefaultKubernetesResourceList<T>, R extends Resource<T>, P extends AbstractKafkaConnectSpec, S extends KafkaConnectStatus>
@@ -120,6 +130,18 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final ServiceAccountOperator serviceAccountOperations;
     private final int port;
 
+    /**
+     * Constructor
+     *
+     * @param vertx                     Vert.x instance
+     * @param pfa                       PlatformFeaturesAvailability describing the platform features
+     * @param kind                      The kind of the custom resource which will be managed
+     * @param resourceOperator          The resource operator for the custom resource
+     * @param supplier                  The supplier of resource operators
+     * @param config                    Cluster operator configuration
+     * @param connectClientProvider     Provider of the Kafka Connect REST API client
+     * @param port                      Port number on which the Connect REST API is listening
+     */
     public AbstractConnectOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                    CrdOperator<C, T, L> resourceOperator,
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
@@ -270,6 +292,13 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
     }
 
+    /**
+     * Checks whether the use of KafkaConnector resources is enabled for this cluster or not
+     *
+     * @param connect   The Connect custom resource
+     *
+     * @return  True if the connector operator is enabled and KafkaConnector resources should be used. False otherwise.
+     */
     public static boolean isUseResources(HasMetadata connect) {
         return Annotations.booleanAnnotation(connect, Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
     }
@@ -733,6 +762,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             .compose(ignored -> Future.succeededFuture());
     }
 
+    /**
+     * Update the status of the Kafka Connector custom resource
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param error                 Throwable indicating if any errors occurred during the reconciliation
+     * @param kafkaConnector2       Latest version of the KafkaConnector resource where the status should be updated
+     * @param connectorOperations   The KafkaConnector operations for updating the status
+     */
     public static void updateStatus(Reconciliation reconciliation, Throwable error, KafkaConnector kafkaConnector2, CrdOperator<?, KafkaConnector, ?> connectorOperations) {
         KafkaConnectorStatus status = new KafkaConnectorStatus();
         StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnector2, status, error);
@@ -778,6 +815,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return topics -> Future.succeededFuture(new ConnectorStatusAndConditions(status.statusResult, topics, status.conditions, status.autoRestart));
     }
 
+    /**
+     * Validates the KafkaConnector resource and returns any warning conditions find during the validation
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          KafkaConnector resource which should be validated
+     *
+     * @return  Set with the warning conditions. Empty set if no conditions were found.
+     */
     public Set<Condition> validate(Reconciliation reconciliation, KafkaConnector resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0);

@@ -6,11 +6,16 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import java.util.List;
 
+/**
+ * Rebalance options for adding a new broker(s) to the cluster
+ */
 public class AddBrokerOptions extends AbstractRebalanceOptions {
-
     /** list with the ids of the new brokers added to the cluster */
     private List<Integer> brokers;
 
+    /**
+     * @return  List of broker IDs which should be added
+     */
     public List<Integer> getBrokers() {
         return brokers;
     }
@@ -20,10 +25,15 @@ public class AddBrokerOptions extends AbstractRebalanceOptions {
         this.brokers = builder.brokers;
     }
 
+    /**
+     * The builder class for building AddBrokerOptions
+     */
     public static class AddBrokerOptionsBuilder extends AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<AddBrokerOptionsBuilder, AddBrokerOptions> {
-
         private List<Integer> brokers;
 
+        /**
+         * Constructs the builder
+         */
         public AddBrokerOptionsBuilder() {
             this.brokers = null;
         }
@@ -33,6 +43,13 @@ public class AddBrokerOptions extends AbstractRebalanceOptions {
             return this;
         }
 
+        /**
+         * Add list of brokers which should be added
+         *
+         * @param brokers   List of broker IDs
+         *
+         * @return  Instance of this builder
+         */
         public AddBrokerOptionsBuilder withBrokers(List<Integer> brokers) {
             this.brokers = brokers;
             return this;
