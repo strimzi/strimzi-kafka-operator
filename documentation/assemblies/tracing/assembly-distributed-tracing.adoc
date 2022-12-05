@@ -31,6 +31,8 @@ You add tracing configuration using `spec.template` properties.
 Support for `type: jaeger` tracing is deprecated.
 The Jaeger clients are now retired and the OpenTracing project archived.
 As such, we cannot guarantee their support for future Kafka versions.
+If possible, we will maintain the support for `type: jaeger` tracing until June 2023 and remove it afterwards.
+Please migrate to OpenTelemetry as soon as possible.
 ====
 
 To enable tracing in Kafka producers, consumers, and Kafka Streams API applications, you _instrument_ application code. 
