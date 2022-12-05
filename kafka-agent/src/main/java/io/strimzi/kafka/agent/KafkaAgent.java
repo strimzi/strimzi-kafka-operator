@@ -9,23 +9,29 @@ import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import com.yammer.metrics.core.MetricsRegistryListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.strimzi.kafka.agent.server.BrokerStateServlet;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
  * Yammer Metric and once it reaches the value 3 (meaning "running as broker", see {@code kafka.server.BrokerState}),
  * creates a given file.
  * The presence of this file is tested via a Kube "exec" readiness probe to determine when the broker is ready.
+ * It also exposes REST endpoint {@code GET /v1/broker-state} which returns JSON representation of {@code kafka.server.BrokerState}
  */
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
+    public static final String BROKER_STATE_PATH = "/v1/broker-state";
+    private static final int BROKER_STATE_PORT = 8080;
 
     // KafkaYammerMetrics class in Kafka 3.3+
     private static final String YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER = "org.apache.kafka.server.metrics.KafkaYammerMetrics";
@@ -84,9 +90,25 @@ public class KafkaAgent {
                             "KafkaAgentPoller");
                     pollerThread.setDaemon(true);
                     pollerThread.start();
+                    startBrokerStateHTTPServer();
                 }
             }
         });
+    }
+
+    private void startBrokerStateHTTPServer() {
+        Server server = new Server(BROKER_STATE_PORT);
+        ServletHandler handler = new ServletHandler();
+        BrokerStateServlet brokerStateServlet = new BrokerStateServlet(brokerState);
+        ServletHolder holder = new ServletHolder(brokerStateServlet);
+        server.setHandler(handler);
+        handler.addServletWithMapping(holder, BROKER_STATE_PATH);
+        try {
+            server.start();
+            LOGGER.info("Metrics server is listening!");
+        } catch (Exception e) {
+            LOGGER.error("Failed to start Metrics server", e);
+        }
     }
 
     /**
