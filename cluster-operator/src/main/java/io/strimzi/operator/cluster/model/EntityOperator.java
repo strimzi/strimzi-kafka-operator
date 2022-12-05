@@ -68,10 +68,10 @@ public class EntityOperator extends AbstractModel {
 
     // Volume name of the temporary volume used by the TLS sidecar container
     // Because the container shares the pod with other containers, it needs to have unique name
-    /*test*/ static final String TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tls-sidecar-tmp";
+    /* test */ static final String TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tls-sidecar-tmp";
 
     // Entity Operator configuration keys
-    public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
+    /* test */ static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
 
     protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
 
@@ -186,10 +186,16 @@ public class EntityOperator extends AbstractModel {
         }
     }
 
+    /**
+     * @return  The Topic Operator model
+     */
     public EntityTopicOperator topicOperator() {
         return topicOperator;
     }
 
+    /**
+     * @return  The User Operator model
+     */
     public EntityUserOperator userOperator() {
         return userOperator;
     }
@@ -199,6 +205,15 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
+    /**
+     * Generates the Entity Operator deployment
+     *
+     * @param isOpenShift       Flag which identifies if we are running on OpenShift
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  Image pull secrets
+     *
+     * @return  Kubernetes Deployment with the Entity Operator
+     */
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")

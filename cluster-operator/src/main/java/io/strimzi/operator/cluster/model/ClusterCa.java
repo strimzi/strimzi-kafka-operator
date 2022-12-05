@@ -23,8 +23,10 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 
+/**
+ * Represents the Cluster CA
+ */
 public class ClusterCa extends Ca {
-
     private final String clusterName;
     private Secret entityTopicOperatorSecret;
     private Secret entityUserOperatorSecret;
@@ -35,10 +37,34 @@ public class ClusterCa extends Ca {
     private Secret brokersSecret;
     private Secret zkNodesSecret;
 
+    /**
+     * Constructor
+     *
+     * @param reconciliation        Reocnciliation marker
+     * @param certManager           Certificate manager instance
+     * @param passwordGenerator     Password generator instance
+     * @param clusterName           Name of the Kafka cluster
+     * @param caCertSecret          Name of the CA public key secret
+     * @param caKeySecret           Name of the CA private key secret
+     */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String clusterName, Secret caCertSecret, Secret caKeySecret) {
         this(reconciliation, certManager, passwordGenerator, clusterName, caCertSecret, caKeySecret, 365, 30, true, null);
     }
 
+    /**
+     * Constructor
+     *
+     * @param reconciliation        Reocnciliation marker
+     * @param certManager           Certificate manager instance
+     * @param passwordGenerator     Password generator instance
+     * @param clusterName           Name of the Kafka cluster
+     * @param clusterCaCert         Secret with the public key
+     * @param clusterCaKey          Secret with the private key
+     * @param validityDays          Validity days
+     * @param renewalDays           Renewal days (how many days before expiration should the CA be renewed)
+     * @param generateCa            Flag indicating if Strimzi CA should be generated or custom CA is used
+     * @param policy                Renewal policy
+     */
     public ClusterCa(Reconciliation reconciliation, CertManager certManager,
                      PasswordGenerator passwordGenerator,
                      String clusterName,
@@ -80,6 +106,11 @@ public class ClusterCa extends Ca {
         return "cluster-ca";
     }
 
+    /**
+     * Initializes the CA Secrets inside this class
+     *
+     * @param secrets   List with the secrets
+     */
     public void initCaSecrets(List<Secret> secrets) {
         for (Secret secret: secrets) {
             String name = secret.getMetadata().getName();
@@ -101,23 +132,26 @@ public class ClusterCa extends Ca {
         }
     }
 
-    public Secret entityTopicOperatorSecret() {
+    protected Secret entityTopicOperatorSecret() {
         return entityTopicOperatorSecret;
     }
 
-    public Secret entityUserOperatorSecret() {
+    protected Secret entityUserOperatorSecret() {
         return entityUserOperatorSecret;
     }
 
+    /**
+     * @return  The secret with the Cluster Operator certificate
+     */
     public Secret clusterOperatorSecret() {
         return clusterOperatorSecret;
     }
 
-    public Secret kafkaExporterSecret() {
+    protected Secret kafkaExporterSecret() {
         return kafkaExporterSecret;
     }
 
-    public Map<String, CertAndKey> generateCcCerts(String namespace, String kafkaName, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+    protected Map<String, CertAndKey> generateCcCerts(String namespace, String kafkaName, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(kafkaName));
 
         Function<Integer, Subject> subjectFn = i -> {
@@ -144,7 +178,7 @@ public class ClusterCa extends Ca {
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    public Map<String, CertAndKey> generateZkCerts(String namespace, String kafkaName, int replicas, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+    protected Map<String, CertAndKey> generateZkCerts(String namespace, String kafkaName, int replicas, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(kafkaName));
         DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName));
 
@@ -175,7 +209,7 @@ public class ClusterCa extends Ca {
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    public Map<String, CertAndKey> generateBrokerCerts(String namespace, String cluster, int replicas, Set<String> externalBootstrapAddresses,
+    protected Map<String, CertAndKey> generateBrokerCerts(String namespace, String cluster, int replicas, Set<String> externalBootstrapAddresses,
                                                        Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         Function<Integer, Subject> subjectFn = i -> {
             Subject.Builder subject = new Subject.Builder()

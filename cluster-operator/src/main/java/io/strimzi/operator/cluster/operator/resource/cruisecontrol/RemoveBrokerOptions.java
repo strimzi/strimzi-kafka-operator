@@ -6,11 +6,16 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import java.util.List;
 
+/**
+ * Rebalance options for removing brokers from the Kafka cluster
+ */
 public class RemoveBrokerOptions extends AbstractRebalanceOptions {
-
     /** list with the ids of the brokers removed from the cluster */
     private List<Integer> brokers;
 
+    /**
+     * @return  List of brokers which will be removed
+     */
     public List<Integer> getBrokers() {
         return brokers;
     }
@@ -20,10 +25,15 @@ public class RemoveBrokerOptions extends AbstractRebalanceOptions {
         this.brokers = builder.brokers;
     }
 
+    /**
+     * Builder class for RemoveBrokerOptions
+     */
     public static class RemoveBrokerOptionsBuilder extends AbstractRebalanceOptionsBuilder<RemoveBrokerOptionsBuilder, RemoveBrokerOptions> {
-
         private List<Integer> brokers;
 
+        /**
+         * Constructor
+         */
         public RemoveBrokerOptionsBuilder() {
             this.brokers = null;
         }
@@ -33,6 +43,13 @@ public class RemoveBrokerOptions extends AbstractRebalanceOptions {
             return this;
         }
 
+        /**
+         * List of brokers which should be removed
+         *
+         * @param brokers   List of broker IDs
+         *
+         * @return  Instance of this builder
+         */
         public RemoveBrokerOptionsBuilder withBrokers(List<Integer> brokers) {
             this.brokers = brokers;
             return this;

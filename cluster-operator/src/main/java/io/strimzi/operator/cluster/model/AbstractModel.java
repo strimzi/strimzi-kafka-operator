@@ -114,7 +114,9 @@ import static java.util.Collections.emptyMap;
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public abstract class AbstractModel {
-
+    /**
+     * Name of the Strimzi Cluster operator a used in various labels
+     */
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractModel.class.getName());
@@ -132,17 +134,23 @@ public abstract class AbstractModel {
     protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
 
+    /**
+     * Key under which the metrics configuration is stored in the ConfigMap
+     */
     public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.json";
+    /**
+     * Key under which the Log4j properties are stored in the ConfigMap
+     */
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
 
-    public static final String ENV_VAR_DYNAMIC_HEAP_PERCENTAGE = "STRIMZI_DYNAMIC_HEAP_PERCENTAGE";
-    public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
-    public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
-    public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "STRIMZI_DYNAMIC_HEAP_MAX";
-    public static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
-    public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
-    public static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
-    public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
+    protected static final String ENV_VAR_DYNAMIC_HEAP_PERCENTAGE = "STRIMZI_DYNAMIC_HEAP_PERCENTAGE";
+    protected static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
+    protected static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
+    protected static final String ENV_VAR_DYNAMIC_HEAP_MAX = "STRIMZI_DYNAMIC_HEAP_MAX";
+    protected static final String ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED = "STRIMZI_KAFKA_GC_LOG_ENABLED";
+    protected static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
+    protected static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
+    protected static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
 
     /*
      * Default values for the Strimzi temporary directory
@@ -152,10 +160,13 @@ public abstract class AbstractModel {
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
 
     /**
-     * Annotation on PVCs storing the original configuration
-     * Used to revert changes
+     * Annotation on PVCs storing the original configuration. It is used to revert any illegal changes.
      */
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
+
+    /**
+     * Annotation for storing the information whether the PVC should be deleted when the node is scaled down or when the cluster is deleted.
+     */
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
 
     /**
@@ -221,9 +232,11 @@ public abstract class AbstractModel {
      * Volume and Storage configuration
      */
     protected Storage storage;
+
+    /**
+     * Base name used to name data volumes
+     */
     public static final String VOLUME_NAME = "data";
-    public static final String KAFKA_MOUNT_PATH = "/var/lib/kafka";
-    public static final String KAFKA_LOG_DIR = "kafka-log";
     protected String mountPath;
 
     /**
@@ -319,11 +332,14 @@ public abstract class AbstractModel {
         this.labels = Labels.generateDefaultLabels(resource, applicationName, STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
+    /**
+     * @return The number of replicas
+     */
     public int getReplicas() {
         return replicas;
     }
 
-    public void setReplicas(int replicas) {
+    protected void setReplicas(int replicas) {
         this.replicas = replicas;
     }
 
@@ -652,6 +668,9 @@ public abstract class AbstractModel {
         this.metricsConfigInCm = metricsConfigInCm;
     }
 
+    /**
+     * @return  Returns the ConfigMap with metrics configuration
+     */
     public MetricsConfig getMetricsConfigInCm() {
         return metricsConfigInCm;
     }

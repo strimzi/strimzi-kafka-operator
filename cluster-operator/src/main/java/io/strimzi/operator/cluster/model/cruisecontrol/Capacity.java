@@ -13,7 +13,6 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.StorageUtils;
@@ -128,16 +127,37 @@ public class Capacity {
     private final Reconciliation reconciliation;
     private final TreeMap<Integer, BrokerCapacity> capacityEntries;
 
+    /**
+     * Broker capacities key
+     */
     public static final String CAPACITIES_KEY = "brokerCapacities";
-    private static final String BROKER_ID_KEY = "brokerId";
+
+    /**
+     * Capacity key
+     */
     public static final String CAPACITY_KEY = "capacity";
+
+    /**
+     * Disk key
+     */
     public static final String DISK_KEY = "DISK";
+
+    /**
+     * CPU key
+     */
     public static final String CPU_KEY = "CPU";
+
+    /**
+     * Resource type
+     */
+    public static final String RESOURCE_TYPE = "cpu";
+
+    private static final String KAFKA_MOUNT_PATH = "/var/lib/kafka";
+    private static final String KAFKA_LOG_DIR = "kafka-log";
+    private static final String BROKER_ID_KEY = "brokerId";
     private static final String INBOUND_NETWORK_KEY = "NW_IN";
     private static final String OUTBOUND_NETWORK_KEY = "NW_OUT";
     private static final String DOC_KEY = "doc";
-
-    public static final String RESOURCE_TYPE = "cpu";
 
     private final Storage storage;
 
@@ -164,6 +184,13 @@ public class Capacity {
         }
     }
 
+    /**
+     * Constructor
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param spec              Spec of the Kafka custom resource
+     * @param storage           Used storage configuration
+     */
     public Capacity(Reconciliation reconciliation, KafkaSpec spec, Storage storage) {
         this.reconciliation = reconciliation;
         this.capacityEntries = new TreeMap<>();
@@ -194,7 +221,7 @@ public class Capacity {
         return null;
     }
 
-    public CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
+    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
         if (cpuBasedOnRequirements != null) {
             if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
                 LOGGER.warnCr(reconciliation, "Ignoring CPU capacity override settings since they are automatically set to resource limits");
@@ -209,7 +236,7 @@ public class Capacity {
         }
     }
 
-    public static DiskCapacity processDisk(Storage storage, int brokerId) {
+    private static DiskCapacity processDisk(Storage storage, int brokerId) {
         if (storage instanceof JbodStorage) {
             return generateJbodDiskCapacity(storage, brokerId);
         } else {
@@ -217,7 +244,7 @@ public class Capacity {
         }
     }
 
-    public static String processInboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
+    private static String processInboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
         if (override != null && override.getInboundNetwork() != null) {
             return getThroughputInKiB(override.getInboundNetwork());
         } else if (bc != null && bc.getInboundNetwork() != null) {
@@ -227,7 +254,7 @@ public class Capacity {
         }
     }
 
-    public static String processOutboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
+    private static String processOutboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
         if (override != null && override.getOutboundNetwork() != null) {
             return getThroughputInKiB(override.getOutboundNetwork());
         } else if (bc != null && bc.getOutboundNetwork() != null) {
@@ -250,7 +277,7 @@ public class Capacity {
 
         for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
             String name = VolumeUtils.createVolumePrefix(volume.getId(), true);
-            String path = AbstractModel.KAFKA_MOUNT_PATH + "/" + name + "/" + AbstractModel.KAFKA_LOG_DIR + brokerId;
+            String path = KAFKA_MOUNT_PATH + "/" + name + "/" + KAFKA_LOG_DIR + brokerId;
 
             if (volume instanceof PersistentClaimStorage) {
                 size = ((PersistentClaimStorage) volume).getSize();
@@ -268,7 +295,7 @@ public class Capacity {
      * @param storage Storage configuration for Kafka cluster
      * @return Disk capacity per broker
      */
-    public static DiskCapacity generateDiskCapacity(Storage storage) {
+    private static DiskCapacity generateDiskCapacity(Storage storage) {
         if (storage instanceof PersistentClaimStorage) {
             return DiskCapacity.of(getSizeInMiB(((PersistentClaimStorage) storage).getSize()));
         } else if (storage instanceof EphemeralStorage) {
@@ -289,14 +316,14 @@ public class Capacity {
      * @param size The String representation of the volume size.
      * @return The equivalent number of mebibytes.
      */
-    public static String getSizeInMiB(String size) {
+    private static String getSizeInMiB(String size) {
         if (size == null) {
             return BrokerCapacity.DEFAULT_DISK_CAPACITY_IN_MIB;
         }
         return String.valueOf(StorageUtils.convertTo(size, "Mi"));
     }
 
-    /*
+    /**
      * Parse Strimzi representation of throughput, such as {@code 10000KB/s},
      * into the equivalent number of kibibytes represented as a String.
      *
@@ -412,10 +439,14 @@ public class Capacity {
         return config;
     }
 
+    @Override
     public String toString() {
         return generateCapacityConfig().encodePrettily();
     }
 
+    /**
+     * @return  Capacity entries
+     */
     public TreeMap<Integer, BrokerCapacity> getCapacityEntries() {
         return capacityEntries;
     }

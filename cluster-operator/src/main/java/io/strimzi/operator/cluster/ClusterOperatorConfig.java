@@ -35,74 +35,157 @@ import static java.util.Arrays.asList;
 public class ClusterOperatorConfig {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorConfig.class.getName());
 
-    public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
+    /* test */ static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
+
+    /**
+     * Configures how often should the periodical reconciliation be triggered
+     */
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
-    public static final String STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS";
-    public static final String STRIMZI_CONNECT_BUILD_TIMEOUT_MS = "STRIMZI_CONNECT_BUILD_TIMEOUT_MS";
-    public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
-    public static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
-    public static final String STRIMZI_OPERATOR_NAMESPACE = "STRIMZI_OPERATOR_NAMESPACE";
-    public static final String STRIMZI_OPERATOR_NAMESPACE_LABELS = "STRIMZI_OPERATOR_NAMESPACE_LABELS";
-    public static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
-    public static final String STRIMZI_FEATURE_GATES = "STRIMZI_FEATURE_GATES";
-    public static final String STRIMZI_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_OPERATIONS_THREAD_POOL_SIZE";
-    public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
-    public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
-    public static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE";
-    public static final String STRIMZI_POD_SECURITY_PROVIDER_CLASS = "STRIMZI_POD_SECURITY_PROVIDER_CLASS";
-    public static final String STRIMZI_LEADER_ELECTION_ENABLED = "STRIMZI_LEADER_ELECTION_ENABLED";
+
+    /* test */ static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
+    private static final String STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS";
+    /* test */ static final String STRIMZI_CONNECT_BUILD_TIMEOUT_MS = "STRIMZI_CONNECT_BUILD_TIMEOUT_MS";
+    /* test */ static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
+    /* test */ static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
+    /* test */ static final String STRIMZI_OPERATOR_NAMESPACE = "STRIMZI_OPERATOR_NAMESPACE";
+    /* test */ static final String STRIMZI_OPERATOR_NAMESPACE_LABELS = "STRIMZI_OPERATOR_NAMESPACE_LABELS";
+    /* test */ static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
+    /* test */ static final String STRIMZI_FEATURE_GATES = "STRIMZI_FEATURE_GATES";
+    private static final String STRIMZI_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_OPERATIONS_THREAD_POOL_SIZE";
+    /* test */ static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
+    /* test */ static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
+    private static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE";
+    /* test */ static final String STRIMZI_POD_SECURITY_PROVIDER_CLASS = "STRIMZI_POD_SECURITY_PROVIDER_CLASS";
+    /* test */ static final String STRIMZI_LEADER_ELECTION_ENABLED = "STRIMZI_LEADER_ELECTION_ENABLED";
 
     //Used to identify which cluster operator created a Kubernetes event
-    public static final String STRIMZI_OPERATOR_NAME = "STRIMZI_OPERATOR_NAME";
+    private static final String STRIMZI_OPERATOR_NAME = "STRIMZI_OPERATOR_NAME";
 
     // Feature Flags
-    public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
-    public static final String STRIMZI_NETWORK_POLICY_GENERATION = "STRIMZI_NETWORK_POLICY_GENERATION";
+    /* test */ static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
+    private static final String STRIMZI_NETWORK_POLICY_GENERATION = "STRIMZI_NETWORK_POLICY_GENERATION";
 
     // Env vars for configuring images
+    /**
+     * Configures the Kafka container images
+     */
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
+
+    /**
+     * Configures the Kafka Connect container images
+     */
     public static final String STRIMZI_KAFKA_CONNECT_IMAGES = "STRIMZI_KAFKA_CONNECT_IMAGES";
+
+    /**
+     * Configures the Kafka Mirror Maker container images
+     */
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
+
+    /**
+     * Configures the Kafka Mirror Maker 2 container images
+     */
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
+
+    /**
+     * Configures the Entity Operator TLS sidecar container images
+     */
     public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
-    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"; // Used only to produce warning if defined at startup
-    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE"; // Used only to produce warning if defined at startup
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"; // Used only to produce warning if defined at startup
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE"; // Used only to produce warning if defined at startup
+
+    /**
+     * Configures the Kafka Exporter container image
+     */
     public static final String STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE = "STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE";
+
+    /**
+     * Configures the Topic Operator container image
+     */
     public static final String STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
+
+    /**
+     * Configures the User Operator container image
+     */
     public static final String STRIMZI_DEFAULT_USER_OPERATOR_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
+
+    /**
+     * Configures the Kafka init container image
+     */
     public static final String STRIMZI_DEFAULT_KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
+
+    /**
+     * Configures the HTTP Bridge container image
+     */
     public static final String STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE = "STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE";
+
+    /**
+     * Configures the Cruise Control container image
+     */
     public static final String STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE";
+
+    /**
+     * Configures the Kaniko container image
+     */
     public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
+
+    /**
+     * Configures the Maven container image
+     */
     public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";
 
     // Env vars configured in the Cluster operator deployment but passed to all operands
+    /**
+     * HTTP Proxy
+     */
     public static final String HTTP_PROXY = "HTTP_PROXY";
+
+    /**
+     * HTTPS Proxy
+     */
     public static final String HTTPS_PROXY = "HTTPS_PROXY";
+
+    /**
+     * Server which should not use proxy to connect to
+     */
     public static final String NO_PROXY = "NO_PROXY";
+
+    /**
+     * Enabled or disables the FIPS mode
+     */
     public static final String FIPS_MODE = "FIPS_MODE";
 
     // Default values
-    public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+    /* test */ static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+
+    /**
+     * Default work queue size for the Pod Set controller
+     */
     public static final int DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = 1024;
+
+    /**
+     * Default operations timeout
+     */
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
-    public static final String DEFAULT_OPERATOR_NAME = "cluster-operator-name-unset";
-    public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
-    public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
-    public static final int DEFAULT_OPERATIONS_THREAD_POOL_SIZE = 10;
-    public static final int DEFAULT_DNS_CACHE_TTL = 30;
-    public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
-    public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
-    public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
+    private static final String DEFAULT_OPERATOR_NAME = "cluster-operator-name-unset";
+    private static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
+    /* test */ static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
+    private static final int DEFAULT_OPERATIONS_THREAD_POOL_SIZE = 10;
+    /* test */ static final int DEFAULT_DNS_CACHE_TTL = 30;
+    private static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
+    private static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
+    private static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
+
+    /**
+     * Default Pod Security Provider class
+     */
     public static final String DEFAULT_POD_SECURITY_PROVIDER_CLASS = "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider";
-    public static final boolean DEFAULT_LEADER_ELECTION_ENABLED = false;
+    private static final boolean DEFAULT_LEADER_ELECTION_ENABLED = false;
 
     // PodSecurityPolicy shortcut keywords and the corresponding class names
-    public static final String POD_SECURITY_PROVIDER_BASELINE_SHORTCUT = "baseline";
-    public static final String POD_SECURITY_PROVIDER_BASELINE_CLASS = "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider";
-    public static final String POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT = "restricted";
-    public static final String POD_SECURITY_PROVIDER_RESTRICTED_CLASS = "io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider";
+    private static final String POD_SECURITY_PROVIDER_BASELINE_SHORTCUT = "baseline";
+    /* test */ static final String POD_SECURITY_PROVIDER_BASELINE_CLASS = "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider";
+    private static final String POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT = "restricted";
+    /* test */ static final String POD_SECURITY_PROVIDER_RESTRICTED_CLASS = "io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider";
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;

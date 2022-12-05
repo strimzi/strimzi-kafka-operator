@@ -33,8 +33,10 @@ import io.vertx.core.Future;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Manages the Kafka Connect Build
+ */
 public class ConnectBuildOperator {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConnectBuildOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
@@ -49,6 +51,13 @@ public class ConnectBuildOperator {
     private final long connectBuildTimeoutMs;
     private final PlatformFeaturesAvailability pfa;
 
+    /**
+     * Constructor
+     *
+     * @param pfa       Describes the features available in the Kubernetes cluster
+     * @param supplier  Resource operator supplier
+     * @param config    Cluster OPerator configuration
+     */
     public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         this.deploymentOperations = supplier.deploymentOperations;
         this.podOperator = supplier.podOperations;
