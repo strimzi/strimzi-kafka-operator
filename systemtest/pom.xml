@@ -228,7 +228,6 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-model-coordination</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

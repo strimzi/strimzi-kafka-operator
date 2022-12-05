@@ -47,6 +47,7 @@ import io.strimzi.systemtest.resources.kubernetes.ClusterRoleResource;
 import io.strimzi.systemtest.resources.kubernetes.ConfigMapResource;
 import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.resources.kubernetes.JobResource;
+import io.strimzi.systemtest.resources.kubernetes.LeaseResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleResource;
@@ -134,6 +135,7 @@ public class ResourceManager {
         new RoleBindingResource(),
         new ServiceResource(),
         new ConfigMapResource(),
+        new LeaseResource(),
         new ServiceAccountResource(),
         new RoleResource(),
         new ClusterRoleResource(),
