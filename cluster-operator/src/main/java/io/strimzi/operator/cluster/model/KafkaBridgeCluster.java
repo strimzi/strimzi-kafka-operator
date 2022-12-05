@@ -107,7 +107,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_CONSUMER_CONFIG = "KAFKA_BRIDGE_CONSUMER_CONFIG";
     protected static final String ENV_VAR_KAFKA_BRIDGE_ID = "KAFKA_BRIDGE_ID";
 
-    protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED = "KAFKA_BRIDGE_HTTP_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_HOST = "KAFKA_BRIDGE_HTTP_HOST";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_PORT = "KAFKA_BRIDGE_HTTP_PORT";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED = "KAFKA_BRIDGE_CORS_ENABLED";
@@ -119,7 +118,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private KafkaBridgeHttpConfig http;
-    private boolean httpEnabled = false;
     private String bootstrapServers;
     private KafkaBridgeAdminClientSpec kafkaBridgeAdminClient;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
@@ -218,11 +216,10 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, DEFAULT_POD_LABELS);
         if (spec.getHttp() != null) {
-            kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
-            LOGGER.warnCr(reconciliation, "No protocol specified.");
-            throw new InvalidResourceException("No protocol for communication with Bridge specified. Use HTTP.");
+            LOGGER.warnCr(reconciliation, "The spec.http property is missing.");
+            throw new InvalidResourceException("The HTTP configuration for the bridge is not specified.");
         }
         kafkaBridgeCluster.setOwnerReference(kafkaBridge);
 
@@ -392,7 +389,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_PRODUCER_CONFIG, kafkaBridgeProducer == null ? "" : new KafkaBridgeProducerConfiguration(reconciliation, kafkaBridgeProducer.getConfig().entrySet()).getConfiguration()));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_ID, cluster));
 
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED, String.valueOf(httpEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_HOST, KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_HTTP_PORT, String.valueOf(http != null ? http.getPort() : KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)));
 
@@ -500,14 +496,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     @Override
     protected String getServiceAccountName() {
         return KafkaBridgeResources.serviceAccountName(cluster);
-    }
-
-    /**
-     * Set whether the HTTP is enabled
-     * @param httpEnabled HTTP enabled
-     */
-    protected void setHttpEnabled(boolean httpEnabled) {
-        this.httpEnabled = httpEnabled;
     }
 
     /**
