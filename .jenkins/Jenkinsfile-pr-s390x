@@ -32,7 +32,7 @@ pipeline {
         KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
         OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
         COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
-        JAVA_VERSION = "11"
+        JAVA_VERSION = "17"
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
         COPY_DOCKER_LOGIN = "true"

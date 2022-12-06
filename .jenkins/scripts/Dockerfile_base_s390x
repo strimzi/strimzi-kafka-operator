@@ -15,7 +15,7 @@ RUN chown -R ${user}:${user} /home/${user}
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update ; \
-    apt-get install -y make sudo wget git docker.io shellcheck openjdk-11-jdk tar gzip zip patch ruby curl openssl diffutils file procps python3 perl || true; \
+    apt-get install -y make sudo wget git docker.io shellcheck openjdk-17-jdk tar gzip zip patch ruby curl openssl diffutils file procps python3 perl || true; \
     apt-get install -y docker.io iptables ebtables ethtool ca-certificates conntrack socat git nfs-common cifs-utils apt-transport-https gnupg2 software-properties-common bridge-utils ipcalc aufs-tools kmod || true; \
     apt-get clean
 
