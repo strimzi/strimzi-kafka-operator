@@ -140,21 +140,23 @@ public class KafkaExporter extends AbstractModel {
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
 
-                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
-                    kafkaExporter.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                    kafkaExporter.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                if (template.getDeployment() != null) {
+                    if (template.getDeployment().getMetadata() != null) {
+                        kafkaExporter.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                        kafkaExporter.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
+                    }
+                    if (template.getDeployment().getDeploymentStrategy() != null) {
+                        kafkaExporter.templateDeploymentStrategy = template.getDeployment().getDeploymentStrategy();
+                    }
                 }
 
-                if (template.getDeployment() != null && template.getDeployment().getDeploymentStrategy() != null) {
-                    kafkaExporter.templateDeploymentStrategy = template.getDeployment().getDeploymentStrategy();
-                }
-
-                if (template.getContainer() != null && template.getContainer().getEnv() != null) {
-                    kafkaExporter.templateContainerEnvVars = template.getContainer().getEnv();
-                }
-
-                if (template.getContainer() != null && template.getContainer().getSecurityContext() != null) {
-                    kafkaExporter.templateContainerSecurityContext = template.getContainer().getSecurityContext();
+                if (template.getContainer() != null) {
+                    if (template.getContainer().getEnv() != null) {
+                        kafkaExporter.templateContainerEnvVars = template.getContainer().getEnv();
+                    }
+                    if (template.getContainer().getSecurityContext() != null) {
+                        kafkaExporter.templateContainerSecurityContext = template.getContainer().getSecurityContext();
+                    }
                 }
 
                 if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {

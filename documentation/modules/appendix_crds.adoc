@@ -1558,6 +1558,13 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 
 Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 
+xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.template.DeploymentTemplate.adoc[leveloffset=+1]
+
+[id='type-DeploymentTemplate-schema-{context}']
+==== `DeploymentTemplate` schema properties
+
 
 [options="header"]
 |====

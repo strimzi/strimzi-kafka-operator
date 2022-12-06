@@ -583,27 +583,3 @@ jvmOptions:
   gcLoggingEnabled: true
 # ...
 ----
-
-[id='con-common-deployment-strategy-{context}']
-=== Deployment strategy type
-
-Use `template.deployment.deploymentStrategy` to specify the strategy used to replace old Pods by new ones on configuration changes.
-
-The value can be:
-
-- RollingUpdate (default): Pods are restarted with zero downtime.
-- Recreate: Pods are terminated before new ones are created.
-
-Using "Recreate" deployment strategy has the advantage of not requiring spare Node resources, but the disadvantage of application downtime.
-
-.Example of setting the deployment strategy to "Recreate".
-[source,yaml,subs="attributes+"]
-----
-# ...
-template:
-  deployment:
-    deploymentStrategy: Recreate
-# ...
-----
-
-This configuration change does not cause a rolling update.
