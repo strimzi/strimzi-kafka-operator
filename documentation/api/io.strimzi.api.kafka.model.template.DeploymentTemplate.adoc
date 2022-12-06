@@ -1,13 +1,13 @@
-Use `deploymentStrategy` to specify the strategy used to replace old Pods by new ones on configuration changes.
+Use `deploymentStrategy` to specify the strategy used to replace old pods with new ones when deployment configuration changes.
 
-The value can be:
+Use one of the following values:
 
-- RollingUpdate: Pods are restarted with zero downtime.
-- Recreate: Pods are terminated before new ones are created.
+- `RollingUpdate`: Pods are restarted with zero downtime.
+- `Recreate`: Pods are terminated before new ones are created.
 
-Using "Recreate" deployment strategy has the advantage of not requiring spare Node resources, but the disadvantage of application downtime.
+Using the `Recreate` deployment strategy has the advantage of not requiring spare `Node` resources, but the disadvantage of application downtime.
 
-.Example of setting the deployment strategy to "Recreate".
+.Example showing the deployment strategy set to `Recreate`.
 [source,yaml,subs="attributes+"]
 ----
 # ...

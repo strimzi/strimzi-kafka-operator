@@ -45,7 +45,7 @@ public class DeploymentTemplate implements Serializable, UnknownPropertyPreservi
         this.metadata = metadata;
     }
 
-    @Description("DeploymentStrategy which will be used for this Deployment. " +
+    @Description("Pod replacement strategy for deployment configuration changes. " +
             "Valid values are `RollingUpdate` and `Recreate`. " +
             "Defaults to `RollingUpdate`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
