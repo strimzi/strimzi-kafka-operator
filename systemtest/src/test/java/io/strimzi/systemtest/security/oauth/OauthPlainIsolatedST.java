@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -35,6 +37,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -68,6 +71,7 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -78,6 +82,17 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 @IsolatedSuite
 public class OauthPlainIsolatedST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthPlainIsolatedST.class);
+
+    private static final String OAUTH_METRICS_CM_PATH = TestUtils.USER_PATH + "/../packaging/examples/metrics/oauth-metrics.yaml";
+    private static final String OAUTH_METRICS_CM_KEY = "metrics-config.yml";
+    private static final String OAUTH_METRICS_CM_NAME = "oauth-metrics";
+
+    private static final JmxPrometheusExporterMetrics OAUTH_METRICS =
+        new JmxPrometheusExporterMetricsBuilder()
+            .withNewValueFrom()
+                .withNewConfigMapKeyRef(OAUTH_METRICS_CM_KEY, OAUTH_METRICS_CM_NAME, false)
+            .endValueFrom()
+            .build();
 
     private final String oauthClusterName = "oauth-cluster-plain-name";
     private final String scraperName = "oauth-cluster-plain-scraper";
@@ -305,7 +320,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithMetricsAndFileSinkPlugin(oauthClusterName, clusterOperator.getDeploymentNamespace(), oauthClusterName, 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(oauthClusterName, clusterOperator.getDeploymentNamespace(), oauthClusterName, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -332,6 +347,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     // needed for a verification of oauth configuration
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
+                .withJmxPrometheusExporterMetricsConfig(OAUTH_METRICS)
             .endSpec()
             .build();
         // This is required to be able to remove the TLS setting, the builder cannot remove it
@@ -606,11 +622,12 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .endKafkaClientAuthenticationOAuth()
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(oauthClusterName, kafkaTargetClusterName, kafkaSourceClusterName, 1)
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(oauthClusterName, kafkaTargetClusterName, kafkaSourceClusterName, 1, false)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
+                .withJmxPrometheusExporterMetricsConfig(OAUTH_METRICS)
                 .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
                 .editFirstMirror()
                     .withSourceCluster(kafkaSourceClusterName)
@@ -768,7 +785,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
-    void assertOauthMetricsForComponent(MetricsCollector collector) {
+    private void assertOauthMetricsForComponent(MetricsCollector collector) {
         LOGGER.info("Checking OAuth metrics for component: {} with name: {}", collector.getComponentType(), collector.getComponentName());
         collector.collectMetricsFromPods();
 
@@ -781,7 +798,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
     }
 
     @BeforeAll
-    void setUp(ExtensionContext extensionContext) {
+    void setUp(ExtensionContext extensionContext) throws Exception {
         super.setupCoAndKeycloak(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String customClaimListener = "cclistener";
@@ -789,7 +806,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         keycloakInstance.setRealm("internal", false);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(oauthClusterName, clusterOperator.getDeploymentNamespace(), 3, 3)
+        // Deploy OAuth metrics CM
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(OAUTH_METRICS_CM_PATH, clusterOperator.getDeploymentNamespace()));
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -843,6 +863,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                     .withClientId("kafka-component")
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build())
+                    .withJmxPrometheusExporterMetricsConfig(OAUTH_METRICS)
                 .endKafka()
             .endSpec()
             .build());
