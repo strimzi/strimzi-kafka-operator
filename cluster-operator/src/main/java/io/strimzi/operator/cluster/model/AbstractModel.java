@@ -1755,34 +1755,19 @@ public abstract class AbstractModel {
     }
 
     public DeploymentStrategy getDeploymentStrategy() {
-        if (templateDeploymentStrategy == null) {
-            return buildRollingUpdateDeploymentStrategy();
+        if (templateDeploymentStrategy == io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE) {
+            return new DeploymentStrategyBuilder()
+                    .withType("RollingUpdate")
+                    .withRollingUpdate(new RollingUpdateDeploymentBuilder()
+                            .withMaxSurge(new IntOrString(1))
+                            .withMaxUnavailable(new IntOrString(0))
+                            .build())
+                    .build();
         } else {
-            switch (templateDeploymentStrategy) {
-                case ROLLING_UPDATE:
-                    return buildRollingUpdateDeploymentStrategy();
-                case RECREATE:
-                    return buildRecreateDeploymentStrategy();
-                default:
-                    return buildRollingUpdateDeploymentStrategy();
-            }
+            return new DeploymentStrategyBuilder()
+                    .withType("Recreate")
+                    .build();
         }
-    } 
-
-    private DeploymentStrategy buildRollingUpdateDeploymentStrategy() {
-        return new DeploymentStrategyBuilder()
-                        .withType("RollingUpdate")
-                        .withRollingUpdate(new RollingUpdateDeploymentBuilder()
-                                .withMaxSurge(new IntOrString(1))
-                                .withMaxUnavailable(new IntOrString(0))
-                                .build())
-                        .build();
-    }
-
-    private DeploymentStrategy buildRecreateDeploymentStrategy() {
-        return new DeploymentStrategyBuilder()
-                        .withType("Recreate")
-                        .build();
     }
 
     protected Volume createTempDirVolume() {

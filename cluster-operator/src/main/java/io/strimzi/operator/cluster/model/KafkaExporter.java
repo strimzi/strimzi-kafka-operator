@@ -140,14 +140,9 @@ public class KafkaExporter extends AbstractModel {
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
 
-                if (template.getDeployment() != null) {
-                    if (template.getDeployment().getMetadata() != null) {
-                        kafkaExporter.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                        kafkaExporter.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-                    }
-                    if (template.getDeployment().getDeploymentStrategy() != null) {
-                        kafkaExporter.templateDeploymentStrategy = template.getDeployment().getDeploymentStrategy();
-                    }
+                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
+                    kafkaExporter.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
+                    kafkaExporter.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
                 }
 
                 if (template.getContainer() != null) {
@@ -164,6 +159,7 @@ public class KafkaExporter extends AbstractModel {
                     kafkaExporter.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
 
+                ModelUtils.parseDeploymentTemplate(kafkaExporter, template.getDeployment());
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
                 kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
             }
