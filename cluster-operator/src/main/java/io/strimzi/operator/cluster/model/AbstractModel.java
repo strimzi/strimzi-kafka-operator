@@ -1757,14 +1757,15 @@ public abstract class AbstractModel {
     public DeploymentStrategy getDeploymentStrategy() {
         if (templateDeploymentStrategy == null) {
             return buildRollingUpdateDeploymentStrategy();
-        }
-        switch (templateDeploymentStrategy) {
-            case ROLLING_UPDATE:
-                return buildRollingUpdateDeploymentStrategy();
-            case RECREATE:
-                return buildRecreateDeploymentStrategy();
-            default:
-                return buildRollingUpdateDeploymentStrategy();
+        } else {
+            switch (templateDeploymentStrategy) {
+                case ROLLING_UPDATE:
+                    return buildRollingUpdateDeploymentStrategy();
+                case RECREATE:
+                    return buildRecreateDeploymentStrategy();
+                default:
+                    return buildRollingUpdateDeploymentStrategy();
+            }
         }
     } 
 
