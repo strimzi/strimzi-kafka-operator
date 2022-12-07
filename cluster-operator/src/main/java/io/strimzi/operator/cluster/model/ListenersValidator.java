@@ -76,7 +76,7 @@ public class ListenersValidator {
                 validateServiceDnsDomain(errors, listener);
                 validateIpFamilyPolicy(errors, listener);
                 validateIpFamilies(errors, listener);
-                validateIngressClass(errors, listener);
+                validateControllerClass(errors, listener);
                 validateExternalTrafficPolicy(errors, listener);
                 validateLoadBalancerSourceRanges(errors, listener);
                 validateFinalizers(errors, listener);
@@ -240,15 +240,15 @@ public class ListenersValidator {
     }
 
     /**
-     * Validates that ingressClass is used only with Ingress type listener
+     * Validates that controllerClass is used only with Ingress or LoadBalancer type listener
      *
      * @param errors    List where any found errors will be added
      * @param listener  Listener which needs to be validated
      */
-    private static void validateIngressClass(Set<String> errors, GenericKafkaListener listener) {
-        if (!KafkaListenerType.INGRESS.equals(listener.getType())
-                && listener.getConfiguration().getIngressClass() != null)    {
-            errors.add("listener " + listener.getName() + " cannot configure ingressClass because it is not Ingress based listener");
+    private static void validateControllerClass(Set<String> errors, GenericKafkaListener listener) {
+        if (!(KafkaListenerType.INGRESS.equals(listener.getType()) || KafkaListenerType.LOADBALANCER.equals(listener.getType()))
+                && listener.getConfiguration().getControllerClass() != null)    {
+            errors.add("listener " + listener.getName() + " cannot configure class because it is not an Ingress or LoadBalancer based listener");
         }
     }
 

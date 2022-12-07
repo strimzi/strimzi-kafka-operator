@@ -43,7 +43,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     private static final long serialVersionUID = 1L;
 
     private CertAndKeySecretSource brokerCertChainAndKey;
-    private String ingressClass;
+    private String controllerClass;
     private NodeAddressType preferredNodePortAddressType;
     private ExternalTrafficPolicy externalTrafficPolicy;
     private List<String> loadBalancerSourceRanges;
@@ -70,17 +70,19 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
         this.brokerCertChainAndKey = brokerCertChainAndKey;
     }
 
-    @Description("Configures the `Ingress` class that defines which `Ingress` controller will be used. " +
-            "This field can be used only with `ingress` type listener. " +
-            "If not specified, the default Ingress controller will be used.")
+    @Description("Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. " +
+            "This field can only be used with `ingress` and `loadbalancer` type listeners. " +
+            "If not specified, the default controller is used. " +
+            "For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. " +
+            "For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("class")
-    public String getIngressClass() {
-        return ingressClass;
+    public String getControllerClass() {
+        return controllerClass;
     }
 
-    public void setIngressClass(String ingressClass) {
-        this.ingressClass = ingressClass;
+    public void setControllerClass(String controllerClass) {
+        this.controllerClass = controllerClass;
     }
 
     @Description("Defines which address type should be used as the node address. " +

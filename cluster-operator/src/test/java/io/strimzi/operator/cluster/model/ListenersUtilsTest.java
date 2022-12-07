@@ -251,7 +251,7 @@ public class ListenersUtilsTest {
             .withType(KafkaListenerType.INGRESS)
             .withTls(true)
             .withNewConfiguration()
-                .withIngressClass("my-ingress")
+                .withControllerClass("my-ingress")
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-ing-1", "my-ing-2"))
                     .withHost("my-ing-host")
@@ -677,15 +677,15 @@ public class ListenersUtilsTest {
 
     @ParallelTest
     public void testIngressClass() {
-        assertThat(ListenersUtils.ingressClass(newLoadBalancer), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(oldExternal), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(newIngress), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(newClusterIP), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(newIngress2), is("my-ingress"));
-        assertThat(ListenersUtils.ingressClass(oldPlain), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(newTls), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(newNodePort), is(nullValue()));
-        assertThat(ListenersUtils.ingressClass(newNodePort3), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newLoadBalancer), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(oldExternal), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newIngress), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newClusterIP), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newIngress2), is("my-ingress"));
+        assertThat(ListenersUtils.controllerClass(oldPlain), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newTls), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newNodePort), is(nullValue()));
+        assertThat(ListenersUtils.controllerClass(newNodePort3), is(nullValue()));
     }
 
     @ParallelTest

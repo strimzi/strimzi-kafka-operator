@@ -736,6 +736,11 @@ public class KafkaCluster extends AbstractModel {
                         && !finalizers.isEmpty()) {
                     service.getMetadata().setFinalizers(finalizers);
                 }
+
+                String loadBalancerClass = ListenersUtils.controllerClass(listener);
+                if (loadBalancerClass != null) {
+                    service.getSpec().setLoadBalancerClass(loadBalancerClass);
+                }
             }
 
             if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
@@ -805,6 +810,11 @@ public class KafkaCluster extends AbstractModel {
                         && !finalizers.isEmpty()) {
                     service.getMetadata().setFinalizers(finalizers);
                 }
+
+                String loadBalancerClass = ListenersUtils.controllerClass(listener);
+                if (loadBalancerClass != null) {
+                    service.getSpec().setLoadBalancerClass(loadBalancerClass);
+                }
             }
 
             if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
@@ -822,7 +832,7 @@ public class KafkaCluster extends AbstractModel {
         return services;
     }
 
-        /**
+    /**
      * Generates a list of bootstrap route which can be used to bootstrap clients outside of OpenShift.
      *
      * @return The list of generated Routes
@@ -927,7 +937,7 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             String host = ListenersUtils.bootstrapHost(listener);
-            String ingressClass = ListenersUtils.ingressClass(listener);
+            String ingressClass = ListenersUtils.controllerClass(listener);
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
@@ -988,7 +998,7 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             String host = ListenersUtils.bootstrapHost(listener);
-            String ingressClass = ListenersUtils.ingressClass(listener);
+            String ingressClass = ListenersUtils.controllerClass(listener);
 
             io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPath path = new io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPathBuilder()
                     .withPath("/")
@@ -1043,7 +1053,7 @@ public class KafkaCluster extends AbstractModel {
         for (GenericKafkaListener listener : ingressListeners)   {
             String ingressName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
             String host = ListenersUtils.brokerHost(listener, pod);
-            String ingressClass = ListenersUtils.ingressClass(listener);
+            String ingressClass = ListenersUtils.controllerClass(listener);
 
             HTTPIngressPath path = new HTTPIngressPathBuilder()
                     .withPath("/")
@@ -1103,7 +1113,7 @@ public class KafkaCluster extends AbstractModel {
         for (GenericKafkaListener listener : ingressListeners)   {
             String ingressName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
             String host = ListenersUtils.brokerHost(listener, pod);
-            String ingressClass = ListenersUtils.ingressClass(listener);
+            String ingressClass = ListenersUtils.controllerClass(listener);
 
             io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPath path = new io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressPathBuilder()
                     .withPath("/")

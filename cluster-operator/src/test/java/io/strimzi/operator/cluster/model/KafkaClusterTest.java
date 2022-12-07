@@ -1921,6 +1921,35 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    public void testExternalLoadBalancersWithLoadBalancerClass() {
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.LOADBALANCER)
+                        .withNewConfiguration()
+                            .withControllerClass("metallb-class")
+                        .endConfiguration()
+                        .withTls(true)
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Check Service Class
+        Service ext = kc.generateExternalBootstrapServices().get(0);
+        assertThat(ext.getSpec().getLoadBalancerClass(), is("metallb-class"));
+
+        for (int i = 0; i < REPLICAS; i++) {
+            Service service = kc.generateExternalServices(i).get(0);
+            assertThat(service.getSpec().getLoadBalancerClass(), is("metallb-class"));
+        }
+    }
+
+    @ParallelTest
     public void testExternalNodePortWithLabelsAndAnnotations() {
         GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
                 .withAnnotations(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com."))
@@ -3100,7 +3129,7 @@ public class KafkaClusterTest {
                                 .withType(KafkaListenerType.INGRESS)
                                 .withTls(true)
                                 .withNewConfiguration()
-                                    .withIngressClass("nginx-internal")
+                                    .withControllerClass("nginx-internal")
                                     .withNewBootstrap()
                                         .withHost("my-kafka-bootstrap.com")
                                         .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
@@ -3146,7 +3175,7 @@ public class KafkaClusterTest {
                                 .withType(KafkaListenerType.INGRESS)
                                 .withTls(true)
                                 .withNewConfiguration()
-                                    .withIngressClass("nginx-internal")
+                                    .withControllerClass("nginx-internal")
                                     .withNewBootstrap()
                                         .withHost("my-kafka-bootstrap.com")
                                         .withAnnotations(Collections.singletonMap("dns-annotation", "my-kafka-bootstrap.com"))
