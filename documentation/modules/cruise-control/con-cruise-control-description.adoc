@@ -1,0 +1,24 @@
+//standard description for cruise control
+[role="_abstract"]
+Cruise Control is an open source system that supports the following Kafka operations:
+
+* Monitoring cluster workload
+* Rebalancing a cluster based on predefined constraints
+
+The operations help with running a more balanced Kafka cluster that uses broker pods more efficiently.
+
+A typical cluster can become unevenly loaded over time.
+Partitions that handle large amounts of message traffic might not be evenly distributed across the available brokers.
+To rebalance the cluster, administrators must monitor the load on brokers and manually reassign busy partitions to brokers with spare capacity.
+
+Cruise Control automates the cluster rebalancing process.
+It constructs a _workload model_ of resource utilization for the cluster--based on CPU, disk, and network load--and generates optimization proposals (that you can approve or reject) for more balanced partition assignments.
+A set of configurable optimization goals is used to calculate these proposals.
+
+You can generate optimization proposals in specific modes. 
+The default `full` mode rebalances partitions across all brokers.
+You can also use the `add-brokers` and `remove-brokers` modes to accommodate changes when scaling a cluster up or down.
+
+When you approve an optimization proposal, Cruise Control applies it to your Kafka cluster.
+You configure and generate optimization proposals using a `KafkaRebalance` resource.
+You can configure the resource using an annotation so that optimization proposals are approved automatically or manually.  

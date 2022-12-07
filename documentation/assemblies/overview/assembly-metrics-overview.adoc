@@ -21,19 +21,10 @@ Cruise Control provides support for rebalancing of Kafka clusters, based on work
 .Metrics and monitoring tools
 Strimzi can employ the following tools for metrics and monitoring:
 
-* *Prometheus* pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
-* *Kafka Exporter* adds additional Prometheus metrics
-* *Grafana* provides dashboard visualizations of Prometheus metrics
-* *Jaeger* provides distributed tracing support to track transactions between applications
-* *Cruise Control* balances data across a Kafka cluster
-
-.Supporting documentation for metrics and monitoring tools
-For more information on the metrics and monitoring tools, refer to the supporting documentation:
-
-* {PrometheusHome}
-* {kafka-exporter-project}
-* {GrafanaHome}
-* {JaegerHome}
-* link:https://github.com/linkedin/cruise-control/wiki[Cruise Control Wiki^]
+Prometheus:: {PrometheusHome} pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
+Kafka Exporter:: {kafka-exporter-project} adds additional Prometheus metrics.
+Grafana:: {GrafanaHome} provides dashboard visualizations of Prometheus metrics.
+Jaeger:: {JaegerDocs} provides distributed tracing support to track transactions between applications.
+Cruise Control:: {CruiseControlProject} monitors data distribution and performs data rebalances across a Kafka cluster.
 
 include::../../modules/overview/con-metrics-overview-tools.adoc[leveloffset=+1]

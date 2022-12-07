@@ -6,7 +6,7 @@
 = Configuring and deploying Cruise Control with Kafka
 
 [role="_abstract"]
-Through `Kafka` resource configuration, the Cluster Operator can deploy Cruise Control when deploying a Kafka cluster.
+Configure a `Kafka` resource to deploy Cruise Control alongside a Kafka cluster.
 You can use the `cruiseControl` properties of the `Kafka` resource to configure the deployment.
 Deploy one instance of Cruise Control per Kafka cluster.
 

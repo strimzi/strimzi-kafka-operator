@@ -36,13 +36,7 @@ A sample configuration file, alerting rules and Grafana dashboard for Kafka Expo
 [id="metrics-overview-tracing_{context}"]
 = Distributed tracing
 
-Within a Kafka deployment, distributed tracing using Jaeger is supported for:
-
-* MirrorMaker to trace messages from a source cluster to a target cluster
-* Kafka Connect to trace messages consumed and produced by Kafka Connect
-* Kafka Bridge to trace messages consumed and produced by Kafka Bridge, and HTTP requests from client applications
-
-Template configuration properties are set for the Kafka resources, which describe tracing environment variables.
+include::../../modules/tracing/con-distributed-tracing-description.adoc[leveloffset=+1]
 
 [discrete]
 == Tracing for Kafka clients
@@ -52,18 +46,7 @@ Clients are configured with a tracing profile, and a tracer is initialized for t
 [id="metrics-overview-cruisecontrol_{context}"]
 = Cruise Control
 
-Cruise Control is an open source project for simplifying the monitoring and balancing of data across a Kafka cluster.
-Cruise Control is deployed alongside a Kafka cluster to monitor its traffic, propose more balanced partition assignments, and trigger partition reassignments based on those proposals.
+include::../../modules/cruise-control/con-cruise-control-description.adoc[leveloffset=+1]
 
-Cruise Control collects resource utilization information to model and analyze the workload of the Kafka cluster.
-Based on _optimization goals_ that have been defined, Cruise Control generates _optimization proposals_ outlining how the cluster can be effectively rebalanced.
-When an _optimization proposal_ is approved, Cruise Control applies the rebalancing outlined in the proposal.
-
-You can generate optimization proposals in specific modes. 
-The `full` mode rebalances across all brokers and is used by default.
-Other modes accommodate changes when scaling a cluster up or down.
-Generate an optimization proposal in `add-brokers` mode to move data from existing brokers to newly added ones.
-Generate an optimization proposal in `remove-brokers` mode to move all data off brokers to be removed, before scaling down.
-
-Prometheus can extract Cruise Control metrics data, including data related to optimization proposals and rebalancing operations.
+NOTE: Prometheus can extract Cruise Control metrics data, including data related to optimization proposals and rebalancing operations.
 A sample configuration file and Grafana dashboard for Cruise Control are provided with Strimzi.

@@ -5,55 +5,9 @@
 [id='cruise-control-concepts-{context}']
 = Cruise Control for cluster rebalancing
 
-[role="_abstract"]
-Cruise Control is an open source system for automating Kafka operations, such as monitoring cluster workload, rebalancing a cluster based on predefined constraints, and detecting and fixing anomalies.
-It consists of four main components--the Load Monitor, the Analyzer, the Anomaly Detector, and the Executor--and a REST API for client interactions.
+include::../../modules/cruise-control/con-cruise-control-description.adoc[leveloffset=+1]
 
-You can deploy {CruiseControlProject} to your Strimzi cluster and use it to _rebalance_ a Kafka cluster.
-You deploy Cruise Control through configuration of a `Kafka` resource.
-You perform rebalances through the `KafkaRebalance` resource, which generates and applies optimization proposals.  
-
-Strimzi utilizes the REST API to support the following Cruise Control features:
-
-* Generating optimization proposals from optimization goals.
-* Rebalancing a Kafka cluster based on an optimization proposal. 
-
-Optimization goals:: An optimization goal describes a specific objective to achieve from a rebalance. 
-For example, a goal might be to distribute topic replicas across brokers more evenly. 
-You can change what goals to include through configuration.
-A goal is defined as a hard goal or soft goal.
-You can add hard goals through Cruise Control deployment configuration.
-You also have main, default, and user-provided goals that fit into each of these categories.  
-+
---
-* *Hard goals* are preset and must be satisfied for an optimization proposal to be successful.
-* *Soft goals* do not need to be satisfied for an optimization proposal to be successful. 
-They can be set aside if it means that all hard goals are met.  
-* *Main goals* are inherited from Cruise Control. Some are preset as hard goals.
-Main goals are used in optimization proposals by default.  
-* *Default goals* are the same as the main goals by default. 
-You can specify your own set of default goals.  
-* *User-provided goals* are a subset of default goals that are configured for generating a specific optimization proposal. 
---
-
-Optimization proposals::  Optimization proposals comprise the goals you want to achieve from a rebalance. 
-You generate an optimization proposal to create a summary of proposed changes and the results that are possible with the rebalance.
-The goals are assessed in a specific order of priority.
-You can then choose to approve or reject the proposal.
-You can reject the proposal to run it again with an adjusted set of goals.  
-+
-You can generate an optimization proposal in one of three modes.
-+
---
-* *`full`* is the default mode and runs a full rebalance.
-* *`add-brokers`* is the mode you use after adding brokers when scaling up a Kafka cluster.  
-* *`remove-brokers`* is the mode you use before removing brokers when scaling down a Kafka cluster.
---
-
-Other Cruise Control features are not currently supported, including self healing, notifications, write-your-own goals, and changing the topic replication factor.
-
-Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files].
-Example YAML configuration files for Cruise Control are provided in `examples/cruise-control/`.
+NOTE: Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files for Cruise Control].
 
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
 
