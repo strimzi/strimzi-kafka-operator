@@ -6,6 +6,7 @@
 = Instrumenting producers and consumers for tracing
 
 [role="_abstract"]
+Instrument application code to enable tracing in Kafka producers and consumers. 
 Use a decorator pattern or interceptors to instrument your Java producer and consumer application code for tracing.
 You can then record traces when messages are produced or retrieved from a topic.
 

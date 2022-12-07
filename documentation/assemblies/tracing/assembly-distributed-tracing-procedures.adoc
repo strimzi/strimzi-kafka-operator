@@ -1,0 +1,49 @@
+// This assembly is included in the following assemblies:
+//
+// configuring/configuring.adoc
+
+[id='assembly-distributed-tracing-procedures-{context}']
+= Setting up distributed tracing
+
+[role="_abstract"]
+Enable distributed tracing in Kafka components by specifying a tracing type in the custom resource.
+Instrument tracers in Kafka clients for end-to-end tracking of messages.
+
+To set up distributed tracing, follow these procedures in order:
+
+* xref:proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}[Enable tracing for MirrorMaker, Kafka Connect, and the Kafka Bridge]
+
+* Set up tracing for clients:
+
+** xref:proc-configuring-tracers-kafka-clients-{context}[Initialize a Jaeger tracer for Kafka clients]
+
+* Instrument clients with tracers:
+
+** xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument producers and consumers for tracing]
+
+** xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams applications for tracing]
+
+== Prerequisites
+
+Before setting up distributed tracing, make sure Jaeger backend components are deployed to your Kubernetes cluster. 
+We recommend using the Jaeger operator for deploying Jaeger on your Kubernetes cluster.
+
+For deployment instructions, see the {JaegerDocs}.
+
+[NOTE]
+====
+Setting up tracing for applications and systems beyond Strimzi is outside the scope of this content. 
+====
+
+include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bridge-resources.adoc[leveloffset=+1]
+
+include::../../modules/tracing/proc-configuring-tracers-kafka-clients.adoc[leveloffset=+1]
+
+include::../../modules/tracing/proc-instrumenting-producers-consumers-opentracing.adoc[leveloffset=+1]
+
+include::../../modules/tracing/proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]
+
+include::../../modules/tracing/proc-enabling-tracing-type.adoc[leveloffset=+1]  
+
+include::../../modules/tracing/ref-tracing-span-names.adoc[leveloffset=+1]
+

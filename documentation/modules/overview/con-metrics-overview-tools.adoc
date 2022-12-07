@@ -36,13 +36,7 @@ A sample configuration file, alerting rules and Grafana dashboard for Kafka Expo
 [id="metrics-overview-tracing_{context}"]
 = Distributed tracing
 
-Within a Kafka deployment, distributed tracing using Jaeger is supported for the following Kafka components:
-
-* MirrorMaker to trace messages from a source cluster to a target cluster
-* Kafka Connect to trace messages consumed and produced by Kafka Connect
-* Kafka Bridge to trace messages between Kafka and HTTP client applications
-
-Template configuration properties are set for the Kafka resources, which describe tracing environment variables.
+include::../../modules/tracing/con-distributed-tracing-description.adoc[leveloffset=+1]
 
 [discrete]
 == Tracing for Kafka clients

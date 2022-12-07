@@ -1,0 +1,33 @@
+//standard description for distributed tracing
+[role="_abstract"]
+Distributed tracing tracks the progress of transactions between applications in a distributed system. 
+In a microservices architecture, tracing tracks the progress of transactions between services. 
+Trace data is useful for monitoring application performance and investigating issues with target systems and end-user applications.
+
+In Strimzi, tracing facilitates the end-to-end tracking of messages: from source systems to Kafka, and then from Kafka to target systems and applications. 
+Distributed tracing complements the monitoring of metrics in Grafana dashboards, as well as the component loggers.
+
+Support for tracing is built in to the following Kafka components:
+
+* MirrorMaker to trace messages from a source cluster to a target cluster
+* Kafka Connect to trace messages consumed and produced by Kafka Connect
+* Kafka Bridge to trace messages between Kafka and HTTP client applications
+
+Tracing is not supported for Kafka brokers.
+
+You enable and configure tracing for these components through their custom resources. 
+You add tracing configuration using `spec.template` properties.
+
+You enable tracing by specifying a tracing type using the `spec.tracing.type` property:
+
+`opentelemetry`:: Specify `type: opentelemetry` to use OpenTelemetry. By Default, OpenTelemetry uses the OTLP (OpenTelemetry Protocol) exporter and endpoint to get trace data. You can specify other tracing systems supported by OpenTelemetry, including Jaeger tracing. To do this, you change the OpenTelemetry exporter and endpoint in the tracing configuration.  
+`jaeger`:: Specify `type:jaeger` to use OpenTracing and the Jaeger client to get trace data.  
+
+[NOTE]
+====
+Support for `type: jaeger` tracing is deprecated.
+The Jaeger clients are now retired and the OpenTracing project archived.
+As such, we cannot guarantee their support for future Kafka versions.
+If possible, we will maintain the support for `type: jaeger` tracing until June 2023 and remove it afterwards.
+Please migrate to OpenTelemetry as soon as possible.
+====
