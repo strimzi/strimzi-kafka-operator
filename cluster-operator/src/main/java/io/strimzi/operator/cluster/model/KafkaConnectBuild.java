@@ -45,8 +45,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+/**
+ * Model class for Kafka Connect Build - this model handled the build of the new image with custom connectors
+ */
 public class KafkaConnectBuild extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-connect-build";
 
@@ -107,9 +109,7 @@ public class KafkaConnectBuild extends AbstractModel {
 
             // The additionalKanikoOptions are validated separately to avoid parsing the list twice
             if (spec.getBuild().getOutput() != null
-                    && spec.getBuild().getOutput() instanceof DockerOutput) {
-                DockerOutput dockerOutput = (DockerOutput) spec.getBuild().getOutput();
-
+                    && spec.getBuild().getOutput() instanceof DockerOutput dockerOutput) {
                 if (dockerOutput.getAdditionalKanikoOptions() != null
                         && !dockerOutput.getAdditionalKanikoOptions().isEmpty())  {
                     validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
@@ -169,7 +169,7 @@ public class KafkaConnectBuild extends AbstractModel {
             throw new InvalidResourceException("List of connector plugins is required when Kafka Connect Build is used.");
         }
 
-        List<String> names = build.getPlugins().stream().map(Plugin::getName).distinct().collect(Collectors.toList());
+        List<String> names = build.getPlugins().stream().map(Plugin::getName).distinct().toList();
 
         if (names.size() != build.getPlugins().size())  {
             throw new InvalidResourceException("Connector plugins names have to be unique within a single KafkaConnect resource.");
@@ -193,7 +193,7 @@ public class KafkaConnectBuild extends AbstractModel {
         List<String> forbiddenOptions = desiredOptions.stream()
                 .map(option -> option.contains("=") ? option.substring(0, option.indexOf("=")) : option)
                 .filter(option -> allowedOptions.stream().noneMatch(option::equals))
-                .collect(Collectors.toList());
+                .toList();
 
         if (!forbiddenOptions.isEmpty())    {
             throw new InvalidResourceException(".spec.build.additionalKanikoOptions contains forbidden options: " + forbiddenOptions);
@@ -276,8 +276,7 @@ public class KafkaConnectBuild extends AbstractModel {
 
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
-        if (build.getOutput() instanceof DockerOutput) {
-            DockerOutput output = (DockerOutput) build.getOutput();
+        if (build.getOutput() instanceof DockerOutput output) {
 
             if (output.getPushSecret() != null) {
                 volumes.add(VolumeUtils.createSecretVolume("docker-credentials", output.getPushSecret(), Collections.singletonMap(".dockerconfigjson", "config.json"), isOpenShift));
@@ -299,8 +298,7 @@ public class KafkaConnectBuild extends AbstractModel {
 
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
 
-        if (build.getOutput() instanceof DockerOutput) {
-            DockerOutput output = (DockerOutput) build.getOutput();
+        if (build.getOutput() instanceof DockerOutput output) {
 
             if (output.getPushSecret() != null) {
                 volumeMounts.add(new VolumeMountBuilder().withName("docker-credentials").withMountPath("/kaniko/.docker").build());
@@ -385,8 +383,7 @@ public class KafkaConnectBuild extends AbstractModel {
     public BuildConfig generateBuildConfig(KafkaConnectDockerfile dockerfile)    {
         BuildOutput output;
 
-        if (build.getOutput() instanceof DockerOutput) {
-            DockerOutput dockerOutput = (DockerOutput) build.getOutput();
+        if (build.getOutput() instanceof DockerOutput dockerOutput) {
 
             output = new BuildOutputBuilder()
                     .withNewTo()
@@ -398,8 +395,7 @@ public class KafkaConnectBuild extends AbstractModel {
             if (dockerOutput.getPushSecret() != null) {
                 output.setPushSecret(new LocalObjectReferenceBuilder().withName(dockerOutput.getPushSecret()).build());
             }
-        } else if (build.getOutput() instanceof ImageStreamOutput)  {
-            ImageStreamOutput imageStreamOutput = (ImageStreamOutput) build.getOutput();
+        } else if (build.getOutput() instanceof ImageStreamOutput imageStreamOutput)  {
 
             output = new BuildOutputBuilder()
                     .withNewTo()
@@ -443,6 +439,13 @@ public class KafkaConnectBuild extends AbstractModel {
                 .build();
     }
 
+    /**
+     * Generates OpenShift Build Request to start a new build using OpenShift Build feature
+     *
+     * @param buildRevision The revision of the build (to indicate if rebuild is needed)
+     *
+     * @return  The BuildRequest resource
+     */
     public BuildRequest generateBuildRequest(String buildRevision)  {
         return new BuildRequestBuilder()
                 .withNewMetadata()

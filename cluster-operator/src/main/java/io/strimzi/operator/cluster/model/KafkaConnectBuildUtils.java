@@ -10,6 +10,9 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.api.model.Build;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 
+/**
+ * Utility methods for Kafka Connect Build
+ */
 public class KafkaConnectBuildUtils {
     /**
      * Checks if Pod already completed

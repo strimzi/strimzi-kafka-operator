@@ -128,11 +128,11 @@ public class ConnectBuildOperator {
             LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", currentImage);
             return Future.succeededFuture(new BuildInfo(currentImage, newBuildRevision));
         } else if (pfa.supportsS2I()) {
-            // Revisions differ and we have S2I support => we are on OpenShift and should do a build
+            // Revisions differ, and we have S2I support => we are on OpenShift and should do a build
             return openShiftBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerfile, newBuildRevision)
                     .compose(image -> Future.succeededFuture(new BuildInfo(image, newBuildRevision)));
         } else {
-            // Revisions differ and no S2I support => we are on Kubernetes and should do a build
+            // Revisions differ, and no S2I support => we are on Kubernetes and should do a build
             return kubernetesBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerFileConfigMap, newBuildRevision)
                     .compose(image -> Future.succeededFuture(new BuildInfo(image, newBuildRevision)));
         }
@@ -162,7 +162,7 @@ public class ConnectBuildOperator {
                         if (newBuildRevision.equals(existingBuildRevision)
                                 && !KafkaConnectBuildUtils.buildPodFailed(pod, KafkaConnectBuildUtils.getBuildContainerName(connectBuild.getCluster(), pfa.isOpenshift()))
                                 && !forceRebuild) {
-                            // Builder pod exists, is not failed, and is building the same Dockerfile and we are not
+                            // Builder pod exists, is not failed, and is building the same Dockerfile, and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
                             LOGGER.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
                             return Future.succeededFuture();
@@ -281,7 +281,7 @@ public class ConnectBuildOperator {
                         if (newBuildRevision.equals(existingBuildRevision)
                                 && !KafkaConnectBuildUtils.buildFailed(build)
                                 && !forceRebuild) {
-                            // Build exists, is not failed, and is building the same Dockerfile and we are not
+                            // Build exists, is not failed, and is building the same Dockerfile, and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
                             LOGGER.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
                             return Future.succeededFuture(build.getMetadata().getName());
@@ -345,7 +345,7 @@ public class ConnectBuildOperator {
                 .compose(ignore -> buildOperator.getAsync(namespace, buildName))
                 .compose(build -> {
                     if (KafkaConnectBuildUtils.buildSucceeded(build))   {
-                        // Build completed successfully. Lets extract the new image
+                        // Build completed successfully. Let's extract the new image
                         if (build.getStatus().getOutputDockerImageReference() != null
                                 && build.getStatus().getOutput() != null
                                 && build.getStatus().getOutput().getTo() != null
@@ -378,21 +378,5 @@ public class ConnectBuildOperator {
     /**
      * Utility class to return the information about the Kafka Connect Build.
      */
-    static class BuildInfo {
-        private final String image;
-        private final String buildRevision;
-
-        public BuildInfo(String image, String buildRevision) {
-            this.image = image;
-            this.buildRevision = buildRevision;
-        }
-
-        public String getImage() {
-            return image;
-        }
-
-        public String getBuildRevision() {
-            return buildRevision;
-        }
-    }
+    record BuildInfo(String image, String buildRevision) { }
 }

@@ -64,6 +64,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     protected final long connectBuildTimeoutMs;
 
     /**
+     * Constructor
+     *
      * @param vertx The Vertx instance
      * @param pfa Platform features availability properties
      * @param supplier Supplies the operators for different resources
@@ -75,13 +77,36 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
     }
 
-    public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+    /**
+     * Constructor which allows providing custom implementation of the Kafka Connect Client. This is used in tests.
+     *
+     * @param vertx                     The Vertx instance
+     * @param pfa                       Platform features availability properties
+     * @param supplier                  Supplies the operators for different resources
+     * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy
+     *                                  and the secrets.
+     * @param connectClientProvider     Provider of the Kafka Connect client
+     */
+    protected KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         this(vertx, pfa, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
     }
-    public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+
+    /**
+     * Constructor which allows providing custom implementation of the Kafka Connect Client and port on which the Kafka
+     * Connect REST API is listening. This is used in tests.
+     *
+     * @param vertx                     The Vertx instance
+     * @param pfa                       Platform features availability properties
+     * @param supplier                  Supplies the operators for different resources
+     * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy
+     *                                  and the secrets.
+     * @param connectClientProvider     Provider of the Kafka Connect client
+     * @param port                      Port of the Kafka Connect REST API
+     */
+    protected KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
@@ -125,8 +150,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getName(), build))
                 .compose(buildInfo -> {
                     if (buildInfo != null) {
-                        annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildInfo.getBuildRevision());
-                        image.set(buildInfo.getImage());
+                        annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildInfo.buildRevision());
+                        image.set(buildInfo.image());
                     }
                     return Future.succeededFuture();
                 })
