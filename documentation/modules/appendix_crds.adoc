@@ -1542,7 +1542,7 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |====
 |Property               |Description
 |deployment      1.2+<.<a|Template for Kafka Exporter `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod             1.2+<.<a|Template for Kafka Exporter `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |service         1.2+<.<a|**The `service` property has been deprecated.** The Kafka Exporter service has been removed. Template for Kafka Exporter `Service`.
@@ -1551,6 +1551,28 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |serviceAccount  1.2+<.<a|Template for the Kafka Exporter service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|====
+
+[id='type-DeploymentTemplate-{context}']
+### `DeploymentTemplate` schema reference
+
+Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
+
+xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.template.DeploymentTemplate.adoc[leveloffset=+1]
+
+[id='type-DeploymentTemplate-schema-{context}']
+==== `DeploymentTemplate` schema properties
+
+
+[options="header"]
+|====
+|Property                   |Description
+|metadata            1.2+<.<a|Metadata applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|deploymentStrategy  1.2+<.<a|Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
+|string (one of [RollingUpdate, Recreate])
 |====
 
 [id='type-KafkaStatus-{context}']
@@ -1956,21 +1978,6 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |jmxSecret            1.2+<.<a|Template for Secret of the Kafka Connect Cluster JMX authentication.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|====
-
-[id='type-DeploymentTemplate-{context}']
-### `DeploymentTemplate` schema reference
-
-Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
-
-
-[options="header"]
-|====
-|Property                   |Description
-|metadata            1.2+<.<a|Metadata applied to the resource.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|deploymentStrategy  1.2+<.<a|DeploymentStrategy which will be used for this Deployment. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
-|string (one of [RollingUpdate, Recreate])
 |====
 
 [id='type-BuildConfigTemplate-{context}']

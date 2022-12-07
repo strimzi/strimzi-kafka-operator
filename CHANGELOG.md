@@ -9,6 +9,7 @@
 * Improved FIPS (Federal Information Processing Standards) support
 * Upgrade Vert.x to 4.3.5
 * Moved from using the Jaeger exporter to OTLP exporter by default
+* Kafka Exporter support for `Recreate` deployment strategy
 
 ### Changes, deprecations and removals
 

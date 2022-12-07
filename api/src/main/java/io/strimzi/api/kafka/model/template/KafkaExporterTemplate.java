@@ -31,7 +31,7 @@ import java.util.Map;
 public class KafkaExporterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment;
+    private DeploymentTemplate deployment;
     private PodTemplate pod;
     private ResourceTemplate service;
     private ContainerTemplate container;
@@ -40,11 +40,11 @@ public class KafkaExporterTemplate implements Serializable, UnknownPropertyPrese
 
     @Description("Template for Kafka Exporter `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getDeployment() {
+    public DeploymentTemplate getDeployment() {
         return deployment;
     }
 
-    public void setDeployment(ResourceTemplate deployment) {
+    public void setDeployment(DeploymentTemplate deployment) {
         this.deployment = deployment;
     }
 

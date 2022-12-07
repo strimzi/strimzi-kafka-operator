@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
@@ -418,6 +419,26 @@ public class KafkaExporterTest {
         ServiceAccount sa = ke.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+    }
+
+    @ParallelTest
+    public void testGenerateDeploymentWithRecreateDeploymentStrategy() {
+        Kafka resource = 
+                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withNewKafkaExporter()
+                        .withNewTemplate()
+                            .withNewDeployment()
+                                .withDeploymentStrategy(DeploymentStrategy.RECREATE)
+                            .endDeployment()
+                        .endTemplate()
+                    .endKafkaExporter()
+                .endSpec()
+                .build();
+        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), 
+                resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+        Deployment dep = ke.generateDeployment(true, null, null);
+        assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
 
     @AfterAll

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -19,6 +20,7 @@ import java.util.Map;
 /**
  * Representation of a template for Strimzi resources.
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
@@ -43,7 +45,7 @@ public class DeploymentTemplate implements Serializable, UnknownPropertyPreservi
         this.metadata = metadata;
     }
 
-    @Description("DeploymentStrategy which will be used for this Deployment. " +
+    @Description("Pod replacement strategy for deployment configuration changes. " +
             "Valid values are `RollingUpdate` and `Recreate`. " +
             "Defaults to `RollingUpdate`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
