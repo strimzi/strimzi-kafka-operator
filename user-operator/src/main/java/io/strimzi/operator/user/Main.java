@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import java.security.Security;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The main class of the Strimzi User Operator
@@ -72,7 +73,8 @@ public class Main {
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
         Admin adminClient = createAdminClient(config, client, new DefaultAdminClientProvider());
-        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), r -> new Thread(r, "operator-thread-pool"));
+        AtomicInteger kafkaUserOperatorExecutorThreadCounter = new AtomicInteger(0);
+        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), r -> new Thread(r, "operator-thread-pool-" + kafkaUserOperatorExecutorThreadCounter.getAndIncrement()));
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
                 client,
