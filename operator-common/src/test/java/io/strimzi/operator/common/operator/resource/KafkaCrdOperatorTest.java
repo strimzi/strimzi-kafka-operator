@@ -42,11 +42,11 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     }
 
     @Override
-    protected Kafka resource() {
+    protected Kafka resource(String name) {
         return new KafkaBuilder()
                 .withApiVersion(Kafka.RESOURCE_GROUP + "/" + Kafka.V1BETA1)
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withNewSpec()
@@ -74,8 +74,8 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
     }
 
     @Override
-    protected Kafka modifiedResource() {
-        return new KafkaBuilder(resource())
+    protected Kafka modifiedResource(String name) {
+        return new KafkaBuilder(resource(name))
                 .editOrNewSpec()
                     .withNewEntityOperator()
                         .withNewTopicOperator()

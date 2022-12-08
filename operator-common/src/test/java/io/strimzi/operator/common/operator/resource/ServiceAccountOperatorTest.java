@@ -53,10 +53,10 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
     }
 
     @Override
-    protected ServiceAccount resource() {
+    protected ServiceAccount resource(String name) {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -64,10 +64,10 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
     }
 
     @Override
-    protected ServiceAccount modifiedResource() {
+    protected ServiceAccount modifiedResource(String name) {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo2", "bar2"))
                 .endMetadata()

@@ -36,7 +36,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     }
 
     @Override
-    protected Role resource() {
+    protected Role resource(String name) {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("somegroup")
                 .addToVerbs("someverb")
@@ -44,7 +44,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
 
         return new RoleBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -53,13 +53,13 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     }
 
     @Override
-    protected Role modifiedResource() {
+    protected Role modifiedResource(String name) {
         PolicyRule rule = new PolicyRuleBuilder()
                 .withApiGroups("somegroup2")
                 .addToVerbs("someverb2")
                 .build();
 
-        return new RoleBuilder(resource())
+        return new RoleBuilder(resource(name))
                 .withRules(rule)
                 .build();
     }

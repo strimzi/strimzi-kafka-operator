@@ -36,7 +36,7 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     }
 
     @Override
-    protected RoleBinding resource() {
+    protected RoleBinding resource(String name) {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName("some-service-account")
@@ -51,7 +51,7 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
 
         return new RoleBindingBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -61,14 +61,14 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     }
 
     @Override
-    protected RoleBinding modifiedResource() {
+    protected RoleBinding modifiedResource(String name) {
         RoleRef roleRef = new RoleRefBuilder()
                 .withName("some-other-role")
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("ClusterRole")
                 .build();
 
-        return new RoleBindingBuilder(resource())
+        return new RoleBindingBuilder(resource(name))
                 .withRoleRef(roleRef)
                 .build();
     }

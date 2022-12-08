@@ -29,11 +29,11 @@ public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<O
     }
 
     @Override
-    protected DeploymentConfig resource() {
+    protected DeploymentConfig resource(String name) {
         return new DeploymentConfigBuilder()
             .withNewMetadata()
                 .withNamespace(NAMESPACE)
-                .withName(RESOURCE_NAME)
+                .withName(name)
             .endMetadata()
             .withNewSpec()
                 .withNewTemplate()
@@ -45,8 +45,8 @@ public class DeploymentConfigOperatorTest extends ScalableResourceOperatorTest<O
     }
 
     @Override
-    protected DeploymentConfig modifiedResource() {
-        return new DeploymentConfigBuilder(resource())
+    protected DeploymentConfig modifiedResource(String name) {
+        return new DeploymentConfigBuilder(resource(name))
                 .editSpec()
                     .editTemplate()
                         .editSpec()

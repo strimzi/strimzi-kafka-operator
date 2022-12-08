@@ -35,21 +35,21 @@ public class PvcOperatorTest extends AbstractResourceOperatorTest<KubernetesClie
     }
 
     @Override
-    protected PersistentVolumeClaim resource() {
+    protected PersistentVolumeClaim resource(String name) {
         return new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                 .endMetadata()
                 .build();
     }
 
     @Override
-    protected PersistentVolumeClaim modifiedResource() {
+    protected PersistentVolumeClaim modifiedResource(String name) {
         return new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .addToLabels("foo", "bar")
                 .endMetadata()
                 .build();

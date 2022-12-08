@@ -44,6 +44,7 @@ import java.util.function.BiPredicate;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -67,11 +68,11 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     }
 
     @Override
-    protected StatefulSet resource() {
+    protected StatefulSet resource(String name) {
         return new StatefulSetBuilder()
                 .withNewMetadata()
                     .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
-                    .withName(AbstractResourceOperatorTest.RESOURCE_NAME)
+                    .withName(name)
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -85,8 +86,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     }
 
     @Override
-    protected StatefulSet modifiedResource() {
-        return new StatefulSetBuilder(resource())
+    protected StatefulSet modifiedResource(String name) {
+        return new StatefulSetBuilder(resource(name))
                 .editSpec()
                     .withReplicas(5)
                     .withNewTemplate()
@@ -396,5 +397,11 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
                 assertThat(e.getMessage(), is("Something failed"));
                 async.flag();
             })));
+    }
+
+    @Override
+    @Test
+    public void testBatchReconciliation(VertxTestContext context) {
+        assumeTrue(false, "StatefulSetOperator reconciliation uses custom code. This test should be skipped.");
     }
 }

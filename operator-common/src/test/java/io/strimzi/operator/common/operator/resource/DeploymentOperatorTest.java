@@ -31,11 +31,11 @@ public class DeploymentOperatorTest extends
     }
 
     @Override
-    protected Deployment resource() {
+    protected Deployment resource(String name) {
         return new DeploymentBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .addToAnnotations(Annotations.ANNO_DEP_KUBE_IO_REVISION, "test")
                 .endMetadata()
                 .withNewSpec()
@@ -47,8 +47,8 @@ public class DeploymentOperatorTest extends
     }
 
     @Override
-    protected Deployment modifiedResource() {
-        return new DeploymentBuilder(resource())
+    protected Deployment modifiedResource(String name) {
+        return new DeploymentBuilder(resource(name))
                 .editSpec()
                     .editStrategy()
                         .withType("Recreate")
