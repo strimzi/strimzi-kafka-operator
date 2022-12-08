@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -42,14 +43,25 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 
+import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Constants.OAUTH;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-public class OauthPasswordGrantsST extends OauthAbstractST {
+@Tag(OAUTH)
+@Tag(REGRESSION)
+@IsolatedSuite
+public class OauthPasswordGrantsIsolatedST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationIsolatedST.class);
     private final String oauthClusterName = "oauth-pass-grants-cluster-name";
     private static final String TEST_REALM = "internal";
@@ -58,6 +70,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     private static final String ALICE_PASSWORD_KEY = "password";
 
     @ParallelTest
+    @Tag(MIRROR_MAKER)
     void testPasswordGrantsKafkaMirrorMaker(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
@@ -194,6 +207,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     }
 
     @ParallelTest
+    @Tag(MIRROR_MAKER2)
     void testPasswordGrantsKafkaMirrorMaker2(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
@@ -339,6 +353,8 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     }
 
     @ParallelTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testPasswordGrantsKafkaConnect(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
@@ -414,6 +430,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
     }
 
     @ParallelTest
+    @Tag(BRIDGE)
     void testPasswordGrantsKafkaBridge(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
