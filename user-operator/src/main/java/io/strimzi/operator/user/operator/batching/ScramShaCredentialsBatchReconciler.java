@@ -48,7 +48,7 @@ public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<
     @Override
     protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<UserScramCredentialAlteration, ReconcileResult<UserScramCredentialAlteration>>> items) {
         List<UserScramCredentialAlteration> alterations = new ArrayList<>();
-        items.forEach(req -> alterations.add(req.desired));
+        items.forEach(req -> alterations.add(req.desired()));
 
         AlterUserScramCredentialsResult result = adminClient.alterUserScramCredentials(alterations);
 
@@ -57,12 +57,12 @@ public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<
                 .handleAsync((r, e) -> {
                     if (e != null)  {
                         LOGGER.warnOp("Quotas reconciliation failed", e);
-                        items.forEach(req -> req.result.completeExceptionally(e));
+                        items.forEach(req -> req.result().completeExceptionally(e));
                     } else {
                         Map<String, KafkaFuture<Void>> perItemResults = result.values();
 
                         items.forEach(req -> {
-                            KafkaFuture<Void> itemResult = perItemResults.get(req.username);
+                            KafkaFuture<Void> itemResult = perItemResults.get(req.username());
 
                             if (itemResult.isCompletedExceptionally()) {
                                 Exception reason = null;
@@ -73,23 +73,23 @@ public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<
                                     reason = completionException;
                                 } finally {
                                     if (reason instanceof ResourceNotFoundException
-                                            && req.desired instanceof UserScramCredentialDeletion) {
-                                        LOGGER.debugCr(req.reconciliation, "SCRAM credentials for user {} do not exist anymore", req.username);
-                                        req.result.complete(ReconcileResult.noop(null));
+                                            && req.desired() instanceof UserScramCredentialDeletion) {
+                                        LOGGER.debugCr(req.reconciliation(), "SCRAM credentials for user {} do not exist anymore", req.username());
+                                        req.result().complete(ReconcileResult.noop(null));
                                     } else {
-                                        LOGGER.warnCr(req.reconciliation, "SCRAM-SHA credentials reconciliation for user {} failed", req.username, reason);
-                                        req.result.completeExceptionally(reason);
+                                        LOGGER.warnCr(req.reconciliation(), "SCRAM-SHA credentials reconciliation for user {} failed", req.username(), reason);
+                                        req.result().completeExceptionally(reason);
                                     }
                                 }
                             } else if (itemResult.isCancelled()) {
-                                LOGGER.warnCr(req.reconciliation, "SCRAM-SHA credentials reconciliation for user {} was canceled", req.username);
-                                req.result.completeExceptionally(new RuntimeException("SCRAM-SHA credentials reconciliation was canceled"));
+                                LOGGER.warnCr(req.reconciliation(), "SCRAM-SHA credentials reconciliation for user {} was canceled", req.username());
+                                req.result().completeExceptionally(new RuntimeException("SCRAM-SHA credentials reconciliation was canceled"));
                             } else if (itemResult.isDone()) {
-                                LOGGER.debugCr(req.reconciliation, "SCRAM-SHA credentials reconciliation for user {} succeeded", req.username);
-                                req.result.complete(ReconcileResult.patched(req.desired));
+                                LOGGER.debugCr(req.reconciliation(), "SCRAM-SHA credentials reconciliation for user {} succeeded", req.username());
+                                req.result().complete(ReconcileResult.patched(req.desired()));
                             } else {
-                                LOGGER.warnCr(req.reconciliation, "SCRAM-SHA credentials reconciliation for user {} ended in unknown state", req.username);
-                                req.result.completeExceptionally(new RuntimeException("SCRAM-SHA credentials reconciliation ended in unknown state"));
+                                LOGGER.warnCr(req.reconciliation(), "SCRAM-SHA credentials reconciliation for user {} ended in unknown state", req.username());
+                                req.result().completeExceptionally(new RuntimeException("SCRAM-SHA credentials reconciliation ended in unknown state"));
                             }
                         });
                     }

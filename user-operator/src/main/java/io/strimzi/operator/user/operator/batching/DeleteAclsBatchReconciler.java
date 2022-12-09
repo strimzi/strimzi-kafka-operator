@@ -47,7 +47,7 @@ public class DeleteAclsBatchReconciler extends AbstractBatchReconciler<AdminApiO
     @Override
     protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<Collection<AclBindingFilter>, ReconcileResult<Collection<AclBindingFilter>>>> items) {
         List<AclBindingFilter> aclFilters = new ArrayList<>();
-        items.forEach(req -> aclFilters.addAll(req.desired));
+        items.forEach(req -> aclFilters.addAll(req.desired()));
 
         DeleteAclsResult result = adminClient.deleteAcls(aclFilters);
 
@@ -56,12 +56,12 @@ public class DeleteAclsBatchReconciler extends AbstractBatchReconciler<AdminApiO
                 .handleAsync((r, e) -> {
                     if (e != null)  {
                         LOGGER.warnOp("ACL reconciliation failed", e);
-                        items.forEach(req -> req.result.completeExceptionally(e));
+                        items.forEach(req -> req.result().completeExceptionally(e));
                     } else {
                         Map<AclBindingFilter, KafkaFuture<DeleteAclsResult.FilterResults>> perItemResults = result.values();
 
                         items.forEach(req -> {
-                            final String principal = "User:" + req.username;
+                            final String principal = "User:" + req.username();
                             AtomicBoolean failed = new AtomicBoolean(false);
 
                             perItemResults.forEach((filter, fut) -> {
@@ -74,30 +74,30 @@ public class DeleteAclsBatchReconciler extends AbstractBatchReconciler<AdminApiO
                                             if (futRes != null) {
                                                 futRes.values().forEach(filterResult -> {
                                                     if (filterResult.exception() != null)   {
-                                                        LOGGER.warnCr(req.reconciliation, "ACL deletion for user {} and ACL filter {} failed", req.username, filter, filterResult.exception());
+                                                        LOGGER.warnCr(req.reconciliation(), "ACL deletion for user {} and ACL filter {} failed", req.username(), filter, filterResult.exception());
                                                         failed.set(true);
                                                     }
                                                 });
                                             }
                                         } catch (Throwable completionException) {
-                                            LOGGER.warnCr(req.reconciliation, "ACL deletion for user {} and ACL filter {} failed", req.username, filter, completionException);
+                                            LOGGER.warnCr(req.reconciliation(), "ACL deletion for user {} and ACL filter {} failed", req.username(), filter, completionException);
                                             failed.set(true);
                                         }
                                     } else if (fut.isCancelled()) {
-                                        LOGGER.warnCr(req.reconciliation, "ACL deletion for user {} and ACL filter {} was canceled", req.username, filter);
+                                        LOGGER.warnCr(req.reconciliation(), "ACL deletion for user {} and ACL filter {} was canceled", req.username(), filter);
                                         failed.set(true);
                                     } else {
-                                        LOGGER.warnCr(req.reconciliation, "ACL deletion for user {} and ACL filter {} ended in unknown state", filter, req.username);
+                                        LOGGER.warnCr(req.reconciliation(), "ACL deletion for user {} and ACL filter {} ended in unknown state", filter, req.username());
                                         failed.set(true);
                                     }
                                 }
                             });
 
                             if (failed.get()) {
-                                req.result.completeExceptionally(new RuntimeException("ACL deletion failed"));
+                                req.result().completeExceptionally(new RuntimeException("ACL deletion failed"));
                             } else {
-                                LOGGER.debugCr(req.reconciliation, "ACL deletion for user {} succeeded", req.username);
-                                req.result.complete(ReconcileResult.deleted());
+                                LOGGER.debugCr(req.reconciliation(), "ACL deletion for user {} succeeded", req.username());
+                                req.result().complete(ReconcileResult.deleted());
                             }
                         });
                     }

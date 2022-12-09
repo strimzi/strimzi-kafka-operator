@@ -222,16 +222,13 @@ public class SimpleAclRuleResource {
      * @return The resource.
      */
     public static SimpleAclRuleResource fromCrd(AclRuleResource resource)   {
-        if (resource instanceof AclRuleTopicResource)   {
-            AclRuleTopicResource adapted = (AclRuleTopicResource) resource;
+        if (resource instanceof AclRuleTopicResource adapted)   {
             return new SimpleAclRuleResource(adapted.getName(), SimpleAclRuleResourceType.TOPIC, adapted.getPatternType());
-        } else if (resource instanceof AclRuleGroupResource)   {
-            AclRuleGroupResource adapted = (AclRuleGroupResource) resource;
+        } else if (resource instanceof AclRuleGroupResource adapted)   {
             return new SimpleAclRuleResource(adapted.getName(), SimpleAclRuleResourceType.GROUP, adapted.getPatternType());
         } else if (resource instanceof AclRuleClusterResource)   {
             return new SimpleAclRuleResource("kafka-cluster", SimpleAclRuleResourceType.CLUSTER, AclResourcePatternType.LITERAL);
-        } else if (resource instanceof AclRuleTransactionalIdResource)   {
-            AclRuleTransactionalIdResource adapted = (AclRuleTransactionalIdResource) resource;
+        } else if (resource instanceof AclRuleTransactionalIdResource adapted)   {
             return new SimpleAclRuleResource(adapted.getName(), SimpleAclRuleResourceType.TRANSACTIONAL_ID, adapted.getPatternType());
         } else  {
             throw new IllegalArgumentException("Invalid Acl resource class: " + resource.getClass());
