@@ -11,13 +11,14 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 public class ScramCredentialsOperatorIT extends AdminApiOperatorIT<String, List<String>> {
     protected boolean createPatches = true;
 
     @Override
     AdminApiOperator<String, List<String>> operator() {
-        return new ScramCredentialsOperator(adminClient, ResourceUtils.createUserOperatorConfig());
+        return new ScramCredentialsOperator(adminClient, ResourceUtils.createUserOperatorConfig(), Executors.newSingleThreadExecutor());
     }
 
     @Override

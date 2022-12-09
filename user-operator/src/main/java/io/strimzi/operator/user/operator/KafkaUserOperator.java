@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -47,6 +48,7 @@ public class KafkaUserOperator {
     private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator;
     private final AdminApiOperator<String, List<String>> scramCredentialsOperator;
     private final AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator;
+    private final ExecutorService executor;
     private final UserOperatorConfig config;
     private final PasswordGenerator passwordGenerator;
     private final LabelSelector selector;
@@ -59,7 +61,8 @@ public class KafkaUserOperator {
      * @param certManager              For managing certificates.
      * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
      * @param quotasOperator           For operating on Kafka User quotas.
-     * @param aclOperator            For operating on ACLs.
+     * @param aclOperator              For operating on ACLs.
+     * @param executor                 Shared executor for executing async operations
      */
     public KafkaUserOperator(
             UserOperatorConfig config,
@@ -67,13 +70,15 @@ public class KafkaUserOperator {
             CertManager certManager,
             AdminApiOperator<String, List<String>> scramCredentialsOperator,
             AdminApiOperator<KafkaUserQuotas, Set<String>> quotasOperator,
-            AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator
+            AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator,
+            ExecutorService executor
     ) {
         this.certManager = certManager;
         this.client = client;
         this.scramCredentialsOperator = scramCredentialsOperator;
         this.quotasOperator = quotasOperator;
         this.aclOperator = aclOperator;
+        this.executor = executor;
         this.config = config;
 
         this.selector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? new LabelSelector() : new LabelSelector(null, config.getLabels().toMap());
@@ -141,7 +146,7 @@ public class KafkaUserOperator {
                     usernames.addAll(scramUsers.toCompletableFuture().getNow(List.of()));
 
                     return toResourceRef(namespace, usernames);
-                });
+                }, executor);
     }
 
     /**
@@ -154,13 +159,14 @@ public class KafkaUserOperator {
     private CompletionStage<Set<String>> getAllKafkaUserUsernames(String namespace)  {
         return CompletableFuture
                 .supplyAsync(() -> Crds.kafkaUserOperation(client)
-                        .inNamespace(namespace)
-                        .withLabelSelector(selector)
-                        .list()
-                        .getItems()
-                        .stream()
-                        .map(resource -> resource.getMetadata().getName())
-                        .collect(Collectors.toSet()));
+                                .inNamespace(namespace)
+                                .withLabelSelector(selector)
+                                .list()
+                                .getItems()
+                                .stream()
+                                .map(resource -> resource.getMetadata().getName())
+                                .collect(Collectors.toSet()),
+                        executor);
     }
 
     /**
@@ -192,7 +198,7 @@ public class KafkaUserOperator {
             return createOrUpdate(reconciliation, kafkaUser, userSecret);
         } else {
             // Delete the user from everywhere with both the TLS and SCRAM-SHa name variants
-            return delete(reconciliation).thenApplyAsync(i -> null);
+            return delete(reconciliation).thenApplyAsync(i -> null, executor);
         }
     }
 
@@ -211,7 +217,7 @@ public class KafkaUserOperator {
 
         // Delete everything what can be deleted
         return CompletableFuture.allOf(
-                CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.getSecretPrefix(), user)).delete()),
+                CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.getSecretPrefix(), user)).delete(), executor),
                 config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 !config.isKraftEnabled() ? scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
@@ -258,8 +264,8 @@ public class KafkaUserOperator {
                         userStatus.setUsername(user.getUserName());
                         return (Void) null;
                     }
-                })
-                .thenApplyAsync(i -> userStatus);
+                }, executor)
+                .thenApplyAsync(i -> userStatus, executor);
     }
 
     /**
@@ -446,6 +452,6 @@ public class KafkaUserOperator {
                     return ReconcileResult.noop(null);
                 }
             }
-        });
+        }, executor);
     }
 }

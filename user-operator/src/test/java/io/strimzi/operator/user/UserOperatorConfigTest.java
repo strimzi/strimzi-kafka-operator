@@ -66,6 +66,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getBatchQueueSize(), is(1_024));
         assertThat(config.getBatchMaxBlockSize(), is(100));
         assertThat(config.getBatchMaxBlockTime(), is(100));
+        assertThat(config.getUserOperationsThreadPoolSize(), is(4));
     }
 
     @Test

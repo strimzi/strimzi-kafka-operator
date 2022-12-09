@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -53,6 +55,8 @@ import static org.mockito.Mockito.when;
 @EnableKubernetesMockClient(crud = true)
 public class KafkaUserOperatorMockTest {
     public static final String NAMESPACE = "namespace";
+
+    private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final CertManager mockCertManager = new MockCertManager();
 
@@ -142,7 +146,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testCreateTlsUser() throws ExecutionException, InterruptedException {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -212,7 +216,7 @@ public class KafkaUserOperatorMockTest {
                     .endKafkaUserTlsExternalClientAuthentication()
                 .endSpec()
                 .build();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -278,7 +282,7 @@ public class KafkaUserOperatorMockTest {
                     .endQuotas()
                 .endSpec()
                 .build();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -338,7 +342,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testCreateTlsUserWithKRaft() throws ExecutionException, InterruptedException {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -401,7 +405,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testCreateScramShaUser() throws ExecutionException, InterruptedException {
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -466,7 +470,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testCreateScramShaUserWithConfigurableLength() throws ExecutionException, InterruptedException {
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig("30"), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig("30"), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -552,7 +556,7 @@ public class KafkaUserOperatorMockTest {
                 .endKafkaUserScramSha512ClientAuthentication()
             .endSpec()
             .build();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -617,7 +621,7 @@ public class KafkaUserOperatorMockTest {
     public void testCreateTlsUserWithSecretPrefix() throws ExecutionException, InterruptedException {
         String secretPrefix = "my-test-";
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, false, "32", secretPrefix), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, false, "32", secretPrefix), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -690,7 +694,7 @@ public class KafkaUserOperatorMockTest {
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -762,7 +766,7 @@ public class KafkaUserOperatorMockTest {
         user.getSpec().setAuthorization(null);
         user.getSpec().setQuotas(null);
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -834,7 +838,7 @@ public class KafkaUserOperatorMockTest {
                 .endSpec()
                 .build();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -894,7 +898,7 @@ public class KafkaUserOperatorMockTest {
                 .build());
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -960,7 +964,7 @@ public class KafkaUserOperatorMockTest {
     public void testUpdateTlsUserWithoutSecret() throws ExecutionException, InterruptedException {
         Secret existingUserSecret = ResourceUtils.createUserSecretTls();
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1028,7 +1032,7 @@ public class KafkaUserOperatorMockTest {
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1094,7 +1098,7 @@ public class KafkaUserOperatorMockTest {
     public void testUpdateScramShaUserWithoutSecret() throws ExecutionException, InterruptedException {
         Secret existingUserSecret = ResourceUtils.createUserSecretScramSha();
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1161,7 +1165,7 @@ public class KafkaUserOperatorMockTest {
         Secret existingUserSecret = ResourceUtils.createUserSecretTls();
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1209,7 +1213,7 @@ public class KafkaUserOperatorMockTest {
         Secret existingUserSecret = ResourceUtils.createUserSecretTls();
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1253,7 +1257,7 @@ public class KafkaUserOperatorMockTest {
         Secret existingUserSecret = ResourceUtils.createUserSecretTls();
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1297,7 +1301,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testDeleteTlsUserWithoutSecret() throws ExecutionException, InterruptedException {
         Secret existingUserSecret = ResourceUtils.createUserSecretTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1350,7 +1354,7 @@ public class KafkaUserOperatorMockTest {
                 .build();
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, false, "32", secretPrefix), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, false, "32", secretPrefix), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1400,7 +1404,7 @@ public class KafkaUserOperatorMockTest {
 
     @Test
     public void testDeleteExternalTlsUser() throws ExecutionException, InterruptedException {
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1448,7 +1452,7 @@ public class KafkaUserOperatorMockTest {
         Secret existingUserSecret = ResourceUtils.createUserSecretScramSha();
         client.secrets().inNamespace(ResourceUtils.NAMESPACE).resource(existingUserSecret).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), null, existingUserSecret);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
@@ -1497,7 +1501,7 @@ public class KafkaUserOperatorMockTest {
         when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(CompletableFuture.failedStage(new KafkaException("Something failed!")));
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
 
         ExecutionException e = assertThrows(ExecutionException.class, () -> futureResult.toCompletableFuture().get());
@@ -1520,7 +1524,7 @@ public class KafkaUserOperatorMockTest {
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(ResourceUtils.NAMESPACE).resource(user2).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<Set<NamespaceAndName>> futureResult = op.getAllUsers(ResourceUtils.NAMESPACE);
         Set<NamespaceAndName> users = futureResult.toCompletableFuture().get();
 
@@ -1548,7 +1552,7 @@ public class KafkaUserOperatorMockTest {
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(ResourceUtils.NAMESPACE).resource(user2).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), false, false, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<Set<NamespaceAndName>> futureResult = op.getAllUsers(ResourceUtils.NAMESPACE);
         Set<NamespaceAndName> users = futureResult.toCompletableFuture().get();
 
@@ -1576,7 +1580,7 @@ public class KafkaUserOperatorMockTest {
                 .build();
         Crds.kafkaUserOperation(client).inNamespace(ResourceUtils.NAMESPACE).resource(user2).create();
 
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(Map.of(), true, true, "32", null), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
         CompletionStage<Set<NamespaceAndName>> futureResult = op.getAllUsers(ResourceUtils.NAMESPACE);
         Set<NamespaceAndName> users = futureResult.toCompletableFuture().get();
 
@@ -1591,7 +1595,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testReconciliationFailsWithDisabledAclOperator() {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, new DisabledSimpleAclOperator());
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, new DisabledSimpleAclOperator(), EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
 
         ExecutionException e = assertThrows(ExecutionException.class, () -> futureResult.toCompletableFuture().get());
@@ -1601,7 +1605,7 @@ public class KafkaUserOperatorMockTest {
     @Test
     public void testReconciliationFailsWithDisabledScramShaOperator() {
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
-        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, new DisabledScramCredentialsOperator(), quotasOps, aclOps);
+        KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, new DisabledScramCredentialsOperator(), quotasOps, aclOps, EXECUTOR);
         CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
 
         ExecutionException e = assertThrows(ExecutionException.class, () -> futureResult.toCompletableFuture().get());

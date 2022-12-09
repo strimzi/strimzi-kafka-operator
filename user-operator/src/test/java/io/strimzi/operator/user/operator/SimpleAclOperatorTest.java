@@ -38,6 +38,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -56,6 +58,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SimpleAclOperatorTest {
+    private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+
     @Test
     public void testGetAllUsers() throws ExecutionException, InterruptedException {
         Admin mockAdminClient = mock(AdminClient.class);
@@ -84,7 +88,7 @@ public class SimpleAclOperatorTest {
 
         assertDoesNotThrow(() -> mockDescribeAcls(mockAdminClient, AclBindingFilter.ANY, aclBindings));
 
-        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig(), EXECUTOR);
         aclOp.start();
 
         try {
@@ -122,7 +126,7 @@ public class SimpleAclOperatorTest {
             mockCreateAcls(mockAdminClient, aclBindingsCaptor);
         });
 
-        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig(), EXECUTOR);
         aclOp.start();
 
         try {
@@ -166,7 +170,7 @@ public class SimpleAclOperatorTest {
             mockDeleteAcls(mockAdminClient, Collections.singleton(readAclBinding), aclBindingFiltersCaptor);
         });
 
-        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig(), EXECUTOR);
         aclOp.start();
 
         try {
@@ -212,7 +216,7 @@ public class SimpleAclOperatorTest {
             mockDeleteAcls(mockAdminClient, Collections.singleton(readAclBinding), aclBindingFiltersCaptor);
         });
 
-        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig());
+        SimpleAclOperator aclOp = new SimpleAclOperator(mockAdminClient, ResourceUtils.createUserOperatorConfig(), EXECUTOR);
         aclOp.start();
 
         try {

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -22,7 +23,7 @@ import static org.hamcrest.Matchers.is;
 public class QuotasOperatorIT extends AdminApiOperatorIT<KafkaUserQuotas, Set<String>> {
     @Override
     AdminApiOperator<KafkaUserQuotas, Set<String>> operator() {
-        return new QuotasOperator(adminClient, ResourceUtils.createUserOperatorConfig());
+        return new QuotasOperator(adminClient, ResourceUtils.createUserOperatorConfig(), Executors.newSingleThreadExecutor());
     }
 
     @Override

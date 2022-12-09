@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 
 /**
  * ScramCredentialsOperator is responsible for managing the SCRAM-SHA credentials in Apache Kafka.
@@ -39,14 +40,18 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
 
     private final ScramShaCredentialsBatchReconciler patchReconciler;
     private final ScramShaCredentialsCache cache;
+    private final ExecutorService executor;
 
     /**
      * Constructor
      *
      * @param adminClient   Kafka Admin client instance
      * @param config        User operator configuration
+     * @param executor      Shared executor for executing async operations
      */
-    public ScramCredentialsOperator(Admin adminClient, UserOperatorConfig config) {
+    public ScramCredentialsOperator(Admin adminClient, UserOperatorConfig config, ExecutorService executor) {
+        this.executor = executor;
+
         // Create cache for querying the SCRAM-SHA Credentials locally
         this.cache = new ScramShaCredentialsCache(adminClient, config.getCacheRefresh());
 
@@ -117,7 +122,7 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
                         }
                     }
                 }
-            });
+            }, executor);
         }
     }
 
