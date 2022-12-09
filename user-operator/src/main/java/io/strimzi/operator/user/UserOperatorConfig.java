@@ -529,29 +529,29 @@ public class UserOperatorConfig {
     public String toString() {
         return "ClusterOperatorConfig(" +
                 "namespace=" + namespace +
-                ",reconciliationIntervalMs=" + reconciliationIntervalMs +
-                ",kafkaBootstrapServers=" + kafkaBootstrapServers +
-                ",labels=" + labels +
-                ",caName=" + caCertSecretName +
-                ",clusterCaCertSecretName=" + clusterCaCertSecretName +
-                ",euoKeySecretName=" + euoKeySecretName +
-                ",caNamespace=" + caNamespace +
-                ",secretPrefix=" + secretPrefix +
-                ",aclsAdminApiSupported=" + aclsAdminApiSupported +
-                ",kraftEnabled=" + kraftEnabled +
-                ",clientsCaValidityDays=" + clientsCaValidityDays +
-                ",clientsCaRenewalDays=" + clientsCaRenewalDays +
-                ",scramPasswordLength=" + scramPasswordLength +
-                ",maintenanceWindows=" + maintenanceWindows +
-                ",kafkaAdminClientConfiguration=" + kafkaAdminClientConfiguration +
-                ",operationTimeoutMs=" + operationTimeoutMs +
-                ",workQueueSize=" + workQueueSize +
-                ",controllerThreadPoolSize=" + controllerThreadPoolSize +
-                ",cacheRefresh=" + cacheRefresh +
-                ",batchQueueSize=" + batchQueueSize +
-                ",batchMaxBlockSize=" + batchMaxBlockSize +
-                ",batchMaxBlockTime=" + batchMaxBlockTime +
-                ",userOperationsThreadPoolSize=" + userOperationsThreadPoolSize +
+                ", reconciliationIntervalMs=" + reconciliationIntervalMs +
+                ", kafkaBootstrapServers=" + kafkaBootstrapServers +
+                ", labels=" + labels +
+                ", caName=" + caCertSecretName +
+                ", clusterCaCertSecretName=" + clusterCaCertSecretName +
+                ", euoKeySecretName=" + euoKeySecretName +
+                ", caNamespace=" + caNamespace +
+                ", secretPrefix=" + secretPrefix +
+                ", aclsAdminApiSupported=" + aclsAdminApiSupported +
+                ", kraftEnabled=" + kraftEnabled +
+                ", clientsCaValidityDays=" + clientsCaValidityDays +
+                ", clientsCaRenewalDays=" + clientsCaRenewalDays +
+                ", scramPasswordLength=" + scramPasswordLength +
+                ", maintenanceWindows=" + maintenanceWindows +
+                ", kafkaAdminClientConfiguration=" + kafkaAdminClientConfiguration +
+                ", operationTimeoutMs=" + operationTimeoutMs +
+                ", workQueueSize=" + workQueueSize +
+                ", controllerThreadPoolSize=" + controllerThreadPoolSize +
+                ", cacheRefresh=" + cacheRefresh +
+                ", batchQueueSize=" + batchQueueSize +
+                ", batchMaxBlockSize=" + batchMaxBlockSize +
+                ", batchMaxBlockTime=" + batchMaxBlockTime +
+                ", userOperationsThreadPoolSize=" + userOperationsThreadPoolSize +
                 ")";
     }
 }
