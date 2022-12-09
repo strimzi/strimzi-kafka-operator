@@ -174,9 +174,7 @@ public class KafkaUserModel {
      * @param user  The KafkaUser which should be validated
      */
     private static void validateDesiredPassword(KafkaUser user)  {
-        if (user.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
-            KafkaUserScramSha512ClientAuthentication scramAuth = (KafkaUserScramSha512ClientAuthentication) user.getSpec().getAuthentication();
-
+        if (user.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication scramAuth) {
             if (scramAuth.getPassword() != null)    {
                 if (scramAuth.getPassword().getValueFrom() == null
                         || scramAuth.getPassword().getValueFrom().getSecretKeyRef() == null
@@ -441,7 +439,7 @@ public class KafkaUserModel {
      * Decodes the name of the User secret based on the username
      *
      * @param username The username.
-     * @return The decoded user name.
+     * @return The decoded username.
      */
     public static String decodeUsername(String username) {
         if (username.contains("CN="))   {
@@ -461,7 +459,7 @@ public class KafkaUserModel {
      * Generates the name of the User secret based on the username
      *
      * @param username The username.
-     * @return The TLS user name.
+     * @return The TLS username.
      */
     public static String getTlsUserName(String username)    {
         return "CN=" + username;
@@ -471,7 +469,7 @@ public class KafkaUserModel {
      * Generates the name of the User secret based on the username
      *
      * @param username The username.
-     * @return The SCRAM user name.
+     * @return The SCRAM username.
      */
     public static String getScramUserName(String username)    {
         return username;

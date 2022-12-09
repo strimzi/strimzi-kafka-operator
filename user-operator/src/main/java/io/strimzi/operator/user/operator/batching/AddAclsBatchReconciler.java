@@ -47,7 +47,7 @@ public class AddAclsBatchReconciler extends AbstractBatchReconciler<AdminApiOper
     @Override
     protected void reconcile(Collection<AdminApiOperator.ReconcileRequest<Collection<AclBinding>, ReconcileResult<Collection<AclBinding>>>> items) {
         List<AclBinding> aclBindings = new ArrayList<>();
-        items.forEach(req -> aclBindings.addAll(req.desired));
+        items.forEach(req -> aclBindings.addAll(req.desired()));
 
         CreateAclsResult result = adminClient.createAcls(aclBindings);
 
@@ -56,12 +56,12 @@ public class AddAclsBatchReconciler extends AbstractBatchReconciler<AdminApiOper
                 .handleAsync((r, e) -> {
                     if (e != null)  {
                         LOGGER.warnOp("ACL reconciliation failed", e);
-                        items.forEach(req -> req.result.completeExceptionally(e));
+                        items.forEach(req -> req.result().completeExceptionally(e));
                     } else {
                         Map<AclBinding, KafkaFuture<Void>> perItemResults = result.values();
 
                         items.forEach(req -> {
-                            final String principal = "User:" + req.username;
+                            final String principal = "User:" + req.username();
                             AtomicBoolean failed = new AtomicBoolean(false);
 
                             perItemResults.forEach((binding, fut) -> {
@@ -75,25 +75,25 @@ public class AddAclsBatchReconciler extends AbstractBatchReconciler<AdminApiOper
                                         } catch (Exception completionException) {
                                             reason = completionException;
                                         } finally {
-                                            LOGGER.warnCr(req.reconciliation, "ACL creation for user {} and ACL binding {} failed", req.username, binding, reason);
+                                            LOGGER.warnCr(req.reconciliation(), "ACL creation for user {} and ACL binding {} failed", req.username(), binding, reason);
                                             failed.set(true);
                                         }
                                     } else if (fut.isCancelled()) {
-                                        LOGGER.warnCr(req.reconciliation, "ACL creation for user {} and ACL binding {} was canceled", req.username, binding);
+                                        LOGGER.warnCr(req.reconciliation(), "ACL creation for user {} and ACL binding {} was canceled", req.username(), binding);
                                         failed.set(true);
                                     } else if (fut.isDone()) {
-                                        LOGGER.debugCr(req.reconciliation, "ACL creation for user {} and ACL binding {} succeeded", req.username, binding);
+                                        LOGGER.debugCr(req.reconciliation(), "ACL creation for user {} and ACL binding {} succeeded", req.username(), binding);
                                     } else {
-                                        LOGGER.warnCr(req.reconciliation, "ACL creation for user {} and ACL binding {} ended in unknown state", req.username, binding);
+                                        LOGGER.warnCr(req.reconciliation(), "ACL creation for user {} and ACL binding {} ended in unknown state", req.username(), binding);
                                         failed.set(true);
                                     }
                                 }
                             });
 
                             if (failed.get()) {
-                                req.result.completeExceptionally(new RuntimeException("ACL creation failed"));
+                                req.result().completeExceptionally(new RuntimeException("ACL creation failed"));
                             } else {
-                                req.result.complete(ReconcileResult.created(req.desired));
+                                req.result().complete(ReconcileResult.created(req.desired()));
                             }
                         });
                     }
