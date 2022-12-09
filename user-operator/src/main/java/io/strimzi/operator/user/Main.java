@@ -69,8 +69,11 @@ public class Main {
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
-        // Create UserOperatorConfig, KubernetesClient, AdminClient and KafkaUserOperator classes
+        // Create and log UserOperatorConfig
         UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
+        LOGGER.info("Cluster Operator configuration is {}", config);
+
+        // Create KubernetesClient, AdminClient and KafkaUserOperator classes
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
         Admin adminClient = createAdminClient(config, client, new DefaultAdminClientProvider());
         AtomicInteger kafkaUserOperatorExecutorThreadCounter = new AtomicInteger(0);
