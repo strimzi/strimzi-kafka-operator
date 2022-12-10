@@ -336,6 +336,9 @@ public class KafkaListenerReconcilerClusterIPTest {
         // Mock the ServiceOperator for the kafka services.
         ServiceOperator mockServiceOperator = supplier.serviceOperations;
 
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockServiceOperator.batchReconcile(any(), eq(NAMESPACE), any(), any())).thenCallRealMethod();
+
         // Mock getting of services and their readiness
         when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-external-bootstrap"))).thenReturn(Future.succeededFuture(mockServiceBootstrap));
         when(mockServiceOperator.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME + "-kafka-0"))).thenReturn(Future.succeededFuture(mockServiceBroker0));

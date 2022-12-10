@@ -28,11 +28,11 @@ public class PodOperatorTest extends
     }
 
     @Override
-    protected Pod resource() {
+    protected Pod resource(String name) {
         return new PodBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                 .endMetadata()
                 .withNewSpec()
                     .withHostname("foo")
@@ -41,8 +41,8 @@ public class PodOperatorTest extends
     }
 
     @Override
-    protected Pod modifiedResource() {
-        return new PodBuilder(resource())
+    protected Pod modifiedResource(String name) {
+        return new PodBuilder(resource(name))
                 .editSpec()
                     .withHostname("bar")
                 .endSpec()

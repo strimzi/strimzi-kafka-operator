@@ -38,10 +38,10 @@ public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<Kubernet
     }
 
     @Override
-    protected ConfigMap resource() {
+    protected ConfigMap resource(String name) {
         return new ConfigMapBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -50,8 +50,8 @@ public class ConfigMapOperatorTest extends AbstractResourceOperatorTest<Kubernet
     }
 
     @Override
-    protected ConfigMap modifiedResource() {
-        return new ConfigMapBuilder(resource())
+    protected ConfigMap modifiedResource(String name) {
+        return new ConfigMapBuilder(resource(name))
                 .withData(singletonMap("FOO", "BAR2"))
                 .build();
     }

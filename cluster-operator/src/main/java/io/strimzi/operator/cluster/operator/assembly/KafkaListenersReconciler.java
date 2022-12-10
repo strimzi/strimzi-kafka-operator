@@ -153,32 +153,7 @@ public class KafkaListenersReconciler {
             services.addAll(kafka.generateExternalServices(i));
         }
 
-        return serviceOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
-                .compose(existingServices -> {
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> serviceFutures = new ArrayList<>(services.size());
-                    List<String> existingServiceNames = existingServices.stream().map(svc -> svc.getMetadata().getName()).collect(Collectors.toList());
-
-                    LOGGER.debugCr(reconciliation, "Reconciling existing Services {} against the desired services", existingServiceNames);
-
-                    // Update desired services
-                    for (Service service : services) {
-                        String serviceName = service.getMetadata().getName();
-                        existingServiceNames.remove(serviceName);
-                        serviceFutures.add(serviceOperator.reconcile(reconciliation, reconciliation.namespace(), serviceName, service));
-                    }
-
-                    LOGGER.debugCr(reconciliation, "Services {} should be deleted", existingServiceNames);
-
-                    // Delete services which match our selector but are not desired anymore
-                    for (String serviceName : existingServiceNames) {
-                        serviceFutures.add(serviceOperator.reconcile(reconciliation, reconciliation.namespace(), serviceName, null));
-                    }
-
-                    return CompositeFuture
-                            .join(serviceFutures)
-                            .map((Void) null);
-                });
+        return serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels());
     }
 
     /**
@@ -196,32 +171,7 @@ public class KafkaListenersReconciler {
                     routes.addAll(kafka.generateExternalRoutes(i));
                 }
 
-                return routeOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
-                        .compose(existingRoutes -> {
-                            @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                            List<Future> routeFutures = new ArrayList<>(routes.size());
-                            List<String> existingRouteNames = existingRoutes.stream().map(route -> route.getMetadata().getName()).collect(Collectors.toList());
-
-                            LOGGER.debugCr(reconciliation, "Reconciling existing Routes {} against the desired routes", existingRouteNames);
-
-                            // Update desired routes
-                            for (Route route : routes) {
-                                String routeName = route.getMetadata().getName();
-                                existingRouteNames.remove(routeName);
-                                routeFutures.add(routeOperator.reconcile(reconciliation, reconciliation.namespace(), routeName, route));
-                            }
-
-                            LOGGER.debugCr(reconciliation, "Routes {} should be deleted", existingRouteNames);
-
-                            // Delete routes which match our selector but are not desired anymore
-                            for (String routeName : existingRouteNames) {
-                                routeFutures.add(routeOperator.reconcile(reconciliation, reconciliation.namespace(), routeName, null));
-                            }
-
-                            return CompositeFuture
-                                    .join(routeFutures)
-                                    .map((Void) null);
-                        });
+                return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels());
             } else {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
                 return Future.failedFuture("The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster " + reconciliation.name() + " using routes is not possible.");
@@ -244,32 +194,7 @@ public class KafkaListenersReconciler {
             ingresses.addAll(kafka.generateExternalIngresses(i));
         }
 
-        return ingressOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
-                .compose(existingIngresses -> {
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> ingressFutures = new ArrayList<>(ingresses.size());
-                    List<String> existingIngressNames = existingIngresses.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
-
-                    LOGGER.debugCr(reconciliation, "Reconciling existing Ingresses {} against the desired ingresses", existingIngressNames);
-
-                    // Update desired ingresses
-                    for (Ingress ingress : ingresses) {
-                        String ingressName = ingress.getMetadata().getName();
-                        existingIngressNames.remove(ingressName);
-                        ingressFutures.add(ingressOperator.reconcile(reconciliation, reconciliation.namespace(), ingressName, ingress));
-                    }
-
-                    LOGGER.debugCr(reconciliation, "Ingresses {} should be deleted", existingIngressNames);
-
-                    // Delete ingresses which match our selector but are not desired anymore
-                    for (String ingressName : existingIngressNames) {
-                        ingressFutures.add(ingressOperator.reconcile(reconciliation, reconciliation.namespace(), ingressName, null));
-                    }
-
-                    return CompositeFuture
-                            .join(ingressFutures)
-                            .map((Void) null);
-                });
+        return ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels());
     }
 
     /**

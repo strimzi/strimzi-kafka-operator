@@ -477,6 +477,8 @@ public class KafkaAssemblyOperatorTest {
 
         Map<String, Service> expectedServicesMap = createdServices.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockServiceOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
         when(mockServiceOps.get(eq(kafkaNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedServicesMap.get(i.<String>getArgument(1))));
         when(mockServiceOps.getAsync(eq(kafkaNamespace), anyString())).thenAnswer(i -> {
             Service svc = expectedServicesMap.get(i.<String>getArgument(1));
@@ -492,6 +494,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockServiceOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Ingress mocks
+
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockIngressOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
         when(mockIngressOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenReturn(
                 Future.succeededFuture(emptyList())
         );
@@ -505,6 +510,8 @@ public class KafkaAssemblyOperatorTest {
 
             Map<String, Route> expectedRoutesMap = expectedRoutes.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
+            // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+            when(mockRouteOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
             when(mockRouteOps.get(eq(kafkaNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
             when(mockRouteOps.getAsync(eq(kafkaNamespace), anyString())).thenAnswer(i -> {
                 Route rt = expectedRoutesMap.get(i.<String>getArgument(1));
@@ -1025,6 +1032,8 @@ public class KafkaAssemblyOperatorTest {
 
         Map<String, Service> expectedServicesMap = expectedServices.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockServiceOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
         when(mockServiceOps.endpointReadiness(any(), eq(clusterNamespace), any(), anyLong(), anyLong())).thenReturn(
                 Future.succeededFuture()
         );
@@ -1049,6 +1058,9 @@ public class KafkaAssemblyOperatorTest {
         );
 
         // Ingress mocks
+
+        // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+        when(mockIngressOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
         when(mockIngressOps.listAsync(eq(clusterNamespace), any(Labels.class))).thenReturn(
                 Future.succeededFuture(emptyList())
         );
@@ -1062,6 +1074,8 @@ public class KafkaAssemblyOperatorTest {
 
             Map<String, Route> expectedRoutesMap = expectedRoutes.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
+            // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
+            when(mockRouteOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
             when(mockRouteOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
             when(mockRouteOps.getAsync(eq(clusterNamespace), anyString())).thenAnswer(i -> {
                 Route rt = expectedRoutesMap.get(i.<String>getArgument(1));

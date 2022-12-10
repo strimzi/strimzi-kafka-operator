@@ -27,12 +27,14 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -141,6 +143,49 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
             promise
         );
         return promise.future();
+    }
+
+    /**
+     * Does a batch reconciliation of resources. It takes a list with desired resources and a selector for getting all
+     * resources. It will compare the desired resources against the actual resources based on the selector and decides
+     * which need to be created, modified or deleted. This is useful in situations when we need to manage list of
+     * resources per operand and not just single resource which either exists or not. The reconciliation of the
+     * individual resources delegates to the regular reconcile(...) methods for a single resource.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param namespace         Namespace where the resources should be reconciled
+     * @param desired           List of desired resources
+     * @param selector          Selector for getting a list of current resource
+     *
+     * @return  Future which completes when the lists are reconciled
+     */
+    public Future<Void> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
+        return listAsync(namespace, selector)
+                .compose(current -> {
+                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
+                    List<Future> futures = new ArrayList<>(desired.size());
+                    List<String> currentNames = current.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
+
+                    LOGGER.debugCr(reconciliation, "Reconciling existing {} resources {} against the desired {} resources", resourceKind, currentNames, resourceKind);
+
+                    // Update desired resources which should be created or already exist and are still desired
+                    for (T desiredResource : desired) {
+                        String name = desiredResource.getMetadata().getName();
+                        currentNames.remove(name);
+                        futures.add(reconcile(reconciliation, namespace, name, desiredResource));
+                    }
+
+                    LOGGER.debugCr(reconciliation, "{} {}/{} should be deleted", resourceKind, namespace, currentNames);
+
+                    // Delete resources which match our selector but are not desired anymore
+                    for (String name : currentNames) {
+                        futures.add(reconcile(reconciliation, namespace, name, null));
+                    }
+
+                    return CompositeFuture
+                            .join(futures)
+                            .map((Void) null);
+                });
     }
 
     /**

@@ -29,10 +29,10 @@ public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesC
     }
 
     @Override
-    protected Secret resource() {
+    protected Secret resource(String name) {
         return new SecretBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -41,8 +41,8 @@ public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesC
     }
 
     @Override
-    protected Secret modifiedResource() {
-        return new SecretBuilder(resource())
+    protected Secret modifiedResource(String name) {
+        return new SecretBuilder(resource(name))
                 .withData(singletonMap("FOO2", "BAR2"))
                 .build();
     }

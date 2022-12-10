@@ -34,10 +34,10 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected Ingress resource() {
+    protected Ingress resource(String name) {
         return new IngressBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -45,10 +45,10 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected Ingress modifiedResource() {
+    protected Ingress modifiedResource(String name) {
         return new IngressBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo2", "bar2"))
                 .endMetadata()

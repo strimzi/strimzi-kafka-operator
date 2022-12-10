@@ -38,11 +38,11 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected Service resource() {
+    protected Service resource(String name) {
         return new ServiceBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                 .endMetadata()
                 .withNewSpec()
                     .withType("LoadBalancer")
@@ -51,8 +51,8 @@ public class ServiceOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected Service modifiedResource() {
-        return new ServiceBuilder(resource())
+    protected Service modifiedResource(String name) {
+        return new ServiceBuilder(resource(name))
                 .editSpec()
                     .withType("NodePort")
                 .endSpec()

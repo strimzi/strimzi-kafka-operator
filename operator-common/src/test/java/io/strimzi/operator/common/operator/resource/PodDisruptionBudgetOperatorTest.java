@@ -45,10 +45,10 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
     }
 
     @Override
-    protected PodDisruptionBudget resource() {
+    protected PodDisruptionBudget resource(String name) {
         return new PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .withNamespace(NAMESPACE)
                     .withLabels(singletonMap("foo", "bar"))
                 .endMetadata()
@@ -59,8 +59,8 @@ public class PodDisruptionBudgetOperatorTest extends AbstractResourceOperatorTes
     }
 
     @Override
-    protected PodDisruptionBudget modifiedResource() {
-        return new PodDisruptionBudgetBuilder(resource())
+    protected PodDisruptionBudget modifiedResource(String name) {
+        return new PodDisruptionBudgetBuilder(resource(name))
                 .editSpec()
                     .withNewMaxUnavailable(2)
                 .endSpec()

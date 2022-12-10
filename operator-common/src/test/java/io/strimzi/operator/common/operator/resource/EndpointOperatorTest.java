@@ -27,21 +27,21 @@ public class EndpointOperatorTest extends AbstractReadyResourceOperatorTest<Kube
     }
 
     @Override
-    protected Endpoints resource() {
+    protected Endpoints resource(String name) {
         return new EndpointsBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                 .endMetadata()
                 .build();
     }
 
     @Override
-    protected Endpoints modifiedResource() {
+    protected Endpoints modifiedResource(String name) {
         return new EndpointsBuilder()
                 .withNewMetadata()
                     .withNamespace(NAMESPACE)
-                    .withName(RESOURCE_NAME)
+                    .withName(name)
                     .addToLabels("foo", "bar")
                 .endMetadata()
                 .build();
