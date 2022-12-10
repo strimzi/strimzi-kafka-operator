@@ -641,7 +641,7 @@ public class KafkaReconciler {
                     // Delete all existing ConfigMaps which are not desired and are not the shared config map
                     List<String> desiredNames = new ArrayList<>(desiredConfigMaps.size() + 1);
                     desiredNames.add(kafka.getAncillaryConfigMapName()); // We do not want to delete the shared ConfigMap, so we add it here
-                    desiredNames.addAll(desiredConfigMaps.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList()));
+                    desiredNames.addAll(desiredConfigMaps.stream().map(cm -> cm.getMetadata().getName()).toList());
 
                     for (ConfigMap cm : existingConfigMaps) {
                         // We delete the cms not on the desired names list
@@ -950,9 +950,8 @@ public class KafkaReconciler {
         //   * JBOD storage is actually used as storage
         //   * and StatefulSets are used
         // StrimziPodSets do not need special rolling update, they can add / remove volumes during regular rolling updates
-        if (storage instanceof JbodStorage
+        if (storage instanceof JbodStorage jbodStorage
                 && !featureGates.useStrimziPodSetsEnabled()) {
-            JbodStorage jbodStorage = (JbodStorage) storage;
             return kafkaRollToAddOrRemoveVolumesInStatefulSet(jbodStorage);
         } else {
             return Future.succeededFuture();

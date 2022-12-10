@@ -526,13 +526,5 @@ public class CaReconciler {
     /**
      * Helper class to pass both Cluster and Clients CA as a result of the reconciliation
      */
-    protected static class CaReconciliationResult {
-        protected final ClusterCa clusterCa;
-        protected final ClientsCa clientsCa;
-
-        protected CaReconciliationResult(ClusterCa clusterCa, ClientsCa clientsCa) {
-            this.clusterCa = clusterCa;
-            this.clientsCa = clientsCa;
-        }
-    }
+    protected record CaReconciliationResult(ClusterCa clusterCa, ClientsCa clientsCa) { }
 }

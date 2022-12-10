@@ -261,7 +261,7 @@ public class KafkaRebalanceAssemblyOperator
                     .filter(condition -> condition.getType() != null)
                     .filter(condition -> Arrays.stream(KafkaRebalanceState.values())
                             .anyMatch(stateValue -> stateValue.toString().equals(condition.getType())))
-                    .collect(Collectors.toList());
+                    .toList();
 
             if (statusConditions.size() == 1) {
                 return statusConditions.get(0);
@@ -1337,10 +1337,12 @@ public class KafkaRebalanceAssemblyOperator
 
     /**
      * Return warning condition if the rebalance annotation wrong corresponding to the state
-
-     * @param state Contains the KafkaRebalanceState for which we are checking the valid annotation
-     * @param rebalanceAnnotation Contains the rebalance annotation
-     * @return the value for the strimzio.io/rebalance annotation on the provided KafkaRebalance resource instance
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param conditions            Set of conditions
+     * @param state                 Contains the KafkaRebalanceState for which we are checking the valid annotation
+     * @param rebalanceAnnotation   Contains the rebalance annotation
+     * @param kafkaRebalance        Kafka Rebalance resource
      */
 
     private void validateAnnotation(Reconciliation reconciliation, Set<Condition> conditions, KafkaRebalanceState state, KafkaRebalanceAnnotation rebalanceAnnotation, KafkaRebalance kafkaRebalance) {

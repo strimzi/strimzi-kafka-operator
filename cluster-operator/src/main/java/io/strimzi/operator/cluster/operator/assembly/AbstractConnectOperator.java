@@ -173,6 +173,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         // When deleting KafkaConnect we need to update the status of all selected KafkaConnector
         return connectorOperator.listAsync(reconciliation.namespace(), Labels.forStrimziCluster(reconciliation.name())).compose(connectors -> {
+            @SuppressWarnings({ "rawtypes" }) // Composite future requires raw Future objects
             List<Future> connectorFutures = new ArrayList<>();
             for (KafkaConnector connector : connectors) {
                 connectorFutures.add(maybeUpdateConnectorStatus(reconciliation, connector, null,
@@ -211,7 +212,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
 
         return Util.async(connectOperator.vertx, () -> {
-            Watch watch = connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<KafkaConnector>() {
+            Watch watch = connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
                     String connectorName = kafkaConnector.getMetadata().getName();
@@ -524,6 +525,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param resource The resource that defines the connector.
      * @return A Future whose result, when successfully completed, is a ConnectorStatusAndConditions object containing the map of the current connector state plus any conditions that have arisen.
      */
+    @SuppressWarnings({ "rawtypes" })
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
         KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
@@ -592,6 +594,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     private Future<Void> pauseResume(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status) {
+        @SuppressWarnings({ "rawtypes" })
         Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
         if (!(path instanceof String)) {
             return Future.failedFuture("JSON response lacked $.connector.state");
@@ -610,6 +613,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    @SuppressWarnings({ "rawtypes" })
     private  Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
         JsonObject statusResultJson = new JsonObject(status.statusResult);
         if (connectorSpec.getAutoRestart() != null && connectorSpec.getAutoRestart().isEnabled()) {
@@ -649,8 +653,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     /**
      * Connector or tasks failed should only restart at minute 0, 2, 6, 12, 20 and 30
-     * @param autoRestartStatus
-     * @return true if the connector
+     *
+     * @param autoRestartStatus     Status field with auto-restart status
+     *
+     * @return true if the connector should be auto-restarted
      */
     boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
         if (connectorHasFailed(statusResult) || failedTaskIds(statusResult).size() > 0) {
@@ -668,6 +674,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return false;
     }
 
+    @SuppressWarnings({ "rawtypes" })
     private Future<List<Condition>> maybeRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         if (hasRestartAnnotation(resource, connectorName)) {
             LOGGER.debugCr(reconciliation, "Restarting connector {}", connectorName);
@@ -686,6 +693,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    @SuppressWarnings({ "rawtypes" })
     private Future<List<Condition>> maybeRestartConnectorTask(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, CustomResource resource, List<Condition> conditions) {
         int taskID = getRestartTaskAnnotationTaskID(resource, connectorName);
         if (taskID >= 0) {
@@ -717,6 +725,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connectorName connectorName name of the connector to check
      * @return true if the provided resource instance has the strimzi.io/restart annotation; false otherwise
      */
+    @SuppressWarnings({ "rawtypes" })
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
         return Annotations.booleanAnnotation(resource, ANNO_STRIMZI_IO_RESTART, false);
     }
@@ -728,6 +737,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param connectorName KafkaConnector resource instance to check
      * @return the ID of the task to be restarted if the provided KafkaConnector resource instance has the strimzio.io/restart-task annotation or -1 otherwise.
      */
+    @SuppressWarnings({ "rawtypes" })
     protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
         return Annotations.intAnnotation(resource, ANNO_STRIMZI_IO_RESTART_TASK, -1);
     }
@@ -736,6 +746,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Patches the KafkaConnector CR to remove the strimzi.io/restart annotation, as
      * the restart action specified by the user has been completed.
      */
+    @SuppressWarnings({ "rawtypes" })
     protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART);
     }
@@ -744,6 +755,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Patches the KafkaConnector CR to remove the strimzi.io/restart-task annotation, as
      * the restart action specified by the user has been completed.
      */
+    @SuppressWarnings({ "rawtypes" })
     protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaConnector) resource, ANNO_STRIMZI_IO_RESTART_TASK);
     }
@@ -781,7 +793,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    protected class ConnectorStatusAndConditions {
+    static protected class ConnectorStatusAndConditions {
         Map<String, Object> statusResult;
         List<String> topics;
         List<Condition> conditions;
@@ -858,12 +870,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 connectorReadiness = Future.failedFuture(new Throwable(String.format("The following tasks have failed: %s, see connectorStatus for more details.", String.join(", ", failedTaskIds))));
             }
             topics = connectorStatus.topics.stream().sorted().collect(Collectors.toList());
-            connectorStatus.conditions.forEach(condition -> conditions.add(condition));
+            conditions.addAll(connectorStatus.conditions);
             autoRestart = connectorStatus.autoRestart;
         }
 
         Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, connector);
-        unknownAndDeprecatedConditions.forEach(condition -> conditions.add(condition));
+        conditions.addAll(unknownAndDeprecatedConditions);
 
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
             StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : connectorReadiness);
@@ -908,6 +920,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param statusResult      The status from the Connect REST API
      * @return                  Number of tasks which should be set in the status
      */
+    @SuppressWarnings({ "rawtypes" })
     protected int getActualTaskCount(KafkaConnector connector, Map<String, Object> statusResult)  {
         if (connector.getSpec() != null
                 && connector.getSpec().getTasksMax() != null)  {
@@ -935,6 +948,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return connectorConfigJson.put("connector.class", spec.getClassName());
     }
 
+    @SuppressWarnings({ "rawtypes" })
     protected Future<KafkaConnectorStatus> getPreviousKafkaConnectorStatus(CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> resourceOperator,
                                                            CustomResource resource) {
         return resourceOperator
@@ -946,11 +960,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Updates the Status field of the KafkaConnect or KafkaConnector CR. It diffs the desired status against the current status and calls
      * the update only when there is any difference in non-timestamp fields.
      *
-     * @param resource The CR of KafkaConnect or KafkaConnector
-     * @param reconciliation Reconciliation information
-     * @param desiredStatus The KafkaConnectStatus or KafkaConnectorStatus which should be set
+     * @param resourceOperator  The resource operator for managing custom resources
+     * @param resource          The CR of KafkaConnect or KafkaConnector
+     * @param reconciliation    Reconciliation information
+     * @param desiredStatus     The KafkaConnectStatus or KafkaConnectorStatus which should be set
+     * @param copyWithStatus    BiFunction for copying parts of the status
      *
-     * @return
+     * @param <T>   Custom resource type
+     * @param <S>   Custom resource status type
+     * @param <L>   Custom resource list type
+     *
+     * @return  Future which completes then the status is updated
      */
     protected <T extends CustomResource<?, S>, S extends Status, L extends DefaultKubernetesResourceList<T>> Future<Void>
         maybeUpdateStatusCommon(CrdOperator<KubernetesClient, T, L> resourceOperator,

@@ -358,8 +358,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return caReconciler()
                     .reconcile(clock)
                     .compose(cas -> {
-                        this.clusterCa = cas.clusterCa;
-                        this.clientsCa = cas.clientsCa;
+                        this.clusterCa = cas.clusterCa();
+                        this.clientsCa = cas.clientsCa();
                         return Future.succeededFuture(this);
                     });
         }
