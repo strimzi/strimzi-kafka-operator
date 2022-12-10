@@ -67,18 +67,26 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolum
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
 
+/**
+ * Cruise Control model
+ */
 public class CruiseControl extends AbstractModel {
     protected static final String APPLICATION_NAME = "cruise-control";
-
-    public static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
-
+    protected static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
     // Fields used for Cruise Control API authentication
+    /**
+     * Name of the admin user
+     */
     public static final String API_ADMIN_NAME = "admin";
     private static final String API_ADMIN_ROLE = "ADMIN";
     protected static final String API_USER_NAME = "user";
     private static final String API_USER_ROLE = "USER";
+
+    /**
+     * Key for the admin user password
+     */
     public static final String API_ADMIN_PASSWORD_KEY = APPLICATION_NAME + ".apiAdminPassword";
     private static final String API_USER_PASSWORD_KEY = APPLICATION_NAME + ".apiUserPassword";
     private static final String API_AUTH_FILE_KEY = APPLICATION_NAME + ".apiAuthFile";
@@ -95,17 +103,17 @@ public class CruiseControl extends AbstractModel {
 
     protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
-    public static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
+    protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
-    public static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
+    protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
 
     // Default probe settings (liveness and readiness) for health checks
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
 
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .build();
@@ -113,11 +121,15 @@ public class CruiseControl extends AbstractModel {
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
     private boolean authEnabled;
-    public Capacity capacity;
+    protected Capacity capacity;
 
-    public static final String REST_API_PORT_NAME = "rest-api";
+    /**
+     * Port of the Cruise Control REST API
+     */
     public static final int REST_API_PORT = 9090;
-    public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
+    /* test */ static final String REST_API_PORT_NAME = "rest-api";
+
+    /* test */ static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
@@ -263,7 +275,7 @@ public class CruiseControl extends AbstractModel {
         }
     }
 
-    public void updateConfiguration(CruiseControlSpec spec) {
+    private void updateConfiguration(CruiseControlSpec spec) {
         CruiseControlConfiguration userConfiguration = new CruiseControlConfiguration(reconciliation, spec.getConfig().entrySet());
         for (Map.Entry<String, String> defaultEntry : CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap().entrySet()) {
             if (userConfiguration.getConfigOption(defaultEntry.getKey()) == null) {
@@ -313,6 +325,9 @@ public class CruiseControl extends AbstractModel {
         }
     }
 
+    /**
+     * @return  Generates a Kuberneets Service for Cruise Control
+     */
     public Service generateService() {
         return createService("ClusterIP", List.of(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP")), templateServiceAnnotations);
     }
@@ -345,6 +360,15 @@ public class CruiseControl extends AbstractModel {
                 createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
+    /**
+     * Generates Kubernetes Deployment for Cruise Cotnrol
+     *
+     * @param isOpenShift       Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  Image pull secrets
+     *
+     * @return  Cruise Control Kubernetes Deployment
+     */
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")

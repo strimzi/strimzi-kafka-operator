@@ -39,6 +39,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Kafka Mirror Maker 1 model
+ */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-mirror-maker";
@@ -54,7 +57,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_DELAY = 60;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
-    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    private static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     protected static final boolean DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED = false;
 
     // Kafka Mirror Maker configuration keys (EnvVariables)
@@ -141,6 +144,15 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
+    /**
+     * Creates the Kafka Mirror Maker 1 model from the KafkaMirrorMaker CR
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param kafkaMirrorMaker      KafkaMirrorMaker custom resource
+     * @param versions              Supported Kafka versions
+     *
+     * @return  Kafka Mirror Maker model instance
+     */
     @SuppressWarnings("deprecation")
     public static KafkaMirrorMakerCluster fromCrd(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
         KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(reconciliation, kafkaMirrorMaker);
@@ -167,18 +179,21 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 LOGGER.warnCr(reconciliation, "Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
             }
 
-            kafkaMirrorMakerCluster.setInclude(include != null ? include : whitelist);
+            kafkaMirrorMakerCluster.include = include != null ? include : whitelist;
 
             String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
             if (!warnMsg.isEmpty()) {
                 LOGGER.warnCr(reconciliation, warnMsg);
             }
-            kafkaMirrorMakerCluster.setProducer(spec.getProducer());
+
+            kafkaMirrorMakerCluster.producer = spec.getProducer();
+
             warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
             if (!warnMsg.isEmpty()) {
                 LOGGER.warnCr(reconciliation, warnMsg);
             }
-            kafkaMirrorMakerCluster.setConsumer(spec.getConsumer());
+
+            kafkaMirrorMakerCluster.consumer = spec.getConsumer();
 
             kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion()));
 
@@ -267,6 +282,16 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return volumeMountList;
     }
 
+    /**
+     * Generates Kafka Mirror Maker Deployment
+     *
+     * @param annotations       Map with annotations
+     * @param isOpenShift       Flag indicating if we are on OpenShift
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  List with image pull secrets
+     *
+     * @return  Generated Deployment
+     */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
@@ -464,18 +489,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     @Override
     protected String getDefaultLogConfigFileName() {
         return "mirrorMakerDefaultLoggingProperties";
-    }
-
-    public void setInclude(String include) {
-        this.include = include;
-    }
-
-    public void setProducer(KafkaMirrorMakerProducerSpec producer) {
-        this.producer = producer;
-    }
-
-    public void setConsumer(KafkaMirrorMakerConsumerSpec consumer) {
-        this.consumer = consumer;
     }
 
     protected String getInclude() {

@@ -63,7 +63,7 @@ public class ModelUtils {
     private ModelUtils() {}
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
-    public static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
+    protected static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
 
     /**
      * @param certificateAuthority The CA configuration.
@@ -110,6 +110,22 @@ public class ModelUtils {
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
 
+    /**
+     * Builds a certificate secret for the different Strimzi components (TO, UO, KE, ...)
+     *
+     * @param reconciliation                        Reconciliation marker
+     * @param clusterCa                             The Cluster CA
+     * @param secret                                Kubernetes Secret
+     * @param namespace                             Namespace
+     * @param secretName                            Name of the Kubernetes secret
+     * @param commonName                            Common Name of the certificate
+     * @param keyCertName                           Key under which the certificate will be stored in the new Secret
+     * @param labels                                Labels
+     * @param ownerReference                        Owner reference
+     * @param isMaintenanceTimeWindowsSatisfied     Flag whether we are inside a maintenance window or not
+     *
+     * @return  Newly built Secret
+     */
     public static Secret buildSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace, String secretName,
                                      String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, String> data = new HashMap<>(4);
@@ -174,6 +190,19 @@ public class ModelUtils {
                 Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())), emptyMap());
     }
 
+    /**
+     * Creates Secret
+     *
+     * @param name                  Name of the Secret
+     * @param namespace             Namespace of the Secret
+     * @param labels                Labels
+     * @param ownerReference        Owner reference
+     * @param data                  Data which should be stored in the Secret
+     * @param customAnnotations     Custom annotations
+     * @param customLabels          Custom Labels
+     *
+     * @return  Created Kubernetes Secret
+     */
     public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference,
                                       Map<String, String> data, Map<String, String> customAnnotations, Map<String, String> customLabels) {
         if (ownerReference == null) {
@@ -309,6 +338,13 @@ public class ModelUtils {
         }
     }
 
+    /**
+     * Decodes Storage configuration from JSON into Java object
+     *
+     * @param json  Storage configuration in the JSON format
+     *
+     * @return  Storage configuration
+     */
     public static Storage decodeStorageFromJson(String json) {
         try {
             return new ObjectMapper().readValue(json, Storage.class);
@@ -317,6 +353,13 @@ public class ModelUtils {
         }
     }
 
+    /**
+     * Encodes storage configuration from Java object to JSON
+     *
+     * @param storage   Storage configuration
+     *
+     * @return  JSON String with the configuration
+     */
     public static String encodeStorageToJson(Storage storage) {
         try {
             return new ObjectMapper().writeValueAsString(storage);
@@ -371,6 +414,16 @@ public class ModelUtils {
         return false;
     }
 
+    /**
+     * Checks for the list passed to this method if it is null or not. And either returns the same list, or empty list
+     * if it is null.
+     *
+     * @param list  List which should be checked for null
+     *
+     * @param <T>   Type of the obejcts in the list
+     *
+     * @return  The original list of empty list if it as null.
+     */
     public static <T> List<T> asListOrEmptyList(List<T> list) {
         return Optional.ofNullable(list)
                 .orElse(Collections.emptyList());
@@ -581,6 +634,7 @@ public class ModelUtils {
     }
 
     /**
+     * Adds user-configured affinity to the AffinityBuilder
      *
      * @param builder the builder which is used to populate the node affinity
      * @param userAffinity the userAffinity which is defined by the user

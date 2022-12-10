@@ -22,13 +22,24 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Diffs Kafka broker logging configuration
+ */
 public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
     private final Reconciliation reconciliation;
 
-    public KafkaBrokerLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, int brokerId) {
+    /**
+     * Constructor
+     *
+     * @param reconciliation    Reconciliatin marker
+     * @param brokerConfigs     Current broker configuration from Kafka Admin API
+     * @param desired           Desired logging configuration
+     * @param brokerId          Broker ID
+     */
+    protected KafkaBrokerLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, int brokerId) {
         this.reconciliation = reconciliation;
         this.diff = diff(brokerId, desired, brokerConfigs);
     }
@@ -37,14 +48,14 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
      * Returns logging difference
      * @return Collection of AlterConfigOp containing difference between current and desired logging configuration
      */
-    public Collection<AlterConfigOp> getLoggingDiff() {
+    protected Collection<AlterConfigOp> getLoggingDiff() {
         return diff;
     }
 
     /**
      * @return The number of broker configs which are different.
      */
-    public int getDiffSize() {
+    protected int getDiffSize() {
         return diff.size();
     }
 
@@ -97,6 +108,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
         return updatedCE;
     }
+
     protected Map<String, String> readLog4jConfig(String config) {
         Map<String, String> parsed = new LinkedHashMap<>();
         Map<String, String> env = new HashMap<>();
@@ -185,7 +197,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
      * where key is the category name, and the value is whatever comes to the right of '=' sign in log4j.properties,
      * which is either a logging level, or a logging level followed by a comma, and followed by the appender name.
      */
-    static class LoggingLevelResolver {
+    private static class LoggingLevelResolver {
 
         private final Map<String, String> config;
         private final Reconciliation reconciliation;
@@ -247,7 +259,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
         }
     }
 
-    enum LoggingLevel {
+    private enum LoggingLevel {
         OFF,
         FATAL,
         ERROR,

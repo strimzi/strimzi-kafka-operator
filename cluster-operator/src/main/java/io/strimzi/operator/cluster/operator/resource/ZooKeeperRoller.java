@@ -33,6 +33,13 @@ public class ZooKeeperRoller {
     private final ZookeeperLeaderFinder leaderFinder;
     private final long operationTimeoutMs;
 
+    /**
+     * Constructor
+     *
+     * @param podOperator           Pod operator
+     * @param leaderFinder          ZooKeeper Leader Finder
+     * @param operationTimeoutMs    Operation timeout in milliseconds
+     */
     public ZooKeeperRoller(PodOperator podOperator, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs) {
         this.podOperator = podOperator;
         this.leaderFinder = leaderFinder;

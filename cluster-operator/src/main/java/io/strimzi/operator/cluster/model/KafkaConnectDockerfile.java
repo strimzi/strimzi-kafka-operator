@@ -48,12 +48,11 @@ public class KafkaConnectDockerfile {
     private static final String DEFAULT_MAVEN_IMAGE = "quay.io/strimzi/maven-builder:latest";
     private final String mavenBuilder;
 
-    public static Cmd run(String cmd, String... args) {
+    private static Cmd run(String cmd, String... args) {
         return new Cmd(new StringBuilder(), cmd, args);
     }
 
-    public static class Cmd {
-
+    private static class Cmd {
         private final StringBuilder stringBuilder;
         boolean doneFirst = false;
 

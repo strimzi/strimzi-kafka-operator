@@ -8,6 +8,11 @@ package io.strimzi.operator.cluster.model;
  * Thrown to indicate that given Kafka version is not supported.
  */
 public class UnsupportedVersionException extends Exception {
+    /**
+     * Constructor
+     *
+     * @param message   Error message
+     */
     public UnsupportedVersionException(String message) {
         super(message);
     }

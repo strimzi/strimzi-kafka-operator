@@ -35,6 +35,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Kafka Exporter model
+ */
 public class KafkaExporter extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-exporter";
 
@@ -48,7 +51,7 @@ public class KafkaExporter extends AbstractModel {
     /*test*/ static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     /*test*/ static final int DEFAULT_HEALTHCHECK_TIMEOUT = 15;
     /*test*/ static final int DEFAULT_HEALTHCHECK_PERIOD = 30;
-    public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).withPeriodSeconds(DEFAULT_HEALTHCHECK_PERIOD).build();
+    private static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).withPeriodSeconds(DEFAULT_HEALTHCHECK_PERIOD).build();
 
     protected static final String ENV_VAR_KAFKA_EXPORTER_LOGGING = "KAFKA_EXPORTER_LOGGING";
     protected static final String ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION = "KAFKA_EXPORTER_KAFKA_VERSION";
@@ -179,6 +182,15 @@ public class KafkaExporter extends AbstractModel {
         return portList;
     }
 
+    /**
+     * Generates Kafka Exporter Deployment
+     *
+     * @param isOpenShift       Flag indicating whether we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  List of Image Pull Secrets
+     *
+     * @return  Generated deployment
+     */
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),

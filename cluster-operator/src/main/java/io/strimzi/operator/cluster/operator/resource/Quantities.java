@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+/**
+ * Utility class for working with Quantities (memory, CPU, ...)
+ */
 public class Quantities {
     private Quantities() {
 
@@ -88,14 +91,13 @@ public class Quantities {
         return factor;
     }
 
-    public static String formatMemory(long bytes) {
+    protected static String formatMemory(long bytes) {
         return Long.toString(bytes);
     }
 
-    public static String normalizeMemory(String memory) {
+    /* test */ static String normalizeMemory(String memory) {
         return formatMemory(parseMemory(memory));
     }
-
 
     /**
      * Parse a K8S-style representation of a quantity of cpu, such as {@code 1000m},
@@ -116,7 +118,7 @@ public class Quantities {
         }
     }
 
-    public static String formatMilliCpu(int milliCpu) {
+    /* test */ static String formatMilliCpu(int milliCpu) {
         if (milliCpu % 1000 == 0) {
             return Long.toString(milliCpu / 1000L);
         } else {
@@ -124,7 +126,7 @@ public class Quantities {
         }
     }
 
-    public static String normalizeCpu(String milliCpu) {
+    /* test */ static String normalizeCpu(String milliCpu) {
         return formatMilliCpu(parseCpuAsMilliCpus(milliCpu));
     }
 }

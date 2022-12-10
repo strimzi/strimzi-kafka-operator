@@ -66,6 +66,16 @@ public class ReconcilerUtils {
         );
     }
 
+    /**
+     * Waits for Pod readiness
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param podOperator           Pod operator
+     * @param operationTimeoutMs    Operations timeout in milliseconds
+     * @param podNames              List with the pod names which should be ready
+     *
+     * @return  Future which completes when all pods are ready or fails when they are not ready in time
+     */
     public static Future<Void> podsReady(Reconciliation reconciliation, PodOperator podOperator, long operationTimeoutMs, List<String> podNames) {
         @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
         List<Future> podFutures = new ArrayList<>(podNames.size());

@@ -6,11 +6,19 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Response to rebalance request
+ */
 public class CruiseControlRebalanceResponse extends CruiseControlResponse {
-
     private boolean isNotEnoughDataForProposal;
     private boolean isProposalStillCalculating;
 
+    /**
+     * Cosntructor
+     *
+     * @param userTaskId    User task ID
+     * @param json          JSON data
+     */
     CruiseControlRebalanceResponse(String userTaskId, JsonObject json) {
         super(userTaskId, json);
         // There is sufficient data for proposal unless response from Cruise Control says otherwise
@@ -21,19 +29,25 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
         this.isProposalStillCalculating = false;
     }
 
+    /**
+     * @return  True if there is not enough data to generate a proposal. False otherwise.
+     */
     public boolean isNotEnoughDataForProposal() {
         return this.isNotEnoughDataForProposal;
     }
 
-    public void setNotEnoughDataForProposal(boolean notEnoughDataForProposal) {
+    protected void setNotEnoughDataForProposal(boolean notEnoughDataForProposal) {
         this.isNotEnoughDataForProposal = notEnoughDataForProposal;
     }
 
+    /**
+     * @return  True if the proposal is still being calculated. False otherwise.
+     */
     public boolean isProposalStillCalculating() {
         return isProposalStillCalculating;
     }
 
-    public void setProposalStillCalculating(boolean proposalStillCalculating) {
+    protected void setProposalStillCalculating(boolean proposalStillCalculating) {
         this.isProposalStillCalculating = proposalStillCalculating;
     }
 }

@@ -8,7 +8,11 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
  * Represents an exception related to Cruise Control REST API interaction
  */
 public class CruiseControlRestException extends RuntimeException {
-
+    /**
+     * Constructor
+     *
+     * @param message   Error message
+     */
     public CruiseControlRestException(String message) {
         super(message);
     }

@@ -17,14 +17,22 @@ import java.util.stream.Stream;
  * Collects reasons to restart a pod, along with additional logging messages for each kind of restart.
  */
 public class RestartReasons implements Iterable<RestartReason> {
-
     private final EnumMap<RestartReason, Set<String>> reasons = new EnumMap<>(RestartReason.class);
 
-
+    /**
+     * @return  Empty restart reasons instance
+     */
     public static RestartReasons empty() {
         return new RestartReasons();
     }
 
+    /**
+     * Restart reasons instance with the provider restart reason
+     *
+     * @param reason    Restart reason
+     *
+     * @return  New RestartReasons instance with given restart reason
+     */
     public static RestartReasons of(RestartReason reason) {
         return new RestartReasons().add(reason);
     }
@@ -54,14 +62,27 @@ public class RestartReasons implements Iterable<RestartReason> {
         return add(reason, null);
     }
 
+    /**
+     * @return  Set with all restart reasons
+     */
     public Set<RestartReason> getReasons() {
         return reasons.keySet();
     }
 
+    /**
+     * @return  True if component should be restarts (there are some restart reasons). False otherwise.
+     */
     public boolean shouldRestart() {
         return !reasons.isEmpty();
     }
 
+    /**
+     * Checks if given restart reason is among the restart reasons
+     *
+     * @param reason    Restart reason which should be checked if it is present
+     *
+     * @return  True if the reason is present in this instance. False otherwise.
+     */
     public boolean contains(RestartReason reason) {
         return reasons.containsKey(reason);
     }
@@ -71,6 +92,13 @@ public class RestartReasons implements Iterable<RestartReason> {
         return reasons.keySet().iterator();
     }
 
+    /**
+     * Gets note for given restart reason
+     *
+     * @param reason    Restart reason for which we want to get the note
+     *
+     * @return  The note for given reason. Null if the reason is not present in this instance.
+     */
     public String getNoteFor(RestartReason reason) {
         if (!reasons.containsKey(reason)) {
             return null;
@@ -84,7 +112,11 @@ public class RestartReasons implements Iterable<RestartReason> {
         }
     }
 
-    // For logging, generally
+    /**
+     * Used mainly for logging
+     *
+     * @return  Gets a list with all reason notes
+     */
     public List<String> getAllReasonNotes() {
         return reasons.entrySet().stream().flatMap(entry -> {
             Set<String> explicitNotes = entry.getValue();

@@ -10,9 +10,19 @@ import io.vertx.core.Future;
  * Cruise Control REST API interface definition
  */
 public interface CruiseControlApi {
-
+    /**
+     * Error key
+     */
     String CC_REST_API_ERROR_KEY = "errorMessage";
+
+    /**
+     * Progress key
+     */
     String CC_REST_API_PROGRESS_KEY = "progress";
+
+    /**
+     * User ID header key
+     */
     String CC_REST_API_USER_ID_HEADER = "User-Task-ID";
 
     /**

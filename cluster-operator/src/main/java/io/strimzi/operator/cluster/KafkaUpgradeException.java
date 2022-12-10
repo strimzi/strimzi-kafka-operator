@@ -11,11 +11,11 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
  * one Kafka version to another.
  */
 public class KafkaUpgradeException extends InvalidResourceException {
-
-    public KafkaUpgradeException() {
-        super();
-    }
-
+    /**
+     * Constructor
+     *
+     * @param s     Error message
+     */
     public KafkaUpgradeException(String s) {
         super(s);
     }

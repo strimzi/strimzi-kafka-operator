@@ -56,17 +56,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Kafka Bridge model class
+ */
 public class KafkaBridgeCluster extends AbstractModel {
-    public static final String APPLICATION_NAME = "kafka-bridge";
-
-
-    // Port configuration
+    /**
+     * HTTP port configuration
+     */
     public static final int DEFAULT_REST_API_PORT = 8080;
-    protected static final String REST_API_PORT_NAME = "rest-api";
 
+    /* test */ static final String APPLICATION_NAME = "kafka-bridge";
+    protected static final String REST_API_PORT_NAME = "rest-api";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
-
     protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
 
     // Configuration defaults
@@ -75,7 +77,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     protected static final boolean DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED = false;
 
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
 
@@ -165,6 +167,15 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
     }
 
+    /**
+     * Create the KafkaBridge model instance from the KafkaBridge custom resource
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param kafkaBridge       KafkaBridge custom resource
+     * @param versions          List of supported Kafka versions
+     *
+     * @return  KafkaBridgeCluster instance
+     */
     @SuppressWarnings({"checkstyle:NPathComplexity"})
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
 
@@ -226,7 +237,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         return kafkaBridgeCluster;
     }
 
-
     private static void fromCrdTemplate(final KafkaBridgeCluster kafkaBridgeCluster, final KafkaBridgeSpec spec) {
         KafkaBridgeTemplate template = spec.getTemplate();
 
@@ -263,7 +273,9 @@ public class KafkaBridgeCluster extends AbstractModel {
         ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
     }
 
-
+    /**
+     * @return  Generates and returns the Kubernetes service for the Kafka Bridge
+     */
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(3);
 
@@ -339,6 +351,16 @@ public class KafkaBridgeCluster extends AbstractModel {
         return volumeMountList;
     }
 
+    /**
+     * Generates the Bridge Kubernetes Deployment
+     *
+     * @param annotations       Map with annotations
+     * @param isOpenShift       Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy configuration
+     * @param imagePullSecrets  List of image pull secrets
+     *
+     * @return  Generated Kubernetes Deployment resource
+     */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
@@ -530,10 +552,12 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.bootstrapServers = bootstrapServers;
     }
 
+    /**
+     * @return  The HTTP configuration of the Bridge
+     */
     public KafkaBridgeHttpConfig getHttp() {
         return this.http;
     }
-
 
     /**
      * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.

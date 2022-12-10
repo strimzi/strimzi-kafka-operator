@@ -20,6 +20,9 @@ import io.strimzi.operator.common.model.Labels;
  * a bit simple.
  */
 public class PodRevision {
+    /**
+     * Annotation for tracking pod revisions
+     */
     public static final String STRIMZI_REVISION_ANNOTATION = Labels.STRIMZI_DOMAIN + "revision";
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodRevision.class.getName());
 

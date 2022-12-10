@@ -103,6 +103,9 @@ import static java.util.Collections.addAll;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
+/**
+ * Kafka cluster model
+ */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka";
@@ -115,13 +118,22 @@ public class KafkaCluster extends AbstractModel {
     // For port names in services, a 'tcp-' prefix is added to support Istio protocol selection
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
     // proper listener, routing and metrics configuration sent to Envoy
+    /**
+     * Port number used for replicastion
+     */
     public static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "tcp-replication";
-    public static final int CONTROLPLANE_PORT = 9090;
+    protected static final int CONTROLPLANE_PORT = 9090;
     protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
 
-    // Ingress and Route listeners advertise port 443 regardless what port is used in Kafka, so we store them here
+    /**
+     * Port used by the Route listeners
+     */
     public static final int ROUTE_PORT = 443;
+
+    /**
+     * Port used by the Ingress listeners
+     */
     public static final int INGRESS_PORT = 443;
 
     protected static final String KAFKA_NAME = "kafka";
@@ -165,15 +177,32 @@ public class KafkaCluster extends AbstractModel {
      */
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
 
+    /**
+     * Annotation for keeping certificate thumprints
+     */
     public static final String ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS = Annotations.STRIMZI_DOMAIN + "custom-listener-cert-thumbprints";
 
     // Env vars for JMX service
     protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
-    // Name of the broker configuration file in the config map
+    /**
+     * Key under which the broker configuration is stored in Config Map
+     */
     public static final String BROKER_CONFIGURATION_FILENAME = "server.config";
+
+    /**
+     * Key under which the listener configuration is stored in Config Map
+     */
     public static final String BROKER_LISTENERS_FILENAME = "listeners.config";
+
+    /**
+     * Key under which the advertised hostnames is stored in Config Map
+     */
     public static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
+
+    /**
+     * Key under which the advertised ports is stored in Config Map
+     */
     public static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
 
     // Cruise Control defaults
@@ -216,7 +245,7 @@ public class KafkaCluster extends AbstractModel {
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
     private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
@@ -253,10 +282,31 @@ public class KafkaCluster extends AbstractModel {
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
 
+    /**
+     * Creates the Kafka cluster model instance from a Kafka CR
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param kafkaAssembly     Kafka custom resource
+     * @param versions          Supported Kafka versions
+     *
+     * @return  Kafka cluster instance
+     */
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0, false);
     }
 
+    /**
+     * Creates the Kafka cluster model instance from a Kafka CR
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param kafkaAssembly     Kafka custom resource
+     * @param versions          Supported Kafka versions
+     * @param oldStorage        The current storage configuration (based on the info from Kubernetes cluster, not from the Kafka CR)
+     * @param oldReplicas       Number of replicas in the existing cluster (before possible scale-up / scale-down)
+     * @param useKRaft          Flag indicating is KRaft is enabled
+     *
+     * @return  Kafka cluster instance
+     */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas, boolean useKRaft) {
         KafkaSpec kafkaSpec = kafkaAssembly.getSpec();
@@ -481,6 +531,14 @@ public class KafkaCluster extends AbstractModel {
         return result;
     }
 
+    /**
+     * Generates list of Kafka pods
+     *
+     * @param cluster   Name of the Kafka cluster
+     * @param replicas  Number of replicas
+     *
+     * @return  List with the Kafka pod names
+     */
     public static List<String> generatePodList(String cluster, int replicas) {
         ArrayList<String> podNames = new ArrayList<>(replicas);
 
@@ -1936,7 +1994,7 @@ public class KafkaCluster extends AbstractModel {
         return (KafkaConfiguration) configuration;
     }
 
-    public void setJmxAuthenticated(boolean jmxAuthenticated) {
+    protected void setJmxAuthenticated(boolean jmxAuthenticated) {
         isJmxAuthenticated = jmxAuthenticated;
     }
 
@@ -2104,6 +2162,9 @@ public class KafkaCluster extends AbstractModel {
         return configMaps;
     }
 
+    /**
+     * @return  Kafka version
+     */
     public KafkaVersion getKafkaVersion() {
         return this.kafkaVersion;
     }
@@ -2113,18 +2174,34 @@ public class KafkaCluster extends AbstractModel {
         return true;
     }
 
+    /**
+     * @return  Kafka's log message format configuration
+     */
     public String getLogMessageFormatVersion() {
         return configuration.getConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION);
     }
 
+    /**
+     * Sets the log message format version
+     *
+     * @param logMessageFormatVersion       Log message format version
+     */
     public void setLogMessageFormatVersion(String logMessageFormatVersion) {
         configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, logMessageFormatVersion);
     }
 
+    /**
+     * @return  Kafka's inter-broker protocol configuration
+     */
     public String getInterBrokerProtocolVersion() {
         return configuration.getConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION);
     }
 
+    /**
+     * Sets the inter-broker protocol version
+     *
+     * @param interBrokerProtocolVersion    Inter-broker protocol version
+     */
     public void setInterBrokerProtocolVersion(String interBrokerProtocolVersion) {
         configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
     }

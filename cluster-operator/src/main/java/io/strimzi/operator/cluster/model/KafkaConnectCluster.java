@@ -73,33 +73,35 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Base64;
 
-
+/**
+ * Kafka Connect model class
+ */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaConnectCluster extends AbstractModel {
-    protected static final String APPLICATION_NAME = "kafka-connect";
-
-    // Port configuration
+    /**
+     * Port of the Kafka Connect REST API
+     */
     public static final int REST_API_PORT = 8083;
-    protected static final String REST_API_PORT_NAME = "rest-api";
 
+    protected static final String APPLICATION_NAME = "kafka-connect";
+    protected static final String REST_API_PORT_NAME = "rest-api";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH = "/opt/kafka/external-configuration/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX = "ext-conf-";
 
     // Configuration defaults
-    protected static final int DEFAULT_REPLICAS = 3;
-    static final int DEFAULT_HEALTHCHECK_DELAY = 60;
-    static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
+    /* test */ static final int DEFAULT_REPLICAS = 3;
+    /* test */ static final int DEFAULT_HEALTHCHECK_DELAY = 60;
+    /* test */ static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
-    protected static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
+    private static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
 
     private static final String NAME_SUFFIX = "-" + APPLICATION_NAME;
-    protected static final String KAFKA_CONNECT_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
-    protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
-    protected static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-
+    private static final String KAFKA_CONNECT_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
+    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
+    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
@@ -186,6 +188,15 @@ public class KafkaConnectCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
+    /**
+     * Creates the Kafka Connect model instance from the Kafka Connect CRD
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param kafkaConnect      Kafka connect custom resource
+     * @param versions          Supported Kafka versions
+     *
+     * @return  Instance of the Kafka Connect model class
+     */
     public static KafkaConnectCluster fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
         KafkaConnectCluster cluster = fromSpec(reconciliation, kafkaConnect.getSpec(), versions,
                 new KafkaConnectCluster(reconciliation, kafkaConnect));
@@ -199,6 +210,13 @@ public class KafkaConnectCluster extends AbstractModel {
      * Abstracts the calling of setters on a (subclass of) KafkaConnectCluster
      * from the instantiation of the (subclass of) KafkaConnectCluster,
      * thus permitting reuse of the setter-calling code for subclasses.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param spec              Spec section of the Kafka Connect resource
+     * @param versions          Supported Kafka versions
+     * @param kafkaConnect      Kafka Connect resource
+     *
+     * @param <C>   Type of the Kafka Connect cluster
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "deprecation"})
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
@@ -323,6 +341,9 @@ public class KafkaConnectCluster extends AbstractModel {
         return kafkaConnect;
     }
 
+    /**
+     * @return  Generates the Kafka Connect service
+     */
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(1);
         ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
@@ -463,6 +484,16 @@ public class KafkaConnectCluster extends AbstractModel {
         return builder.build();
     }
 
+    /**
+     * Generates the Kafka Connect deployment
+     *
+     * @param annotations       Map with annotations
+     * @param isOpenShift       Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  List of image pull Secrets
+     *
+     * @return  Generated deployment
+     */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createDeployment(
                 getDeploymentStrategy(),
@@ -700,6 +731,9 @@ public class KafkaConnectCluster extends AbstractModel {
         return KafkaConnectResources.serviceAccountName(cluster);
     }
 
+    /**
+     * @return  Name of the ClusterRoleBinding for the Connect init container
+     */
     public String getInitContainerClusterRoleBindingName() {
         return KafkaConnectResources.initContainerClusterRoleBindingName(cluster, namespace);
     }
@@ -720,11 +754,14 @@ public class KafkaConnectCluster extends AbstractModel {
         isJmxEnabled = jmxEnabled;
     }
 
+    /**
+     * @return  True if the JMX authentication is enabled. False otherwise.
+     */
     public boolean isJmxAuthenticated() {
         return isJmxAuthenticated;
     }
 
-    public void setJmxAuthenticated(boolean jmxAuthenticated) {
+    protected void setJmxAuthenticated(boolean jmxAuthenticated) {
         isJmxAuthenticated = jmxAuthenticated;
     }
 
@@ -751,8 +788,6 @@ public class KafkaConnectCluster extends AbstractModel {
 
         return createJmxSecret(KafkaConnectCluster.jmxSecretName(cluster), data);
     }
-
-
 
     /**
      * Generates the NetworkPolicies relevant for Kafka Connect nodes
