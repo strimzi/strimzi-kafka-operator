@@ -5,6 +5,8 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
@@ -329,6 +331,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     .compose(i -> {
                         boolean failedConnector = mirrorMaker2Status.getConnectors().stream()
                                 .anyMatch(connector -> {
+                                    @SuppressWarnings({ "rawtypes" })
                                     Object state = ((Map) connector.getOrDefault("connector", emptyMap())).get("state");
                                     return "FAILED".equalsIgnoreCase(state.toString());
                                 });
@@ -529,6 +532,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * The comparison is done by using only one property - 'name'
      */
     static class ConnectorsComparatorByName implements Comparator<Map<String, Object>>, Serializable {
+        @Serial
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -548,6 +552,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @return true if the provided resource instance has the strimzio.io/restart-connector annotation; false otherwise
      */
     @Override
+    @SuppressWarnings({ "rawtypes" })
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {
         String restartAnnotationConnectorName = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR, null);
         return connectorName.equals(restartAnnotationConnectorName);
@@ -560,6 +565,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * @param connectorName connectorName name of the MM2 connector to check
      * @return the ID of the task to be restarted if the provided KafkaConnector resource instance has the strimzio.io/restart-connector-task annotation or -1 otherwise.
      */
+    @SuppressWarnings({ "rawtypes" })
     protected int getRestartTaskAnnotationTaskID(CustomResource resource, String connectorName) {
         int taskID = -1;
         String connectorTask = Annotations.stringAnnotation(resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK, "").trim();
@@ -575,6 +581,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * the restart action specified by user has been completed.
      */
     @Override
+    @SuppressWarnings({ "rawtypes" })
     protected Future<Void> removeRestartAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR);
     }
@@ -585,6 +592,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
      * the restart action specified by user has been completed.
      */
     @Override
+    @SuppressWarnings({ "rawtypes" })
     protected Future<Void> removeRestartTaskAnnotation(Reconciliation reconciliation, CustomResource resource) {
         return removeAnnotation(reconciliation, (KafkaMirrorMaker2) resource, ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK);
     }

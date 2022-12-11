@@ -329,8 +329,7 @@ public class KafkaListenersReconciler {
             String bootstrapAddress = getInternalServiceHostname(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener), useServiceDnsDomain);
 
             if (listener.isTls()) {
-                ModelUtils.generateAllServiceDnsNames(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener))
-                                .forEach(dnsName -> result.bootstrapDnsNames.add(dnsName));
+                result.bootstrapDnsNames.addAll(ModelUtils.generateAllServiceDnsNames(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener)));
             }
 
             ListenerStatus ls = new ListenerStatusBuilder()

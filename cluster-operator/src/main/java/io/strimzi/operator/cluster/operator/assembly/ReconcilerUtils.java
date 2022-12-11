@@ -146,9 +146,7 @@ public class ReconcilerUtils {
             return restartReasons;
         }
 
-        if (ctrlResource instanceof StatefulSet) {
-            StatefulSet sts = (StatefulSet) ctrlResource;
-
+        if (ctrlResource instanceof StatefulSet sts) {
             if (!isStatefulSetGenerationUpToDate(reconciliation, sts, pod)) {
                 restartReasons.add(RestartReason.POD_HAS_OLD_GENERATION);
             }
@@ -156,9 +154,7 @@ public class ReconcilerUtils {
             if (!isCustomCertUpToDate(reconciliation, sts, pod)) {
                 restartReasons.add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE);
             }
-        } else if (ctrlResource instanceof StrimziPodSet) {
-            StrimziPodSet podSet = (StrimziPodSet) ctrlResource;
-
+        } else if (ctrlResource instanceof StrimziPodSet podSet) {
             if (PodRevision.hasChanged(pod, podSet)) {
                 restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
             }
