@@ -64,6 +64,7 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
@@ -540,10 +541,12 @@ public class ResourceUtils {
     @SuppressWarnings("unchecked")
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
+        ImageStreamOperator imageOps = openShift ? mock(ImageStreamOperator.class) : null;
 
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
                 mock(ServiceOperator.class),
                 routeOps,
+                imageOps,
                 mock(StatefulSetOperator.class),
                 mock(ConfigMapOperator.class),
                 mock(SecretOperator.class),

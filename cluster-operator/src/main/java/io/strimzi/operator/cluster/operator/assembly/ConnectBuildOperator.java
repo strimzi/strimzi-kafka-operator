@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.openshift.api.model.Build;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.connect.build.Output;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -26,6 +27,7 @@ import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.Future;
@@ -40,6 +42,7 @@ public class ConnectBuildOperator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConnectBuildOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
+    private final ImageStreamOperator imageStreamOperations;
     private final PodOperator podOperator;
     private final ConfigMapOperator configMapOperations;
     private final ServiceAccountOperator serviceAccountOperations;
@@ -60,6 +63,7 @@ public class ConnectBuildOperator {
      */
     public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         this.deploymentOperations = supplier.deploymentOperations;
+        this.imageStreamOperations = supplier.imageStreamOperations;
         this.podOperator = supplier.podOperations;
         this.configMapOperations = supplier.configMapOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
@@ -262,7 +266,7 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    private Future<String> openShiftBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
+    private Future<String> openShiftBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision) {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         return buildConfigOperator.getAsync(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()))
                 .compose(buildConfig -> {
@@ -311,11 +315,35 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes with the build name when the build is finished (or fails if it fails)
      */
-    private Future<String> openShiftBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
-        return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
+    private Future<String> openShiftBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, KafkaConnectDockerfile dockerfile, String newBuildRevision) {
+        return validateImageStream(namespace, connectBuild.getBuild().getOutput())
+                .compose(ignore -> configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null))
                 .compose(ignore -> buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildConfig(dockerfile)))
                 .compose(ignore -> buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest(newBuildRevision)))
                 .map(build -> build.getMetadata().getName());
+    }
+
+    /**
+     * Checks if the image stream is required and exists.
+     *
+     * @param namespace     Namespace where the BuildConfig exists
+     * @param buidlOutput   Build output configuration
+     * @return              Future that completes when the check completes
+     */
+    public Future<Void> validateImageStream(String namespace, Output buidlOutput)   {
+        if (buidlOutput != null && buidlOutput.getType().equals(Output.TYPE_IMAGESTREAM)) {
+            String imageName = buidlOutput.getImage().split(":")[0];
+            return imageStreamOperations.getAsync(namespace, imageName)
+                .compose(is -> {
+                    if (is == null) {
+                        return Future.failedFuture(
+                            String.format("The build can't start because there is no image stream with name %s", imageName));
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                }).mapEmpty();
+        }
+        return Future.succeededFuture();
     }
 
     /**
