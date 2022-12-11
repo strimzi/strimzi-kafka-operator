@@ -4,8 +4,15 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+/**
+ * Retryable Cruise Control connection exception
+ */
 public class CruiseControlRetriableConnectionException extends RuntimeException {
-
+    /**
+     * Constructor
+     *
+     * @param cause     Cause of this error
+     */
     public CruiseControlRetriableConnectionException(Throwable cause) {
         super(cause);
     }

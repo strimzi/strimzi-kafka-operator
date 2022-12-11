@@ -59,19 +59,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * ZooKeeper cluster model
+ */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class ZookeeperCluster extends AbstractModel {
-    public static final String APPLICATION_NAME = "zookeeper";
-
+    /**
+     * Port for plaintext access for ZooKeeper clients (available inside the pod only)
+     */
     public static final int CLIENT_PLAINTEXT_PORT = 12181; // This port is internal only, not exposed => no need for name
+
+    /**
+     * TLS port for ZooKeeper clients
+     */
     public static final int CLIENT_TLS_PORT = 2181;
-    protected static final String CLIENT_TLS_PORT_NAME = "tcp-clients";
+
+    /**
+     * Port used for ZooKeeper clustering
+     */
     public static final int CLUSTERING_PORT = 2888;
-    protected static final String CLUSTERING_PORT_NAME = "tcp-clustering";
+
+    /**
+     * Port used for ZooKeeper leader election
+     */
     public static final int LEADER_ELECTION_PORT = 3888;
+
+    protected static final String APPLICATION_NAME = "zookeeper";
+    protected static final String CLIENT_TLS_PORT_NAME = "tcp-clients";
+    protected static final String CLUSTERING_PORT_NAME = "tcp-clustering";
     protected static final String LEADER_ELECTION_PORT_NAME = "tcp-election";
 
-    public static final String ZOOKEEPER_NAME = "zookeeper";
+    protected static final String ZOOKEEPER_NAME = "zookeeper";
     protected static final String ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME = "zookeeper-nodes";
     protected static final String ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT = "/opt/kafka/zookeeper-node-certs/";
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_NAME = "cluster-ca-certs";
@@ -89,7 +107,7 @@ public class ZookeeperCluster extends AbstractModel {
     private boolean isJmxEnabled = false;
     private boolean isJmxAuthenticated = false;
 
-    public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
             .withInitialDelaySeconds(15)
             .build();
@@ -97,14 +115,14 @@ public class ZookeeperCluster extends AbstractModel {
     private static final boolean DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = true;
 
     // Zookeeper configuration keys (EnvVariables)
-    public static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
-    public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
-    public static final String ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = "ZOOKEEPER_SNAPSHOT_CHECK_ENABLED";
+    protected static final String ENV_VAR_ZOOKEEPER_METRICS_ENABLED = "ZOOKEEPER_METRICS_ENABLED";
+    protected static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
+    private static final String ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = "ZOOKEEPER_SNAPSHOT_CHECK_ENABLED";
 
     protected static final String CO_ENV_VAR_CUSTOM_ZOOKEEPER_POD_LABELS = "STRIMZI_CUSTOM_ZOOKEEPER_LABELS";
 
     // Config map keys
-    public static final String CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT = "zookeeper.node-count";
+    private static final String CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT = "zookeeper.node-count";
 
     // Templates
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
@@ -145,10 +163,30 @@ public class ZookeeperCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
+    /**
+     * Creates ZooKeeper cluster model from the Kafka CR
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param kafkaAssembly     The Kafka CR
+     * @param versions          Supported Kafka versions
+     *
+     * @return  New instance of the ZooKeeper cluster model
+     */
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
+    /**
+     * Creates ZooKeeper cluster model from the Kafka CR
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param kafkaAssembly     The Kafka CR
+     * @param versions          Supported Kafka versions
+     * @param oldStorage        Old storage configuration (based on the actual Kubernetes cluster)
+     * @param oldReplicas       Current number of replicas (based on the actual Kubernetes cluster)
+     *
+     * @return  New instance of the ZooKeeper cluster model
+     */
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
@@ -288,6 +326,9 @@ public class ZookeeperCluster extends AbstractModel {
         return zk;
     }
 
+    /**
+     * @return  Generates a ZooKeeper service
+     */
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(1);
         ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
@@ -412,10 +453,22 @@ public class ZookeeperCluster extends AbstractModel {
         return networkPolicy;
     }
 
+    /**
+     * @return  Generates the headless ZooKeeper service
+     */
     public Service generateHeadlessService() {
         return createHeadlessService(getServicePortList());
     }
 
+    /**
+     * Generates ZooKeeper StatefulSet
+     *
+     * @param isOpenShift       Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy
+     * @param imagePullSecrets  List of image pull secrets
+     *
+     * @return  Generated StatefulSet
+     */
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
@@ -637,6 +690,9 @@ public class ZookeeperCluster extends AbstractModel {
         return VolumeUtils.createPersistentVolumeClaimTemplates(storage, false);
     }
 
+    /**
+     * @return  Generates list of ZooKeeper PVCs
+     */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims() {
         return createPersistentVolumeClaims(storage, false);
     }

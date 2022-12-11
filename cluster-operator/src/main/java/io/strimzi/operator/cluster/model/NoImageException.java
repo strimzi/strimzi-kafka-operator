@@ -8,6 +8,11 @@ package io.strimzi.operator.cluster.model;
  * Thrown to indicate that an image could not be found for a given Kafka version or custom resource.
  */
 public class NoImageException extends Exception {
+    /**
+     * Constructor
+     *
+     * @param message   Error message
+     */
     public NoImageException(String message) {
         super(message);
     }

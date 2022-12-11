@@ -129,6 +129,25 @@ public class KafkaRoller {
     private final boolean allowReconfiguration;
     private Admin allClient;
 
+    /**
+     * Constructor
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param vertx                 Vert.x instance
+     * @param podOperations         Pod operator for managing pods
+     * @param pollingIntervalMs     Polling interval in milliseconds
+     * @param operationTimeoutMs    Operation timeout in milliseconds
+     * @param backOffSupplier       Backoff supplier
+     * @param podList               List of Kafka pods
+     * @param clusterCaCertSecret   Secret with the Cluster CA public key
+     * @param coKeySecret           Secret with the Cluster CA private key
+     * @param adminClientProvider   Kafka Admin client provider
+     * @param kafkaConfigProvider   Kafka configuration provider
+     * @param kafkaLogging          Kafka logging configuration
+     * @param kafkaVersion          Kafka version
+     * @param allowReconfiguration  Flag indicting whether reconfiguration is allowed or not
+     * @param eventsPublisher       Kubernetes Events publisher for publishing events about pod restarts
+     */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, List<String> podList,
                        Secret clusterCaCertSecret, Secret coKeySecret,
@@ -824,7 +843,7 @@ public class KafkaRoller {
             });
     }
 
-    public static class PodRef {
+    protected static class PodRef {
 
         private final String podName;
         private final int podId;

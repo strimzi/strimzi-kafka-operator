@@ -28,6 +28,11 @@ public class ZooKeeperSpecChecker {
         this.zk = zk;
     }
 
+    /**
+     * Runs the spec checker
+     *
+     * @return  List of warning conditions
+     */
     public List<Condition> run() {
         List<Condition> warnings = new ArrayList<>();
         checkZooKeeperStorage(warnings);

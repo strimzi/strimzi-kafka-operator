@@ -13,12 +13,34 @@ import java.util.Map;
  * Configuration class for the Leader Election Manager
  */
 public class LeaderElectionManagerConfig {
-    // Environment variables
+    /**
+     * Name of the Kubernetes Lease resource
+     */
     public final static String ENV_VAR_LEADER_ELECTION_LEASE_NAME = "STRIMZI_LEADER_ELECTION_LEASE_NAME";
+
+    /**
+     * Namespace of the Kubernetes Lease resource
+     */
     public final static String ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = "STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE";
+
+    /**
+     * Identity of this operator for claiming the leadership
+     */
     public final static String ENV_VAR_LEADER_ELECTION_IDENTITY = "STRIMZI_LEADER_ELECTION_IDENTITY";
+
+    /**
+     * Duration of the leadership
+     */
     public final static String ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS = "STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS";
+
+    /**
+     * Hw often should the leadership be renewed
+     */
     public final static String ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS = "STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS";
+
+    /**
+     * Retry period for accessing the Lease resource
+     */
     public final static String ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS = "STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS";
 
     // Default values
@@ -52,6 +74,13 @@ public class LeaderElectionManagerConfig {
         this.retryPeriod = retryPeriod;
     }
 
+    /**
+     * Creates the LeaderElectionManager configuration from Map with environment variables
+     *
+     * @param map   Map with environment variables
+     *
+     * @return  Instance of LeaderElectionManagerConfig
+     */
     public static LeaderElectionManagerConfig fromMap(Map<String, String> map) {
         String leaseName = map.get(ENV_VAR_LEADER_ELECTION_LEASE_NAME);
         String namespace = map.get(ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE);

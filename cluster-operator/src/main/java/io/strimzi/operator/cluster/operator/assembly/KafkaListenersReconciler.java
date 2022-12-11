@@ -860,17 +860,39 @@ public class KafkaListenersReconciler {
      *   - Custom listener certificates
      */
     public static class ReconciliationResult {
-        // List of ListenerStatus objects for the Kafka custom resource status
+        /**
+         * List of ListenerStatus objects for the Kafka custom resource status
+         */
         public final List<ListenerStatus> listenerStatuses = new ArrayList<>();
 
-        // Information collected about listeners
+        /**
+         * Bootstrap DNS names
+         */
         public final Set<String> bootstrapDnsNames = new HashSet<>();
+
+        /**
+         * Broker DNS names
+         */
         public final Map<Integer, Set<String>> brokerDnsNames = new HashMap<>();
+
+        /**
+         * Advertised hostnames
+         */
         public final Map<Integer, Map<String, String>> advertisedHostnames = new HashMap<>();
+
+        /**
+         * Advertised ports
+         */
         public final Map<Integer, Map<String, String>> advertisedPorts = new HashMap<>();
+
+        /**
+         * Bootstrap node ports
+         */
         public final Map<String, Integer> bootstrapNodePorts = new HashMap<>();
 
-        // Custom Listener certificates hash stubs to be used for rolling updates when the certificate changes
+        /**
+         * Custom Listener certificates hash stubs to be used for rolling updates when the certificate changes
+         */
         public final Map<String, String> customListenerCertificateThumbprints = new HashMap<>();
     }
 }

@@ -596,6 +596,9 @@ public class ClusterOperatorConfig {
         return networkPolicyGeneration;
     }
 
+    /**
+     * @return  Supported Kafka versions and informations about them
+     */
     public KafkaVersion.Lookup versions() {
         return versions;
     }
@@ -635,6 +638,9 @@ public class ClusterOperatorConfig {
         return customResourceSelector;
     }
 
+    /**
+     * @return  Feature gates configuration
+     */
     public FeatureGates featureGates()  {
         return featureGates;
     }
@@ -667,7 +673,9 @@ public class ClusterOperatorConfig {
         return podSetControllerWorkQueueSize;
     }
 
-
+    /**
+     * @return  The name of this operator
+     */
     public String getOperatorName() {
         return operatorName;
     }

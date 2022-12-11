@@ -42,11 +42,20 @@ public class ZookeeperLeaderFinder {
 
     private static final Pattern LEADER_MODE_PATTERN = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
 
+    /**
+     * Unknown leader marker
+     */
     public static final String UNKNOWN_LEADER = "-1";
 
     private final Vertx vertx;
     private final Supplier<BackOff> backOffSupplier;
 
+    /**
+     * Constructor
+     *
+     * @param vertx             Vert.x instance
+     * @param backOffSupplier   Backoff supplier
+     */
     public ZookeeperLeaderFinder(Vertx vertx, Supplier<BackOff> backOffSupplier) {
         this.vertx = vertx;
         this.backOffSupplier = backOffSupplier;

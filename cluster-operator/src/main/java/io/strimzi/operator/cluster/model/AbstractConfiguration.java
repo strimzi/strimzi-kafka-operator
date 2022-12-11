@@ -161,6 +161,7 @@ public abstract class AbstractConfiguration {
      * Returns a value for a specific config option or a default value
      *
      * @param configOption  Config option which should be looked-up
+     * @param defaultValue  Default value
      *
      * @return  The configured value for this option or the default value if given option is not configured
      */

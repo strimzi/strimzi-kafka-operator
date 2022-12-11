@@ -49,43 +49,187 @@ import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Vertx;
 
+/**
+ * Class holding the various resource operator and providers of various clients
+ */
 // Deprecation is suppressed because of KafkaMirrorMaker
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
 public class ResourceOperatorSupplier {
+    /**
+     * Secret operator
+     */
     public final SecretOperator secretOperations;
+
+    /**
+     * Service operator
+     */
     public final ServiceOperator serviceOperations;
+
+    /**
+     * Route operator
+     */
     public final RouteOperator routeOperations;
+
+    /**
+     * StatefulSet operator
+     */
     public final StatefulSetOperator stsOperations;
+
+    /**
+     * Config Map operator
+     */
     public final ConfigMapOperator configMapOperations;
+
+    /**
+     * PVC operator
+     */
     public final PvcOperator pvcOperations;
+
+    /**
+     * Deployment operator
+     */
     public final DeploymentOperator deploymentOperations;
+
+    /**
+     * Service Account operator
+     */
     public final ServiceAccountOperator serviceAccountOperations;
+
+    /**
+     * Role Binding operator
+     */
     public final RoleBindingOperator roleBindingOperations;
+
+    /**
+     * Role operator
+     */
     public final RoleOperator roleOperations;
+
+    /**
+     * Cluster Role Binding operator
+     */
     public final ClusterRoleBindingOperator clusterRoleBindingOperator;
+
+    /**
+     * Kafka CR operator
+     */
     public final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
+
+    /**
+     * KafkaConnect CR operator
+     */
     public final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator;
+
+    /**
+     * KafkaMirrorMaker CR operator
+     */
     public final CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator;
+
+    /**
+     * KafkaBridge CR operator
+     */
     public final CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> kafkaBridgeOperator;
+
+    /**
+     * KafkaConnector CR operator
+     */
     public final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> kafkaConnectorOperator;
+
+    /**
+     * KafkaMirrorMaker2 CR operator
+     */
     public final CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mirrorMaker2Operator;
+
+    /**
+     * KafkaRebalance CR operator
+     */
     public final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
+
+    /**
+     * Strimzi Pod Set operator
+     */
     public final StrimziPodSetOperator strimziPodSetOperator;
+
+    /**
+     * Network Policy operator
+     */
     public final NetworkPolicyOperator networkPolicyOperator;
+
+    /**
+     * PDB operator
+     */
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+
+    /**
+     * PDB v1beta1 operator
+     */
     public final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
+
+    /**
+     * Pod operator
+     */
     public final PodOperator podOperations;
+
+    /**
+     * Ingress operator
+     */
     public final IngressOperator ingressOperations;
+
+    /**
+     * Build Config operator
+     */
     public final BuildConfigOperator buildConfigOperations;
+
+    /**
+     * Build operator
+     */
     public final BuildOperator buildOperations;
+
+    /**
+     * Storage Class operator
+     */
     public final StorageClassOperator storageClassOperations;
+
+    /**
+     * Node operator
+     */
     public final NodeOperator nodeOperator;
+
+    /**
+     * ZooKeeper Scaler provider
+     */
     public final ZookeeperScalerProvider zkScalerProvider;
+
+    /**
+     * Metrics provider
+     */
     public final MetricsProvider metricsProvider;
+
+    /**
+     * Kafka Admin API client provider
+     */
     public final AdminClientProvider adminClientProvider;
+
+    /**
+     * ZooKeeper Leader finder
+     */
     public final ZookeeperLeaderFinder zookeeperLeaderFinder;
+
+    /**
+     * Restart Events publisher
+     */
     public final KubernetesRestartEventPublisher restartEventsPublisher;
 
+    /**
+     * Constructor
+     *
+     * @param vertx                 Vert.x instance
+     * @param client                Kubernetes Client
+     * @param metricsProvider       Metrics provider
+     * @param pfa                   Platform Availability Features
+     * @param operationTimeoutMs    Operation timeout in milliseconds
+     * @param operatorName          Name of this operator instance
+     */
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, long operationTimeoutMs, String operatorName) {
         this(vertx,
                 client,
@@ -101,7 +245,18 @@ public class ResourceOperatorSupplier {
         );
     }
 
-    // Exposed for testing
+    /**
+     * Constructor used for tests
+     *
+     * @param vertx                 Vert.x instance
+     * @param client                Kubernetes Client
+     * @param zlf                   ZooKeeper Leader Finder
+     * @param adminClientProvider   Kafka Admin client provider
+     * @param zkScalerProvider      ZooKeeper Scaler provider
+     * @param metricsProvider       Metrics provider
+     * @param pfa                   Platform Availability Features
+     * @param operationTimeoutMs    Operation timeout in milliseconds
+     */
     public ResourceOperatorSupplier(Vertx vertx,
                                     KubernetesClient client,
                                     ZookeeperLeaderFinder zlf,
@@ -122,8 +277,7 @@ public class ResourceOperatorSupplier {
         );
     }
 
-    //Exposed for testing
-    public ResourceOperatorSupplier(Vertx vertx,
+    private ResourceOperatorSupplier(Vertx vertx,
                                     KubernetesClient client,
                                     ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider,
@@ -167,6 +321,43 @@ public class ResourceOperatorSupplier {
                 restartEventPublisher);
     }
 
+    /**
+     * Constructor
+     *
+     * @param serviceOperations                     Service operator
+     * @param routeOperations                       Route operator
+     * @param stsOperations                         StatefulSet operator
+     * @param configMapOperations                   ConfigMap operator
+     * @param secretOperations                      Secret operator
+     * @param pvcOperations                         PVC operator
+     * @param deploymentOperations                  Deployment operator
+     * @param serviceAccountOperations              Service Account operator
+     * @param roleBindingOperations                 Role Binding operator
+     * @param roleOperations                        Role operator
+     * @param clusterRoleBindingOperator            Cluster Role Binding operator
+     * @param networkPolicyOperator                 Network Policy operator
+     * @param podDisruptionBudgetOperator           Pod Disruption Budget operator
+     * @param podDisruptionBudgetV1Beta1Operator    Pod Disruption Budget v1beta1 operator
+     * @param podOperations                         Pod operator
+     * @param ingressOperations                     Ingress operator
+     * @param buildConfigOperations                 Build Config operator
+     * @param buildOperations                       Build operator
+     * @param kafkaOperator                         Kafka CR operator
+     * @param connectOperator                       KafkaConnect CR operator
+     * @param mirrorMakerOperator                   KafkaMirrorMaker CR operator
+     * @param kafkaBridgeOperator                   KafkaBridge operator
+     * @param kafkaConnectorOperator                KafkaConnector operator
+     * @param mirrorMaker2Operator                  KafkaMirrorMaker2 operator
+     * @param kafkaRebalanceOperator                KafkaRebalance operator
+     * @param strimziPodSetOperator                 StrimziPodSet operator
+     * @param storageClassOperator                  StorageClass operator
+     * @param nodeOperator                          Node operator
+     * @param zkScalerProvider                      ZooKeeper Scaler provider
+     * @param metricsProvider                       Metrics provider
+     * @param adminClientProvider                   Kafka Admin client provider
+     * @param zookeeperLeaderFinder                 ZooKeeper Leader Finder
+     * @param restartEventsPublisher                Kubernetes Events publisher
+     */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,

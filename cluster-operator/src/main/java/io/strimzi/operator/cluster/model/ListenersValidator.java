@@ -29,8 +29,8 @@ import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAu
 public class ListenersValidator {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ListenersValidator.class.getName());
     private final static Pattern LISTENER_NAME_PATTERN = Pattern.compile(GenericKafkaListener.LISTENER_NAME_REGEX);
-    public final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
-    public final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
+    private final static List<Integer> FORBIDDEN_PORTS = List.of(9404, 9999);
+    private final static int LOWEST_ALLOWED_PORT_NUMBER = 9092;
 
     /**
      * Validated the listener configuration. If the configuration is not valid, InvalidResourceException will be thrown.

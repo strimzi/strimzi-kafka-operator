@@ -44,7 +44,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             CruiseControlGoals.PREFERRED_LEADER_ELECTION_GOAL.toString()
     );
 
-    public static final String CRUISE_CONTROL_GOALS = String.join(",", CRUISE_CONTROL_GOALS_LIST);
+    protected static final String CRUISE_CONTROL_GOALS = String.join(",", CRUISE_CONTROL_GOALS_LIST);
 
     /**
      * A list of case insensitive goals that Cruise Control will use as hard goals that must all be met for an optimization
@@ -59,7 +59,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             CruiseControlGoals.CPU_CAPACITY_GOAL.toString()
     );
 
-    public static final String CRUISE_CONTROL_HARD_GOALS = String.join(",", CRUISE_CONTROL_HARD_GOALS_LIST);
+    private static final String CRUISE_CONTROL_HARD_GOALS = String.join(",", CRUISE_CONTROL_HARD_GOALS_LIST);
 
     protected static final List<String> CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST = List.of(
             CruiseControlGoals.RACK_AWARENESS_GOAL.toString(),
@@ -68,7 +68,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
             CruiseControlGoals.DISK_CAPACITY_GOAL.toString()
     );
 
-    public static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
+    protected static final String CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS =
             String.join(",", CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS_LIST);
 
     /*
@@ -107,7 +107,7 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES, FORBIDDEN_PREFIX_EXCEPTIONS);
     }
 
-    public static Map<String, String> getCruiseControlDefaultPropertiesMap() {
+    protected static Map<String, String> getCruiseControlDefaultPropertiesMap() {
         return CRUISE_CONTROL_DEFAULT_PROPERTIES_MAP;
     }
 
@@ -116,10 +116,16 @@ public class CruiseControlConfiguration extends AbstractConfiguration {
         return Boolean.parseBoolean(s);
     }
 
+    /**
+     * @return  True if API authentication is enabled. False otherwise.
+     */
     public boolean isApiAuthEnabled() {
         return isEnabledInConfiguration(CruiseControlConfigurationParameters.WEBSERVER_SECURITY_ENABLE.getValue(), Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED));
     }
 
+    /**
+     * @return  True if TLS is enabled. False otherwise.
+     */
     public boolean isApiSslEnabled() {
         return isEnabledInConfiguration(CruiseControlConfigurationParameters.WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED));
     }

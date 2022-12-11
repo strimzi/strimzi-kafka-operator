@@ -69,6 +69,11 @@ public class Main {
         }
     }
 
+    /**
+     * The main method used to run the Cluster Operator
+     *
+     * @param args  The command line arguments
+     */
     public static void main(String[] args) {
         final String strimziVersion = Main.class.getPackage().getImplementationVersion();
         LOGGER.info("ClusterOperator {} is starting", strimziVersion);

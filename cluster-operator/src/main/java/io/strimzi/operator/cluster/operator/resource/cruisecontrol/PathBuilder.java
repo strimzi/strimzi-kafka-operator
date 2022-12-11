@@ -10,16 +10,31 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Builds the path to the Cruise Control APi
+ */
 public class PathBuilder {
 
     String constructedPath;
     boolean firstParam;
 
+    /**
+     * Constructor
+     *
+     * @param endpoint  Cruise COntrol endpoint
+     */
     public PathBuilder(CruiseControlEndpoints endpoint) {
         constructedPath = endpoint.path + "?";
         firstParam = true;
     }
 
+    /**
+     * Adds parameter to the path
+     *
+     * @param parameter     Parameter
+     *
+     * @return  Instance of this builder
+     */
     public PathBuilder withParameter(String parameter) {
         if (!firstParam) {
             constructedPath += "&";
@@ -34,6 +49,14 @@ public class PathBuilder {
         return this;
     }
 
+    /**
+     * Adds parameter with value to the path
+     *
+     * @param param     Cruise Control parameter
+     * @param value     Parameter value
+     *
+     * @return  Instance of this builder
+     */
     public PathBuilder withParameter(CruiseControlParameters param, String value) {
         if (!firstParam) {
             constructedPath += "&";
@@ -48,6 +71,14 @@ public class PathBuilder {
         return this;
     }
 
+    /**
+     * Adds parameter with multiple values to the path
+     *
+     * @param param     Cruise Control parameter
+     * @param values    List of parameter value
+     *
+     * @return  Instance of this builder
+     */
     public PathBuilder withParameter(CruiseControlParameters param, List<String> values) {
         if (!firstParam) {
             constructedPath += "&";
@@ -68,6 +99,13 @@ public class PathBuilder {
         }
     }
 
+    /**
+     * Adds Rebalance parameters to the path
+     *
+     * @param options   Rebalance options
+     *
+     * @return  Instance of this builder
+     */
     public PathBuilder withRebalanceParameters(RebalanceOptions options) {
         if (options != null) {
             PathBuilder builder = withAbstractRebalanceParameters(options)
@@ -105,6 +143,13 @@ public class PathBuilder {
         }
     }
 
+    /**
+     * Adds add-broker options to the path
+     *
+     * @param options   Add broker options
+     *
+     * @return  Instance of this builder
+     */
     public PathBuilder withAddBrokerParameters(AddBrokerOptions options) {
         if (options != null) {
             PathBuilder builder = withAbstractRebalanceParameters(options)
@@ -115,6 +160,13 @@ public class PathBuilder {
         }
     }
 
+    /**
+     * Adds remove broker options to the path
+     *
+     * @param options   Remove-broker options
+     *
+     * @return  Instance of this builder
+     */
     public PathBuilder withRemoveBrokerParameters(RemoveBrokerOptions options) {
         if (options != null) {
             PathBuilder builder = withAbstractRebalanceParameters(options)
@@ -125,6 +177,9 @@ public class PathBuilder {
         }
     }
 
+    /**
+     * @return  Builds and returns the path
+     */
     public String build() {
         return constructedPath;
     }

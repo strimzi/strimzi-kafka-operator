@@ -1619,6 +1619,9 @@ public abstract class AbstractModel {
         }
     }
 
+    /**
+     * @return  The key under which tge logging configuration is stored in the Logging Config Map
+     */
     public String getAncillaryConfigMapKeyLogConfig() {
         return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
@@ -1754,7 +1757,10 @@ public abstract class AbstractModel {
         return warningConditions;
     }
 
-    public DeploymentStrategy getDeploymentStrategy() {
+    /**
+     * @return  The deployment strategy which should be used in deployments
+     */
+    protected DeploymentStrategy getDeploymentStrategy() {
         if (templateDeploymentStrategy == io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE) {
             return new DeploymentStrategyBuilder()
                     .withType("RollingUpdate")

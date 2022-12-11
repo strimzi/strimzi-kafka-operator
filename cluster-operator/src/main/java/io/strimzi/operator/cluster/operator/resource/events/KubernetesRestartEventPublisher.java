@@ -50,12 +50,18 @@ public class KubernetesRestartEventPublisher {
         this(client, operatorName, Clock.systemDefaultZone());
     }
 
-    public KubernetesRestartEventPublisher(KubernetesClient client, String operatorName, Clock clock) {
+    protected KubernetesRestartEventPublisher(KubernetesClient client, String operatorName, Clock clock) {
         this.clock = clock;
         this.operatorName = operatorName;
         this.client = client;
     }
 
+    /**
+     * Publishes an Kubernetes Event about Pod restart
+     *
+     * @param pod       Pod which is restarted
+     * @param reasons   Reasons for the restart
+     */
     public void publishRestartEvents(Pod pod, RestartReasons reasons) {
         MicroTime k8sEventTime = new MicroTime(K8S_MICROTIME.format(ZonedDateTime.now(clock)));
         ObjectReference podReference = createPodReference(pod);

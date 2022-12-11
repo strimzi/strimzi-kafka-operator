@@ -35,6 +35,9 @@ import java.util.function.Supplier;
 
 import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE;
 
+/**
+ * Kafka Mirror Maker 2 model
+ */
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String APPLICATION_NAME = "kafka-mirror-maker-2";
 

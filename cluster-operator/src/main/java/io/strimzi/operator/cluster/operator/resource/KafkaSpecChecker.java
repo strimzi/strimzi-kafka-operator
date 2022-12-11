@@ -47,6 +47,11 @@ public class KafkaSpecChecker {
         }
     }
 
+    /**
+     * Runs the SpecChecker and returns a list of warning conditions
+     *
+     * @return  List with warning conditions
+     */
     public List<Condition> run() {
         List<Condition> warnings = new ArrayList<>();
         checkKafkaLogMessageFormatVersion(warnings);

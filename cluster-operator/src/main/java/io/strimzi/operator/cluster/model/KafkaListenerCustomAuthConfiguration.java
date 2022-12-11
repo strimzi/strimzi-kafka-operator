@@ -15,13 +15,17 @@ import java.util.Map;
  * Class for handling Kafka listener configuration passed by the user
  */
 public class KafkaListenerCustomAuthConfiguration extends AbstractConfiguration {
-
     private static final List<String> FORBIDDEN_PREFIXES;
-
     static {
         FORBIDDEN_PREFIXES = AbstractConfiguration.splitPrefixesToList(KafkaListenerAuthenticationCustom.FORBIDDEN_PREFIXES);
     }
 
+    /**
+     * Constructor
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param jsonOptions       Configuration options
+     */
     public KafkaListenerCustomAuthConfiguration(Reconciliation reconciliation, Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(reconciliation, jsonOptions, FORBIDDEN_PREFIXES);
     }

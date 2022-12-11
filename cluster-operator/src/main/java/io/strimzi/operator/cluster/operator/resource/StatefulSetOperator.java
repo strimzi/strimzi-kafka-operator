@@ -104,6 +104,14 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
         return !diff.isEmpty() && needsRollingUpdate(reconciliation, diff);
     }
 
+    /**
+     * Checks if rolling update is needed or not
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param diff              StatefulSet diff
+     *
+     * @return  True if restart is needed. False otherwise.
+     */
     public static boolean needsRollingUpdate(Reconciliation reconciliation, StatefulSetDiff diff) {
         if (diff.changesLabels()) {
             LOGGER.debugCr(reconciliation, "Changed labels => needs rolling update");

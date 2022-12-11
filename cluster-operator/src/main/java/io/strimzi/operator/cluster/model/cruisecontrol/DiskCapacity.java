@@ -9,10 +9,16 @@ import io.vertx.core.json.JsonObject;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Cruise Control disk capactiy
+ */
 public class DiskCapacity {
     private static final String SINGLE_DISK = "";
     private Map<String, String> map;
 
+    /**
+     * Constructor
+     */
     public DiskCapacity() {
         map = new HashMap<>(1);
     }
@@ -22,18 +28,18 @@ public class DiskCapacity {
         map.put(SINGLE_DISK, size);
     }
 
-    public static DiskCapacity of(String size) {
+    protected static DiskCapacity of(String size) {
         return new DiskCapacity(size);
     }
 
-    public void add(String path, String size) {
+    protected void add(String path, String size) {
         if (path == null || SINGLE_DISK.equals(path)) {
             throw new IllegalArgumentException("The disk path cannot be null or empty");
         }
         map.put(path, size);
     }
 
-    public Object getJson() {
+    protected Object getJson() {
         if (map.size() == 1 && map.containsKey(SINGLE_DISK)) {
             return map.get(SINGLE_DISK);
         } else {

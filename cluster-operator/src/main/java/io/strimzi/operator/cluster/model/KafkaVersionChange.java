@@ -14,6 +14,14 @@ public class KafkaVersionChange {
     private final String interBrokerProtocolVersion;
     private final int compare;
 
+    /**
+     * Constructor
+     *
+     * @param from                          Current Kafka version
+     * @param to                            Desired Kafka version
+     * @param interBrokerProtocolVersion    Inter-broker protocol version
+     * @param logMessageFormatVersion       Log-message format version
+     */
     public KafkaVersionChange(KafkaVersion from, KafkaVersion to, String interBrokerProtocolVersion, String logMessageFormatVersion) {
         this.from = from;
         this.to = to;

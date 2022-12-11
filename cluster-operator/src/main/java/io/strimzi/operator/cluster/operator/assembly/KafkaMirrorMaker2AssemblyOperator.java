@@ -88,10 +88,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
 
-    public static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
-    public static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
-    public static final String MIRRORMAKER2_CHECKPOINT_CONNECTOR_SUFFIX = ".MirrorCheckpointConnector";
-    public static final String MIRRORMAKER2_HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
+    private static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
+    private static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
+    private static final String MIRRORMAKER2_CHECKPOINT_CONNECTOR_SUFFIX = ".MirrorCheckpointConnector";
+    private static final String MIRRORMAKER2_HEARTBEAT_CONNECTOR_SUFFIX = ".MirrorHeartbeatConnector";
     private static final Map<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> MIRRORMAKER2_CONNECTORS = new HashMap<>(3);
 
     static {
@@ -100,8 +100,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         MIRRORMAKER2_CONNECTORS.put(MIRRORMAKER2_HEARTBEAT_CONNECTOR_SUFFIX, KafkaMirrorMaker2MirrorSpec::getHeartbeatConnector);
     }
 
-    public static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
-    public static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
+    private static final String TARGET_CLUSTER_PREFIX = "target.cluster.";
+    private static final String SOURCE_CLUSTER_PREFIX = "source.cluster.";
 
     private static final String STORE_LOCATION_ROOT = "/tmp/kafka/clusters/";
     private static final String TRUSTSTORE_SUFFIX = ".truststore.p12";
@@ -110,10 +110,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static final String CONNECTORS_CONFIG_FILE = "/tmp/strimzi-mirrormaker2-connector.properties";
 
     /**
-     * @param vertx The Vertx instance
-     * @param pfa Platform features availability properties
-     * @param supplier Supplies the operators for different resources
-     * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * Constructor
+     *
+     * @param vertx     The Vertx instance
+     * @param pfa       Platform features availability properties
+     * @param supplier  Supplies the operators for different resources
+     * @param config    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
      */
     public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
@@ -121,7 +123,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         this(vertx, pfa, supplier, config, connect -> new KafkaConnectApiImpl(vertx));
     }
 
-    public KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
+    /**
+     * Constructor used for tests
+     *
+     * @param vertx                     The Vertx instance
+     * @param pfa                       Platform features availability properties
+     * @param supplier                  Supplies the operators for different resources
+     * @param config                    ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param connectClientProvider     Connect REST APi client provider
+     */
+    protected KafkaMirrorMaker2AssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
@@ -238,7 +249,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         }
         return authHash.future();
     }
-
 
     /**
      * Reconcile all the MirrorMaker 2.0 connectors selected by the given MirrorMaker 2.0 instance.
