@@ -53,7 +53,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
 
     @Test
     public void testReplaceRootLogger() {
-        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), brokerId);
+        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()));
         assertThat(klcd.getDiffSize(), is(0));
     }
 
@@ -65,7 +65,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         // Prepare currentConfig
         Config currentConfig = getRealisticConfig();
 
-        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig, brokerId);
+        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig);
         assertThat(diff.getLoggingDiff(), is(getRealisticConfigDiff()));
     }
 
@@ -167,7 +167,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
                 "log4j.logger.kafka.authorizer.logger=INFO\n" +
                 "monitorInterval=30\n";
 
-        KafkaBrokerLoggingConfigurationDiff kdiff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null, 0);
+        KafkaBrokerLoggingConfigurationDiff kdiff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null);
 
         Map<String, String> res = kdiff.readLog4jConfig(input);
         assertThat(res.get("root"), is("INFO"));

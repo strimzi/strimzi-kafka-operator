@@ -19,7 +19,6 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -47,7 +46,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBridgeAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
-    private final KafkaVersion.Lookup versions;
 
     /**
      * @param vertx The Vertx instance
@@ -63,7 +61,6 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                        ClusterOperatorConfig config) {
         super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
-        this.versions = config.versions();
     }
 
     @Override
@@ -74,7 +71,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         KafkaBridgeCluster bridge;
 
         try {
-            bridge = KafkaBridgeCluster.fromCrd(reconciliation, assemblyResource, versions);
+            bridge = KafkaBridgeCluster.fromCrd(reconciliation, assemblyResource);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));

@@ -170,14 +170,12 @@ public class KafkaBridgeCluster extends AbstractModel {
     /**
      * Create the KafkaBridge model instance from the KafkaBridge custom resource
      *
-     * @param reconciliation    Reconciliation marker
-     * @param kafkaBridge       KafkaBridge custom resource
-     * @param versions          List of supported Kafka versions
-     *
-     * @return  KafkaBridgeCluster instance
+     * @param reconciliation Reconciliation marker
+     * @param kafkaBridge    KafkaBridge custom resource
+     * @return KafkaBridgeCluster instance
      */
     @SuppressWarnings({"checkstyle:NPathComplexity"})
-    public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
+    public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge) {
 
         KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(reconciliation, kafkaBridge);
 
