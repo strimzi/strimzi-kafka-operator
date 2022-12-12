@@ -103,9 +103,9 @@
         <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.2.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.2.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.2.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.3.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.3.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.3.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.13.4</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.13.4.1</fasterxml.jackson-databind.version>
@@ -273,6 +273,17 @@
                 <artifactId>kubernetes-client</artifactId>
                 <version>${fabric8.kubernetes-client.version}</version>
                 <scope>runtime</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>kubernetes-httpclient-okhttp</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-httpclient-jdk</artifactId>
+                <version>${fabric8.kubernetes-client.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -1096,6 +1107,7 @@
                             <failOnWarning>true</failOnWarning>
                             <ignoredUnusedDeclaredDependencies>
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-client</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.fabric8:openshift-client</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-clients</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-streams</ignoredUnusedDeclaredDependency>
