@@ -333,6 +333,7 @@ public class ResourceOperatorSupplier {
      *
      * @param serviceOperations                     Service operator
      * @param routeOperations                       Route operator
+     * @param imageStreamOperations                 ImageStream operator
      * @param stsOperations                         StatefulSet operator
      * @param configMapOperations                   ConfigMap operator
      * @param secretOperations                      Secret operator
