@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.controllers.AbstractMockController;
@@ -185,7 +186,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaUserCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaUser", KafkaRebalance.class, TestUtils.CRD_KAFKA_USER);
+            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaUser", KafkaUser.class, TestUtils.CRD_KAFKA_USER);
             return this;
         }
 
