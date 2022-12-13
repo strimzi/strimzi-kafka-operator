@@ -20,18 +20,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class RoleOperatorIT extends AbstractResourceOperatorIT<
+public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
         KubernetesClient,
         Role,
         RoleList,
         Resource<Role>> {
 
     @Override
-    protected AbstractResourceOperator<
-            KubernetesClient,
-            Role,
-            RoleList,
-            Resource<Role>> operator() {
+    protected AbstractNamespacedResourceOperator<
+                KubernetesClient,
+                Role,
+                RoleList,
+                Resource<Role>> operator() {
         return new RoleOperator(vertx, client);
     }
 

@@ -24,12 +24,12 @@ import java.util.Optional;
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractWatchableResourceOperator<
+public abstract class AbstractWatchableNamespacedResourceOperator<
         C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>>
-        extends AbstractResourceOperator<C, T, L, R> {
+        extends AbstractNamespacedResourceOperator<C, T, L, R> {
     /**
      * Constructor.
      *
@@ -37,7 +37,7 @@ public abstract class AbstractWatchableResourceOperator<
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractWatchableResourceOperator(Vertx vertx, C client, String resourceKind) {
+    public AbstractWatchableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 

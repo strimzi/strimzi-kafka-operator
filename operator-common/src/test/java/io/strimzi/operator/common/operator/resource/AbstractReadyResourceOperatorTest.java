@@ -29,10 +29,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList<T>, R extends Resource<T>> extends AbstractResourceOperatorTest<C, T, L, R> {
+        L extends KubernetesResourceList<T>, R extends Resource<T>> extends AbstractNamespacedResourceOperatorTest<C, T, L, R> {
 
     @Override
-    protected abstract AbstractReadyResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient);
+    protected abstract AbstractReadyNamespacedResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient);
 
     @Test
     public void testReadinessThrowsWhenResourceDoesNotExist(VertxTestContext context) {
@@ -49,7 +49,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
         Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
             .onComplete(context.failing(e -> context.verify(() -> {
@@ -78,7 +78,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
@@ -130,7 +130,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 5_000)
@@ -157,7 +157,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)
@@ -188,7 +188,7 @@ public abstract class AbstractReadyResourceOperatorTest<C extends KubernetesClie
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractReadyResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractReadyNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
         op.readiness(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, 20, 100)

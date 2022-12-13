@@ -23,10 +23,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static java.util.Collections.singletonMap;
 
 @ExtendWith(VertxExtension.class)
-public class RoleBindingOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
+public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
         return new RoleBindingOperator(vertx, client);
     }
 

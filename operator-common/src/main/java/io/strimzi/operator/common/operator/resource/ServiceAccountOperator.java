@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operator for managing Service Accounts
  */
-public class ServiceAccountOperator extends AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
+public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Map;
 
-public class ServiceOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

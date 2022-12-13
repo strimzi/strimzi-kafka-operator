@@ -33,7 +33,7 @@ import io.vertx.core.Vertx;
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends DefaultKubernetesResourceList<T>>
-        extends AbstractWatchableStatusedResourceOperator<C, T, L, Resource<T>> {
+        extends AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, Resource<T>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(CrdOperator.class);
 

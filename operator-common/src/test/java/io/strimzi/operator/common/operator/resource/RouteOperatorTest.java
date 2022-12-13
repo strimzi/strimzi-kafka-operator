@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Route, RouteList, Resource<Route>> {
+public class RouteOperatorTest extends AbstractNamespacedResourceOperatorTest<OpenShiftClient, Route, RouteList, Resource<Route>> {
     @Override
     protected Class<OpenShiftClient> clientType() {
         return OpenShiftClient.class;
@@ -52,7 +52,7 @@ public class RouteOperatorTest extends AbstractResourceOperatorTest<OpenShiftCli
     }
 
     @Override
-    protected AbstractResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
+    protected AbstractNamespacedResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
         return new RouteOperator(vertx, mockClient);
     }
 }

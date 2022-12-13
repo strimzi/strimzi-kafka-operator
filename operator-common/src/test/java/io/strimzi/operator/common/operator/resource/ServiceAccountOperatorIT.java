@@ -25,9 +25,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 @ExtendWith(VertxExtension.class)
-public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
+public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
     @Override
-    protected AbstractResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> operator() {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> operator() {
         return new ServiceAccountOperator(vertx, client);
     }
 

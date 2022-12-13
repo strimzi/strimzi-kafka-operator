@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Build}s.
  */
-public class BuildOperator extends AbstractResourceOperator<OpenShiftClient, Build, BuildList, BuildResource> {
+public class BuildOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, Build, BuildList, BuildResource> {
     /**
      * Constructor
      *

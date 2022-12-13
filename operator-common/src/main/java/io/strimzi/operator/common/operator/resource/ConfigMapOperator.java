@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * Operations for {@code ConfigMap}s.
  */
-public class ConfigMapOperator extends AbstractResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
+public class ConfigMapOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConfigMapOperator.class);
 

@@ -20,7 +20,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
@@ -44,7 +44,7 @@ import java.util.List;
  */
 public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends CustomResource<P, S>,
         L extends KubernetesResourceList<T>, R extends Resource<T>, P extends Spec, S extends Status>
-    extends AbstractOperator<T, P, S, AbstractWatchableStatusedResourceOperator<C, T, L, R>> {
+    extends AbstractOperator<T, P, S, AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R>> {
     protected final PlatformFeaturesAvailability pfa;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
@@ -72,7 +72,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
      */
     protected AbstractAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, String kind,
                                        CertManager certManager, PasswordGenerator passwordGenerator,
-                                       AbstractWatchableStatusedResourceOperator<C, T, L, R> resourceOperator,
+                                       AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
         super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());

@@ -21,7 +21,7 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
@@ -63,7 +63,7 @@ public abstract class AbstractOperator<
         T extends CustomResource<P, S>,
         P extends Spec,
         S extends Status,
-        O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?>>
+        O extends AbstractWatchableStatusedNamespacedResourceOperator<?, T, ?, ?>>
             implements Operator {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractOperator.class);

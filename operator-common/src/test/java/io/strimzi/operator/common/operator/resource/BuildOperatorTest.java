@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
-public class BuildOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, Build, BuildList, BuildResource> {
+public class BuildOperatorTest extends AbstractNamespacedResourceOperatorTest<OpenShiftClient, Build, BuildList, BuildResource> {
 
     @Override
     protected void mocker(OpenShiftClient mockClient, MixedOperation mockCms) {

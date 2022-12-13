@@ -19,7 +19,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RoleOperatorTest extends AbstractResourceOperatorTest<
+public class RoleOperatorTest extends AbstractNamespacedResourceOperatorTest<
         KubernetesClient,
         Role,
         RoleList,
@@ -72,7 +72,7 @@ public class RoleOperatorTest extends AbstractResourceOperatorTest<
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new RoleOperator(vertx, mockClient);
     }
 }

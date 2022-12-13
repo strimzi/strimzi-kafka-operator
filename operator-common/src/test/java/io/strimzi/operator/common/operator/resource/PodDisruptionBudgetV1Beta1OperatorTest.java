@@ -18,7 +18,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PodDisruptionBudgetV1Beta1OperatorTest extends AbstractResourceOperatorTest<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
+public class PodDisruptionBudgetV1Beta1OperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
 
     @Override
     protected void  mocker(KubernetesClient mockClient, MixedOperation op) {
@@ -30,7 +30,7 @@ public class PodDisruptionBudgetV1Beta1OperatorTest extends AbstractResourceOper
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new PodDisruptionBudgetV1Beta1Operator(vertx, mockClient);
     }
 

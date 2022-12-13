@@ -17,7 +17,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code DeploymentConfigs}s.
  */
-public class DeploymentConfigOperator extends AbstractScalableResourceOperator<OpenShiftClient, DeploymentConfig,
+public class DeploymentConfigOperator extends AbstractScalableNamespacedResourceOperator<OpenShiftClient, DeploymentConfig,
         DeploymentConfigList, DeployableScalableResource<DeploymentConfig>> {
     /**
      * Constructor

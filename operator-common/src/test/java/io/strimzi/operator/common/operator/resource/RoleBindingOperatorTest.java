@@ -22,7 +22,7 @@ import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
+public class RoleBindingOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> {
 
 
     @Override
@@ -81,8 +81,8 @@ public class RoleBindingOperatorTest extends AbstractResourceOperatorTest<Kubern
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
-            Resource<RoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
+                Resource<RoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new RoleBindingOperator(vertx, mockClient);
     }
 }

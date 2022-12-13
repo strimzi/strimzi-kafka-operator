@@ -16,8 +16,8 @@ import java.util.regex.Pattern;
 /**
  * Operator for managing network policies
  */
-public class NetworkPolicyOperator extends AbstractResourceOperator<KubernetesClient, NetworkPolicy, NetworkPolicyList, Resource<NetworkPolicy>> {
-    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
+public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<KubernetesClient, NetworkPolicy, NetworkPolicyList, Resource<NetworkPolicy>> {
+    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/creationTimestamp" +
                     "|/metadata/resourceVersion" +

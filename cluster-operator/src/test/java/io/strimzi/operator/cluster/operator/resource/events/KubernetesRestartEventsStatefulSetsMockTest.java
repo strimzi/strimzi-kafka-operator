@@ -41,7 +41,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
-import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.MockKube2;
@@ -76,7 +76,7 @@ import static io.strimzi.operator.cluster.model.RestartReason.MANUAL_ROLLING_UPD
 import static io.strimzi.operator.cluster.model.RestartReason.POD_HAS_OLD_GENERATION;
 import static io.strimzi.operator.cluster.model.RestartReason.POD_STUCK;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE;
-import static io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION;
+import static io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_GENERATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -174,7 +174,7 @@ public class KubernetesRestartEventsStatefulSetsMockTest {
         StatefulSet kafkaSet = stsOps().withLabel(appName, "kafka").list().getItems().get(0);
         int statefulSetGen = StatefulSetOperator.getStsGeneration(kafkaSet);
 
-        patchKafkaPodWithAnnotation(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION, String.valueOf(statefulSetGen - 1));
+        patchKafkaPodWithAnnotation(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_GENERATION, String.valueOf(statefulSetGen - 1));
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_GENERATION, context));
     }
 

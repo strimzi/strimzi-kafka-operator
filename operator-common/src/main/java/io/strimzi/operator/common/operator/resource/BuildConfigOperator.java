@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code BuildConfig}s.
  */
-public class BuildConfigOperator extends AbstractResourceOperator<OpenShiftClient, BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
+public class BuildConfigOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Deployment}s.
  */
-public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
+public class DeploymentOperator extends AbstractScalableNamespacedResourceOperator<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
 
     private final PodOperator podOperations;
 

@@ -22,7 +22,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.vertx.core.Future;
@@ -68,7 +68,7 @@ public class ManualPodCleanerTest {
     private void manualPodCleanupOnePod(VertxTestContext context, boolean useStrimziPodSets)    {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
-                podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
+                podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
                 podWithName(CONTROLLER_NAME + "-2")
         );
 
@@ -94,7 +94,7 @@ public class ManualPodCleanerTest {
     private void manualPodCleanupJbod(VertxTestContext context, boolean useStrimziPodSets)    {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
-                podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
+                podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
                 podWithName(CONTROLLER_NAME + "-2")
         );
 
@@ -123,8 +123,8 @@ public class ManualPodCleanerTest {
     private void manualPodCleanupMultiplePods(VertxTestContext context, boolean useStrimziPodSets)    {
         List<Pod> pods = List.of(
                 podWithName(CONTROLLER_NAME + "-0"),
-                podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
-                podWithNameAndAnnotations(CONTROLLER_NAME + "-2", Collections.singletonMap(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true"))
+                podWithNameAndAnnotations(CONTROLLER_NAME + "-1", Collections.singletonMap(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true")),
+                podWithNameAndAnnotations(CONTROLLER_NAME + "-2", Collections.singletonMap(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, "true"))
         );
 
         List<PersistentVolumeClaim> pvcs = List.of(

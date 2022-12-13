@@ -19,9 +19,9 @@ import java.util.regex.Pattern;
 /**
  * Operations for {@code PersistentVolumeClaim}s.
  */
-public class PvcOperator extends AbstractResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
+public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesClient, PersistentVolumeClaim, PersistentVolumeClaimList, Resource<PersistentVolumeClaim>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PvcOperator.class);
-    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
+    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/annotations/pv.kubernetes.io~1bind-completed" +
                     "|/metadata/finalizers" +

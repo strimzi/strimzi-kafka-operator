@@ -26,9 +26,9 @@ import java.util.stream.Collectors;
 /**
  * Operations for {@code Service}s.
  */
-public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+public class ServiceOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ServiceOperator.class);
-    protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
+    private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
                     "|/metadata/creationTimestamp" +
                     "|/metadata/resourceVersion" +
