@@ -131,6 +131,13 @@ rules:
       - patch
       - update
   - apiGroups:
+      - image.openshift.io
+    resources:
+      # The cluster operator needs to verify the image stream when used for Kafka Connect image build
+      - imagestreams
+    verbs:
+      - get
+  - apiGroups:
       - policy
     resources:
       # The cluster operator needs to access and manage pod disruption budgets this limits the number of concurrent disruptions

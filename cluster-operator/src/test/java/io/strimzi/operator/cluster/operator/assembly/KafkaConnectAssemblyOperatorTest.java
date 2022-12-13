@@ -23,6 +23,9 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
+import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -998,5 +1001,69 @@ public class KafkaConnectAssemblyOperatorTest {
         assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
 
         context.completeNow();
+    }
+
+    @Test
+    public void testImageStreamValidation(VertxTestContext context) {
+        String kcName = "my-connect", kcNamespace = "test";
+        String failureMsg = String.format("The build can't start because there is no image stream with name %s", kcName);
+
+        KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
+        kc.getSpec().setBuild(
+            new BuildBuilder()
+                .withNewImageStreamOutput()
+                    .withImage(kcName + ":latest")
+                .endImageStreamOutput()
+                .withPlugins(new PluginBuilder()
+                                .withName("my-connector")
+                                .withArtifacts(new JarArtifactBuilder()
+                                                .withUrl("https://example.com/my.jar")
+                                                .build())
+                                .build())
+                .build());
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        var mockConnectOps = supplier.connectOperator;
+        var mockDcOps = supplier.deploymentOperations;
+        var mockNetPolOps = supplier.networkPolicyOperator;
+        var mockPodOps = supplier.podOperations;
+        var mockBcOps = supplier.buildConfigOperations;
+        var mockIsOps = supplier.imageStreamOperations;
+
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
+        when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(
+            Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.failedFuture(failureMsg));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any()))
+            .thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null)))
+            .thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null)))
+            .thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("unit-test", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName))
+            .onComplete(context.failing(v -> context.verify(() -> {
+                List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                assertThat(capturedConnects, hasSize(1));
+                KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+                assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                assertThat(connectStatus.getConditions().get(0).getType(), is("NotReady"));
+                assertThat(connectStatus.getConditions().get(0).getMessage(), is(failureMsg));
+                async.flag();
+            })));
     }
 }

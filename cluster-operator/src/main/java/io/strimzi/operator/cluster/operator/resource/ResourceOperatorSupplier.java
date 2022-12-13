@@ -32,6 +32,7 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
+import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
@@ -71,8 +72,13 @@ public class ResourceOperatorSupplier {
     public final RouteOperator routeOperations;
 
     /**
-     * StatefulSet operator
+     * ImageStream operator
      */
+    public final ImageStreamOperator imageStreamOperations;
+
+    /**
+     * StatefulSet operator
+     */    
     public final StatefulSetOperator stsOperations;
 
     /**
@@ -288,6 +294,7 @@ public class ResourceOperatorSupplier {
                                     KubernetesRestartEventPublisher restartEventPublisher) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new StatefulSetOperator(vertx, client, operationTimeoutMs),
                 new ConfigMapOperator(vertx, client),
                 new SecretOperator(vertx, client),
@@ -326,6 +333,7 @@ public class ResourceOperatorSupplier {
      *
      * @param serviceOperations                     Service operator
      * @param routeOperations                       Route operator
+     * @param imageStreamOperations                 ImageStream operator
      * @param stsOperations                         StatefulSet operator
      * @param configMapOperations                   ConfigMap operator
      * @param secretOperations                      Secret operator
@@ -361,6 +369,7 @@ public class ResourceOperatorSupplier {
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
+                                    ImageStreamOperator imageStreamOperations,
                                     StatefulSetOperator stsOperations,
                                     ConfigMapOperator configMapOperations,
                                     SecretOperator secretOperations,
@@ -394,6 +403,7 @@ public class ResourceOperatorSupplier {
                                     KubernetesRestartEventPublisher restartEventsPublisher) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
+        this.imageStreamOperations = imageStreamOperations;
         this.stsOperations = stsOperations;
         this.configMapOperations = configMapOperations;
         this.secretOperations = secretOperations;
