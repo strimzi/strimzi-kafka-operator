@@ -598,7 +598,7 @@ public class KafkaRoller {
             throws ForceableProblem, InterruptedException {
         Config brokerLogging = brokerLogging(podRef.getPodId());
         LOGGER.traceCr(reconciliation, "Broker {}: logging description {}", podRef, brokerLogging);
-        return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging, podRef.getPodId());
+        return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging);
     }
 
     /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
