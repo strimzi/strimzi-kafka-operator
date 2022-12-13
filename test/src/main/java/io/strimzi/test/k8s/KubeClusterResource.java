@@ -215,8 +215,7 @@ public class KubeClusterResource {
                     .forEach(namespaceName -> {
                         LOGGER.debug("Deleting Namespace: {}", namespaceName);
                         kubeClient().deleteNamespace(namespaceName);
-                        client.getClient().namespaces().withName(namespaceName).waitUntilCondition(
-                            namespace -> client.getClient().namespaces().withName(namespaceName).get() == null, 4, TimeUnit.MINUTES);
+                        client.getClient().namespaces().withName(namespaceName).waitUntilCondition(namespace -> namespace == null, 4, TimeUnit.MINUTES);
                     }));
 
         MAP_WITH_SUITE_NAMESPACES.clear();
