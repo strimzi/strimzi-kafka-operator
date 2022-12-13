@@ -66,6 +66,11 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
+    protected static final String OAUTH_BRIDGE_CLIENT_ID = "kafka-bridge";
+    protected static final String OAUTH_CONNECT_CLIENT_ID = "kafka-connect";
+    protected static final String OAUTH_MM_CLIENT_ID = "kafka-mirror-maker";
+    protected static final String OAUTH_MM2_CLIENT_ID = "kafka-mirror-maker-2";
+
     // broker oauth configuration
     protected static final Integer CONNECT_TIMEOUT_S = 100;
     protected static final Integer READ_TIMEOUT_S = 100;
