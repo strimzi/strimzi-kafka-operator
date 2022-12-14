@@ -4,15 +4,17 @@ image_jar_dir=$2 #/opt/kafka/libs
 whilelist_file=$3
 DOCKER_CMD=${DOCKER_CMD:-docker}
 
-jars_dir=`mktemp -d`
-trap "[ -e $jars_dir ] && rm -rf $jars_dir" EXIT
+jars_dir=$(mktemp -d)
+classes_root=$(mktemp -d)
+exit_handler() {
+  [ -e $jars_dir ] && rm -rf $jars_dir
+  [ -e $classes_root ] && rm -rf $classes_root
+}
+trap exit_handler EXIT
 
 ${DOCKER_CMD} run --name temp-container-name "$image" /bin/true || exit 2
 ${DOCKER_CMD} cp "temp-container-name:$image_jar_dir" "$jars_dir"
 ${DOCKER_CMD} rm temp-container-name > /dev/null
-
-classes_root=`mktemp -d`
-trap "[ -e $classes_root ] && rm -rf $classes_root" EXIT
 
 $(dirname $0)/../artifacts/extract-jars.sh "$jars_dir" "$classes_root"
 
