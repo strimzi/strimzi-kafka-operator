@@ -58,13 +58,13 @@ items:
 - action: StrimziInitiatedPodRestart
   apiVersion: v1
   eventTime: "2022-05-13T00:22:34.168086Z"
-  firstTimestamp: null <1>
+  firstTimestamp: null
   involvedObject:
       kind: Pod
       name: strimzi-cluster-kafka-1
       namespace: kafka
   kind: Event
-  lastTimestamp: null <1>
+  lastTimestamp: null
   message: Pod needs to be forcibly restarted due to an error
   metadata:
       creationTimestamp: "2022-05-13T00:22:34Z"
@@ -76,11 +76,16 @@ items:
   reason: PodForceRestartOnError
   reportingController: strimzi.io/cluster-operator
   reportingInstance: strimzi-cluster-operator-6458cfb4c6-6bpdp
-  source: {} <1>
+  source: {}
   type: Normal
 kind: List
 metadata:
   resourceVersion: ""
   selfLink: ""
 ----
-<1> These fields are deprecated, and will be removed in Kubernetes 1.25. As such, they are not populated for these events.
+
+The following fields are deprecated, so they are not populated for these events:
+
+* `firstTimestamp`
+* `lastTimestamp`
+* `source`
