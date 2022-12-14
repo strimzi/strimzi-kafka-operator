@@ -1050,6 +1050,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
     protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
-        return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
     }
 }
