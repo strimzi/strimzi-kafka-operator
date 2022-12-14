@@ -196,14 +196,26 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static Secret createClusterSecret(String clusterNamespace, String clusterName, int replicas, String secretName,
-                                             String caCert, String caKey, String caStore, String caStorePassword) {
+    /**
+     * Create a mock Secret for brokers certificates that uses the same cert and key for each replica
+     * @param clusterNamespace Namespace of the Kafka cluster
+     * @param clusterName Kafka cluster name
+     * @param replicas Number of broker replicas
+     * @param secretName Name of the secret
+     * @param brokerCert Broker x509 certificate
+     * @param brokerKey Broker private key
+     * @param p12KeyStore P12 keystore for cert & key
+     * @param p12KeyStorePassword P12 keystore password
+     * @return A Secret object
+     */
+    public static Secret createMockBrokersCertsSecret(String clusterNamespace, String clusterName, int replicas, String secretName,
+                                                      String brokerCert, String brokerKey, String p12KeyStore, String p12KeyStorePassword) {
         Map<String, String> data = new HashMap<>(replicas * 4);
         for (int i = 0; i < replicas; i++) {
-            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.KEY), caKey);
-            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.CRT), caCert);
-            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.P12_KEYSTORE), caStore);
-            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.P12_KEYSTORE_PASSWORD), caStorePassword);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.KEY), brokerKey);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.CRT), brokerCert);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.P12_KEYSTORE), p12KeyStore);
+            data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.P12_KEYSTORE_PASSWORD), p12KeyStorePassword);
         }
         return new SecretBuilder()
                 .withNewMetadata()

@@ -79,6 +79,7 @@ import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
 
+import java.security.cert.CertificateException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -803,7 +804,12 @@ public class KafkaReconciler {
         Map<String, String> podAnnotations = commonKafkaPodAnnotations(brokerId);
 
         // Annotation of broker certificate hash
-        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CERT_HASH, Util.hashStub(kafka.getBrokerCertificates(kafkaSecret, brokerId).toString()));
+        try {
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CERT_HASH, Util.hashStub(kafka.getBrokerCertificates(kafkaSecret, brokerId).certAsX509Cert().getSignature()));
+        } catch (CertificateException e) {
+            LOGGER.warnCr(reconciliation, "Certificate exception while trying to generate signature {}", e.getMessage());
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CERT_HASH, Util.hashStub(kafka.getBrokerCertificates(kafkaSecret, brokerId).certAsBase64String()));
+        }
 
         return podAnnotations;
     }

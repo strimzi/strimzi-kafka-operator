@@ -122,10 +122,95 @@ public class MockCertManager implements CertManager {
             "QtlIdmFljGSaGGY6aJjUvUdgoPp1yQPa5oS+afr5g9gaEp4lxP6mc+Li\n" +
             "-----END CERTIFICATE-----\n";
 
+    private static final String ENTITY_CERT = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFkzCCA3ugAwIBAgIUdhN8r8dvT3iMhKiLZ0PoPAGBn94wDQYJKoZIhvcNAQEL\n" +
+            "BQAwWTELMAkGA1UEBhMCREUxDDAKBgNVBAgMA05SVzETMBEGA1UEBwwKRHVzc2Vs\n" +
+            "ZG9yZjEQMA4GA1UECgwHU3RyaW16aTEVMBMGA1UEAwwMU3RyaW16aSBUZXN0MB4X\n" +
+            "DTIyMTIwMjEyNTQwN1oXDTIzMTIwMjEyNTQwN1owWTELMAkGA1UEBhMCREUxDDAK\n" +
+            "BgNVBAgMA05SVzETMBEGA1UEBwwKRHVzc2VsZG9yZjEQMA4GA1UECgwHU3RyaW16\n" +
+            "aTEVMBMGA1UEAwwMU3RyaW16aSBUZXN0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8A\n" +
+            "MIICCgKCAgEAtS1obVl4UaQWfNsQZFQVPdIGnkqE5FvvX0yEXYN8rdGOlCuvj5Y6\n" +
+            "73P+TlbwI5U5dPRiaWMlhvZdkB/JUUz0ENe/hXIm3ZmDomvu6edYcfyuahWon8w3\n" +
+            "hS66wXK2MJwP5MysoLQFjWJWr+ZujL+o1UkTRH2DDN1FVxaIYRTyzqPLZhA+77Hz\n" +
+            "+TmaQE4IgyciR3CGjMgez6QZplBBqdPAXMxlSh3UolDRSeAL+cP28fM7mIyZ9FyM\n" +
+            "uqdbN78cD9IhdoKZY8HzM3ulB7ueE4Rsl0JaKxKwJDLFYXV9tjJHPcogAFmKlgUx\n" +
+            "uaSmKBKH8fs+8/YjE3orkmrOaFSxOjW5dMaX+9RFQA9oYSbzI4v2u6W7YXn13tZs\n" +
+            "0puuPLXMARsdXatqWQRxRKIPoGqfciuaTndcGHnMOk7UDaa6rzknpaCFoAF1PH8S\n" +
+            "m+M66kQD+4ZhO/n6BDNngK6yknnll2nSzqEn+CRGudlDUMM7KojUUXDFnWWe0oXn\n" +
+            "PQisWVyhJuQf5RzfhIS3erFT5gsjx0uu3Xe+McqCjlkMFzCOH4RHWcxGU/x0XTJa\n" +
+            "sVZIudTKMr33vykxGS8YeSHiEut2OZmE8YeMd0fuqrp7rlNjnHLeKTzaJ8b1g940\n" +
+            "j2Wh1IsKhxl63j5B2x2ij00y/9YFzKjjbRfruV0luTM01LEC2un0c48CAwEAAaNT\n" +
+            "MFEwHQYDVR0OBBYEFNW+Kta7uZl5Zs53TjPhFNhSiJ+QMB8GA1UdIwQYMBaAFNW+\n" +
+            "Kta7uZl5Zs53TjPhFNhSiJ+QMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQEL\n" +
+            "BQADggIBACE+Gtw1hC+xPicwronOrtHvIaur2Kawt65d4BdQNNBzlaZz44+CWbsg\n" +
+            "fhaKj1rS9MV87aPE000hfej4iZ9NxSPyrZuZCnBGtt/bYn6hWji6auFVZJOCygUQ\n" +
+            "MXITsQ4gqa56wxfDaNZipejCqIH1+GboSu9+E/d1rhVx2wXIPFLjLoehm+Pxp1eF\n" +
+            "fL1V/mu60j+v0TL/O1fG0zgmKy/4pcfV1doy8foxJu2yGdK25KyjLDfUO5AbeJCj\n" +
+            "tU6Dvl35VWDkfLPcYZzrrwfMdF45HTEKaW39U5Tgsk8JRPl5ATbzdLIKxBVQbH55\n" +
+            "HsaRweVoOs6afjSOu4He68GUdXC2LMUmaqKmEvb79r5YZxaSMVoXjiv+BwtyXe9f\n" +
+            "1tJvdlsZ4TBfF4qqhH0L30t8YSEbYKfptFM/sDOB5asfF9qBzuJGDdC3huYlcq0q\n" +
+            "hiKuGPD30V9AEYPyqFyk80J4akoc7FgBjKlEYf86AtY32DUIl/6O7PWzyWMSmqig\n" +
+            "DkXPoSAq/Nn97T2BTdyZq0Ejnuvmwu+HSpe5feVgS5R+GJTP4/3eO4uzGcJNROQc\n" +
+            "RxyaEmOORNBw8b8xR249DrWf6EtF0GYQWeD3U7q6tOeXTe0vfqRlso0j2+AdzrUe\n" +
+            "txuQUxit8O7UqX6WTSDblqDY//sqtWgnHOE6HtCTcT3eVob0HAEV\n" +
+            "-----END CERTIFICATE-----";
+    private static final String ENTITY_KEY = "-----BEGIN PRIVATE KEY-----\n" +
+            "MIIJQgIBADANBgkqhkiG9w0BAQEFAASCCSwwggkoAgEAAoICAQC1LWhtWXhRpBZ8\n" +
+            "2xBkVBU90gaeSoTkW+9fTIRdg3yt0Y6UK6+Pljrvc/5OVvAjlTl09GJpYyWG9l2Q\n" +
+            "H8lRTPQQ17+FcibdmYOia+7p51hx/K5qFaifzDeFLrrBcrYwnA/kzKygtAWNYlav\n" +
+            "5m6Mv6jVSRNEfYMM3UVXFohhFPLOo8tmED7vsfP5OZpATgiDJyJHcIaMyB7PpBmm\n" +
+            "UEGp08BczGVKHdSiUNFJ4Av5w/bx8zuYjJn0XIy6p1s3vxwP0iF2gpljwfMze6UH\n" +
+            "u54ThGyXQlorErAkMsVhdX22Mkc9yiAAWYqWBTG5pKYoEofx+z7z9iMTeiuSas5o\n" +
+            "VLE6Nbl0xpf71EVAD2hhJvMji/a7pbthefXe1mzSm648tcwBGx1dq2pZBHFEog+g\n" +
+            "ap9yK5pOd1wYecw6TtQNprqvOSeloIWgAXU8fxKb4zrqRAP7hmE7+foEM2eArrKS\n" +
+            "eeWXadLOoSf4JEa52UNQwzsqiNRRcMWdZZ7Shec9CKxZXKEm5B/lHN+EhLd6sVPm\n" +
+            "CyPHS67dd74xyoKOWQwXMI4fhEdZzEZT/HRdMlqxVki51Moyvfe/KTEZLxh5IeIS\n" +
+            "63Y5mYTxh4x3R+6qunuuU2Occt4pPNonxvWD3jSPZaHUiwqHGXrePkHbHaKPTTL/\n" +
+            "1gXMqONtF+u5XSW5MzTUsQLa6fRzjwIDAQABAoICAAQ3Q0fQHimgLNnI6y+6eSgQ\n" +
+            "HBFQ4JjDvuUzzZyzc5JD3xJ5lcM8lrB9vXwrL7lUPpsHGMclBHmIgBLben7G0KMX\n" +
+            "siAz0M21RcfgxRVySa+VVqWnTV4yjVQvCy93MOAesYv8a0PuDHcGw8eiEA58Yzxb\n" +
+            "T/R3Czaga32kS5Yeu6utSg1c8Wn4dRnmij1W04Hhxj1tU+Qwv+7K/cHN+kkuYTqH\n" +
+            "kw/Pc+Q3Bze12/F66uMkas2Y7/gssyWgwVGhw9BmblronRMiLzuSc/ujFQGVQkWe\n" +
+            "yKRZ8flVqRwkdMFpmBjK/EWlz8C/7DFKsIccL0elNgjNQHGylRL6I0VwOxOEroUM\n" +
+            "Fr2d4vMWNvsybEmXTtXmomfJ8OOkfP/aIUMTdL/VS1RBfSG7GIpSRqtPKejykoAT\n" +
+            "GMeR4IAI4u17jqTu9X6vL4zll0fUNWzJVNPXrq7rTLvttdBxoOPObx1bcGWDUTEC\n" +
+            "gC0q/WEbE7AvDoDiy4eLcA++Ux40/w8cbS2Ng7PBPegu6nu7V2uYABjYGE/k6nSU\n" +
+            "MO/K/YcqehieqvE92OC7rOpUgb5fNe+Rsi0Mo/kRCPl6WeD7ORuCj06ti11n9oDZ\n" +
+            "8Xi7un6zI9MaWBc+oX65mEiW7mxJGv2+hmgS2evhQ5AFrNDSyRmTk9IHKxHJXIbR\n" +
+            "r+uA0QyFkLT5qAn7at9pAoIBAQDekDdGbVg7XIODOZUdimWiAylpk+RbrzHDFuKC\n" +
+            "px+VnXBdLAqbKCCw9/ry5QpOfIHRc2do52p9cymiL2+FtTD1F4PC4Mz3IIvikRXf\n" +
+            "JbPWo4U/3EKyZME5mbQx7cDXopOKsFYcG6Fq0ft6TDYakao+NgTuiOJ4z9aQFKi7\n" +
+            "KN2Dn6j4xzuZ2BxyDhYfAx+Kf/BsmSFb5GUNd1VXAwD3DofedsR1PqihXbg0qTpp\n" +
+            "PQza4uJPSQroEpyqcEtiWVAHCn8hcQ/MU8V868vmDdzGfXcebnyRDcfoc4B8gaJy\n" +
+            "YehikXjKIJ3i52ZH9QlWpoE6LZUW7XqENYrC4e8dv4/M/3MlAoIBAQDQZXzvyKJN\n" +
+            "km1vb7EUiq9o5KIZVXVLzCz+raTy4S5l6cKHlud4LjYaOMlAdmZwmRMNgi4EoKv/\n" +
+            "NoaZ7Qi04tHj9mft+RYkhkqhNfiRbuHK/nkLaG6AnnUJgadLiOKJrTz8aphEgl8H\n" +
+            "EfCbPdzhA089XuIYQ1dFc1/XucVUiwrwa9n3qmPOTy3/iNFmpUYERaxONK28ynPU\n" +
+            "A7PJ1lb9rI1Yd223NTjazH78EC4z0K4x+RQGf+vY4tJITdDLFAYOC4RJLeyRubYh\n" +
+            "cJ6/Y+syt2ybJU0ABGdD7z9WjQrFkH3y7zlDpJjI7cu9U9ohLnPRB2XRMb/QnrVN\n" +
+            "XmOVcVmkHaejAoIBAF1aPmUi/iw//MWxBHPUlhajnt4y80jlrki3M6E7ukrGM9hQ\n" +
+            "3c4Awd2Y1kDFg1IydT1GW6yrzIX8JQ1rOirqOjPDfjfilPZfR21sD7F+nfU8t2p2\n" +
+            "19791fJ0HxoGMKoB/kLg/e1iRY2JsCK3DsaMLM1VWTI4Zk3oV4YttCx00p0f/f8D\n" +
+            "imNYO243rF2rsLImQdE7Vbu2jBBe6oPJtcDq7mCIjpTjCFZO+jHUfbSgr+Cr4+L/\n" +
+            "rzxyehYfbe89qQybAYIka0z4IlDokqjXTbBP9gPksgkhr6U3tUAEHABAQvn9LJ4T\n" +
+            "mkYPa15pUFZxFqkxb2SjjY0g7CgcHnDq5cVFrKUCggEBAMBU+jK/Y/Pd8XxIhBEm\n" +
+            "Ue+oG2bwNTpIbTp7fmHeq5jJXo0PHAAR/kLDKBKDc9X1oNz1yYzh0PvREfccCc4Q\n" +
+            "DJCtCIxcODBrdJNGoWtv/5n+tC5wKpQwKmokrAcNha51IXUA2BlajWOUDhDozmMp\n" +
+            "T8efO2ITPIdPjSQnQtTdIrJzh46JRmXRM+3EEyb94BnvR7BB9Brqam5BIHxmgpDK\n" +
+            "4QTF7I+K4jclRwlR0aJmtW5PqEi7ZSsdY9/xWYMjrtblkCiN5ukzkcFZFFolWJvN\n" +
+            "J8IkceVTKw9KzpUNxORDj8pXOO2SCqReu4u3yPiYy7Eed7zTgmmDIGcQdy4kmAvc\n" +
+            "hqsCggEAWs3tK7cgOYJbbPGrW8rvtneK8+BH+15fyFjEZLv+0kDAu3pux5CBhsn8\n" +
+            "xHYe5sTUJnSMv4RFnGN777R56NKdqz+g6cOBwX8Wa9HJgUv37xQ0y+bpWwRGEcWa\n" +
+            "b40yeuAnBPwaGFwfm+IvB/h/Dovblwb8IDhQ3H0A/Xw94HWhEDhOfnDozd2zSaIS\n" +
+            "gPuuXmbT+5Nnefg6DupRxhOLUASG5eyaIJKGaBvoc2Ylmq5BXPyCnMIoUNS9e85q\n" +
+            "tUt1ndVBV2e7HV4BMXB6cCvE62H2ks8WoytpxOyg8GfwIeePe+seJOQAj6HuG4R8\n" +
+            "nEhbTwU8z4HvDeru2iLQfOv0JyKaXg==\n" +
+            "-----END PRIVATE KEY-----";
     private static final String CERT_STORE_PASSWORD = "123456";
 
     private static final byte[] CLUSTER_CERT_STORE;
     private static final byte[] CLIENTS_CERT_STORE;
+
 
     static {
         InputStream is = MockCertManager.class.getClassLoader().getResourceAsStream("CLUSTER_CERT.str");
@@ -253,17 +338,17 @@ public class MockCertManager implements CertManager {
      */
     @Override
     public void generateCsr(File keyFile, File csrFile, Subject sbj) throws IOException {
-        write(keyFile, "key file");
-        write(csrFile, "csr file");
+        write(keyFile, ENTITY_KEY);
+        write(csrFile, ENTITY_CERT);
     }
 
     @Override
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
-        write(crtFile, "crt file");
+        write(crtFile, ENTITY_CERT);
     }
 
     @Override
     public void generateCert(File csrFile, byte[] caKey, byte[] caCert, File crtFile, Subject sbj, int days) throws IOException {
-        write(crtFile, "crt file");
+        write(crtFile, ENTITY_CERT);
     }
 }

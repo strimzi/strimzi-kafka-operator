@@ -180,7 +180,7 @@ public class KafkaCluster extends AbstractModel {
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
 
     /**
-     * Records the hash of the Kafka broker. Each pod will have a different hash since each broker has a different certificate.
+     * Annotation for keeping brokers' certificate thumbprints.
      */
     public static final String ANNO_STRIMZI_BROKER_CERT_HASH = Annotations.STRIMZI_DOMAIN + "broker-certs-hash";
 
@@ -1237,6 +1237,17 @@ public class KafkaCluster extends AbstractModel {
                 )
         );
     }
+
+    /**
+     * Get the broker certificate information stored in the broker secret.
+     * @param secret Kubernetes Secret containing the certificate
+     * @param brokerId Broker ID
+     * @return Broker certificate and key as a CertAndKey object
+     */
+    public CertAndKey getBrokerCertificates(Secret secret, int brokerId) {
+        return Ca.asCertAndKey(secret, KafkaResources.kafkaPodName(cluster, brokerId));
+    }
+
 
     /**
      * Generate the Secret containing the username and password to secure the jmx port on the Kafka brokers.

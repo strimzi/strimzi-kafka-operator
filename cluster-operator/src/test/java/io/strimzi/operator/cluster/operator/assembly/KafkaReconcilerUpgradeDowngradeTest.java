@@ -142,7 +142,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         kafka.getSpec().getKafka().getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
@@ -196,7 +196,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         KAFKA.getSpec().getKafka().getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
@@ -260,7 +260,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
         when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         kafka.getSpec().getKafka().getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),

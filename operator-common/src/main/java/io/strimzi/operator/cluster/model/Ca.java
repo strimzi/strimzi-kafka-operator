@@ -67,22 +67,50 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
 
+    /**
+     * A certificate entry in a ConfigMap. Each entry contains an entry name and data.
+     */
     public enum SecretEntry {
+        /**
+         * A 64-bit encoded X509 Cretificate
+         */
         CRT(".crt"),
+        /**
+         * Entity private key
+         */
         KEY(".key"),
+        /**
+         * Entity certificate and key as a P12 keystore
+         */
         P12_KEYSTORE(".p12"),
+        /**
+         * P12 keystore password
+         */
         P12_KEYSTORE_PASSWORD(".password");
 
         final String suffix;
 
-        private SecretEntry(String suffix) {
+        SecretEntry(String suffix) {
             this.suffix = suffix;
         }
 
+        /**
+         * Retrieve a specific secret entry for pod from the given Secret.
+         * @param secret Kubernetes Secret containing desired entry
+         * @param podName Name of the pod which secret entry is looked for
+         * @param entry The SecretEntry type
+         * @return the data of the secret entry if found or null otherwise
+         */
         public static String getDataForPod(Secret secret, String podName, SecretEntry entry) {
             return secret.getData().get(getNameForPod(podName, entry));
         }
 
+        /**
+         * Get the name of secret entry of given SecretEntry type for podName
+         * @param podName Name of the pod which secret entry is looked for
+         * @param entry The SecretEntry type
+         * @return the name of the secret entry
+         */
         public static String getNameForPod(String podName, SecretEntry entry) {
             return podName + entry.suffix;
         }
@@ -536,6 +564,11 @@ public abstract class Ca {
         return store != null && !store.isEmpty() && password != null && !password.isEmpty();
     }
 
+    /** Return given secret for pod as a CertAndKey object
+     * @param secret Kubernetes Secret
+     * @param podName Name of the pod
+     * @return CertAndKey instance
+     */
     public static CertAndKey asCertAndKey(Secret secret, String podName) {
         return asCertAndKey(secret, SecretEntry.getNameForPod(podName, SecretEntry.KEY),
                 SecretEntry.getNameForPod(podName, SecretEntry.CRT),

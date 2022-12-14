@@ -185,7 +185,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         kafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
@@ -298,7 +298,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         kafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
@@ -539,7 +539,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         newKafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
@@ -660,7 +660,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
         when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         kafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
@@ -802,7 +802,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
         when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createClusterSecret(NAMESPACE,
+                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
                         CLUSTER_NAME,
                         oldKafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
