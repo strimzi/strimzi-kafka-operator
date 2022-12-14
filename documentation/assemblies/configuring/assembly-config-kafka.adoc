@@ -25,8 +25,8 @@ For more information, see xref:assembly-securing-kafka-str[Securing access to Ka
 
 .Managing TLS certificates
 When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
-If required, you can manually renew the cluster and client CA certificates before their renewal period ends.
-You can also replace the keys used by the cluster and client CA certificates.
+If required, you can manually renew the cluster and clients CA certificates before their renewal period ends.
+You can also replace the keys used by the cluster and clients CA certificates.
 For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
 
 //procedure to configure Kafka

@@ -308,7 +308,7 @@ The User Operator creates the users representing the client (MirrorMaker), and t
 +
 The User Operator creates a new secret with the same name as the `KafkaUser` resource.
 The secret contains a private and public key for mTLS authentication.
-The public key is contained in a user certificate, which is signed by the client CA.
+The public key is contained in a user certificate, which is signed by the clients CA.
 
 . Configure a `KafkaMirrorMaker2` resource with the authentication details to connect to the source and target Kafka clusters.
 +
