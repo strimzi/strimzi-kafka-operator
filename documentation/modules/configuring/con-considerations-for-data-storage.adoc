@@ -7,8 +7,9 @@
 
 [role="_abstract"]
 For Strimzi to work well, an efficient data storage infrastructure is essential.
-Block storage is used in the testing of Strimzi.
-File storage, such as NFS, is not covered by the Strimzi tests, use at your own risk.
+We strongly recommend using block storage.
+Strimzi is only tested for use with block storage. 
+File storage, such as NFS, is not tested and there is no guarantee it will work. 
 
 Choose one of the following options for your block storage:
 
