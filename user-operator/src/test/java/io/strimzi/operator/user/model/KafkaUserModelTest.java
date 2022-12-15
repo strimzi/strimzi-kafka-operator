@@ -281,9 +281,9 @@ public class KafkaUserModelTest {
         Secret generatedSecret = model.generateSecret();
 
         assertThat(new String(model.decodeFromSecret(generatedSecret, "ca.crt")),  is("different-clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.crt")), is("crt file"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.key")), is("key file"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.p12")), is("key store"));
+        assertThat(generatedSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
+        assertThat(generatedSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(generatedSecret.getData().get("user.p12"), is(MockCertManager.entityCertStore()));;
         assertThat(new String(model.decodeFromSecret(generatedSecret, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
@@ -317,9 +317,9 @@ public class KafkaUserModelTest {
         Secret generated = model.generateSecret();
 
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(generated.getData().get("user.crt"), is(MockCertManager.entityCert()));
+        assertThat(generated.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(generated.getData().get("user.p12"), is(MockCertManager.entityCertStore()));;
         assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
@@ -343,10 +343,10 @@ public class KafkaUserModelTest {
         assertThat(generatedSecret.getData().keySet(), is(set("ca.crt", "user.crt", "user.key", "user.p12", "user.password")));
 
         assertThat(new String(model.decodeFromSecret(generatedSecret, "ca.crt")), is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.crt")), is("crt file"));
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.key")), is("key file"));
+        assertThat(generatedSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
+        assertThat(generatedSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
         // assert that keystore and password have been re-added
-        assertThat(new String(model.decodeFromSecret(generatedSecret, "user.p12")), is("key store"));
+        assertThat(generatedSecret.getData().get("user.p12"), is(MockCertManager.entityCertStore()));
         assertThat(new String(model.decodeFromSecret(generatedSecret, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
