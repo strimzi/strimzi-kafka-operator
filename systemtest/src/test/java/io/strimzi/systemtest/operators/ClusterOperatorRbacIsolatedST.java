@@ -65,14 +65,14 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
         String log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
-        assertTrue(log.contains("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
+        assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
-        log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName, "--tail", "50").out();
-        assertTrue(log.contains("Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
+        log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        assertTrue(log.contains("KafkaConnect(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
