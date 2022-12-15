@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -35,8 +34,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -727,23 +724,6 @@ public class KafkaListenersReconciler {
     }
 
     /**
-     * Generates hash stub of the certificate which is used to track when the certificate changes and rolling update needs to be triggered.
-     *
-     * @param certSecret        Secrets with the certificate
-     * @param customCertSecret  Identified where in the secret can you get the right certificate
-     *
-     * @return                  Hash stub of the certificate
-     */
-    private static String getCertificateThumbprint(Secret certSecret, CertAndKeySecretSource customCertSecret)   {
-        try {
-            X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
-            return Util.hashStub(cert.getEncoded());
-        } catch (CertificateEncodingException e) {
-            throw new RuntimeException("Failed to get certificate hashStub of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e);
-        }
-    }
-
-    /**
      * Collects the custom listener certificates from the secrets and stores them for later use
      *
      * @return  Future which completes when all custom listener certificates are collected and are valid
@@ -796,7 +776,7 @@ public class KafkaListenersReconciler {
                                 } else  {
                                     byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCert.getCertificate()));
                                     customListenerCertificates.put(listener.getName(), new String(publicKeyBytes, StandardCharsets.US_ASCII));
-                                    result.customListenerCertificateThumbprints.put(listener.getName(), getCertificateThumbprint(secret, customCert));
+                                    result.customListenerCertificateThumbprints.put(listener.getName(), Ca.getCertificateThumbprint(secret, customCert.getCertificate()));
                                 }
                             } else {
                                 errors.add("Secret " + customCert.getSecretName() + " with custom TLS certificate does not exist.");

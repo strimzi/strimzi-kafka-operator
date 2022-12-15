@@ -146,9 +146,9 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                         CLUSTER_NAME,
                         kafka.getSpec().getKafka().getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.clusterCaCert(),
-                        MockCertManager.clusterCaKey(),
-                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.entityCert(),
+                        MockCertManager.entityKey(),
+                        MockCertManager.entityCertStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
@@ -200,9 +200,9 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                         CLUSTER_NAME,
                         KAFKA.getSpec().getKafka().getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.clusterCaCert(),
-                        MockCertManager.clusterCaKey(),
-                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.entityCert(),
+                        MockCertManager.entityKey(),
+                        MockCertManager.entityCertStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
@@ -264,9 +264,9 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                         CLUSTER_NAME,
                         kafka.getSpec().getKafka().getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.clusterCaCert(),
-                        MockCertManager.clusterCaKey(),
-                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.entityCert(),
+                        MockCertManager.entityKey(),
+                        MockCertManager.entityCertStore(),
                         MockCertManager.certStorePassword()
                 ))
         );

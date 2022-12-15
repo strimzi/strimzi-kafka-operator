@@ -210,6 +210,7 @@ public class MockCertManager implements CertManager {
 
     private static final byte[] CLUSTER_CERT_STORE;
     private static final byte[] CLIENTS_CERT_STORE;
+    private static final byte[] ENTITY_CERT_STORE;
 
 
     static {
@@ -217,6 +218,8 @@ public class MockCertManager implements CertManager {
         CLUSTER_CERT_STORE = loadResource(is);
         is = MockCertManager.class.getClassLoader().getResourceAsStream("CLIENTS_CERT.str");
         CLIENTS_CERT_STORE = loadResource(is);
+        is = MockCertManager.class.getClassLoader().getResourceAsStream("ENTITY_CERT.str");
+        ENTITY_CERT_STORE = loadResource(is);
     }
 
     public static String clusterCaCert() {
@@ -235,6 +238,14 @@ public class MockCertManager implements CertManager {
         return Base64.getEncoder().encodeToString(CLIENTS_KEY.getBytes(Charset.defaultCharset()));
     }
 
+    public static String entityCert() {
+        return Base64.getEncoder().encodeToString(ENTITY_CERT.getBytes(Charset.defaultCharset()));
+    }
+
+    public static String entityKey() {
+        return Base64.getEncoder().encodeToString(ENTITY_KEY.getBytes(Charset.defaultCharset()));
+    }
+
     public static String clusterCaCertStore() {
         return Base64.getEncoder().encodeToString(CLUSTER_CERT_STORE);
     }
@@ -243,9 +254,14 @@ public class MockCertManager implements CertManager {
         return Base64.getEncoder().encodeToString(CLIENTS_CERT_STORE);
     }
 
+    public static String entityCertStore() {
+        return Base64.getEncoder().encodeToString(ENTITY_CERT_STORE);
+    }
+
     public static String certStorePassword() {
         return Base64.getEncoder().encodeToString(CERT_STORE_PASSWORD.getBytes(Charset.defaultCharset()));
     }
+
 
     private void write(File keyFile, String str) throws IOException {
         try (FileWriter writer = new FileWriter(keyFile)) {
@@ -320,7 +336,8 @@ public class MockCertManager implements CertManager {
     @Override
     public void addKeyAndCertToKeyStore(File keyFile, File certFile, String alias, File keyStoreFile, String keyStorePassword) throws IOException {
         // never called during the tests which use this MockCertManager
-        write(keyStoreFile, "key store");
+        //write(keyStoreFile, "key store");
+        Files.write(keyStoreFile.toPath(), ENTITY_CERT_STORE);
     }
 
     @Override

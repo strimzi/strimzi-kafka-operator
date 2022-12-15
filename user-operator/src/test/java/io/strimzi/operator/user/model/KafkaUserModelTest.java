@@ -226,9 +226,9 @@ public class KafkaUserModelTest {
         Secret generated = model.generateSecret();
 
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")), is("clients-ca-crt"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.crt")), is("crt file"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.key")), is("key file"));
-        assertThat(new String(model.decodeFromSecret(generated, "user.p12")), is("key store"));
+        assertThat(generated.getData().get("user.crt"), is(MockCertManager.entityCert()));
+        assertThat(generated.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(generated.getData().get("user.p12"), is(MockCertManager.entityCertStore()));
         assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference

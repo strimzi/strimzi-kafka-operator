@@ -4,11 +4,7 @@
  */
 package io.strimzi.certs;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.Base64;
 
 /**
@@ -116,14 +112,5 @@ public class CertAndKey {
      */
     public String storePasswordAsBase64String() {
         return Base64.getEncoder().encodeToString(storePassword.getBytes(StandardCharsets.US_ASCII));
-    }
-
-    /**
-     * Get certificate as an X509 Certificate.
-     * @return The X509Certificate
-     * @throws CertificateException Thrown when the certificate can't be parsed correctly as an X509 Certificate.
-     */
-    public X509Certificate certAsX509Cert() throws CertificateException {
-        return (cert == null || cert.length == 0) ? null : (X509Certificate) CertificateFactory.getInstance("X509").generateCertificate(new ByteArrayInputStream(cert));
     }
 }

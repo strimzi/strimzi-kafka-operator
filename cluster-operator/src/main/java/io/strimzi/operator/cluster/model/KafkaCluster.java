@@ -1239,17 +1239,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Get the broker certificate information stored in the broker secret.
-     * @param secret Kubernetes Secret containing the certificate
-     * @param brokerId Broker ID
-     * @return Broker certificate and key as a CertAndKey object
-     */
-    public CertAndKey getBrokerCertificates(Secret secret, int brokerId) {
-        return Ca.asCertAndKey(secret, KafkaResources.kafkaPodName(cluster, brokerId));
-    }
-
-
-    /**
      * Generate the Secret containing the username and password to secure the jmx port on the Kafka brokers.
      *
      * @param currentSecret The existing Secret with the current JMX credentials. Null if no secret exists yet.

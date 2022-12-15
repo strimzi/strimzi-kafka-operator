@@ -1119,9 +1119,9 @@ public class KafkaAssemblyOperatorTest {
                         clusterName,
                         updatedKafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(clusterName),
-                        MockCertManager.clusterCaCert(),
-                        MockCertManager.clusterCaKey(),
-                        MockCertManager.clusterCaCertStore(),
+                        MockCertManager.entityCert(),
+                        MockCertManager.entityKey(),
+                        MockCertManager.entityCertStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
