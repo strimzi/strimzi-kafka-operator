@@ -14,15 +14,15 @@ You can switch to using your own CA certificates and private keys in the followi
 * Install your own CA certificates and private keys before deploying your Kafka cluster
 * Replace the default CA certificates and private keys with your own after deploying a Kafka cluster
 
+The steps to replace the default CA certificates and private keys after deploying a Kafka cluster are the same as those used to renew your own CA certificates and private keys.
+
 If you use your own certificates, they won't be renewed automatically. 
 You need to renew the CA certificates and private keys before they expire.
 
 Renewal options:
 
 * Renew the CA certificates only
-* Renew CA certificates and private keys
-
-The steps to renew your own CA certificates and private keys are the same steps to replace the default CA certificates after deploying a Kafka cluster.
+* Renew CA certificates and private keys (or replace the defaults)
 
 include::../../modules/security/proc-installing-your-own-ca-certificates.adoc[leveloffset=+1]
 
