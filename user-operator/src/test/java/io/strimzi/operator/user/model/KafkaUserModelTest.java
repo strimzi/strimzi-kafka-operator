@@ -283,7 +283,7 @@ public class KafkaUserModelTest {
         assertThat(new String(model.decodeFromSecret(generatedSecret, "ca.crt")),  is("different-clients-ca-crt"));
         assertThat(generatedSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
         assertThat(generatedSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
-        assertThat(generatedSecret.getData().get("user.p12"), is(MockCertManager.entityCertStore()));;
+        assertThat(generatedSecret.getData().get("user.p12"), is(MockCertManager.entityCertStore()));
         assertThat(new String(model.decodeFromSecret(generatedSecret, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
@@ -319,7 +319,7 @@ public class KafkaUserModelTest {
         assertThat(new String(model.decodeFromSecret(generated, "ca.crt")),  is("clients-ca-crt"));
         assertThat(generated.getData().get("user.crt"), is(MockCertManager.entityCert()));
         assertThat(generated.getData().get("user.key"), is(MockCertManager.entityKey()));
-        assertThat(generated.getData().get("user.p12"), is(MockCertManager.entityCertStore()));;
+        assertThat(generated.getData().get("user.p12"), is(MockCertManager.entityCertStore()));
         assertThat(new String(model.decodeFromSecret(generated, "user.password")), is("aaaaaaaaaa"));
 
         // Check owner reference
