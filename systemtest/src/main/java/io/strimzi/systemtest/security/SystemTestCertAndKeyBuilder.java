@@ -74,6 +74,8 @@ public class SystemTestCertAndKeyBuilder {
     private X500Name issuer;
     private X500Name subject;
 
+    // Suppresses the deprecation warning about getSubjectDN()
+    @SuppressWarnings("deprecation")
     private SystemTestCertAndKeyBuilder(KeyPair keyPair, SystemTestCertAndKey caCert, List<Extension> extensions) {
         this.keyPair = keyPair;
         this.caCert = caCert;
