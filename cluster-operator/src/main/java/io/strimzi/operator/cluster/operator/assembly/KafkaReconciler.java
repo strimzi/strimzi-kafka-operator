@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
@@ -244,9 +245,10 @@ public class KafkaReconciler {
      *
      * @return              Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock) {
         return modelWarnings(kafkaStatus)
                 .compose(i -> manualPodCleaning())
+                .compose(i -> validateComputeResources())
                 .compose(i -> networkPolicy())
                 .compose(i -> manualRollingUpdate())
                 .compose(i -> pvcs())
@@ -287,6 +289,23 @@ public class KafkaReconciler {
     protected Future<Void> modelWarnings(KafkaStatus kafkaStatus) {
         kafkaStatus.addConditions(kafka.getWarningConditions());
         return Future.succeededFuture();
+    }
+
+    /**
+     * Early compute resources validation to avoid a rolling update with invalid configuration.
+     *
+     * @return Completes the future when the validation is completed.
+     */
+    protected Future<Void> validateComputeResources() {
+        Set<String> errors = new HashSet<>();
+        ResourceRequirements resources = kafka.getResources();
+        Util.validateComputeResources(resources, "cpu", "kafka").ifPresent(errors::add);
+        Util.validateComputeResources(resources, "memory", "kafka").ifPresent(errors::add);
+        if (errors.size() > 0) { 
+            return Future.failedFuture(errors.toString());
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**

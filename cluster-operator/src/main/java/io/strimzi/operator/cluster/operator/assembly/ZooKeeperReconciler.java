@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
@@ -185,8 +186,9 @@ public class ZooKeeperReconciler {
      *
      * @return              Future which completes when the reconciliation completes
      */
-    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
+    public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock) {
         return modelWarnings(kafkaStatus)
+                .compose(i -> validateComputeResources())
                 .compose(i -> jmxSecret())
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
@@ -224,6 +226,23 @@ public class ZooKeeperReconciler {
     protected Future<Void> modelWarnings(KafkaStatus kafkaStatus) {
         kafkaStatus.addConditions(zk.getWarningConditions());
         return Future.succeededFuture();
+    }
+
+    /**
+     * Early compute resources validation to avoid a rolling update with invalid configuration.
+     *
+     * @return Completes the future when the validation is completed.
+     */
+    protected Future<Void> validateComputeResources() {
+        Set<String> errors = new HashSet<>();
+        ResourceRequirements resources = zk.getResources();
+        Util.validateComputeResources(resources, "cpu", "zookeeper").ifPresent(errors::add);
+        Util.validateComputeResources(resources, "memory", "zookeeper").ifPresent(errors::add);
+        if (errors.size() > 0) { 
+            return Future.failedFuture(errors.toString());
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**
@@ -811,7 +830,7 @@ public class ZooKeeperReconciler {
      */
     private Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, Secret clusterCaCertSecret, Secret coKeySecret) {
         return new ZooKeeperRoller(podOperator, zooLeaderFinder, operationTimeoutMs)
-                .maybeRollingUpdate(reconciliation, zk.getSelectorLabels(), podNeedsRestart, clusterCaCertSecret, coKeySecret);
+                    .maybeRollingUpdate(reconciliation, zk.getSelectorLabels(), podNeedsRestart, clusterCaCertSecret, coKeySecret);
     }
 
     /**

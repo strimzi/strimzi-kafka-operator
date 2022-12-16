@@ -7,6 +7,8 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ExternalLogging;
@@ -41,6 +43,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -53,6 +56,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
@@ -857,5 +861,33 @@ public class Util {
      */
     public static String encodeToBase64(String encode)  {
         return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /**
+     * Validate container's common compute resources.
+     * 
+     * @param resources Compute resources configuration.
+     * @param type Compute resource type (cpu or memory).
+     * @param owner Compute resource owner.
+     * 
+     * @return Error message or empty (no error found).
+     */
+    public static Optional<String> validateComputeResources(ResourceRequirements resources, String type, String owner) {
+        if (resources != null && resources.getRequests() != null && resources.getLimits() != null 
+                && type != null && Arrays.asList("cpu", "memory").contains(type)) {
+            Quantity cpuRequest = resources.getRequests().get(type);
+            Quantity cpuLimit = resources.getLimits().get(type);
+            if (cpuRequest != null && cpuRequest.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
+                return Optional.of(String.format("Invalid %s request for %s: must be > 0", type, owner));
+            }
+            if (cpuLimit != null && cpuLimit.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
+                return Optional.of(String.format("Invalid %s limit for %s: must be > 0", type, owner));
+            }
+            if (cpuRequest != null && cpuLimit != null && cpuRequest.getNumericalAmount().compareTo(cpuLimit.getNumericalAmount()) > 0) {
+                return Optional.of(String.format("Invalid %s request for %s: must be <= limit", type, owner));
+            }
+            return Optional.empty();
+        }
+        return Optional.empty();
     }
 }
