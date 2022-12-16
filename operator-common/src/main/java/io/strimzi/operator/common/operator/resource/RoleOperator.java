@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operator for managing Roles
  */
-public class RoleOperator extends AbstractResourceOperator<
+public class RoleOperator extends AbstractNamespacedResourceOperator<
         KubernetesClient,
         Role,
         RoleList,

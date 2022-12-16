@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
@@ -22,9 +21,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Pattern;
 
 /**
  * Abstract resource creation, for a generic resource type {@code R}.
@@ -35,14 +31,12 @@ import java.util.regex.Pattern;
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient, T extends HasMetadata,
-        L extends KubernetesResourceList<T>, R extends Resource<T>> {
+public abstract class AbstractNonNamespacedResourceOperator<C extends KubernetesClient,
+            T extends HasMetadata,
+            L extends KubernetesResourceList<T>,
+            R extends Resource<T>>
+        extends AbstractResourceOperator<C, T, L, R> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNonNamespacedResourceOperator.class);
-
-    protected final Vertx vertx;
-    protected final C client;
-    protected final String resourceKind;
-    protected final ResourceSupport resourceSupport;
 
     /**
      * Constructor.
@@ -51,10 +45,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
     public AbstractNonNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        this.vertx = vertx;
-        this.client = client;
-        this.resourceKind = resourceKind;
-        this.resourceSupport = new ResourceSupport(vertx);
+        super(vertx, client, resourceKind);
     }
 
     protected abstract NonNamespaceOperation<T, L, R> operation();
@@ -118,10 +109,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         return promise.future();
     }
 
-    protected long deleteTimeoutMs() {
-        return ResourceSupport.DEFAULT_TIMEOUT_MS;
-    }
-
     /**
      * Asynchronously deletes the resource with the given {@code name},
      * returning a Future which completes once the resource
@@ -163,41 +150,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     }
 
     /**
-     * @return  Returns the Pattern for matching paths which can be ignored in the resource diff
-     */
-    protected Pattern ignorablePaths() {
-        return ResourceDiff.DEFAULT_IGNORABLE_PATHS;
-    }
-
-    /**
-     * Returns the diff of the current and desired resources
-     *
-     * @param reconciliation The reconciliation
-     * @param resourceName  Name of the resource used for logging
-     * @param current       Current resource
-     * @param desired       Desired resource
-     *
-     * @return  The ResourceDiff instance
-     */
-    protected ResourceDiff<T> diff(Reconciliation reconciliation, String resourceName, T current, T desired)  {
-        return new ResourceDiff<>(reconciliation, resourceKind, resourceName, current, desired, ignorablePaths());
-    }
-
-    /**
-     * Checks whether the current and desired resources differ and need to be patched in the Kubernetes API server.
-     *
-     * @param reconciliation The reconciliation
-     * @param name      Name of the resource used for logging
-     * @param current   Current resource
-     * @param desired   desired resource
-     *
-     * @return          True if the resources differ and need patching
-     */
-    protected boolean needsPatching(Reconciliation reconciliation, String name, T current, T desired)   {
-        return !diff(reconciliation, name, current, desired).isEmpty();
-    }
-
-    /**
      * Patches the resource with the given name to match the given desired resource
      * and completes the given future accordingly.
      */
@@ -216,17 +168,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
         } else {
             LOGGER.debugCr(reconciliation, "{} {} did not changed and doesn't need patching", resourceKind, name);
             return Future.succeededFuture(ReconcileResult.noop(current));
-        }
-    }
-
-    private boolean wasChanged(T oldVersion, T newVersion) {
-        if (oldVersion != null
-                && oldVersion.getMetadata() != null
-                && newVersion != null
-                && newVersion.getMetadata() != null) {
-            return !Objects.equals(oldVersion.getMetadata().getResourceVersion(), newVersion.getMetadata().getResourceVersion());
-        } else {
-            return true;
         }
     }
 
@@ -276,7 +217,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return A list of matching resources.
      */
     public List<T> list(Labels selector) {
-        return listOperation(selector).list().getItems();
+        return list(applySelector(operation(), selector));
     }
 
     /**
@@ -285,17 +226,6 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @return A list of matching resources.
      */
     public Future<List<T>> listAsync(Labels selector) {
-        return resourceSupport.listAsync(listOperation(selector));
-    }
-
-    protected FilterWatchListDeletable<T, L, R> listOperation(Labels selector) {
-        NonNamespaceOperation<T, L, R> operation = operation();
-
-        if (selector != null) {
-            Map<String, String> labels = selector.toMap();
-            return operation.withLabels(labels);
-        } else {
-            return operation;
-        }
+        return listAsync(applySelector(operation(), selector));
     }
 }

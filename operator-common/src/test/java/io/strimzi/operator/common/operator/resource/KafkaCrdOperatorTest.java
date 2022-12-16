@@ -29,7 +29,7 @@ import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Kafka, KafkaList, Resource<Kafka>> {
+public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Kafka, KafkaList, Resource<Kafka>> {
 
     @Override
     protected Class<KubernetesClient> clientType() {

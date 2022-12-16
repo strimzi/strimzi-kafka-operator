@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Route}s.
  */
-public class RouteOperator extends AbstractResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> {
+public class RouteOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> {
     /**
      * Constructor
      * @param vertx The Vertx instance

@@ -16,19 +16,19 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 /**
- * An {@link AbstractResourceOperator} that can be scaled up and down in addition to the usual operations.
+ * An {@link AbstractNamespacedResourceOperator} that can be scaled up and down in addition to the usual operations.
  * @param <C> The type of client used to interact with kubernetes.
  * @param <T> The Kubernetes resource type.
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractScalableResourceOperator<C extends KubernetesClient,
+public abstract class AbstractScalableNamespacedResourceOperator<C extends KubernetesClient,
             T extends HasMetadata,
             L extends KubernetesResourceList<T>,
             R extends ScalableResource<T>>
-        extends AbstractReadyResourceOperator<C, T, L, R> {
+        extends AbstractReadyNamespacedResourceOperator<C, T, L, R> {
 
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractScalableResourceOperator.class);
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractScalableNamespacedResourceOperator.class);
 
     /**
      * Annotation key for indicating the resource generation
@@ -46,7 +46,7 @@ public abstract class AbstractScalableResourceOperator<C extends KubernetesClien
      * @param client The Kubernetes client
      * @param resourceKind The kind of resource.
      */
-    public AbstractScalableResourceOperator(Vertx vertx, C client, String resourceKind) {
+    public AbstractScalableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 

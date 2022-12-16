@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Secret}s.
  */
-public class SecretOperator extends AbstractResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> {
+public class SecretOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> {
 
     /**
      * Constructor

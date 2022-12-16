@@ -14,7 +14,7 @@ import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.AbstractResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractNamespacedResourceOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -369,16 +369,16 @@ public class ClusterOperatorConfig {
     private static Set<String> parseNamespaceList(String namespacesList)   {
         Set<String> namespaces;
         if (namespacesList == null || namespacesList.isEmpty()) {
-            namespaces = Collections.singleton(AbstractResourceOperator.ANY_NAMESPACE);
+            namespaces = Collections.singleton(AbstractNamespacedResourceOperator.ANY_NAMESPACE);
         } else {
-            if (namespacesList.trim().equals(AbstractResourceOperator.ANY_NAMESPACE)) {
-                namespaces = Collections.singleton(AbstractResourceOperator.ANY_NAMESPACE);
+            if (namespacesList.trim().equals(AbstractNamespacedResourceOperator.ANY_NAMESPACE)) {
+                namespaces = Collections.singleton(AbstractNamespacedResourceOperator.ANY_NAMESPACE);
             } else if (namespacesList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
                 namespaces = new HashSet<>(asList(namespacesList.trim().split("\\s*,+\\s*")));
             } else {
                 throw new InvalidConfigurationException(STRIMZI_NAMESPACE
                         + " is not a valid list of namespaces nor the 'any namespace' wildcard "
-                        + AbstractResourceOperator.ANY_NAMESPACE);
+                        + AbstractNamespacedResourceOperator.ANY_NAMESPACE);
             }
         }
 

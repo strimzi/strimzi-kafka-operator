@@ -23,8 +23,8 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.AbstractResourceOperatorTest;
-import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractNamespacedResourceOperatorTest;
+import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
@@ -71,14 +71,14 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     protected StatefulSet resource(String name) {
         return new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
+                    .withNamespace(AbstractNamespacedResourceOperatorTest.NAMESPACE)
                     .withName(name)
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
                     .withNewTemplate()
                         .withNewMetadata()
-                            .addToAnnotations(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION, "1")
+                            .addToAnnotations(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_GENERATION, "1")
                         .endMetadata()
                     .endTemplate()
                 .endSpec()
@@ -92,7 +92,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
                     .withReplicas(5)
                     .withNewTemplate()
                         .withNewMetadata()
-                            .addToAnnotations(AbstractScalableResourceOperator.ANNO_STRIMZI_IO_GENERATION, "2")
+                            .addToAnnotations(AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_GENERATION, "2")
                         .endMetadata()
                         .withNewSpec()
                             .withHostname("new-hostname")
@@ -155,8 +155,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     public void testInternalReplace(VertxTestContext context)   {
         StatefulSet sts1 = new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
-                    .withName(AbstractResourceOperatorTest.RESOURCE_NAME)
+                    .withNamespace(AbstractNamespacedResourceOperatorTest.NAMESPACE)
+                    .withName(AbstractNamespacedResourceOperatorTest.RESOURCE_NAME)
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -185,8 +185,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         StatefulSet sts2 = new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withNamespace(AbstractResourceOperatorTest.NAMESPACE)
-                    .withName(AbstractResourceOperatorTest.RESOURCE_NAME)
+                    .withNamespace(AbstractNamespacedResourceOperatorTest.NAMESPACE)
+                    .withName(AbstractNamespacedResourceOperatorTest.RESOURCE_NAME)
                 .endMetadata()
                 .withNewSpec()
                     .withReplicas(3)
@@ -228,7 +228,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -274,7 +274,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -314,7 +314,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -348,7 +348,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -383,7 +383,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;

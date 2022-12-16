@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operator for managing Pod Disruption Budgets of API version v1beta1
  */
-public class PodDisruptionBudgetV1Beta1Operator extends AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
+public class PodDisruptionBudgetV1Beta1Operator extends AbstractNamespacedResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
     /**
      * Constructs the PDB v1beta1 operator
      *

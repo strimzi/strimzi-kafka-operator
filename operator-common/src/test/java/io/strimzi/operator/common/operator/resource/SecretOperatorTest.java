@@ -15,7 +15,7 @@ import io.vertx.core.Vertx;
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
-public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Secret, SecretList, Resource<Secret>> {
+public class SecretOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Secret, SecretList, Resource<Secret>> {
 
 
     @Override
@@ -53,7 +53,7 @@ public class SecretOperatorTest extends AbstractResourceOperatorTest<KubernetesC
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new SecretOperator(vertx, mockClient);
     }
 }

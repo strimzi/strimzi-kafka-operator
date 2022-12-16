@@ -13,7 +13,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
- * Specializes {@link AbstractResourceOperator} for resources which also have a notion
+ * Specializes {@link AbstractNamespacedResourceOperator} for resources which also have a notion
  * of being "ready".
  *
  * @param <C> The type of client used to interact with kubernetes.
@@ -21,11 +21,11 @@ import io.vertx.core.Vertx;
  * @param <L> The list variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
+public abstract class AbstractReadyNamespacedResourceOperator<C extends KubernetesClient,
             T extends HasMetadata,
             L extends KubernetesResourceList<T>,
             R extends Resource<T>>
-        extends AbstractResourceOperator<C, T, L, R> {
+        extends AbstractNamespacedResourceOperator<C, T, L, R> {
 
     /**
      * Constructor.
@@ -34,7 +34,7 @@ public abstract class AbstractReadyResourceOperator<C extends KubernetesClient,
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractReadyResourceOperator(Vertx vertx, C client, String resourceKind) {
+    public AbstractReadyNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 

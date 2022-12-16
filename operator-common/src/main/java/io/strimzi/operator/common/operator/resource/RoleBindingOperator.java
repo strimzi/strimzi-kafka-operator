@@ -14,7 +14,7 @@ import io.vertx.core.Vertx;
 /**
  * Operator for managing Role Bindings
  */
-public class RoleBindingOperator extends AbstractResourceOperator<KubernetesClient, RoleBinding,
+public class RoleBindingOperator extends AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding,
         RoleBindingList,
         Resource<RoleBinding>> {
     /**

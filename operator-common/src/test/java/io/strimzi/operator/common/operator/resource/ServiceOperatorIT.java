@@ -20,11 +20,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
-public class ServiceOperatorIT extends AbstractResourceOperatorIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
+public class ServiceOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, Service, ServiceList, ServiceResource<Service>> {
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Service, ServiceList,
-            ServiceResource<Service>> operator() {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Service, ServiceList,
+                ServiceResource<Service>> operator() {
         return new ServiceOperator(vertx, client);
     }
 

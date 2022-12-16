@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -68,7 +68,7 @@ public class OperatorMetricsTest {
     public void successfulReconcile(VertxTestContext context, Labels selectorLabels)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels) {
             @Override
@@ -130,7 +130,7 @@ public class OperatorMetricsTest {
     public void failingReconcile(VertxTestContext context, Labels selectorLabels)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, selectorLabels) {
             @Override
@@ -194,7 +194,7 @@ public class OperatorMetricsTest {
     public void testPauseReconcile(VertxTestContext context)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingPausedResource();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
             @Override
@@ -244,7 +244,7 @@ public class OperatorMetricsTest {
     public void testFailingWithLockReconcile(VertxTestContext context)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metricsProvider, null) {
             @Override
@@ -281,7 +281,7 @@ public class OperatorMetricsTest {
     public void testDeleteCountsReconcile(VertxTestContext context)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
             @Override
             protected MixedOperation operation() {
                 return null;
@@ -349,7 +349,7 @@ public class OperatorMetricsTest {
         resources.add(new NamespaceAndName("my-namespace", "vtid"));
         resources.add(new NamespaceAndName("my-namespace", "utv"));
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
         AbstractOperator operator = new ReconcileAllMockOperator(vertx, "TestResource", resourceOperator, metrics, null);
 
         Promise<Void> reconcileAllPromise = Promise.promise();
@@ -400,7 +400,7 @@ public class OperatorMetricsTest {
         updatedResources.add(new NamespaceAndName("my-namespace", "avfc"));
         updatedResources.add(new NamespaceAndName("my-namespace", "vtid"));
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
 
         AbstractOperator operator = new ReconcileAllMockOperator(vertx, "TestResource", resourceOperator, metrics, null);
 
@@ -489,8 +489,8 @@ public class OperatorMetricsTest {
     protected abstract static class MyResource extends CustomResource {
     }
 
-    protected AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource(Labels selectorLabels)    {
-        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+    protected AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingResource(Labels selectorLabels)    {
+        return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
             @Override
             public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
@@ -515,16 +515,16 @@ public class OperatorMetricsTest {
         };
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithoutSelectorLabel() {
+    private AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingResourceWithoutSelectorLabel() {
         return resourceOperatorWithExistingResource(null);
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithSelectorLabel(Labels selectorLabel) {
+    private AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingResourceWithSelectorLabel(Labels selectorLabel) {
         return resourceOperatorWithExistingResource(selectorLabel);
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource() {
-        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
+    private AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingPausedResource() {
+        return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
             @Override
             public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return Future.succeededFuture();
@@ -561,7 +561,7 @@ public class OperatorMetricsTest {
     static class ReconcileAllMockOperator extends  AbstractOperator  {
         private Set<NamespaceAndName> resources;
 
-        public ReconcileAllMockOperator(Vertx vertx, String kind, AbstractWatchableStatusedResourceOperator resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
+        public ReconcileAllMockOperator(Vertx vertx, String kind, AbstractWatchableStatusedNamespacedResourceOperator resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
             super(vertx, kind, resourceOperator, metrics, selectorLabels);
         }
 

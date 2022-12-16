@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
+import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -214,7 +214,7 @@ class AbstractOperatorTest {
             T extends CustomResource<P, S>,
             P extends Spec,
             S extends Status,
-            O extends AbstractWatchableStatusedResourceOperator<?, T, ?, ?>>
+            O extends AbstractWatchableStatusedNamespacedResourceOperator<?, T, ?, ?>>
                 extends AbstractOperator<T, P, S, O> {
 
         public DefaultOperator(Vertx vertx, String kind, O resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
@@ -250,7 +250,7 @@ class AbstractOperatorTest {
             T extends HasMetadata,
             L extends KubernetesResourceList<T>,
             R extends Resource<T>>
-                extends AbstractWatchableStatusedResourceOperator<C, T, L, R> {
+                extends AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> {
 
         public DefaultWatchableStatusedResourceOperator(Vertx vertx, C client, String resourceKind) {
             super(vertx, client, resourceKind);

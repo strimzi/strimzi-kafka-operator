@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Pod}s, which support {@link #isReady(String, String)}.
  */
-public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient, Pod, PodList, PodResource> {
+public class PodOperator extends AbstractReadyNamespacedResourceOperator<KubernetesClient, Pod, PodList, PodResource> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodOperator.class);
     private static final String NO_UID = "NULL";

@@ -22,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IngressOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
     @Override
     protected Class<KubernetesClient> clientType() {
         return KubernetesClient.class;
@@ -65,7 +65,7 @@ public class IngressOperatorTest extends AbstractResourceOperatorTest<Kubernetes
     }
 
     @Override
-    protected AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
         return new IngressOperator(vertx, mockClient);
     }
 

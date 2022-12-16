@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operations for {@code Ingress}es.
  */
-public class IngressOperator extends AbstractResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
+public class IngressOperator extends AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> {
 
     /**
      * Constructor

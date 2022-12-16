@@ -31,10 +31,6 @@ import java.util.function.Function;
  * Utility method for working with Kubernetes resources
  */
 public class ResourceSupport {
-    /**
-     * Default reconciliation timeout
-     */
-    public static final long DEFAULT_TIMEOUT_MS = 300_000;
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceSupport.class);
 
     private final Vertx vertx;

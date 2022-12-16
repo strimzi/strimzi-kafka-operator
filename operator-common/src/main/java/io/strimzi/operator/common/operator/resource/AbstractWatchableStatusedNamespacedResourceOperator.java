@@ -21,12 +21,12 @@ import io.vertx.core.Vertx;
  * @param <L>   Kubernetes resource list
  * @param <R>   Kubernetes Reasource
  */
-public abstract class AbstractWatchableStatusedResourceOperator<
+public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
         C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>>
-        extends AbstractWatchableResourceOperator<C, T, L, R> {
+        extends AbstractWatchableNamespacedResourceOperator<C, T, L, R> {
     /**
      * Constructor.
      *
@@ -34,7 +34,7 @@ public abstract class AbstractWatchableStatusedResourceOperator<
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractWatchableStatusedResourceOperator(Vertx vertx, C client, String resourceKind) {
+    public AbstractWatchableStatusedNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
 
