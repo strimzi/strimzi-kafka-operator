@@ -180,9 +180,9 @@ public class KafkaCluster extends AbstractModel {
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
 
     /**
-     * Annotation for keeping brokers' certificate thumbprints.
+     * Annotation for keeping Kafka servers' certificate thumbprints.
      */
-    public static final String ANNO_STRIMZI_BROKER_CERT_HASH = Annotations.STRIMZI_DOMAIN + "broker-certs-hash";
+    public static final String ANNO_STRIMZI_SERVER_CERT_HASH = Annotations.STRIMZI_DOMAIN + "server-certs-hash";
 
     /**
      * Annotation for keeping certificate thumprints

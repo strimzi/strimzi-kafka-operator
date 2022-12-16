@@ -803,7 +803,7 @@ public class KafkaReconciler {
         Map<String, String> podAnnotations = commonKafkaPodAnnotations(brokerId);
 
         // Annotation of broker certificate hash
-        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CERT_HASH, Ca.getCertificateThumbprintForBroker(kafkaSecret, KafkaResources.kafkaPodName(reconciliation.name(), brokerId)));
+        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_SERVER_CERT_HASH, Ca.getCertificateThumbprintForBroker(kafkaSecret, KafkaResources.kafkaPodName(reconciliation.name(), brokerId)));
 
         return podAnnotations;
     }
