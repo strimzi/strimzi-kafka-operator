@@ -236,7 +236,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         return super.delete(reconciliation)
-                .compose(i -> withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
+                .compose(i -> ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 

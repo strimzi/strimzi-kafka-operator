@@ -5,7 +5,6 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -23,7 +22,6 @@ import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
@@ -570,30 +568,4 @@ public abstract class AbstractOperator<
             LOGGER.debugCr(reconciliation, "Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
         }
     }
-
-    /**
-     * In some cases, when the ClusterRoleBinding reconciliation fails with RBAC error and the desired object is null,
-     * we want to ignore the error and return success. This is used to let Strimzi work without some Cluster-wide RBAC
-     * rights when the features they are needed for are not used by the user.
-     *
-     * @param reconciliation    The reconciliation
-     * @param reconcileFuture   The original reconciliation future
-     * @param desired           The desired state of the resource.
-     * @return                  A future which completes when the resource was reconciled.
-     */
-    public Future<ReconcileResult<ClusterRoleBinding>> withIgnoreRbacError(Reconciliation reconciliation, Future<ReconcileResult<ClusterRoleBinding>> reconcileFuture, ClusterRoleBinding desired) {
-        return reconcileFuture.compose(
-            rr -> Future.succeededFuture(),
-            e -> {
-                if (desired == null
-                        && e.getMessage() != null
-                        && e.getMessage().contains("Message: Forbidden!")) {
-                    LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
-                    return Future.succeededFuture();
-                }
-                return Future.failedFuture(e.getMessage());
-            }
-        );
-    }
-
 }
