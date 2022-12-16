@@ -12,7 +12,7 @@ This is usually defined as a number of days since the certificate was generated.
 For CA certificates automatically created by the Cluster Operator, you can configure the validity period of:
 
 * Cluster CA certificates in `Kafka.spec.clusterCa.validityDays`
-* Client CA certificates in `Kafka.spec.clientsCa.validityDays`
+* Clients CA certificates in `Kafka.spec.clientsCa.validityDays`
 
 The default validity period for both certificates is 365 days.
 Manually-installed CA certificates should have their own validity periods defined.
@@ -25,7 +25,7 @@ To allow the renewal of CA certificates without a loss of service, the Cluster O
 You can configure the renewal period of the certificates created by the Cluster Operator:
 
 * Cluster CA certificates in `Kafka.spec.clusterCa.renewalDays`
-* Client CA certificates in `Kafka.spec.clientsCa.renewalDays`
+* Clients CA certificates in `Kafka.spec.clientsCa.renewalDays`
 
 The default renewal period for both certificates is 30 days.
 

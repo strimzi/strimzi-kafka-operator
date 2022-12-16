@@ -3,15 +3,14 @@
 // assembly-security.adoc
 
 [id='certificate-authorities-{context}']
-= Certificate Authorities
+= Internal cluster CA and clients CA
 
+[role="_abstract"]
 To support encryption, each Strimzi component needs its own private keys and public key certificates.
 All component certificates are signed by an internal CA (certificate authority) called the _cluster CA_.
 
 Similarly, each Kafka client application connecting to Strimzi using mTLS needs to use private keys and certificates.
 A second internal CA, named the _clients CA_, is used to sign certificates for the Kafka clients.
-
-== CA certificates
 
 Both the cluster CA and clients CA have a self-signed public key certificate.
 
@@ -22,8 +21,7 @@ This is also true for client applications that perform xref:assembly-securing-ka
 
 By default, Strimzi automatically generates and renews CA certificates issued by the cluster CA or clients CA.
 You can configure the management of these CA certificates in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.
-Certificates provided by users are not renewed.
 
-You can provide your own CA certificates for the cluster CA or clients CA.
+You can replace the CA certificates for the cluster CA or clients CA with your own.
 For more information, see xref:installing-your-own-ca-certificates-{context}[].
-If you provide your own certificates, you must manually renew them when needed.
+If you provide your own CA certificates, you must renew them before they expire.

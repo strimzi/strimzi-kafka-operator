@@ -33,7 +33,7 @@ a|StatefulSet
 
 |ClientCaCertKeyReplaced
 |ClientCaCertKeyReplaced
-|The key used to sign client CA certificates has been replaced, and the pod is being restarted as part of the CA renewal process.
+|The key used to sign clients CA certificates has been replaced, and the pod is being restarted as part of the CA renewal process.
 
 |ClusterCaCertKeyReplaced
 |ClusterCaCertKeyReplaced
