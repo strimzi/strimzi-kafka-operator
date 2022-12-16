@@ -1481,6 +1481,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                     .withImage(ccImage)
                                 .endCruiseControl()
                             .endSpec()
+                            .withNewStatus()
+                            .withObservedGeneration(1L)
+                            .withConditions(new ConditionBuilder()
+                                    .withType("Ready")
+                                    .withStatus("True")
+                                    .build())
+                            .endStatus()
                             .build();
 
                     when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));
