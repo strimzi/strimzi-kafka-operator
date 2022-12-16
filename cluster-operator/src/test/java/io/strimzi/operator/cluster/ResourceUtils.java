@@ -210,7 +210,7 @@ public class ResourceUtils {
      */
     public static Secret createMockBrokersCertsSecret(String clusterNamespace, String clusterName, int replicas, String secretName,
                                                       String brokerCert, String brokerKey, String p12KeyStore, String p12KeyStorePassword) {
-        Map<String, String> data = new HashMap<>(replicas * 4);
+        Map<String, String> data = new HashMap<>((int)(1 + replicas * 4 / 0.75));
         for (int i = 0; i < replicas; i++) {
             data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.KEY), brokerKey);
             data.put(Ca.SecretEntry.getNameForPod(KafkaResources.kafkaPodName(clusterName, i), Ca.SecretEntry.CRT), brokerCert);
