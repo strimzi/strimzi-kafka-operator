@@ -1405,7 +1405,7 @@ public class KafkaRebalanceAssemblyOperator
          * Kafka Cluster is not ready
          *
          */
-        kafkaClusterNotReady("Creating Kafka Cluster");
+        kafkaClusterNotReady("Kafka cluster is not Ready");
 
         public String getReason() {
             return reason;

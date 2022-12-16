@@ -19,7 +19,9 @@ import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
-import io.strimzi.api.kafka.model.status.*;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -1393,7 +1395,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
                             .editKafka()
-                            .withVersion(version)
+                                .withVersion(version)
                             .endKafka()
                         .endSpec()
                         .withNewStatus()
