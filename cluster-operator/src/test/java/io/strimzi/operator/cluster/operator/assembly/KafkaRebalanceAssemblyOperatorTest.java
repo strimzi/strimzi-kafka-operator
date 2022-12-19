@@ -19,10 +19,11 @@ import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpecBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
-import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -126,6 +127,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
                             .withImage(ccImage)
                         .endCruiseControl()
                     .endSpec()
+                    .withNewStatus()
+                        .withObservedGeneration(1L)
+                        .withConditions(new ConditionBuilder()
+                                .withType("Ready")
+                                .withStatus("True")
+                                .build())
+                    .endStatus()
                     .build();
 
     @BeforeAll
@@ -1386,10 +1394,17 @@ public class KafkaRebalanceAssemblyOperatorTest {
         Kafka kafka =
                 new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
                         .editSpec()
-                        .editKafka()
-                        .withVersion(version)
-                        .endKafka()
+                            .editKafka()
+                                .withVersion(version)
+                            .endKafka()
                         .endSpec()
+                        .withNewStatus()
+                            .withObservedGeneration(1L)
+                            .withConditions(new ConditionBuilder()
+                                    .withType("Ready")
+                                    .withStatus("True")
+                                    .build())
+                        .endStatus()
                         .build();
 
         KafkaRebalance kr =
@@ -1423,6 +1438,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                 .withVersion(version)
                             .endKafka()
                         .endSpec()
+                        .withNewStatus()
+                            .withObservedGeneration(1L)
+                            .withConditions(new ConditionBuilder()
+                                    .withType("Ready")
+                                    .withStatus("True")
+                                    .build())
+                        .endStatus()
                         .build();
 
         KafkaRebalance kr =
@@ -1459,6 +1481,13 @@ public class KafkaRebalanceAssemblyOperatorTest {
                                     .withImage(ccImage)
                                 .endCruiseControl()
                             .endSpec()
+                            .withNewStatus()
+                            .withObservedGeneration(1L)
+                            .withConditions(new ConditionBuilder()
+                                    .withType("Ready")
+                                    .withStatus("True")
+                                    .build())
+                            .endStatus()
                             .build();
 
                     when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));

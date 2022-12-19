@@ -1160,6 +1160,14 @@ public class KafkaRebalanceAssemblyOperator
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")).mapEmpty();
+                    } else if (kafka.getStatus() == null
+                            || kafka.getStatus().getConditions() == null
+                            || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) {
+                        String errorString = "Kafka cluster is not Ready";
+                        LOGGER.warnCr(reconciliation, errorString);
+                        KafkaRebalanceStatus status = new KafkaRebalanceStatus();
+                        return updateStatus(reconciliation, kafkaRebalance, status,
+                                new RuntimeException(CruiseControlIssues.kafkaClusterNotReady.getReason())).mapEmpty();
                     } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.get().getMatchLabels());
                         return Future.succeededFuture();
@@ -1392,7 +1400,12 @@ public class KafkaRebalanceAssemblyOperator
         /**
          * Cruise Control was not declared in the Kafka Resource
          */
-        cruiseControlDisabled("Cruise Control disabled");
+        cruiseControlDisabled("Cruise Control disabled"),
+
+        /**
+         * Kafka Cluster is not ready
+         */
+        kafkaClusterNotReady("Kafka cluster is not Ready");
 
         public String getReason() {
             return reason;
