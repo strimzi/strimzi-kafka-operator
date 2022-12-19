@@ -817,33 +817,28 @@ public class ModelUtils {
     }
 
     /**
-     * Validate CPU requests and limits.
+     * Validate cpu and memory resources.
+     * Early resources validation avoids triggering any pod operation with invalid configuration.
      * 
-     * @param resources Compute resources configuration.
-     * @param owner Compute resources owner.
+     * For both cpu and memory, this method checks that the request is greater than zero and, if present, 
+     * that the limit is greater than zero and greater than or equal to the request.
      * 
-     * @return Error set.
+     * @param resources Resources configuration.
+     * @param owner Resources owner.
      */
-    public static Set<String> validateCpuResources(ResourceRequirements resources, String owner) {
-        return validateComputeResources(resources, "cpu", owner);
+    public static void validateComputeResources(ResourceRequirements resources, String owner) {
+        Set<String> errors = ModelUtils.validateComputeResources(resources, "cpu", owner);
+        errors.addAll(ModelUtils.validateComputeResources(resources, "memory", owner));
+        if (errors.size() > 0) {
+            throw new InvalidResourceException(errors.toString());
+        }
     }
 
     /**
-     * Validate memory requests and limits.
+     * Validate compute resources for a given owner.
      * 
-     * @param resources Compute resources configuration.
-     * @param owner Compute resources owner.
-     * 
-     * @return Error set.
-     */
-    public static Set<String> validateMemoryResources(ResourceRequirements resources, String owner) {
-        return validateComputeResources(resources, "memory", owner);
-    }
-
-    /**
-     * Validate compute resources requests and limits.
-     * 
-     * TODO: handle any type, not just cpu and memory.
+     * This method checks that the request is greater than zero and, if present, 
+     * that the limit is greater than zero and greater than or equal to the request.
      * 
      * @param resources Compute resources configuration.
      * @param type Compute resources type.
@@ -853,19 +848,21 @@ public class ModelUtils {
      */
     private static Set<String> validateComputeResources(ResourceRequirements resources, String type, String owner) {
         Set<String> errors = new HashSet<>();
-        String ownerId = owner != null && !owner.isBlank() ? owner : "unknown";
+        String oid = owner != null && !owner.isBlank() ? owner : "component";
         if (resources != null && resources.getRequests() != null) {
-            Quantity cpuRequest = resources.getRequests().get(type);
-            if (cpuRequest != null && cpuRequest.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
-                errors.add(String.format("Invalid %s request for %s: must be > 0", type, ownerId));
+            Quantity request = resources.getRequests().get(type);
+            if (request != null && request.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
+                errors.add(String.format("Invalid %s request for %s: must be > 0", type, oid));
             }
             if (resources.getLimits() != null) {
-                Quantity cpuLimit = resources.getLimits().get(type);
-                if (cpuLimit != null && cpuLimit.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
-                    errors.add(String.format("Invalid %s limit for %s: must be > 0", type, ownerId));
-                }
-                if (cpuLimit != null && cpuRequest.getNumericalAmount().compareTo(cpuLimit.getNumericalAmount()) > 0) {
-                    errors.add(String.format("Invalid %s request for %s: must be <= limit", type, ownerId));
+                Quantity limit = resources.getLimits().get(type);
+                if (limit != null) {
+                    if (limit.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
+                        errors.add(String.format("Invalid %s limit for %s: must be > 0", type, oid));
+                    }
+                    if (request.getNumericalAmount().compareTo(limit.getNumericalAmount()) > 0) {
+                        errors.add(String.format("Invalid %s request for %s: must be <= limit", type, oid));
+                    }
                 }
             }
         }

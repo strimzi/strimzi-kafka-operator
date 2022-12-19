@@ -204,7 +204,7 @@ public class ZookeeperCluster extends AbstractModel {
         }
         zk.setReplicas(replicas);
 
-        validateComputeResources(zookeeperClusterSpec.getResources());
+        ModelUtils.validateComputeResources(zookeeperClusterSpec.getResources(), ".spec.zookeeper.resources");
 
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
@@ -328,19 +328,6 @@ public class ZookeeperCluster extends AbstractModel {
         zk.warningConditions.addAll(specChecker.run());
 
         return zk;
-    }
-
-    /**
-     * Early resources validation to avoid triggering any pod operation with invalid configuration.
-     * 
-     * @param resources Resources configuration.
-     */
-    private static void validateComputeResources(ResourceRequirements resources) {
-        Set<String> errors = ModelUtils.validateCpuResources(resources, "zookeeper");
-        errors.addAll(ModelUtils.validateMemoryResources(resources, "zookeeper"));
-        if (errors.size() > 0) {
-            throw new InvalidResourceException(errors.toString());
-        }
     }
 
     /**

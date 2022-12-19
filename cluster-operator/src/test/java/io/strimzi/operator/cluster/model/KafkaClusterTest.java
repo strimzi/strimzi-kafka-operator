@@ -3899,10 +3899,71 @@ public class KafkaClusterTest {
         resourceTester.assertDesiredResource(".yaml", AbstractModel::getTolerations);
     }
 
-    // TODO add tests covering the different valid and invalid resource combinations
+    // TODO use @MethodSource to test every combination
 
     @ParallelTest
-    public void testValidateComputeResources() {
+    public void resourcesWithNoLimits() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("cpu", new Quantity("1000m"))
+                            .addToRequests("memory", new Quantity("2Gi"))
+                            .build())
+                        .withStorage(new EphemeralStorageBuilder().build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        assertThat(kc.getContainers(null).get(0), notNullValue());
+    }
+
+    @ParallelTest
+    public void resourcesWithRequestsEqualToLimits() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("cpu", new Quantity("1000m"))
+                            .addToLimits("cpu", new Quantity("1000m"))
+                            .addToRequests("memory", new Quantity("2Gi"))
+                            .addToLimits("memory", new Quantity("2Gi"))
+                            .build())
+                        .withStorage(new EphemeralStorageBuilder().build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        assertThat(kc.getContainers(null).get(0), notNullValue());
+    }
+
+    @ParallelTest
+    public void resourcesWithRequestsLowerThanLimits() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("cpu", new Quantity("500m"))
+                            .addToLimits("cpu", new Quantity("1000m"))
+                            .addToRequests("memory", new Quantity("1Gi"))
+                            .addToLimits("memory", new Quantity("2Gi"))
+                            .build())
+                        .withStorage(new EphemeralStorageBuilder().build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        assertThat(kc.getContainers(null).get(0), notNullValue());
+    }
+
+    @ParallelTest
+    public void resourcesWithRequestsEqualToZero() {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -3910,6 +3971,27 @@ public class KafkaClusterTest {
                         .withResources(new ResourceRequirementsBuilder()
                             .addToRequests("cpu", new Quantity("0"))
                             .addToLimits("cpu", new Quantity("1000m"))
+                            .build())
+                        .withStorage(new PersistentClaimStorageBuilder()
+                            .withSize("123")
+                            .withStorageClass("foo")
+                            .withDeleteClaim(true)
+                            .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
+        assertThat(ex.getMessage(), equalTo("[Invalid cpu request for .spec.kafka.resources: must be > 0]"));
+    }
+
+    @ParallelTest
+    public void resourcesWithRequestsGreaterThanLimits() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withResources(new ResourceRequirementsBuilder()
                             .addToRequests("memory", new Quantity("2Gi"))
                             .addToLimits("memory", new Quantity("1Gi"))
                             .build())
@@ -3923,6 +4005,6 @@ public class KafkaClusterTest {
                 .build();
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
-        assertThat(ex.getMessage(), equalTo("[Invalid cpu request for kafka: must be > 0, Invalid memory request for kafka: must be <= limit]"));
-    }   
+        assertThat(ex.getMessage(), equalTo("[Invalid memory request for .spec.kafka.resources: must be <= limit]"));
+    }
 }
