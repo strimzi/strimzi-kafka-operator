@@ -42,15 +42,18 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 
@@ -811,5 +814,61 @@ public class ModelUtils {
         dnsNames.add(kafkaDnsGenerator.serviceDnsName());
 
         return dnsNames;
+    }
+
+    /**
+     * Validate CPU requests and limits.
+     * 
+     * @param resources Compute resources configuration.
+     * @param owner Compute resources owner.
+     * 
+     * @return Error set.
+     */
+    public static Set<String> validateCpuResources(ResourceRequirements resources, String owner) {
+        return validateComputeResources(resources, "cpu", owner);
+    }
+
+    /**
+     * Validate memory requests and limits.
+     * 
+     * @param resources Compute resources configuration.
+     * @param owner Compute resources owner.
+     * 
+     * @return Error set.
+     */
+    public static Set<String> validateMemoryResources(ResourceRequirements resources, String owner) {
+        return validateComputeResources(resources, "memory", owner);
+    }
+
+    /**
+     * Validate compute resources requests and limits.
+     * 
+     * TODO: handle any type, not just cpu and memory.
+     * 
+     * @param resources Compute resources configuration.
+     * @param type Compute resources type.
+     * @param owner Compute resources owner.
+     * 
+     * @return Error set.
+     */
+    private static Set<String> validateComputeResources(ResourceRequirements resources, String type, String owner) {
+        Set<String> errors = new HashSet<>();
+        String ownerId = owner != null && !owner.isBlank() ? owner : "unknown";
+        if (resources != null && resources.getRequests() != null) {
+            Quantity cpuRequest = resources.getRequests().get(type);
+            if (cpuRequest != null && cpuRequest.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
+                errors.add(String.format("Invalid %s request for %s: must be > 0", type, ownerId));
+            }
+            if (resources.getLimits() != null) {
+                Quantity cpuLimit = resources.getLimits().get(type);
+                if (cpuLimit != null && cpuLimit.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
+                    errors.add(String.format("Invalid %s limit for %s: must be > 0", type, ownerId));
+                }
+                if (cpuLimit != null && cpuRequest.getNumericalAmount().compareTo(cpuLimit.getNumericalAmount()) > 0) {
+                    errors.add(String.format("Invalid %s request for %s: must be <= limit", type, ownerId));
+                }
+            }
+        }
+        return errors;
     }
 }

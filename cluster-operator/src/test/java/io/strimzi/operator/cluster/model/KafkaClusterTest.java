@@ -3898,4 +3898,31 @@ public class KafkaClusterTest {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withTolerations");
         resourceTester.assertDesiredResource(".yaml", AbstractModel::getTolerations);
     }
+
+    // TODO add tests covering the different valid and invalid resource combinations
+
+    @ParallelTest
+    public void testValidateComputeResources() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToRequests("cpu", new Quantity("0"))
+                            .addToLimits("cpu", new Quantity("1000m"))
+                            .addToRequests("memory", new Quantity("2Gi"))
+                            .addToLimits("memory", new Quantity("1Gi"))
+                            .build())
+                        .withStorage(new PersistentClaimStorageBuilder()
+                            .withSize("123")
+                            .withStorageClass("foo")
+                            .withDeleteClaim(true)
+                            .build())
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS));
+        assertThat(ex.getMessage(), equalTo("[Invalid cpu request for kafka: must be > 0, Invalid memory request for kafka: must be <= limit]"));
+    }   
 }

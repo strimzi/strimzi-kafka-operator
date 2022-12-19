@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -327,6 +328,7 @@ public class KafkaCluster extends AbstractModel {
             result.clusterId = getOrGenerateKRaftClusterId(kafkaAssembly);
         }
 
+        validateComputeResources(kafkaClusterSpec.getResources());
         validateIntConfigProperty("default.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
@@ -618,6 +620,19 @@ public class KafkaCluster extends AbstractModel {
             configuration.setConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD, String.join(",", metricReporterList));
         } else {
             configuration.removeConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
+        }
+    }
+
+    /**
+     * Early resources validation to avoid triggering any pod operation with invalid configuration.
+     * 
+     * @param resources Resources configuration.
+     */
+    private static void validateComputeResources(ResourceRequirements resources) {
+        Set<String> errors = ModelUtils.validateCpuResources(resources, "kafka");
+        errors.addAll(ModelUtils.validateMemoryResources(resources, "kafka"));
+        if (errors.size() > 0) {
+            throw new InvalidResourceException(errors.toString());
         }
     }
 

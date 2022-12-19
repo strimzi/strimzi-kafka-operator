@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -58,6 +59,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * ZooKeeper cluster model
@@ -202,6 +204,8 @@ public class ZookeeperCluster extends AbstractModel {
         }
         zk.setReplicas(replicas);
 
+        validateComputeResources(zookeeperClusterSpec.getResources());
+
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
@@ -324,6 +328,19 @@ public class ZookeeperCluster extends AbstractModel {
         zk.warningConditions.addAll(specChecker.run());
 
         return zk;
+    }
+
+    /**
+     * Early resources validation to avoid triggering any pod operation with invalid configuration.
+     * 
+     * @param resources Resources configuration.
+     */
+    private static void validateComputeResources(ResourceRequirements resources) {
+        Set<String> errors = ModelUtils.validateCpuResources(resources, "zookeeper");
+        errors.addAll(ModelUtils.validateMemoryResources(resources, "zookeeper"));
+        if (errors.size() > 0) {
+            throw new InvalidResourceException(errors.toString());
+        }
     }
 
     /**

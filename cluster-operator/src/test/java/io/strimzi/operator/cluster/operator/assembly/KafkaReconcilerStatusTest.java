@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.api.model.NodeAddress;
 import io.fabric8.kubernetes.api.model.NodeBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -22,7 +20,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
@@ -685,47 +682,6 @@ public class KafkaReconcilerStatusTest {
         }));
     }
 
-    @Test
-    public void testKafkaReconcilerStatusWithInvalidResources(VertxTestContext context) {
-        Kafka kafka = new KafkaBuilder(KAFKA)
-                .editOrNewSpec()
-                    .editOrNewKafka()
-                        .withReplicas(1)
-                        .withResources(new ResourceRequirementsBuilder()
-                            .addToRequests("cpu", new Quantity("0"))
-                            .addToLimits("cpu", new Quantity("1000m"))
-                            .addToRequests("memory", new Quantity("2Gi"))
-                            .addToLimits("memory", new Quantity("1Gi"))
-                            .build())
-                        .withStorage(new PersistentClaimStorageBuilder()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                            .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
-                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                supplier,
-                kafka
-        );
-
-        KafkaStatus status = new KafkaStatus();
-        Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(res -> context.verify(() -> {
-            assertThat(res.succeeded(), is(false));
-            assertThat(res.cause().getMessage(), is("[Invalid cpu request for kafka: must be > 0, Invalid memory request for kafka: must be <= limit]"));
-            async.flag();
-        }));
-    }
-
     private static List<Node> kubernetesWorkerNodes()    {
         Node node0 = new NodeBuilder()
                 .withNewMetadata()
@@ -794,7 +750,6 @@ public class KafkaReconcilerStatusTest {
         @Override
         public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
             return modelWarnings(kafkaStatus)
-                    .compose(i -> validateComputeResources())
                     .compose(i -> listeners())
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
