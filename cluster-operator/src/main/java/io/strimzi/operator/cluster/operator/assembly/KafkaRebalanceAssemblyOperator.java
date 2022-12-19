@@ -1163,7 +1163,7 @@ public class KafkaRebalanceAssemblyOperator
                     } else if (kafka.getStatus() == null
                             || kafka.getStatus().getConditions() == null
                             || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) {
-                        String errorString = "Kafka cluster is being deployed";
+                        String errorString = "Kafka cluster is not Ready";
                         LOGGER.warnCr(reconciliation, errorString);
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return updateStatus(reconciliation, kafkaRebalance, status,
@@ -1404,7 +1404,6 @@ public class KafkaRebalanceAssemblyOperator
 
         /**
          * Kafka Cluster is not ready
-         *
          */
         kafkaClusterNotReady("Kafka cluster is not Ready");
 
