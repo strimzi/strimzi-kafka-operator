@@ -20,7 +20,7 @@ check_command_present shellcheck
 # After version 3.3.1, yq --version sends the string to STDERR instead of STDOUT
 YQ_VERSION="$(yq --version 2>&1 | ${SED} -r 's/^.* v?//g')"
 
-IFS="." read -r -a YQ_ARRAY <<< "$YQ_VERSION"
+IFS="." read -r -a YQ_ARRAY <<< "${YQ_VERSION#v}"
 
 yq_err_msg="${RED}yq version is ${YQ_VERSION}, version must be 4.2.1 or above. Please download the latest version from https://github.com/mikefarah/yq/releases${NO_COLOUR}"
 
