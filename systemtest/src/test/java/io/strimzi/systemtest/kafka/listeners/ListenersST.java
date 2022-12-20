@@ -2154,7 +2154,8 @@ public class ListenersST extends AbstractST {
     void testMessagesTlsScramShaWithPredefinedPassword(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String firstUnencodedPassword = "completely_secret_password";
+        // FIPS needs the passwords at least 32 characters long
+        final String firstUnencodedPassword = "completely_secret_password_long_enough_for_fips";
         final String secondUnencodedPassword = "completely_different_secret_password";
 
         final String firstEncodedPassword = Base64.getEncoder().encodeToString(firstUnencodedPassword.getBytes(StandardCharsets.UTF_8));

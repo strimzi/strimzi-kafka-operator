@@ -1276,7 +1276,7 @@ class ConnectIsolatedST extends AbstractST {
                     .withName("custom-pwd-secret")
                     .withNamespace(namespaceName)
                 .endMetadata()
-                .addToData("pwd", "MTIzNDU2Nzg5")
+                .addToStringData("pwd", "completely_secret_password_long_enough_for_fips")
                 .build();
 
         kubeClient(namespaceName).createSecret(passwordSecret);
@@ -1321,13 +1321,12 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
 
         Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
-        String newPassword = "bmVjb0ppbmVob05lelNwcmF2bnlQYXNzd29yZA==";
         Secret newPasswordSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName("new-custom-pwd-secret")
                     .withNamespace(namespaceName)
                 .endMetadata()
-                .addToData("pwd", newPassword)
+                .addToStringData("pwd", "completely_different_secret_password")
                 .build();
 
         kubeClient(namespaceName).createSecret(newPasswordSecret);
