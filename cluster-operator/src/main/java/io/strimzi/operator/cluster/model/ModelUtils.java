@@ -49,11 +49,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 
@@ -820,14 +818,14 @@ public class ModelUtils {
      * Validate cpu and memory resources.
      * Early resources validation avoids triggering any pod operation with invalid configuration.
      * 
-     * For both cpu and memory, this method checks that the request is greater than zero and, if present, 
-     * that the limit is greater than zero and greater than or equal to the request.
+     * For both cpu and memory, this method checks that request is greater than zero, 
+     * limit is greater than zero and limit is greater than or equal to the request.
      * 
      * @param resources Resources configuration.
      * @param owner Resources owner.
      */
     public static void validateComputeResources(ResourceRequirements resources, String owner) {
-        Set<String> errors = ModelUtils.validateComputeResources(resources, "cpu", owner);
+        List<String> errors = ModelUtils.validateComputeResources(resources, "cpu", owner);
         errors.addAll(ModelUtils.validateComputeResources(resources, "memory", owner));
         if (errors.size() > 0) {
             throw new InvalidResourceException(errors.toString());
@@ -837,8 +835,8 @@ public class ModelUtils {
     /**
      * Validate compute resources for a given owner.
      * 
-     * This method checks that the request is greater than zero and, if present, 
-     * that the limit is greater than zero and greater than or equal to the request.
+     * This method checks that request is greater than zero, limit is greater than zero 
+     * and limit is greater than or equal to the request.
      * 
      * @param resources Compute resources configuration.
      * @param type Compute resources type.
@@ -846,23 +844,28 @@ public class ModelUtils {
      * 
      * @return Error set.
      */
-    private static Set<String> validateComputeResources(ResourceRequirements resources, String type, String owner) {
-        Set<String> errors = new HashSet<>();
+    private static List<String> validateComputeResources(ResourceRequirements resources, String type, String owner) {
+        List<String> errors = new ArrayList<>();
         String oid = owner != null && !owner.isBlank() ? owner : "component";
-        if (resources != null && resources.getRequests() != null) {
-            Quantity request = resources.getRequests().get(type);
-            if (request != null && request.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
-                errors.add(String.format("Invalid %s request for %s: must be > 0", type, oid));
+        if (resources != null) {
+            if (resources.getRequests() != null && resources.getRequests().get(type) != null) {
+                Quantity request = resources.getRequests().get(type);
+                if (request != null && request.getNumericalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                    errors.add(String.format("%s %s request must be > zero", oid, type));
+                }
             }
-            if (resources.getLimits() != null) {
+            if (resources.getLimits() != null && resources.getLimits().get(type) != null) {
                 Quantity limit = resources.getLimits().get(type);
-                if (limit != null) {
-                    if (limit.getNumericalAmount().compareTo(BigDecimal.ZERO) != 1) {
-                        errors.add(String.format("Invalid %s limit for %s: must be > 0", type, oid));
-                    }
-                    if (request.getNumericalAmount().compareTo(limit.getNumericalAmount()) > 0) {
-                        errors.add(String.format("Invalid %s request for %s: must be <= limit", type, oid));
-                    }
+                if (limit.getNumericalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                    errors.add(String.format("%s %s limit must be > zero", oid, type));
+                }
+            }
+            if (resources.getRequests() != null && resources.getRequests().get(type) != null
+                    && resources.getLimits() != null && resources.getLimits().get(type) != null) {
+                Quantity limit = resources.getLimits().get(type);
+                Quantity request = resources.getRequests().get(type);
+                if (request != null && request.getNumericalAmount().compareTo(limit.getNumericalAmount()) > 0) {
+                    errors.add(String.format("%s %s request must be <= limit", oid, type));
                 }
             }
         }
