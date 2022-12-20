@@ -822,42 +822,41 @@ public class ModelUtils {
      * limit is greater than zero and limit is greater than or equal to the request.
      * 
      * @param resources Resources configuration.
-     * @param owner Resources owner.
+     * @param path Resources path.
      */
-    public static void validateComputeResources(ResourceRequirements resources, String owner) {
-        List<String> errors = ModelUtils.validateComputeResources(resources, "cpu", owner);
-        errors.addAll(ModelUtils.validateComputeResources(resources, "memory", owner));
+    public static void validateComputeResources(ResourceRequirements resources, String path) {
+        List<String> errors = ModelUtils.validateComputeResources(resources, "cpu", path);
+        errors.addAll(ModelUtils.validateComputeResources(resources, "memory", path));
         if (errors.size() > 0) {
             throw new InvalidResourceException(errors.toString());
         }
     }
 
     /**
-     * Validate compute resources for a given owner.
+     * Validate compute resources.
      * 
      * This method checks that request is greater than zero, limit is greater than zero 
      * and limit is greater than or equal to the request.
      * 
-     * @param resources Compute resources configuration.
-     * @param type Compute resources type.
-     * @param owner Compute resources owner.
+     * @param resources Resources configuration.
+     * @param type Resources type.
+     * @param path Resources path.
      * 
      * @return Error set.
      */
-    private static List<String> validateComputeResources(ResourceRequirements resources, String type, String owner) {
+    private static List<String> validateComputeResources(ResourceRequirements resources, String type, String path) {
         List<String> errors = new ArrayList<>();
-        String oid = owner != null && !owner.isBlank() ? owner : "component";
         if (resources != null) {
             if (resources.getRequests() != null && resources.getRequests().get(type) != null) {
                 Quantity request = resources.getRequests().get(type);
                 if (request != null && request.getNumericalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                    errors.add(String.format("%s %s request must be > zero", oid, type));
+                    errors.add(String.format("%s %s request must be > zero", path, type).trim());
                 }
             }
             if (resources.getLimits() != null && resources.getLimits().get(type) != null) {
                 Quantity limit = resources.getLimits().get(type);
                 if (limit.getNumericalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                    errors.add(String.format("%s %s limit must be > zero", oid, type));
+                    errors.add(String.format("%s %s limit must be > zero", path, type).trim());
                 }
             }
             if (resources.getRequests() != null && resources.getRequests().get(type) != null
@@ -865,7 +864,7 @@ public class ModelUtils {
                 Quantity limit = resources.getLimits().get(type);
                 Quantity request = resources.getRequests().get(type);
                 if (request != null && request.getNumericalAmount().compareTo(limit.getNumericalAmount()) > 0) {
-                    errors.add(String.format("%s %s request must be <= limit", oid, type));
+                    errors.add(String.format("%s %s request must be <= limit", path, type).trim());
                 }
             }
         }
