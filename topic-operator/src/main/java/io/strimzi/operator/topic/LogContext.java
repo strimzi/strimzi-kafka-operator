@@ -9,12 +9,12 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/** LogContext for correlating the log messages */
 public class LogContext {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sTopicWatcher.class);
@@ -60,7 +60,7 @@ public class LogContext {
         return new LogContext(periodicType, namespace, topicName);
     }
 
-    public String trigger() {
+    protected String trigger() {
         return trigger;
     }
 
@@ -73,13 +73,7 @@ public class LogContext {
         }
     }
 
-    public Marker getMarker() {
-        String marker = "KafkaTopic(" + namespace + "/" + topicName + ")";
-        LOGGER.trace("marker is {}", marker);
-        return MarkerManager.getMarker(marker);
-    }
-
-    public LogContext withKubeTopic(KafkaTopic kafkaTopic) {
+    protected LogContext withKubeTopic(KafkaTopic kafkaTopic) {
         String newResourceVersion = kafkaTopic == null ? null : kafkaTopic.getMetadata().getResourceVersion();
         if (!Objects.equals(resourceVersion, newResourceVersion)) {
             LOGGER.debug("{}: Concurrent modification in kube: new version {}", this, newResourceVersion);
@@ -88,7 +82,7 @@ public class LogContext {
         return this;
     }
 
-    public Reconciliation toReconciliation() {
+    protected Reconciliation toReconciliation() {
         return new Reconciliation(trigger, "KafkaTopic", namespace, topicName);
     }
 }

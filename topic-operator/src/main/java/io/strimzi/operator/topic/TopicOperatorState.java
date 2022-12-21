@@ -25,19 +25,19 @@ public class TopicOperatorState {
     private volatile boolean alive = true;
     private volatile boolean ready = false;
 
-    public boolean isAlive() {
+    protected boolean isAlive() {
         return alive;
     }
 
-    public void setAlive(boolean alive) {
+    protected void setAlive(boolean alive) {
         this.alive = alive;
     }
 
-    public boolean isReady() {
+    protected boolean isReady() {
         return ready;
     }
 
-    public void setReady(boolean ready) {
+    protected void setReady(boolean ready) {
         this.ready = ready;
     }
 }

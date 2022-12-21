@@ -92,10 +92,11 @@ class ZkTopicsWatcher {
         private final Zk zk;
         private int watchCount = 0;
 
-        public ChildrenWatchHandler(Zk zk) {
+        protected ChildrenWatchHandler(Zk zk) {
             this.zk = zk;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(AsyncResult<List<String>> childResult) {
             if (state == 2) {

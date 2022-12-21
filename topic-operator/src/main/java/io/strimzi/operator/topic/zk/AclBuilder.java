@@ -17,11 +17,22 @@ import java.util.Map;
 
 import static java.util.Arrays.asList;
 
+/** Builds ACL permissions */
 public class AclBuilder {
+
+    /** Enums for different permissions */
     public enum Permission {
+
+        /** Read permission */
         READ(ZooDefs.Perms.READ),
+
+        /** Write permission */
         WRITE(ZooDefs.Perms.WRITE),
+
+        /** Create permission */
         CREATE(ZooDefs.Perms.CREATE),
+
+        /** Delete permission */
         DELETE(ZooDefs.Perms.DELETE);
         private final int bit;
         Permission(int bit) {
@@ -44,12 +55,17 @@ public class AclBuilder {
     private Map<String, ACL> hosts;
     private Map<String, ACL> ips;
 
-    public static final List<ACL> PUBLIC = Collections.singletonList(new ACL(Permission.encode(EnumSet.allOf(Permission.class)), new Id("world", "anyone")));
+    protected static final List<ACL> PUBLIC = Collections.singletonList(new ACL(Permission.encode(EnumSet.allOf(Permission.class)), new Id("world", "anyone")));
 
+    /** Constructor */
     public AclBuilder() {
 
     }
 
+    /** Constructor
+     *
+     * @param acls  List of ACL's
+     */
     public AclBuilder(List<ACL> acls) {
         for (ACL acl: acls) {
             String scheme = acl.getId().getScheme();

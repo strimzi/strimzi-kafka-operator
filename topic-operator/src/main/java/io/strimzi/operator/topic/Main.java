@@ -27,12 +27,22 @@ public class Main {
 
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
 
+
+
+    /**
+     * The main method used to run the Cluster Operator
+     *
+     * @param args  The command line arguments
+     */
     public static void main(String[] args) {
         LOGGER.info("TopicOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         Main main = new Main();
         main.run();
     }
 
+    /**
+     * Runs the Topic Operator
+     */
     public void run() {
         Map<String, String> m = new HashMap<>(System.getenv());
         m.keySet().retainAll(Config.keyNames());

@@ -23,7 +23,7 @@ public class Labels {
 
     private final Map<String, String> labels;
 
-    public Labels(String... labels) {
+    protected Labels(String... labels) {
         if (labels.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
@@ -132,10 +132,16 @@ public class Labels {
         return new Labels(map);
     }
 
+    /**
+     * @return A map of labels
+     */
     public Map<String, String> labels() {
         return labels;
     }
 
+    /**
+     * @return String form of label
+     */
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

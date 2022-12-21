@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Done
  * Represents a handler for getting Kafka topic metadata, providing a helper {@link #retry} method
  * for subclasses which want to retry when they need to do that
  */

@@ -83,7 +83,7 @@ class TopicSerialization {
      * Create a Topic to reflect the given KafkaTopic resource.
      * @throws InvalidTopicException
      */
-    public static Topic fromTopicResource(KafkaTopic kafkaTopic) {
+    protected static Topic fromTopicResource(KafkaTopic kafkaTopic) {
         if (kafkaTopic == null) {
             return null;
         }
@@ -136,7 +136,7 @@ class TopicSerialization {
     /**
      * Create a resource to reflect the given Topic.
      */
-    public static KafkaTopic toTopicResource(Topic topic, Labels labels) {
+    protected static KafkaTopic toTopicResource(Topic topic, Labels labels) {
         ResourceName resourceName = topic.getOrAsKubeName();
         ObjectMeta om = topic.getMetadata();
         Map<String, String> lbls = new HashMap<>(labels.labels());
@@ -175,7 +175,7 @@ class TopicSerialization {
     /**
      * Create a NewTopic to reflect the given Topic.
      */
-    public static NewTopic toNewTopic(Topic topic, Map<Integer, List<Integer>> assignment) {
+    protected static NewTopic toNewTopic(Topic topic, Map<Integer, List<Integer>> assignment) {
         NewTopic newTopic;
         if (assignment != null) {
             if (topic.getNumPartitions() != assignment.size()) {
@@ -284,7 +284,7 @@ class TopicSerialization {
      * This is what is stored in the znodes owned by the {@link ZkTopicStore}.
      */
     @SuppressWarnings("unchecked")
-    public static Topic fromJson(byte[] json) {
+    protected static Topic fromJson(byte[] json) {
         return fromJson(json, (mapper, bytes) -> {
             Map<String, Object> root;
             try {
@@ -302,7 +302,7 @@ class TopicSerialization {
      * @param root the map
      * @return topic from map
      */
-    public static Topic fromJsonNode(JsonNode root) {
+    protected static Topic fromJsonNode(JsonNode root) {
         TypeReference<Map<String, Object>> ref = new TypeReference<>() {
         };
         Map<String, Object> map = objectMapper().convertValue(root, ref);

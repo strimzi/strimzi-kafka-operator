@@ -13,7 +13,7 @@ import io.vertx.core.Handler;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Base abstract class for a ZooKeeper watcher for child znodes
+ * Base abstract class for a ZooKeeper watcher for child znodes.
  */
 public abstract class ZkWatcher {
 

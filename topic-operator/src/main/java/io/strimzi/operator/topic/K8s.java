@@ -12,6 +12,7 @@ import io.vertx.core.Future;
 
 import java.util.List;
 
+/** K8s Interface */
 public interface K8s {
 
     /**

@@ -45,6 +45,7 @@ import static io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT;
 import static io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS;
 import static io.strimzi.operator.topic.Config.ZOOKEEPER_SESSION_TIMEOUT_MS;
 
+/** Session of Topic operator */
 public class Session extends AbstractVerticle {
 
     private final static Logger LOGGER = LogManager.getLogger(Session.class);
@@ -199,6 +200,9 @@ public class Session extends AbstractVerticle {
         }, stop);
     }
 
+    /**
+     * Starts the operator.
+     */
     @SuppressWarnings({"JavaNCSS", "MethodLength", "CyclomaticComplexity"})
     @Override
     public void start(Promise<Void> start) {

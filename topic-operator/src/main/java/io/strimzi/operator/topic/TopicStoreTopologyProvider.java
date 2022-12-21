@@ -32,7 +32,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
     private final Properties kafkaProperties;
     private final ForeachAction<? super String, ? super Integer> dispatcher;
 
-    public TopicStoreTopologyProvider(
+    protected TopicStoreTopologyProvider(
             String storeTopic,
             String topicStoreName,
             Properties kafkaProperties,
@@ -44,6 +44,9 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
         this.dispatcher = dispatcher;
     }
 
+    /**
+     * @return  Computed Topology for TopicStore
+     */
     @Override
     public Topology get() {
         StreamsBuilder builder = new StreamsBuilder();
@@ -93,7 +96,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
 
         private KeyValueStore<String, Topic> store;
 
-        public TopicCommandTransformer(
+        protected TopicCommandTransformer(
                 String topicStoreName,
                 ForeachAction<? super String, ? super Integer> dispatcher
         ) {
@@ -101,12 +104,18 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
             this.dispatcher = dispatcher;
         }
 
+        /** Initialise the key value store */
         @Override
         @SuppressWarnings("unchecked")
         public void init(ProcessorContext context) {
             store = (KeyValueStore<String, Topic>) context.getStateStore(topicStoreName);
         }
 
+        /**
+         * Process and applies the topic command to key-value store
+         *
+         * @param record Record containing the topic command
+         */
         @Override
         public void process(final Record<String, TopicCommand> record) {
             String uuid = record.value().getUuid();
@@ -132,6 +141,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
             dispatcher.apply(uuid, result);
         }
 
+        /** Overriden close method */
         @Override
         public void close() {
         }

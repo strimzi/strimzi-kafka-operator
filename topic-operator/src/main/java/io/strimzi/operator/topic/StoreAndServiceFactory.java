@@ -30,11 +30,11 @@ interface StoreAndServiceFactory {
             this.service = Objects.requireNonNull(service);
         }
 
-        public ReadOnlyKeyValueStore<String, Topic> getStore() {
+        protected ReadOnlyKeyValueStore<String, Topic> getStore() {
             return store;
         }
 
-        public BiFunction<String, String, CompletionStage<Integer>> getService() {
+        protected BiFunction<String, String, CompletionStage<Integer>> getService() {
             return service;
         }
     }

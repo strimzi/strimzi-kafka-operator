@@ -43,7 +43,7 @@ public class ZkImpl implements Zk {
     private final ConcurrentHashMap<String, IZkDataListener> dataWatches = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, IZkChildListener> childWatches = new ConcurrentHashMap<>();
 
-    public ZkImpl(Vertx vertx, ZkClient zkClient) {
+    protected ZkImpl(Vertx vertx, ZkClient zkClient) {
         this.vertx = vertx;
         this.workerExecutor = vertx.createSharedWorkerExecutor(getClass().getName(), 4);
         this.zookeeper = zkClient;
