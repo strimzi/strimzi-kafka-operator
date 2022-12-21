@@ -327,6 +327,7 @@ public class KafkaCluster extends AbstractModel {
             result.clusterId = getOrGenerateKRaftClusterId(kafkaAssembly);
         }
 
+        ModelUtils.validateComputeResources(kafkaClusterSpec.getResources(), ".spec.kafka.resources");
         validateIntConfigProperty("default.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);

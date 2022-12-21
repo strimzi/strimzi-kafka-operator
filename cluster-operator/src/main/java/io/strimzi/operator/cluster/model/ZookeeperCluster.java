@@ -202,6 +202,8 @@ public class ZookeeperCluster extends AbstractModel {
         }
         zk.setReplicas(replicas);
 
+        ModelUtils.validateComputeResources(zookeeperClusterSpec.getResources(), ".spec.zookeeper.resources");
+
         String image = zookeeperClusterSpec.getImage();
         if (image == null) {
             KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();

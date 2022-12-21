@@ -42,6 +42,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -811,5 +812,62 @@ public class ModelUtils {
         dnsNames.add(kafkaDnsGenerator.serviceDnsName());
 
         return dnsNames;
+    }
+
+    /**
+     * Validate cpu and memory resources.
+     * Early resources validation avoids triggering any pod operation with invalid configuration.
+     * 
+     * For both cpu and memory, this method checks that request is greater than zero, 
+     * limit is greater than zero and limit is greater than or equal to the request.
+     * 
+     * @param resources Resources configuration.
+     * @param path Resources path.
+     */
+    public static void validateComputeResources(ResourceRequirements resources, String path) {
+        List<String> errors = ModelUtils.validateComputeResources(resources, "cpu", path);
+        errors.addAll(ModelUtils.validateComputeResources(resources, "memory", path));
+        if (errors.size() > 0) {
+            throw new InvalidResourceException(errors.toString());
+        }
+    }
+
+    /**
+     * Validate compute resources.
+     * 
+     * This method checks that request is greater than zero, limit is greater than zero 
+     * and limit is greater than or equal to the request.
+     * 
+     * @param resources Resources configuration.
+     * @param type Resources type.
+     * @param path Resources path.
+     * 
+     * @return Error set.
+     */
+    private static List<String> validateComputeResources(ResourceRequirements resources, String type, String path) {
+        List<String> errors = new ArrayList<>();
+        if (resources != null) {
+            if (resources.getRequests() != null && resources.getRequests().get(type) != null) {
+                Quantity request = resources.getRequests().get(type);
+                if (request != null && request.getNumericalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                    errors.add(String.format("%s %s request must be > zero", path, type).trim());
+                }
+            }
+            if (resources.getLimits() != null && resources.getLimits().get(type) != null) {
+                Quantity limit = resources.getLimits().get(type);
+                if (limit.getNumericalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                    errors.add(String.format("%s %s limit must be > zero", path, type).trim());
+                }
+            }
+            if (resources.getRequests() != null && resources.getRequests().get(type) != null
+                    && resources.getLimits() != null && resources.getLimits().get(type) != null) {
+                Quantity limit = resources.getLimits().get(type);
+                Quantity request = resources.getRequests().get(type);
+                if (request != null && request.getNumericalAmount().compareTo(limit.getNumericalAmount()) > 0) {
+                    errors.add(String.format("%s %s request must be <= limit", path, type).trim());
+                }
+            }
+        }
+        return errors;
     }
 }
