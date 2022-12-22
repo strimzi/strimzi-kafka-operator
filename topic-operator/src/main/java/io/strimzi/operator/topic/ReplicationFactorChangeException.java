@@ -13,6 +13,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  * it requires replica placement decisions).
  */
 public class ReplicationFactorChangeException extends OperatorException {
+
+    /**
+     * Constructor
+     *
+     * @param resource   Kubernetes resource with metadata containing the namespace and cluster name etc
+     * @param message    The Error message
+     */
     public ReplicationFactorChangeException(HasMetadata resource, String message) {
         super(resource, message);
     }

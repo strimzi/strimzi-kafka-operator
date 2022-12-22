@@ -23,13 +23,13 @@ import java.util.concurrent.TimeUnit;
  * which will be completed once Streams transformer handles CRUD command.
  */
 public class WaitForResultService implements AsyncBiFunctionService.WithSerdes<String, String, Integer> {
-    public static final String NAME = "WaitForResultService";
+    protected static final String NAME = "WaitForResultService";
 
     private final long timeoutMillis;
     private final Map<String, ResultCF> waitingResults = new ConcurrentHashMap<>();
     private final ScheduledExecutorService executorService;
 
-    public WaitForResultService(long timeoutMillis, ForeachActionDispatcher<String, Integer> dispatcher) {
+    protected WaitForResultService(long timeoutMillis, ForeachActionDispatcher<String, Integer> dispatcher) {
         this.timeoutMillis = timeoutMillis;
         dispatcher.register(this::topicUpdated);
         executorService = new ScheduledThreadPoolExecutor(1);
@@ -62,26 +62,43 @@ public class WaitForResultService implements AsyncBiFunctionService.WithSerdes<S
         }
     }
 
+    /** Close the service */
     @Override
     public void close() {
         executorService.shutdown();
     }
 
+    /**
+     * @return Key serde of type string
+     */
     @Override
     public Serde<String> keySerde() {
         return Serdes.String();
     }
 
+    /**
+     * @return Request Serde of type string
+     */
     @Override
     public Serde<String> reqSerde() {
         return Serdes.String();
     }
 
+    /**
+     * @return Result serde of type integer
+     */
     @Override
     public Serde<Integer> resSerde() {
         return Serdes.Integer();
     }
 
+    /**
+     * Applies the ResultCF in waitingResults map so it could be completed
+     *
+     * @param name  Name
+     * @param uuid  The UUID associated to ResultCF
+     * @return A ResultCF
+     */
     @Override
     public CompletionStage<Integer> apply(String name, String uuid) {
         ResultCF cf = new ResultCF();

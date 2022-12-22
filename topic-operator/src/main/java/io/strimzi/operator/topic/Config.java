@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+/** Topic Operator configurations */
 public class Config {
 
     private static abstract class Type<T> {
@@ -98,39 +99,39 @@ public class Config {
         }
     }
 
-    public static final String TC_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
-    public static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    public static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
-    public static final String TC_CLIENT_ID = "STRIMZI_CLIENT_ID";
-    public static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
-    public static final String TC_ZK_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
-    public static final String TC_ZK_CONNECTION_TIMEOUT_MS = "TC_ZK_CONNECTION_TIMEOUT_MS";
-    public static final String TC_PERIODIC_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
-    public static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
-    public static final String TC_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
-    public static final String TC_TOPICS_PATH = "STRIMZI_TOPICS_PATH";
+    protected static final String TC_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
+    private static final String TC_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    protected static final String TC_NAMESPACE = "STRIMZI_NAMESPACE";
+    protected static final String TC_CLIENT_ID = "STRIMZI_CLIENT_ID";
+    protected static final String TC_ZK_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
+    protected static final String TC_ZK_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
+    protected static final String TC_ZK_CONNECTION_TIMEOUT_MS = "TC_ZK_CONNECTION_TIMEOUT_MS";
+    protected static final String TC_PERIODIC_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
+    protected static final String TC_REASSIGN_THROTTLE = "STRIMZI_REASSIGN_THROTTLE";
+    protected static final String TC_REASSIGN_VERIFY_INTERVAL_MS = "STRIMZI_REASSIGN_VERIFY_INTERVAL_MS";
+    protected static final String TC_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    protected static final String TC_TOPICS_PATH = "STRIMZI_TOPICS_PATH";
 
-    public static final String TC_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
-    public static final String TC_TLS_TRUSTSTORE_LOCATION = "STRIMZI_TRUSTSTORE_LOCATION";
-    public static final String TC_TLS_TRUSTSTORE_PASSWORD = "STRIMZI_TRUSTSTORE_PASSWORD";
-    public static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
-    public static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
-    public static final String TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = "STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM";
+    protected static final String TC_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    protected static final String TC_TLS_TRUSTSTORE_LOCATION = "STRIMZI_TRUSTSTORE_LOCATION";
+    protected static final String TC_TLS_TRUSTSTORE_PASSWORD = "STRIMZI_TRUSTSTORE_PASSWORD";
+    protected static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
+    protected static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
+    protected static final String TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = "STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM";
 
-    public static final String TC_SASL_ENABLED = "STRIMZI_SASL_ENABLED";
-    public static final String TC_SASL_MECHANISM = "STRIMZI_SASL_MECHANISM";
-    public static final String TC_SASL_USERNAME = "STRIMZI_SASL_USERNAME";
-    public static final String TC_SASL_PASSWORD = "STRIMZI_SASL_PASSWORD";
+    protected static final String TC_SASL_ENABLED = "STRIMZI_SASL_ENABLED";
+    protected static final String TC_SASL_MECHANISM = "STRIMZI_SASL_MECHANISM";
+    protected static final String TC_SASL_USERNAME = "STRIMZI_SASL_USERNAME";
+    protected static final String TC_SASL_PASSWORD = "STRIMZI_SASL_PASSWORD";
 
-    public static final String TC_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
+    protected static final String TC_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
 
-    public static final String TC_STORE_TOPIC = "STRIMZI_STORE_TOPIC";
-    public static final String TC_STORE_NAME = "STRIMZI_STORE_NAME";
-    public static final String TC_APPLICATION_ID = "STRIMZI_APPLICATION_ID";
-    public static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
+    protected static final String TC_STORE_TOPIC = "STRIMZI_STORE_TOPIC";
+    protected static final String TC_STORE_NAME = "STRIMZI_STORE_NAME";
+    protected static final String TC_APPLICATION_ID = "STRIMZI_APPLICATION_ID";
+    protected static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
 
-    public static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
+    protected static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
@@ -250,6 +251,11 @@ public class Config {
 
     private final Map<String, Object> map;
 
+    /**
+     * Constructor
+     *
+     * @param map  Map containing configurations and their respective values
+     */
     public Config(Map<String, String> map) {
         this.map = new HashMap<>(map.size());
         for (Map.Entry<String, String> entry : map.entrySet()) {
@@ -267,14 +273,28 @@ public class Config {
         }
     }
 
+    /**
+     * @return Collection of configuration values
+     */
     public static Collection<Value<?>> keys() {
         return Collections.unmodifiableCollection(CONFIG_VALUES.values());
     }
 
+    /**
+     * @return Set of configuration key/names
+     */
     public static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
 
+    /**
+     * Checks if the configuration values are known or not.
+     *
+     * @param map    The map containing configuration values
+     * @param value  The configuration value that need to be checked
+     *
+     * @return The configuration value
+     */
     private <T> T get(Map<String, String> map, Value<T> value) {
         if (!CONFIG_VALUES.containsKey(value.key)) {
             throw new IllegalArgumentException("Unknown config value: " + value.key + " probably needs to be added to Config.CONFIG_VALUES");
@@ -291,12 +311,12 @@ public class Config {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T get(Value<T> value, T defaultValue) {
+    protected  <T> T get(Value<T> value, T defaultValue) {
         return (T) this.map.getOrDefault(value.key, defaultValue);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T get(Value<T> value) {
+    protected  <T> T get(Value<T> value) {
         return (T) this.map.get(value.key);
     }
 

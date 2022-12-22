@@ -43,7 +43,7 @@ public class KafkaStreamsTopicStoreService {
     /* test */ KafkaStreams streams;
     /* test */ TopicStore store;
 
-    public CompletionStage<TopicStore> start(Config config, Properties kafkaProperties) {
+    protected CompletionStage<TopicStore> start(Config config, Properties kafkaProperties) {
         String storeTopic = config.get(Config.STORE_TOPIC);
         String storeName = config.get(Config.STORE_NAME);
 
@@ -157,7 +157,7 @@ public class KafkaStreamsTopicStoreService {
             });
     }
 
-    public void stop() {
+    protected void stop() {
         LOGGER.info("Stopping services ...");
         Collections.reverse(closeables);
         closeables.forEach(KafkaStreamsTopicStoreService::close);
@@ -183,7 +183,7 @@ public class KafkaStreamsTopicStoreService {
         return cf;
     }
 
-    static class Context {
+    protected static class Context {
         int clusterSize;
         Set<String> topics = Collections.emptySet(); // to make spotbugs happy
         int rf;
@@ -193,17 +193,17 @@ public class KafkaStreamsTopicStoreService {
             this.clusterSize = clusterSize;
         }
 
-        public Context setTopics(Set<String> topics) {
+        private Context setTopics(Set<String> topics) {
             this.topics = topics;
             return this;
         }
 
-        public Context setRf(int rf) {
+        private Context setRf(int rf) {
             this.rf = rf;
             return this;
         }
 
-        public Context setMinISR(int minISR) {
+        private Context setMinISR(int minISR) {
             this.minISR = minISR;
             return this;
         }

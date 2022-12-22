@@ -12,9 +12,16 @@ import java.util.UUID;
  */
 public class TopicCommand {
 
+    /** Enum for type of Topic commands */
     public enum Type {
+
+        /** Create Command */
         CREATE(0),
+
+        /** Update Command */
         UPDATE(1),
+
+        /** Delete Command */
         DELETE(2);
 
         // make sure ids are unique!
@@ -24,10 +31,19 @@ public class TopicCommand {
             this.id = id;
         }
 
+        /**
+         * @return  the id
+         */
         public int getId() {
             return id;
         }
 
+        /**
+         * Returns the type of Topic command w.r.t id
+         *
+         * @param id   Id
+         * @return Type of Topic command
+         */
         public static Type fromId(int id) {
             return Arrays.stream(values())
                     .filter(t -> t.id == id)
@@ -36,7 +52,7 @@ public class TopicCommand {
         }
     }
 
-    public static final int CURRENT_VERSION = 1;
+    protected static final int CURRENT_VERSION = 1;
 
     private final String uuid;
     private final Type type;
@@ -48,7 +64,7 @@ public class TopicCommand {
         this(UUID.randomUUID().toString(), type, topic, name, CURRENT_VERSION);
     }
 
-    public TopicCommand(String uuid, Type type, Topic topic, TopicName name, int version) {
+    protected TopicCommand(String uuid, Type type, Topic topic, TopicName name, int version) {
         this.uuid = uuid;
         this.type = type;
         this.topic = topic;
@@ -56,39 +72,39 @@ public class TopicCommand {
         this.version = version;
     }
 
-    public static TopicCommand create(Topic topic) {
+    protected static TopicCommand create(Topic topic) {
         return new TopicCommand(Type.CREATE, topic, null);
     }
 
-    public static TopicCommand update(Topic topic) {
+    protected static TopicCommand update(Topic topic) {
         return new TopicCommand(Type.UPDATE, topic, null);
     }
 
-    public static TopicCommand delete(TopicName name) {
+    protected static TopicCommand delete(TopicName name) {
         return new TopicCommand(Type.DELETE, null, name);
     }
 
-    public String getKey() {
+    protected String getKey() {
         return name != null ? name.toString() : topic.getTopicName().toString();
     }
 
-    public String getUuid() {
+    protected String getUuid() {
         return uuid;
     }
 
-    public Type getType() {
+    protected Type getType() {
         return type;
     }
 
-    public Topic getTopic() {
+    protected Topic getTopic() {
         return topic;
     }
 
-    public TopicName getName() {
+    protected TopicName getName() {
         return name;
     }
 
-    public int getVersion() {
+    protected int getVersion() {
         return version;
     }
 }

@@ -32,8 +32,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.common.errors.InvalidReplicationFactorException;
 import org.apache.kafka.common.errors.TopicExistsException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -54,12 +52,12 @@ import static java.util.Collections.disjoint;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+/** An operator which manages the whole Topic operator operations */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 class TopicOperator {
 
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperator.class);
 
-    private final static Logger EVENT_LOGGER = LogManager.getLogger("Event");
     public static final String METRICS_PREFIX = "strimzi.";
     private final Kafka kafka;
     private final K8s k8s;
@@ -96,6 +94,15 @@ class TopicOperator {
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param involvedObject     Involved Kubernetes resource with metadata
+         * @param message            Message related to Event
+         * @param eventType          Type of K8s event
+         * @param handler            Handles the events
+         */
         public Event(LogContext logContext, HasMetadata involvedObject, String message, EventType eventType, Handler<AsyncResult<Void>> handler) {
             this.logContext = logContext;
             this.involvedObject = involvedObject;
@@ -104,6 +111,7 @@ class TopicOperator {
             this.eventType = eventType;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) {
             EventBuilder evtb = new EventBuilder();
@@ -137,6 +145,9 @@ class TopicOperator {
             k8s.createEvent(event).onComplete(handler);
         }
 
+        /**
+         * @return The Kubernetes resource and correlated error message
+         */
         public String toString() {
             return "ErrorEvent(involvedObject=" + involvedObject + ", message=" + message + ")";
         }
@@ -154,24 +165,41 @@ class TopicOperator {
         private final Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler;
         private final LogContext logContext;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param handler            Handles the events
+         */
         public CreateResource(LogContext logContext, Topic topic, Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler) {
             this.logContext = logContext;
             this.topic = topic;
             this.handler = handler;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) throws OperatorException {
             KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
             k8s.createResource(kafkaTopic).onComplete(handler);
         }
 
+        /**
+         * @return The name and correlated log message of the created topic
+         */
         @Override
         public String toString() {
             return "CreateResource(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
     }
 
+    /**
+     * Deletes the topic resource in ZK
+     *
+     * @param logContext   Instance of LogContext
+     * @param resourceName Name of the resource to be deleted
+     * @return Future based upon deletion of the resource
+     */
     private Future<Void> deleteResource(LogContext logContext, ResourceName resourceName) {
         Promise<Void> result = Promise.promise();
         enqueue(logContext, new DeleteResource(logContext, resourceName, result));
@@ -185,23 +213,41 @@ class TopicOperator {
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
         private final LogContext logContext;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param resourceName       Name of the resource
+         * @param handler            Handles the events
+         */
         public DeleteResource(LogContext logContext, ResourceName resourceName, Handler<io.vertx.core.AsyncResult<Void>> handler) {
             this.logContext = logContext;
             this.resourceName = resourceName;
             this.handler = handler;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) {
             k8s.deleteResource(logContext.toReconciliation(), resourceName).onComplete(handler);
         }
 
+        /**
+         * @return The name and correlated log message of the deleted topic
+         */
         @Override
         public String toString() {
             return "DeleteResource(mapName=" + resourceName + ",ctx=" + logContext + ")";
         }
     }
 
+    /**
+     * Update the topic resource in ZK
+     *
+     * @param logContext   Instance of LogContext
+     * @param topic        The topic whose configs needs to be updated
+     * @return Future based upon update of the resource
+     */
     private Future<KafkaTopic> updateResource(LogContext logContext, Topic topic) {
         Promise<KafkaTopic> result = Promise.promise();
         enqueue(logContext, new UpdateResource(logContext, topic, result));
@@ -215,24 +261,42 @@ class TopicOperator {
         private final Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler;
         private final LogContext logContext;
 
+        /** Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param topic              The topic whose configs needs to be updated
+         * @param handler            Handles the events
+         */
         public UpdateResource(LogContext logContext, Topic topic, Handler<AsyncResult<KafkaTopic>> handler) {
             this.logContext = logContext;
             this.topic = topic;
             this.handler = handler;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) {
             KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(this.topic, labels);
             k8s.updateResource(kafkaTopic).onComplete(handler);
         }
 
+        /**
+         * @return The name and correlated log message of the updated topic
+         */
         @Override
         public String toString() {
             return "UpdateResource(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
     }
 
+    /**
+     * Creates the topic resource in k8s
+     *
+     * @param logContext      Instance of LogContext
+     * @param topic           The topic whose configs needs to be updated
+     * @param involvedObject  Involved kubernetes object
+     * @return Future based upon creation of the resource
+     */
     private Future<Void> createKafkaTopic(LogContext logContext, Topic topic,
                                           HasMetadata involvedObject) {
         Promise<Void> result = Promise.promise();
@@ -248,6 +312,14 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param topic              The topic whose configs needs to be updated
+         * @param involvedObject  Involved kubernetes object
+         * @param handler            Handles the events
+         */
         public CreateKafkaTopic(LogContext logContext, Topic topic,
                                 HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.logContext = logContext;
@@ -256,6 +328,7 @@ class TopicOperator {
             this.involvedObject = involvedObject;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) throws OperatorException {
             kafka.createTopic(logContext.toReconciliation(), topic).onComplete(ar -> {
@@ -276,6 +349,9 @@ class TopicOperator {
             });
         }
 
+        /**
+         * @return The name and correlated log context of the created topic in k8s
+         */
         @Override
         public String toString() {
             return "CreateKafkaTopic(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
@@ -291,6 +367,14 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param topic              The topic whose configs needs to be updated
+         * @param involvedObject  Involved kubernetes object
+         * @param handler            Handles the events
+         */
         public UpdateKafkaConfig(LogContext logContext, Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.logContext = logContext;
             this.topic = topic;
@@ -298,6 +382,7 @@ class TopicOperator {
             this.handler = handler;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) throws OperatorException {
             kafka.updateTopicConfig(logContext.toReconciliation(), topic).onComplete(ar -> {
@@ -309,6 +394,9 @@ class TopicOperator {
 
         }
 
+        /**
+         * @return The name and correlated log context of the updated topic in k8s
+         */
         @Override
         public String toString() {
             return "UpdateKafkaConfig(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
@@ -324,6 +412,14 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param topic              The topic whose configs needs to be updated
+         * @param involvedObject  Involved kubernetes object
+         * @param handler            Handles the events
+         */
         public IncreaseKafkaPartitions(LogContext logContext, Topic topic, HasMetadata involvedObject, Handler<AsyncResult<Void>> handler) {
             this.logContext = logContext;
             this.topic = topic;
@@ -331,6 +427,7 @@ class TopicOperator {
             this.handler = handler;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) throws OperatorException {
             kafka.increasePartitions(logContext.toReconciliation(), topic).onComplete(ar -> {
@@ -342,12 +439,22 @@ class TopicOperator {
 
         }
 
+        /**
+         * @return The name and correlated log context of the topic in k8s whose partition are increased
+         */
         @Override
         public String toString() {
             return "UpdateKafkaPartitions(topicName=" + topic.getTopicName() + ",ctx=" + logContext + ")";
         }
     }
 
+    /**
+     * Creates the topic resource in k8s
+     *
+     * @param logContext      Instance of LogContext
+     * @param topicName       Name of the topic to be deleted
+     * @return Future based upon deletion of the resource
+     */
     private Future<Void> deleteKafkaTopic(LogContext logContext, TopicName topicName) {
         Promise<Void> result = Promise.promise();
         enqueue(logContext, new DeleteKafkaTopic(logContext, topicName, result));
@@ -361,25 +468,37 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
+        /**
+         * Constructor
+         *
+         * @param logContext         The context for correlating the logs
+         * @param topicName       Name of the topic to be deleted
+         * @param handler            Handles the events
+         */
         public DeleteKafkaTopic(LogContext logContext, TopicName topicName, Handler<AsyncResult<Void>> handler) {
             this.logContext = logContext;
             this.topicName = topicName;
             this.handler = handler;
         }
 
+        /** Handles the event that has happened */
         @Override
         public void handle(Void v) throws OperatorException {
             LOGGER.infoCr(logContext.toReconciliation(), "Deleting topic '{}'", topicName);
             kafka.deleteTopic(logContext.toReconciliation(), topicName).onComplete(handler);
         }
 
+        /**
+         * @return The name and correlated log context of the topic deleted in k8s
+         */
         @Override
         public String toString() {
             return "DeleteKafkaTopic(topicName=" + topicName + ",ctx=" + logContext + ")";
         }
     }
 
-    public TopicOperator(Vertx vertx, Kafka kafka,
+    /** Topic Operator constructor */
+    protected TopicOperator(Vertx vertx, Kafka kafka,
                          K8s k8s,
                          TopicStore topicStore,
                          Labels labels,
@@ -398,7 +517,7 @@ class TopicOperator {
         initMetrics();
     }
 
-    public void initMetrics() {
+    protected void initMetrics() {
         if (metrics != null) {
             Tags metricTags = Tags.of(Tag.of("kind", "KafkaTopic"));
 
@@ -436,12 +555,8 @@ class TopicOperator {
         }
     }
 
-    public Counter getPeriodicReconciliationsCounter() {
+    protected Counter getPeriodicReconciliationsCounter() {
         return this.periodicReconciliationsCounter;
-    }
-
-    public void setTopicCount(int topics) {
-        this.topicCounter.set(topics);
     }
 
     /**
@@ -1539,7 +1654,7 @@ class TopicOperator {
         });
     }
 
-    public String getNamespace() {
+    protected String getNamespace() {
         return this.namespace;
     }
 

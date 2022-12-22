@@ -11,6 +11,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  * and the topic in Kafka had conflicting changes.
  */
 public class ConflictingChangesException extends OperatorException {
+
+    /**
+     * Constructor
+     *
+     * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
+     * @param message   The error message
+     */
     public ConflictingChangesException(HasMetadata resource, String message) {
         super(resource, message);
     }

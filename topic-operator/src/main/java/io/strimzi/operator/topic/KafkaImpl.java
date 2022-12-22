@@ -42,6 +42,12 @@ public class KafkaImpl implements Kafka {
 
     protected final Vertx vertx;
 
+    /**
+     * Constructor
+     *
+     * @param adminClient  Instance of the Kafka AdminClient API
+     * @param vertx        The Vertx instance
+     */
     public KafkaImpl(Admin adminClient, Vertx vertx) {
         this.adminClient = adminClient;
         this.vertx = vertx;
@@ -50,6 +56,9 @@ public class KafkaImpl implements Kafka {
     /**
      * Delete a topic via the Kafka AdminClient API, calling the given handler
      * (in a different thread) with the result.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param topicName         Name of the Kafka Topic
      */
     @Override
     public Future<Void> deleteTopic(Reconciliation reconciliation, TopicName topicName) {
@@ -66,6 +75,13 @@ public class KafkaImpl implements Kafka {
         return handler.future();
     }
 
+    /**
+     * Check the existence of a topic via the Kafka AdminClient API
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param topicName         Name of the Kafka Topic
+     * @return Future which completes when the topic exists.
+     */
     @Override
     public Future<Boolean> topicExists(Reconciliation reconciliation, TopicName topicName) {
         // Test existence by doing a validate-only creation and checking for topic exists exception.
@@ -90,6 +106,14 @@ public class KafkaImpl implements Kafka {
     }
 
 
+    /**
+     * Updates the topic configuration via the Kafka AdminClient API
+     * (in a different thread) with the result.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param topic             The Kafka Topic
+     * @return Future which completes when the topic is altered successfully.
+     */
     @SuppressWarnings("deprecation")
     @Override
     public Future<Void> updateTopicConfig(Reconciliation reconciliation, Topic topic) {
@@ -121,6 +145,11 @@ public class KafkaImpl implements Kafka {
         });
     }
 
+    /**
+     * Check the existence of a topic via the Kafka AdminClient API
+     *
+     * @return Future which return a set of topic names on successful completion
+     */
     @Override
     public Future<Set<String>> listTopics() {
         try {
@@ -132,7 +161,14 @@ public class KafkaImpl implements Kafka {
         }
     }
 
-
+    /**
+     * Increase the number of partitions of a topic via the Kafka AdminClient API, calling the given handler
+     * (in a different thread) with the result.
+     *
+     * @param reconciliation    Reconciliation Marker
+     * @param topic             The Kafka topic
+     * @return Future which completes when the partition count is increased
+     */
     @Override
     public Future<Void> increasePartitions(Reconciliation reconciliation, Topic topic) {
         try {
@@ -149,6 +185,10 @@ public class KafkaImpl implements Kafka {
     /**
      * Create a new topic via the Kafka AdminClient API, calling the given handler
      * (in a different thread) with the result.
+     *
+     * @param reconciliation   Reconciliation marker
+     * @param topic            The KafkaTopic to be created
+     * @return Future which completes when the topic is created
      */
     @Override
     public Future<Void> createTopic(Reconciliation reconciliation, Topic topic) {

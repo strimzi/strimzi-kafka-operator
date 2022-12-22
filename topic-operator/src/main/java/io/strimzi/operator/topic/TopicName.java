@@ -18,6 +18,11 @@ import java.security.NoSuchAlgorithmException;
 class TopicName {
     private final String name;
 
+    /**
+     * Constructor
+     *
+     * @param name  Name of the topic
+     */
     public TopicName(String name) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException();
@@ -27,14 +32,30 @@ class TopicName {
         this.name = name;
     }
 
+
+    /**
+     * Constructor
+     *
+     * @param kafkaTopic  The Kafka Topic
+     */
     public TopicName(KafkaTopic kafkaTopic) {
         this(kafkaTopic.getSpec().getTopicName() != null ? kafkaTopic.getSpec().getTopicName() : kafkaTopic.getMetadata().getName());
     }
 
+    /**
+     * Constructor
+     *
+     * @return String name of the topic
+     */
     public String toString() {
         return this.name;
     }
 
+    /**
+     * Compares the topic names
+     *
+     * @return o Object
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -45,13 +66,17 @@ class TopicName {
         return name.equals(topicName.name);
     }
 
+
+    /**
+     * @return Hashcode corresponding to topic name
+     */
     @Override
     public int hashCode() {
         return name.hashCode();
     }
 
     // This is the same regex used by kubernetes (or at least oc create)
-    public static final String SEP = "---";
+    protected static final String SEP = "---";
 
     /**
      * Return a valid resource name for the given topic name. If the topic name is already valid as a resource name
@@ -60,7 +85,7 @@ class TopicName {
      * prefix and the concatenation of the prefix and hash is returned.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
-    public ResourceName asKubeName() {
+    protected ResourceName asKubeName() {
         ResourceName mname;
         if (ResourceName.isValidResourceName(this.name)) {
             mname = new ResourceName(this.name);
@@ -126,7 +151,7 @@ class TopicName {
         return mname;
     }
 
-    private boolean isInRange(char a, char ch, char z) {
+    protected boolean isInRange(char a, char ch, char z) {
         return a <= ch && ch <= z;
     }
 }

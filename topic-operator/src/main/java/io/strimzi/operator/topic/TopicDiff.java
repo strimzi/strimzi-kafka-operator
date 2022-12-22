@@ -208,7 +208,7 @@ class TopicDiff {
 
     private final Map<String, Difference> differences;
 
-    private TopicDiff(Map<String, Difference> differences, ObjectMeta objectMeta) {
+    protected TopicDiff(Map<String, Difference> differences, ObjectMeta objectMeta) {
         this.differences = differences;
         this.objectMeta = objectMeta;
     }
@@ -220,7 +220,7 @@ class TopicDiff {
      * @param target
      * @return The difference between the source and target.
      */
-    public static TopicDiff diff(Topic source, Topic target) {
+    protected static TopicDiff diff(Topic source, Topic target) {
         Objects.requireNonNull(source);
         Objects.requireNonNull(target);
         Objects.requireNonNull(source.getTopicName());
@@ -290,20 +290,20 @@ class TopicDiff {
     /**
      * Whether the diff is empty. Applying an empty diff is a noop.
      */
-    public boolean isEmpty() {
+    protected boolean isEmpty() {
         return this.differences.isEmpty();
     }
 
-    public boolean changesNumPartitions() {
+    protected boolean changesNumPartitions() {
         return this.differences.containsKey(NumPartitionsDifference.ADDRESS);
     }
 
-    public int numPartitionsDelta() {
+    protected int numPartitionsDelta() {
         NumPartitionsDifference newP = (NumPartitionsDifference) this.differences.get(NumPartitionsDifference.ADDRESS);
         return newP == null ? 0 : newP.numPartitionsChange();
     }
 
-    public boolean changesConfig() {
+    protected boolean changesConfig() {
         for (String address : differences.keySet()) {
             if (address.startsWith(AddedConfigEntry.ADDRESS_PREFIX)) {
                 return true;
@@ -312,7 +312,7 @@ class TopicDiff {
         return false;
     }
 
-    public boolean changesReplicationFactor() {
+    protected boolean changesReplicationFactor() {
         return this.differences.containsKey(NumReplicasDifference.ADDRESS);
     }
 
@@ -323,7 +323,7 @@ class TopicDiff {
      * @param topic
      * @return
      */
-    public Topic apply(Topic topic) {
+    protected Topic apply(Topic topic) {
         Topic.Builder builder = new Topic.Builder(topic);
         for (Difference d : differences.values()) {
             d.apply(builder);
@@ -341,7 +341,7 @@ class TopicDiff {
     /**
      * Return true if this TopicDiff conflicts with the given other TopicDiff
      */
-    public String conflict(TopicDiff other) {
+    protected String conflict(TopicDiff other) {
         Set<String> intersection = new HashSet<>(this.differences.keySet());
         intersection.retainAll(other.differences.keySet());
         // they could still be OK if they're applying the _same_ differences
@@ -356,7 +356,7 @@ class TopicDiff {
         return sb.length() == 0 ? null : sb.toString();
     }
 
-    public boolean conflicts(TopicDiff other) {
+    protected boolean conflicts(TopicDiff other) {
         return conflict(other) != null;
     }
 
@@ -368,7 +368,7 @@ class TopicDiff {
      * @return
      * @throws IllegalArgumentException if the topics conflict.
      */
-    public TopicDiff merge(TopicDiff other) {
+    protected TopicDiff merge(TopicDiff other) {
         String confict = this.conflict(other);
         if (confict != null) {
             throw new IllegalArgumentException("Conflict: " + confict);

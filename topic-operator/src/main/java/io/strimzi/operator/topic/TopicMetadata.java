@@ -18,16 +18,16 @@ public class TopicMetadata {
     private final Config config;
     private final TopicDescription description;
 
-    public TopicMetadata(TopicDescription description, Config config) {
+    protected TopicMetadata(TopicDescription description, Config config) {
         this.config = config;
         this.description = description;
     }
 
-    public Config getConfig() {
+    protected Config getConfig() {
         return config;
     }
 
-    public TopicDescription getDescription() {
+    protected TopicDescription getDescription() {
         return description;
     }
 }

@@ -11,6 +11,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  * (e.g. one with a negative number of partitions, etc.).
  */
 public class InvalidTopicException extends OperatorException {
+
+    /**
+     * Constructor
+     *
+     * @param involvedObject  Kubernetes resource with metadata containing the namespace and cluster name
+     * @param message   The error message
+     */
     public InvalidTopicException(HasMetadata involvedObject, String message) {
         super(involvedObject, message);
     }

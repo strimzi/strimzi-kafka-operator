@@ -11,6 +11,13 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  * partitions in a topic (something which Kafka does not support).
  */
 public class PartitionDecreaseException extends OperatorException {
+
+    /**
+     * Constructor
+     *
+     * @param resource   Kubernetes resource with metadata containing the namespace and cluster name etc
+     * @param message    The Error message
+     */
     public PartitionDecreaseException(HasMetadata resource, String message) {
         super(resource, message);
     }

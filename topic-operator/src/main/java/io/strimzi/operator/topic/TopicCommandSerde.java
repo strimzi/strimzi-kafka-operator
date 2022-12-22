@@ -21,6 +21,13 @@ public class TopicCommandSerde extends SelfSerde<TopicCommand> {
     private static final String KEY = "key";
     private static final String VERSION = "version";
 
+    /**
+     * Method to serialize the topic command data into byte stream
+     *
+     * @param topic  The Kafka topic
+     * @param data   Topic command
+     * @return byte stream after serializing the topic command
+     */
     @Override
     public byte[] serialize(String topic, TopicCommand data) {
         return TopicSerialization.toBytes((mapper, root) -> {
@@ -37,6 +44,12 @@ public class TopicCommandSerde extends SelfSerde<TopicCommand> {
         });
     }
 
+    /**
+     * Method to deserialize the topic data into topic command
+     *
+     * @param data   Topic command in byte stream
+     * @return Topic command after deserializing the topic command byte stream
+     */
     @Override
     public TopicCommand deserialize(String t, byte[] data) {
         return TopicSerialization.fromJson(data, (mapper, bytes) -> {

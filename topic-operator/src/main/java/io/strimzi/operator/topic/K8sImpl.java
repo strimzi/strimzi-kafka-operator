@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
+/** Partial Implementation of Kubernetes */
 public class K8sImpl implements K8s {
 
     private final static Logger LOGGER = LogManager.getLogger(K8sImpl.class);
@@ -37,6 +38,14 @@ public class K8sImpl implements K8s {
 
     private final Vertx vertx;
 
+    /**
+     * Constructor
+     *
+     * @param vertx  Instance of vertx
+     * @param client    Instance of Kubernetes client
+     * @param labels    Cluster label
+     * @param namespace   Namespace where the cluster is deployed
+     */
     public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
@@ -45,6 +54,12 @@ public class K8sImpl implements K8s {
         this.namespace = namespace;
     }
 
+    /**
+     * Creates the Kafka topic resource
+     *
+     * @param topicResource  The topic resource that need to be created
+     * @return  Future which completes with result of the request. If the request was successful, this returns the Kafka topic
+     */
     @Override
     public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
         Promise<KafkaTopic> handler = Promise.promise();
@@ -63,6 +78,12 @@ public class K8sImpl implements K8s {
         return handler.future();
     }
 
+    /**
+     * Updates the Kafka topic resource
+     *
+     * @param topicResource  The topic resource that need to be updated
+     * @return  Future which completes with result of the request. If the request was successful, this returns the updated Kafka topic
+     */
     @Override
     public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
         Promise<KafkaTopic> handler = Promise.promise();
@@ -81,11 +102,25 @@ public class K8sImpl implements K8s {
         return handler.future();
     }
 
+    /**
+     * Updates the status of the Kafka topic resource
+     *
+     * @param ctx            Reconciliation Marker
+     * @param topicResource  The topic resource that need to be created
+     * @return  Future which completes with result of the request. If the request was successful, this returns the Kafka topic with updated status
+     */
     @Override
     public Future<KafkaTopic> updateResourceStatus(Reconciliation ctx, KafkaTopic topicResource) {
         return crdOperator.updateStatusAsync(ctx, topicResource);
     }
 
+    /**
+     * Deletes the Kafka topic resource
+     *
+     * @param reconciliation Reconciliation marker
+     * @param resourceName  The topic resource name that need to be deleted
+     * @return  Future which completes when the resource is deleted successfully.
+     */
     @Override
     public Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName) {
         Promise<Void> handler = Promise.promise();
@@ -111,11 +146,22 @@ public class K8sImpl implements K8s {
         return client.resources(KafkaTopic.class, KafkaTopicList.class);
     }
 
+    /**
+     * Lists the Kafka topics
+     *
+     * @return  Future which completes with result of the request. If the request was successful, this returns a list of Kafka topics
+     */
     @Override
     public Future<List<KafkaTopic>> listResources() {
         return crdOperator.listAsync(namespace, io.strimzi.operator.common.model.Labels.fromMap(labels.labels()));
     }
 
+    /**
+     * Lists the Kafka topic based on the resource name
+     *
+     * @param resourceName Name of the resource
+     * @return  Future which completes with result of the request. If the request was successful, this returns a Kafka topic
+     */
     @Override
     public Future<KafkaTopic> getFromName(ResourceName resourceName) {
         return crdOperator.getAsync(namespace, resourceName.toString());

@@ -23,7 +23,7 @@ import java.util.concurrent.CompletionStage;
 public class Zk2KafkaStreams {
     private static final Logger LOGGER = LoggerFactory.getLogger(Zk2KafkaStreams.class);
 
-    public static CompletionStage<KafkaStreamsTopicStoreService> upgrade(
+    protected static CompletionStage<KafkaStreamsTopicStoreService> upgrade(
             Zk zk,
             Config config,
             Properties kafkaProperties,

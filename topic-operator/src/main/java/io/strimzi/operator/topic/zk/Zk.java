@@ -20,6 +20,16 @@ import java.util.List;
  */
 public interface Zk {
 
+
+    /**
+     * Creates the zookeeper client asynchronously
+     *
+     * @param vertx  Instance of Vert.x
+     * @param zkConnectionString  Zookeeper connection string
+     * @param sessionTimeout  Timeout for session
+     * @param connectionTimeout Timeout for connection
+     * @return  Future completes if the Zookeeper instance is created successfully.
+     */
     static Future<Zk> create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
         return vertx.executeBlocking(f -> {
             try {
@@ -30,6 +40,15 @@ public interface Zk {
         });
     }
 
+    /**
+     * Creates the zookeeper client
+     *
+     * @param vertx  Instance of Vert.x
+     * @param zkConnectionString  Zookeeper connection string
+     * @param sessionTimeout  Timeout for session
+     * @param connectionTimeout Timeout for connection
+     * @return Zookeeper instace
+     */
     static Zk createSync(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
         return new ZkImpl(vertx,
                 new ZkClient(zkConnectionString, sessionTimeout, connectionTimeout,
@@ -153,12 +172,36 @@ public interface Zk {
 
     // sync methods -- use in already async code
 
+    /**
+     * Does the path exist.
+     *
+     * @param path The path
+     * @return boolean result
+     */
     boolean getPathExists(String path);
 
+    /**
+     * List of child nodes
+     *
+     * @param path  Topic path
+     * @return List of child nodes
+     */
     List<String> getChildren(String path);
 
+    /**
+     * Gets byte form of zk data at topic path
+     *
+     * @param path  Topic path
+     * @return Byte stream of data
+     * */
     byte[] getData(String path);
 
+    /**
+     * Deletes zk topic path
+     *
+     * @param path     Topic Path
+     * @param version  version
+     * */
     void delete(String path, int version);
 
     // TODO getAcl(), setAcl(), multi()

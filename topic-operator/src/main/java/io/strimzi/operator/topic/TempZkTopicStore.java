@@ -32,16 +32,34 @@ class TempZkTopicStore implements TopicStore {
         return Future.succeededFuture(topic);
     }
 
+    /**
+     * Creates the topic store which store topic state in Zookeeper
+     *
+     * @param topic    The topic resource
+     * @return  A failed future
+     */
     @Override
     public Future<Void> create(Topic topic) {
         return Future.failedFuture("Not supported!");
     }
 
+    /**
+     * Updates the topic store which store topic state in Zookeeper
+     *
+     * @param topic    The topic resource
+     * @return  A failed future
+     */
     @Override
     public Future<Void> update(Topic topic) {
         return Future.failedFuture("Not supported!");
     }
 
+    /**
+     * Deletes the topic store which store topic state in Zookeeper
+     *
+     * @param topicName    The topic name
+     * @return  A failed future
+     */
     @Override
     public Future<Void> delete(TopicName topicName) {
         String topicPath = getTopicPath(topicName);

@@ -12,11 +12,11 @@ import io.vertx.core.Future;
  */
 interface TopicStore {
 
-    public static class EntityExistsException extends Exception {
+    class EntityExistsException extends Exception {
 
     }
 
-    public static class NoSuchEntityExistsException extends Exception {
+    class NoSuchEntityExistsException extends Exception {
 
     }
 
@@ -25,7 +25,7 @@ interface TopicStore {
      * e.g. in the case of KafkaStreamsTopicStore we throw this when
      * waiting on a async result takes too long -- see Config#STALE_RESULT_TIMEOUT_MS
      */
-    public static class InvalidStateException extends Exception {
+    class InvalidStateException extends Exception {
 
     }
 

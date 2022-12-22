@@ -22,6 +22,9 @@ import java.util.Properties;
  */
 class LocalStoreAndServiceFactory implements StoreAndServiceFactory {
 
+    /**
+     * Creates the local/in-memory store
+     */
     @SuppressWarnings("unchecked")
     public StoreContext create(
             Config config,
@@ -46,11 +49,14 @@ class LocalStoreAndServiceFactory implements StoreAndServiceFactory {
 
         private ReadOnlyKeyValueStore<String, Topic> store;
 
-        public LazyInvocationHandler(KafkaStreams streams, String storeName) {
+        protected LazyInvocationHandler(KafkaStreams streams, String storeName) {
             this.streams = streams;
             this.storeName = storeName;
         }
 
+        /**
+         * Overriden invoke method whihc
+         */
         @Override
         public synchronized Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if (store == null) {

@@ -22,7 +22,7 @@ class ResourceName {
                 && RESOURCE_PATTERN.matcher(resourceName).matches();
     }
 
-    public ResourceName(String name) {
+    protected ResourceName(String name) {
         if (!isValidResourceName(name)) {
             throw new IllegalArgumentException("'" + name + "' is not a valid Kubernetes resource name");
         }
@@ -38,10 +38,19 @@ class ResourceName {
         this(resource.getMetadata().getName());
     }
 
+    /**
+     * @return   Resource name
+     */
     public String toString() {
         return this.name;
     }
 
+    /**
+     * Checks if the resource names are equal or not
+     *
+     * @param o Object
+     * @return Boolean result whether the resource name are equal or not
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -52,6 +61,9 @@ class ResourceName {
         return name != null ? name.equals(resourceName.name) : resourceName.name == null;
     }
 
+    /**
+     * @return  Hashcode corresponding to the resource name
+     */
     @Override
     public int hashCode() {
         return name != null ? name.hashCode() : 0;

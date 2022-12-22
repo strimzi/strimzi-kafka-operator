@@ -77,8 +77,6 @@ class MockTopicOperator extends TopicOperator {
     public Future<Void> topicDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".topicDeletedResult");
     public Future<Void> topicModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".topicModifiedResult");
     public Future<Void> resourceAddedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".resourceAddedResult");
-    public Future<Void> resourceDeletedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".resourceDeletedResult");
-    public Future<Void> resourceModifiedResult = Future.failedFuture("Unexpected mock interaction. Configure " + getClass().getSimpleName() + ".resourceModifiedResult");
     private List<MockOperatorEvent> mockOperatorEvents = new ArrayList<>();
 
     public List<MockOperatorEvent> getMockOperatorEvents() {
@@ -90,7 +88,7 @@ class MockTopicOperator extends TopicOperator {
     }
 
     @Override
-    public void initMetrics() {
+    protected void initMetrics() {
         return;
     }
 

@@ -28,6 +28,14 @@ public class KafkaStreamsTopicStore implements TopicStore {
 
     private final BiFunction<String, String, CompletionStage<Integer>> resultService;
 
+    /**
+     * Constructor
+     *
+     * @param topicStore   Read-only topic store containing the topics.
+     * @param storeTopic   Name of the topic store
+     * @param producer     Producer actions
+     * @param resultService  Bifunction
+     */
     public KafkaStreamsTopicStore(
             ReadOnlyKeyValueStore<String, Topic> topicStore,
             String storeTopic,
@@ -39,7 +47,8 @@ public class KafkaStreamsTopicStore implements TopicStore {
         this.resultService = resultService;
     }
 
-    public static Throwable toThrowable(Integer index) {
+
+    private static Throwable toThrowable(Integer index) {
         if (index == null) {
             return null;
         }
@@ -55,7 +64,7 @@ public class KafkaStreamsTopicStore implements TopicStore {
         }
     }
 
-    public static Integer toIndex(Class<? extends Throwable> ct) {
+    protected static Integer toIndex(Class<? extends Throwable> ct) {
         if (ct.equals(TopicStore.EntityExistsException.class)) {
             return 1;
         }
@@ -78,7 +87,14 @@ public class KafkaStreamsTopicStore implements TopicStore {
         }
     }
 
-    private Future<Void> handleTopicCommand(TopicCommand cmd) {
+
+    /**
+     * Method to handle the topic commands
+     *
+     * @param cmd    Topic command like CREATE, UPDATE, DELETE
+     * @return Future which completes when the topic command is handle successfully
+     */
+    protected Future<Void> handleTopicCommand(TopicCommand cmd) {
         LOGGER.debug("Handling topic command [{}]: {}", cmd.getType(), cmd.getKey());
         String key = cmd.getKey();
         CompletionStage<Throwable> result = resultService.apply(key, cmd.getUuid())
@@ -95,18 +111,39 @@ public class KafkaStreamsTopicStore implements TopicStore {
         );
     }
 
+    /**
+     * Method to generate the topic command CREATE
+     * which is later on handled by the `handleTopicCommand` method
+     *
+     * @param topic  The Kafka topic
+     * @return Future which completes when the topic command is handled successfully
+     */
     @Override
     public Future<Void> create(Topic topic) {
         TopicCommand cmd = TopicCommand.create(topic);
         return handleTopicCommand(cmd);
     }
 
+    /**
+     * Method to generate the topic command UPDATE
+     * which is later on handled by the `handleTopicCommand` method
+     *
+     * @param topic  The Kafka topic
+     * @return Future which completes when the topic command UPDATE is created and handled successfully
+     */
     @Override
     public Future<Void> update(Topic topic) {
         TopicCommand cmd = TopicCommand.update(topic);
         return handleTopicCommand(cmd);
     }
 
+    /**
+     * Method to generate the topic command DELETE
+     * which is later on handled by the `handleTopicCommand` method
+     *
+     * @param topic  The Kafka topic
+     * @return Future which completes when the topic command DELETE is created and handled successfully
+     */
     @Override
     public Future<Void> delete(TopicName topic) {
         TopicCommand cmd = TopicCommand.delete(topic);
