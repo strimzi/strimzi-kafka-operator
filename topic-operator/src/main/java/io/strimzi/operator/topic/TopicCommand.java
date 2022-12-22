@@ -38,7 +38,8 @@ public class TopicCommand {
             return id;
         }
 
-        /** Returns the type of Topic command w.r.t id
+        /**
+         * Returns the type of Topic command w.r.t id
          *
          * @param id   Id
          * @return Type of Topic command

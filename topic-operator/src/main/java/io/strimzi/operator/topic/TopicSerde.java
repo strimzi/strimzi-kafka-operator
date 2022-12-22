@@ -11,7 +11,8 @@ import io.apicurio.registry.utils.kafka.SelfSerde;
  */
 public class TopicSerde extends SelfSerde<Topic> {
 
-    /** Method to serialize the topic into byte stream
+    /**
+     * Method to serialize the topic into byte stream
      *
      * @param topic  The Kafka topic
      * @param data   Topic data
@@ -22,7 +23,8 @@ public class TopicSerde extends SelfSerde<Topic> {
         return TopicSerialization.toJson(data);
     }
 
-    /** Method to deserialize the topic data into topic command
+    /**
+     * Method to deserialize the topic data into topic command
      *
      * @param data   Topic in byte stream
      * @return Topic after deserializing the topic byte stream

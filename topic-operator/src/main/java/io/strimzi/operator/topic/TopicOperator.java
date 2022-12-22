@@ -94,7 +94,8 @@ class TopicOperator {
         private final HasMetadata involvedObject;
         private final Handler<AsyncResult<Void>> handler;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param involvedObject     Involved Kubernetes resource with metadata
@@ -164,7 +165,8 @@ class TopicOperator {
         private final Handler<io.vertx.core.AsyncResult<KafkaTopic>> handler;
         private final LogContext logContext;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param handler            Handles the events
@@ -191,7 +193,8 @@ class TopicOperator {
         }
     }
 
-    /** Deletes the topic resource in ZK
+    /**
+     * Deletes the topic resource in ZK
      *
      * @param logContext   Instance of LogContext
      * @param resourceName Name of the resource to be deleted
@@ -210,7 +213,8 @@ class TopicOperator {
         private final Handler<io.vertx.core.AsyncResult<Void>> handler;
         private final LogContext logContext;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param resourceName       Name of the resource
@@ -237,7 +241,8 @@ class TopicOperator {
         }
     }
 
-    /** Update the topic resource in ZK
+    /**
+     * Update the topic resource in ZK
      *
      * @param logContext   Instance of LogContext
      * @param topic        The topic whose configs needs to be updated
@@ -284,7 +289,8 @@ class TopicOperator {
         }
     }
 
-    /** Creates the topic resource in k8s
+    /**
+     * Creates the topic resource in k8s
      *
      * @param logContext      Instance of LogContext
      * @param topic           The topic whose configs needs to be updated
@@ -306,7 +312,8 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param topic              The topic whose configs needs to be updated
@@ -360,7 +367,8 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param topic              The topic whose configs needs to be updated
@@ -404,7 +412,8 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param topic              The topic whose configs needs to be updated
@@ -439,7 +448,8 @@ class TopicOperator {
         }
     }
 
-    /** Creates the topic resource in k8s
+    /**
+     * Creates the topic resource in k8s
      *
      * @param logContext      Instance of LogContext
      * @param topicName       Name of the topic to be deleted
@@ -458,7 +468,8 @@ class TopicOperator {
         private final Handler<AsyncResult<Void>> handler;
         private final LogContext logContext;
 
-        /** Constructor
+        /**
+         * Constructor
          *
          * @param logContext         The context for correlating the logs
          * @param topicName       Name of the topic to be deleted

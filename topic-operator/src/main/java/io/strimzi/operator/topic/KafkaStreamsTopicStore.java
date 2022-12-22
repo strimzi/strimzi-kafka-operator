@@ -28,7 +28,8 @@ public class KafkaStreamsTopicStore implements TopicStore {
 
     private final BiFunction<String, String, CompletionStage<Integer>> resultService;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param topicStore   Read-only topic store containing the topics.
      * @param storeTopic   Name of the topic store
@@ -87,7 +88,8 @@ public class KafkaStreamsTopicStore implements TopicStore {
     }
 
 
-    /** Method to handle the topic commands
+    /**
+     * Method to handle the topic commands
      *
      * @param cmd    Topic command like CREATE, UPDATE, DELETE
      * @return Future which completes when the topic command is handle successfully
@@ -109,7 +111,8 @@ public class KafkaStreamsTopicStore implements TopicStore {
         );
     }
 
-    /** Method to generate the topic command CREATE
+    /**
+     * Method to generate the topic command CREATE
      * which is later on handled by the `handleTopicCommand` method
      *
      * @param topic  The Kafka topic
@@ -121,7 +124,8 @@ public class KafkaStreamsTopicStore implements TopicStore {
         return handleTopicCommand(cmd);
     }
 
-    /** Method to generate the topic command UPDATE
+    /**
+     * Method to generate the topic command UPDATE
      * which is later on handled by the `handleTopicCommand` method
      *
      * @param topic  The Kafka topic
@@ -133,7 +137,8 @@ public class KafkaStreamsTopicStore implements TopicStore {
         return handleTopicCommand(cmd);
     }
 
-    /** Method to generate the topic command DELETE
+    /**
+     * Method to generate the topic command DELETE
      * which is later on handled by the `handleTopicCommand` method
      *
      * @param topic  The Kafka topic

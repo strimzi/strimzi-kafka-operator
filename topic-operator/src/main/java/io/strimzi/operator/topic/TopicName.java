@@ -18,7 +18,8 @@ import java.security.NoSuchAlgorithmException;
 class TopicName {
     private final String name;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param name  Name of the topic
      */
@@ -32,7 +33,8 @@ class TopicName {
     }
 
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param kafkaTopic  The Kafka Topic
      */
@@ -40,7 +42,8 @@ class TopicName {
         this(kafkaTopic.getSpec().getTopicName() != null ? kafkaTopic.getSpec().getTopicName() : kafkaTopic.getMetadata().getName());
     }
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @return String name of the topic
      */
@@ -48,7 +51,8 @@ class TopicName {
         return this.name;
     }
 
-    /** Compares the topic names
+    /**
+     * Compares the topic names
      *
      * @return o Object
      */

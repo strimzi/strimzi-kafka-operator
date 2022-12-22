@@ -14,7 +14,8 @@ public class OperatorException extends RuntimeException {
     /** Kubernetes resource with metadata containing the namespace and cluster name etc */
     private final HasMetadata involvedObject;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param involvedObject   C
      * @param message    The Error message
@@ -23,7 +24,8 @@ public class OperatorException extends RuntimeException {
         this(involvedObject, message, null);
     }
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param involvedObject   Kubernetes resource with metadata containing the namespace and cluster name etc
      * @param cause            Exception which caused this error
@@ -32,7 +34,8 @@ public class OperatorException extends RuntimeException {
         this(involvedObject, null, cause);
     }
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param involvedObject   Kubernetes resource with metadata containing the namespace and cluster name etc
      * @param message          The Error message
@@ -43,7 +46,8 @@ public class OperatorException extends RuntimeException {
         this.involvedObject = involvedObject;
     }
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param message          The Error message
      * @param cause            Exception which caused this error

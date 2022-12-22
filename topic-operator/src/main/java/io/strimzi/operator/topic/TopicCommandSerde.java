@@ -21,7 +21,8 @@ public class TopicCommandSerde extends SelfSerde<TopicCommand> {
     private static final String KEY = "key";
     private static final String VERSION = "version";
 
-    /** Method to serialize the topic command data into byte stream
+    /**
+     * Method to serialize the topic command data into byte stream
      *
      * @param topic  The Kafka topic
      * @param data   Topic command
@@ -43,7 +44,8 @@ public class TopicCommandSerde extends SelfSerde<TopicCommand> {
         });
     }
 
-    /** Method to deserialize the topic data into topic command
+    /**
+     * Method to deserialize the topic data into topic command
      *
      * @param data   Topic command in byte stream
      * @return Topic command after deserializing the topic command byte stream

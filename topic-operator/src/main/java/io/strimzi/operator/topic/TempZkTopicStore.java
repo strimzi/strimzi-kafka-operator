@@ -32,7 +32,8 @@ class TempZkTopicStore implements TopicStore {
         return Future.succeededFuture(topic);
     }
 
-    /**  Creates the topic store which store topic state in Zookeeper
+    /**
+     * Creates the topic store which store topic state in Zookeeper
      *
      * @param topic    The topic resource
      * @return  A failed future
@@ -42,7 +43,8 @@ class TempZkTopicStore implements TopicStore {
         return Future.failedFuture("Not supported!");
     }
 
-    /**  Updates the topic store which store topic state in Zookeeper
+    /**
+     * Updates the topic store which store topic state in Zookeeper
      *
      * @param topic    The topic resource
      * @return  A failed future
@@ -52,9 +54,10 @@ class TempZkTopicStore implements TopicStore {
         return Future.failedFuture("Not supported!");
     }
 
-    /**  Deletes the topic store which store topic state in Zookeeper
+    /**
+     * Deletes the topic store which store topic state in Zookeeper
      *
-     * @param topic    The topic name
+     * @param topicName    The topic name
      * @return  A failed future
      */
     @Override

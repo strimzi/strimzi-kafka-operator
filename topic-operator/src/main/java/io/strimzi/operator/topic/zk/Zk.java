@@ -21,7 +21,8 @@ import java.util.List;
 public interface Zk {
 
 
-    /** Creates the zookeeper client asynchronously
+    /**
+     * Creates the zookeeper client asynchronously
      *
      * @param vertx  Instance of Vert.x
      * @param zkConnectionString  Zookeeper connection string
@@ -39,7 +40,8 @@ public interface Zk {
         });
     }
 
-    /** Creates the zookeeper client
+    /**
+     * Creates the zookeeper client
      *
      * @param vertx  Instance of Vert.x
      * @param zkConnectionString  Zookeeper connection string
@@ -178,21 +180,24 @@ public interface Zk {
      */
     boolean getPathExists(String path);
 
-    /** List of child nodes
+    /**
+     * List of child nodes
      *
      * @param path  Topic path
      * @return List of child nodes
      */
     List<String> getChildren(String path);
 
-    /** Gets byte form of zk data at topic path
+    /**
+     * Gets byte form of zk data at topic path
      *
      * @param path  Topic path
      * @return Byte stream of data
      * */
     byte[] getData(String path);
 
-    /** Deletes zk topic path
+    /**
+     * Deletes zk topic path
      *
      * @param path     Topic Path
      * @param version  version

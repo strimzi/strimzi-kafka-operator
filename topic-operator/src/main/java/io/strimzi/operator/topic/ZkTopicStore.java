@@ -31,7 +31,8 @@ public class ZkTopicStore implements TopicStore {
 
     private final List<ACL> acl;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param zk          Vert.x style zookeeper instance
      * @param topicsPath  Path of the topic
@@ -67,7 +68,8 @@ public class ZkTopicStore implements TopicStore {
         return topicsPath + "/" + name;
     }
 
-    /** Read the Topic present in the zookeeper topic store
+    /**
+     * Read the Topic present in the zookeeper topic store
      *
      * @param topicName       Name of the topic to be deleted
      * @return Future which succeeds if the topic is read successfully
@@ -92,7 +94,8 @@ public class ZkTopicStore implements TopicStore {
         return handler.future();
     }
 
-    /** Create the Topic in the zookeeper topic store
+    /**
+     * Create the Topic in the zookeeper topic store
      *
      * @param topic       Topic to be created
      * @return Future based upon creation of the resource. Future completes if the topic is created successfully
@@ -113,7 +116,8 @@ public class ZkTopicStore implements TopicStore {
         return handler.future();
     }
 
-    /** Update the Topic in the zookeeper topic store
+    /**
+     * Update the Topic in the zookeeper topic store
      *
      * @param topic       Topic to be created
      * @return Future based upon update of the resource. Future completes if the topic is updated successfully
@@ -129,7 +133,8 @@ public class ZkTopicStore implements TopicStore {
         return handler.future();
     }
 
-    /** Update the Topic in the zookeeper topic store
+    /**
+     * Update the Topic in the zookeeper topic store
      *
      * @param topicName       Name of the topic to be deleted
      * @return Future based upon deletion of the resource. Future completes if the topic is deleted successfully

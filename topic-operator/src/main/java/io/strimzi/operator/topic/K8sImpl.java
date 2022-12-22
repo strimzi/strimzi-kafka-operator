@@ -38,7 +38,8 @@ public class K8sImpl implements K8s {
 
     private final Vertx vertx;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param vertx  Instance of vertx
      * @param client    Instance of Kubernetes client
@@ -53,7 +54,8 @@ public class K8sImpl implements K8s {
         this.namespace = namespace;
     }
 
-    /**  Creates the Kafka topic resource
+    /**
+     * Creates the Kafka topic resource
      *
      * @param topicResource  The topic resource that need to be created
      * @return  Future which completes with result of the request. If the request was successful, this returns the Kafka topic
@@ -76,7 +78,8 @@ public class K8sImpl implements K8s {
         return handler.future();
     }
 
-    /**  Updates the Kafka topic resource
+    /**
+     * Updates the Kafka topic resource
      *
      * @param topicResource  The topic resource that need to be updated
      * @return  Future which completes with result of the request. If the request was successful, this returns the updated Kafka topic
@@ -99,7 +102,8 @@ public class K8sImpl implements K8s {
         return handler.future();
     }
 
-    /**  Updates the status of the Kafka topic resource
+    /**
+     * Updates the status of the Kafka topic resource
      *
      * @param ctx            Reconciliation Marker
      * @param topicResource  The topic resource that need to be created
@@ -110,7 +114,8 @@ public class K8sImpl implements K8s {
         return crdOperator.updateStatusAsync(ctx, topicResource);
     }
 
-    /**  Deletes the Kafka topic resource
+    /**
+     * Deletes the Kafka topic resource
      *
      * @param reconciliation Reconciliation marker
      * @param resourceName  The topic resource name that need to be deleted
@@ -141,7 +146,8 @@ public class K8sImpl implements K8s {
         return client.resources(KafkaTopic.class, KafkaTopicList.class);
     }
 
-    /**  Lists the Kafka topics
+    /**
+     * Lists the Kafka topics
      *
      * @return  Future which completes with result of the request. If the request was successful, this returns a list of Kafka topics
      */
@@ -150,7 +156,8 @@ public class K8sImpl implements K8s {
         return crdOperator.listAsync(namespace, io.strimzi.operator.common.model.Labels.fromMap(labels.labels()));
     }
 
-    /**  Lists the Kafka topic based on the resource name
+    /**
+     * Lists the Kafka topic based on the resource name
      *
      * @param resourceName Name of the resource
      * @return  Future which completes with result of the request. If the request was successful, this returns a Kafka topic

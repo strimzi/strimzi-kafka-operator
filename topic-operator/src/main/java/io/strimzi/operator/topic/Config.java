@@ -251,7 +251,8 @@ public class Config {
 
     private final Map<String, Object> map;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param map  Map containing configurations and their respective values
      */

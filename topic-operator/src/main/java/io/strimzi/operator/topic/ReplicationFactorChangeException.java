@@ -14,7 +14,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  */
 public class ReplicationFactorChangeException extends OperatorException {
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param resource   Kubernetes resource with metadata containing the namespace and cluster name etc
      * @param message    The Error message

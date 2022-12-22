@@ -92,7 +92,8 @@ public class WaitForResultService implements AsyncBiFunctionService.WithSerdes<S
         return Serdes.Integer();
     }
 
-    /** Applies the ResultCF in waitingResults map so it could be completed
+    /**
+     * Applies the ResultCF in waitingResults map so it could be completed
      *
      * @param name  Name
      * @param uuid  The UUID associated to ResultCF

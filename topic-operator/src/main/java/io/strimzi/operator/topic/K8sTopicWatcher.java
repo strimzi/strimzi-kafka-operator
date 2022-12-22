@@ -26,7 +26,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     private TopicOperator topicOperator;
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param topicOperator  Instance of the Topic Operator
      * @param initReconcileFuture  Future of initial event for topic during initial reconcile
@@ -38,7 +39,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
         this.onHttpGoneTask = onHttpGoneTask;
     }
 
-    /**  Process Kubernetes events based on actions performed on KafkaTopic
+    /**
+     * Process Kubernetes events based on actions performed on KafkaTopic
      *
      * @param action      Kubernetes action performed
      * @param kafkaTopic  The Kafka topic resource
@@ -92,7 +94,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
         }
     }
 
-    /**  Decides whether reconciliation is needed or not
+    /**
+     * Decides whether reconciliation is needed or not
      *
      * @param kafkaTopic              The Kafka topic resource
      * @param metadata                Object metadata
@@ -107,7 +110,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                 || pauseAnnotationChanged;
     }
 
-    /** Check whether the paused annotation is changed in Kafka topic resource
+    /**
+     * Check whether the paused annotation is changed in Kafka topic resource
      *
      * @param kafkaTopic              The Kafka topic resource
      * @return Returns paused annotation changes which depicts whether the annotation is now moved from unpaused to paused or paused to unpaused.
@@ -121,7 +125,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
 
     }
 
-    /** Close the topic watcher
+    /**
+     * Close the topic watcher
      *
      * @param exception     Watcher Exception
      */

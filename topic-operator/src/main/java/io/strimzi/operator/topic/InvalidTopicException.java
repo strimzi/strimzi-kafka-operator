@@ -12,7 +12,8 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
  */
 public class InvalidTopicException extends OperatorException {
 
-    /** Constructor
+    /**
+     * Constructor
      *
      * @param involvedObject  Kubernetes resource with metadata containing the namespace and cluster name
      * @param message   The error message
