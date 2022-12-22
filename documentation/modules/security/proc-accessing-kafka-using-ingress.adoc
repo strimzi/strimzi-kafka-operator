@@ -3,48 +3,47 @@
 // assembly-configuring-kafka-listeners.adoc
 
 [id='proc-accessing-kafka-using-ingress-{context}']
-= Accessing Kafka using ingresses
+= Accessing Kafka using an Ingress NGINX Controller for Kubernetes
 
 [role="_abstract"]
 Use an {NginxIngressController} to access a Strimzi Kafka cluster from clients outside the Kubernetes cluster. 
-The Nginx Ingress Controller supports connections from HTTP and HTTPS-based applications.
 
-To be able to use an Nginx Ingress Controller, add configuration for an `ingress` type listener in the `Kafka` custom resource. 
+To be able to use an Ingress NGINX Controller for Kubernetes, add configuration for an `ingress` type listener in the `Kafka` custom resource. 
 When applied, the configuration creates a dedicated ingress and service for an external bootstrap and each broker in the cluster. 
 Clients connect to the bootstrap ingress, which routes them through the bootstrap service to connect to a broker. 
 Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific ingresses and services.
 
-To connect to a broker, you specify a hostname (advertised address) for the ingress bootstrap address, as well as the certificate used for authentication.
+To connect to a broker, you specify a hostname for the ingress bootstrap address, as well as the TLS certificate.
+Authentication is optional.
 
-For access using an ingress, the port is always 443.
+For access using an ingress, the port used in the Kafka client is typically 443.
 
 .TLS passthrough
 
-Make sure that you enable TLS passthrough in your NGINX Ingress Controller deployment.
-Kafka uses a binary protocol over TCP, but the NGINX Ingress Controller is designed to work with a HTTP protocol. 
-To be able to route traffic through ingresses, Strimzi uses TLS passthrough with Server Name Indication (SNI).
+Make sure that you enable TLS passthrough in your Ingress NGINX Controller for Kubernetes deployment.
+Kafka uses a binary protocol over TCP, but the Ingress NGINX Controller for Kubernetes is designed to work with a HTTP protocol. 
+To be able to route TCP traffic through ingresses, Strimzi uses TLS passthrough with Server Name Indication (SNI).
 
 SNI helps with identifying and passing connection to Kafka brokers.
 In passthrough mode, TLS encryption is always used.
-Because connection passes to the brokers, the listeners use the TLS certificates signed by the internal cluster CA.
+Because the connection passes to the brokers, the listeners use the TLS certificates signed by the internal cluster CA and not the ingrress certificates.
 To configure listeners to use your own listener certificates, xref:proc-installing-certs-per-listener-{context}[use the `brokerCertChainAndKey` property]. 
 
 For more information about enabling TLS passthrough, see the {NginxIngressControllerTLSPassthrough}.
 
 .Prerequisites
 
-* An NGINX Ingress Controller is running with TLS passthrough enabled
+* An Ingress NGINX Controller for Kubernetes is running with TLS passthrough enabled
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
-
-NOTE: You can install and use the NGINX Ingress Operator to deploy an NGINX Ingress Controller.
 
 .Procedure
 
 . Configure a `Kafka` resource with an external listener set to the `ingress` type.
 +
 Specify an ingress hostname for the bootstrap service and each of the Kafka brokers in the Kafka cluster.
+Add any hostname to the `bootstrap` and `broker-<index>` prefixes that identify the bootstrap and brokers.
 +
 For example:
 +
@@ -77,15 +76,12 @@ spec:
             host: broker-1.myingress.com
           - broker: 2
             host: broker-2.myingress.com
-          class: nginx  
+          class: nginx  # <1>
     # ...
   zookeeper:
     # ...
 ----
-+
-Add any hostname to the `bootstrap` and `broker-<index>` prefixes that identify the bootstrap and brokers.
-+
-NOTE: You might need to add `nginx` as the class if it is missing in the ingresses created. 
+<1> (Optional) Class that specifies the ingress controller to use. You might need to add a class if you have not set up a default and a class name is missing in the ingresses created. 
 
 . Create or update the resource.
 +
@@ -98,7 +94,7 @@ A cluster CA certificate to verify the identity of the kafka brokers is created 
 +
 `ClusterIP` type services are created for each Kafka broker, as well as an external bootstrap service.
 +
-An `ingress` is also created for each service, with a DNS address to expose them using the NGINX Ingress Controller.
+An `ingress` is also created for each service, with a DNS address to expose them using the Ingress NGINX Controller for Kubernetes.
 +
 .Ingresses created for the bootstrap and brokers
 [source,shell]
@@ -126,7 +122,7 @@ status:
 +
 [source,shell]
 ----
-openssl s_client -connect my-cluster-kafka-0:443 -servername my-cluster-kafka-0 -showcerts
+openssl s_client -connect broker-0.myingress.com:443 -servername broker-0.myingress.com -showcerts
 ----
 +
 The server name is the SNI for passing the connection to the broker. 

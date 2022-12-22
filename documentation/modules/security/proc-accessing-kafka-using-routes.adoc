@@ -7,7 +7,6 @@
 
 [role="_abstract"]
 Use OpenShift routes to access a Strimzi Kafka cluster from clients outside the OpenShift cluster.
-Routes support connections from from HTTP and HTTPS-based applications.
 
 To be able to use routes, add configuration for a `route` type listener in the `Kafka` custom resource. 
 When applied, the configuration creates a dedicated route and service for an external bootstrap and each broker in the cluster. 
@@ -23,13 +22,13 @@ For example, `my-cluster-kafka-listener1-bootstrap-myproject` (<cluster_name>-ka
 
 .TLS passthrough
 
-TLS passthrough is enabled for routes created by AMQ Streams.
+TLS passthrough is enabled for routes created by Strimzi.
 Kafka uses a binary protocol over TCP, but routes are designed to work with a HTTP protocol. 
-To be able to route traffic through routes, Strimzi uses TLS passthrough with Server Name Indication (SNI).
+To be able to route TCP traffic through routes, Strimzi uses TLS passthrough with Server Name Indication (SNI).
 
 SNI helps with identifying and passing connection to Kafka brokers.
 In passthrough mode, TLS encryption is always used.
-Because connection passes to the brokers, the listeners use TLS certificates signed by the internal cluster CA.
+Because the connection passes to the brokers, the listeners use TLS certificates signed by the internal cluster CA and not the ingrress certificates.
 To configure listeners to use your own listener certificates, xref:proc-installing-certs-per-listener-{context}[use the `brokerCertChainAndKey` property].
 
 .Prerequisites
@@ -108,7 +107,7 @@ status:
 +
 [source,shell]
 ----
-openssl s_client -connect my-cluster-kafka-0:443 -servername my-cluster-kafka-0 -showcerts
+openssl s_client -connect my-cluster-kafka-listener1-0-my-project.router.com:443 -servername my-cluster-kafka-listener1-0-my-project.router.com -showcerts
 ----
 +
 The server name is the SNI for passing the connection to the broker. 
