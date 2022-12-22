@@ -14,7 +14,7 @@
 
 ### Changes, deprecations and removals
 
-* The `UseStrimziPodSet` feature gate will ove to GA in Strimzi 0.35.
+* The `UseStrimziPodSet` feature gate will move to GA in Strimzi 0.35.
   Support for StatefulSets will be removed from Strimzi right after the 0.34 release.
   Please use the Strimzi 0.33 release to test StrimziPodSets in your environment and report any major or blocking issues before the StatefulSet support is removed.
 * The default length of any new SCRAM-SHA-512 passwords will be 32 characters instead of 12 characters used in the previous Strimzi versions.
