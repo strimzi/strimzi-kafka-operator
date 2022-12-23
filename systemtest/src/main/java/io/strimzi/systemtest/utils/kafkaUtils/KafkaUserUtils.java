@@ -24,7 +24,6 @@ import java.util.Random;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaUserUtils {
 
@@ -54,10 +53,6 @@ public class KafkaUserUtils {
         ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, Ready);
     }
 
-    public static void waitForKafkaUserCreation(String userName) {
-        waitForKafkaUserCreation(kubeClient().getNamespace(), userName);
-    }
-
     public static void waitForKafkaUserDeletion(final String namespaceName, String userName) {
         LOGGER.info("Waiting for KafkaUser deletion {}", userName);
         TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
@@ -73,10 +68,6 @@ public class KafkaUserUtils {
             () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} deleted", userName);
-    }
-
-    public static void waitForKafkaUserDeletion(String userName) {
-        waitForKafkaUserDeletion(kubeClient().getNamespace(), userName);
     }
 
     public static void waitForKafkaUserIncreaseObserverGeneration(String namespaceName, long observation, String userName) {
@@ -106,17 +97,8 @@ public class KafkaUserUtils {
         return ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
     }
 
-    public static boolean waitForKafkaUserStatus(String userName, Enum<?> state) {
-        KafkaUser kafkaUser = KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get();
-        return ResourceManager.waitForResourceStatus(KafkaUserResource.kafkaUserClient(), kafkaUser, state);
-    }
-
     public static boolean waitForKafkaUserNotReady(String namespaceName, String userName) {
         return waitForKafkaUserStatus(namespaceName, userName, NotReady);
-    }
-
-    public static boolean waitForKafkaUserNotReady(String userName) {
-        return waitForKafkaUserStatus(kubeClient().getNamespace(), userName, NotReady);
     }
 
     public static boolean waitForKafkaUserReady(String namespaceName, String userName) {

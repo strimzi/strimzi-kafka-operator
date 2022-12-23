@@ -26,8 +26,8 @@ public class ConfigMapUtils {
      * Wait until the config map has been recovered.
      * @param name The name of the ConfigMap.
      */
-    public static void waitForConfigMapRecovery(String name, String configMapUid) {
-        LOGGER.info("Waiting for config map {}-{} recovery in namespace {}", name, configMapUid, kubeClient().getNamespace());
+    public static void waitForConfigMapRecovery(String namespaceName, String name, String configMapUid) {
+        LOGGER.info("Waiting for config map {}-{} recovery in namespace {}", name, configMapUid, namespaceName);
         TestUtils.waitFor("Config map " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getConfigMapUid(name).equals(configMapUid));
         LOGGER.info("Config map {} was recovered", name);

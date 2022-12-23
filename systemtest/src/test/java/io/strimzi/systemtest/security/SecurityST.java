@@ -237,7 +237,7 @@ class SecurityST extends AbstractST {
         }
 
         resourceManager.createResource(extensionContext,
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
         );
 
@@ -317,7 +317,7 @@ class SecurityST extends AbstractST {
         // Check a new client (signed by new client key) can consume
         String bobUserName = "bob-" + testStorage.getUserName();
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), bobUserName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), bobUserName).build());
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
@@ -413,7 +413,7 @@ class SecurityST extends AbstractST {
         createKafkaCluster(extensionContext, testStorage.getClusterName());
 
         resourceManager.createResource(extensionContext,
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
         );
 
@@ -511,7 +511,7 @@ class SecurityST extends AbstractST {
 
         final String bobUserName = "bobik-" + testStorage.getUserName();
 
-        resourceManager.createResource(extensionContext,  KafkaUserTemplates.tlsUser(testStorage.getClusterName(), bobUserName).build());
+        resourceManager.createResource(extensionContext,  KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), bobUserName).build());
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
@@ -596,7 +596,7 @@ class SecurityST extends AbstractST {
         createKafkaCluster(extensionContext, testStorage.getClusterName());
 
         resourceManager.createResource(extensionContext,
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
         );
 
@@ -664,7 +664,7 @@ class SecurityST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext,
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
         );
 
@@ -746,7 +746,7 @@ class SecurityST extends AbstractST {
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         resourceManager.createResource(extensionContext,
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
         );
 
@@ -933,7 +933,7 @@ class SecurityST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, kafkaUserWrite)
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -962,7 +962,7 @@ class SecurityST extends AbstractST {
 
         assertThrows(GroupAuthorizationException.class, externalKafkaClient::receiveMessagesTls);
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, kafkaUserRead)
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -1019,7 +1019,7 @@ class SecurityST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName)
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -1053,7 +1053,7 @@ class SecurityST extends AbstractST {
 
         String nonSuperuserName = userName + "-non-super-user";
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, nonSuperuserName)
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, nonSuperuserName)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -1099,7 +1099,7 @@ class SecurityST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext,
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
         );
 
@@ -1509,7 +1509,7 @@ class SecurityST extends AbstractST {
             .build());
 
         String username = "strimzi-tls-user-" + new Random().nextInt(Integer.MAX_VALUE);
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), username).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), username).build());
 
         final Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());

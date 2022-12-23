@@ -285,7 +285,7 @@ class HttpBridgeIsolatedST extends AbstractST {
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0), clusterOperator.getDeploymentNamespace());
 
         KafkaBridgeUtils.waitForKafkaBridgeReady(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName);
-        PodUtils.waitForPodsReady(kubeClient().getDeploymentSelectors(deploymentName), 0, true);
+        PodUtils.waitForPodsReady(clusterOperator.getDeploymentNamespace(), kubeClient().getDeploymentSelectors(deploymentName), 0, true);
 
         bridgePods = kubeClient().listPodNames(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus();

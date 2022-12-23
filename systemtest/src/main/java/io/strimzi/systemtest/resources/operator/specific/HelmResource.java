@@ -112,7 +112,7 @@ public class HelmResource implements SpecificResourceType {
         cmdKubeClient().applyContent(helmServiceAccount);
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
-        DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
+        DeploymentUtils.waitForDeploymentReady(oldNamespace, ResourceManager.getCoDeploymentName());
     }
 
     /**
@@ -137,6 +137,6 @@ public class HelmResource implements SpecificResourceType {
      */
     private void deleteClusterOperator() {
         ResourceManager.helmClient().delete(namespaceInstallTo, HELM_RELEASE_NAME);
-        DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
+        DeploymentUtils.waitForDeploymentDeletion(namespaceInstallTo, ResourceManager.getCoDeploymentName());
     }
 }

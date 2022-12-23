@@ -59,9 +59,6 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     /**
      * Method for allowing network policies for ClusterOperator
      */
-    public static void allowNetworkPolicySettingsForClusterOperator(ExtensionContext extensionContext) {
-        allowNetworkPolicySettingsForClusterOperator(extensionContext, kubeClient().getNamespace());
-    }
 
     public static void allowNetworkPolicySettingsForClusterOperator(ExtensionContext extensionContext, String namespace) {
         String clusterOperatorKind = "cluster-operator";
@@ -88,10 +85,6 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
-    }
-
-    public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName) {
-        allowNetworkPolicySettingsForEntityOperator(extensionContext, clusterName, kubeClient().getNamespace());
     }
 
     public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName, String namespace) {
@@ -126,10 +119,6 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
-    }
-
-    public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName) {
-        allowNetworkPolicySettingsForKafkaExporter(extensionContext, clusterName, kubeClient().getNamespace());
     }
 
     public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName, String namespace) {

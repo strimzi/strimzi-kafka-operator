@@ -25,7 +25,7 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
     @Override
     public Deployment get(String namespace, String name) {
         String deploymentName = ResourceManager.kubeClient().namespace(namespace).getDeploymentNameByPrefix(name);
-        return deploymentName != null ? ResourceManager.kubeClient().getDeployment(deploymentName) : null;
+        return deploymentName != null ? ResourceManager.kubeClient().getDeployment(namespace, deploymentName) : null;
     }
 
     @Override
@@ -35,7 +35,7 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
 
     @Override
     public void delete(Deployment resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteDeployment(resource.getMetadata().getName());
+        ResourceManager.kubeClient().deleteDeployment(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
 
     @Override
@@ -44,7 +44,7 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
             && resource.getMetadata() != null
             && resource.getMetadata().getName() != null
             && resource.getStatus() != null
-            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
+            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
 
     public DeploymentBuilder buildDrainCleanerDeployment() {

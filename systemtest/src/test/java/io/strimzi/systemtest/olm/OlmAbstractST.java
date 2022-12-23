@@ -37,7 +37,7 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaResource.toString());
-        KafkaUtils.waitForKafkaReady(kafkaResource.getJsonObject("metadata").getString("name"));
+        KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaUser(ExtensionContext extensionContext) {
@@ -54,25 +54,25 @@ public class OlmAbstractST extends AbstractST {
         JsonObject kafkaUserResource = OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND);
         kafkaUserResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, userKafkaName);
         cmdKubeClient().applyContent(kafkaUserResource.toString());
-        KafkaUserUtils.waitForKafkaUserCreation(kafkaUserResource.getJsonObject("metadata").getString("name"));
+        KafkaUserUtils.waitForKafkaUserCreation(clusterOperator.getDeploymentNamespace(), kafkaUserResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaTopic() {
         JsonObject kafkaTopicResource = OlmResource.getExampleResources().get(KafkaTopic.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaTopicResource.toString());
-        KafkaTopicUtils.waitForKafkaTopicCreation(kafkaTopicResource.getJsonObject("metadata").getString("name"));
+        KafkaTopicUtils.waitForKafkaTopicCreation(clusterOperator.getDeploymentNamespace(), kafkaTopicResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaConnect() {
         JsonObject kafkaConnectResource = OlmResource.getExampleResources().get(KafkaConnect.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaConnectResource.toString());
-        KafkaConnectUtils.waitForConnectReady(kafkaConnectResource.getJsonObject("metadata").getString("name"));
+        KafkaConnectUtils.waitForConnectReady(clusterOperator.getDeploymentNamespace(), kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaBridge() {
         JsonObject kafkaBridgeResource = OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaBridgeResource.toString());
-        KafkaBridgeUtils.waitForKafkaBridgeReady(kafkaBridgeResource.getJsonObject("metadata").getString("name"));
+        KafkaBridgeUtils.waitForKafkaBridgeReady(clusterOperator.getDeploymentNamespace(), kafkaBridgeResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker() {
@@ -80,7 +80,7 @@ public class OlmAbstractST extends AbstractST {
         cmdKubeClient().applyContent(kafkaMirrorMakerResource.toString()
                 .replace("my-source-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("my-target-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(kafkaMirrorMakerResource.getJsonObject("metadata").getString("name"));
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterOperator.getDeploymentNamespace(), kafkaMirrorMakerResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker2() {
@@ -88,7 +88,7 @@ public class OlmAbstractST extends AbstractST {
         cmdKubeClient().applyContent(kafkaMirrorMaker2Resource.toString()
                 .replace("my-cluster-source-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("my-cluster-target-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(clusterOperator.getDeploymentNamespace(), kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
@@ -97,7 +97,7 @@ public class OlmAbstractST extends AbstractST {
         JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState("my-rebalance", KafkaRebalanceState.PendingProposal);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), "my-rebalance", KafkaRebalanceState.PendingProposal);
     }
 
     @AfterAll

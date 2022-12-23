@@ -51,26 +51,12 @@ public class StatefulSetUtils {
         waitForAllStatefulSetPodsReady(namespaceName, statefulSetName, expectPods, READINESS_TIMEOUT);
     }
 
-    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods, long timeout) {
-        waitForAllStatefulSetPodsReady(kubeClient().getNamespace(), statefulSetName, expectPods, timeout);
-    }
-
-    /**
-     * Wait until the STS is ready and all of its Pods are also ready with default timeout.
-     *
-     * @param statefulSetName The name of the StatefulSet
-     * @param expectPods The number of pods expected.
-     */
-    public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods) {
-        waitForAllStatefulSetPodsReady(statefulSetName, expectPods, READINESS_TIMEOUT);
-    }
-
     /**
      * Wait until the given StatefulSet has been recovered.
      * @param name The name of the StatefulSet.
      */
-    public static void waitForStatefulSetRecovery(String name, String statefulSetUid) {
-        LOGGER.info("Waiting for StatefulSet {}-{} recovery in namespace {}", name, statefulSetUid, kubeClient().getNamespace());
+    public static void waitForStatefulSetRecovery(String namespaceName, String name, String statefulSetUid) {
+        LOGGER.info("Waiting for StatefulSet {}-{} recovery in namespace {}", name, statefulSetUid, namespaceName);
         TestUtils.waitFor("StatefulSet " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getStatefulSetUid(name).equals(statefulSetUid));
         LOGGER.info("StatefulSet {} was recovered", name);

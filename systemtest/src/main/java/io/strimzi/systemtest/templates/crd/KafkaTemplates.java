@@ -100,12 +100,12 @@ public class KafkaTemplates {
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String name, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG);
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).resource(kafkaMetricsCm).createOrReplace();
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(kafkaMetricsCm).createOrReplace();
         ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).resource(zkMetricsCm).createOrReplace();
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(zkMetricsCm).createOrReplace();
 
         ConfigMap ccCm = new ConfigMapBuilder()
                 .withApiVersion("v1")
@@ -120,7 +120,7 @@ public class KafkaTemplates {
                         "  name: kafka_cruisecontrol_$1_$2\n" +
                         "  type: GAUGE"))
                 .build();
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).resource(ccCm).createOrReplace();
+        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(ccCm).createOrReplace();
 
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("cruise-control-metrics-test")

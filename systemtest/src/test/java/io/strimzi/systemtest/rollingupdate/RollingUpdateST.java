@@ -89,7 +89,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         KafkaClients clients = new KafkaClientsBuilder()
@@ -98,7 +98,7 @@ class RollingUpdateST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withUserName(testStorage.getUserName())
             .build();
 
@@ -164,7 +164,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         KafkaClients clients = new KafkaClientsBuilder()
@@ -173,7 +173,7 @@ class RollingUpdateST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withUserName(testStorage.getUserName())
             .build();
 
@@ -257,7 +257,7 @@ class RollingUpdateST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
@@ -277,7 +277,7 @@ class RollingUpdateST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withUserName(testStorage.getUserName())
             .build();
 
@@ -364,7 +364,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         // kafka cluster already deployed
@@ -378,7 +378,7 @@ class RollingUpdateST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .withUserName(testStorage.getUserName())
             .build();
 

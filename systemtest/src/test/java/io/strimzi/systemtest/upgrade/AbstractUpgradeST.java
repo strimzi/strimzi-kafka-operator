@@ -80,10 +80,10 @@ public class AbstractUpgradeST extends AbstractST {
     protected File kafkaYaml;
 
     protected void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        coPods = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
         zkPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
         kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
-        eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        eoPods = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName));
     }
 
     @SuppressWarnings("CyclomaticComplexity")
@@ -187,16 +187,16 @@ public class AbstractUpgradeST extends AbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
-        eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
     }
 
     protected void waitForReadinessOfKafkaCluster() {
         LOGGER.info("Waiting for Zookeeper StatefulSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(zkSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3);
         LOGGER.info("Waiting for Kafka StatefulSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(kafkaSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3);
         LOGGER.info("Waiting for EO Deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
     protected void changeClusterOperator(UpgradeDowngradeData upgradeData, String namespace, ExtensionContext extensionContext) throws IOException {
@@ -214,7 +214,7 @@ public class AbstractUpgradeST extends AbstractST {
         copyModifyApply(coDir, namespace, extensionContext, upgradeData.getFeatureGatesAfter());
 
         LOGGER.info("Waiting for CO upgrade");
-        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
+        DeploymentUtils.waitTillDepHasRolled(namespace, ResourceManager.getCoDeploymentName(), 1, coPods);
     }
 
     protected void copyModifyApply(File root, String namespace, ExtensionContext extensionContext, final String strimziFeatureGatesValue) {
@@ -259,7 +259,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void checkAllImages(UpgradeDowngradeData upgradeDowngradeData) {
+    protected void checkAllImages(UpgradeDowngradeData upgradeDowngradeData, String namespaceName) {
         if (upgradeDowngradeData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
@@ -278,8 +278,8 @@ public class AbstractUpgradeST extends AbstractST {
 
         checkContainerImages(zkSelector, upgradeDowngradeData.getZookeeperImage());
         checkContainerImages(kafkaSelector, upgradeDowngradeData.getKafkaImage());
-        checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), upgradeDowngradeData.getTopicOperatorImage());
-        checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, upgradeDowngradeData.getUserOperatorImage());
+        checkContainerImages(kubeClient().getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), upgradeDowngradeData.getTopicOperatorImage());
+        checkContainerImages(kubeClient().getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, upgradeDowngradeData.getUserOperatorImage());
     }
 
     protected void checkContainerImages(Map<String, String> matchLabels, String image) {
@@ -316,7 +316,7 @@ public class AbstractUpgradeST extends AbstractST {
         copyModifyApply(coDir, namespace, extensionContext, upgradeData.getFeatureGatesBefore());
 
         LOGGER.info("Waiting for {} deployment", ResourceManager.getCoDeploymentName());
-        DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespace, ResourceManager.getCoDeploymentName(), 1);
         LOGGER.info("{} is ready", ResourceManager.getCoDeploymentName());
 
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion)).contains(clusterName)) {
@@ -346,7 +346,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL, operatorVersion)).contains(userName)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespace, clusterName, userName).build());
             } else {
                 kafkaUserYaml = new File(dir, upgradeData.getFromExamples() + "/examples/user/kafka-user.yaml");
                 LOGGER.info("Deploy KafkaUser from: {}", kafkaUserYaml.getPath());

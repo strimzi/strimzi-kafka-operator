@@ -39,7 +39,6 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -135,21 +134,21 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         assertKafkaStatus(1, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + clusterOperator.getDeploymentNamespace() + ".svc");
 
-        KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
                     .build());
-        });
+        }, clusterOperator.getDeploymentNamespace());
 
         LOGGER.info("Wait until cluster will be in NotReady state ...");
-        KafkaUtils.waitForKafkaNotReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        KafkaUtils.waitForKafkaNotReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         LOGGER.info("Recovery cluster to Ready state ...");
-        KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
                     .build());
-        });
+        }, clusterOperator.getDeploymentNamespace());
 
         KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaStatus(3, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + clusterOperator.getDeploymentNamespace() + ".svc");
@@ -174,7 +173,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         // Simulate NotReady state with userName longer than 64 characters
         String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
 
-        resourceManager.createResource(extensionContext, false, KafkaUserTemplates.defaultUser(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
+        resourceManager.createResource(extensionContext, false, KafkaUserTemplates.defaultUser(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
 
         KafkaUserUtils.waitForKafkaUserNotReady(clusterOperator.getDeploymentNamespace(), userName);
 
@@ -199,18 +198,18 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         // Deploy Mirror Maker
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).build());
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(mirrorMakerName);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
         assertKafkaMirrorMakerStatus(1, mirrorMakerName);
         // Corrupt Mirror Maker pods
-        KafkaMirrorMakerResource.replaceMirrorMakerResource(mirrorMakerName, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
-                .build()));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerNotReady(mirrorMakerName);
+                .build()), clusterOperator.getDeploymentNamespace());
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerNotReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
         // Restore Mirror Maker pod
-        KafkaMirrorMakerResource.replaceMirrorMakerResource(mirrorMakerName, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100m"))
-                .build()));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(mirrorMakerName);
+                .build()), clusterOperator.getDeploymentNamespace());
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
         assertKafkaMirrorMakerStatus(3, mirrorMakerName);
     }
 
@@ -271,7 +270,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         String connectUrl = KafkaConnectResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, testStorage.getNamespaceName(), 8083);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .withNamespace(testStorage.getNamespaceName())
@@ -343,14 +342,14 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, false, KafkaConnectorTemplates.kafkaConnector(clusterName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 2)
             .withNewMetadata()
                 .withName(clusterName)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
-        KafkaConnectorUtils.waitForConnectorNotReady(clusterName);
+        KafkaConnectorUtils.waitForConnectorNotReady(clusterOperator.getDeploymentNamespace(), clusterName);
 
         KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaConnectorUtils.waitForConnectorDeletion(clusterName);
+        KafkaConnectorUtils.waitForConnectorDeletion(clusterOperator.getDeploymentNamespace(), clusterName);
     }
 
     @ParallelTest
@@ -443,12 +442,12 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false, kafkaMirrorMaker2);
 
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(mirrorMaker2Name);
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(clusterOperator.getDeploymentNamespace(), mirrorMaker2Name);
 
         // delete
         KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(clusterOperator.getDeploymentNamespace()).withName(mirrorMaker2Name).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
-        DeploymentUtils.waitForDeploymentDeletion(KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
+        DeploymentUtils.waitForDeploymentDeletion(clusterOperator.getDeploymentNamespace(), KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
     }
 
     @ParallelTest
@@ -491,8 +490,8 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         String invalidValue = "x";
 
         LOGGER.info("Changing min.insync.replicas to random char");
-        KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", invalidValue));
-        KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", invalidValue), clusterOperator.getDeploymentNamespace());
+        KafkaTopicUtils.waitForKafkaTopicNotReady(cluster.getNamespace(), topicName);
 
         assertKafkaTopicWrongMinInSyncReplicasStatus(topicName, invalidValue);
 

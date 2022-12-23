@@ -681,7 +681,7 @@ class LoggingChangeST extends AbstractST {
         loggers.put("connect.root.logger.level", "OFF");
         ilOff.setLoggers(loggers);
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editSpec()
                 .withInlineLogging(ilOff)
             .endSpec()
@@ -1380,7 +1380,7 @@ class LoggingChangeST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()

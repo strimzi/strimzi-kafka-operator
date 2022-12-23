@@ -141,7 +141,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .endSpec().build());
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(httpBridgeScramShaClusterName, USER_NAME)
+        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(namespace, httpBridgeScramShaClusterName, USER_NAME)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()

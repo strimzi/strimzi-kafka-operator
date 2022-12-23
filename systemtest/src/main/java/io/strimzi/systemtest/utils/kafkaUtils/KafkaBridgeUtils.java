@@ -18,7 +18,6 @@ import java.util.Map;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.resources.crd.KafkaBridgeResource.kafkaBridgeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaBridgeUtils {
     private KafkaBridgeUtils() {}
@@ -55,15 +54,7 @@ public class KafkaBridgeUtils {
         return waitForKafkaBridgeStatus(namespaceName, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaBridgeReady(String clusterName) {
-        return waitForKafkaBridgeStatus(kubeClient().getNamespace(), clusterName, Ready);
-    }
-
     public static boolean waitForKafkaBridgeNotReady(final String namespaceName, String clusterName) {
         return waitForKafkaBridgeStatus(namespaceName, clusterName, NotReady);
-    }
-
-    public static boolean waitForKafkaBridgeNotReady(String clusterName) {
-        return waitForKafkaBridgeStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }
 }

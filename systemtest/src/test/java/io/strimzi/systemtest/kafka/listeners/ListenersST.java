@@ -186,7 +186,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -238,7 +238,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
         String brokerPodLog = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-0", "kafka");
@@ -313,7 +313,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -376,7 +376,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -562,7 +562,7 @@ public class ListenersST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -650,7 +650,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName).build());
 
         ServiceUtils.waitUntilAddressIsReachable(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getListeners().get(0).getAddresses().get(0).getHost());
 
@@ -715,11 +715,7 @@ public class ListenersST extends AbstractST {
     void testClusterIpTls(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String clusterName = testStorage.getClusterName();
-        final String userName = testStorage.getUserName();
-        final String namespaceName = testStorage.getNamespaceName();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -734,23 +730,23 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withNamespaceName(namespaceName)
+                .withNamespaceName(testStorage.getNamespaceName())
                 .withTopicName(testStorage.getTopicName())
-                .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
-                .withMessageCount(MESSAGE_COUNT)
-                .withUserName(userName)
+                .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(testStorage.getClusterName(), testStorage.getNamespaceName(), Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
+                .withMessageCount(testStorage.getMessageCount())
+                .withUserName(testStorage.getUserName())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), namespaceName, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
-        ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), namespaceName, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
 
     }
 
@@ -807,7 +803,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -900,7 +896,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -986,7 +982,7 @@ public class ListenersST extends AbstractST {
             .build());
 
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1075,7 +1071,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
@@ -1162,7 +1158,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1249,7 +1245,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1326,7 +1322,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
         String externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
@@ -1585,7 +1581,7 @@ public class ListenersST extends AbstractST {
             .build());
 
 
-        KafkaUser aliceUser = KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build();
+        KafkaUser aliceUser = KafkaUserTemplates.tlsUser(testStorage).build();
         resourceManager.createResource(extensionContext, aliceUser);
 
         String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -1824,7 +1820,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
         String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
         String externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
@@ -2174,7 +2170,7 @@ public class ListenersST extends AbstractST {
         kubeClient().namespace(testStorage.getNamespaceName()).createSecret(password);
         assertThat("Password in secret is not correct", kubeClient().namespace(testStorage.getNamespaceName()).getSecret(secretName).getData().get("password"), is(firstEncodedPassword));
 
-        KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(testStorage.getClusterName(), testStorage.getUserName())
+        KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(testStorage)
             .editSpec()
                 .withNewKafkaUserScramSha512ClientAuthentication()
                     .withNewPassword()

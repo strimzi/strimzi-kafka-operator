@@ -137,9 +137,9 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         clusterOperator.getOlmResource().upgradeClusterOperator();
 
         // wait until RU is finished
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(kafkaSelector, 3, kafkaPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
         clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
@@ -162,7 +162,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), messageUpgradeCount);
 
         // Check errors in CO log
-        assertNoCoErrorsLogged(0);
+        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @BeforeAll

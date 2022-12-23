@@ -718,7 +718,7 @@ class KafkaST extends AbstractST {
                 });
             });
         } else {
-            DeploymentUtils.waitForDeploymentDeletion(KafkaResources.entityOperatorDeploymentName(clusterName));
+            DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), namespaceName);
@@ -738,7 +738,7 @@ class KafkaST extends AbstractST {
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(duration);
+        assertNoCoErrorsLogged(namespaceName, duration);
     }
 
     @ParallelNamespaceTest
@@ -778,7 +778,7 @@ class KafkaST extends AbstractST {
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(duration);
+        assertNoCoErrorsLogged(namespaceName, duration);
     }
 
     @ParallelNamespaceTest
@@ -801,7 +801,7 @@ class KafkaST extends AbstractST {
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(duration);
+        assertNoCoErrorsLogged(namespaceName, duration);
 
         //Checking that TO was not deployed
         kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
@@ -829,7 +829,7 @@ class KafkaST extends AbstractST {
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(duration);
+        assertNoCoErrorsLogged(namespaceName, duration);
 
         //Checking that UO was not deployed
         kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
@@ -854,7 +854,7 @@ class KafkaST extends AbstractST {
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(duration);
+        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), duration);
 
         //Checking that EO was not deployed
         assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName)).size(), is(0));
@@ -1329,7 +1329,7 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(firstClusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(firstClusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, firstClusterName, userName).build());
 
         LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
         String entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0);
@@ -1815,7 +1815,7 @@ class KafkaST extends AbstractST {
 
         kubeClient(namespaceName).listPods(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
-            .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
+            .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getNamespace(), p.getMetadata().getName()));
 
         kubeClient(namespaceName).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(namespaceName).delete();
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();

@@ -119,7 +119,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
                     .withNamespace(DEFAULT_NAMESPACE)
                 .endMetadata()
                 .build(),
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(DEFAULT_NAMESPACE, clusterName, 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, DEFAULT_NAMESPACE, 1)
                 .editOrNewMetadata()
                     .addToLabels(FIRST_CO_SELECTOR)
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -156,7 +156,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(producerName, DEFAULT_NAMESPACE, MESSAGE_COUNT);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(DEFAULT_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
     }
 
     @IsolatedTest

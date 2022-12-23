@@ -15,7 +15,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaMirrorMaker2Utils {
 
@@ -34,27 +33,15 @@ public class KafkaMirrorMaker2Utils {
 
     /**
      * Wait until KafkaMirrorMaker2 will be in desired state
+     * @param namespaceName name of the namespace
      * @param clusterName name of KafkaMirrorMaker2 cluster
-     * @param state desired state
      */
-    public static boolean waitForKafkaMirrorMaker2Status(String clusterName, Enum<?> state) {
-        return waitForKafkaMirrorMaker2Status(kubeClient().getNamespace(), clusterName, state);
-    }
-
     public static boolean waitForKafkaMirrorMaker2Ready(String namespaceName, String clusterName) {
         return waitForKafkaMirrorMaker2Status(namespaceName, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaMirrorMaker2Ready(String clusterName) {
-        return waitForKafkaMirrorMaker2Status(clusterName, Ready);
-    }
-
     public static boolean waitForKafkaMirrorMaker2NotReady(final String namespaceName, String clusterName) {
         return waitForKafkaMirrorMaker2Status(namespaceName, clusterName, NotReady);
-    }
-
-    public static boolean waitForKafkaMirrorMaker2NotReady(String clusterName) {
-        return waitForKafkaMirrorMaker2Status(clusterName, NotReady);
     }
 
     @SuppressWarnings("unchecked")

@@ -98,7 +98,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
@@ -195,8 +195,8 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build(),
-            KafkaUserTemplates.tlsUser(kafkaClusterSourceName, kafkaSourceUserName).build(),
-            KafkaUserTemplates.tlsUser(kafkaClusterTargetName, kafkaTargetUserName).build()
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaSourceUserName).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
         );
 
         // Initialize CertSecretSource with certificate and secret names for consumer
@@ -216,7 +216,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withUserName(kafkaSourceUserName)
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(kafkaClusterSourceName), clients.consumerTlsStrimzi(kafkaClusterSourceName));
@@ -309,8 +309,8 @@ public class MirrorMakerIsolatedST extends AbstractST {
         // Deploy topic
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build(),
-            KafkaUserTemplates.scramShaUser(kafkaClusterSourceName, kafkaSourceUserName).build(),
-            KafkaUserTemplates.scramShaUser(kafkaClusterTargetName, kafkaTargetUserName).build()
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaSourceUserName).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
         );
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
@@ -340,7 +340,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withUserName(kafkaSourceUserName)
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerScramShaTlsStrimzi(kafkaClusterSourceName), clients.consumerScramShaTlsStrimzi(kafkaClusterSourceName));
@@ -405,7 +405,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(topicName)
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());

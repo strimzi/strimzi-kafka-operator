@@ -307,7 +307,7 @@ public class CustomCaST extends AbstractST {
             .withDelayMs(10)
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUserName()).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
 
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
@@ -366,7 +366,7 @@ public class CustomCaST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
         LOGGER.info("Check KafkaUser certificate.");
-        final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build();
+        final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
         resourceManager.createResource(extensionContext, user);
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             testStorage.getUserName()), "user.crt");
@@ -538,8 +538,8 @@ public class CustomCaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getClusterName(), testStorage.getUserName()).build());
-        final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
 
         // Check initial clientsCA validity days
         Secret clientsCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));

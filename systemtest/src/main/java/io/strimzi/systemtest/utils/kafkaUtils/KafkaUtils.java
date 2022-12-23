@@ -69,16 +69,8 @@ public class KafkaUtils {
         return waitForKafkaStatus(namespaceName, clusterName, Ready);
     }
 
-    public static boolean waitForKafkaReady(String clusterName) {
-        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, Ready);
-    }
-
     public static boolean waitForKafkaNotReady(String namespaceName, String clusterName) {
         return waitForKafkaStatus(namespaceName, clusterName, NotReady);
-    }
-
-    public static boolean waitForKafkaNotReady(String clusterName) {
-        return waitForKafkaStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }
 
     public static boolean waitForKafkaStatus(String namespaceName, String clusterName, Enum<?>  state) {
@@ -236,10 +228,6 @@ public class KafkaUtils {
             count[0] = 0;
             return false;
         });
-    }
-
-    public static void waitForClusterStability(String clusterName) {
-        waitForClusterStability(kubeClient().getNamespace(), clusterName);
     }
 
     /**
