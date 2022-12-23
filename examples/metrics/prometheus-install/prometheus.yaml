@@ -43,7 +43,6 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: prometheus-server
-    namespace: myproject
 
 ---
 apiVersion: monitoring.coreos.com/v1
