@@ -14,6 +14,9 @@
 
 ### Changes, deprecations and removals
 
+* The `UseStrimziPodSet` feature gate will move to GA in Strimzi 0.35.
+  Support for StatefulSets will be removed from Strimzi right after the 0.34 release.
+  Please use the Strimzi 0.33 release to test StrimziPodSets in your environment and report any major or blocking issues before the StatefulSet support is removed.
 * The default length of any new SCRAM-SHA-512 passwords will be 32 characters instead of 12 characters used in the previous Strimzi versions.
   Existing passwords will not be affected by this change until they are regenerated (for example because the user secret is deleted).
   If you want to keep using the original password length, you can set it using the `STRIMZI_SCRAM_SHA_PASSWORD_LENGTH` environment variable in `.spec.entityOperator.template.userOperatorContainer.env` in the `Kafka` custom resource or in the `Deployment` of the standalone User Operator.
