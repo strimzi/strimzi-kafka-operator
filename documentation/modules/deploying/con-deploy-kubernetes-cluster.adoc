@@ -17,4 +17,4 @@ Once installed, start Minikube using:
 [source,shell]
 minikube start --memory 4096
 
-To interact with the cluster, install the https://kubernetes.io/docs/tasks/tools/install-kubectl/[`kubectl`] utility.
+To interact with the cluster, install the https://kubernetes.io/docs/tasks/tools/[`kubectl`] utility.
