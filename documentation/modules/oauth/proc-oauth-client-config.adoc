@@ -5,9 +5,18 @@
 [id='proc-oauth-client-config-{context}']
 = Configuring Kafka Java clients to use OAuth 2.0
 
-This procedure describes how to configure Kafka producer and consumer APIs to use OAuth 2.0 for interaction with Kafka brokers.
+[role="_abstract"]
+Configure Kafka producer and consumer APIs to use OAuth 2.0 for interaction with Kafka brokers.
+Add a callback plugin to your client `pom.xml` file, then configure your system properties for OAuth 2.0.
 
-Add a client callback plugin to your _pom.xml_ file, and configure the system properties.
+
+How you configure your system properties depends on the method you are using to authenticate your client with the Kafka brokers.
+You can use one of the following methods: 
+
+* The OAuth 2.0 client credentials mechanism
+* The (deprecated) OAuth 2.0 password grant mechanism
+* An access token
+* A refresh token
 
 .Prerequisites
 
@@ -28,10 +37,12 @@ Add a client callback plugin to your _pom.xml_ file, and configure the system pr
 </dependency>
 ----
 
-. Configure the system properties for the callback:
+. Configure the system properties for the callback.
 +
 For example:
 +
+--
+.Client credentials mechanism properties 
 [source,env, subs="+quotes,attributes"]
 ----
 System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token_”); <1>
@@ -47,8 +58,49 @@ System.setProperty(ClientConfig.OAUTH_AUDIENCE, "_<audience_value_") <5>
 An authorization server may require a client to specify the scope.
 <5> (Optional) The `audience` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the audience.
+--
++
+--
+.Password grants mechanism properties 
+[source,env, subs="+quotes,attributes"]
+----
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token_”);
+System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client_name>_"); <1>
+System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client_secret>_"); <2>
+System.setProperty(ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, "__<username>__"); <3>
+System.setProperty(ClientConfig.OAUTH_PASSWORD_GRANT_PASSWORD, "__<password>__"); <4>
+----
+<1> Client ID, which is the name used when creating the _client_ in the authorization server.
+<2> (Optional) Client secret created when creating the _client_ in the authorization server.
+<3> Username for password grant authentication. OAuth password grant configuration (username and password) uses the OAuth 2.0 password grant mechanism. To use password grants, create a user account for a client on your authorization server with limited permissions. The account should act like a service account. Use in environments where user accounts are required for authentication, but consider using a refresh token first.
+<4> Password for password grant authentication. 
+--
++
+--
+.Access token properties 
+[source,env, subs="+quotes,attributes"]
+----
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token_”);
+System.setProperty(ClientConfig.OAUTH_ACCESS_TOKEN, "<access_token>"); <1>
+----
+<1> Long-lived access token for Kafka clients.
+--
++
+--
+.Refresh token properties 
+[source,env, subs="+quotes,attributes"]
+----
+System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token_”);
+System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "<client_name>"); <1>
+System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "<client_secret>"); <2>
+System.setProperty(ClientConfig.OAUTH_REFRESH_TOKEN, "<refresh_token>"); <3>
+----
+<1> Client ID, which is the name used when creating the _client_ in the authorization server.
+<2> (Optional) Client secret created when creating the _client_ in the authorization server.
+<3> Long-lived refresh token for Kafka clients.
+--
 
-. Enable the _OAUTHBEARER_ or _PLAIN_ mechanism on a TLS encrypted connection in the Kafka client configuration.
+. Enable an _OAUTHBEARER_ or _PLAIN_ mechanism on a TLS encrypted connection in the Kafka client configuration.
 +
 For example:
 +
@@ -71,3 +123,6 @@ props.put("sasl.mechanism", "PLAIN");
 <1> Here we use `SASL_SSL` for use over TLS encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
 
 . Verify that the Kafka client can access the Kafka brokers.
+
+NOTE: You can only pass client credentials (clientId + secret) or an access token through the SASL PLAIN mechanism.
+OAuth over PLAIN does not support passing a username and password (password grants) using the OAuth 2.0 password grant mechanism.
