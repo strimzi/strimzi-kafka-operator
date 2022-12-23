@@ -70,8 +70,8 @@ spec:
       type: jmxPrometheusExporter
       valueFrom:
         configMapKeyRef:
-          name: my-config-map
-          key: my-key
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
 ---
 kind: ConfigMap <2>
 apiVersion: v1
