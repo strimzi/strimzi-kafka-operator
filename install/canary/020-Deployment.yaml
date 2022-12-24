@@ -17,7 +17,7 @@ spec:
       serviceAccountName: strimzi-canary
       containers:
       - name: strimzi-canary
-        image: quay.io/strimzi/canary:0.5.0
+        image: quay.io/strimzi/canary:0.6.0
         env:
           - name: KAFKA_BOOTSTRAP_SERVERS
             value: my-cluster-kafka-bootstrap:9092
