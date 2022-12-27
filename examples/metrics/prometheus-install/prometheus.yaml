@@ -43,6 +43,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: prometheus-server
+    namespace: default
 
 ---
 apiVersion: monitoring.coreos.com/v1
@@ -68,7 +69,7 @@ spec:
       app: strimzi
   alerting:
     alertmanagers:
-    - namespace: myproject
+    - namespace: default
       name: alertmanager
       port: alertmanager
   additionalScrapeConfigs:
