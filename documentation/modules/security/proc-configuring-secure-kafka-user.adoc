@@ -73,4 +73,4 @@ kubectl apply -f _<user_config_file>_
 The user is created, as well as a Secret with the same name as the `KafkaUser` resource.
 The Secret contains a private and public key for mTLS authentication.
 
-For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up access for clients outside of Kubernetes^].
+For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up client access to a Kafka cluster using listeners^].
