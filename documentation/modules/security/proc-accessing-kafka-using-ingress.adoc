@@ -26,7 +26,7 @@ To be able to route TCP traffic through ingresses, Strimzi uses TLS passthrough 
 
 SNI helps with identifying and passing connection to Kafka brokers.
 In passthrough mode, TLS encryption is always used.
-Because the connection passes to the brokers, the listeners use the TLS certificates signed by the internal cluster CA and not the ingrress certificates.
+Because the connection passes to the brokers, the listeners use the TLS certificates signed by the internal cluster CA and not the ingress certificates.
 To configure listeners to use your own listener certificates, xref:proc-installing-certs-per-listener-{context}[use the `brokerCertChainAndKey` property]. 
 
 For more information about enabling TLS passthrough, see the {NginxIngressControllerTLSPassthrough}.
