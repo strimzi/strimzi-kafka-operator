@@ -563,6 +563,9 @@ public abstract class TracingAbstractST extends AbstractST {
 
     private void deleteCertManager() {
         cmdKubeClient().delete(certManagerPath);
+        DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
+        DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT);
+        DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT);
     }
 
     private void deployJaegerContent(ExtensionContext extensionContext) throws IOException {
