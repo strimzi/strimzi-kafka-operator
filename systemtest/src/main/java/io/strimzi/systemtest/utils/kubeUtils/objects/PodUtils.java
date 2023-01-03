@@ -107,7 +107,7 @@ public class PodUtils {
      * The method to wait when all pods of specific prefix will be deleted
      * To wait for the cluster to be updated, the following methods must be used:
      * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#componentHasRolled(String, LabelSelector, Map)},
-     * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#waitTillComponentHasRolled(LabelSelector, int, Map)} )}
+     * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#waitTillComponentHasRolled(String, LabelSelector, int, Map)} )}
      * @param podsNamePrefix Cluster name where pods should be deleted
      */
     public static void waitForPodsWithPrefixDeletion(String podsNamePrefix) {
