@@ -310,6 +310,13 @@ public abstract class AbstractModel {
     protected Boolean templatePodEnableServiceLinks;
     protected Map<String, String> templateClusterRoleBindingLabels;
     protected Map<String, String> templateClusterRoleBindingAnnotations;
+
+
+    protected Map<String, String> templateEntityOperatorRoleBindingLabels;
+    protected Map<String, String> templateEntityOperatorRoleBindingAnnotations;
+    protected Map<String, String> templateEntityOperatorRoleLabels;
+    protected Map<String, String> templateEntityOperatorRoleAnnotations;
+
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
     protected Map<String, String> templateJmxSecretLabels;
@@ -1669,7 +1676,8 @@ public abstract class AbstractModel {
                     .withName(getRoleName())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
-                    .addToLabels(labels.toMap())
+                    .addToLabels(labels.withAdditionalLabels(templateEntityOperatorRoleLabels).toMap())
+                    .addToAnnotations(templateEntityOperatorRoleAnnotations)
                 .endMetadata()
                 .withRules(rules)
                 .build();
@@ -1689,7 +1697,8 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
-                    .withLabels(labels.toMap())
+                    .withLabels(labels.withAdditionalLabels(templateEntityOperatorRoleBindingLabels).toMap())
+                    .withAnnotations(templateEntityOperatorRoleBindingAnnotations)
                 .endMetadata()
                 .withRoleRef(roleRef)
                 .withSubjects(subjects)

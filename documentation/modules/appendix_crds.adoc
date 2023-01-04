@@ -1271,18 +1271,22 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 [options="header"]
 |====
-|Property                       |Description
-|deployment              1.2+<.<a|Template for Entity Operator `Deployment`.
+|Property                          |Description
+|deployment                 1.2+<.<a|Template for Entity Operator `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                     1.2+<.<a|Template for Entity Operator `Pods`.
+|pod                        1.2+<.<a|Template for Entity Operator `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|topicOperatorContainer  1.2+<.<a|Template for the Entity Topic Operator container.
+|entityOperatorRoleBinding  1.2+<.<a|Template for the Entity operator RoleBinding.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|entityOperatorRole         1.2+<.<a|Template for the Entity Operator Role.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|topicOperatorContainer     1.2+<.<a|Template for the Entity Topic Operator container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|userOperatorContainer   1.2+<.<a|Template for the Entity User Operator container.
+|userOperatorContainer      1.2+<.<a|Template for the Entity User Operator container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer     1.2+<.<a|Template for the Entity Operator TLS sidecar container.
+|tlsSidecarContainer        1.2+<.<a|Template for the Entity Operator TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount          1.2+<.<a|Template for the Entity Operator service account.
+|serviceAccount             1.2+<.<a|Template for the Entity Operator service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 

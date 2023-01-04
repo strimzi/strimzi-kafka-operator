@@ -233,6 +233,9 @@ public class EntityOperatorTest {
         Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> saAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> rbLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> rbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
         Toleration toleration = new TolerationBuilder()
                 .withEffect("NoSchedule")
                 .withValue("")
@@ -281,6 +284,12 @@ public class EntityOperatorTest {
                                         .withTopologySpreadConstraints(tsc1, tsc2)
                                         .withEnableServiceLinks(false)
                                     .endPod()
+                                    .withNewEntityOperatorRole()
+                                        .withNewMetadata()
+                                            .withLabels(rbLabels)
+                                            .withAnnotations(rbAnots)
+                                        .endMetadata()
+                                    .endEntityOperatorRole()
                                     .withNewServiceAccount()
                                         .withNewMetadata()
                                             .withLabels(saLabels)
@@ -306,6 +315,11 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
+
+        // Generate Role metadata
+        Role crb = entityOperator.generateRole(null, namespace);
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(rbLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(rbAnots.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = entityOperator.generateServiceAccount();
