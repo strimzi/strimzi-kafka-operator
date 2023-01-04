@@ -310,13 +310,10 @@ public abstract class AbstractModel {
     protected Boolean templatePodEnableServiceLinks;
     protected Map<String, String> templateClusterRoleBindingLabels;
     protected Map<String, String> templateClusterRoleBindingAnnotations;
-
-
     protected Map<String, String> templateEntityOperatorRoleBindingLabels;
     protected Map<String, String> templateEntityOperatorRoleBindingAnnotations;
     protected Map<String, String> templateEntityOperatorRoleLabels;
     protected Map<String, String> templateEntityOperatorRoleAnnotations;
-
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
     protected Map<String, String> templateJmxSecretLabels;
