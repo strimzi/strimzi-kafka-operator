@@ -63,7 +63,7 @@ spec:
       - name: external
         port: 9094
         type: ingress
-        tls: true
+        tls: true # <1>
         authentication:
           type: tls
         configuration:
@@ -76,12 +76,13 @@ spec:
             host: broker-1.myingress.com
           - broker: 2
             host: broker-2.myingress.com
-          class: nginx  # <1>
+          class: nginx  # <2>
     # ...
   zookeeper:
     # ...
 ----
-<1> (Optional) Class that specifies the ingress controller to use. You might need to add a class if you have not set up a default and a class name is missing in the ingresses created. 
+<1> For `ingress` type listeners, TLS encryption must be enabled (`true`).
+<2> (Optional) Class that specifies the ingress controller to use. You might need to add a class if you have not set up a default and a class name is missing in the ingresses created. 
 
 . Create or update the resource.
 +

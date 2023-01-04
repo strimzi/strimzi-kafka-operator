@@ -59,12 +59,13 @@ spec:
       - name: listener1
         port: 9094
         type: route
-        tls: true
+        tls: true # <1>
         # ...
     # ...
   zookeeper:
     # ...
 ----
+<1> For `route` type listeners, TLS encryption must be enabled (`true`).
 
 . Create or update the resource.
 +
