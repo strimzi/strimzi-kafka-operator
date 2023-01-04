@@ -1276,10 +1276,6 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                        1.2+<.<a|Template for Entity Operator `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|entityOperatorRole         1.2+<.<a|Template for the Entity Operator Role.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|entityOperatorRoleBinding  1.2+<.<a|Template for the Entity operator RoleBinding.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |topicOperatorContainer     1.2+<.<a|Template for the Entity Topic Operator container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |userOperatorContainer      1.2+<.<a|Template for the Entity User Operator container.
@@ -1287,6 +1283,10 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |tlsSidecarContainer        1.2+<.<a|Template for the Entity Operator TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |serviceAccount             1.2+<.<a|Template for the Entity Operator service account.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|entityOperatorRole         1.2+<.<a|Template for the Entity Operator Role.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|entityOperatorRoleBinding  1.2+<.<a|Template for the Entity Operator RoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 

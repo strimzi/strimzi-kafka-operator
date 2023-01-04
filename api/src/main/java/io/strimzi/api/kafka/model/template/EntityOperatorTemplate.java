@@ -24,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "entityOperatorRole", "entityOperatorRoleBinding", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "entityOperatorRole", "entityOperatorRoleBinding"})
 @EqualsAndHashCode
 public class EntityOperatorTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -68,7 +68,7 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
         this.entityOperatorRole = entityOperatorRole;
     }
 
-    @Description("Template for the Entity operator RoleBinding")
+    @Description("Template for the Entity Operator RoleBinding")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ResourceTemplate getEntityOperatorRoleBinding() {
         return entityOperatorRoleBinding;

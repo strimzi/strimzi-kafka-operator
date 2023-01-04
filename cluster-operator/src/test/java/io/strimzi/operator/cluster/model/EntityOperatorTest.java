@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -71,6 +73,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 @ParallelSuite
 public class EntityOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -290,6 +293,12 @@ public class EntityOperatorTest {
                                             .withAnnotations(rbAnots)
                                         .endMetadata()
                                     .endEntityOperatorRole()
+                                    .withNewEntityOperatorRoleBinding()
+                                        .withNewMetadata()
+                                            .withLabels(rbLabels)
+                                            .withAnnotations(rbAnots)
+                                        .endMetadata()
+                                    .endEntityOperatorRoleBinding()
                                     .withNewServiceAccount()
                                         .withNewMetadata()
                                             .withLabels(saLabels)
@@ -320,6 +329,11 @@ public class EntityOperatorTest {
         Role crb = entityOperator.generateRole(null, namespace);
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(rbLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(rbAnots.entrySet()), is(true));
+
+        // Generate RoleBinding metadata
+        RoleBinding binding = entityOperator.generateRoleBinding(namespace, namespace, new RoleRef(), new ArrayList<>());
+        assertThat(binding.getMetadata().getLabels().entrySet().containsAll(rbLabels.entrySet()), is(true));
+        assertThat(binding.getMetadata().getAnnotations().entrySet().containsAll(rbAnots.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = entityOperator.generateServiceAccount();

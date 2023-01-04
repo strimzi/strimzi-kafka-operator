@@ -154,7 +154,7 @@ public class EntityOperator extends AbstractModel {
                 }
 
                 if (template.getEntityOperatorRoleBinding() != null && template.getEntityOperatorRoleBinding().getMetadata() != null) {
-                    result.templateEntityOperatorRoleBindingAnnotations = template.getEntityOperatorRoleBinding().getMetadata().getLabels();
+                    result.templateEntityOperatorRoleBindingLabels = template.getEntityOperatorRoleBinding().getMetadata().getLabels();
                     result.templateEntityOperatorRoleBindingAnnotations = template.getEntityOperatorRoleBinding().getMetadata().getAnnotations();
                 }
 
