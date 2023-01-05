@@ -11,6 +11,7 @@
 * Moved from using the Jaeger exporter to OTLP exporter by default
 * Kafka Exporter support for `Recreate` deployment strategy
 * `ImageStream` validation for Kafka Connect builds on OpenShift
+* Support for configuring the metadata for the Role / RoleBinding of Entity Operator
 
 ### Changes, deprecations and removals
 

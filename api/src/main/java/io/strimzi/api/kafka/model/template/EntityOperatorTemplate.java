@@ -24,13 +24,14 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "entityOperatorRole", "entityOperatorRoleBinding"})
 @EqualsAndHashCode
 public class EntityOperatorTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
-
     private ResourceTemplate deployment;
     private PodTemplate pod;
+    private ResourceTemplate entityOperatorRole;
+    private ResourceTemplate entityOperatorRoleBinding;
     private ContainerTemplate topicOperatorContainer;
     private ContainerTemplate userOperatorContainer;
     private ContainerTemplate tlsSidecarContainer;
@@ -55,6 +56,26 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
 
     public void setPod(PodTemplate pod) {
         this.pod = pod;
+    }
+
+    @Description("Template for the Entity Operator Role")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getEntityOperatorRole() {
+        return entityOperatorRole;
+    }
+
+    public void setEntityOperatorRole(ResourceTemplate entityOperatorRole) {
+        this.entityOperatorRole = entityOperatorRole;
+    }
+
+    @Description("Template for the Entity Operator RoleBinding")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getEntityOperatorRoleBinding() {
+        return entityOperatorRoleBinding;
+    }
+
+    public void setEntityOperatorRoleBinding(ResourceTemplate entityOperatorRoleBinding) {
+        this.entityOperatorRoleBinding = entityOperatorRoleBinding;
     }
 
     @Description("Template for the Entity Topic Operator container")

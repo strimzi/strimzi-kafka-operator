@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRuleBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
@@ -71,6 +73,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
 
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 @ParallelSuite
 public class EntityOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -233,6 +236,12 @@ public class EntityOperatorTest {
         Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> saAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> rLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> rAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
+        Map<String, String> rbLabels = TestUtils.map("l9", "v9", "l10", "v10");
+        Map<String, String> rbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+
         Toleration toleration = new TolerationBuilder()
                 .withEffect("NoSchedule")
                 .withValue("")
@@ -281,6 +290,18 @@ public class EntityOperatorTest {
                                         .withTopologySpreadConstraints(tsc1, tsc2)
                                         .withEnableServiceLinks(false)
                                     .endPod()
+                                    .withNewEntityOperatorRole()
+                                        .withNewMetadata()
+                                            .withLabels(rLabels)
+                                            .withAnnotations(rAnots)
+                                        .endMetadata()
+                                    .endEntityOperatorRole()
+                                    .withNewEntityOperatorRoleBinding()
+                                        .withNewMetadata()
+                                            .withLabels(rbLabels)
+                                            .withAnnotations(rbAnots)
+                                        .endMetadata()
+                                    .endEntityOperatorRoleBinding()
                                     .withNewServiceAccount()
                                         .withNewMetadata()
                                             .withLabels(saLabels)
@@ -306,6 +327,16 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(singletonList(assertToleration)));
+
+        // Generate Role metadata
+        Role crb = entityOperator.generateRole(null, namespace);
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(rLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(rAnots.entrySet()), is(true));
+
+        // Generate RoleBinding metadata
+        RoleBinding binding = entityOperator.generateRoleBinding(namespace, namespace, new RoleRef(), new ArrayList<>());
+        assertThat(binding.getMetadata().getLabels().entrySet().containsAll(rbLabels.entrySet()), is(true));
+        assertThat(binding.getMetadata().getAnnotations().entrySet().containsAll(rbAnots.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = entityOperator.generateServiceAccount();

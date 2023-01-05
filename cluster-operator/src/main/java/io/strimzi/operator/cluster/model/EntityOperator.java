@@ -148,6 +148,16 @@ public class EntityOperator extends AbstractModel {
 
                 ModelUtils.parsePodTemplate(result, template.getPod());
 
+                if (template.getEntityOperatorRole() != null && template.getEntityOperatorRole().getMetadata() != null) {
+                    result.templateEntityOperatorRoleLabels = template.getEntityOperatorRole().getMetadata().getLabels();
+                    result.templateEntityOperatorRoleAnnotations = template.getEntityOperatorRole().getMetadata().getAnnotations();
+                }
+
+                if (template.getEntityOperatorRoleBinding() != null && template.getEntityOperatorRoleBinding().getMetadata() != null) {
+                    result.templateEntityOperatorRoleBindingLabels = template.getEntityOperatorRoleBinding().getMetadata().getLabels();
+                    result.templateEntityOperatorRoleBindingAnnotations = template.getEntityOperatorRoleBinding().getMetadata().getAnnotations();
+                }
+
                 if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getEnv() != null) {
                     topicOperator.templateContainerEnvVars = template.getTopicOperatorContainer().getEnv();
                 }
