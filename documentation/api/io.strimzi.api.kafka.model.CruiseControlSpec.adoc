@@ -103,6 +103,10 @@ spec:
 The Cruise Control REST API is secured with HTTP Basic authentication and SSL to protect the cluster against potentially destructive Cruise Control operations, such as decommissioning Kafka brokers.
 We recommend that Cruise Control in Strimzi is **only used with these settings enabled**.
 
+Strimzi only provides read-only access to the REST API through a public API user.
+
+The username for this public API user is `user` and the password is `user`.
+
 However, it is possible to disable these settings by specifying the following Cruise Control configuration:
 
 * To disable the built-in HTTP Basic authentication, set `webserver.security.enable` to `false`.

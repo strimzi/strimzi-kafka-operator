@@ -81,14 +81,15 @@ public class CruiseControl extends AbstractModel {
      */
     public static final String API_ADMIN_NAME = "admin";
     private static final String API_ADMIN_ROLE = "ADMIN";
-    protected static final String API_USER_NAME = "user";
+    protected static final String API_HEALTHCHECK_NAME = "healthcheck";
+    private static final String API_HEALTHCHECK_ROLE = "USER";
+    public static final String API_USER_NAME = "user";
     private static final String API_USER_ROLE = "USER";
-
-    /**
-     * Key for the admin user password
-     */
+    public static final String API_USER_PASSWORD = "user";
     public static final String API_ADMIN_PASSWORD_KEY = APPLICATION_NAME + ".apiAdminPassword";
+    private static final String API_HEALTHCHECK_PASSWORD_KEY = APPLICATION_NAME + ".apiHealthcheckPassword";
     private static final String API_USER_PASSWORD_KEY = APPLICATION_NAME + ".apiUserPassword";
+
     private static final String API_AUTH_FILE_KEY = APPLICATION_NAME + ".apiAuthFile";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
 
@@ -140,7 +141,7 @@ public class CruiseControl extends AbstractModel {
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
-    protected static final String ENV_VAR_API_USER = "API_USER";
+    protected static final String ENV_VAR_API_HEALTHCHECK = "API_HEALTHCHECK";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
     protected static final String ENV_VAR_API_HEALTHCHECK_PATH = "API_HEALTHCHECK_PATH";
 
@@ -430,7 +431,7 @@ public class CruiseControl extends AbstractModel {
 
         varList.add(buildEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(buildEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
+        varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK, API_HEALTHCHECK_NAME));
         varList.add(buildEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
@@ -486,7 +487,7 @@ public class CruiseControl extends AbstractModel {
     public static Map<String, String> generateCruiseControlApiCredentials() {
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
         String apiAdminPassword = passwordGenerator.generate();
-        String apiUserPassword = passwordGenerator.generate();
+        String apiHealthcheckPassword = passwordGenerator.generate();
 
         /*
          * Create Cruise Control API auth credentials file following Jetty's
@@ -494,11 +495,14 @@ public class CruiseControl extends AbstractModel {
          */
         String authCredentialsFile =
                 API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
-                API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
+                API_HEALTHCHECK_NAME + ": " + apiHealthcheckPassword + "," + API_HEALTHCHECK_ROLE + "\n" +
+                API_USER_NAME + ": " + API_USER_PASSWORD + "," + API_USER_ROLE + "\n";
 
         Map<String, String> data = new HashMap<>(3);
         data.put(API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword));
-        data.put(API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword));
+        data.put(API_HEALTHCHECK_PASSWORD_KEY, Util.encodeToBase64(apiHealthcheckPassword));
+        data.put(API_USER_PASSWORD_KEY, Util.encodeToBase64(API_USER_PASSWORD));
+
         data.put(API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile));
 
         return data;

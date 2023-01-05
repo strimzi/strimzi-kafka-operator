@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.cluster.model.CruiseControl;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -63,7 +64,7 @@ public class CruiseControlClientTest {
     public void testGetCCState(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         MockCruiseControl.setupCCStateResponse(ccServer);
 
-        CruiseControlApi client = cruiseControlClientProvider(vertx);
+        CruiseControlApiImpl client = (CruiseControlApiImpl) cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
         client.getCruiseControlState(HOST, PORT, false)
@@ -72,6 +73,14 @@ public class CruiseControlClientTest {
                         hasEntry("state", "NO_TASK_IN_PROGRESS"));
                 checkpoint.flag();
             })));
+
+        client.setAuthHttpHeader(CruiseControlApiImpl.generateAuthHttpHeader(CruiseControl.API_USER_NAME, CruiseControl.API_USER_NAME));
+        client.getCruiseControlState(HOST, PORT, false)
+                .onComplete(context.succeeding(result -> context.verify(() -> {
+                    assertThat(result.getJson().getJsonObject("ExecutorState"),
+                            hasEntry("state", "NO_TASK_IN_PROGRESS"));
+                    checkpoint.flag();
+                })));
     }
 
     @Test
