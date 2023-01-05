@@ -236,6 +236,9 @@ public class EntityOperatorTest {
         Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
         Map<String, String> saAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
+        Map<String, String> rLabels = TestUtils.map("l7", "v7", "l8", "v8");
+        Map<String, String> rAnots = TestUtils.map("a7", "v7", "a8", "v8");
+
         Map<String, String> rbLabels = TestUtils.map("l9", "v9", "l10", "v10");
         Map<String, String> rbAnots = TestUtils.map("a9", "v9", "a10", "v10");
 
@@ -289,8 +292,8 @@ public class EntityOperatorTest {
                                     .endPod()
                                     .withNewEntityOperatorRole()
                                         .withNewMetadata()
-                                            .withLabels(rbLabels)
-                                            .withAnnotations(rbAnots)
+                                            .withLabels(rLabels)
+                                            .withAnnotations(rAnots)
                                         .endMetadata()
                                     .endEntityOperatorRole()
                                     .withNewEntityOperatorRoleBinding()
@@ -327,8 +330,8 @@ public class EntityOperatorTest {
 
         // Generate Role metadata
         Role crb = entityOperator.generateRole(null, namespace);
-        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(rbLabels.entrySet()), is(true));
-        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(rbAnots.entrySet()), is(true));
+        assertThat(crb.getMetadata().getLabels().entrySet().containsAll(rLabels.entrySet()), is(true));
+        assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(rAnots.entrySet()), is(true));
 
         // Generate RoleBinding metadata
         RoleBinding binding = entityOperator.generateRoleBinding(namespace, namespace, new RoleRef(), new ArrayList<>());
