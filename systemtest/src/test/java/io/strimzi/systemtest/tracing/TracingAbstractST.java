@@ -44,7 +44,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -52,6 +51,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Stack;
 
+import static io.strimzi.systemtest.Constants.JAEGER_DEPLOYMENT_POLL;
+import static io.strimzi.systemtest.Constants.JAEGER_DEPLOYMENT_TIMEOUT;
 import static io.strimzi.systemtest.Constants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_CA_INJECTOR_DEPLOYMENT;
@@ -568,9 +569,7 @@ public abstract class TracingAbstractST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT);
     }
 
-    private void deployJaegerContent(ExtensionContext extensionContext) throws IOException {
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-
+    private void deployCertManager(ExtensionContext extensionContext) {
         // create namespace `cert-manager` and add it to stack, to collect logs from it
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), CERT_MANAGER_NAMESPACE);
 
@@ -579,22 +578,38 @@ public abstract class TracingAbstractST extends AbstractST {
         cmdKubeClient("").apply(certManagerPath);
 
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteCertManager));
-        // wait for CertManager's deployments and pods to be ready
+    }
+
+    private void waitForCertManagerDeployment() {
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT, 1);
+    }
 
-        String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.namespace);
+    private void deployAndWaitForCertManager(final ExtensionContext extensionContext) {
+        this.deployCertManager(extensionContext);
+        this.waitForCertManagerDeployment();
+    }
 
-        this.jaegerConfigs = jaegerOperator;
-        LOGGER.info("Creating Jaeger operator (and needed resources) from {}", jaegerOperatorPath);
-        cmdKubeClient(this.namespace).applyContent(jaegerOperator);
+    private void deployJaegerContent(ExtensionContext extensionContext) {
+        TestUtils.waitFor("Jaeger deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
+            try {
+                String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.namespace);
 
+                this.jaegerConfigs = jaegerOperator;
+                LOGGER.info("Creating Jaeger operator (and needed resources) from {}", jaegerOperatorPath);
+                cmdKubeClient(this.namespace).applyContent(jaegerOperator);
+                return true;
+            } catch (Exception e) {
+                LOGGER.error("{} - Exception {} has been thrown during Jaeger deployment" + e.getMessage());
+                return false;
+            }
+        });
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
         DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
-    private void deployJaegerOperator(final ExtensionContext extensionContext) throws IOException {
+    private void deployJaegerOperator(final ExtensionContext extensionContext) {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
         this.deployJaegerContent(extensionContext);
@@ -624,7 +639,7 @@ public abstract class TracingAbstractST extends AbstractST {
     /**
      * Install of Jaeger instance
      */
-    void deployJaegerInstance(final ExtensionContext extensionContext, String namespaceName) {
+    private void deployJaegerInstance(final ExtensionContext extensionContext, String namespaceName) {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(jaegerInstancePath), TestUtils::toYamlString);
@@ -688,8 +703,9 @@ public abstract class TracingAbstractST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(final ExtensionContext extensionContext) throws IOException {
-        // deployment of the jaeger
+    void setup(final ExtensionContext extensionContext) {
+        ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
+        deployAndWaitForCertManager(extensionContext);
         deployJaegerOperator(extensionContext);
     }
 }
