@@ -15,7 +15,11 @@ Specify the following in your client configuration:
 ** `SASL_SSL` for authentication over TLS encrypted connections
 ** `SASL_PLAINTEXT` for authentication over unencrypted connections
 +
-Use `SASL_PLAINTEXT` for local development only.
+Use `SASL_SSL` for production and `SASL_PLAINTEXT` for local development only.
+When using `SASL_SSL`, additional `ssl.truststore` configuration is needed.
+The truststore configuration is required for secure connection (`https://`) to the OAuth 2.0 authorization server.
+To verify the OAuth 2.0 authorization server, add the CA certificate for the authorization server to the truststore in your client configuration.
+You can configure a truststore in PEM or PKCS #12 format.
 
 * A Kafka SASL mechanism:
 ** `OAUTHBEARER` for credentials exchange using a bearer token
@@ -33,7 +37,7 @@ Use `SASL_PLAINTEXT` for local development only.
 ** Refresh token
 
 Add the SASL authentication properties as JAAS configuration (`sasl.jaas.config`).
-How you configure the authentication properties depends on the authentication method you are using.
+How you configure the authentication properties depends on the authentication method you are using to access the OAuth 2.0 authorization server.
 In this procedure, the properties are specified in a properties file, then loaded into the client configuration.
 
 NOTE: You can also specify authentication properties as environment variables, or as Java system properties. For Java system properties, you can set them using `setProperty` and pass them on the command line using the `-D` option.
@@ -71,21 +75,31 @@ For example, we can add the following to a `client.properties` file:
 ----
 security.protocol=SASL_SSL # <1>
 sasl.mechanism=OAUTHBEARER # <2>
+ssl.truststore.location=/tmp/truststore.p12 <3>
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="_<token_endpoint_url>_" \ # <3>
-  oauth.client.id="_<client_id>_" \ # <4>
-  oauth.client.secret="_<client_secret>_" \ # <5> 
-  oauth.scope="_<scope>_" \ # <6> 
-  oauth.audience="_<audience>_" ; # <7> 
+  oauth.token.endpoint.uri="_<token_endpoint_url>_" \ # <4>
+  oauth.client.id="_<client_id>_" \ # <5>
+  oauth.client.secret="_<client_secret>_" \ # <6> 
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ <7>
+  oauth.ssl.truststore.password="$STOREPASS" \ <8>
+  oauth.ssl.truststore.type="PKCS12" \ <9>
+  oauth.scope="_<scope>_" \ # <10> 
+  oauth.audience="_<audience>_" ; # <11> 
 ----
 <1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
 <2> The SASL mechanism specified as `OAUTHBEARER` or `PLAIN`. 
-<3> URI of the authorization server token endpoint.
-<4> Client ID, which is the name used when creating the _client_ in the authorization server.
-<5> Client secret created when creating the _client_ in the authorization server.
-<6> (Optional) The `scope` for requesting the token from the token endpoint.
+<3> The truststore configuration for secure access to the Kafka cluster. 
+<4> URI of the authorization server token endpoint.
+<5> Client ID, which is the name used when creating the _client_ in the authorization server.
+<6> Client secret created when creating the _client_ in the authorization server.
+<7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
+<8> The password for accessing the truststore.
+<9> the truststore type.
+<10> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
-<7> (Optional) The `audience` for requesting the token from the token endpoint.
+<11> (Optional) The `audience` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the audience.
 --
 +
@@ -95,12 +109,18 @@ An authorization server may require a client to specify the audience.
 ----
 security.protocol=SASL_SSL
 sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \
   oauth.client.id="_<client_id>_" \ # <1>
   oauth.client.secret="_<client_secret>_" \ # <2>
   oauth.password.grant.username="_<username>_" \ # <3> 
   oauth.password.grant.password="_<password>_" \ # <4> 
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" \
   oauth.scope="_<scope>_" \
   oauth.audience="_<audience>_" ;
 ----
@@ -118,9 +138,15 @@ NOTE: SASL PLAIN does not support passing a username and password (password gran
 ----
 security.protocol=SASL_SSL
 sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \
   oauth.access.token="_<access_token>_" ; # <1>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" \
 ----
 <1> Long-lived access token for Kafka clients.
 --
@@ -131,11 +157,17 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
 ----
 security.protocol=SASL_SSL
 sasl.mechanism=OAUTHBEARER
+ssl.truststore.location=/tmp/truststore.p12
+ssl.truststore.password=$STOREPASS
+ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \
   oauth.client.id="_<client_id>_" \ # <1> 
   oauth.client.secret="_<client_secret>_" \ # <2> 
   oauth.refresh.token="_<refresh_token>_" ; # <3>
+  oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
+  oauth.ssl.truststore.password="$STOREPASS" \
+  oauth.ssl.truststore.type="PKCS12" \
 ----
 <1> Client ID, which is the name used when creating the _client_ in the authorization server.
 <2> (Optional) Client secret created when creating the _client_ in the authorization server.
