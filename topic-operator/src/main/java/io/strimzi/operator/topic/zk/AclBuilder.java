@@ -77,11 +77,9 @@ public class AclBuilder {
      */
     public List<ACL> build() {
         List<ACL> result = new ArrayList<>();
-
         if (world != null) {
             result.add(world);
         }
-
         return result;
     }
 }
