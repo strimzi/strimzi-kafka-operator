@@ -164,7 +164,7 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
   annotations:
-    strimzi.io/rebalance-auto-approval: true
+    strimzi.io/rebalance-auto-approval: "true"
 spec:
   mode: # any mode
   # ...
