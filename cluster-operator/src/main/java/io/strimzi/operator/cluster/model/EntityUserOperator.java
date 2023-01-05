@@ -89,8 +89,8 @@ public class EntityUserOperator extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = cluster + NAME_SUFFIX;
+        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, APPLICATION_NAME);
+
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";

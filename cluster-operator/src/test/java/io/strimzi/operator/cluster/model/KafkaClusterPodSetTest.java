@@ -107,7 +107,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> Map.of("test-anno", kc.getPodName(brokerId)));
 
         assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
-        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kc.getLabelsWithStrimziName(kc.getName(), null).toMap().entrySet()), is(true));
+        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kc.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
         assertThat(ps.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(ps.getMetadata().getOwnerReferences().get(0), is(kc.createOwnerReference()));
@@ -117,7 +117,7 @@ public class KafkaClusterPodSetTest {
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
-            assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kc.getLabelsWithStrimziNameAndPodName(kc.getName(), pod.getMetadata().getName(), null).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(kc.getName()).toMap().entrySet()), is(true));
+            assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kc.labels.withStrimziPodName(pod.getMetadata().getName()).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(kc.getName()).toMap().entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().size(), is(2));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
             assertThat(pod.getMetadata().getAnnotations().get("test-anno"), is(pod.getMetadata().getName()));

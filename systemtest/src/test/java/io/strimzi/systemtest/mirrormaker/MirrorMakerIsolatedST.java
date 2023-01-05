@@ -122,7 +122,6 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build());
 
         verifyLabelsOnPods(testStorage.getNamespaceName(), testStorage.getClusterName(), "mirror-maker", KafkaMirrorMaker.RESOURCE_KIND);
-        verifyLabelsForService(testStorage.getNamespaceName(), testStorage.getClusterName(), "mirror-maker", KafkaMirrorMaker.RESOURCE_KIND);
 
         verifyLabelsForConfigMaps(testStorage.getNamespaceName(), kafkaClusterSourceName, null, kafkaClusterTargetName);
         verifyLabelsForServiceAccounts(testStorage.getNamespaceName(), kafkaClusterSourceName, null);

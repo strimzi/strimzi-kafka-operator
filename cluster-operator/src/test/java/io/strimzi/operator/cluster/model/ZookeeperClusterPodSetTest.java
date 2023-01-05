@@ -91,7 +91,7 @@ public class ZookeeperClusterPodSetTest {
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, Map.of());
 
         assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
-        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(zc.getLabelsWithStrimziName(zc.getName(), null).toMap().entrySet()), is(true));
+        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(zc.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new PersistentClaimStorageBuilder().withSize("100Gi").withDeleteClaim(false).build())));
         assertThat(ps.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(ps.getMetadata().getOwnerReferences().get(0), is(zc.createOwnerReference()));
@@ -101,7 +101,7 @@ public class ZookeeperClusterPodSetTest {
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
-            assertThat(pod.getMetadata().getLabels().entrySet().containsAll(zc.getLabelsWithStrimziNameAndPodName(zc.getName(), pod.getMetadata().getName(), null).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(zc.getName()).toMap().entrySet()), is(true));
+            assertThat(pod.getMetadata().getLabels().entrySet().containsAll(zc.labels.withStrimziPodName(pod.getMetadata().getName()).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(zc.getName()).toMap().entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().size(), is(1));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
 

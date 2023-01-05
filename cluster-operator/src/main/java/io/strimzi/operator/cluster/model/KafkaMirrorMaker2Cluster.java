@@ -78,8 +78,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaMirrorMaker2Resources.deploymentName(cluster);
+        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
     }

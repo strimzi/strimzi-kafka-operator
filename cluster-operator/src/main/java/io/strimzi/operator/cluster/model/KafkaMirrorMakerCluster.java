@@ -129,8 +129,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaMirrorMakerResources.deploymentName(cluster);
+        super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
         this.readinessPath = "/";

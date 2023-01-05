@@ -86,8 +86,8 @@ public class KafkaExporter extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaExporterResources.deploymentName(cluster);
+        super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.replicas = 1;
         this.readinessPath = "/healthz";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;

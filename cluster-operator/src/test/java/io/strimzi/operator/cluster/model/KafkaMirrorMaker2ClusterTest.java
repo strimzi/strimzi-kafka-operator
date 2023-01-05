@@ -172,6 +172,7 @@ public class KafkaMirrorMaker2ClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND,
+                Labels.STRIMZI_COMPONENT_LABEL, KafkaMirrorMaker2Cluster.APPLICATION_NAME,
                 Labels.KUBERNETES_NAME_LABEL, KafkaMirrorMaker2Cluster.APPLICATION_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.clusterName,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.clusterName,
@@ -236,7 +237,7 @@ public class KafkaMirrorMaker2ClusterTest {
         Service svc = kmm2.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kmm2.getServiceName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kmm2.getName())));
         assertThat(svc.getMetadata().getAnnotations().size(), is(0));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
@@ -260,7 +261,7 @@ public class KafkaMirrorMaker2ClusterTest {
         Service svc = kmm2.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kmm2.getServiceName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kmm2.getName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(KafkaMirrorMaker2Cluster.REST_API_PORT));

@@ -48,22 +48,26 @@ public class Labels {
     public static final String STRIMZI_KIND_LABEL = STRIMZI_DOMAIN + "kind";
 
     /**
-     * The Strimzi cluster the resource is part of.
-     * The value is the cluster name (i.e. the name of the cluster CM)
+     * The Strimzi cluster the resource is part of. This is typically the name of the custom resource.
      */
     public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "cluster";
 
     /**
-     * The name of the K8S resource.
-     * This is often the same name as the cluster
-     * (i.e. the same as {@code strimzi.io/cluster})
-     * but is different in some cases (e.g. headful and headless services)
+     * Name of the Strimzi component to which given resource belongs. E.g. Kafka or ZooKeeper. This label does not
+     * depend on the name of the cluster. This is useful to identify resources which belong to the same component but
+     * different clusters which is useful for example for scheduling (e.g. when you do not want this broker to be
+     * scheduled on a node where any other Kafka broker is running).
+     */
+    public static final String STRIMZI_COMPONENT_LABEL = STRIMZI_DOMAIN + "component";
+
+    /**
+     * Name of the component to which given resource belongs. This typically consists of the cluster name and component.
      */
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
     /**
-     * The name of the K8S Pod.
-     * This is used to identify individual pods for example in per-node services.
+     * Identifies Pods managed directly by Strimzi and resources belonging directly to them such as per-node services,
+     * config maps or secrets.
      */
     public static final String STRIMZI_POD_NAME_LABEL = STRIMZI_DOMAIN + "pod-name";
 
@@ -134,41 +138,24 @@ public class Labels {
     private final Map<String, String> labels;
 
     /**
-     * @param resource The resource.
-     * @return The value of the {@code strimzi.io/cluster} label of the given {@code resource}.
-     */
-    public static String cluster(HasMetadata resource) {
-        return resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-    }
-
-    /**
-     * @param resource The resource.
-     * @return the value of the {@code strimzi.io/name} label of the given {@code resource}.
-     */
-    public static String name(HasMetadata resource) {
-        return resource.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL);
-    }
-
-    /**
      * @param additionalLabels The labels
      * @return A {@code Labels} instance from the given map
      */
     private static Labels additionalLabels(Map<String, String> additionalLabels) {
-
-        if (additionalLabels == null) {
+        if (additionalLabels == null || additionalLabels.isEmpty()) {
             return EMPTY;
-        }
+        } else {
+            List<String> invalidLabels = additionalLabels
+                    .keySet()
+                    .stream()
+                    .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN) && !key.startsWith(Labels.STRIMZI_CLUSTER_LABEL))
+                    .collect(Collectors.toList());
+            if (invalidLabels.size() > 0) {
+                throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
+            }
 
-        List<String> invalidLabels = additionalLabels
-                .keySet()
-                .stream()
-                .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN) && !key.startsWith(Labels.STRIMZI_CLUSTER_LABEL))
-                .collect(Collectors.toList());
-        if (invalidLabels.size() > 0) {
-            throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
+            return new Labels(additionalLabels);
         }
-
-        return new Labels(additionalLabels);
     }
 
     /**
@@ -176,11 +163,15 @@ public class Labels {
      * @return A new instances with the given {@code additionalLabels} added to the labels in this instance.
      */
     public Labels withAdditionalLabels(Map<String, String> additionalLabels) {
-        Map<String, String> newLabels = new HashMap<>(labels.size());
-        newLabels.putAll(labels);
-        newLabels.putAll(Labels.additionalLabels(additionalLabels).toMap());
+        if (additionalLabels == null || additionalLabels.isEmpty()) {
+            return this;
+        } else {
+            Map<String, String> newLabels = new HashMap<>(labels.size());
+            newLabels.putAll(labels);
+            newLabels.putAll(Labels.additionalLabels(additionalLabels).toMap());
 
-        return new Labels(newLabels);
+            return new Labels(newLabels);
+        }
     }
 
     /**
@@ -351,6 +342,17 @@ public class Labels {
     }
 
     /**
+     * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/component} key.
+     *
+     * @param name The name to add
+     *
+     * @return A new instance with the given name added.
+     */
+    public Labels withStrimziComponent(String name) {
+        return with(STRIMZI_COMPONENT_LABEL, name);
+    }
+
+    /**
      * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/pod-name} key.
      *
      * @param name The name to add
@@ -463,22 +465,27 @@ public class Labels {
      * Note: Valid label values must be a maximum length of 63 characters
      * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
      *
-     * @param resource        a resource with metadata
-     * @param applicationName the name of the application of the component
-     * @param managedBy       a resource with meta
-     * @return The default Labels set
+     * @param resource          Kubernetes resource with metadata. It is used to get the resource name as well as copy
+     *                          its labels. This is typically a custom resource which owns the whole deployment.
+     * @param strimziName       Name of the resource used for the strimzi.io/name label
+     * @param strimziComponent  Name of the component / application (e.g. kafka, zookeeper, etc.)
+     * @param managedBy         Name of the component managing this resource (e.g. strimzi-cluster-operator)
+     *
+     * @return  The default set of labels used for the Kubernetes resources
      */
-    public static Labels generateDefaultLabels(HasMetadata resource, String applicationName, String managedBy) {
-        String instanceName = resource.getMetadata().getName();
+    public static Labels generateDefaultLabels(HasMetadata resource, String strimziName, String strimziComponent, String managedBy) {
+        String customResourceName = resource.getMetadata().getName();
+
         return Labels.fromResource(resource)
+                // Strimzi labels
                 .withStrimziKind(resource.getKind())
-                // Default Strimzi name is the owning application name (Strimzi)
-                // for resources belonging to no particular component
-                .withStrimziName(Labels.APPLICATION_NAME)
-                .withStrimziCluster(instanceName)
-                .withKubernetesName(applicationName)
-                .withKubernetesInstance(instanceName)
-                .withKubernetesPartOf(instanceName)
+                .withStrimziName(strimziName)
+                .withStrimziCluster(customResourceName)
+                .withStrimziComponent(strimziComponent)
+                // Kubernetes labels
+                .withKubernetesName(strimziComponent)
+                .withKubernetesInstance(customResourceName)
+                .withKubernetesPartOf(customResourceName)
                 .withKubernetesManagedBy(managedBy);
     }
 }

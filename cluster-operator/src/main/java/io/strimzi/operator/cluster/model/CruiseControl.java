@@ -165,8 +165,8 @@ public class CruiseControl extends AbstractModel {
      * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = CruiseControlResources.deploymentName(cluster);
+        super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.serviceName = CruiseControlResources.serviceName(cluster);
         this.ancillaryConfigMapName = CruiseControlResources.logAndMetricsConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;

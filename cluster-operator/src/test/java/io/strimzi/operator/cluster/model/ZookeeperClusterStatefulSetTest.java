@@ -96,6 +96,7 @@ public class ZookeeperClusterStatefulSetTest {
     private Map<String, String> expectedLabels()    {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
             Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER),
+            Labels.STRIMZI_COMPONENT_LABEL, ZookeeperCluster.APPLICATION_NAME,
             Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
             Labels.KUBERNETES_NAME_LABEL, ZookeeperCluster.APPLICATION_NAME,
             Labels.KUBERNETES_INSTANCE_LABEL, CLUSTER,

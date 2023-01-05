@@ -143,8 +143,8 @@ public class ZookeeperCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaResources.zookeeperStatefulSetName(cluster);
+        super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.serviceName = KafkaResources.zookeeperServiceName(cluster);
         this.headlessServiceName = KafkaResources.zookeeperHeadlessServiceName(cluster);
         this.ancillaryConfigMapName = KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);

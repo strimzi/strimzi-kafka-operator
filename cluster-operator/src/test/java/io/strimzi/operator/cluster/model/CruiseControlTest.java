@@ -162,6 +162,7 @@ public class CruiseControlTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
                 Labels.STRIMZI_NAME_LABEL, name,
+                Labels.STRIMZI_COMPONENT_LABEL, CruiseControl.APPLICATION_NAME,
                 Labels.KUBERNETES_NAME_LABEL, CruiseControl.APPLICATION_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,

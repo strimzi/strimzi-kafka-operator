@@ -151,8 +151,8 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaBridgeResources.deploymentName(cluster);
+        super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;

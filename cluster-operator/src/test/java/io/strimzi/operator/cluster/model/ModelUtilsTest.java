@@ -367,7 +367,7 @@ public class ModelUtilsTest {
 
     private static class Model extends AbstractModel   {
         public Model(Reconciliation reconciliation, HasMetadata resource) {
-            super(reconciliation, resource, "model-app");
+            super(reconciliation, resource, resource + "-model-app", "model-app");
         }
 
         @Override

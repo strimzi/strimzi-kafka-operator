@@ -134,7 +134,7 @@ class ConnectIsolatedST extends AbstractST {
         testDockerImagesForKafkaConnect(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), testStorage.getClusterName());
 
         verifyLabelsOnPods(testStorage.getNamespaceName(), testStorage.getClusterName(), "connect", "KafkaConnect");
-        verifyLabelsForService(testStorage.getNamespaceName(), testStorage.getClusterName(), "connect-api", "KafkaConnect");
+        verifyLabelsForService(testStorage.getNamespaceName(), testStorage.getClusterName(), "connect", "connect-api", "KafkaConnect");
         verifyLabelsForConfigMaps(testStorage.getNamespaceName(), testStorage.getClusterName(), null, "");
         verifyLabelsForServiceAccounts(testStorage.getNamespaceName(), testStorage.getClusterName(), null);
     }

@@ -264,8 +264,8 @@ public class KafkaCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaResources.kafkaStatefulSetName(cluster);
+        super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.serviceName = KafkaResources.bootstrapServiceName(cluster);
         this.headlessServiceName = KafkaResources.brokersServiceName(cluster);
         this.ancillaryConfigMapName = KafkaResources.kafkaMetricsAndLogConfigMapName(cluster);
@@ -771,7 +771,7 @@ public class KafkaCluster extends AbstractModel {
                     serviceName,
                     ListenersUtils.serviceType(listener),
                     ports,
-                    getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapServiceLabels, ListenersUtils.bootstrapLabels(listener))),
+                    labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapServiceLabels, ListenersUtils.bootstrapLabels(listener))),
                     getSelectorLabels(),
                     Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations),
                     ListenersUtils.ipFamilyPolicy(listener),
@@ -845,7 +845,7 @@ public class KafkaCluster extends AbstractModel {
                     serviceName,
                     ListenersUtils.serviceType(listener),
                     ports,
-                    getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodServiceLabels, ListenersUtils.brokerLabels(listener, pod))),
+                    labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodServiceLabels, ListenersUtils.brokerLabels(listener, pod))),
                     selector,
                     Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations),
                     ListenersUtils.ipFamilyPolicy(listener),
@@ -907,7 +907,7 @@ public class KafkaCluster extends AbstractModel {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(routeName)
-                        .withLabels(Util.mergeLabelsOrAnnotations(getLabelsWithStrimziName(name, templateExternalBootstrapRouteLabels).toMap(), ListenersUtils.bootstrapLabels(listener)))
+                        .withLabels(Util.mergeLabelsOrAnnotations(labels.withAdditionalLabels(templateExternalBootstrapRouteLabels).toMap(), ListenersUtils.bootstrapLabels(listener)))
                         .withAnnotations(Util.mergeLabelsOrAnnotations(templateExternalBootstrapRouteAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -952,7 +952,7 @@ public class KafkaCluster extends AbstractModel {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(routeName)
-                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodRouteLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodRouteLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(templatePerPodRouteAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -1025,7 +1025,7 @@ public class KafkaCluster extends AbstractModel {
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -1081,7 +1081,7 @@ public class KafkaCluster extends AbstractModel {
             io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -1141,7 +1141,7 @@ public class KafkaCluster extends AbstractModel {
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -1196,7 +1196,7 @@ public class KafkaCluster extends AbstractModel {
             io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingress = new io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
@@ -2075,7 +2075,7 @@ public class KafkaCluster extends AbstractModel {
         data.put(BROKER_LISTENERS_FILENAME,
                 listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
-        return createConfigMap(ancillaryConfigMapName, getLabelsWithStrimziName(name, Map.of()).toMap(), data);
+        return createConfigMap(ancillaryConfigMapName, labels.withAdditionalLabels(Map.of()).toMap(), data);
     }
 
     /**
@@ -2156,7 +2156,7 @@ public class KafkaCluster extends AbstractModel {
             // environment variables are parsed in the container bash scripts
             data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
-            configMaps.add(createConfigMap(getPodName(brokerId), getLabelsWithStrimziNameAndPodName(name, getPodName(brokerId), Map.of()).toMap(), data));
+            configMaps.add(createConfigMap(getPodName(brokerId), labels.withStrimziPodName(getPodName(brokerId)).toMap(), data));
         }
 
         return configMaps;

@@ -110,6 +110,7 @@ public class KafkaBridgeClusterTest {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
+                Labels.STRIMZI_COMPONENT_LABEL, KafkaBridgeCluster.APPLICATION_NAME,
                 Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND,
                 Labels.KUBERNETES_NAME_LABEL, KafkaBridgeCluster.APPLICATION_NAME,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,

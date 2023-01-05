@@ -99,8 +99,8 @@ public class EntityOperator extends AbstractModel {
      * @param resource          Kafka custom resource
      */
     protected EntityOperator(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaResources.entityOperatorDeploymentName(cluster);
+        super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }

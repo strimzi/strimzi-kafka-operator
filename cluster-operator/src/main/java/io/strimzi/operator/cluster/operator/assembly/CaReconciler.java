@@ -144,16 +144,8 @@ public class CaReconciler {
                 .build();
         this.clusterCaConfig = kafkaCr.getSpec().getClusterCa();
         this.clientsCaConfig = kafkaCr.getSpec().getClientsCa();
-        this.caLabels = Labels
-                .generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME)
-                .toMap();
-        this.clusterOperatorSecretLabels = Labels.fromResource(kafkaCr)
-                .withStrimziKind(reconciliation.kind())
-                .withStrimziCluster(reconciliation.name())
-                .withKubernetesName(Labels.APPLICATION_NAME)
-                .withKubernetesInstance(reconciliation.name())
-                .withKubernetesPartOf(reconciliation.name())
-                .withKubernetesManagedBy(AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
+        this.caLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, "certificate-authority", AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME).toMap();
+        this.clusterOperatorSecretLabels = Labels.generateDefaultLabels(kafkaCr, Labels.APPLICATION_NAME, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
         this.clusterCaCertLabels = clusterCaCertLabels(kafkaCr);
         this.clusterCaCertAnnotations = clusterCaCertAnnotations(kafkaCr);
     }

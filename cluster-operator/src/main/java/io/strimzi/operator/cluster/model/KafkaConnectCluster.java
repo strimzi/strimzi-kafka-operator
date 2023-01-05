@@ -161,7 +161,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource) {
-        this(reconciliation, resource, APPLICATION_NAME);
+        this(reconciliation, resource, KafkaConnectResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
     }
 
     /**
@@ -169,11 +169,12 @@ public class KafkaConnectCluster extends AbstractModel {
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
-     * @param applicationName configurable allow other classes to extend this class
+     *                 @param name              Name of the Strimzi component usually consisting from the cluster name and component type
+     * @param componentType configurable allow other classes to extend this class
      */
-    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, String applicationName) {
-        super(reconciliation, resource, applicationName);
-        this.name = KafkaConnectResources.deploymentName(cluster);
+    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, String name, String componentType) {
+        super(reconciliation, resource, name, componentType);
+
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
