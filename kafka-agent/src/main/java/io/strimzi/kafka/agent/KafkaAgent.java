@@ -33,7 +33,7 @@ public class KafkaAgent {
     private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
     private final File sessionConnectedFile;
-    private File brokerReadyFile;
+    private final File brokerReadyFile;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private MetricName sessionStateName;
@@ -159,11 +159,19 @@ public class KafkaAgent {
             boolean handleBrokerState() {
                 LOGGER.trace("Polling {}", brokerStateName);
                 boolean ready = false;
-                Integer running = Integer.valueOf(3);
-                Object value = brokerState.value();
+                Integer runningState = 3;
+                Integer unknownState = 127;
+                Object observedState = brokerState.value();
 
-                if ((value instanceof Integer && running.equals(value))
-                        || (value instanceof Byte && running.equals(((Byte) value).intValue()))) {
+                boolean stateIsRunning = false;
+                if (observedState instanceof Integer) {
+                    stateIsRunning = runningState.compareTo((Integer) observedState) <= 0 && !unknownState.equals(observedState);
+                }
+                if (observedState instanceof Byte) {
+                    int intValue = ((Byte) observedState).intValue();
+                    stateIsRunning = runningState <= intValue && !unknownState.equals(intValue);
+                }
+                if (stateIsRunning) {
                     try {
                         LOGGER.trace("Running as server according to {} => ready", brokerStateName);
                         touch(brokerReadyFile);
@@ -173,7 +181,7 @@ public class KafkaAgent {
                     ready = true;
 
                 } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, value, value.getClass());
+                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, observedState, observedState.getClass());
                 }
                 return ready;
             }

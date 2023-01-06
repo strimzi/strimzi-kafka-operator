@@ -63,8 +63,6 @@ if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
     echo "Kraft storage is already formatted"
   fi
 
-  touch /var/opt/kafka/kafka-ready
-  touch /var/opt/kafka/zk-connected
 else
   rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
