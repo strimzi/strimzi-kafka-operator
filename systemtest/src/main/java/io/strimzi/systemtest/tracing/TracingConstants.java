@@ -28,6 +28,8 @@ public interface TracingConstants {
     String JAEGER_COLLECTOR_OTLP_URL = "http://" + JAEGER_COLLECTOR_NAME + ":4317";
 
     String CERT_MANAGER_WEBHOOK_DEPLOYMENT = "cert-manager-webhook";
+    String CERT_MANAGER_CA_INJECTOR_DEPLOYMENT = "cert-manager-cainjector";
+    String CERT_MANAGER_DEPLOYMENT = "cert-manager";
     String CERT_MANAGER_NAMESPACE = "cert-manager";
 
     String JAEGER_SERVICE_ENV = "JAEGER_SERVICE_NAME";
