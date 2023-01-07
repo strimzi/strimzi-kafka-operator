@@ -1,6 +1,11 @@
 # Example ConfigMap for exposing OAuth metrics
-# For usage with other metric rules, f.e. in KafkaConnect or Kafka broker, below rules need to be copied into
-# the certain ConfigMaps - f.e into `.data.kafka-metrics-config.yml` section of `kafka-metrics` ConfigMap inside `kafka-metrics.yaml`
+#
+# This is not supposed to be used stand-alone, but to serve as a list of mapping rules that need to be manually copied into the target component's
+# `metrics-config.yml`. For example, into `kafka-metrics-config.yml` ConfigMap key inside `oauth-metrics.yaml` file,
+# or into `metrics-config.yml` configMap key inside `kafka-connect-metrics.yaml`.
+#
+# See `../security/keycloak-authorization/kafka-ephemeral-oauth-single-keycloak-authz-metrics.yaml` for a working example.
+#
 kind: ConfigMap
 apiVersion: v1
 metadata:
