@@ -200,7 +200,6 @@ data:
       labels:
         quantile: "0.$4"
     # OAuth Metrics
-    # WARNING: Make sure that the ordering of the attributes is the same as in MBean names
     - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+), (.+)=(.+)><>(count|totalTimeMs):"
       name: "strimzi_oauth_$1_$12"
       type: COUNTER
