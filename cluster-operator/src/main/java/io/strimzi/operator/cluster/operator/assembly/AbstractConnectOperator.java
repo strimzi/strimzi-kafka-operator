@@ -660,18 +660,23 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
         if (connectorHasFailed(statusResult) || failedTaskIds(statusResult).size() > 0) {
-            if (autoRestartStatus == null) {
+            if (autoRestartStatus == null
+                    || autoRestartStatus.getLastRestartTimestamp() == null) {
+                // If there is no previous auto.restart status or timestamp, we always restart it
                 return true;
+            } else {
+                // If the status of the previous restart is present, we calculate if it is time for another restart
+                var count = autoRestartStatus.getCount();
+                var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
+
+                // n^2 + n
+                var nextRestart = count * count + count;
+
+                return count < 7 && minutesSinceLastRestart >= nextRestart;
             }
-            var count =  autoRestartStatus.getCount();
-            var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
-
-            // n^2 + n
-            var nextRestart = count * count + count;
-
-            return count <  7 &&  minutesSinceLastRestart  >= nextRestart;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @SuppressWarnings({ "rawtypes" })
