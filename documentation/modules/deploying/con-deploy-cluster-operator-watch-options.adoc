@@ -16,7 +16,7 @@ You can specify the following namespaces:
 * xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces]
 
 NOTE: The Cluster Operator can watch one, multiple, or all namespaces in a Kubernetes cluster.
-The Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in a single namespace. For more information, see link:{BookURLUsing}#con-operators-namespaces-str[Watching namespaces with Strimzi operators^].
+The Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in a single namespace. For more information, see link:{BookURLConfiguring}#con-operators-namespaces-str[Watching namespaces with Strimzi operators^].
 
 The Cluster Operator watches for changes to the following resources:
 

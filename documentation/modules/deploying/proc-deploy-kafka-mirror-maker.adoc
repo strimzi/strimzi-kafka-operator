@@ -13,7 +13,7 @@ The deployment uses a YAML file to provide the specification to create a `KafkaM
 IMPORTANT: Kafka MirrorMaker 1 (referred to as just _MirrorMaker_ in the documentation) has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.
 As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well.
 The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.0.
-As a replacement, use the `KafkaMirrorMaker2` custom resource with the link:{BookURLUsing}#unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
+As a replacement, use the `KafkaMirrorMaker2` custom resource with the link:{BookURLConfiguring}#unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
 
 Strimzi provides xref:deploy-examples-{context}[example configuration files].
 In this procedure, we use the following example files:
@@ -67,4 +67,4 @@ The deployment is successful when the `AVAILABLE` output shows `1`.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLUsing}#assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker cluster configuration^]
+* link:{BookURLConfiguring}#assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker cluster configuration^]

@@ -12,7 +12,7 @@ The deployment procedures use the example installation files provided with Strim
 The procedures highlight any important configuration considerations, but they do not describe all the configuration options available.
 
 You might want to review the configuration options available for Kafka components before you deploy Strimzi.
-For more information on the configuration options, see link:{BookURLUsing}[_Configuring Strimzi_^].
+For more information on the configuration options, see link:{BookURLConfiguring}[_Configuring Strimzi_^].
 
 == Securing Kafka
 
@@ -20,9 +20,9 @@ On deployment, the Cluster Operator automatically sets up TLS certificates for d
 
 Strimzi provides additional configuration options for _encryption_, _authentication_ and _authorization_:
 
-* Secure data exchange between the Kafka cluster and clients by link:{BookURLUsing}#assembly-securing-access-str[Managing secure access to Kafka^].
-* Configure your deployment to use an authorization server to provide link:{BookURLUsing}#assembly-oauth-authentication_str[OAuth 2.0 authentication^] and link:{BookURLUsing}#assembly-oauth-authorization_str[OAuth 2.0 authorization^].
-* link:{BookURLUsing}#security-str[Secure Kafka using your own certificates^].
+* Secure data exchange between the Kafka cluster and clients by link:{BookURLConfiguring}#assembly-securing-access-str[Managing secure access to Kafka^].
+* Configure your deployment to use an authorization server to provide link:{BookURLConfiguring}#assembly-oauth-authentication_str[OAuth 2.0 authentication^] and link:{BookURLConfiguring}#assembly-oauth-authorization_str[OAuth 2.0 authorization^].
+* link:{BookURLConfiguring}#security-str[Secure Kafka using your own certificates^].
 
 == Monitoring a deployment
 
@@ -41,4 +41,4 @@ Having sufficient resources is important for applications like Kafka to be stabl
 The right amount of resources you should use depends on the specific requirements and use-cases.
 
 You should consider configuring the CPU and memory resources.
-You can set resource requests and limits for each container in the link:{BookURLUsing}#con-common-configuration-resources-reference[Strimzi custom resources].
+You can set resource requests and limits for each container in the link:{BookURLConfiguring}#con-common-configuration-resources-reference[Strimzi custom resources].

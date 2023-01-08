@@ -9,4 +9,4 @@ You can enable and disable some features of operators using _feature gates_.
 
 Feature gates are set in the operator configuration and have three stages of maturity: alpha, beta, or General Availability (GA).
 
-For more information, see link:{BookURLUsing}#ref-operator-cluster-feature-gates-str[Feature gates].
+For more information, see link:{BookURLConfiguring}#ref-operator-cluster-feature-gates-str[Feature gates].

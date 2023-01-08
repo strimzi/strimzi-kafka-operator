@@ -110,4 +110,4 @@ The deployment is successful when the `STATUS` shows as `Running`.
 
 [role="_additional-resources"]
 .Additional resources
-link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^]
+link:{BookURLConfiguring}#assembly-config-kafka-str[Kafka cluster configuration^]

@@ -88,4 +88,4 @@ kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restar
 
 [role="_additional-resources"]
 .Additional resources
-* link:{BookURLUsing}#ref-topic-operator-store-{context}[Topic Operator topic store^]
+* link:{BookURLConfiguring}#ref-topic-operator-store-{context}[Topic Operator topic store^]

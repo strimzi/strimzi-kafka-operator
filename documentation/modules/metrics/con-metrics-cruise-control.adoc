@@ -11,7 +11,7 @@ Cruise Control also provides a set of metrics for monitoring its own performance
 
 The Cruise Control metrics reporter collects raw metrics data from Kafka brokers.
 The data is produced to topics that are automatically created by Cruise Control.
-The metrics are used to link:{BookURLUsing}#proc-generating-optimization-proposals-str[generate optimization proposals for Kafka clusters^].
+The metrics are used to link:{BookURLConfiguring}#proc-generating-optimization-proposals-str[generate optimization proposals for Kafka clusters^].
 
 Cruise Control metrics are available for real-time monitoring of Cruise Control operations.
 For example, you can use Cruise Control metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in an operation's performance.

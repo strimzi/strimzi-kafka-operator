@@ -50,5 +50,5 @@ The deployment is successful when the `AVAILABLE` output shows `1`.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLUsing}#assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration^]
+* link:{BookURLConfiguring}#assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration^]
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
