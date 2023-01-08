@@ -34,5 +34,7 @@ include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
 
+include::../../modules/upgrading/proc-switching-to-FIPS-mode-when-upgrading-Strimzi.adoc[leveloffset=+1]
+
 //how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
 include::../../modules/upgrading/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]
