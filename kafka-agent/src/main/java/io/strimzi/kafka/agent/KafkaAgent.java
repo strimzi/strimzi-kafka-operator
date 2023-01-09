@@ -32,6 +32,9 @@ public class KafkaAgent {
     // KafkaYammerMetrics class in Kafka 3.2-
     private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
+    private static final Integer BROKER_RUNNING_STATE = 3;
+    private static final Integer BROKER_UNKNOWN_STATE = 127;
+
     private final File sessionConnectedFile;
     private final File brokerReadyFile;
     private MetricName brokerStateName;
@@ -159,17 +162,15 @@ public class KafkaAgent {
             boolean handleBrokerState() {
                 LOGGER.trace("Polling {}", brokerStateName);
                 boolean ready = false;
-                Integer runningState = 3;
-                Integer unknownState = 127;
                 Object observedState = brokerState.value();
 
                 boolean stateIsRunning = false;
                 if (observedState instanceof Integer) {
-                    stateIsRunning = runningState.compareTo((Integer) observedState) <= 0 && !unknownState.equals(observedState);
+                    stateIsRunning = BROKER_RUNNING_STATE.compareTo((Integer) observedState) <= 0 && !BROKER_UNKNOWN_STATE.equals(observedState);
                 }
                 if (observedState instanceof Byte) {
                     int intValue = ((Byte) observedState).intValue();
-                    stateIsRunning = runningState <= intValue && !unknownState.equals(intValue);
+                    stateIsRunning = BROKER_RUNNING_STATE <= intValue && !BROKER_UNKNOWN_STATE.equals(intValue);
                 }
                 if (stateIsRunning) {
                     try {
