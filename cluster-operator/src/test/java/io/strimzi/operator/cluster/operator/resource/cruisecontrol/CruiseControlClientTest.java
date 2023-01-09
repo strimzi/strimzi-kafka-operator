@@ -4,14 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
-import io.strimzi.operator.common.Util;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.net.PemTrustOptions;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -29,7 +25,6 @@ import java.util.function.Consumer;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
-import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_CLIENT_ACTIVITY_LOGGING;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
