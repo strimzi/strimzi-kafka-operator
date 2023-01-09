@@ -13,10 +13,10 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,7 +25,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -137,12 +136,8 @@ public class OauthAbstractST extends AbstractST {
             cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
         }
 
-        KeycloakUtils.deployKeycloak(clusterOperator.getDeploymentNamespace(), namespace);
-
-        SecretUtils.waitForSecretReady(namespace, "credential-example-keycloak", () -> { });
-        String passwordEncoded = kubeClient(namespace).getSecret(namespace, "credential-example-keycloak").getData().get("ADMIN_PASSWORD");
-        String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
-        keycloakInstance = new KeycloakInstance("admin", password, namespace);
+        SetupKeycloak.deployKeycloakOperator(extensionContext, clusterOperator.getDeploymentNamespace(), namespace);
+        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, namespace);
 
         createSecretsForDeployments(namespace);
     }
