@@ -103,7 +103,8 @@ public class SetupKeycloak {
                 String jsonRealm = new JsonObject(Files.readString(path, StandardCharsets.UTF_8)).encode();
                 String result = KeycloakUtils.createRealm(namespaceName, "https://" + keycloakInstance.getHttpsUri(), token, jsonRealm);
 
-                if (result.contains("Conflict detected")) {
+                // if KeycloakRealm is successfully imported, the return contains just empty String
+                if (!result.isEmpty()) {
                     throw new RuntimeException(String.format("Realm from file path: %s wasn't imported!", path));
                 }
 
