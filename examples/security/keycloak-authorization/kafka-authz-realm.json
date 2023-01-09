@@ -360,9 +360,6 @@
               },
               {
                 "name": "ClusterAction"
-              },
-              {
-                "name": "IdempotentWrite"
               }
             ]
           },
@@ -433,21 +430,7 @@
             "type" : "Cluster",
             "ownerManagedAccess" : false,
             "attributes" : { },
-            "uris" : [ ],
-            "scopes": [
-              {
-                "name": "DescribeConfigs"
-              },
-              {
-                "name": "AlterConfigs"
-              },
-              {
-                "name": "ClusterAction"
-              },
-              {
-                "name": "IdempotentWrite"
-              }
-            ]
+            "uris" : [ ]
           }
         ],
         "policies": [
@@ -517,17 +500,6 @@
             }
           },
           {
-            "name": "Dev Team A can do IdempotentWrites on cluster my-cluster",
-            "type": "scope",
-            "logic": "POSITIVE",
-            "decisionStrategy": "UNANIMOUS",
-            "config": {
-              "resources": "[\"kafka-cluster:my-cluster,Cluster:*\"]",
-              "scopes": "[\"IdempotentWrite\"]",
-              "applyPolicies": "[\"Dev Team A\"]"
-            }
-          },
-          {
             "name": "Dev Team B owns topics that start with b_ on cluster my-cluster",
             "type": "resource",
             "logic": "POSITIVE",
@@ -556,17 +528,6 @@
             "config": {
               "resources": "[\"Group:x_*\"]",
               "scopes": "[\"Describe\",\"Read\"]",
-              "applyPolicies": "[\"Dev Team B\"]"
-            }
-          },
-          {
-            "name": "Dev Team B can do IdempotentWrites on cluster my-cluster",
-            "type": "scope",
-            "logic": "POSITIVE",
-            "decisionStrategy": "UNANIMOUS",
-            "config": {
-              "resources": "[\"kafka-cluster:my-cluster,Cluster:*\"]",
-              "scopes": "[\"IdempotentWrite\"]",
               "applyPolicies": "[\"Dev Team B\"]"
             }
           },
