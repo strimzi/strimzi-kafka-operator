@@ -127,8 +127,8 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
-
         HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         Checkpoint checkpoint = context.checkpoint();
@@ -260,7 +260,6 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
-
         HttpClient httpClient = vertx.createHttpClient(httpOptions);
 
         Checkpoint checkpoint = context.checkpoint();
@@ -298,7 +297,6 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
-
         HttpClient httpClient = vertx.createHttpClient(httpOptions);
 
         Checkpoint checkpoint = context.checkpoint();
@@ -336,7 +334,6 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
-
         HttpClient httpClient = vertx.createHttpClient(httpOptions);
 
         Checkpoint checkpoint = context.checkpoint();
@@ -374,7 +371,6 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
-
         HttpClient httpClient = vertx.createHttpClient(httpOptions);
 
         Checkpoint checkpoint = context.checkpoint();
@@ -412,7 +408,6 @@ public class CruiseControlClientTest {
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
-
         HttpClient httpClient = vertx.createHttpClient(httpOptions);
 
         Checkpoint checkpoint = context.checkpoint();
