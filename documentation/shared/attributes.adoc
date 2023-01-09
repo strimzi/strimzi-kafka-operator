@@ -176,7 +176,7 @@
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
-:BookURLUsing: ./using.html
+:BookURLConfiguring: ./configuring.html
 :BookURLOverview: ./overview.html
 :BookURLBridge: https://strimzi.io/docs/bridge/latest/
 

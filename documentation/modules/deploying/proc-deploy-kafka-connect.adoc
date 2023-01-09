@@ -53,4 +53,4 @@ The deployment is successful when the `AVAILABLE` output shows `1`.
 
 [role="_additional-resources"]
 .Additional resources
-link:{BookURLUsing}#assembly-kafka-connect-str[Kafka Connect cluster configuration^]
+link:{BookURLConfiguring}#assembly-kafka-connect-str[Kafka Connect cluster configuration^]

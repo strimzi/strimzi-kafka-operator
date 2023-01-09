@@ -72,7 +72,7 @@ spec:
       # ...
   # ...
 ----
-<1> link:{BookURLUsing}#type-Build-reference[Build configuration properties^] for building a container image with plugins automatically.
+<1> link:{BookURLConfiguring}#type-Build-reference[Build configuration properties^] for building a container image with plugins automatically.
 <2> Configuration of the container registry where new images are pushed. The `output` properties describe the type and name of the image, and optionally the name of the secret containing the credentials needed to access the container registry.
 <3> List of plugins and their artifacts to add to the new container image. The `plugins` properties describe the type of artifact and the URL from which the artifact is downloaded. Each plugin must be configured with at least one artifact. Additionally, you can specify a SHA-512 checksum to verify the artifact before unpacking it.
 
@@ -208,7 +208,7 @@ spec:
 <6> Location of the external data file. In this example, we're configuring the `FileStreamSourceConnector` to read from the `/opt/kafka/LICENSE` file.
 <7> Kafka topic to publish the source data to.
 
-NOTE: You can link:{BookURLUsing}#proc-loading-config-with-provider-str[load confidential configuration values for a connector^] from Kubernetes Secrets or ConfigMaps.
+NOTE: You can link:{BookURLConfiguring}#proc-loading-config-with-provider-str[load confidential configuration values for a connector^] from Kubernetes Secrets or ConfigMaps.
 
 [discrete]
 == Kafka Connect API
@@ -247,11 +247,11 @@ Use advisedly as the connection is insecure.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLUsing}#assembly-kafka-connect-str[Kafka Connect configuration options^]
-* link:{BookURLUsing}#con-kafka-connect-multiple-instances-str[Kafka Connect configuration for multiple instances^]
+* link:{BookURLConfiguring}#assembly-kafka-connect-str[Kafka Connect configuration options^]
+* link:{BookURLConfiguring}#con-kafka-connect-multiple-instances-str[Kafka Connect configuration for multiple instances^]
 * link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with plugins^]
 * link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Creating a new container image automatically using Strimzi^]
 * link:{BookURLDeploying}#creating-new-image-from-base-str[Creating a Docker image from the Kafka Connect base image^]
-* link:{BookURLUsing}#type-Build-reference[Build schema reference^]
+* link:{BookURLConfiguring}#type-Build-reference[Build schema reference^]
 * link:{BookURLDeploying}#kafkaconnector-configs[Source and sink connector configuration options^]
-* link:{BookURLUsing}#proc-loading-config-with-provider-str[Loading configuration values from external sources^]
+* link:{BookURLConfiguring}#proc-loading-config-with-provider-str[Loading configuration values from external sources^]

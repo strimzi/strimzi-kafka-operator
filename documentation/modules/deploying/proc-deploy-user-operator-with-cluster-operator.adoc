@@ -17,7 +17,7 @@ One namespace should be watched by only one User Operator.
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
 
-For more information about configuring the `entityOperator` and `userOperator` properties, see link:{BookURLUsing}#assembly-kafka-entity-operator-str[Configuring the Entity Operator^].
+For more information about configuring the `entityOperator` and `userOperator` properties, see link:{BookURLConfiguring}#assembly-kafka-entity-operator-str[Configuring the Entity Operator^].
 
 .Prerequisites
 
@@ -39,7 +39,7 @@ spec:
     topicOperator: {}
     *userOperator: {}*
 ----
-. Configure the User Operator `spec` using the properties described in link:{BookURLUsing}#type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference^].
+. Configure the User Operator `spec` using the properties described in link:{BookURLConfiguring}#type-EntityUserOperatorSpec-reference[`EntityUserOperatorSpec` schema reference^].
 +
 Use an empty object (`{}`) if you want all properties to use their default values.
 

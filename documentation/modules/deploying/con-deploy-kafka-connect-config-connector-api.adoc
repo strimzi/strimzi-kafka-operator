@@ -33,7 +33,7 @@ You remove a connector by deleting its corresponding `KafkaConnector`.
 
 To ensure compatibility with earlier versions of Strimzi, KafkaConnectors are disabled by default.
 To enable KafkaConnectors for a Kafka Connect cluster, you set the `strimzi.io/use-connector-resources` annotation to `true` in the `KafkaConnect` resource.
-For instructions, see link:{BookURLUsing}#proc-kafka-connect-config-str[Configuring Kafka Connect^].
+For instructions, see link:{BookURLConfiguring}#proc-kafka-connect-config-str[Configuring Kafka Connect^].
 
 When KafkaConnectors are enabled, the Cluster Operator begins to watch for them.
 It updates the configurations of running connector instances to match the configurations defined in their KafkaConnectors.

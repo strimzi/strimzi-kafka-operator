@@ -27,7 +27,7 @@ The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as ex
 .Prerequisites
 
 * A Kafka Connect deployment
-* link:{BookURLUsing}#proc-kafka-connect-config-str[KafkaConnectors are enabled in the Kafka Connect deployment^]
+* link:{BookURLConfiguring}#proc-kafka-connect-config-str[KafkaConnectors are enabled in the Kafka Connect deployment^]
 * The Cluster Operator is running
 
 .Procedure

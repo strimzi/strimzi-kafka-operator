@@ -12,7 +12,7 @@ When the Cluster Operator is running, it starts to watch for updates of Kafka re
 
 By default, a single replica of the Cluster Operator is deployed. 
 You can add replicas with leader election so that additional Cluster Operators are on standby in case of disruption. 
-For more information, see link:{BookURLUsing}#assembly-using-multiple-cluster-operator-replicas-str[Running multiple Cluster Operator replicas with leader election]. 
+For more information, see link:{BookURLConfiguring}#assembly-using-multiple-cluster-operator-replicas-str[Running multiple Cluster Operator replicas with leader election]. 
 
 //Options for deploying the Cluster Operator
 include::../../modules/deploying/con-deploy-cluster-operator-watch-options.adoc[leveloffset=+1]
