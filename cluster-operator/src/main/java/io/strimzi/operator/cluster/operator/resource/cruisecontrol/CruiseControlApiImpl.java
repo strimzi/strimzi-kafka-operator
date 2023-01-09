@@ -13,18 +13,19 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PemTrustOptions;
 
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
+
+import static io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator.getHttpClientOptions;
 
 /**
  * Implementation of the Cruise Control API client
@@ -34,14 +35,17 @@ public class CruiseControlApiImpl implements CruiseControlApi {
      * Default timeout for the HTTP client (-1 means use the clients default)
      */
     public static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1;
-    private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
+    /**
+     * Default activity logging for the HTTP client
+     */
+    public static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
     private static final String STATUS_KEY = "Status";
 
     private final Vertx vertx;
     private final long idleTimeout;
     private boolean apiSslEnabled;
     private HTTPHeader authHttpHeader;
-    private PemTrustOptions pto;
+    private Secret ccSecret;
 
     /**
      * Constructor
@@ -57,8 +61,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         this.vertx = vertx;
         this.idleTimeout = idleTimeout;
         this.apiSslEnabled = apiSslEnabled;
+        this.ccSecret = ccSecret;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
-        this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(ccSecret, "cruise-control.crt")));
     }
 
     @Override
@@ -66,20 +70,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         return getCruiseControlState(host, port, verbose, null);
     }
 
-    private HttpClientOptions getHttpClientOptions() {
-        if (apiSslEnabled) {
-            return new HttpClientOptions()
-                .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
-                .setSsl(true)
-                .setVerifyHost(true)
-                .setPemTrustOptions(
-                    new PemTrustOptions(pto)
-                );
-        } else {
-            return new HttpClientOptions()
-                    .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
-        }
-    }
 
     private static HTTPHeader generateAuthHttpHeader(String user, String password) {
         String headerName = "Authorization";
@@ -101,15 +91,16 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     @SuppressWarnings("deprecation")
     private Future<CruiseControlResponse> getCruiseControlState(String host, int port, boolean verbose, String userTaskId) {
 
+        HttpClientOptions httpOptions = getHttpClientOptions(true, ccSecret);
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         String path = new PathBuilder(CruiseControlEndpoints.STATE)
                 .withParameter(CruiseControlParameters.JSON, "true")
                 .withParameter(CruiseControlParameters.VERBOSE, String.valueOf(verbose))
                 .build();
 
-        HttpClientOptions options = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
-            httpClient.request(HttpMethod.GET, port, host, path, request -> {
+        return HttpClientUtils.withHttpClientCruiseControl(httpClient, (httpClient1, result) -> {
+            httpClient1.request(HttpMethod.GET, port, host, path, request -> {
                 if (request.succeeded()) {
 
                     if (authHttpHeader != null) {
@@ -236,7 +227,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions options, String userTaskId) {
+    public Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions options, String userTaskId, HttpClient httpClient1) {
 
         if (options == null && userTaskId == null) {
             return Future.failedFuture(
@@ -248,15 +239,13 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withRebalanceParameters(options)
                 .build();
 
-        HttpClientOptions httpOptions = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
+        return HttpClientUtils.withHttpClientCruiseControl(httpClient1, (httpClient, result) -> {
             httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
         });
     }
 
     @Override
-    public Future<CruiseControlRebalanceResponse> addBroker(String host, int port, AddBrokerOptions options, String userTaskId) {
+    public Future<CruiseControlRebalanceResponse> addBroker(String host, int port, AddBrokerOptions options, String userTaskId, HttpClient httpClient) {
         if (options == null && userTaskId == null) {
             return Future.failedFuture(
                     new IllegalArgumentException("Either add broker options or user task ID should be supplied, both were null"));
@@ -267,15 +256,13 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withAddBrokerParameters(options)
                 .build();
 
-        HttpClientOptions httpOptions = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
-            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
+        return HttpClientUtils.withHttpClientCruiseControl(httpClient, (httpClient1, result) -> {
+            httpClient1.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
         });
     }
 
     @Override
-    public Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId) {
+    public Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId, HttpClient httpClient) {
         if (options == null && userTaskId == null) {
             return Future.failedFuture(
                     new IllegalArgumentException("Either remove broker options or user task ID should be supplied, both were null"));
@@ -286,16 +273,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .withRemoveBrokerParameters(options)
                 .build();
 
-        HttpClientOptions httpOptions = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, httpOptions, (httpClient, result) -> {
-            httpClient.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
+        return HttpClientUtils.withHttpClientCruiseControl(httpClient, (httpClient2, result) -> {
+            httpClient2.request(HttpMethod.POST, port, host, path, request -> internalRebalance(host, port, path, userTaskId, request, result));
         });
     }
 
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskId) {
+    public Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskId, HttpClient httpClient) {
 
         PathBuilder pathBuilder = new PathBuilder(CruiseControlEndpoints.USER_TASKS)
                         .withParameter(CruiseControlParameters.JSON, "true")
@@ -307,10 +292,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
         String path = pathBuilder.build();
 
-        HttpClientOptions options = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
-            httpClient.request(HttpMethod.GET, port, host, path, request -> {
+        return HttpClientUtils.withHttpClientCruiseControl(httpClient, (httpClient1, result) -> {
+            httpClient1.request(HttpMethod.GET, port, host, path, request -> {
                 if (request.succeeded()) {
 
                     if (authHttpHeader != null) {
@@ -399,14 +382,12 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     @Override
     @SuppressWarnings("deprecation")
-    public Future<CruiseControlResponse> stopExecution(String host, int port) {
+    public Future<CruiseControlResponse> stopExecution(String host, int port, HttpClient httpClient) {
 
         String path = new PathBuilder(CruiseControlEndpoints.STOP)
                         .withParameter(CruiseControlParameters.JSON, "true").build();
 
-        HttpClientOptions options = getHttpClientOptions();
-
-        return HttpClientUtils.withHttpClient(vertx, options, (httpClient, result) -> {
+        return HttpClientUtils.withHttpClientCruiseControl(httpClient, (httpClient1, result) -> {
             httpClient.request(HttpMethod.POST, port, host, path, request -> {
                 if (request.succeeded()) {
 

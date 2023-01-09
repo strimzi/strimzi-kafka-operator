@@ -4,7 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.net.PemTrustOptions;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -22,6 +29,7 @@ import java.util.function.Consumer;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_CLIENT_ACTIVITY_LOGGING;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -77,6 +85,7 @@ public class CruiseControlClientTest {
     @Test
     public void testCCRebalance(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder().build();
+
         this.ccRebalance(vertx, context, 0, options, CruiseControlEndpoints.REBALANCE,
                 result -> {
                     assertThat(result.getUserTaskId(), is(MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID));
@@ -116,12 +125,17 @@ public class CruiseControlClientTest {
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
+
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         Checkpoint checkpoint = context.checkpoint();
-        client.getUserTaskStatus(HOST, PORT, userTaskID).onComplete(context.succeeding(result -> {
+        client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient).onComplete(context.succeeding(result -> {
             context.verify(() -> assertThat(result.getUserTaskId(), is(MockCruiseControl.USER_TASK_REBALANCE_NO_GOALS_RESPONSE_UTID)));
             context.verify(() -> assertThat(result.getJson().getJsonObject(CruiseControlRebalanceKeys.SUMMARY.getKey()), is(notNullValue())));
+            httpClient.close();
             checkpoint.flag();
         }));
     }
@@ -245,26 +259,33 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, null)
+                client.rebalance(HOST, PORT, (RebalanceOptions) options, null, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, null)
+                client.addBroker(HOST, PORT, (AddBrokerOptions) options, null, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, null)
+                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, null, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
@@ -276,26 +297,33 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, null)
+                client.rebalance(HOST, PORT, (RebalanceOptions) options, null, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, null)
+                client.addBroker(HOST, PORT, (AddBrokerOptions) options, null, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, null)
+                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, null, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
@@ -307,26 +335,33 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(HOST, PORT, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
@@ -338,26 +373,33 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case REBALANCE:
-                client.rebalance(HOST, PORT, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.rebalance(HOST, PORT, (RebalanceOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
+                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR, httpClient)
                         .onComplete(context.succeeding(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
@@ -369,19 +411,25 @@ public class CruiseControlClientTest {
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         Checkpoint checkpoint = context.checkpoint();
         switch (endpoint) {
             case ADD_BROKER:
-                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.addBroker(HOST, PORT, (AddBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR, httpClient)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;
             case REMOVE_BROKER:
-                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR)
+                client.removeBroker(HOST, PORT, (RemoveBrokerOptions) options, MockCruiseControl.BROKERS_NOT_EXIST_ERROR, httpClient)
                         .onComplete(context.failing(result -> context.verify(() -> {
                             assertion.accept(result);
+                            httpClient.close();
                             checkpoint.flag();
                         })));
                 break;

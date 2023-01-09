@@ -39,4 +39,23 @@ public class HttpClientUtils {
                 return Future.failedFuture(error);
             });
     }
+
+    /**
+     * Perform the given operation, which completes the promise, using an HTTP client instance,
+     * and the future for the promise returned.
+     * @param httpClient Any client that should be applied.
+     * @param operation The operation to perform.
+     * @param <T> The type of the result
+     * @return A future which is completed with the result performed by the operation
+     */
+    public static <T> Future<T> withHttpClientCruiseControl(HttpClient httpClient, BiConsumer<HttpClient, Promise<T>> operation) {
+        Promise<T> promise = Promise.promise();
+        operation.accept(httpClient, promise);
+        return promise.future().compose(
+                Future::succeededFuture,
+                error -> {
+                    httpClient.close();
+                    return Future.failedFuture(error);
+                });
+    }
 }

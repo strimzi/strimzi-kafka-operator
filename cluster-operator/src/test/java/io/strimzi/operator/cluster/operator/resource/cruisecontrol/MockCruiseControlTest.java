@@ -4,8 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -53,11 +56,15 @@ public class MockCruiseControlTest {
 
     private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls);
 
         CruiseControlApi client = cruiseControlClientProvider(vertx);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient);
 
         // One interaction is always expected at the end of the test, hence the +1
         Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);
@@ -69,7 +76,7 @@ public class MockCruiseControlTest {
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 expectedInteractions.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient);
             });
         }
 
@@ -106,6 +113,10 @@ public class MockCruiseControlTest {
     @Test
     public void testMockCCServerPendingCallsOverride(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
 
+        HttpClientOptions httpOptions = KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET);
+
+        HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
         CruiseControlApi client = cruiseControlClientProvider(vertx);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
@@ -120,7 +131,7 @@ public class MockCruiseControlTest {
 
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
 
-        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
+        Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient);
 
         for (int i = 1; i <= pendingCalls1; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -129,7 +140,7 @@ public class MockCruiseControlTest {
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 firstPending.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient);
             });
         }
 
@@ -151,7 +162,7 @@ public class MockCruiseControlTest {
             return Future.succeededFuture();
         });
 
-        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, PORT, userTaskID));
+        statusFuture = statusFuture.compose(ignore -> client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient));
 
         for (int i = 1; i <= pendingCalls2; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -160,7 +171,7 @@ public class MockCruiseControlTest {
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
                 secondPending.flag();
-                return client.getUserTaskStatus(HOST, PORT, userTaskID);
+                return client.getUserTaskStatus(HOST, PORT, userTaskID, httpClient);
             });
         }
 

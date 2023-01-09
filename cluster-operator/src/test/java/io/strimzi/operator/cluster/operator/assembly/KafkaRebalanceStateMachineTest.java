@@ -32,6 +32,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpClient;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -182,7 +183,9 @@ public class KafkaRebalanceStateMachineTest {
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
         when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));
 
-        return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
+        HttpClient httpClient =  vertx.createHttpClient(KafkaRebalanceAssemblyOperator.getHttpClientOptions(true, MockCruiseControl.CC_SECRET));
+
+        return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions, httpClient)
                 .compose(result -> {
                     context.verify(() -> {
                         assertThat(result.getStatus().getConditions(), StateMatchers.hasStateInConditions(nextState));

@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
 import io.vertx.core.Future;
+import io.vertx.core.http.HttpClient;
 
 /**
  * Cruise Control REST API interface definition
@@ -44,14 +45,15 @@ public interface CruiseControlApi {
      * @param userTaskId This is the unique ID of a previous rebalance request. If a previous request had not been
      *                   completed when the response was returned then this ID can be used to retrieve the results of that
      *                   request.
+     * @param httpClient An HTTP client instance
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions options, String userTaskId);
+    Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions options, String userTaskId, HttpClient httpClient);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when adding new brokers.
      * This method allows to move replicas from existing brokers to the new ones and avoids to run a full rebalance
-     * across all brokers in the cluster as done by {@link #rebalance(String, int, RebalanceOptions, String)}.
+     * across all brokers in the cluster as done by {@link #rebalance(String, int, RebalanceOptions, String, HttpClient)}.
      *
      * @param host The address of the Cruise Control server.
      * @param port The port the Cruise Control Server is listening on.
@@ -59,9 +61,10 @@ public interface CruiseControlApi {
      * @param userTaskId This is the unique ID of a previous addBroker request. If a previous request had not been
      *                   completed when the response was returned then this ID can be used to retrieve the results of that
      *                   request.
+     * @param httpClient An HTTP client instance
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    Future<CruiseControlRebalanceResponse> addBroker(String host, int port, AddBrokerOptions options, String userTaskId);
+    Future<CruiseControlRebalanceResponse> addBroker(String host, int port, AddBrokerOptions options, String userTaskId, HttpClient httpClient);
 
     /**
      * Send a request to the Cruise Control server to perform a cluster rebalance when removing existing brokers.
@@ -73,9 +76,10 @@ public interface CruiseControlApi {
      * @param userTaskId This is the unique ID of a previous removeBroker request. If a previous request had not been
      *                   completed when the response was returned then this ID can be used to retrieve the results of that
      *                   request.
+     * @param httpClient An HTTP client instance
      * @return A future for the rebalance response from the Cruise Control server containing details of the optimization.
      */
-    Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId);
+    Future<CruiseControlRebalanceResponse> removeBroker(String host, int port, RemoveBrokerOptions options, String userTaskId, HttpClient httpClient);
 
     /**
      *  Get the state of a specific task (e.g. a rebalance) from the Cruise Control server.
@@ -84,9 +88,10 @@ public interface CruiseControlApi {
      * @param port The port the Cruise Control Server is listening on.
      * @param userTaskID This is the unique ID of a previous rebalance request or other task supported by Cruise Control.
      *                   This is used to retrieve the task's current state.
+     * @param httpClient An HTTP client instance.
      * @return A future for the state of the specified task.
      */
-    Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskID);
+    Future<CruiseControlResponse> getUserTaskStatus(String host, int port, String userTaskID, HttpClient httpClient);
 
     /**
      *  Issue a stop command to the Cruise Control server. This will halt any task (e.g. a rebalance) which is currently
@@ -94,8 +99,9 @@ public interface CruiseControlApi {
      *
      * @param host The address of the Cruise Control server.
      * @param port The port the Cruise Control Server is listening on.
+     * @param httpClient An HTTP client instance
      * @return A furture for the response from the Cruise Control server indicating if the stop command was issued.
      */
-    Future<CruiseControlResponse> stopExecution(String host, int port);
+    Future<CruiseControlResponse> stopExecution(String host, int port, HttpClient httpClient);
 }
 

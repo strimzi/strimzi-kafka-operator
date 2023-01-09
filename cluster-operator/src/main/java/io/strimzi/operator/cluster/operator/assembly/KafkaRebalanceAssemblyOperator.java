@@ -61,8 +61,12 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.PemTrustOptions;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -77,6 +81,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_CLIENT_ACTIVITY_LOGGING;
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
@@ -148,7 +153,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_A
  *    |-----------→|               |                   |
  * </code></pre>
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public class KafkaRebalanceAssemblyOperator
        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedNamespacedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
@@ -394,7 +399,7 @@ public class KafkaRebalanceAssemblyOperator
 
     private Future<Void> reconcile(Reconciliation reconciliation, String host,
                                    CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                   KafkaRebalanceState currentState, KafkaRebalanceAnnotation rebalanceAnnotation) {
+                                   KafkaRebalanceState currentState, KafkaRebalanceAnnotation rebalanceAnnotation, HttpClient httpClient) {
 
         LOGGER.infoCr(reconciliation, "Rebalance action from state [{}]", currentState);
 
@@ -419,11 +424,12 @@ public class KafkaRebalanceAssemblyOperator
         try {
             AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
-            return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
+            return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder, httpClient)
                     .compose(desiredStatusAndMap -> {
                         // More events related to resource modification might be queued with a stale state. (potentially updated by the rebalance holding the lock)
                         // Due to possible long rebalancing operations that take the lock for the entire period,
                         // do a new get to retrieve the current resource state.
+                        httpClient.close();
                         return kafkaRebalanceOperator.getAsync(reconciliation.namespace(), reconciliation.name())
                                 .compose(currentKafkaRebalance -> {
                                     if (currentKafkaRebalance != null) {
@@ -492,26 +498,27 @@ public class KafkaRebalanceAssemblyOperator
                                                                          String host, CruiseControlApi apiClient,
                                                                          KafkaRebalance kafkaRebalance, KafkaRebalanceState currentState,
                                                                          KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                                         AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                         AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder,
+                                                                         HttpClient httpClient) {
         switch (currentState) {
             case New:
-                return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+                return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder, httpClient);
             case PendingProposal:
-                return onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onPendingProposal(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder, httpClient);
             case ProposalReady:
-                return onProposalReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onProposalReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder, httpClient);
             case Rebalancing:
-                return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation);
+                return onRebalancing(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, httpClient);
             case Stopped:
-                return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onStop(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder, httpClient);
             case Ready:
                 // Rebalance Complete
-                return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder, httpClient);
             case ReconciliationPaused:
-                return onReconciliationPaused(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+                return onReconciliationPaused(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder, httpClient);
             case NotReady:
                 // Error case
-                return onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+                return onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder, httpClient);
             default:
                 return Future.failedFuture(new RuntimeException("Unexpected state " + currentState));
         }
@@ -754,8 +761,8 @@ public class KafkaRebalanceAssemblyOperator
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onNew(Reconciliation reconciliation,
                                                                         String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                                                        AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
-        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+                                                                        AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder, httpClient);
     }
 
     /**
@@ -775,11 +782,11 @@ public class KafkaRebalanceAssemblyOperator
                                                                              String host, CruiseControlApi apiClient,
                                                                              KafkaRebalance kafkaRebalance,
                                                                              KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                                             AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                             AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
 
         if (shouldRenewRebalance(kafkaRebalance, rebalanceAnnotation)) {
             // CC is activated from the disabled state or the user has fixed the error on the resource and want to 'refresh'
-            return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
+            return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder, httpClient);
         } else {
             // Stay in the current NotReady state
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
@@ -804,9 +811,10 @@ public class KafkaRebalanceAssemblyOperator
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onReconciliationPaused(Reconciliation reconciliation,
                                                                              String host, CruiseControlApi apiClient,
                                                                              KafkaRebalance kafkaRebalance,
-                                                                             AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                             AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder,
+                                                                             HttpClient httpClient) {
 
-        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder, httpClient);
     }
 
     /**
@@ -831,7 +839,7 @@ public class KafkaRebalanceAssemblyOperator
                                                                     String host, CruiseControlApi apiClient,
                                                                     KafkaRebalance kafkaRebalance,
                                                                     KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                                    AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                    AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
         Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p = Promise.promise();
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
             LOGGER.debugCr(reconciliation, "Starting Cruise Control rebalance proposal request timer");
@@ -849,7 +857,7 @@ public class KafkaRebalanceAssemblyOperator
                                     p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, currentKafkaRebalance)));
                                 } else {
                                     requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder,
-                                            currentKafkaRebalance.getStatus().getSessionId())
+                                            currentKafkaRebalance.getStatus().getSessionId(), httpClient)
                                         .onSuccess(rebalanceMapAndStatus -> {
                                             // If the returned status has an optimization result then the rebalance proposal
                                             // is ready, so stop the polling
@@ -916,10 +924,10 @@ public class KafkaRebalanceAssemblyOperator
                                                                       String host, CruiseControlApi apiClient,
                                                                       KafkaRebalance kafkaRebalance,
                                                                       KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                                      AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                      AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
         if (Annotations.booleanAnnotation(kafkaRebalance, ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, false)) {
             LOGGER.infoCr(reconciliation, "Auto-approval set on the KafkaRebalance resource");
-            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder);
+            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder, httpClient);
         } else {
             switch (rebalanceAnnotation) {
                 case none:
@@ -927,10 +935,10 @@ public class KafkaRebalanceAssemblyOperator
                     return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), StatusUtils.validate(reconciliation, kafkaRebalance)))));
                 case approve:
                     LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.approve);
-                    return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder);
+                    return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, false, rebalanceOptionsBuilder, httpClient);
                 case refresh:
                     LOGGER.debugCr(reconciliation, "Annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh);
-                    return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+                    return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder, httpClient);
                 default:
                     LOGGER.warnCr(reconciliation, "Ignore annotation {}={}", ANNO_STRIMZI_IO_REBALANCE, kafkaRebalance.getMetadata().getAnnotations().get(ANNO_STRIMZI_IO_REBALANCE));
                     Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
@@ -961,7 +969,7 @@ public class KafkaRebalanceAssemblyOperator
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onRebalancing(Reconciliation reconciliation,
                                                                                 String host, CruiseControlApi apiClient,
                                                                                 KafkaRebalance kafkaRebalance,
-                                                                                KafkaRebalanceAnnotation rebalanceAnnotation) {
+                                                                                KafkaRebalanceAnnotation rebalanceAnnotation, HttpClient httpClient) {
         Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p = Promise.promise();
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
             LOGGER.infoCr(reconciliation, "Starting Cruise Control rebalance user task status timer");
@@ -983,7 +991,7 @@ public class KafkaRebalanceAssemblyOperator
                                 if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
                                     LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task");
                                     vertx.cancelTimer(t);
-                                    apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
+                                    apiClient.stopExecution(host, CruiseControl.REST_API_PORT, httpClient)
                                         .onSuccess(r -> p.complete(buildRebalanceStatus(null, KafkaRebalanceState.Stopped, StatusUtils.validate(reconciliation, kafkaRebalance))))
                                         .onFailure(e -> {
                                             LOGGER.errorCr(reconciliation, "Cruise Control stopping execution failed", e.getCause());
@@ -993,7 +1001,7 @@ public class KafkaRebalanceAssemblyOperator
                                     LOGGER.infoCr(reconciliation, "Getting Cruise Control rebalance user task status");
                                     Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
                                     validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Rebalancing, rebalanceAnnotation(currentKafkaRebalance), kafkaRebalance);
-                                    apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId)
+                                    apiClient.getUserTaskStatus(host, CruiseControl.REST_API_PORT, sessionId, httpClient)
                                         .onSuccess(cruiseControlResponse -> {
                                             JsonObject taskStatusJson = cruiseControlResponse.getJson();
                                             CruiseControlUserTaskStatus taskStatus = CruiseControlUserTaskStatus.lookup(taskStatusJson.getString("Status"));
@@ -1091,9 +1099,9 @@ public class KafkaRebalanceAssemblyOperator
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onStop(Reconciliation reconciliation,
                                                                  String host, CruiseControlApi apiClient,
                                                                  KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                                 AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                 AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
-            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder, httpClient);
         } else {
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Stopped, rebalanceAnnotation, kafkaRebalance);
@@ -1118,9 +1126,9 @@ public class KafkaRebalanceAssemblyOperator
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onReady(Reconciliation reconciliation,
                                                                     String host, CruiseControlApi apiClient,
                                                                     KafkaRebalance kafkaRebalance, KafkaRebalanceAnnotation rebalanceAnnotation,
-                                                                    AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
+                                                                    AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
-            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
+            return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder, httpClient);
         } else {
             Set<Condition> conditions = StatusUtils.validate(reconciliation, kafkaRebalance);
             validateAnnotation(reconciliation, conditions, KafkaRebalanceState.Ready, rebalanceAnnotation, kafkaRebalance);
@@ -1208,6 +1216,10 @@ public class KafkaRebalanceAssemblyOperator
                                 boolean apiSslEnabled = ccConfig.isApiSslEnabled();
                                 CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
+                                HttpClientOptions httpOptions = getHttpClientOptions(apiSslEnabled, ccSecret);
+
+                                HttpClient httpClient = vertx.createHttpClient(httpOptions);
+
                                 // get latest KafkaRebalance state as it may have changed
                                 return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                                         .compose(currentKafkaRebalance -> {
@@ -1226,23 +1238,44 @@ public class KafkaRebalanceAssemblyOperator
                                             // Check annotation
                                             KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(currentKafkaRebalance);
                                             return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
-                                                    apiClient, currentKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
+                                                    apiClient, currentKafkaRebalance, currentState, rebalanceAnnotation, httpClient).mapEmpty();
 
                                         }, exception -> Future.failedFuture(exception).mapEmpty());
                             });
                 }, exception -> updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception).mapEmpty());
     }
 
+    /**
+     * Creates Http Client options
+     * @param apiSslEnabled    API ssl
+     * @param ccSecret         Cruise Control secret
+     * @return A future which is completed with the result performed by the operation
+     */
+    public static HttpClientOptions getHttpClientOptions(boolean apiSslEnabled, Secret ccSecret) {
+
+        HttpClientOptions httpOptions = new HttpClientOptions();
+
+        if (apiSslEnabled) {
+            httpOptions.setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
+                    .setSsl(true)
+                    .setVerifyHost(true)
+                    .setPemTrustOptions(new PemTrustOptions(new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(ccSecret, "cruise-control.crt")))));
+        } else {
+            httpOptions.setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);
+        }
+        return httpOptions;
+    }
+
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation,
                                                           String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
-                                                          boolean dryrun, AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder) {
-        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, dryrun, rebalanceOptionsBuilder, null);
+                                                          boolean dryrun, AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, HttpClient httpClient) {
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, dryrun, rebalanceOptionsBuilder, null, httpClient);
     }
 
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation, String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
                                                                                    boolean dryrun,
-                                                                                   AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, String userTaskID) {
+                                                                                   AbstractRebalanceOptions.AbstractRebalanceOptionsBuilder<?, ?> rebalanceOptionsBuilder, String userTaskID, HttpClient httpClient) {
 
         LOGGER.infoCr(reconciliation, "Requesting Cruise Control rebalance [dryrun={}]", dryrun);
         rebalanceOptionsBuilder.withVerboseResponse();
@@ -1257,13 +1290,13 @@ public class KafkaRebalanceAssemblyOperator
         Future<CruiseControlRebalanceResponse> future;
         switch (mode) {
             case ADD_BROKERS:
-                future = apiClient.addBroker(host, CruiseControl.REST_API_PORT, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.addBroker(host, CruiseControl.REST_API_PORT, ((AddBrokerOptions.AddBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID, httpClient);
                 break;
             case REMOVE_BROKERS:
-                future = apiClient.removeBroker(host, CruiseControl.REST_API_PORT, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.removeBroker(host, CruiseControl.REST_API_PORT, ((RemoveBrokerOptions.RemoveBrokerOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID, httpClient);
                 break;
             default:
-                future = apiClient.rebalance(host, CruiseControl.REST_API_PORT, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID);
+                future = apiClient.rebalance(host, CruiseControl.REST_API_PORT, ((RebalanceOptions.RebalanceOptionsBuilder) rebalanceOptionsBuilder).build(), userTaskID, httpClient);
                 break;
         }
         return future.map(response -> handleRebalanceResponse(reconciliation, kafkaRebalance, dryrun, response));
