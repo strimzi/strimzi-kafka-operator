@@ -1,4 +1,4 @@
-PROJECT_NAME=kafka-agent
+PROJECT_NAME=tracing-agent
 
 docker_build: java_install
 docker_push:
