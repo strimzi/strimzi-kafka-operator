@@ -32,8 +32,8 @@ public class KafkaAgent {
     // KafkaYammerMetrics class in Kafka 3.2-
     private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
-    private static final Integer BROKER_RUNNING_STATE = 3;
-    private static final Integer BROKER_UNKNOWN_STATE = 127;
+    private static final byte BROKER_RUNNING_STATE = 3;
+    private static final byte BROKER_UNKNOWN_STATE = 127;
 
     private final File sessionConnectedFile;
     private final File brokerReadyFile;
@@ -162,16 +162,9 @@ public class KafkaAgent {
             boolean handleBrokerState() {
                 LOGGER.trace("Polling {}", brokerStateName);
                 boolean ready = false;
-                Object observedState = brokerState.value();
+                byte observedState = (byte) brokerState.value();
 
-                boolean stateIsRunning = false;
-                if (observedState instanceof Integer) {
-                    stateIsRunning = BROKER_RUNNING_STATE.compareTo((Integer) observedState) <= 0 && !BROKER_UNKNOWN_STATE.equals(observedState);
-                }
-                if (observedState instanceof Byte) {
-                    int intValue = ((Byte) observedState).intValue();
-                    stateIsRunning = BROKER_RUNNING_STATE <= intValue && !BROKER_UNKNOWN_STATE.equals(intValue);
-                }
+                boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
                 if (stateIsRunning) {
                     try {
                         LOGGER.trace("Running as server according to {} => ready", brokerStateName);
@@ -180,9 +173,8 @@ public class KafkaAgent {
                         LOGGER.error("Could not write readiness file {}", brokerReadyFile, e);
                     }
                     ready = true;
-
                 } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, observedState, observedState.getClass());
+                    LOGGER.debug("Metric {} = {}", brokerStateName, observedState);
                 }
                 return ready;
             }
