@@ -101,7 +101,7 @@ public class SetupKeycloak {
             try {
                 LOGGER.info("Importing realm from file: {}", path);
                 String jsonRealm = new JsonObject(Files.readString(path, StandardCharsets.UTF_8)).encode();
-                String result = KeycloakUtils.createRealm(namespaceName, "https://" + keycloakInstance.getHttpsUri(), token, jsonRealm);
+                String result = KeycloakUtils.importRealm(namespaceName, "https://" + keycloakInstance.getHttpsUri(), token, jsonRealm);
 
                 // if KeycloakRealm is successfully imported, the return contains just empty String
                 if (!result.isEmpty()) {

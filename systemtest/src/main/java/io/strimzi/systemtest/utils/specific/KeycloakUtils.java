@@ -175,14 +175,14 @@ public class KeycloakUtils {
     }
 
     /**
-     * Creates Keycloak realm
+     * Imports Keycloak realm
      * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param realmData realm data/configuration in JSON format
      * @return result of creation
      */
-    public static String createRealm(String namespaceName, String baseURI, String token, String realmData) {
+    public static String importRealm(String namespaceName, String baseURI, String token, String realmData) {
         String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
 
         return cmdKubeClient(namespaceName).execInPod(
