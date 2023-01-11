@@ -1,0 +1,450 @@
+{
+  "realm": "internal",
+  "accessTokenLifespan": 300,
+  "ssoSessionMaxLifespan": 32140800,
+  "ssoSessionIdleTimeout": 32140800,
+  "enabled": true,
+  "sslRequired": "external",
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice-password"
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ],
+      "clientRoles": {
+        "kafka": [
+          "kafka-topic:superapp_*:owner"
+        ]
+      }
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin-password"
+        }
+      ],
+      "realmRoles": [
+        "admin"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ],
+        "kafka": [
+          "kafka-admin"
+        ]
+      }
+    },
+    {
+      "username": "service-account-kafka-broker",
+      "enabled": true,
+      "email": "service-account-kafka-broker@placeholder.org",
+      "serviceAccountClientId": "kafka-broker",
+      "clientRoles": {
+        "kafka": [
+          "kafka-admin"
+        ]
+      }
+    },
+    {
+      "username": "service-account-kafka-producer",
+      "enabled": true,
+      "email": "service-account-kafka-producer@placeholder.org",
+      "serviceAccountClientId": "kafka-producer"
+    },
+    {
+      "username": "service-account-kafka-consumer",
+      "enabled": true,
+      "email": "service-account-kafka-consumer@placeholder.org",
+      "serviceAccountClientId": "kafka-consumer"
+    },
+    {
+      "username": "service-account-kafka-connect",
+      "enabled": true,
+      "email": "service-account-kafka-connect@placeholder.org",
+      "serviceAccountClientId": "kafka-connect"
+    },
+    {
+      "username": "service-account-kafka-bridge",
+      "enabled": true,
+      "email": "service-account-kafka-bridge@placeholder.org",
+      "serviceAccountClientId": "kafka-bridge"
+    },
+    {
+      "username": "service-account-kafka-mirror-maker",
+      "enabled": true,
+      "email": "service-account-kafka-mirror-maker@placeholder.org",
+      "serviceAccountClientId": "kafka-mirror-maker"
+    },
+    {
+      "username": "service-account-kafka-mirror-maker-2",
+      "enabled": true,
+      "email": "service-account-kafka-mirror-maker-2@placeholder.org",
+      "serviceAccountClientId": "kafka-mirror-maker-2"
+    },
+    {
+      "username": "service-account-hello-world-producer",
+      "enabled": true,
+      "email": "service-account-hello-world-producer@placeholder.org",
+      "serviceAccountClientId": "hello-world-producer"
+    },
+    {
+      "username": "service-account-hello-world-consumer",
+      "enabled": true,
+      "email": "service-account-hello-world-consumer@placeholder.org",
+      "serviceAccountClientId": "hello-world-consumer"
+    },
+    {
+      "username": "service-account-hello-world-streams",
+      "enabled": true,
+      "email": "service-account-hello-world-streams@placeholder.org",
+      "serviceAccountClientId": "hello-world-streams"
+    },
+    {
+      "username": "service-account-kafka-audience-producer",
+      "enabled": true,
+      "email": "service-account-kafka-audience-producer@placeholder.org",
+      "serviceAccountClientId": "kafka-audience-producer"
+    },
+    {
+      "username": "service-account-kafka-audience-consumer",
+      "enabled": true,
+      "email": "service-account-kafka-audience-consumer@placeholder.org",
+      "serviceAccountClientId": "kafka-audience-consumer"
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator privileges"
+      }
+    ],
+    "client": {
+      "kafka": [
+        {
+          "name": "kafka-admin",
+          "description": "Kafka administrator - can perform any action on any Kafka resource",
+          "clientRole": true
+        },
+        {
+          "name": "kafka-topic:superapp_*:owner",
+          "description": "Owner of topics that begin with superapp_ prefix. Can perform any operation on these topics.",
+          "clientRole": true
+        },
+        {
+          "name": "kafka-topic:superapp_*:consumer",
+          "description": "Consumer of topics that begin with superapp_ prefix. Can perform READ, and DESCRIBE on these topics.",
+          "clientRole": true
+        }
+      ]
+    }
+  },
+  "scopeMappings": [
+    {
+      "client": "kafka-producer",
+      "roles": [
+        "offline_access"
+      ]
+    },
+    {
+      "client": "kafka-consumer",
+      "roles": [
+        "offline_access"
+      ]
+    },
+    {
+      "clientScope": "offline_access",
+      "roles": [
+        "offline_access"
+      ]
+    }
+  ],
+  "clientScopeMappings": {
+    "kafka": [
+      {
+        "client": "kafka-broker",
+        "roles": [
+          "kafka-admin"
+        ]
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "kafka",
+      "enabled": true,
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "consentRequired": false,
+      "fullScopeAllowed": false
+    },
+    {
+      "clientId": "kafka-broker",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-broker-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience for kafka-component",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "kafka-component",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "kafka-producer",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-producer-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "36000"
+      }
+    },
+    {
+      "clientId": "kafka-consumer",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-consumer-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "kafka-audience-producer",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-audience-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "36000"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience for kafka-component",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "kafka-component",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "kafka-audience-consumer",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-audience-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      },
+      "protocolMappers": [
+        {
+          "name": "audience for kafka-component",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "kafka-component",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "hello-world-producer",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "hello-world-producer-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "36000"
+      }
+    },
+    {
+      "clientId": "hello-world-consumer",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "hello-world-consumer-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "hello-world-streams",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "hello-world-streams-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "kafka-connect",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-connect-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "kafka-bridge",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-bridge-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "kafka-mirror-maker",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-mirror-maker-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "kafka-mirror-maker-2",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-mirror-maker-2-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    }
+  ]
+}
+
+
+
+

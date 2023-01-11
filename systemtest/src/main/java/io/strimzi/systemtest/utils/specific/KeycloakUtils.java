@@ -4,54 +4,20 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.strimzi.systemtest.Constants;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.Exec;
-import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Level;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KeycloakUtils {
 
-    private static final Logger LOGGER = LogManager.getLogger(KeycloakUtils.class);
-
-    public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
-    public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
-
     public final static String LATEST_KEYCLOAK_VERSION = "15.0.2";
     public final static String OLD_KEYCLOAK_VERSION = "11.0.1";
 
 
     private KeycloakUtils() {}
-
-    public static void deployKeycloak(final String deploymentNamespace, final String watchNamespace) {
-        LOGGER.info("Prepare Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
-
-        // This is needed because from time to time the first try fails on Azure
-        TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
-            ExecResult result = Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
-
-            if (!result.out().contains("All realms were successfully imported")) {
-                LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
-                return false;
-            }
-            return  true;
-        });
-
-        LOGGER.info("Keycloak in namespace {} is ready", deploymentNamespace);
-    }
-
-    public static void deleteKeycloak(final String deploymentNamespace, final String watchNamespace) {
-        LOGGER.info("Teardown Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
-        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, getValidKeycloakVersion(), watchNamespace);
-    }
 
     /**
      * Returns token from Keycloak API
@@ -206,6 +172,30 @@ public class KeycloakUtils {
             "-d", policy.toString(),
             "-H", "Content-Type: application/json"
         ).out();
+    }
+
+    /**
+     * Imports Keycloak realm
+     * @param namespaceName namespace name
+     * @param baseURI base uri for accessing Keycloak API
+     * @param token admin token
+     * @param realmData realm data/configuration in JSON format
+     * @return result of creation
+     */
+    public static String importRealm(String namespaceName, String baseURI, String token, String realmData) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+
+        return cmdKubeClient(namespaceName).execInPod(
+                coPodName,
+                "curl",
+                "--insecure",
+                "-X",
+                "POST",
+                "-H", "Content-Type: application/json",
+                "-d", realmData,
+                baseURI + "/auth/admin/realms",
+                "-H", "Authorization: Bearer " + token
+                ).out().trim();
     }
 
     public static String getValidKeycloakVersion() {

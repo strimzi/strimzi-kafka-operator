@@ -37,13 +37,11 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -492,15 +490,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, OAUTH_CLIENT_NAME).build());
     }
-
-    @AfterAll
-    void tearDown(ExtensionContext extensionContext) throws Exception {
-        // delete keycloak before namespace
-        KeycloakUtils.deleteKeycloak(clusterOperator.getDeploymentNamespace(), clusterOperator.getDeploymentNamespace());
-        // delete namespace etc.
-        super.afterAllMayOverride(extensionContext);
-    }
-
 }
 
 

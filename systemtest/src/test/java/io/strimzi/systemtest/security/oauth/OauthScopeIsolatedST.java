@@ -25,11 +25,9 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.Level;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -262,13 +260,5 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
                 .endKafka()
             .endSpec()
             .build());
-    }
-
-    @AfterAll
-    void tearDown(ExtensionContext extensionContext) throws Exception {
-        // delete keycloak before namespace
-        KeycloakUtils.deleteKeycloak(clusterOperator.getDeploymentNamespace(), clusterOperator.getDeploymentNamespace());
-        // delete namespace etc.
-        super.afterAllMayOverride(extensionContext);
     }
 }

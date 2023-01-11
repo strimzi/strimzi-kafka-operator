@@ -33,7 +33,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
-import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -42,7 +41,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -518,13 +516,5 @@ public class OauthPasswordGrantsIsolatedST extends OauthAbstractST {
             .build());
 
         SecretUtils.createSecret(clusterOperator.getDeploymentNamespace(), ALICE_SECRET, ALICE_PASSWORD_KEY, "alice-password");
-    }
-
-    @AfterAll
-    void tearDown(ExtensionContext extensionContext) throws Exception {
-        // delete keycloak before namespace
-        KeycloakUtils.deleteKeycloak(clusterOperator.getDeploymentNamespace(), clusterOperator.getDeploymentNamespace());
-        // delete namespace etc.
-        super.afterAllMayOverride(extensionContext);
     }
 }

@@ -1,0 +1,197 @@
+{
+  "realm": "scope-test",
+  "accessTokenLifespan": 2592000,
+  "ssoSessionMaxLifespan": 32140800,
+  "ssoSessionIdleTimeout": 32140800,
+  "enabled": true,
+  "sslRequired": "external",
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin-password"
+        }
+      ],
+      "realmRoles": [
+        "admin"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ],
+        "kafka": [
+          "kafka-admin"
+        ]
+      }
+    },
+    {
+      "username": "service-account-kafka-broker",
+      "enabled": true,
+      "email": "service-account-kafka-broker@placeholder.org",
+      "serviceAccountClientId": "kafka-broker",
+      "clientRoles": {
+        "kafka" : ["kafka-admin"]
+      }
+    },
+    {
+      "username": "service-account-kafka-client",
+      "enabled": true,
+      "serviceAccountClientId": "kafka-client",
+      "realmRoles": [
+        "default-roles-audience"
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User privileges"
+      },
+      {
+        "name": "admin",
+        "description": "Administrator privileges"
+      }
+    ],
+    "client": {
+      "kafka": [],
+      "kafka-client": []
+    }
+  },
+  "scopeMappings": [
+    {
+      "client": "kafka-broker",
+      "roles": [
+        "offline_access"
+      ]
+    },
+    {
+      "client": "kafka-client",
+      "roles": [
+        "offline_access"
+      ]
+    },
+    {
+      "clientScope": "offline_access",
+      "roles": [
+        "offline_access"
+      ]
+    }
+  ],
+  "clientScopeMappings": {
+    "kafka": [
+      {
+        "client": "kafka-broker",
+        "roles": [
+          "kafka-admin"
+        ]
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "test",
+      "description": "Custom test scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "offline_access",
+      "description": "OpenID Connect built-in scope: offline_access",
+      "protocol": "openid-connect",
+      "attributes": {
+        "consent.screen.text": "${offlineAccessScopeConsentText}",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "profile",
+      "description": "OpenID Connect built-in scope: profile",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "${profileScopeConsentText}"
+      },
+      "protocolMappers": [
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-property-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "username",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "kafka",
+      "enabled": true,
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "consentRequired" : false,
+      "fullScopeAllowed" : false
+    },
+    {
+      "clientId": "kafka-broker",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-broker-secret",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "consentRequired" : false,
+      "fullScopeAllowed" : false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      }
+    },
+    {
+      "clientId": "kafka-client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "kafka-client-secret",
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "attributes": {
+        "access.token.lifespan": "32140800"
+      },
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "profile"
+      ],
+      "optionalClientScopes": [
+        "test",
+        "offline_access"
+      ]
+    }
+  ]
+}
