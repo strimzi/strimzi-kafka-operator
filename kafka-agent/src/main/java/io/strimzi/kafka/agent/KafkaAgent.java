@@ -32,8 +32,11 @@ public class KafkaAgent {
     // KafkaYammerMetrics class in Kafka 3.2-
     private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
+    private static final byte BROKER_RUNNING_STATE = 3;
+    private static final byte BROKER_UNKNOWN_STATE = 127;
+
     private final File sessionConnectedFile;
-    private File brokerReadyFile;
+    private final File brokerReadyFile;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private MetricName sessionStateName;
@@ -159,11 +162,10 @@ public class KafkaAgent {
             boolean handleBrokerState() {
                 LOGGER.trace("Polling {}", brokerStateName);
                 boolean ready = false;
-                Integer running = Integer.valueOf(3);
-                Object value = brokerState.value();
+                byte observedState = (byte) brokerState.value();
 
-                if ((value instanceof Integer && running.equals(value))
-                        || (value instanceof Byte && running.equals(((Byte) value).intValue()))) {
+                boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
+                if (stateIsRunning) {
                     try {
                         LOGGER.trace("Running as server according to {} => ready", brokerStateName);
                         touch(brokerReadyFile);
@@ -171,9 +173,8 @@ public class KafkaAgent {
                         LOGGER.error("Could not write readiness file {}", brokerReadyFile, e);
                     }
                     ready = true;
-
                 } else if (i++ % 60 == 0) {
-                    LOGGER.debug("Metric {} = {} (type: {})", brokerStateName, value, value.getClass());
+                    LOGGER.debug("Metric {} = {}", brokerStateName, observedState);
                 }
                 return ready;
             }

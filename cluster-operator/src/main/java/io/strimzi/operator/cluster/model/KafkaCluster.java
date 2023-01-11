@@ -1656,8 +1656,7 @@ public class KafkaCluster extends AbstractModel {
                         .endExec().build())
                 .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
                         .withNewExec()
-                            // The kafka-agent will create /var/opt/kafka/kafka-ready in the container
-                            .withCommand("test", "-f", "/var/opt/kafka/kafka-ready")
+                            .withCommand("/opt/kafka/kafka_readiness.sh")
                         .endExec().build())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))

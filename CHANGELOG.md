@@ -12,6 +12,7 @@
 * Kafka Exporter support for `Recreate` deployment strategy
 * `ImageStream` validation for Kafka Connect builds on OpenShift
 * Support for configuring the metadata for the Role / RoleBinding of Entity Operator
+* Add liveness and readiness probes specifically for nodes running in KRaft combined mode
 
 ### Changes, deprecations and removals
 
