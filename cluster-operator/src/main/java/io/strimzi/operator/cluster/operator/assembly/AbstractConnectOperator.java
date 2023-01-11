@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.AutoRestartStatus;
+import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -613,8 +614,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
+    /**
+     * Handles auto-restarting of the connectors and managing the auto-restart status. It checks that current state of
+     * the connector and its tasks. If it is failing, it will restart them in periodic intervals with backoff. If the connector is stable after the restart, it resets that auto-restart status.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param host              Kafka Connect host
+     * @param apiClient         Kafka Connect REST API client
+     * @param connectorName     Name of the connector
+     * @param connectorSpec     Spec of the connector
+     * @param status            The new/future status of the connector
+     * @param resource          The custom resource used to get the existing status of the connector
+     *
+     * @return  Future with connector status and conditions which completes when the auto-restart is handled
+     */
     @SuppressWarnings({ "rawtypes" })
-    private  Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
+    /* test */ Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
         JsonObject statusResultJson = new JsonObject(status.statusResult);
         if (connectorSpec.getAutoRestart() != null && connectorSpec.getAutoRestart().isEnabled()) {
             return getPreviousKafkaConnectorStatus(connectorOperator, resource)
@@ -625,25 +640,35 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                      return Future.succeededFuture(previousStatus.getAutoRestart());
                  })
                  .compose(previousAutoRestartStatus -> {
-                     if (shouldAutoRestart(previousAutoRestartStatus, statusResultJson)) {
-                         LOGGER.debugCr(reconciliation, "Auto restarting connector {}", connectorName);
-                         return apiClient.restart(host, port, connectorName, true, true)
-                             .compose(
-                                 statusResult -> {
-                                     status.statusResult = statusResult;
-                                     status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
-                                     return  Future.succeededFuture(status);
-                                 },
-                                 throwable -> {
-                                     status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
-                                     String message = "Failed to auto restart for the " + status.autoRestart.getCount() + " time(s) connector  " + connectorName + ". " + throwable.getMessage();
-                                     LOGGER.warnCr(reconciliation, message);
-                                     return Future.succeededFuture(status);
-                                 });
+                     boolean needsRestart = connectorHasFailed(statusResultJson) || failedTaskIds(statusResultJson).size() > 0;
+
+                     if (needsRestart)    {
+                         // Connector or task failed and we should check it for auto-restart
+                         if (shouldAutoRestart(previousAutoRestartStatus))    {
+                             // There are failures, and it is a time to restart the connector now
+                             return autoRestartConnector(reconciliation, host, apiClient, connectorName, status, previousAutoRestartStatus);
+                         } else {
+                             // There are failures, but the next restart should happen only later => keep the original status
+                             status.autoRestart = new AutoRestartStatusBuilder(previousAutoRestartStatus).build();
+                             return Future.succeededFuture(status);
+                         }
                      } else {
-                         // keep previous auto restart status
-                         status.autoRestart = previousAutoRestartStatus;
-                         return Future.succeededFuture(status);
+                         // Connector and tasks are not failed
+                         if (previousAutoRestartStatus != null) {
+                             if (shouldResetAutoRestartStatus(previousAutoRestartStatus))    {
+                                 // The connector is not failing now for some time => time to reset the auto-restart status
+                                 LOGGER.infoCr(reconciliation, "Resetting the auto-restart status of connector {} ", connectorName);
+                                 status.autoRestart = null;
+                                 return Future.succeededFuture(status);
+                             } else {
+                                 // The connector is not failing, but it is not sure yet if it is stable => keep the original status
+                                 status.autoRestart = new AutoRestartStatusBuilder(previousAutoRestartStatus).build();
+                                 return Future.succeededFuture(status);
+                             }
+                         } else {
+                             // No failures and no need to reset the previous auto.restart state => nothing to do
+                             return Future.succeededFuture(status);
+                         }
                      }
                  });
         } else {
@@ -652,29 +677,89 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Connector or tasks failed should only restart at minute 0, 2, 6, 12, 20 and 30
+     * Restarts the connector and updates the auto-restart status.
+     *
+     * @param reconciliation                Reconciliation marker
+     * @param host                          Kafka Connect host
+     * @param apiClient                     Kafka Connect REST API client
+     * @param connectorName                 Name of the connector
+     * @param status                        The new/future status of the connector
+     * @param previousAutoRestartStatus     Previous auto-restart status used to generate the new status (increment the restart counter etc.)
+
+     * @return  Future with connector status and conditions which completes when the connector is restarted
+     */
+    private Future<ConnectorStatusAndConditions> autoRestartConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, ConnectorStatusAndConditions status, AutoRestartStatus previousAutoRestartStatus) {
+        LOGGER.infoCr(reconciliation, "Auto restarting connector {}", connectorName);
+        return apiClient.restart(host, port, connectorName, true, true)
+                .compose(
+                        statusResult -> {
+                            LOGGER.infoCr(reconciliation, "Restarted connector {} ", connectorName);
+                            status.statusResult = statusResult;
+                            status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
+                            return  Future.succeededFuture(status);
+                        },
+                        throwable -> {
+                            status.autoRestart = StatusUtils.incrementAutoRestartStatus(previousAutoRestartStatus);
+                            String message = "Failed to auto restart for the " + status.autoRestart.getCount() + " time(s) connector  " + connectorName + ". " + throwable.getMessage();
+                            LOGGER.warnCr(reconciliation, message);
+                            return Future.succeededFuture(status);
+                        });
+    }
+
+    /**
+     * Connector or tasks failed should only restart at minute 0, 2, 6, 12, 20, 30 and 42. This method checks if there
+     * is time for another restart.
      *
      * @param autoRestartStatus     Status field with auto-restart status
      *
-     * @return true if the connector should be auto-restarted
+     * @return  True if the connector should be auto-restarted right now. False otherwise.
      */
-    boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus, JsonObject statusResult) {
-        if (connectorHasFailed(statusResult) || failedTaskIds(statusResult).size() > 0) {
-            if (autoRestartStatus == null
-                    || autoRestartStatus.getLastRestartTimestamp() == null) {
-                // If there is no previous auto.restart status or timestamp, we always restart it
-                return true;
-            } else {
-                // If the status of the previous restart is present, we calculate if it is time for another restart
-                var count = autoRestartStatus.getCount();
-                var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
-
-                // n^2 + n
-                var nextRestart = count * count + count;
-
-                return count < 7 && minutesSinceLastRestart >= nextRestart;
-            }
+    /* test */ boolean shouldAutoRestart(AutoRestartStatus autoRestartStatus) {
+        if (autoRestartStatus == null
+                || autoRestartStatus.getLastRestartTimestamp() == null) {
+            // If there is no previous auto.restart status or timestamp, we always restart it
+            return true;
         } else {
+            // If the status of the previous restart is present, we calculate if it is time for another restart
+            var count = autoRestartStatus.getCount();
+            var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
+
+            return count < 7 && minutesSinceLastRestart >= autoRestartBackOffInterval(count);
+        }
+    }
+
+    /**
+     * Calculates the back-off interval for auto-restarting the connectors. It is calculated as (n^2 + n) where n is the
+     * number of previous restarts. As a result, the restarts should be done after 0, 2, 6, 12, 20, 30 and 42 minutes
+     * (there are always only up to 7 restarts).
+     *
+     * @param restartCount  Number of restarts already applied to the connector
+     *
+     * @return  Number of minutes after which the next restart should happen
+     */
+    private int autoRestartBackOffInterval(int restartCount)    {
+        return restartCount * restartCount + restartCount;
+    }
+
+    /**
+     * Checks whether the connector is stable for long enough after the previous restart to reset the auto-restart
+     * counters. Normally, this follows the same backoff intervals as the restarts. For example, after 4 restarts, the
+     * connector needs to be running for 20 minutes to be considered stable.
+     *
+     * @param autoRestartStatus     Status field with auto-restart status
+     *
+     * @return  True if the previous auto-restart status of the connector should be reset to 0. False otherwise.
+     */
+    /* test */ boolean shouldResetAutoRestartStatus(AutoRestartStatus autoRestartStatus) {
+        if (autoRestartStatus != null
+                && autoRestartStatus.getLastRestartTimestamp() != null
+                && autoRestartStatus.getCount() > 0) {
+            // There are previous auto-restarts => we check if it is time to reset the status
+            long minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
+
+            return minutesSinceLastRestart > autoRestartBackOffInterval(autoRestartStatus.getCount());
+        } else {
+            // There are no previous restarts => nothing to reset
             return false;
         }
     }
@@ -812,11 +897,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         ConnectorStatusAndConditions(Map<String, Object> statusResult, List<Condition> conditions) {
-            this(statusResult, Collections.emptyList(), conditions, new AutoRestartStatus());
+            this(statusResult, Collections.emptyList(), conditions, null);
         }
 
         ConnectorStatusAndConditions(Map<String, Object> statusResult) {
-            this(statusResult, Collections.emptyList(), Collections.emptyList(), new AutoRestartStatus());
+            this(statusResult, Collections.emptyList(), Collections.emptyList(), null);
         }
     }
 
