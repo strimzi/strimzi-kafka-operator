@@ -399,9 +399,9 @@ public class KafkaRebalanceAssemblyOperator
 
 
         if (kafkaRebalance != null && kafkaRebalance.getStatus() != null
-                && Objects.equals(rebalanceStateConditionType(kafkaRebalance.getStatus()), "Ready")
+                && "Ready".equals(rebalanceStateConditionType(kafkaRebalance.getStatus()))
                 && rawRebalanceAnnotation(kafkaRebalance) == null) {
-            LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the  `refresh` annotation to ask for a new rebalance request", currentState);
+            LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the  `refresh` annotation to ask for a new rebalance request");
         } else {
                 LOGGER.infoCr(reconciliation, "Rebalance action is performed and KafkaRebalance resource is currently in [{}] state", currentState);
         }
@@ -442,7 +442,7 @@ public class KafkaRebalanceAssemblyOperator
                                                     String message = "";
                                                     if (currentKafkaRebalance.getStatus() != null
                                                             && updatedKafkaRebalance.getStatus() != null
-                                                            && !Objects.equals(rebalanceStateConditionType(currentKafkaRebalance.getStatus()), rebalanceStateConditionType(updatedKafkaRebalance.getStatus()))) {
+                                                            && !rebalanceStateConditionType(currentKafkaRebalance.getStatus()).equals(rebalanceStateConditionType(updatedKafkaRebalance.getStatus()))) {
                                                         message = "KafkaRebalance state is now updated to [{}]";
                                                     }
                                                     if (rawRebalanceAnnotation(updatedKafkaRebalance) != null) {
