@@ -376,7 +376,7 @@
             <id>azp_kafka_oauth</id>
             <properties>
                 <skipTests>false</skipTests>
-                <groups>regression</groups>
+                <groups>regression,kafkasmoke</groups>
                 <it.test>
                     kafka/**/*ST,
                     !kafka/listeners/*ST,
