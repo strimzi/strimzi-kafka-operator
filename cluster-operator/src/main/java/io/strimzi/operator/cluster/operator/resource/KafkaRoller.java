@@ -800,7 +800,7 @@ public class KafkaRoller {
             try {
                 LOGGER.debugCr(reconciliation, "Probing TCP port due to previous problems connecting to pod {}", podRef);
                 // do a tcp connect and close (with a short connect timeout)
-                tcpProbe(podRef.getPodName(), KafkaCluster.REPLICATION_PORT);
+                tcpProbe(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podRef.getPodName()), KafkaCluster.REPLICATION_PORT);
             } catch (IOException connectionException) {
                 throw new ForceableProblem("Unable to connect to " + podRef.getPodName() + ":" + KafkaCluster.REPLICATION_PORT, executionException.getCause(), true);
             }
@@ -817,7 +817,7 @@ public class KafkaRoller {
      * @param port The port
      * @throws IOException if anything went wrong.
      */
-    void tcpProbe(String hostname, int port) throws IOException {
+    /*test*/ void tcpProbe(String hostname, int port) throws IOException {
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(hostname, port), 5_000);
