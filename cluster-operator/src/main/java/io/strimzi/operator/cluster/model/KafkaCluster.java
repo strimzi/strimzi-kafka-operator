@@ -182,7 +182,7 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Annotation for keeping Kafka servers' certificate thumbprints.
      */
-    public static final String ANNO_STRIMZI_SERVER_CERT_HASH = Annotations.STRIMZI_DOMAIN + "server-certs-hash";
+    public static final String ANNO_STRIMZI_SERVER_CERT_HASH = Annotations.STRIMZI_DOMAIN + "server-cert-hash";
 
     /**
      * Annotation for keeping certificate thumprints

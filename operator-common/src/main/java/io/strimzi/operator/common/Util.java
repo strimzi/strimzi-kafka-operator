@@ -556,12 +556,20 @@ public class Util {
      * @return              First 8 characters of the SHA-1 hash
      */
     public static String hashStub(byte[] toBeHashed)   {
+        byte[] digest = getSHA1(toBeHashed);
+        return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
+    }
+
+    /**
+     * Get a SHA-1 hash of the provided byte array
+     * @param toBeHashed    Byte array for which the hash will be returned
+     * @return              SHA-1 hash
+     */
+    public static byte[] getSHA1(byte[] toBeHashed) {
         try {
             // This is used to generate unique identifier which is not used for security => using SHA-1 is ok
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            byte[] digest = sha1.digest(toBeHashed);
-
-            return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
+            return sha1.digest(toBeHashed);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to get SHA-1 hash", e);
         }

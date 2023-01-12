@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -565,7 +564,8 @@ public abstract class Ca {
         return store != null && !store.isEmpty() && password != null && !password.isEmpty();
     }
 
-    /** Return given secret for pod as a CertAndKey object
+    /**
+     * Return given secret for pod as a CertAndKey object
      * @param secret Kubernetes Secret
      * @param podName Name of the pod
      * @return CertAndKey instance
@@ -1251,34 +1251,5 @@ public abstract class Ca {
             return caCertGenerationAnno != null && Integer.parseInt(caCertGenerationAnno) != currentCaCertGeneration;
         }
         return false;
-    }
-
-    /**
-     * Generates hash stub of the certificate which is used to track when the certificate changes and rolling update needs to be triggered.
-     *
-     * @param certSecret    Secrets with the certificate
-     * @param key           Key under which the certificate is stored in the Secret
-     *
-     * @return              Hash stub of the certificate
-     */
-    public static String getCertificateThumbprint(Secret certSecret, String key) {
-        try {
-            X509Certificate cert = Ca.cert(certSecret, key);
-            return Util.hashStub(cert.getEncoded());
-        } catch (CertificateEncodingException e) {
-            throw new RuntimeException("Failed to get certificate hashStub of " + key + " from Secret " + certSecret.getMetadata().getName(), e);
-        }
-    }
-
-    /**
-     * Generates hash stub of the broker certificate which is used to track when the certificate changes and rolling update needs to be triggered.
-     *
-     * @param certSecret    Secrets with the certificate
-     * @param podName       Broker pod name
-     *
-     * @return              Hash stub of the certificate
-     */
-    public static String getCertificateThumbprintForBroker(Secret certSecret, String podName) {
-        return getCertificateThumbprint(certSecret, SecretEntry.getNameForPod(podName, SecretEntry.CRT));
     }
 }
