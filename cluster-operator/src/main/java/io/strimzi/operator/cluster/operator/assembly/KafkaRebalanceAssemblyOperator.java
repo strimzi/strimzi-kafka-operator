@@ -65,7 +65,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.HashSet;
 import java.util.Arrays;
 import java.util.Collections;
@@ -403,7 +402,7 @@ public class KafkaRebalanceAssemblyOperator
                 && rawRebalanceAnnotation(kafkaRebalance) == null) {
             LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the  `refresh` annotation to ask for a new rebalance request");
         } else {
-                LOGGER.infoCr(reconciliation, "Rebalance action is performed and KafkaRebalance resource is currently in [{}] state", currentState);
+            LOGGER.infoCr(reconciliation, "Rebalance action is performed and KafkaRebalance resource is currently in [{}] state", currentState);
         }
 
         if (Annotations.isReconciliationPausedWithAnnotation(kafkaRebalance)) {
