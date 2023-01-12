@@ -12,7 +12,7 @@ You can monitor your Strimzi deployment by viewing key metrics on dashboards and
 Metrics are available for each of the components of Strimzi.
 
 If you are using `oauth` authentication or `opa` / `keycloak` authorization the collection of their specific metrics has to be explicitly enabled. For example, Kafka CR 'spec.kafka.listeners.authentication' and 'spec.kafka.authorization' have 'enableMetrics' property which needs to be set to 'true'.
-Similarly for client authentication in KafkaBridge, KafkaConnect, KafkaMirrorMaker, or KafkaMirrorMaker2 CRs when 'oauth' type is used.
+Similarly, you can enable metrics for `oauth` authentication in the `KafkaBridge`, `KafkaConnect`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` custom resources.  
 
 To provide metrics information, Strimzi uses Prometheus rules and Grafana dashboards.
 
