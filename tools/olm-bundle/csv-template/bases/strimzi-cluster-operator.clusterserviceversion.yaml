@@ -692,7 +692,7 @@ spec:
         - urn:alm:descriptor:io.kubernetes.conditions
       version: v1beta2
   description: >
-    Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
+    Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on
     [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
     See our [website](https://strimzi.io) for more details about the project.
 
@@ -717,7 +717,7 @@ spec:
     * **Monitoring** - Built-in support for monitoring using Prometheus and provided Grafana dashabords
 
     ### Upgrading your Clusters
-    
+
     The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
     When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
     See [the upgrade guide](https://strimzi.io/docs/operators/latest/deploying.html#assembly-upgrading-kafka-versions-str) for more information.
@@ -726,16 +726,16 @@ spec:
 
     An efficient data storage infrastructure is essential to the optimal performance of Apache Kafka®.
     Apache Kafka® deployed via Strimzi requires block storage.
-    The use of file storage (for example, NFS) is not recommended.
-    
+    The use of file storage (for example, NFS) is not covered by Strimzi tests.
+
     The Strimzi Operator supports three types of data storage:
-    
+
     * Ephemeral (Recommended for development only!)
-    
+
     * Persistent
-    
+
     * JBOD (Just a Bunch of Disks, suitable for Kafka only. Not supported in Zookeeper.)
-    
+
     Strimzi also supports advanced operations such as adding or removing disks in Apache Kafka® brokers or resizing the persistent volumes (where supported by the infrastructure).
 
     ### Documentation
@@ -763,12 +763,12 @@ spec:
     * Talking about Strimzi
 
 
-    All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which 
+    All bugs, tasks or enhancements are tracked as [GitHub issues](https://github.com/strimzi/strimzi-kafka-operator/issues). Issues which
     might be a good start for new contributors are marked with ["good-start"](https://github.com/strimzi/strimzi-kafka-operator/labels/good-start)
     label.
 
 
-    The [Development guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/development-docs/DEV_GUIDE.md) describes how to build Strimzi and how to 
+    The [Development guide](https://github.com/strimzi/strimzi-kafka-operator/blob/master/development-docs/DEV_GUIDE.md) describes how to build Strimzi and how to
     test your changes before submitting a patch or opening a PR.
 
 
@@ -782,7 +782,7 @@ spec:
     * [Strimzi Slack channel on CNCF workspace](https://cloud-native.slack.com/messages/strimzi)
 
     ### License
-    
+
     Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/strimzi/strimzi-kafka-operator/blob/master/LICENSE).
   displayName: Strimzi
   icon:
@@ -831,7 +831,7 @@ spec:
   maturity: stable
   provider:
     name: Strimzi
-  replaces: # placeholder 
+  replaces: # placeholder
   selector:
     matchLabels:
       name: strimzi-cluster-operator
