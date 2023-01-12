@@ -53,12 +53,12 @@ public class Labels {
     public static final String STRIMZI_CLUSTER_LABEL = STRIMZI_DOMAIN + "cluster";
 
     /**
-     * Name of the Strimzi component to which given resource belongs. E.g. Kafka or ZooKeeper. This label does not
+     * Type of the Strimzi component to which given resource belongs. E.g. Kafka or ZooKeeper. This label does not
      * depend on the name of the cluster. This is useful to identify resources which belong to the same component but
      * different clusters which is useful for example for scheduling (e.g. when you do not want this broker to be
      * scheduled on a node where any other Kafka broker is running).
      */
-    public static final String STRIMZI_COMPONENT_LABEL = STRIMZI_DOMAIN + "component";
+    public static final String STRIMZI_COMPONENT_TYPE_LABEL = STRIMZI_DOMAIN + "component-type";
 
     /**
      * Name of the component to which given resource belongs. This typically consists of the cluster name and component.
@@ -342,14 +342,14 @@ public class Labels {
     }
 
     /**
-     * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/component} key.
+     * The same labels as this instance, but with the given {@code type} for the {@code strimzi.io/component-type} key.
      *
-     * @param name The name to add
+     * @param type The type to add
      *
-     * @return A new instance with the given name added.
+     * @return A new instance with the given type added.
      */
-    public Labels withStrimziComponent(String name) {
-        return with(STRIMZI_COMPONENT_LABEL, name);
+    public Labels withStrimziComponentType(String type) {
+        return with(STRIMZI_COMPONENT_TYPE_LABEL, type);
     }
 
     /**
@@ -465,25 +465,25 @@ public class Labels {
      * Note: Valid label values must be a maximum length of 63 characters
      * https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
      *
-     * @param resource          Kubernetes resource with metadata. It is used to get the resource name as well as copy
-     *                          its labels. This is typically a custom resource which owns the whole deployment.
-     * @param strimziName       Name of the resource used for the strimzi.io/name label
-     * @param strimziComponent  Name of the component / application (e.g. kafka, zookeeper, etc.)
-     * @param managedBy         Name of the component managing this resource (e.g. strimzi-cluster-operator)
+     * @param resource              Kubernetes resource with metadata. It is used to get the resource name as well as copy
+     *                              its labels. This is typically a custom resource which owns the whole deployment.
+     * @param strimziComponentName  Name of the component used for the strimzi.io/name label
+     * @param strimziComponentType  Type of the component (e.g. kafka, zookeeper, etc.) used for the strimzi.io/component-type label
+     * @param managedBy             Name of the component managing this resource (e.g. strimzi-cluster-operator)
      *
      * @return  The default set of labels used for the Kubernetes resources
      */
-    public static Labels generateDefaultLabels(HasMetadata resource, String strimziName, String strimziComponent, String managedBy) {
+    public static Labels generateDefaultLabels(HasMetadata resource, String strimziComponentName, String strimziComponentType, String managedBy) {
         String customResourceName = resource.getMetadata().getName();
 
         return Labels.fromResource(resource)
                 // Strimzi labels
                 .withStrimziKind(resource.getKind())
-                .withStrimziName(strimziName)
+                .withStrimziName(strimziComponentName)
                 .withStrimziCluster(customResourceName)
-                .withStrimziComponent(strimziComponent)
+                .withStrimziComponentType(strimziComponentType)
                 // Kubernetes labels
-                .withKubernetesName(strimziComponent)
+                .withKubernetesName(strimziComponentType)
                 .withKubernetesInstance(customResourceName)
                 .withKubernetesPartOf(customResourceName)
                 .withKubernetesManagedBy(managedBy);

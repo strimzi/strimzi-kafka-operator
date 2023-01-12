@@ -90,17 +90,17 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         LOGGER.debugCr(reconciliation, "Updating Kafka Bridge cluster");
         kafkaBridgeServiceAccount(reconciliation, namespace, bridge)
             .compose(i -> bridgeInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
-            .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
+            .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas()))
             .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, bridge.getServiceName(), bridge.generateService()))
             .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, bridge.getLogging(), null))
             .compose(metricsAndLogging -> configMapOperations.reconcile(reconciliation, namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
-            .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudget()) : Future.succeededFuture())
-            .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
+            .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudget()) : Future.succeededFuture())
+            .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
             .compose(i -> Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
-            .compose(hash -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getName(), bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash)), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-            .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
-            .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
-            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
+            .compose(hash -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getComponentName(), bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash)), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+            .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getComponentName(), bridge.getReplicas()))
+            .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs))
+            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs))
             .onComplete(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
                 if (!bridgeHasZeroReplicas) {

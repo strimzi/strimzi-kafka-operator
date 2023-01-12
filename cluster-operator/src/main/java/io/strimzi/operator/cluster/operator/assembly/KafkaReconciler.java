@@ -508,7 +508,7 @@ public class KafkaReconciler {
                     desiredPodNames.add(kafka.getPodName(i));
                 }
 
-                return strimziPodSetOperator.getAsync(reconciliation.namespace(), kafka.getName())
+                return strimziPodSetOperator.getAsync(reconciliation.namespace(), kafka.getComponentName())
                         .compose(podSet -> {
                             if (podSet == null) {
                                 return Future.succeededFuture();
@@ -524,13 +524,13 @@ public class KafkaReconciler {
                                         .build();
 
                                 return strimziPodSetOperator
-                                        .reconcile(reconciliation, reconciliation.namespace(), kafka.getName(), scaledDownPodSet)
+                                        .reconcile(reconciliation, reconciliation.namespace(), kafka.getComponentName(), scaledDownPodSet)
                                         .map((Void) null);
                             }
                         });
             } else {
                 return stsOperator
-                        .scaleDown(reconciliation, reconciliation.namespace(), kafka.getName(), kafka.getReplicas())
+                        .scaleDown(reconciliation, reconciliation.namespace(), kafka.getComponentName(), kafka.getReplicas())
                         .map((Void) null);
             }
         } else {

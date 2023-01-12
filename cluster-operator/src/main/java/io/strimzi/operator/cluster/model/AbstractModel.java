@@ -203,7 +203,7 @@ public abstract class AbstractModel {
     protected final Reconciliation reconciliation;
     protected final String cluster;
     protected final String namespace;
-    protected final String name;
+    protected final String componentName;
 
     protected String serviceName;
     protected String headlessServiceName;
@@ -327,15 +327,15 @@ public abstract class AbstractModel {
      *
      * @param reconciliation    The reconciliation marker
      * @param resource          Custom resource with metadata containing the namespace and cluster name
-     * @param name              Name of the Strimzi component usually consisting from the cluster name and component type
-     * @param componentType     Type of the application that the extending class is deploying
+     * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
+     * @param componentType     Type of the component that the extending class is deploying (e.g. Kafka, ZooKeeper etc. )
      */
-    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String name, String componentType) {
+    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String componentName, String componentType) {
         this.reconciliation = reconciliation;
         this.cluster = resource.getMetadata().getName();
         this.namespace = resource.getMetadata().getNamespace();
-        this.name = name;
-        this.labels = Labels.generateDefaultLabels(resource, name, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
+        this.componentName = componentName;
+        this.labels = Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
     /**
@@ -368,8 +368,8 @@ public abstract class AbstractModel {
     /**
      * @return the default Kubernetes resource name.
      */
-    public String getName() {
-        return name;
+    public String getComponentName() {
+        return componentName;
     }
 
     /**
@@ -789,7 +789,7 @@ public abstract class AbstractModel {
      * @return The name of the pod with the given name.
      */
     public String getPodName(int podId) {
-        return name + "-" + podId;
+        return componentName + "-" + podId;
     }
 
     /**
@@ -898,7 +898,7 @@ public abstract class AbstractModel {
         if (storage != null) {
             if (storage instanceof PersistentClaimStorage) {
                 PersistentClaimStorage persistentStorage = (PersistentClaimStorage) storage;
-                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + name;
+                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + componentName;
 
                 for (int i = 0; i < replicas; i++) {
                     pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, persistentStorage));
@@ -1083,7 +1083,7 @@ public abstract class AbstractModel {
             PodSecurityContext podSecurityContext) {
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templateStatefulSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
@@ -1097,7 +1097,7 @@ public abstract class AbstractModel {
                     .withReplicas(replicas)
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withName(name)
+                            .withName(componentName)
                             .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
                             .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
@@ -1158,7 +1158,7 @@ public abstract class AbstractModel {
         for (int i = 0; i < replicas; i++)  {
             String podName = getPodName(i);
             Pod pod = createStatefulPod(
-                    name,
+                    componentName,
                     podName,
                     podAnnotationsProvider.apply(i),
                     volumes.apply(podName),
@@ -1173,7 +1173,7 @@ public abstract class AbstractModel {
 
         return new StrimziPodSetBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templatePodSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templatePodSetAnnotations))
@@ -1297,7 +1297,7 @@ public abstract class AbstractModel {
     ) {
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templateDeploymentLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
@@ -1468,7 +1468,7 @@ public abstract class AbstractModel {
     protected PodDisruptionBudget createPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
@@ -1489,7 +1489,7 @@ public abstract class AbstractModel {
     protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createPodDisruptionBudgetV1Beta1()   {
         return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
@@ -1514,7 +1514,7 @@ public abstract class AbstractModel {
     protected PodDisruptionBudget createCustomControllerPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
@@ -1539,7 +1539,7 @@ public abstract class AbstractModel {
     protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createCustomControllerPodDisruptionBudgetV1Beta1()   {
         return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
+                    .withName(componentName)
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)

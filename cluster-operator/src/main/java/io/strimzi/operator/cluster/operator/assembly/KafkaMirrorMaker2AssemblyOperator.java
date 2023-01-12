@@ -169,7 +169,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
-                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
+                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
@@ -179,20 +179,20 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
-                .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
-                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()) : Future.succeededFuture())
-                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
+                .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster))
+                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudget()) : Future.succeededFuture())
+                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
                 .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
                 .compose(hash -> {
                     if (hash != null) {
                         annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     }
                     Deployment deployment = mirrorMaker2Cluster.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-                    return deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), deployment);
+                    return deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), deployment);
                 })
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
-                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas()))
+                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), 1_000, operationTimeoutMs))
+                .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : reconcileConnectors(reconciliation, kafkaMirrorMaker2, mirrorMaker2Cluster, kafkaMirrorMaker2Status, desiredLogging.get()))
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {

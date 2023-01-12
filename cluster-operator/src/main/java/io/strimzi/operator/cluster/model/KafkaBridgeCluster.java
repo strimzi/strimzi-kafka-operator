@@ -65,7 +65,7 @@ public class KafkaBridgeCluster extends AbstractModel {
      */
     public static final int DEFAULT_REST_API_PORT = 8080;
 
-    /* test */ static final String APPLICATION_NAME = "kafka-bridge";
+    /* test */ static final String COMPONENT_TYPE = "kafka-bridge";
     protected static final String REST_API_PORT_NAME = "rest-api";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
@@ -151,7 +151,7 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+        super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
@@ -378,7 +378,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withCommand("/opt/strimzi/bin/docker/kafka_bridge_run.sh")
                 .withEnv(getEnvVars())

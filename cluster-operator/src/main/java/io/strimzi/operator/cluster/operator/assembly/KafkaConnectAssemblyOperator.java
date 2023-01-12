@@ -147,7 +147,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
-                .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getName(), build))
+                .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getComponentName(), build))
                 .compose(buildInfo -> {
                     if (buildInfo != null) {
                         annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildInfo.buildRevision());
@@ -155,7 +155,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     }
                     return Future.succeededFuture();
                 })
-                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, connect.getName(), connect.getReplicas()))
+                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, connect.getComponentName(), connect.getReplicas()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, connect))
                 .compose(logAndMetricsConfigMap -> {
@@ -166,17 +166,17 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()) : Future.succeededFuture())
-                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
+                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generatePodDisruptionBudget()) : Future.succeededFuture())
+                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
                 .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
                 .compose(hash -> {
                     annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     Deployment deployment = generateDeployment(connect, image.get(), annotations);
-                    return deploymentOperations.reconcile(reconciliation, namespace, connect.getName(), deployment);
+                    return deploymentOperations.reconcile(reconciliation, namespace, connect.getComponentName(), deployment);
                 })
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, connect.getName(), connect.getReplicas()))
-                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, connect.getComponentName(), connect.getReplicas()))
+                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, connect.getComponentName(), 1_000, operationTimeoutMs))
+                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, connect.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging.get(), connect.getDefaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);

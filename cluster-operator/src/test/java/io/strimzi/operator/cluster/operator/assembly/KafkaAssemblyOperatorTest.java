@@ -552,9 +552,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockPvcOps.get(eq(kafkaNamespace), ArgumentMatchers.startsWith("data-")))
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
-                    if (pvcName.contains(zookeeperCluster.getName())) {
+                    if (pvcName.contains(zookeeperCluster.getComponentName())) {
                         return zkPvcs.get(pvcName);
-                    } else if (pvcName.contains(kafkaCluster.getName())) {
+                    } else if (pvcName.contains(kafkaCluster.getComponentName())) {
                         return kafkaPvcs.get(pvcName);
                     }
                     return null;
@@ -563,9 +563,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockPvcOps.getAsync(eq(kafkaNamespace), ArgumentMatchers.startsWith("data-")))
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
-                    if (pvcName.contains(zookeeperCluster.getName())) {
+                    if (pvcName.contains(zookeeperCluster.getComponentName())) {
                         return Future.succeededFuture(zkPvcs.get(pvcName));
-                    } else if (pvcName.contains(kafkaCluster.getName())) {
+                    } else if (pvcName.contains(kafkaCluster.getComponentName())) {
                         return Future.succeededFuture(kafkaPvcs.get(pvcName));
                     }
                     return Future.succeededFuture(null);
@@ -934,9 +934,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockPvcOps.get(eq(clusterNamespace), ArgumentMatchers.startsWith("data-")))
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
-                    if (pvcName.contains(originalZookeeperCluster.getName())) {
+                    if (pvcName.contains(originalZookeeperCluster.getComponentName())) {
                         return zkPvcs.get(pvcName);
-                    } else if (pvcName.contains(originalKafkaCluster.getName())) {
+                    } else if (pvcName.contains(originalKafkaCluster.getComponentName())) {
                         return kafkaPvcs.get(pvcName);
                     }
                     return null;
@@ -945,9 +945,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockPvcOps.getAsync(eq(clusterNamespace), ArgumentMatchers.startsWith("data-")))
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
-                    if (pvcName.contains(originalZookeeperCluster.getName())) {
+                    if (pvcName.contains(originalZookeeperCluster.getComponentName())) {
                         return Future.succeededFuture(zkPvcs.get(pvcName));
-                    } else if (pvcName.contains(originalKafkaCluster.getName())) {
+                    } else if (pvcName.contains(originalKafkaCluster.getComponentName())) {
                         return Future.succeededFuture(kafkaPvcs.get(pvcName));
                     }
                     return Future.succeededFuture(null);

@@ -108,7 +108,7 @@ import static java.util.Collections.singletonMap;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaCluster extends AbstractModel {
-    protected static final String APPLICATION_NAME = "kafka";
+    protected static final String COMPONENT_TYPE = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
     /* test */ static final String ENV_VAR_STRIMZI_CLUSTER_ID = "STRIMZI_CLUSTER_ID";
@@ -264,7 +264,7 @@ public class KafkaCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), APPLICATION_NAME);
+        super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.serviceName = KafkaResources.bootstrapServiceName(cluster);
         this.headlessServiceName = KafkaResources.brokersServiceName(cluster);
@@ -1586,7 +1586,7 @@ public class KafkaCluster extends AbstractModel {
                                 .withTopologyKey(rack.getTopologyKey())
                                 .withNewLabelSelector()
                                     .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
+                                    .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, componentName)
                                 .endLabelSelector()
                             .endPodAffinityTerm()
                         .endPreferredDuringSchedulingIgnoredDuringExecution()

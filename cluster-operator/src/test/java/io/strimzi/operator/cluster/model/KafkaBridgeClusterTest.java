@@ -110,9 +110,9 @@ public class KafkaBridgeClusterTest {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
-                Labels.STRIMZI_COMPONENT_LABEL, KafkaBridgeCluster.APPLICATION_NAME,
+                Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaBridgeCluster.COMPONENT_TYPE,
                 Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND,
-                Labels.KUBERNETES_NAME_LABEL, KafkaBridgeCluster.APPLICATION_NAME,
+                Labels.KUBERNETES_NAME_LABEL, KafkaBridgeCluster.COMPONENT_TYPE,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -177,7 +177,7 @@ public class KafkaBridgeClusterTest {
         Service svc = kbc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kbc.getComponentName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(KafkaBridgeCluster.DEFAULT_REST_API_PORT));
@@ -821,7 +821,7 @@ public class KafkaBridgeClusterTest {
         List<Container> containers = podSpec.getContainers();
         assertThat(containers, is(notNullValue()));
         assertThat(containers, hasSize(1));
-        final Optional<Container> maybeContainer = containers.stream().filter(container -> container.getName().equals(bridgeCluster.getName())).findFirst();
+        final Optional<Container> maybeContainer = containers.stream().filter(container -> container.getName().equals(bridgeCluster.getComponentName())).findFirst();
         assertThat(maybeContainer.isPresent(), is(true));
         final Container bridgeContainer = maybeContainer.get();
 
@@ -1208,7 +1208,7 @@ public class KafkaBridgeClusterTest {
         Service svc = kb.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kb.getName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedServiceLabels(kb.getComponentName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(1874));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));

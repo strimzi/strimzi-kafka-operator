@@ -83,7 +83,7 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     public static final int REST_API_PORT = 8083;
 
-    protected static final String APPLICATION_NAME = "kafka-connect";
+    protected static final String COMPONENT_TYPE = "kafka-connect";
     protected static final String REST_API_PORT_NAME = "rest-api";
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/connect-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
@@ -98,7 +98,7 @@ public class KafkaConnectCluster extends AbstractModel {
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     private static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
 
-    private static final String NAME_SUFFIX = "-" + APPLICATION_NAME;
+    private static final String NAME_SUFFIX = "-" + COMPONENT_TYPE;
     private static final String KAFKA_CONNECT_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
     private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
     private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
@@ -161,7 +161,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource) {
-        this(reconciliation, resource, KafkaConnectResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+        this(reconciliation, resource, KafkaConnectResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
     }
 
     /**
@@ -514,7 +514,7 @@ public class KafkaConnectCluster extends AbstractModel {
         List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withCommand(getCommand())
                 .withEnv(getEnvVars())
@@ -855,7 +855,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
             NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
                     .withNewMetadata()
-                        .withName(name)
+                        .withName(componentName)
                         .withNamespace(namespace)
                         .withLabels(labels.toMap())
                         .withOwnerReferences(createOwnerReference())

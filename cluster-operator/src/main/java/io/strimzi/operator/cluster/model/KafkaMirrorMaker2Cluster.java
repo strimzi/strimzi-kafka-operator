@@ -39,7 +39,7 @@ import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_
  * Kafka Mirror Maker 2 model
  */
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
-    protected static final String APPLICATION_NAME = "kafka-mirror-maker-2";
+    protected static final String COMPONENT_TYPE = "kafka-mirror-maker-2";
 
     // Kafka MirrorMaker 2.0 connector configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS = "KAFKA_MIRRORMAKER_2_CLUSTERS";
@@ -78,7 +78,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);

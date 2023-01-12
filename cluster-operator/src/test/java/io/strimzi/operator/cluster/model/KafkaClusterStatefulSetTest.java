@@ -107,9 +107,9 @@ public class KafkaClusterStatefulSetTest {
         return TestUtils.map(
             Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
             Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(CLUSTER),
-            Labels.STRIMZI_COMPONENT_LABEL, KafkaCluster.APPLICATION_NAME,
+            Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaCluster.COMPONENT_TYPE,
             Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
-            Labels.KUBERNETES_NAME_LABEL, KafkaCluster.APPLICATION_NAME,
+            Labels.KUBERNETES_NAME_LABEL, KafkaCluster.COMPONENT_TYPE,
             Labels.KUBERNETES_INSTANCE_LABEL, CLUSTER,
             Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + CLUSTER,
             Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);

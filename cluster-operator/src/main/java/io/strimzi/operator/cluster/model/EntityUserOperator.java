@@ -37,7 +37,7 @@ import java.util.List;
  * Represents the User Operator deployment
  */
 public class EntityUserOperator extends AbstractModel {
-    protected static final String APPLICATION_NAME = "entity-user-operator";
+    protected static final String COMPONENT_TYPE = "entity-user-operator";
     
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
@@ -89,7 +89,7 @@ public class EntityUserOperator extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, APPLICATION_NAME);
+        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE);
 
         this.readinessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -311,7 +311,7 @@ public class EntityUserOperator extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.entityUserOperatorSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityUserOperatorSecretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityUserOperatorSecretName(cluster), componentName,
             CERT_SECRET_KEY_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 

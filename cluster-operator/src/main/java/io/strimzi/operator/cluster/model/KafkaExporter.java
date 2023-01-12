@@ -39,7 +39,7 @@ import java.util.Map;
  * Kafka Exporter model
  */
 public class KafkaExporter extends AbstractModel {
-    protected static final String APPLICATION_NAME = "kafka-exporter";
+    protected static final String COMPONENT_TYPE = "kafka-exporter";
 
     // Configuration for mounting certificates
     protected static final String KAFKA_EXPORTER_CERTS_VOLUME_NAME = "kafka-exporter-certs";
@@ -86,7 +86,7 @@ public class KafkaExporter extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+        super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.replicas = 1;
         this.readinessPath = "/healthz";
@@ -210,7 +210,7 @@ public class KafkaExporter extends AbstractModel {
         List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withCommand("/opt/kafka-exporter/kafka_exporter_run.sh")
                 .withEnv(getEnvVars())
@@ -293,7 +293,7 @@ public class KafkaExporter extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.kafkaExporterSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporterResources.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporterResources.secretName(cluster), componentName,
                 "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }

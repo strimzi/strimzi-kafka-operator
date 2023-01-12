@@ -56,7 +56,7 @@ import java.util.Map;
 @SuppressWarnings("deprecation") // JMX Trans is deprecated
 @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // Spotbugs is complaining about outputDefinitions and kafkaQueries which are required in the CRD about not being initialized
 public class JmxTrans extends AbstractModel {
-    private static final String APPLICATION_NAME = "jmx-trans";
+    private static final String COMPONENT_TYPE = "jmx-trans";
 
     // Configuration defaults
     private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
@@ -107,7 +107,7 @@ public class JmxTrans extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected JmxTrans(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, JmxTransResources.deploymentName(resource.getMetadata().getName()), APPLICATION_NAME);
+        super(reconciliation, resource, JmxTransResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.replicas = 1;
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
@@ -340,7 +340,7 @@ public class JmxTrans extends AbstractModel {
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, cluster))

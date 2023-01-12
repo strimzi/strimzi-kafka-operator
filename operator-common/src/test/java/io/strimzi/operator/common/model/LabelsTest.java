@@ -269,7 +269,7 @@ public class LabelsTest {
         Map<String, String> expectedLabels = new HashMap<>();
         expectedLabels.put(Labels.STRIMZI_KIND_LABEL, "MyResource");
         expectedLabels.put(Labels.STRIMZI_NAME_LABEL, customResourceName + "-" + componentName);
-        expectedLabels.put(Labels.STRIMZI_COMPONENT_LABEL, componentName);
+        expectedLabels.put(Labels.STRIMZI_COMPONENT_TYPE_LABEL, componentName);
         expectedLabels.put(Labels.STRIMZI_CLUSTER_LABEL, customResourceName);
         expectedLabels.put(Labels.KUBERNETES_NAME_LABEL, componentName);
         expectedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, customResourceName);

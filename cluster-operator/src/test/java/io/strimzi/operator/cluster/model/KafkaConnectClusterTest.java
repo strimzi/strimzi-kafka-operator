@@ -167,8 +167,8 @@ public class KafkaConnectClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
-                Labels.STRIMZI_COMPONENT_LABEL, KafkaConnectCluster.APPLICATION_NAME,
-                Labels.KUBERNETES_NAME_LABEL, KafkaConnectCluster.APPLICATION_NAME,
+                Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectCluster.COMPONENT_TYPE,
+                Labels.KUBERNETES_NAME_LABEL, KafkaConnectCluster.COMPONENT_TYPE,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.clusterName,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.clusterName,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -228,7 +228,7 @@ public class KafkaConnectClusterTest {
         Service svc = kc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kc.getName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kc.getComponentName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(KafkaConnectCluster.REST_API_PORT));
@@ -252,7 +252,7 @@ public class KafkaConnectClusterTest {
         Service svc = kc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kc.getName())));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(kc.getComponentName())));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(KafkaConnectCluster.REST_API_PORT));
@@ -1647,7 +1647,7 @@ public class KafkaConnectClusterTest {
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
 
-        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getMetadata().getName(), is(kc.getComponentName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress().size(), is(2));
         assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
@@ -1669,7 +1669,7 @@ public class KafkaConnectClusterTest {
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
 
-        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getMetadata().getName(), is(kc.getComponentName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress().size(), is(2));
         assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
@@ -1691,7 +1691,7 @@ public class KafkaConnectClusterTest {
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
-        assertThat(np.getMetadata().getName(), is(kc.getName()));
+        assertThat(np.getMetadata().getName(), is(kc.getComponentName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(np.getSpec().getIngress().size(), is(2));
         assertThat(np.getSpec().getIngress().get(0).getPorts().size(), is(1));
