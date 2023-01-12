@@ -35,7 +35,8 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "version", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
-    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template"})
+    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template",
+    "interBrokerTls"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
 
@@ -71,6 +72,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     private List<GenericKafkaListener> listeners;
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
+    private boolean interBrokerTls = true;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The kafka broker version. Defaults to {DefaultKafkaVersion}. " +
@@ -249,6 +251,16 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
 
     public void setTemplate(KafkaClusterTemplate template) {
         this.template = template;
+    }
+
+    @Description("Inter-broker communication should be over TLS. Defaults to 'true'." +
+            "Affects CONTROLPLANE and REPLICATION listener creation.")
+    public boolean getInterBrokerTls() {
+        return interBrokerTls;
+    }
+
+    public void setInterBrokerTls(boolean interBrokerTls) {
+        this.interBrokerTls = interBrokerTls;
     }
 
     @Override

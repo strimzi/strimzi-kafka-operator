@@ -223,6 +223,7 @@ public class KafkaCluster extends AbstractModel {
     private boolean isJmxAuthenticated;
     private boolean useKRaft = false;
     private String clusterId;
+    private boolean interBrokerTls;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -528,6 +529,8 @@ public class KafkaCluster extends AbstractModel {
         // Should run at the end when everything is set
         KafkaSpecChecker specChecker = new KafkaSpecChecker(kafkaSpec, versions, result);
         result.warningConditions.addAll(specChecker.run());
+
+        result.interBrokerTls = kafkaSpec.getKafka().getInterBrokerTls();
 
         return result;
     }
@@ -2103,7 +2106,8 @@ public class KafkaCluster extends AbstractModel {
                             () -> getPodName(brokerId),
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
-                            true)
+                            true,
+                            interBrokerTls)
                     .withAuthorization(cluster, authorization, true)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)
@@ -2120,7 +2124,8 @@ public class KafkaCluster extends AbstractModel {
                             () -> getPodName(brokerId),
                             listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
                             listenerId -> advertisedPorts.get(brokerId).get(listenerId),
-                            false)
+                            false,
+                            interBrokerTls)
                     .withAuthorization(cluster, authorization, false)
                     .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
                     .withUserConfiguration(configuration)

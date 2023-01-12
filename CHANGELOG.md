@@ -13,6 +13,7 @@
 * `ImageStream` validation for Kafka Connect builds on OpenShift
 * Support for configuring the metadata for the Role / RoleBinding of Entity Operator
 * Add liveness and readiness probes specifically for nodes running in KRaft combined mode
+* Add new interBrokerTls boolean flag [#2266](https://github.com/strimzi/strimzi-kafka-operator/issues/2266)
 
 ### Changes, deprecations and removals
 

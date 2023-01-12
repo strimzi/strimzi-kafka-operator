@@ -95,6 +95,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |template             1.2+<.<a|Template for Kafka cluster resources. The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated.
 |xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
+|interBrokerTls       1.2+<.<a|Inter-broker communication should be over TLS. Defaults to 'true'.Affects CONTROLPLANE and REPLICATION listener creation.
+|boolean
 |====
 
 [id='type-GenericKafkaListener-{context}']

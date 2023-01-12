@@ -248,7 +248,8 @@ public class KafkaBrokerConfigurationBuilder {
                 () -> KafkaResources.kafkaStatefulSetName(clusterName) + "-" + brokerId,
                 (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_HOSTNAME, listenerId),
                 (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_PORT, listenerId),
-                false);
+                false,
+                true);
     }
 
     /**
@@ -265,6 +266,8 @@ public class KafkaBrokerConfigurationBuilder {
      * @param advertisedPortProvider     Lambda method which provides the advertised port for given listener and broker.
      *                                   This is used to configure the user-configurable listeners.
      * @param useKRaft                   Use KRaft mode in the configuration
+     * @param interBrokerTls             Inter-broker communication should be over TLS
+     *                                   This affects CONTROLPLANE and REPLICATION listener creation.
      *
      * @return Returns the builder instance
      */
@@ -274,11 +277,14 @@ public class KafkaBrokerConfigurationBuilder {
             Supplier<String> podNameProvider,
             Function<String, String> advertisedHostnameProvider,
             Function<String, String> advertisedPortProvider,
-            boolean useKRaft
+            boolean useKRaft,
+            boolean interBrokerTls
     )  {
         List<String> listeners = new ArrayList<>();
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
+
+        final String interBrokerProtocol = interBrokerTls ? "SSL" : "PLAINTEXT";
 
         // Control Plane listener
         listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
@@ -290,8 +296,10 @@ public class KafkaBrokerConfigurationBuilder {
                             podNameProvider.get())
             ));
         }
-        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
-        configureControlPlaneListener();
+        securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":" + interBrokerProtocol);
+        if (interBrokerTls) {
+            configureControlPlaneListener();
+        }
 
         // Replication listener
         listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
@@ -301,8 +309,10 @@ public class KafkaBrokerConfigurationBuilder {
                 DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
                         podNameProvider.get())
         ));
-        securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
-        configureReplicationListener();
+        securityProtocol.add(REPLICATION_LISTENER_NAME + ":" + interBrokerProtocol);
+        if (interBrokerTls) {
+            configureReplicationListener();
+        }
 
         for (GenericKafkaListener listener : kafkaListeners) {
             int port = listener.getPort();
