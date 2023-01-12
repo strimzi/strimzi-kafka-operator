@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
@@ -53,8 +54,9 @@ import java.util.Map;
  * JmxTrans deployment including: config map, deployment, and service accounts.
  */
 @SuppressWarnings("deprecation") // JMX Trans is deprecated
+@SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // Spotbugs is complaining about outputDefinitions and kafkaQueries which are required in the CRD about not being initialized
 public class JmxTrans extends AbstractModel {
-    private static final String APPLICATION_NAME = "jmx-trans";
+    private static final String COMPONENT_TYPE = "jmx-trans";
 
     // Configuration defaults
     private static final String STRIMZI_DEFAULT_JMXTRANS_IMAGE = "STRIMZI_DEFAULT_JMXTRANS_IMAGE";
@@ -105,8 +107,8 @@ public class JmxTrans extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected JmxTrans(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = JmxTransResources.deploymentName(cluster);
+        super(reconciliation, resource, JmxTransResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+
         this.replicas = 1;
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
     }
@@ -338,7 +340,7 @@ public class JmxTrans extends AbstractModel {
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(1);
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, cluster))

@@ -165,14 +165,14 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
-                assertThat(dc.getMetadata().getName(), is(bridge.getName()));
+                assertThat(dc.getMetadata().getName(), is(bridge.getComponentName()));
                 assertThat(dc, is(bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, "0"), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                 assertThat(capturedPdb.size(), is(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                assertThat(pdb.getMetadata().getName(), is(bridge.getName()));
+                assertThat(pdb.getMetadata().getName(), is(bridge.getComponentName()));
                 assertThat(pdb, is(bridge.generatePodDisruptionBudget()));
 
                 // Verify status
@@ -207,8 +207,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
-        when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
+        when(mockServiceOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateService());
+        when(mockDcOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -254,7 +254,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                 assertThat(capturedPdb, hasSize(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                assertThat(pdb.getMetadata().getName(), is(bridge.getName()));
+                assertThat(pdb.getMetadata().getName(), is(bridge.getComponentName()));
                 assertThat(pdb, is(bridge.generatePodDisruptionBudget()));
 
                 // Verify scaleDown / scaleUp were not called
@@ -286,8 +286,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
-        when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
+        when(mockServiceOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateService());
+        when(mockDcOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -352,14 +352,14 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
-                assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
+                assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
                 assertThat(dc, is(compareTo.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, "0"), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                 assertThat(capturedPdb, hasSize(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                assertThat(pdb.getMetadata().getName(), is(compareTo.getName()));
+                assertThat(pdb.getMetadata().getName(), is(compareTo.getComponentName()));
                 assertThat(pdb, is(compareTo.generatePodDisruptionBudget()));
 
                 // Verify scaleDown / scaleUp were not called
@@ -422,8 +422,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
-        when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
+        when(mockServiceOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateService());
+        when(mockDcOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -485,9 +485,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
+        when(mockServiceOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateService());
         Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
-        when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(dep);
+        when(mockDcOps.get(kbNamespace, bridge.getComponentName())).thenReturn(dep);
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -496,10 +496,10 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
 
         when(mockBridgeOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaBridge())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -511,7 +511,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                verify(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
 
                 async.flag();
             })));
@@ -545,9 +545,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
+        when(mockServiceOps.get(kbNamespace, bridge.getComponentName())).thenReturn(bridge.generateService());
         Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
-        when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(dep);
+        when(mockDcOps.get(kbNamespace, bridge.getComponentName())).thenReturn(dep);
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -556,10 +556,10 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
 
         when(mockBridgeOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaBridge())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -571,8 +571,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), scaledDownCluster)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
-                verify(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getName()), eq(scaleTo));
+                verify(mockDcOps).scaleUp(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
+                verify(mockDcOps).scaleDown(any(), eq(kbNamespace), eq(bridge.getComponentName()), eq(scaleTo));
                 async.flag();
             })));
     }

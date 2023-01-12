@@ -44,7 +44,7 @@ import java.util.Map;
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class KafkaMirrorMakerCluster extends AbstractModel {
-    protected static final String APPLICATION_NAME = "kafka-mirror-maker";
+    protected static final String COMPONENT_TYPE = "kafka-mirror-maker";
 
     protected static final String TLS_CERTS_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-password/";
@@ -129,8 +129,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaMirrorMakerResources.deploymentName(cluster);
+        super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+
         this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
         this.readinessPath = "/";
@@ -311,7 +311,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         List<Container> containers = new ArrayList<>(1);
 
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withCommand("/opt/kafka/kafka_mirror_maker_run.sh")
                 .withEnv(getEnvVars())

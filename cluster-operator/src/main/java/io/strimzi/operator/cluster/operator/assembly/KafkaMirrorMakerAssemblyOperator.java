@@ -100,15 +100,15 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Mirror Maker cluster");
         mirrorMakerServiceAccount(reconciliation, namespace, mirror)
-                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
+                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, mirror.getLogging(), mirror.getMetricsConfigInCm()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
                     return configMapOperations.reconcile(reconciliation, namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
-                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudget()) : Future.succeededFuture())
-                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
+                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generatePodDisruptionBudget()) : Future.succeededFuture())
+                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
                 .compose(i -> CompositeFuture.join(Util.authTlsHash(secretOperations, namespace, authConsumer, trustedCertificatesConsumer),
                         Util.authTlsHash(secretOperations, namespace, authProducer, trustedCertificatesProducer)))
                 .compose(hashFut -> {
@@ -117,10 +117,10 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                     }
                     return Future.succeededFuture();
                 })
-                .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
-                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirror.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirror.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas()))
+                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
+                .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
 

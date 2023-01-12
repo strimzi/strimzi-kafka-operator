@@ -71,7 +71,7 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
  * Cruise Control model
  */
 public class CruiseControl extends AbstractModel {
-    protected static final String APPLICATION_NAME = "cruise-control";
+    protected static final String COMPONENT_TYPE = "cruise-control";
     protected static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
@@ -87,9 +87,9 @@ public class CruiseControl extends AbstractModel {
     /**
      * Key for the admin user password
      */
-    public static final String API_ADMIN_PASSWORD_KEY = APPLICATION_NAME + ".apiAdminPassword";
-    private static final String API_USER_PASSWORD_KEY = APPLICATION_NAME + ".apiUserPassword";
-    private static final String API_AUTH_FILE_KEY = APPLICATION_NAME + ".apiAuthFile";
+    public static final String API_ADMIN_PASSWORD_KEY = COMPONENT_TYPE + ".apiAdminPassword";
+    private static final String API_USER_PASSWORD_KEY = COMPONENT_TYPE + ".apiUserPassword";
+    private static final String API_AUTH_FILE_KEY = COMPONENT_TYPE + ".apiAuthFile";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
 
     protected static final String TLS_CC_CERTS_VOLUME_NAME = "cc-certs";
@@ -165,8 +165,8 @@ public class CruiseControl extends AbstractModel {
      * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = CruiseControlResources.deploymentName(cluster);
+        super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+
         this.serviceName = CruiseControlResources.serviceName(cluster);
         this.ancillaryConfigMapName = CruiseControlResources.logAndMetricsConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;

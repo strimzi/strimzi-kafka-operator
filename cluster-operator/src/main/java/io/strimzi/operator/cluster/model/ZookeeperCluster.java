@@ -84,7 +84,7 @@ public class ZookeeperCluster extends AbstractModel {
      */
     public static final int LEADER_ELECTION_PORT = 3888;
 
-    protected static final String APPLICATION_NAME = "zookeeper";
+    protected static final String COMPONENT_TYPE = "zookeeper";
     protected static final String CLIENT_TLS_PORT_NAME = "tcp-clients";
     protected static final String CLUSTERING_PORT_NAME = "tcp-clustering";
     protected static final String LEADER_ELECTION_PORT_NAME = "tcp-election";
@@ -143,8 +143,8 @@ public class ZookeeperCluster extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaResources.zookeeperStatefulSetName(cluster);
+        super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
+
         this.serviceName = KafkaResources.zookeeperServiceName(cluster);
         this.headlessServiceName = KafkaResources.zookeeperHeadlessServiceName(cluster);
         this.ancillaryConfigMapName = KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);

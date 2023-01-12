@@ -191,7 +191,8 @@ public class KafkaConnectBuildTest {
         Map<String, String> expectedDeploymentLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
-                Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.APPLICATION_NAME,
+                Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
+                Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -320,7 +321,8 @@ public class KafkaConnectBuildTest {
         Map<String, String> expectedDeploymentLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
-                Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.APPLICATION_NAME,
+                Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
+                Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -365,7 +367,8 @@ public class KafkaConnectBuildTest {
         Map<String, String> expectedDeploymentLabels = TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
                 Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.buildPodName(cluster),
                 Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND,
-                Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.APPLICATION_NAME,
+                Labels.STRIMZI_COMPONENT_TYPE_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
+                Labels.KUBERNETES_NAME_LABEL, KafkaConnectBuild.COMPONENT_TYPE,
                 Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
                 Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);

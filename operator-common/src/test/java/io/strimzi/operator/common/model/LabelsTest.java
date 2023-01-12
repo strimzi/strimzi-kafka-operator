@@ -211,7 +211,6 @@ public class LabelsTest {
         String instance = "my-cluster";
         String operatorName  = "my-operator";
         String appName = "an-app";
-        String appArchitecture = "app-architecture";
 
         Map<String, String> expectedLabels = new HashMap<>();
         expectedLabels.put(Labels.KUBERNETES_NAME_LABEL, appName);
@@ -230,10 +229,10 @@ public class LabelsTest {
 
     @Test
     public void testGenerateDefaultLabels() {
-        String instance = "my-cluster";
+        String customResourceName = "my-cluster";
+        String componentName = "kafka";
         String operatorName  = "my-operator";
         String appName = "an-app";
-        String appArchitecture = "app-architecture";
 
         class ResourceWithMetadata implements HasMetadata {
 
@@ -269,16 +268,17 @@ public class LabelsTest {
 
         Map<String, String> expectedLabels = new HashMap<>();
         expectedLabels.put(Labels.STRIMZI_KIND_LABEL, "MyResource");
-        expectedLabels.put(Labels.STRIMZI_NAME_LABEL, Labels.APPLICATION_NAME);
-        expectedLabels.put(Labels.STRIMZI_CLUSTER_LABEL, instance);
-        expectedLabels.put(Labels.KUBERNETES_NAME_LABEL, appName);
-        expectedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, instance);
+        expectedLabels.put(Labels.STRIMZI_NAME_LABEL, customResourceName + "-" + componentName);
+        expectedLabels.put(Labels.STRIMZI_COMPONENT_TYPE_LABEL, componentName);
+        expectedLabels.put(Labels.STRIMZI_CLUSTER_LABEL, customResourceName);
+        expectedLabels.put(Labels.KUBERNETES_NAME_LABEL, componentName);
+        expectedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, customResourceName);
         expectedLabels.put(Labels.KUBERNETES_MANAGED_BY_LABEL, operatorName);
-        expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + instance);
+        expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + customResourceName);
 
-        Labels l = Labels.generateDefaultLabels(new ResourceWithMetadata("MyResource", "strimzi.io/v0", new ObjectMetaBuilder()
-            .withName(instance)
-            .build()), appName, operatorName);
+        ResourceWithMetadata resource = new ResourceWithMetadata("MyResource", "strimzi.io/v0", new ObjectMetaBuilder().withName(customResourceName).build());
+
+        Labels l = Labels.generateDefaultLabels(resource, customResourceName + "-" + componentName, componentName, operatorName);
 
         assertThat(l.toMap(), is(expectedLabels));
     }

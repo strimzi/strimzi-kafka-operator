@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -39,7 +38,7 @@ public class AbstractModelTest {
     // Implement AbstractModel to test the abstract class
     private static class Model extends AbstractModel   {
         public Model(HasMetadata resource) {
-            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, "model-app");
+            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, resource.getMetadata().getName() + "-model-app", "model-app");
         }
 
         @Override
@@ -76,8 +75,6 @@ public class AbstractModelTest {
                 .build();
 
         AbstractModel am = new Model(kafka);
-
-        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(opts);
         List<EnvVar> envVars = new ArrayList<>(1);
         ModelUtils.jvmPerformanceOptions(envVars, am.getJvmOptions());
@@ -99,7 +96,6 @@ public class AbstractModelTest {
                 .build();
 
         AbstractModel am = new Model(kafka);
-        am.setLabels(Labels.forStrimziCluster("foo"));
         am.setOwnerReference(kafka);
 
         OwnerReference ref = am.createOwnerReference();
@@ -120,7 +116,6 @@ public class AbstractModelTest {
                 .build();
 
         AbstractModel am = new Model(kafka);
-        am.setLabels(Labels.forStrimziCluster("foo"));
 
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"), is(ImagePullPolicy.IFNOTPRESENT.toString()));

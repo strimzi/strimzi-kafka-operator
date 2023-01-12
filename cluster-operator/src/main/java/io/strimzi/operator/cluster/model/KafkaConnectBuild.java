@@ -50,7 +50,7 @@ import java.util.Map;
  * Model class for Kafka Connect Build - this model handled the build of the new image with custom connectors
  */
 public class KafkaConnectBuild extends AbstractModel {
-    protected static final String APPLICATION_NAME = "kafka-connect-build";
+    protected static final String COMPONENT_TYPE = "kafka-connect-build";
 
     private static final String DEFAULT_KANIKO_EXECUTOR_IMAGE = "gcr.io/kaniko-project/executor:latest";
 
@@ -80,8 +80,8 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
     protected KafkaConnectBuild(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaConnectResources.buildPodName(cluster);
+        super(reconciliation, resource, KafkaConnectResources.buildPodName(resource.getMetadata().getName()), COMPONENT_TYPE);
+
         this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE, DEFAULT_KANIKO_EXECUTOR_IMAGE);
     }
 
@@ -346,7 +346,7 @@ public class KafkaConnectBuild extends AbstractModel {
         }
 
         Container container = new ContainerBuilder()
-                .withName(name)
+                .withName(componentName)
                 .withImage(getImage())
                 .withArgs(args)
                 .withVolumeMounts(getVolumeMounts())
@@ -415,7 +415,7 @@ public class KafkaConnectBuild extends AbstractModel {
         return new BuildConfigBuilder()
                 .withNewMetadata()
                     .withName(KafkaConnectResources.buildConfigName(cluster))
-                    .withLabels(getLabelsWithStrimziName(name, templateBuildConfigLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templateBuildConfigLabels).toMap())
                     .withAnnotations(templateBuildConfigAnnotations)
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
@@ -452,7 +452,7 @@ public class KafkaConnectBuild extends AbstractModel {
                     .withName(KafkaConnectResources.buildConfigName(cluster))
                     .withNamespace(namespace)
                     .withAnnotations(Collections.singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildRevision))
-                    .withLabels(getLabelsWithStrimziName(name, templateBuildConfigLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templateBuildConfigLabels).toMap())
                 .endMetadata()
                 .build();
     }

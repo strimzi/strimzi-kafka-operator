@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -338,19 +339,18 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void verifyLabelsForService(String namespaceName, String clusterName, String serviceToTest, String kind) {
+    protected void verifyLabelsForService(String namespaceName, String clusterName, String nameLabel, String serviceToTest, String kind) {
         LOGGER.info("Verifying labels for Kafka Connect Services");
 
         String serviceName = clusterName.concat("-").concat(serviceToTest);
-        kubeClient(namespaceName).listServices().stream()
-            .filter(service -> service.getMetadata().getName().equals(serviceName))
-            .forEach(service -> {
-                LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
-                assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
-                assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(kind));
-                assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(serviceName));
-            }
-        );
+        Service service = kubeClient(namespaceName).getService(serviceName);
+
+        assertThat(service, is(notNullValue()));
+
+        LOGGER.info("Verifying labels for service {}", service.getMetadata().getName());
+        assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
+        assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is(kind));
+        assertThat(service.getMetadata().getLabels().get(Labels.STRIMZI_NAME_LABEL), is(clusterName.concat("-").concat(nameLabel)));
     }
 
     void verifyLabelsForSecrets(String namespaceName, String clusterName, String appName) {

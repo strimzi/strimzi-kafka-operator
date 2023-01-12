@@ -143,8 +143,8 @@ public class JmxTransReconciler {
      */
     protected Future<Void> waitForDeploymentReadiness() {
         if (this.jmxTrans != null) {
-            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(),  this.jmxTrans.getName(), 1_000, operationTimeoutMs)
-                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), this.jmxTrans.getName(), 1_000, operationTimeoutMs));
+            return deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(),  this.jmxTrans.getComponentName(), 1_000, operationTimeoutMs)
+                    .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), this.jmxTrans.getComponentName(), 1_000, operationTimeoutMs));
         } else {
             return Future.succeededFuture();
         }

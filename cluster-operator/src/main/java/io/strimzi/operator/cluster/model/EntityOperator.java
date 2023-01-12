@@ -54,7 +54,7 @@ import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class EntityOperator extends AbstractModel {
-    protected static final String APPLICATION_NAME = "entity-operator";
+    protected static final String COMPONENT_TYPE = "entity-operator";
     // Certificates for the Entity Topic Operator
     protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
     protected static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
@@ -99,8 +99,8 @@ public class EntityOperator extends AbstractModel {
      * @param resource          Kafka custom resource
      */
     protected EntityOperator(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, APPLICATION_NAME);
-        this.name = KafkaResources.entityOperatorDeploymentName(cluster);
+        super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }

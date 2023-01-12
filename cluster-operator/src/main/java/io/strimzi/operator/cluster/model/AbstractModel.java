@@ -203,8 +203,8 @@ public abstract class AbstractModel {
     protected final Reconciliation reconciliation;
     protected final String cluster;
     protected final String namespace;
+    protected final String componentName;
 
-    protected String name;
     protected String serviceName;
     protected String headlessServiceName;
 
@@ -325,15 +325,17 @@ public abstract class AbstractModel {
     /**
      * Constructor
      *
-     * @param reconciliation   The reconciliation
-     * @param resource         Kubernetes resource with metadata containing the namespace and cluster name
-     * @param applicationName  Name of the application that the extending class is deploying
+     * @param reconciliation    The reconciliation marker
+     * @param resource          Custom resource with metadata containing the namespace and cluster name
+     * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
+     * @param componentType     Type of the component that the extending class is deploying (e.g. Kafka, ZooKeeper etc. )
      */
-    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String applicationName) {
+    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String componentName, String componentType) {
         this.reconciliation = reconciliation;
         this.cluster = resource.getMetadata().getName();
         this.namespace = resource.getMetadata().getNamespace();
-        this.labels = Labels.generateDefaultLabels(resource, applicationName, STRIMZI_CLUSTER_OPERATOR_NAME);
+        this.componentName = componentName;
+        this.labels = Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
     /**
@@ -366,8 +368,8 @@ public abstract class AbstractModel {
     /**
      * @return the default Kubernetes resource name.
      */
-    public String getName() {
-        return name;
+    public String getComponentName() {
+        return componentName;
     }
 
     /**
@@ -388,39 +390,7 @@ public abstract class AbstractModel {
      * @return The selector labels as an instance of the Labels object.
      */
     public Labels getSelectorLabels() {
-        return getLabelsWithStrimziName(name, emptyMap()).strimziSelectorLabels();
-    }
-
-    /**
-     * @param name the value for the {@code strimzi.io/name} key
-     * @param additionalLabels a nullable map of additional labels to be added to this instance of Labels
-     *
-     * @return Labels object with the default labels merged with the provided additional labels and the new {@code strimzi.io/name} label
-     */
-    protected Labels getLabelsWithStrimziName(String name, Map<String, String> additionalLabels) {
-        return labels.withStrimziName(name).withAdditionalLabels(additionalLabels);
-    }
-
-    /**
-     * @param name the value for the {@code strimzi.io/name} key
-     * @param podName the value for the {@code strimzi.io/pod-name} key
-     * @param additionalLabels a nullable map of additional labels to be added to this instance of Labels
-     *
-     * @return Labels object with the default labels merged with the provided additional labels and the new {@code strimzi.io/name} label
-     */
-    protected Labels getLabelsWithStrimziNameAndPodName(String name, String podName, Map<String, String> additionalLabels) {
-        return labels.withStrimziName(name).withStrimziPodName(podName).withAdditionalLabels(additionalLabels);
-    }
-
-    /**
-     * @param name the value for the {@code strimzi.io/name} key
-     * @param additionalLabels a nullable map of additional labels to be added to this instance of Labels
-     *
-     * @return Labels object with the default labels merged with the provided additional labels, the new {@code strimzi.io/name} label
-     * and {@code strimzi.io/discovery} set to true to make the service discoverable
-     */
-    protected Labels getLabelsWithStrimziNameAndDiscovery(String name, Map<String, String> additionalLabels) {
-        return getLabelsWithStrimziName(name, additionalLabels).withStrimziDiscovery();
+        return labels.strimziSelectorLabels();
     }
 
     /**
@@ -819,7 +789,7 @@ public abstract class AbstractModel {
      * @return The name of the pod with the given name.
      */
     public String getPodName(int podId) {
-        return name + "-" + podId;
+        return componentName + "-" + podId;
     }
 
     /**
@@ -928,7 +898,7 @@ public abstract class AbstractModel {
         if (storage != null) {
             if (storage instanceof PersistentClaimStorage) {
                 PersistentClaimStorage persistentStorage = (PersistentClaimStorage) storage;
-                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + name;
+                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + componentName;
 
                 for (int i = 0; i < replicas; i++) {
                     pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, persistentStorage));
@@ -981,7 +951,7 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withNamespace(namespace)
                     // labels with the Strimzi name label of the component (this.name)
-                    .withLabels(getLabelsWithStrimziName(this.name, templatePersistentVolumeClaimLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templatePersistentVolumeClaimLabels).toMap())
                     .withAnnotations(Util.mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
                 .withNewSpec()
@@ -1028,12 +998,12 @@ public abstract class AbstractModel {
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithStrimziName(serviceName, templateServiceLabels),
+        return createService(serviceName, type, ports, labels.withAdditionalLabels(templateServiceLabels),
                 getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
     }
 
-    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> labels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, getLabelsWithStrimziNameAndDiscovery(name, labels), getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
+    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> additionalLabels, Map<String, String> annotations) {
+        return createService(serviceName, type, ports, labels.withAdditionalLabels(additionalLabels).withStrimziDiscovery(), getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
     }
 
     protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, IpFamilyPolicy ipFamilyPolicy, List<IpFamily> ipFamilies) {
@@ -1075,7 +1045,7 @@ public abstract class AbstractModel {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
                     .withName(headlessServiceName)
-                    .withLabels(getLabelsWithStrimziName(name, templateHeadlessServiceLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templateHeadlessServiceLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -1113,8 +1083,8 @@ public abstract class AbstractModel {
             PodSecurityContext podSecurityContext) {
         StatefulSet statefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templateStatefulSetLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templateStatefulSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -1127,8 +1097,8 @@ public abstract class AbstractModel {
                     .withReplicas(replicas)
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withName(name)
-                            .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
+                            .withName(componentName)
+                            .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
                             .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
@@ -1188,7 +1158,7 @@ public abstract class AbstractModel {
         for (int i = 0; i < replicas; i++)  {
             String podName = getPodName(i);
             Pod pod = createStatefulPod(
-                    name,
+                    componentName,
                     podName,
                     podAnnotationsProvider.apply(i),
                     volumes.apply(podName),
@@ -1203,8 +1173,8 @@ public abstract class AbstractModel {
 
         return new StrimziPodSetBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templatePodSetLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templatePodSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templatePodSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -1246,7 +1216,7 @@ public abstract class AbstractModel {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(podName)
-                    .withLabels(getLabelsWithStrimziNameAndPodName(name, podName, templatePodLabels).withStatefulSetPod(podName).withStrimziPodSetController(strimziPodSetName).toMap())
+                    .withLabels(labels.withStrimziPodName(podName).withAdditionalLabels(templatePodLabels).withStatefulSetPod(podName).withStrimziPodSetController(strimziPodSetName).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                 .endMetadata()
@@ -1289,7 +1259,7 @@ public abstract class AbstractModel {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -1327,8 +1297,8 @@ public abstract class AbstractModel {
     ) {
         Deployment dep = new DeploymentBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templateDeploymentLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templateDeploymentLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
                     .withOwnerReferences(createOwnerReference())
@@ -1339,7 +1309,7 @@ public abstract class AbstractModel {
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
                     .withNewTemplate()
                         .withNewMetadata()
-                            .withLabels(getLabelsWithStrimziName(name, templatePodLabels).toMap())
+                            .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
                             .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
                         .endMetadata()
                         .withNewSpec()
@@ -1436,20 +1406,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return The Labels object.
-     */
-    public Labels getLabels() {
-        return labels;
-    }
-
-    /**
-     * @param labels The Labels object.
-     */
-    public void setLabels(Labels labels) {
-        this.labels = labels;
-    }
-
-    /**
      * @param resources The resource requirements.
      */
     public void setResources(ResourceRequirements resources) {
@@ -1512,8 +1468,8 @@ public abstract class AbstractModel {
     protected PodDisruptionBudget createPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
                     .withOwnerReferences(createOwnerReference())
@@ -1533,8 +1489,8 @@ public abstract class AbstractModel {
     protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createPodDisruptionBudgetV1Beta1()   {
         return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
                     .withOwnerReferences(createOwnerReference())
@@ -1558,8 +1514,8 @@ public abstract class AbstractModel {
     protected PodDisruptionBudget createCustomControllerPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
                     .withOwnerReferences(createOwnerReference())
@@ -1583,8 +1539,8 @@ public abstract class AbstractModel {
     protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createCustomControllerPodDisruptionBudgetV1Beta1()   {
         return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
                 .withNewMetadata()
-                    .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withName(componentName)
+                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
                     .withOwnerReferences(createOwnerReference())
@@ -1655,7 +1611,7 @@ public abstract class AbstractModel {
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
                     .withOwnerReferences(createOwnerReference())
-                    .withLabels(getLabelsWithStrimziName(name, templateServiceAccountLabels).toMap())
+                    .withLabels(labels.withAdditionalLabels(templateServiceAccountLabels).toMap())
                     .withAnnotations(templateServiceAccountAnnotations)
                 .endMetadata()
             .build();

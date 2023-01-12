@@ -114,7 +114,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "my-bridge", "KafkaBridge");
-        verifyLabelsForService(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "my-bridge", "KafkaBridge");
+        verifyLabelsForService(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "bridge", "bridge-service", "KafkaBridge");
     }
 
     @ParallelTest

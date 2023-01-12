@@ -158,7 +158,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
-                assertThat(dc.getMetadata().getName(), is(mirror.getName()));
+                assertThat(dc.getMetadata().getName(), is(mirror.getComponentName()));
                 Map<String, String> annotations = new HashMap<>();
                 annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
                 annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
@@ -168,7 +168,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                 assertThat(capturedPdb, hasSize(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                assertThat(pdb.getMetadata().getName(), is(mirror.getName()));
+                assertThat(pdb.getMetadata().getName(), is(mirror.getComponentName()));
                 assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget()));
 
                 // Verify status
@@ -212,7 +212,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
         when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
-        when(mockDcOps.get(kmmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
+        when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -226,7 +226,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
         when(mockDcOps.scaleDown(any(), eq(kmmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -249,7 +249,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                 assertThat(capturedPdb, hasSize(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                assertThat(pdb.getMetadata().getName(), is(mirror.getName()));
+                assertThat(pdb.getMetadata().getName(), is(mirror.getComponentName()));
                 assertThat("PodDisruptionBudgets are not equal", pdb, is(mirror.generatePodDisruptionBudget()));
 
                 // Verify scaleDown / scaleUp were not called
@@ -289,8 +289,8 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
         when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
-        when(mockDcOps.get(kmmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -351,7 +351,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<Deployment> capturedDc = dcCaptor.getAllValues();
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
-                assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
+                assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
                 Map<String, String> annotations = new HashMap<>();
                 annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
                 annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
@@ -361,7 +361,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
                 assertThat(capturedPdb, hasSize(1));
                 PodDisruptionBudget pdb = capturedPdb.get(0);
-                assertThat(pdb.getMetadata().getName(), is(compareTo.getName()));
+                assertThat(pdb.getMetadata().getName(), is(compareTo.getComponentName()));
                 assertThat("PodDisruptionBudgets are not equal", pdb, is(compareTo.generatePodDisruptionBudget()));
 
                 // Verify scaleDown / scaleUp were not called
@@ -401,8 +401,8 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         kmm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockDcOps.get(kmmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> dcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
@@ -467,16 +467,16 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         kmm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockDcOps.get(kmmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo));
 
         when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
@@ -493,7 +493,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
+                verify(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo));
                 async.flag();
             })));
     }
@@ -529,16 +529,16 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
         when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
-        when(mockDcOps.get(kmmNamespace, mirror.getName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo));
 
         doAnswer(i -> Future.succeededFuture(scaleTo))
-                .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
+                .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo));
 
         when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -554,7 +554,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaMirrorMaker.RESOURCE_KIND, kmmNamespace, kmmName), kmm)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                verify(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getName()), eq(scaleTo));
+                verify(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo));
                 async.flag();
             })));
     }
