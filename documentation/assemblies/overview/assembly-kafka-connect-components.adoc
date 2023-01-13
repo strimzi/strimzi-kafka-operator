@@ -9,13 +9,7 @@
 Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems.
 The other system is typically an external data source or target, such as a database.
 
-Kafka Connect uses a plugin architecture.
-Plugins allow connections to other systems and provide additional configuration to manipulate data.
-Plugins include _connectors_ and other components, such as data converters and transforms.
-A connector operates with a specific type of external system.
-Each connector defines a schema for its configuration.
-You supply the configuration to Kafka Connect to create a _connector instance_ within Kafka Connect.
-Connector instances then define a set of tasks for moving data between systems.
+include::../../shared/snip-intro-connectors.adoc[]
 
 Strimzi operates Kafka Connect in _distributed mode_, distributing data streaming tasks across one or more worker pods.
 A Kafka Connect cluster comprises a group of worker pods.

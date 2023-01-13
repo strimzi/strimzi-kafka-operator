@@ -3,7 +3,7 @@
 // assembly-kafka-connect-configuration.adoc
 
 [id='con-kafka-connect-multiple-instances-{context}']
-= Kafka Connect configuration for multiple instances
+= Configuring Kafka Connect for multiple instances
 
 If you are running multiple instances of Kafka Connect, you have to change the default configuration of the following `config` properties:
 

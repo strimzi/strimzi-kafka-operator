@@ -3,28 +3,42 @@
 // deploying/assembly-deploy-kafka-connect.adoc
 
 [id='using-kafka-connect-with-plug-ins-{context}']
-= Extending Kafka Connect with connector plugins
+= Adding connectors
 
 [role="_abstract"]
-Kafka Connect uses connector instances to integrate with other systems to stream data.
-Connectors can be one of the following type:
+Kafka Connect uses connectors to integrate with other systems to stream data.
+A connector is an instance of a Kafka `Connector` class, which can be one of the following type:
 
-* Source connectors that push data into Kafka
-* Sink connectors that extract data out of Kafka
+Source connector:: A source connector is a runtime entity that fetches data from an external system and feeds it to Kafka as messages.
+Sink connector:: A sink connector is a runtime entity that fetches messages from Kafka topics and feeds them to an external system.
 
-The procedures in this section describe how you can add connectors by doing one of the following:
+include::../../shared/snip-intro-connectors.adoc[]
 
-* xref:creating-new-image-using-kafka-connect-build-{context}[]
-* xref:creating-new-image-from-base-{context}[](manually or using continuous integration)
+Add connector plugins to Kafka Connect in one of the following ways:
 
-IMPORTANT: You create the configuration for connectors directly xref:assembly-creating-managing-connectors-{context}[using the Kafka Connect REST API or `KafkaConnector` custom resources].
+* xref:creating-new-image-using-kafka-connect-build-{context}[Configure Kafka Connect to build a new container image with plugins automatically]
+* xref:creating-new-image-from-base-{context}[Create a Docker image from the base Kafka Connect image] (manually or using continuous integration)
 
-You can use your own connectors or try the example `FileStreamSourceConnector` and  `FileStreamSinkConnector` connectors for moving file-based data into and out of a Kafka cluster.
-For information on deploying the example file connectors as `KafkaConnector` resources, see xref:proc-deploying-kafkaconnector-str[].  
+After plugins have been added to the container image, you can manage the running of connector instances in the following ways:
 
-NOTE: Up until Apache Kafka 3.1.0, the Strimzi container images for Kafka Connect included the example file connectors. From Apache Kafka 3.1.1 and 3.2.0, these connectors are no longer included and must be deployed like any connector. 
+* xref:proc-deploying-kafkaconnector-{context}[Using Strimzi’s `KafkaConnector` custom resource]
+* xref:con-exposing-kafka-connect-api-{context}[Using the Kafka Connect API] 
 
-//Procedure to create a container images using Strimzi and Kafka Connect build
+You can also create new connector instances using these options.
+
+IMPORTANT: You create the configuration for connectors directly using `KafkaConnector` custom resources or the Kafka Connect REST API.
+
+//Procedure to create container images using Strimzi and Kafka Connect build
 include::../../modules/deploying/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]
-//Procedure to create a container images from base image
+//Procedure to create container images from base image
 include::../../modules/deploying/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
+//Procedure to deploy a KafkaConnector resource
+include::../../modules/deploying/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
+//Procedure to manually restart a Kafka connector
+include::../../modules/deploying/proc-manual-restart-connector.adoc[leveloffset=+1]
+//Procedure to manually restart a Kafka connector task
+include::../../modules/deploying/proc-manual-restart-connector-task.adoc[leveloffset=+1]
+//Exposing the Kafka Connect API
+include::../../modules/deploying/con-exposing-kafka-connect-api.adoc[leveloffset=+1]
+//Switching from the Kafka Connect API to KafkaConnector
+include::../../modules/deploying/con-switching-api-to-kafka-connector.adoc[leveloffset=+1]

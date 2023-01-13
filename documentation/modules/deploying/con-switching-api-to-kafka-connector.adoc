@@ -1,0 +1,18 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deploy-kafka-connect-with-plugins.adoc
+
+[id='con-switching-api-to-kafka-connector-{context}']
+= Switching from using the Kafka Connect API to using KafkaConnector custom resources
+
+[role="_abstract"]
+You can switch from using the Kafka Connect API to using `KafkaConnector` custom resources to manage your connectors.
+To make the switch, do the following in the order shown:
+
+. Deploy `KafkaConnector` resources with the configuration to create your connector instances.
+. Enable `KafkaConnector` resources in your Kafka Connect configuration by setting the `strimzi.io/use-connector-resources` annotation to `true`.
+
+WARNING: If you enable `KafkaConnector` resources before creating them, you delete all connectors.
+
+To switch from using `KafkaConnector` resources to using the Kafka Connect API, first remove the annotation that enables the `KafkaConnector` resources from your Kafka Connect configuration.
+Otherwise, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.

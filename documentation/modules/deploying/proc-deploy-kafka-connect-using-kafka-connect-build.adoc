@@ -1,11 +1,12 @@
 // Module included in the following assemblies:
 //
-// assembly-using-kafka-connect-with-plugins.adoc
+// assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='creating-new-image-using-kafka-connect-build-{context}']
-= Creating a new container image automatically using Strimzi
+= Building a new container image with connector plugins automatically
 
-This procedure shows how to configure Kafka Connect so that Strimzi automatically builds a new container image with additional connectors.
+[role="_abstract"]
+Configure Kafka Connect so that Strimzi automatically builds a new container image with additional connectors.
 You define the connector plugins using the `.spec.build.plugins` property of the `KafkaConnect` custom resource.
 Strimzi will automatically download and add the connector plugins into a new container image.
 The container is pushed into the container repository specified in `.spec.build.output` and automatically used in the Kafka Connect deployment.
@@ -56,7 +57,7 @@ spec: # <1>
 +
 [source,subs="+quotes"]
 ----
-$ kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
+$ kubectl apply -f <kafka_connect_configuration_file>
 ----
 
 . Wait for the new container image to build, and for the Kafka Connect cluster to be deployed.
@@ -65,7 +66,5 @@ $ kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
 
 [role="_additional-resources"]
 .Additional resources
-
-See the _Using Strimzi_ guide for more information on:
 
 * link:{BookURLConfiguring}#type-Build-reference[Kafka Connect `Build` schema reference^]

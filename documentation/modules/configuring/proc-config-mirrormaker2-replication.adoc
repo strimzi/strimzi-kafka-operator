@@ -77,91 +77,97 @@ kind: KafkaMirrorMaker2
 metadata:
   name: my-mirror-maker2
 spec:
-  version: {DefaultKafkaVersion} <1>
-  replicas: 3 <2>
-  connectCluster: "my-cluster-target" <3>
-  clusters: <4>
-  - alias: "my-cluster-source" <5>
-    authentication: <6>
+  version: {DefaultKafkaVersion} # <1>
+  replicas: 3 # <2>
+  connectCluster: "my-cluster-target" # <3>
+  clusters: # <4>
+  - alias: "my-cluster-source" # <5>
+    authentication: # <6>
       certificateAndKey:
         certificate: source.crt
         key: source.key
         secretName: my-user-source
       type: tls
-    bootstrapServers: my-cluster-source-kafka-bootstrap:9092 <7>
-    tls: <8>
+    bootstrapServers: my-cluster-source-kafka-bootstrap:9092 # <7>
+    tls: # <8>
       trustedCertificates:
       - certificate: ca.crt
         secretName: my-cluster-source-cluster-ca-cert
-  - alias: "my-cluster-target" <9>
-    authentication: <10>
+  - alias: "my-cluster-target" # <9>
+    authentication: # <10>
       certificateAndKey:
         certificate: target.crt
         key: target.key
         secretName: my-user-target
       type: tls
-    bootstrapServers: my-cluster-target-kafka-bootstrap:9092 <11>
-    config: <12>
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092 # <11>
+    config: # <12>
       config.storage.replication.factor: 1
       offset.storage.replication.factor: 1
       status.storage.replication.factor: 1
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <13>
+      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" # <13>
       ssl.enabled.protocols: "TLSv1.2"
       ssl.protocol: "TLSv1.2"
-      ssl.endpoint.identification.algorithm: HTTPS <14>
-    tls: <15>
+      ssl.endpoint.identification.algorithm: HTTPS # <14>
+    tls: # <15>
       trustedCertificates:
       - certificate: ca.crt
         secretName: my-cluster-target-cluster-ca-cert
-  mirrors: <16>
-  - sourceCluster: "my-cluster-source" <17>
-    targetCluster: "my-cluster-target" <18>
-    sourceConnector: <19>
-      tasksMax: 10 <20>
+  mirrors: # <16>
+  - sourceCluster: "my-cluster-source" # <17>
+    targetCluster: "my-cluster-target" # <18>
+    sourceConnector: # <19>
+      tasksMax: 10 # <20>
+      autoRestart: # <21>
+        enabled: true
       config:
-        replication.factor: 1 <21>
-        offset-syncs.topic.replication.factor: 1 <22>
-        sync.topic.acls.enabled: "false" <23>
-        refresh.topics.interval.seconds: 60 <24>
-        replication.policy.separator: "" <25>
-        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" <26>
-    heartbeatConnector: <27>
+        replication.factor: 1 # <22>
+        offset-syncs.topic.replication.factor: 1 # <23>
+        sync.topic.acls.enabled: "false" # <24>
+        refresh.topics.interval.seconds: 60 # <25>
+        replication.policy.separator: "" # <26>
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <27>
+    heartbeatConnector: # <28>
+      autoRestart:
+        enabled: true
       config:
-        heartbeats.topic.replication.factor: 1 <28>
-    checkpointConnector: <29>
+        heartbeats.topic.replication.factor: 1 # <29>
+    checkpointConnector: # <30>
+      autoRestart:
+        enabled: true
       config:
-        checkpoints.topic.replication.factor: 1 <30>
-        refresh.groups.interval.seconds: 600 <31>
-        sync.group.offsets.enabled: true <32>
-        sync.group.offsets.interval.seconds: 60 <33>
-        emit.checkpoints.interval.seconds: 60 <34>
+        checkpoints.topic.replication.factor: 1 # <31>
+        refresh.groups.interval.seconds: 600 # <32>
+        sync.group.offsets.enabled: true # <33>
+        sync.group.offsets.interval.seconds: 60 # <34>
+        emit.checkpoints.interval.seconds: 60 # <35>
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
-    topicsPattern: "topic1|topic2|topic3" <35>
-    groupsPattern: "group1|group2|group3" <36>
-  resources: <37>
+    topicsPattern: "topic1|topic2|topic3" # <36>
+    groupsPattern: "group1|group2|group3" # <37>
+  resources: # <38>
     requests:
       cpu: "1"
       memory: 2Gi
     limits:
       cpu: "2"
       memory: 2Gi
-  logging: <38>
+  logging: # <39>
     type: inline
     loggers:
       connect.root.logger.level: "INFO"
-  readinessProbe: <39>
+  readinessProbe: # <40>
     initialDelaySeconds: 15
     timeoutSeconds: 5
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  jvmOptions: <40>
+  jvmOptions: # <41>
     "-Xmx": "1g"
     "-Xms": "1g"
-  image: my-org/my-image:latest <41>
+  image: my-org/my-image:latest # <42>
   rack:
-    topologyKey: topology.kubernetes.io/zone <42>
-  template: <43>
+    topologyKey: topology.kubernetes.io/zone # <43>
+  template: # <44>
     pod:
       affinity:
         podAntiAffinity:
@@ -174,7 +180,7 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    connectContainer: <44>
+    connectContainer: # <45>
       env:
         - name: JAEGER_SERVICE_NAME
           value: my-jaeger-service
@@ -183,8 +189,8 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
   tracing:
-    type: jaeger <45>
-  externalConfiguration: <46>
+    type: jaeger # <46>
+  externalConfiguration: # <47>
     env:
       - name: AWS_ACCESS_KEY_ID
         valueFrom:
@@ -218,33 +224,34 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <18> xref:type-KafkaMirrorMaker2MirrorSpec-reference[Cluster alias] for the target cluster used by the MirrorMaker 2.0 connectors.
 <19> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorSourceConnector`] that creates remote topics. The `config` overrides the default configuration options.
 <20> The maximum number of tasks that the connector may create. Tasks handle the data replication and run in parallel. If the infrastructure supports the processing overhead, increasing this value can improve throughput. Kafka Connect distributes the tasks between members of the cluster. If there are more tasks than workers, workers are assigned multiple tasks. For sink connectors, aim to have one task for each topic partition consumed. For source connectors, the number of tasks that can run in parallel may also depend on the external system. The connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
-<21> Replication factor for mirrored topics created at the target cluster.
-<22> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
-<23> When xref:con-mirrormaker-acls-{context}[ACL rules synchronization] is enabled, ACLs are applied to synchronized topics. The default is `true`. This feature is not compatible with the User Operator. If you are using the User Operator, set this property to `false`.
-<24> Optional setting to change the frequency of checks for new topics. The default is for a check every 10 minutes.
-<25> Defines the separator used for the renaming of remote topics.
-<26> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration.
+<21> Enables automatic restarts of failed connectors and tasks. Up to seven restart attempts are made, after which restarts must be made manually. If you are using a Kafka version earlier than 3.0.0, only a failed connector is restarted and not failed tasks.
+<22> Replication factor for mirrored topics created at the target cluster.
+<23> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
+<24> When xref:con-mirrormaker-acls-{context}[ACL rules synchronization] is enabled, ACLs are applied to synchronized topics. The default is `true`. This feature is not compatible with the User Operator. If you are using the User Operator, set this property to `false`.
+<25> Optional setting to change the frequency of checks for new topics. The default is for a check every 10 minutes.
+<26> Defines the separator used for the renaming of remote topics.
+<27> Adds a policy that overrides the automatic renaming of remote topics. Instead of prepending the name with the name of the source cluster, the topic retains its original name. This optional setting is useful for active/passive backups and data migration.
 To configure topic offset synchronization, this property must also be set for the `checkpointConnector.config`.
-<27> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorHeartbeatConnector`] that performs connectivity checks. The `config` overrides the default configuration options.
-<28> Replication factor for the heartbeat topic created at the target cluster.
-<29> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorCheckpointConnector`] that tracks offsets. The `config` overrides the default configuration options.
-<30> Replication factor for the checkpoints topic created at the target cluster.
-<31> Optional setting to change the frequency of checks for new consumer groups. The default is for a check every 10 minutes.
-<32> Optional setting to synchronize consumer group offsets, which is useful for recovery in an active/passive configuration. Synchronization is not enabled by default.
-<33> If the synchronization of consumer group offsets is enabled, you can adjust the frequency of the synchronization.
-<34> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
-<35> Topic replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. The source connector replicates the specified topics. The checkpoint connector tracks offsets for the specified topics. Here we request three topics by name.
-<36> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. The checkpoint connector replicates the specified consumer groups. Here we request three consumer groups by name.
-<37> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<38> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
-<39> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<40> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
-<41> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<42> SPECIALIZED OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
-<43> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
-<44> Environment variables are set for distributed tracing.
-<45> Distributed tracing is enabled for Jaeger.
-<46> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
+<28> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorHeartbeatConnector`] that performs connectivity checks. The `config` overrides the default configuration options.
+<29> Replication factor for the heartbeat topic created at the target cluster.
+<30> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorCheckpointConnector`] that tracks offsets. The `config` overrides the default configuration options.
+<31> Replication factor for the checkpoints topic created at the target cluster.
+<32> Optional setting to change the frequency of checks for new consumer groups. The default is for a check every 10 minutes.
+<33> Optional setting to synchronize consumer group offsets, which is useful for recovery in an active/passive configuration. Synchronization is not enabled by default.
+<34> If the synchronization of consumer group offsets is enabled, you can adjust the frequency of the synchronization.
+<35> Adjusts the frequency of checks for offset tracking. If you change the frequency of offset synchronization, you might also need to adjust the frequency of these checks.
+<36> Topic replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. The source connector replicates the specified topics. The checkpoint connector tracks offsets for the specified topics. Here we request three topics by name.
+<37> Consumer group replication from the source cluster xref:type-KafkaMirrorMaker2MirrorSpec-reference[defined as a comma-separated list or regular expression pattern]. The checkpoint connector replicates the specified consumer groups. Here we request three consumer groups by name.
+<38> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<39> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<40> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<41> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
+<42> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
+<43> SPECIALIZED OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
+<44> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<45> Environment variables are set for distributed tracing.
+<46> Distributed tracing is enabled for Jaeger.
+<47> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
 You can also use _configuration provider plugins_ to xref:assembly-loading-config-with-providers-str[load configuration values from external sources].
 
 . Create or update the resource:
