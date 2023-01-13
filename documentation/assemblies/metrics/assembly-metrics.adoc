@@ -13,7 +13,7 @@ Metrics are available for each of the components of Strimzi.
 
 You can also collect metrics specific to `oauth` authentication and `opa` or `keycloak` authorization. 
 You do this by setting the `enableMetrics` property to `true` in the listener configuration of the `Kafka` resource. 
-For example, set `enableMetrics'  to `true` in `spec.kafka.listeners.authentication` and `spec.kafka.authorization`.
+For example, set `enableMetrics`  to `true` in `spec.kafka.listeners.authentication` and `spec.kafka.authorization`.
 Similarly, you can enable metrics for `oauth` authentication in the `KafkaBridge`, `KafkaConnect`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` custom resources.  
 
 To provide metrics information, Strimzi uses Prometheus rules and Grafana dashboards.
