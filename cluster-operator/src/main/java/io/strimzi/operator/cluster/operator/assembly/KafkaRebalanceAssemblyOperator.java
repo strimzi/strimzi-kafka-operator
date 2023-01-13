@@ -396,7 +396,14 @@ public class KafkaRebalanceAssemblyOperator
                                    CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,
                                    KafkaRebalanceState currentState, KafkaRebalanceAnnotation rebalanceAnnotation) {
 
-        LOGGER.infoCr(reconciliation, "Rebalance action from state [{}]", currentState);
+
+        if (kafkaRebalance != null && kafkaRebalance.getStatus() != null
+                && "Ready".equals(rebalanceStateConditionType(kafkaRebalance.getStatus()))
+                && rawRebalanceAnnotation(kafkaRebalance) == null) {
+            LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the  `refresh` annotation to ask for a new rebalance request");
+        } else {
+            LOGGER.infoCr(reconciliation, "Rebalance action is performed and KafkaRebalance resource is currently in [{}] state", currentState);
+        }
 
         if (Annotations.isReconciliationPausedWithAnnotation(kafkaRebalance)) {
             // we need to do this check again because it was triggered by a watcher
@@ -431,13 +438,14 @@ public class KafkaRebalanceAssemblyOperator
                                                 kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
                                                 .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
                                                 .compose(updatedKafkaRebalance -> {
-                                                    String message = "State updated to [{}] ";
-                                                    if (rawRebalanceAnnotation(updatedKafkaRebalance) == null) {
-                                                        LOGGER.infoCr(reconciliation, message + "and annotation {} is not set ",
-                                                                rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
-                                                                ANNO_STRIMZI_IO_REBALANCE);
-                                                    } else {
-                                                        LOGGER.infoCr(reconciliation, message + "with annotation {}={} ",
+                                                    String message = "";
+                                                    if (currentKafkaRebalance.getStatus() != null
+                                                            && updatedKafkaRebalance.getStatus() != null
+                                                            && !rebalanceStateConditionType(currentKafkaRebalance.getStatus()).equals(rebalanceStateConditionType(updatedKafkaRebalance.getStatus()))) {
+                                                        message = "KafkaRebalance state is now updated to [{}]";
+                                                    }
+                                                    if (rawRebalanceAnnotation(updatedKafkaRebalance) != null) {
+                                                        LOGGER.infoCr(reconciliation, message + " with annotation {}={} applied on the KafkaRebalance resource",
                                                                 rebalanceStateConditionType(updatedKafkaRebalance.getStatus()),
                                                                 ANNO_STRIMZI_IO_REBALANCE,
                                                                 rawRebalanceAnnotation(updatedKafkaRebalance)
