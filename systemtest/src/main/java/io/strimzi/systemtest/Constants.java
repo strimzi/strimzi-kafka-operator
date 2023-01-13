@@ -206,6 +206,11 @@ public interface Constants {
     String SMOKE = "smoke";
 
     /**
+     * Tag for Kafka smoke tests
+     */
+    String KAFKA_SMOKE = "kafkasmoke";
+
+    /**
      * Tag for sanity tests
      */
     String SANITY = "sanity";
