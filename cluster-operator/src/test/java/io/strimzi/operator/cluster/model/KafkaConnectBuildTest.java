@@ -215,8 +215,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
         assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/kaniko/.docker"));
-        assertThat(pod.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(pod.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
+        TestUtils.checkOwnerReference(pod, kc);
     }
 
     @ParallelTest
@@ -278,8 +277,7 @@ public class KafkaConnectBuildTest {
         assertThat(cm.getMetadata().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
         assertThat(cm.getMetadata().getNamespace(), is(namespace));
         assertThat(cm.getData().get("Dockerfile"), is(dockerfile.getDockerfile()));
-        assertThat(cm.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(cm.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
+        TestUtils.checkOwnerReference(cm, kc);
     }
 
     @ParallelTest
@@ -334,8 +332,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getSpec().getStrategy().getDockerStrategy(), is(notNullValue()));
         assertThat(bc.getSpec().getResources().getLimits(), is(limit));
         assertThat(bc.getSpec().getResources().getRequests(), is(request));
-        assertThat(bc.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(bc.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
+        TestUtils.checkOwnerReference(bc, kc);
     }
 
     @ParallelTest
@@ -377,8 +374,7 @@ public class KafkaConnectBuildTest {
         assertThat(bc.getSpec().getOutput().getTo().getKind(), is("ImageStreamTag"));
         assertThat(bc.getSpec().getOutput().getTo().getName(), is("my-image:latest"));
         assertThat(bc.getSpec().getStrategy().getDockerStrategy(), is(notNullValue()));
-        assertThat(bc.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(bc.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
+        TestUtils.checkOwnerReference(bc, kc);
     }
 
     @ParallelTest

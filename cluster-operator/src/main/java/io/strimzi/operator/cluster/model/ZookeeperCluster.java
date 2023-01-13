@@ -190,7 +190,6 @@ public class ZookeeperCluster extends AbstractModel {
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
-        zk.setOwnerReference(kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
         int replicas = zookeeperClusterSpec.getReplicas();
@@ -443,7 +442,7 @@ public class ZookeeperCluster extends AbstractModel {
                     .withName(KafkaResources.zookeeperNetworkPolicyName(cluster))
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withPodSelector(labelSelector2)

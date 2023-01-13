@@ -229,8 +229,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         }
         kafkaMirrorMakerCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaMirrorMakerCluster.templatePodLabels, DEFAULT_POD_LABELS);
 
-        kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
-
         return kafkaMirrorMakerCluster;
     }
 

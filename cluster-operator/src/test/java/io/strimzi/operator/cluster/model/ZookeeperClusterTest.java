@@ -9,10 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -146,11 +144,6 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
     }
 
-    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
     private Secret generateCertificatesSecret() {
         ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER, null, null);
         clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER, emptyMap(), emptyMap(), emptyMap(), null, true);
@@ -180,7 +173,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ConfigMap brokerCm = zc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCm, null));
-        checkOwnerReference(zc.createOwnerReference(), brokerCm);
+        TestUtils.checkOwnerReference(brokerCm, KAFKA);
         assertThat(brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is("{\"animal\":\"wombat\"}"));
     }
 
@@ -198,7 +191,7 @@ public class ZookeeperClusterTest {
         assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
         assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
-        checkOwnerReference(ZC.createOwnerReference(), svc);
+        TestUtils.checkOwnerReference(svc, KAFKA);
     }
 
     @ParallelTest
@@ -222,14 +215,14 @@ public class ZookeeperClusterTest {
 
         assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
-        checkOwnerReference(zc.createOwnerReference(), svc);
+        TestUtils.checkOwnerReference(svc, KAFKA);
     }
 
     @ParallelTest
     public void testGenerateHeadlessService() {
         Service headless = ZC.generateHeadlessService();
         checkHeadlessService(headless);
-        checkOwnerReference(ZC.createOwnerReference(), headless);
+        TestUtils.checkOwnerReference(headless, KAFKA);
     }
 
     @ParallelTest
@@ -262,7 +255,7 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
 
-        checkOwnerReference(zc.createOwnerReference(), headless);
+        TestUtils.checkOwnerReference(headless, KAFKA);
     }
 
     @ParallelTest

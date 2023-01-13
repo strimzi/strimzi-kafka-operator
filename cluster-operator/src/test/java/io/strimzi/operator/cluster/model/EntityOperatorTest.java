@@ -130,8 +130,7 @@ public class EntityOperatorTest {
         assertThat(dep.getMetadata().getName(), is(KafkaResources.entityOperatorDeploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
         assertThat(dep.getSpec().getReplicas(), is(EntityOperatorSpec.DEFAULT_REPLICAS));
-        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(entityOperator.createOwnerReference()));
+        TestUtils.checkOwnerReference(dep, resource);
 
         assertThat(containers.size(), is(3));
         // just check names of topic and user operators (their containers are tested in the related unit test classes)
@@ -1064,7 +1063,7 @@ public class EntityOperatorTest {
         EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, true);
         Role role = eo.generateRole(namespace, namespace);
 
-        assertThat(role.getMetadata().getOwnerReferences().get(0), is(entityOperator.createOwnerReference()));
+        TestUtils.checkOwnerReference(role, resource);
 
         role = eo.generateRole(namespace, "some-other-namespace");
         assertThat(role.getMetadata().getOwnerReferences().size(), is(0));

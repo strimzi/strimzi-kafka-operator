@@ -97,7 +97,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                                                    KafkaVersion.Lookup versions) {
         KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
-        cluster.setOwnerReference(kafkaMirrorMaker2);
 
         cluster.setImage(versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion()));
 

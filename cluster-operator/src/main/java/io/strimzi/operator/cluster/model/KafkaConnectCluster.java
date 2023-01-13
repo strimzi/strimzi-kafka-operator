@@ -202,8 +202,6 @@ public class KafkaConnectCluster extends AbstractModel {
         KafkaConnectCluster cluster = fromSpec(reconciliation, kafkaConnect.getSpec(), versions,
                 new KafkaConnectCluster(reconciliation, kafkaConnect));
 
-        cluster.setOwnerReference(kafkaConnect);
-
         return cluster;
     }
 
@@ -858,7 +856,7 @@ public class KafkaConnectCluster extends AbstractModel {
                         .withName(componentName)
                         .withNamespace(namespace)
                         .withLabels(labels.toMap())
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withNewPodSelector()

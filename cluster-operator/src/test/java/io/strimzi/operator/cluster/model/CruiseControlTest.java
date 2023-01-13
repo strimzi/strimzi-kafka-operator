@@ -139,7 +139,8 @@ public class CruiseControlTest {
             .endTemplate()
             .build();
 
-    private final CruiseControl cc = createCruiseControl(createKafka(cruiseControlSpec));
+    private final Kafka kafka = createKafka(cruiseControlSpec);
+    private final CruiseControl cc = createCruiseControl(kafka);
 
     private CruiseControl createCruiseControl(Kafka kafkaAssembly) {
         return CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, kafkaAssembly.getSpec().getKafka().getStorage());
@@ -368,8 +369,7 @@ public class CruiseControlTest {
 
         assertThat(dep.getMetadata().getName(), is(CruiseControlResources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(cc.createOwnerReference()));
+        TestUtils.checkOwnerReference(dep, kafka);
 
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
@@ -535,7 +535,7 @@ public class CruiseControlTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
 
-        TestUtils.checkOwnerReference(cc.createOwnerReference(), svc);
+        TestUtils.checkOwnerReference(svc, kafka);
     }
 
     @ParallelTest

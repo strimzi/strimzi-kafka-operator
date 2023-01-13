@@ -102,8 +102,6 @@ public class KafkaConnectBuild extends AbstractModel {
             throw new InvalidResourceException("Required .spec section is missing.");
         }
 
-        build.setOwnerReference(kafkaConnect);
-
         if (spec.getBuild() != null)    {
             validateBuildConfiguration(spec.getBuild());
 
@@ -418,7 +416,7 @@ public class KafkaConnectBuild extends AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templateBuildConfigLabels).toMap())
                     .withAnnotations(templateBuildConfigAnnotations)
                     .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withOutput(output)

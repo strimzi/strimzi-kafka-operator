@@ -230,7 +230,6 @@ public class KafkaBridgeCluster extends AbstractModel {
             LOGGER.warnCr(reconciliation, "The spec.http property is missing.");
             throw new InvalidResourceException("The HTTP configuration for the bridge is not specified.");
         }
-        kafkaBridgeCluster.setOwnerReference(kafkaBridge);
 
         return kafkaBridgeCluster;
     }

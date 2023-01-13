@@ -92,13 +92,13 @@ public class AbstractModelTest {
                 .withNewMetadata()
                     .withName("my-cluster")
                     .withNamespace("my-namespace")
+                    .withUid("6d92db8a-a1f9-4c18-a663-d88731bd52bb")
                 .endMetadata()
                 .build();
 
         AbstractModel am = new Model(kafka);
-        am.setOwnerReference(kafka);
 
-        OwnerReference ref = am.createOwnerReference();
+        OwnerReference ref = am.ownerReference;
 
         assertThat(ref.getApiVersion(), is(kafka.getApiVersion()));
         assertThat(ref.getKind(), is(kafka.getKind()));

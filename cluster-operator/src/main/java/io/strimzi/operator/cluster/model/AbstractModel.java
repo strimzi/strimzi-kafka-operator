@@ -24,7 +24,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -204,6 +203,7 @@ public abstract class AbstractModel {
     protected final String cluster;
     protected final String namespace;
     protected final String componentName;
+    protected final OwnerReference ownerReference;
 
     protected String serviceName;
     protected String headlessServiceName;
@@ -212,11 +212,6 @@ public abstract class AbstractModel {
     protected String image;
     // Number of replicas
     protected int replicas;
-
-    // Owner Reference information
-    private String ownerApiVersion;
-    private String ownerKind;
-    private String ownerUid;
 
     protected Labels labels;
 
@@ -336,6 +331,7 @@ public abstract class AbstractModel {
         this.namespace = resource.getMetadata().getNamespace();
         this.componentName = componentName;
         this.labels = Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
+        this.ownerReference = ModelUtils.createOwnerReference(resource, false);
     }
 
     /**
@@ -967,7 +963,7 @@ public abstract class AbstractModel {
 
         // if the persistent volume claim has to be deleted when the cluster is un-deployed then set an owner reference of the CR
         if (storage.isDeleteClaim())    {
-            pvc.getMetadata().setOwnerReferences(Collections.singletonList(createOwnerReference()));
+            pvc.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
         }
 
         return pvc;
@@ -983,18 +979,18 @@ public abstract class AbstractModel {
                     .withName(name)
                     .withNamespace(namespace)
                     .withLabels(labels)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withData(data)
                 .build();
     }
 
     protected Secret createSecret(String name, Map<String, String> data, Map<String, String> customAnnotations) {
-        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, customAnnotations, emptyMap());
+        return ModelUtils.createSecret(name, namespace, labels, ownerReference, data, customAnnotations, emptyMap());
     }
 
     protected Secret createJmxSecret(String name, Map<String, String> data) {
-        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
+        return ModelUtils.createSecret(name, namespace, labels, ownerReference, data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
@@ -1013,7 +1009,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.toMap())
                     .withNamespace(namespace)
                     .withAnnotations(annotations)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withType(type)
@@ -1048,7 +1044,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templateHeadlessServiceLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withType("ClusterIP")
@@ -1087,7 +1083,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templateStatefulSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withPodManagementPolicy(templatePodManagementPolicy.toValue())
@@ -1177,7 +1173,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templatePodSetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templatePodSetAnnotations))
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
@@ -1262,7 +1258,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withRestartPolicy("Never")
@@ -1301,7 +1297,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templateDeploymentLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withStrategy(updateStrategy)
@@ -1434,33 +1430,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
-     *
-     * @return The OwnerReference object
-     */
-    protected OwnerReference createOwnerReference() {
-        return new OwnerReferenceBuilder()
-                .withApiVersion(ownerApiVersion)
-                .withKind(ownerKind)
-                .withName(cluster)
-                .withUid(ownerUid)
-                .withBlockOwnerDeletion(false)
-                .withController(false)
-                .build();
-    }
-
-    /**
-     * Set fields needed to generate the OwnerReference object
-     *
-     * @param parent The resource which should be used as parent. It will be used to gather the date needed for generating OwnerReferences.
-     */
-    protected void setOwnerReference(HasMetadata parent)  {
-        this.ownerApiVersion = parent.getApiVersion();
-        this.ownerKind = parent.getKind();
-        this.ownerUid = parent.getMetadata().getUid();
-    }
-
-    /**
      * Creates the PodDisruptionBudget
      *
      * @return The default PodDisruptionBudget
@@ -1472,7 +1441,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
@@ -1493,7 +1462,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
@@ -1518,7 +1487,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
@@ -1543,7 +1512,7 @@ public abstract class AbstractModel {
                     .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
@@ -1610,7 +1579,7 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(getServiceAccountName())
                     .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                     .withLabels(labels.withAdditionalLabels(templateServiceAccountLabels).toMap())
                     .withAnnotations(templateServiceAccountAnnotations)
                 .endMetadata()
@@ -1628,7 +1597,7 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(getRoleName())
                     .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                     .addToLabels(labels.withAdditionalLabels(templateEntityOperatorRoleLabels).toMap())
                     .addToAnnotations(templateEntityOperatorRoleAnnotations)
                 .endMetadata()
@@ -1649,7 +1618,7 @@ public abstract class AbstractModel {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                     .withLabels(labels.withAdditionalLabels(templateEntityOperatorRoleBindingLabels).toMap())
                     .withAnnotations(templateEntityOperatorRoleBindingAnnotations)
                 .endMetadata()

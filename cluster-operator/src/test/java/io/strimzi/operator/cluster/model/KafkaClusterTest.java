@@ -9,10 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorRequirementBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -160,12 +158,6 @@ public class KafkaClusterTest {
     //////////
     // Utility methods
     //////////
-
-    private void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
     private Map<String, String> expectedSelectorLabels()    {
         return Map.of(Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
                 Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(CLUSTER),
@@ -227,7 +219,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ConfigMap brokerCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCm, null));
-        checkOwnerReference(kc.createOwnerReference(), brokerCm);
+        TestUtils.checkOwnerReference(brokerCm, KAFKA);
         assertThat(brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is("{\"animal\":\"wombat\"}"));
     }
 
@@ -372,7 +364,7 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
-        checkOwnerReference(KC.createOwnerReference(), headful);
+        TestUtils.checkOwnerReference(headful, KAFKA);
     }
 
     @ParallelTest
@@ -408,7 +400,7 @@ public class KafkaClusterTest {
         assertThat(headful.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(true));
         assertThat(headful.getMetadata().getLabels().get(Labels.STRIMZI_DISCOVERY_LABEL), is("true"));
 
-        checkOwnerReference(kc.createOwnerReference(), headful);
+        TestUtils.checkOwnerReference(headful, KAFKA);
     }
 
     @ParallelTest
@@ -444,7 +436,7 @@ public class KafkaClusterTest {
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
 
-        checkOwnerReference(kc.createOwnerReference(), headless);
+        TestUtils.checkOwnerReference(headless, KAFKA);
     }
 
     @ParallelTest
@@ -700,7 +692,7 @@ public class KafkaClusterTest {
     public void testGenerateHeadlessService() {
         Service headless = KC.generateHeadlessService();
         checkHeadlessService(headless);
-        checkOwnerReference(KC.createOwnerReference(), headless);
+        TestUtils.checkOwnerReference(headless, KAFKA);
     }
 
     @ParallelTest
@@ -1494,7 +1486,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-        checkOwnerReference(kc.createOwnerReference(), ext);
+        TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         for (int i = 0; i < REPLICAS; i++)  {
@@ -1503,7 +1495,7 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-            checkOwnerReference(kc.createOwnerReference(), srv);
+            TestUtils.checkOwnerReference(srv, KAFKA);
         }
 
         // Check bootstrap route
@@ -1513,7 +1505,7 @@ public class KafkaClusterTest {
         assertThat(brt.getSpec().getTo().getKind(), is("Service"));
         assertThat(brt.getSpec().getTo().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
         assertThat(brt.getSpec().getPort().getTargetPort(), is(new IntOrString(9094)));
-        checkOwnerReference(kc.createOwnerReference(), brt);
+        TestUtils.checkOwnerReference(brt, KAFKA);
 
         // Check per pod router
         for (int i = 0; i < REPLICAS; i++)  {
@@ -1523,7 +1515,7 @@ public class KafkaClusterTest {
             assertThat(rt.getSpec().getTo().getKind(), is("Service"));
             assertThat(rt.getSpec().getTo().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(rt.getSpec().getPort().getTargetPort(), is(new IntOrString(9094)));
-            checkOwnerReference(kc.createOwnerReference(), rt);
+            TestUtils.checkOwnerReference(rt, KAFKA);
         }
     }
 
@@ -1665,7 +1657,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getLoadBalancerIP(), is(nullValue()));
         assertThat(ext.getSpec().getExternalTrafficPolicy(), is("Cluster"));
         assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
-        checkOwnerReference(kc.createOwnerReference(), ext);
+        TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         for (int i = 0; i < REPLICAS; i++)  {
@@ -1678,7 +1670,7 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getLoadBalancerIP(), is(nullValue()));
             assertThat(srv.getSpec().getExternalTrafficPolicy(), is("Cluster"));
             assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
-            checkOwnerReference(kc.createOwnerReference(), srv);
+            TestUtils.checkOwnerReference(srv, KAFKA);
         }
     }
 
@@ -2026,7 +2018,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getType(), is("NodePort"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-        checkOwnerReference(kc.createOwnerReference(), ext);
+        TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         for (int i = 0; i < REPLICAS; i++)  {
@@ -2035,7 +2027,7 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getType(), is("NodePort"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-            checkOwnerReference(kc.createOwnerReference(), srv);
+            TestUtils.checkOwnerReference(srv, KAFKA);
         }
     }
 
@@ -2101,7 +2093,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getType(), is("NodePort"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, 32001, "TCP"))));
-        checkOwnerReference(kc.createOwnerReference(), ext);
+        TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         for (int i = 0; i < REPLICAS; i++)  {
@@ -2114,7 +2106,7 @@ public class KafkaClusterTest {
             } else {
                 assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
             }
-            checkOwnerReference(kc.createOwnerReference(), srv);
+            TestUtils.checkOwnerReference(srv, KAFKA);
         }
     }
 
@@ -3022,7 +3014,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-        checkOwnerReference(kc.createOwnerReference(), ext);
+        TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         for (int i = 0; i < REPLICAS; i++)  {
@@ -3031,7 +3023,7 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-            checkOwnerReference(kc.createOwnerReference(), srv);
+            TestUtils.checkOwnerReference(srv, KAFKA);
         }
 
         // Check bootstrap ingress
@@ -3049,7 +3041,7 @@ public class KafkaClusterTest {
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
-        checkOwnerReference(kc.createOwnerReference(), bing);
+        TestUtils.checkOwnerReference(bing, KAFKA);
 
         io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress bingV1Beta1 = kc.generateExternalBootstrapIngressesV1Beta1().get(0);
         assertThat(bingV1Beta1.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(CLUSTER)));
@@ -3065,7 +3057,7 @@ public class KafkaClusterTest {
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort(), is(new IntOrString(9094)));
-        checkOwnerReference(kc.createOwnerReference(), bingV1Beta1);
+        TestUtils.checkOwnerReference(bingV1Beta1, KAFKA);
 
         // Check per pod ingress
         for (int i = 0; i < REPLICAS; i++)  {
@@ -3083,7 +3075,7 @@ public class KafkaClusterTest {
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
-            checkOwnerReference(kc.createOwnerReference(), ing);
+            TestUtils.checkOwnerReference(ing, KAFKA);
 
             io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingV1Beta1 = kc.generateExternalIngressesV1Beta1(i).get(0);
             assertThat(ingV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
@@ -3099,7 +3091,7 @@ public class KafkaClusterTest {
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort(), is(new IntOrString(9094)));
-            checkOwnerReference(kc.createOwnerReference(), ingV1Beta1);
+            TestUtils.checkOwnerReference(ingV1Beta1, KAFKA);
         }
     }
 
@@ -3244,7 +3236,7 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-        checkOwnerReference(kc.createOwnerReference(), ext);
+        TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
         for (int i = 0; i < REPLICAS; i++)  {
@@ -3253,7 +3245,7 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
             assertThat(srv.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
-            checkOwnerReference(kc.createOwnerReference(), srv);
+            TestUtils.checkOwnerReference(srv, KAFKA);
         }
 
     }

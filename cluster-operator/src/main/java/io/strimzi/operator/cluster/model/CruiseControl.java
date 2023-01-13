@@ -238,7 +238,6 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setJvmOptions(ccSpec.getJvmOptions());
 
             cruiseControl.setResources(ccSpec.getResources());
-            cruiseControl.setOwnerReference(kafkaCr);
 
             if (ccSpec.getTemplate() != null) {
                 CruiseControlTemplate template = ccSpec.getTemplate();
@@ -510,7 +509,7 @@ public class CruiseControl extends AbstractModel {
      * @return The generated Secret.
      */
     public Secret generateApiSecret() {
-        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -596,7 +595,7 @@ public class CruiseControl extends AbstractModel {
                     .withName(CruiseControlResources.networkPolicyName(cluster))
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withNewPodSelector()
