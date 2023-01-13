@@ -171,8 +171,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("ca.crt"))), is("clients-ca-crt"));
-        assertThat(userSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
-        assertThat(userSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.crt"))), is(MockCertManager.userCert()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.key"))), is(MockCertManager.userKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -307,8 +307,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("ca.crt"))), is("clients-ca-crt"));
-        assertThat(userSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
-        assertThat(userSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.crt"))), is(MockCertManager.userCert()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.key"))), is(MockCertManager.userKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -367,8 +367,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("ca.crt"))), is("clients-ca-crt"));
-        assertThat(userSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
-        assertThat(userSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.crt"))), is(MockCertManager.userCert()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.key"))), is(MockCertManager.userKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -651,8 +651,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(prefixedUserSecret.getData().get("ca.crt"))), is("clients-ca-crt"));
-        assertThat(prefixedUserSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
-        assertThat(prefixedUserSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(new String(Base64.getDecoder().decode(prefixedUserSecret.getData().get("user.crt"))), is(MockCertManager.userCert()));
+        assertThat(new String(Base64.getDecoder().decode(prefixedUserSecret.getData().get("user.key"))), is(MockCertManager.userKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -923,8 +923,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("ca.crt"))), is("different-clients-ca-crt"));
-        assertThat(userSecret.getData().get("user.crt"), is(MockCertManager.entityCert()));
-        assertThat(userSecret.getData().get("user.key"), is(MockCertManager.entityKey()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.crt"))), is(MockCertManager.userCert()));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.key"))), is(MockCertManager.userKey()));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();

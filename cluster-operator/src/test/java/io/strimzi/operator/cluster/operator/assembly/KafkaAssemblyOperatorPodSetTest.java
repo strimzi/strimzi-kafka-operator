@@ -189,9 +189,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                         CLUSTER_NAME,
                         kafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.entityCert(),
-                        MockCertManager.entityKey(),
-                        MockCertManager.entityCertStore(),
+                        MockCertManager.serverCert(),
+                        MockCertManager.serverKey(),
+                        MockCertManager.serverKeyStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
@@ -302,9 +302,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                         CLUSTER_NAME,
                         kafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.entityCert(),
-                        MockCertManager.entityKey(),
-                        MockCertManager.entityCertStore(),
+                        MockCertManager.serverCert(),
+                        MockCertManager.serverKey(),
+                        MockCertManager.serverKeyStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
@@ -543,9 +543,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                         CLUSTER_NAME,
                         newKafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.entityCert(),
-                        MockCertManager.entityKey(),
-                        MockCertManager.entityCertStore(),
+                        MockCertManager.serverCert(),
+                        MockCertManager.serverKey(),
+                        MockCertManager.serverKeyStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
@@ -664,9 +664,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                         CLUSTER_NAME,
                         kafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.entityCert(),
-                        MockCertManager.entityKey(),
-                        MockCertManager.entityCertStore(),
+                        MockCertManager.serverCert(),
+                        MockCertManager.serverKey(),
+                        MockCertManager.serverKeyStore(),
                         MockCertManager.certStorePassword()
                 ))
         );
@@ -806,9 +806,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                         CLUSTER_NAME,
                         oldKafkaCluster.getReplicas(),
                         KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.entityCert(),
-                        MockCertManager.entityKey(),
-                        MockCertManager.entityCertStore(),
+                        MockCertManager.serverCert(),
+                        MockCertManager.serverKey(),
+                        MockCertManager.serverKeyStore(),
                         MockCertManager.certStorePassword()
                 ))
         );

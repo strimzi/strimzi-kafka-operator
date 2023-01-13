@@ -733,6 +733,7 @@ public class KafkaReconciler {
                                         // The secret is patched and some changes to the existing certificates actually occurred
                                         existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     }
+
                                     IntStream.range(0, kafka.getReplicas())
                                             .forEach(brokerId -> kafkaServerCertificateHash.put(brokerId, CertUtils.getCertificateThumbprintForServer(patchResult.resource(), KafkaResources.kafkaPodName(reconciliation.name(), brokerId))));
                                 }
