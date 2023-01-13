@@ -29,7 +29,7 @@ spec:
           certificate: sso.crt
       delegateToKafkaAcls: true
       superUsers:
-        - User:service-account-kafka
+        - service-account-kafka
     logging:
       type: inline
       loggers:

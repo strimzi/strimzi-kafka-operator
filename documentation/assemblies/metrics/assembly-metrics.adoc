@@ -11,6 +11,11 @@ You can use Prometheus and Grafana to monitor your Strimzi deployment.
 You can monitor your Strimzi deployment by viewing key metrics on dashboards and setting up alerts that trigger under certain conditions.
 Metrics are available for each of the components of Strimzi.
 
+You can also collect metrics specific to `oauth` authentication and `opa` or `keycloak` authorization. 
+You do this by setting the `enableMetrics` property to `true` in the listener configuration of the `Kafka` resource. 
+For example, set `enableMetrics`  to `true` in `spec.kafka.listeners.authentication` and `spec.kafka.authorization`.
+Similarly, you can enable metrics for `oauth` authentication in the `KafkaBridge`, `KafkaConnect`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` custom resources.  
+
 To provide metrics information, Strimzi uses Prometheus rules and Grafana dashboards.
 
 When configured with a set of rules for each component of Strimzi, Prometheus consumes key metrics from the pods that are running in your cluster.
