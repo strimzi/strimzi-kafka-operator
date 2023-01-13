@@ -109,8 +109,7 @@ public class KafkaClusterPodSetTest {
         assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kc.labels.withAdditionalLabels(null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
-        assertThat(ps.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(ps.getMetadata().getOwnerReferences().get(0), is(kc.createOwnerReference()));
+        TestUtils.checkOwnerReference(ps, KAFKA);
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(ps.getSpec().getPods().size(), is(3));
 

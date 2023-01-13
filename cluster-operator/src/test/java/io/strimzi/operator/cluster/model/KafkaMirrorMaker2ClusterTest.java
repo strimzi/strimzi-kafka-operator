@@ -10,12 +10,10 @@ import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
@@ -247,7 +245,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
 
-        checkOwnerReference(kmm2.createOwnerReference(), svc);
+        TestUtils.checkOwnerReference(svc, resource);
     }
 
     @ParallelTest
@@ -272,7 +270,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getMetadata().getAnnotations().containsKey("prometheus.io/scrape"), is(false));
         assertThat(svc.getMetadata().getAnnotations().containsKey("prometheus.io/path"), is(false));
 
-        checkOwnerReference(kmm2.createOwnerReference(), svc);
+        TestUtils.checkOwnerReference(svc, resource);
     }
 
     @ParallelTest
@@ -308,7 +306,7 @@ public class KafkaMirrorMaker2ClusterTest {
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
             .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
-        checkOwnerReference(kmm2.createOwnerReference(), dep);
+        TestUtils.checkOwnerReference(dep, resource);
     }
 
     @ParallelTest
@@ -976,11 +974,6 @@ public class KafkaMirrorMaker2ClusterTest {
         ServiceAccount sa = kmm2.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
-    }
-
-    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
     }
 
     @ParallelTest

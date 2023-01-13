@@ -317,8 +317,6 @@ public class KafkaCluster extends AbstractModel {
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
-        result.setOwnerReference(kafkaAssembly);
-
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
         // Configures KRaft and KRaft cluster ID
@@ -910,7 +908,7 @@ public class KafkaCluster extends AbstractModel {
                         .withLabels(Util.mergeLabelsOrAnnotations(labels.withAdditionalLabels(templateExternalBootstrapRouteLabels).toMap(), ListenersUtils.bootstrapLabels(listener)))
                         .withAnnotations(Util.mergeLabelsOrAnnotations(templateExternalBootstrapRouteAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withNewTo()
@@ -955,7 +953,7 @@ public class KafkaCluster extends AbstractModel {
                         .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodRouteLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(templatePerPodRouteAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withNewTo()
@@ -1028,7 +1026,7 @@ public class KafkaCluster extends AbstractModel {
                         .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withIngressClassName(ingressClass)
@@ -1084,7 +1082,7 @@ public class KafkaCluster extends AbstractModel {
                         .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withIngressClassName(ingressClass)
@@ -1144,7 +1142,7 @@ public class KafkaCluster extends AbstractModel {
                         .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withIngressClassName(ingressClass)
@@ -1199,7 +1197,7 @@ public class KafkaCluster extends AbstractModel {
                         .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
                         .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
-                        .withOwnerReferences(createOwnerReference())
+                        .withOwnerReferences(ownerReference)
                     .endMetadata()
                     .withNewSpec()
                         .withIngressClassName(ingressClass)
@@ -1860,7 +1858,7 @@ public class KafkaCluster extends AbstractModel {
                     .withName(KafkaResources.kafkaNetworkPolicyName(cluster))
                     .withNamespace(namespace)
                     .withLabels(labels.toMap())
-                    .withOwnerReferences(createOwnerReference())
+                    .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
                     .withNewPodSelector()

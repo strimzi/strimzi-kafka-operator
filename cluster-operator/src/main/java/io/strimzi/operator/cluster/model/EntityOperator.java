@@ -122,8 +122,6 @@ public class EntityOperator extends AbstractModel {
                 && (entityOperatorSpec.getUserOperator() != null || entityOperatorSpec.getTopicOperator() != null)) {
             EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly);
 
-            result.setOwnerReference(kafkaAssembly);
-
             EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, kraftEnabled);
 

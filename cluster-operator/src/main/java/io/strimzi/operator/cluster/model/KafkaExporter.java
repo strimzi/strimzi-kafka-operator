@@ -168,7 +168,6 @@ public class KafkaExporter extends AbstractModel {
             }
 
             kafkaExporter.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
-            kafkaExporter.setOwnerReference(kafkaAssembly);
 
             return kafkaExporter;
         } else {
@@ -294,6 +293,6 @@ public class KafkaExporter extends AbstractModel {
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.kafkaExporterSecret();
         return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporterResources.secretName(cluster), componentName,
-                "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+                "kafka-exporter", labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 }

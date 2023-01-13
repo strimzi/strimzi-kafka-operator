@@ -160,8 +160,7 @@ public class KafkaExporterTest {
 
         assertThat(dep.getMetadata().getName(), is(KafkaExporterResources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(ke.createOwnerReference()));
+        TestUtils.checkOwnerReference(dep, resource);
 
         // checks on the main Exporter container
         assertThat(containers.get(0).getImage(), is(ke.image));

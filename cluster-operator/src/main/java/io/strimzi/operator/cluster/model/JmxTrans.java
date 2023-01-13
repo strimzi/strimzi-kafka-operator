@@ -149,8 +149,6 @@ public class JmxTrans extends AbstractModel {
             }
             result.setImage(image);
 
-            result.setOwnerReference(kafkaAssembly);
-
             if (jmxTransSpec.getTemplate() != null) {
                 JmxTransTemplate template = jmxTransSpec.getTemplate();
 

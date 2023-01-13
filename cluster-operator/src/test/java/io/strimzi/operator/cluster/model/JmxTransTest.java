@@ -188,8 +188,7 @@ public class JmxTransTest {
 
         assertThat(dep.getMetadata().getName(), is(JmxTransResources.deploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(jmxTrans.createOwnerReference()));
+        TestUtils.checkOwnerReference(dep, kafkaAssembly);
 
         // checks on the main Exporter container
         assertThat(containers.get(0).getImage(), is(image));
@@ -247,8 +246,7 @@ public class JmxTransTest {
 
         assertThat(cm.getMetadata().getName(), is(JmxTransResources.configMapName(cluster)));
         assertThat(cm.getMetadata().getNamespace(), is(namespace));
-        assertThat(cm.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(cm.getMetadata().getOwnerReferences().get(0), is(jmxTrans.createOwnerReference()));
+        TestUtils.checkOwnerReference(cm, kafkaAssembly);
 
         assertThat(cm.getData().getOrDefault(JmxTrans.JMXTRANS_CONFIGMAP_KEY, ""), is("{\"servers\":[{\"host\":\"foo-kafka-0.foo-kafka-brokers\",\"port\":9999,\"username\":\"${kafka.username}\",\"password\":\"${kafka.password}\",\"queries\":[{\"obj\":\"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*\",\"attr\":[\"Count\"],\"outputWriters\":[{\"@class\":\"com.googlecode.jmxtrans.model.output.StdOutWriter\"}]}]},{\"host\":\"foo-kafka-1.foo-kafka-brokers\",\"port\":9999,\"username\":\"${kafka.username}\",\"password\":\"${kafka.password}\",\"queries\":[{\"obj\":\"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*\",\"attr\":[\"Count\"],\"outputWriters\":[{\"@class\":\"com.googlecode.jmxtrans.model.output.StdOutWriter\"}]}]},{\"host\":\"foo-kafka-2.foo-kafka-brokers\",\"port\":9999,\"username\":\"${kafka.username}\",\"password\":\"${kafka.password}\",\"queries\":[{\"obj\":\"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*\",\"attr\":[\"Count\"],\"outputWriters\":[{\"@class\":\"com.googlecode.jmxtrans.model.output.StdOutWriter\"}]}]}]}"));
     }

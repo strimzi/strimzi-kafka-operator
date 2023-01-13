@@ -125,8 +125,6 @@ public class EntityUserOperator extends AbstractModel {
             EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
             EntityUserOperator result = new EntityUserOperator(reconciliation, kafkaAssembly);
 
-            result.setOwnerReference(kafkaAssembly);
-
             String image = userOperatorSpec.getImage();
             if (image == null) {
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
@@ -312,7 +310,7 @@ public class EntityUserOperator extends AbstractModel {
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.entityUserOperatorSecret();
         return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityUserOperatorSecretName(cluster), componentName,
-            CERT_SECRET_KEY_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+            CERT_SECRET_KEY_NAME, labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
     }
 
     /**

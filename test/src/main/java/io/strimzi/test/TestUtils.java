@@ -368,9 +368,17 @@ public final class TestUtils {
         }
     }
 
-    public static void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
+    public static void checkOwnerReference(HasMetadata resource, HasMetadata parent)  {
         assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
+
+        OwnerReference or = resource.getMetadata().getOwnerReferences().get(0);
+
+        assertThat(or.getApiVersion(), is(parent.getApiVersion()));
+        assertThat(or.getKind(), is(parent.getKind()));
+        assertThat(or.getName(), is(parent.getMetadata().getName()));
+        assertThat(or.getUid(), is(parent.getMetadata().getUid()));
+        assertThat(or.getBlockOwnerDeletion(), is(false));
+        assertThat(or.getController(), is(false));
     }
 
     /**

@@ -197,7 +197,7 @@ public class KafkaClusterStatefulSetTest {
         // We expect a single statefulSet ...
         StatefulSet sts = KC.generateStatefulSet(true, null, null, null);
         checkStatefulSet(sts, KAFKA);
-        checkOwnerReference(KC.createOwnerReference(), sts);
+        TestUtils.checkOwnerReference(sts, KAFKA);
 
         // Check Volumes
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().size(), is(6));

@@ -5,12 +5,10 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
@@ -146,11 +144,6 @@ public class ZookeeperClusterStatefulSetTest {
                 .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
     }
 
-    public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
     //////////
     // Tests
     //////////
@@ -160,7 +153,7 @@ public class ZookeeperClusterStatefulSetTest {
         // We expect a single statefulSet ...
         StatefulSet sts = ZC.generateStatefulSet(true, null, null);
         checkStatefulSet(sts);
-        checkOwnerReference(ZC.createOwnerReference(), sts);
+        TestUtils.checkOwnerReference(sts, KAFKA);
     }
 
     @ParallelTest
