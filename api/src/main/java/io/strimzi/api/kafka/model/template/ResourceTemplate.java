@@ -26,7 +26,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"metadata"})
 @EqualsAndHashCode
-public class ResourceTemplate implements Serializable, UnknownPropertyPreserving {
+public class ResourceTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private MetadataTemplate metadata;

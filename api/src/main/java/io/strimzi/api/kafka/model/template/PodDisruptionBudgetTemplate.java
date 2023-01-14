@@ -30,7 +30,7 @@ import java.util.Map;
 @JsonPropertyOrder({"metadata", "maxUnavailable"})
 @DescriptionFile
 @EqualsAndHashCode
-public class PodDisruptionBudgetTemplate implements Serializable, UnknownPropertyPreserving {
+public class PodDisruptionBudgetTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private MetadataTemplate metadata;

@@ -68,6 +68,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
+import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -225,6 +226,7 @@ public class KafkaCluster extends AbstractModel {
     private String clusterId;
 
     // Templates
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected Map<String, String> templateExternalBootstrapServiceLabels;
     protected Map<String, String> templateExternalBootstrapServiceAnnotations;
     protected Map<String, String> templatePerPodServiceLabels;
@@ -239,7 +241,6 @@ public class KafkaCluster extends AbstractModel {
     protected Map<String, String> templatePerPodIngressAnnotations;
     protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
     protected List<ContainerEnvVar> templateInitContainerEnvVars;
-
     protected SecurityContext templateKafkaContainerSecurityContext;
     protected SecurityContext templateInitContainerSecurityContext;
 
@@ -518,7 +519,7 @@ public class KafkaCluster extends AbstractModel {
                 result.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
             }
 
-            ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
+            result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
         }
 
         result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
@@ -1875,37 +1876,33 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates the PodDisruptionBudget.
      *
+     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
+     *                          or not (Deployments, StatefulSet)
+     *
      * @return The PodDisruptionBudget.
      */
-    public PodDisruptionBudget generatePodDisruptionBudget() {
-        return createPodDisruptionBudget();
+    public PodDisruptionBudget generatePodDisruptionBudget(boolean customController) {
+        if (customController) {
+            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
+        } else {
+            return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+        }
     }
 
     /**
      * Generates the PodDisruptionBudget V1Beta1.
      *
-     * @return The PodDisruptionBudget V1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return createPodDisruptionBudgetV1Beta1();
-    }
-
-    /**
-     * Generates the PodDisruptionBudget for operator managed pods.
-     *
-     * @return The PodDisruptionBudget.
-     */
-    public PodDisruptionBudget generateCustomControllerPodDisruptionBudget() {
-        return createCustomControllerPodDisruptionBudget();
-    }
-
-    /**
-     * Generates the PodDisruptionBudget V1Beta1 for operator managed pods.
+     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
+     *                          or not (Deployments, StatefulSet)
      *
      * @return The PodDisruptionBudget V1Beta1.
      */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generateCustomControllerPodDisruptionBudgetV1Beta1() {
-        return createCustomControllerPodDisruptionBudgetV1Beta1();
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean customController) {
+        if (customController) {
+            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
+        } else {
+            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+        }
     }
 
     /**

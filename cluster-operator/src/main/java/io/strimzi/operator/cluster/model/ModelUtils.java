@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
-import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
@@ -229,23 +228,6 @@ public class ModelUtils {
                     .withType("Opaque")
                     .withData(data)
                     .build();
-        }
-    }
-
-    /**
-     * Parses the values from the PodDisruptionBudgetTemplate in CRD model into the component model
-     *
-     * @param model AbstractModel class where the values from the PodDisruptionBudgetTemplate should be set
-     * @param pdb PodDisruptionBudgetTemplate with the values form the CRD
-     */
-    public static void parsePodDisruptionBudgetTemplate(AbstractModel model, PodDisruptionBudgetTemplate pdb)   {
-        if (pdb != null)  {
-            if (pdb.getMetadata() != null) {
-                model.templatePodDisruptionBudgetLabels = pdb.getMetadata().getLabels();
-                model.templatePodDisruptionBudgetAnnotations = pdb.getMetadata().getAnnotations();
-            }
-
-            model.templatePodDisruptionBudgetMaxUnavailable = pdb.getMaxUnavailable();
         }
     }
 

@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
+import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -128,6 +129,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     private List<ContainerEnvVar> templateInitContainerEnvVars;
     private SecurityContext templateContainerSecurityContext;
 
+    // Templates
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private SecurityContext templateInitContainerSecurityContext;
 
     private Tracing tracing;
@@ -267,7 +270,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
         }
 
-        ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
+        kafkaBridgeCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
     }
 
     /**
@@ -500,7 +503,7 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @return The pod disruption budget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
-        return createPodDisruptionBudget();
+        return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     /**
@@ -509,7 +512,7 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @return The pod disruption budget V1Beta1.
      */
     public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return createPodDisruptionBudgetV1Beta1();
+        return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     @Override

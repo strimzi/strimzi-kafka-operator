@@ -53,6 +53,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -145,6 +146,9 @@ public class KafkaConnectCluster extends AbstractModel {
 
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
+
+    // Templates
+    protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -320,7 +324,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
             }
 
-            ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
+            kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -710,19 +714,19 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Generates the PodDisruptionBudget
      *
-     * @return The PodDisruptionBudget.
+     * @return The pod disruption budget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
-        return createPodDisruptionBudget();
+        return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     /**
      * Generates the PodDisruptionBudgetV1Beta1
      *
-     * @return The PodDisruptionBudgetV1Beta1.
+     * @return The pod disruption budget V1Beta1.
      */
     public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return createPodDisruptionBudgetV1Beta1();
+        return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     @Override

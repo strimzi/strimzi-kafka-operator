@@ -44,8 +44,6 @@ import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplateBuilder;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
-import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -108,48 +106,6 @@ public class ModelUtilsTest {
         assertThat(m.get("discovery.3scale.net/port"), is("8080"));
         assertThat(m.get("discovery.3scale.net/path"), is("path/"));
         assertThat(m.get("discovery.3scale.net/description-path"), is("oapi/"));
-    }
-
-    @Test
-    public void testParsePodDisruptionBudgetTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        PodDisruptionBudgetTemplate template = new PodDisruptionBudgetTemplateBuilder()
-                .withNewMetadata()
-                .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
-                .withLabels(Collections.singletonMap("labelKey", "labelValue"))
-                .endMetadata()
-                .withMaxUnavailable(2)
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parsePodDisruptionBudgetTemplate(model, template);
-        assertThat(model.templatePodDisruptionBudgetLabels, is(Collections.singletonMap("labelKey", "labelValue")));
-        assertThat(model.templatePodDisruptionBudgetAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
-        assertThat(model.templatePodDisruptionBudgetMaxUnavailable, is(2));
-    }
-
-    @Test
-    public void testParseNullPodDisruptionBudgetTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parsePodDisruptionBudgetTemplate(model, null);
-        assertThat(model.templatePodDisruptionBudgetLabels, is(nullValue()));
-        assertThat(model.templatePodDisruptionBudgetAnnotations, is(nullValue()));
-        assertThat(model.templatePodDisruptionBudgetMaxUnavailable, is(1));
     }
 
     @Test

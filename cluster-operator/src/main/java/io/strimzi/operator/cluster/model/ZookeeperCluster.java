@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -125,6 +126,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT = "zookeeper.node-count";
 
     // Templates
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
@@ -315,7 +317,7 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
             }
 
-            ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
+            zk.templatePodDisruptionBudget = template.getPodDisruptionBudget();
         }
 
         zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, DEFAULT_POD_LABELS);
@@ -715,37 +717,33 @@ public class ZookeeperCluster extends AbstractModel {
     /**
      * Generates the PodDisruptionBudget.
      *
-     * @return The PodDisruptionBudget.
-     */
-    public PodDisruptionBudget generatePodDisruptionBudget() {
-        return createPodDisruptionBudget();
-    }
-
-    /**
-     * Generates the PodDisruptionBudgetV1Beta1.
-     *
-     * @return The PodDisruptionBudgetV1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return createPodDisruptionBudgetV1Beta1();
-    }
-
-    /**
-     * Generates the PodDisruptionBudget for operator managed pods.
+     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
+     *                          or not (Deployments, StatefulSet)
      *
      * @return The PodDisruptionBudget.
      */
-    public PodDisruptionBudget generateCustomControllerPodDisruptionBudget() {
-        return createCustomControllerPodDisruptionBudget();
+    public PodDisruptionBudget generatePodDisruptionBudget(boolean customController) {
+        if (customController) {
+            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
+        } else {
+            return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+        }
     }
 
     /**
-     * Generates the PodDisruptionBudget V1Beta1 for operator managed pods.
+     * Generates the PodDisruptionBudget V1Beta1.
      *
-     * @return The PodDisruptionBudget v1beta1.
+     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
+     *                          or not (Deployments, StatefulSet)
+     *
+     * @return The PodDisruptionBudget V1Beta1.
      */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generateCustomControllerPodDisruptionBudgetV1Beta1() {
-        return createCustomControllerPodDisruptionBudgetV1Beta1();
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean customController) {
+        if (customController) {
+            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
+        } else {
+            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+        }
     }
 
     @Override
