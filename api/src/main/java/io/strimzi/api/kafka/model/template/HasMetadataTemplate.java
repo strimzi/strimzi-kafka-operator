@@ -9,6 +9,17 @@ package io.strimzi.api.kafka.model.template;
  * methods for getting the template values.
  */
 public interface HasMetadataTemplate {
+    /**
+     * Gets the metadata template
+     *
+     * @return  Metadata template
+     */
     MetadataTemplate getMetadata();
+
+    /**
+     * Sets the metadata template
+     *
+     * @param metadata  Metadata template
+     */
     void setMetadata(MetadataTemplate metadata);
 }

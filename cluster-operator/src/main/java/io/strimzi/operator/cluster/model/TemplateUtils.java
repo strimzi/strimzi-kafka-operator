@@ -14,7 +14,7 @@ import java.util.Map;
 public class TemplateUtils {
     /**
      * Extracts custom labels configured through the Strimzi API resource templates. This method deals the null checks
-     * and makes the code using it more eas to read.
+     * and makes the code using it more easy to read.
      *
      * @param template  The resource template
      *
@@ -31,7 +31,7 @@ public class TemplateUtils {
 
     /**
      * Extracts custom annotations configured through the Strimzi API resource templates. This method deals the null
-     * checks and makes the code using it more eas to read.
+     * checks and makes the code using it more easy to read.
      *
      * @param template  The resource template
      *
