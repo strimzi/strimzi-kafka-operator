@@ -229,6 +229,7 @@ public class KafkaCluster extends AbstractModel {
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private ResourceTemplate templatePersistentVolumeClaims;
+    private ResourceTemplate templateInitClusterRoleBinding;
     protected Map<String, String> templateExternalBootstrapServiceLabels;
     protected Map<String, String> templateExternalBootstrapServiceAnnotations;
     protected Map<String, String> templatePerPodServiceLabels;
@@ -484,11 +485,6 @@ public class KafkaCluster extends AbstractModel {
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
             }
 
-            if (template.getClusterRoleBinding() != null && template.getClusterRoleBinding().getMetadata() != null) {
-                result.templateClusterRoleBindingLabels = template.getClusterRoleBinding().getMetadata().getLabels();
-                result.templateClusterRoleBindingAnnotations = template.getClusterRoleBinding().getMetadata().getAnnotations();
-            }
-
             if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {
                 result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
             }
@@ -517,6 +513,7 @@ public class KafkaCluster extends AbstractModel {
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
+            result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
         }
 
         result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
@@ -1614,7 +1611,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null || isExposedWithNodePort()) {
-            Subject ks = new SubjectBuilder()
+            Subject subject = new SubjectBuilder()
                     .withKind("ServiceAccount")
                     .withName(getServiceAccountName())
                     .withNamespace(assemblyNamespace)
@@ -1626,7 +1623,8 @@ public class KafkaCluster extends AbstractModel {
                     .withKind("ClusterRole")
                     .build();
 
-            return getClusterRoleBinding(KafkaResources.initContainerClusterRoleBindingName(cluster, namespace), ks, roleRef);
+            return RbacUtils
+                    .createClusterRoleBinding(KafkaResources.initContainerClusterRoleBindingName(cluster, namespace), roleRef, List.of(subject), labels, templateInitClusterRoleBinding);
         } else {
             return null;
         }

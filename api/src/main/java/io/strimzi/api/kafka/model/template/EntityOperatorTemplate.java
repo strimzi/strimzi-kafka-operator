@@ -24,14 +24,15 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "entityOperatorRole", "entityOperatorRoleBinding"})
+@JsonPropertyOrder({"deployment", "pod", "topicOperatorContainer", "userOperatorContainer", "tlsSidecarContainer", "serviceAccount", "entityOperatorRole", "topicOperatorRoleBinding", "userOperatorRoleBinding"})
 @EqualsAndHashCode
 public class EntityOperatorTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
     private ResourceTemplate deployment;
     private PodTemplate pod;
     private ResourceTemplate entityOperatorRole;
-    private ResourceTemplate entityOperatorRoleBinding;
+    private ResourceTemplate topicOperatorRoleBinding;
+    private ResourceTemplate userOperatorRoleBinding;
     private ContainerTemplate topicOperatorContainer;
     private ContainerTemplate userOperatorContainer;
     private ContainerTemplate tlsSidecarContainer;
@@ -68,14 +69,24 @@ public class EntityOperatorTemplate implements Serializable, UnknownPropertyPres
         this.entityOperatorRole = entityOperatorRole;
     }
 
-    @Description("Template for the Entity Operator RoleBinding")
+    @Description("Template for the Entity Topic Operator RoleBinding")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getEntityOperatorRoleBinding() {
-        return entityOperatorRoleBinding;
+    public ResourceTemplate getTopicOperatorRoleBinding() {
+        return topicOperatorRoleBinding;
     }
 
-    public void setEntityOperatorRoleBinding(ResourceTemplate entityOperatorRoleBinding) {
-        this.entityOperatorRoleBinding = entityOperatorRoleBinding;
+    public void setTopicOperatorRoleBinding(ResourceTemplate topicOperatorRoleBinding) {
+        this.topicOperatorRoleBinding = topicOperatorRoleBinding;
+    }
+
+    @Description("Template for the Entity Topic Operator RoleBinding")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getUserOperatorRoleBinding() {
+        return userOperatorRoleBinding;
+    }
+
+    public void setUserOperatorRoleBinding(ResourceTemplate userOperatorRoleBinding) {
+        this.userOperatorRoleBinding = userOperatorRoleBinding;
     }
 
     @Description("Template for the Entity Topic Operator container")

@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
@@ -80,6 +81,8 @@ public class EntityUserOperator extends AbstractModel {
     /* test */ int clientsCaRenewalDays;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private ResourceTemplate templateRoleBinding;
+
     private boolean aclsAdminApiSupported = false;
     private boolean kraftEnabled = false;
     private List<String> maintenanceWindows;
@@ -143,6 +146,10 @@ public class EntityUserOperator extends AbstractModel {
             }
             if (userOperatorSpec.getLivenessProbe() != null) {
                 result.setLivenessProbe(userOperatorSpec.getLivenessProbe());
+            }
+
+            if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
+                result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getUserOperatorRoleBinding();
             }
 
             if (kafkaAssembly.getSpec().getClientsCa() != null) {
@@ -235,11 +242,6 @@ public class EntityUserOperator extends AbstractModel {
                 VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }
 
-    @Override
-    protected String getRoleName() {
-        return KafkaResources.entityOperatorDeploymentName(cluster);
-    }
-
     /**
      * Generates the User Operator Role Binding
      *
@@ -249,24 +251,20 @@ public class EntityUserOperator extends AbstractModel {
      * @return  Role Binding for the User Operator
      */
     public RoleBinding generateRoleBindingForRole(String namespace, String watchedNamespace) {
-        Subject ks = new SubjectBuilder()
+        Subject subject = new SubjectBuilder()
                 .withKind("ServiceAccount")
                 .withName(KafkaResources.entityOperatorDeploymentName(cluster))
                 .withNamespace(namespace)
                 .build();
 
         RoleRef roleRef = new RoleRefBuilder()
-                .withName(getRoleName())
+                .withName(KafkaResources.entityOperatorDeploymentName(cluster))
                 .withApiGroup("rbac.authorization.k8s.io")
                 .withKind("Role")
                 .build();
 
-        RoleBinding rb = generateRoleBinding(
-                KafkaResources.entityUserOperatorRoleBinding(cluster),
-                watchedNamespace,
-                roleRef,
-                List.of(ks)
-        );
+        RoleBinding rb = RbacUtils
+                .createRoleBinding(KafkaResources.entityUserOperatorRoleBinding(cluster), watchedNamespace, roleRef, List.of(subject), labels, ownerReference, templateRoleBinding);
 
         // We set OwnerReference only within the same namespace since it does not work cross-namespace
         if (!namespace.equals(watchedNamespace)) {
