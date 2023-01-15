@@ -48,8 +48,6 @@ import io.vertx.core.Vertx;
 
 import java.time.Clock;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
-
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
  * <ul>
@@ -296,7 +294,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Storage storage = null;
 
             if (sts != null)    {
-                String jsonStorage = Annotations.stringAnnotation(sts, ANNO_STRIMZI_IO_STORAGE, null);
+                String jsonStorage = Annotations.stringAnnotation(sts, Annotations.ANNO_STRIMZI_IO_STORAGE, null);
 
                 if (jsonStorage != null)    {
                     storage = ModelUtils.decodeStorageFromJson(jsonStorage);

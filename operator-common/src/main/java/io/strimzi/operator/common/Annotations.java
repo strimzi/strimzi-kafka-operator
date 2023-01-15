@@ -125,6 +125,16 @@ public class Annotations {
         ">\\d+)$");
 
     /**
+     * Annotation on PVCs storing the original configuration. It is used to revert any illegal changes.
+     */
+    public static final String ANNO_STRIMZI_IO_STORAGE = STRIMZI_DOMAIN + "storage";
+
+    /**
+     * Annotation for storing the information whether the PVC should be deleted when the node is scaled down or when the cluster is deleted.
+     */
+    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = STRIMZI_DOMAIN + "delete-claim";
+
+    /**
      * Annotation for tracking Deployment revisions
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";

@@ -42,10 +42,12 @@ import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -127,6 +129,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
+    private ResourceTemplate templatePersistentVolumeClaims;
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
@@ -293,12 +296,6 @@ public class ZookeeperCluster extends AbstractModel {
             ModelUtils.parseInternalServiceTemplate(zk, template.getClientService());
             ModelUtils.parseInternalHeadlessServiceTemplate(zk, template.getNodesService());
 
-            if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
-                zk.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
-                        zk.templateStatefulSetLabels);
-                zk.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
-            }
-
             if (template.getZookeeperContainer() != null && template.getZookeeperContainer().getEnv() != null) {
                 zk.templateZookeeperContainerEnvVars = template.getZookeeperContainer().getEnv();
             }
@@ -318,6 +315,7 @@ public class ZookeeperCluster extends AbstractModel {
             }
 
             zk.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+            zk.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
         }
 
         zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, DEFAULT_POD_LABELS);
@@ -474,7 +472,7 @@ public class ZookeeperCluster extends AbstractModel {
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         return createStatefulSet(
-                Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+                Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 Collections.emptyMap(),
                 getStatefulSetVolumes(isOpenShift),
                 getPersistentVolumeClaimTemplates(),
@@ -505,7 +503,7 @@ public class ZookeeperCluster extends AbstractModel {
                                         Map<String, String> podAnnotations) {
         return createPodSet(
             replicas,
-            Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+            Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
             (brokerId) -> podAnnotations,
             podName -> getPodSetVolumes(podName, isOpenShift),
             getMergedAffinity(),
@@ -697,7 +695,8 @@ public class ZookeeperCluster extends AbstractModel {
      * @return  Generates list of ZooKeeper PVCs
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims() {
-        return createPersistentVolumeClaims(storage, false);
+        return PersistentVolumeClaimUtils
+                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSetLabels);
     }
 
     private List<VolumeMount> getVolumeMounts() {

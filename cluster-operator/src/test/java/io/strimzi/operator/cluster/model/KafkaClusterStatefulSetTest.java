@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
@@ -121,7 +122,7 @@ public class KafkaClusterStatefulSetTest {
         assertThat(sts.getMetadata().getNamespace(), is(NAMESPACE));
         // ... with these labels
         assertThat(sts.getMetadata().getLabels(), is(expectedLabels()));
-        assertThat(sts.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(kafka.getSpec().getKafka().getStorage())));
+        assertThat(sts.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(kafka.getSpec().getKafka().getStorage())));
         assertThat(sts.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
 
         assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("default-scheduler"));
@@ -590,7 +591,7 @@ public class KafkaClusterStatefulSetTest {
 
         // Check Storage annotation on STS
         StatefulSet sts = kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null);
-        assertThat(sts.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
+        assertThat(sts.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "data".equals(v.getName())).findFirst().orElseThrow().getEmptyDir(), is(notNullValue()));
 
         // Check PVCs

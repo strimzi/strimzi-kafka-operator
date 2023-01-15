@@ -12,8 +12,8 @@ import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
@@ -523,7 +523,7 @@ public class PvcReconcilerTest {
     public void testVolumesDeletion(VertxTestContext context)  {
         PersistentVolumeClaim pvcWithDeleteClaim = new PersistentVolumeClaimBuilder(createPvc("data-pod-3"))
                 .editMetadata()
-                    .withAnnotations(Map.of(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, "true"))
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, "true"))
                 .endMetadata()
                 .build();
 
