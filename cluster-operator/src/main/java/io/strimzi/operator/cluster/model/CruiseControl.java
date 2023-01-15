@@ -26,7 +26,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
@@ -262,8 +261,6 @@ public class CruiseControl extends AbstractModel {
                     cruiseControl.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
                     cruiseControl.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
-
-                ModelUtils.parsePodDisruptionBudgetTemplate(cruiseControl, template.getPodDisruptionBudget());
             }
 
             cruiseControl.templatePodLabels = Util.mergeLabelsOrAnnotations(cruiseControl.templatePodLabels, DEFAULT_POD_LABELS);
@@ -447,24 +444,6 @@ public class CruiseControl extends AbstractModel {
         addContainerEnvsToExistingEnvs(varList, templateCruiseControlContainerEnvVars);
 
         return varList;
-    }
-
-    /**
-     * Generates the PodDisruptionBudget.
-     *
-     * @return The PodDisruptionBudget.
-     */
-    public PodDisruptionBudget generatePodDisruptionBudget() {
-        return createPodDisruptionBudget();
-    }
-
-    /**
-     * Generates the PodDisruptionBudgetV1Beta1.
-     *
-     * @return The PodDisruptionBudgetV1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return createPodDisruptionBudgetV1Beta1();
     }
 
     @Override

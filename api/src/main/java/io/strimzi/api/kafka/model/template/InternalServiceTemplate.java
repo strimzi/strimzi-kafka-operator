@@ -29,7 +29,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"metadata", "ipFamilyPolicy", "ipFamilies"})
 @EqualsAndHashCode
-public class InternalServiceTemplate implements Serializable, UnknownPropertyPreserving {
+public class InternalServiceTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private MetadataTemplate metadata;

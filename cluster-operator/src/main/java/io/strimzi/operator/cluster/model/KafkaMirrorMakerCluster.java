@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
+import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -111,6 +112,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected KafkaMirrorMakerProducerSpec producer;
     protected KafkaMirrorMakerConsumerSpec consumer;
+
+    // Templates
+    private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
 
@@ -222,7 +226,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
                 ModelUtils.parseDeploymentTemplate(kafkaMirrorMakerCluster, template.getDeployment());
                 ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
-                ModelUtils.parsePodDisruptionBudgetTemplate(kafkaMirrorMakerCluster, template.getPodDisruptionBudget());
+                kafkaMirrorMakerCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             }
 
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
@@ -467,21 +471,21 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     /**
-     * Generates the PodDisruptionBudget.
+     * Generates the PodDisruptionBudget
      *
-     * @return The PodDisruptionBudget.
+     * @return The pod disruption budget.
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
-        return createPodDisruptionBudget();
+        return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     /**
-     * Generates the PodDisruptionBudgetV1Beta1.
+     * Generates the PodDisruptionBudgetV1Beta1
      *
-     * @return The PodDisruptionBudgetV1Beta1.
+     * @return The pod disruption budget V1Beta1.
      */
     public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return createPodDisruptionBudgetV1Beta1();
+        return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     @Override

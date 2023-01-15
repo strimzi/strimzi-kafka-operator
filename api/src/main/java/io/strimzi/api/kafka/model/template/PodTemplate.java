@@ -40,7 +40,7 @@ import java.util.Map;
     "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit"})
 @EqualsAndHashCode
 @DescriptionFile
-public class PodTemplate implements Serializable, UnknownPropertyPreserving {
+public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private MetadataTemplate metadata;

@@ -30,7 +30,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
@@ -650,29 +649,6 @@ public class CruiseControlTest {
         ServiceAccount sa = cc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
-    }
-
-    @ParallelTest
-    public void testPodDisruptionBudget() {
-        int maxUnavailable = 2;
-        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
-                .withImage(ccImage)
-                    .withNewTemplate()
-                        .withNewPodDisruptionBudget()
-                        .withMaxUnavailable(maxUnavailable)
-                    .endPodDisruptionBudget()
-                .endTemplate()
-                .build();
-
-        Kafka resource = createKafka(cruiseControlSpec);
-
-        CruiseControl cc = createCruiseControl(resource);
-
-        PodDisruptionBudget pdb = cc.generatePodDisruptionBudget();
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(maxUnavailable)));
-
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = cc.generatePodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(maxUnavailable)));
     }
 
     @ParallelTest

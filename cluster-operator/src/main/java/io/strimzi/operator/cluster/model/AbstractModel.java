@@ -50,8 +50,6 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -294,9 +292,6 @@ public abstract class AbstractModel {
     protected int templateTerminationGracePeriodSeconds = 30;
     protected Map<String, String> templatePersistentVolumeClaimLabels;
     protected Map<String, String> templatePersistentVolumeClaimAnnotations;
-    protected Map<String, String> templatePodDisruptionBudgetLabels;
-    protected Map<String, String> templatePodDisruptionBudgetAnnotations;
-    protected int templatePodDisruptionBudgetMaxUnavailable = 1;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
     protected List<HostAlias> templatePodHostAliases;
@@ -1427,98 +1422,6 @@ public abstract class AbstractModel {
      */
     public JvmOptions getJvmOptions() {
         return jvmOptions;
-    }
-
-    /**
-     * Creates the PodDisruptionBudget
-     *
-     * @return The default PodDisruptionBudget
-     */
-    protected PodDisruptionBudget createPodDisruptionBudget()   {
-        return new PodDisruptionBudgetBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                .endSpec()
-                .build();
-    }
-
-    /**
-     * Creates the PodDisruptionBudgetV1Beta1
-     *
-     * @return The default PodDisruptionBudgetV1Beta1
-     */
-    protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createPodDisruptionBudgetV1Beta1()   {
-        return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                .endSpec()
-                .build();
-    }
-
-    /**
-     * Creates a PodDisruptionBudget for use with custom pod controller (such as StrimziPodSetController). Unlike
-     * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
-     * with minAvailable in absolute numbers (i.e. no percentages).
-     * See https://kubernetes.io/docs/tasks/run-application/configure-pdb/#arbitrary-controllers-and-selectors for more
-     * details.
-     *
-     * @return The default PodDisruptionBudget
-     */
-    protected PodDisruptionBudget createCustomControllerPodDisruptionBudget()   {
-        return new PodDisruptionBudgetBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                .endSpec()
-                .build();
-    }
-
-    /**
-     * Creates a PodDisruptionBudget V1Beta1 for use with custom pod controller (such as StrimziPodSetController). Unlike
-     * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
-     * with minAvailable in absolute numbers (i.e. no percentages).
-     * See https://kubernetes.io/docs/tasks/run-application/configure-pdb/#arbitrary-controllers-and-selectors for more
-     * details.
-     *
-     * @return The default PodDisruptionBudget V1Beta1
-     */
-    protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createCustomControllerPodDisruptionBudgetV1Beta1()   {
-        return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templatePodDisruptionBudgetLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                .endSpec()
-                .build();
     }
 
     /**

@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -774,15 +773,8 @@ public class KafkaReconciler {
         if (!pfa.hasPodDisruptionBudgetV1()) {
             return Future.succeededFuture();
         } else {
-            PodDisruptionBudget pdb;
-
-            if (featureGates.useStrimziPodSetsEnabled()) {
-                pdb = kafka.generateCustomControllerPodDisruptionBudget();
-            } else {
-                pdb = kafka.generatePodDisruptionBudget();
-            }
-
-            return podDisruptionBudgetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), pdb)
+            return podDisruptionBudgetOperator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudget(featureGates.useStrimziPodSetsEnabled()))
                     .map((Void) null);
         }
     }
@@ -796,15 +788,8 @@ public class KafkaReconciler {
         if (pfa.hasPodDisruptionBudgetV1()) {
             return Future.succeededFuture();
         } else {
-            io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdb;
-
-            if (featureGates.useStrimziPodSetsEnabled()) {
-                pdb = kafka.generateCustomControllerPodDisruptionBudgetV1Beta1();
-            } else {
-                pdb = kafka.generatePodDisruptionBudgetV1Beta1();
-            }
-
-            return podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), pdb)
+            return podDisruptionBudgetV1Beta1Operator
+                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudgetV1Beta1(featureGates.useStrimziPodSetsEnabled()))
                     .map((Void) null);
         }
     }
