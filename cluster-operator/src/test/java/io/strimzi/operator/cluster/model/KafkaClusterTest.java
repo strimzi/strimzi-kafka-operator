@@ -3043,22 +3043,6 @@ public class KafkaClusterTest {
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
         TestUtils.checkOwnerReference(bing, KAFKA);
 
-        io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress bingV1Beta1 = kc.generateExternalBootstrapIngressesV1Beta1().get(0);
-        assertThat(bingV1Beta1.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(CLUSTER)));
-        assertThat(bingV1Beta1.getSpec().getIngressClassName(), is(nullValue()));
-        assertThat(bingV1Beta1.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
-        assertThat(bingV1Beta1.getMetadata().getLabels().get("label"), is("label-value"));
-        assertThat(bingV1Beta1.getSpec().getTls().size(), is(1));
-        assertThat(bingV1Beta1.getSpec().getTls().get(0).getHosts().size(), is(1));
-        assertThat(bingV1Beta1.getSpec().getTls().get(0).getHosts().get(0), is("my-kafka-bootstrap.com"));
-        assertThat(bingV1Beta1.getSpec().getRules().size(), is(1));
-        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHost(), is("my-kafka-bootstrap.com"));
-        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
-        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaResources.externalBootstrapServiceName(CLUSTER)));
-        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort(), is(new IntOrString(9094)));
-        TestUtils.checkOwnerReference(bingV1Beta1, KAFKA);
-
         // Check per pod ingress
         for (int i = 0; i < REPLICAS; i++)  {
             Ingress ing = kc.generateExternalIngresses(i).get(0);
@@ -3076,22 +3060,6 @@ public class KafkaClusterTest {
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(ing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
             TestUtils.checkOwnerReference(ing, KAFKA);
-
-            io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingV1Beta1 = kc.generateExternalIngressesV1Beta1(i).get(0);
-            assertThat(ingV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
-            assertThat(ingV1Beta1.getSpec().getIngressClassName(), is(nullValue()));
-            assertThat(ingV1Beta1.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
-            assertThat(ingV1Beta1.getMetadata().getLabels().get("label"), is("label-value"));
-            assertThat(ingV1Beta1.getSpec().getTls().size(), is(1));
-            assertThat(ingV1Beta1.getSpec().getTls().get(0).getHosts().size(), is(1));
-            assertThat(ingV1Beta1.getSpec().getTls().get(0).getHosts().get(0), is(String.format("my-broker-kafka-%d.com", i)));
-            assertThat(ingV1Beta1.getSpec().getRules().size(), is(1));
-            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHost(), is(String.format("my-broker-kafka-%d.com", i)));
-            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
-            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
-            assertThat(ingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort(), is(new IntOrString(9094)));
-            TestUtils.checkOwnerReference(ingV1Beta1, KAFKA);
         }
     }
 
@@ -3139,16 +3107,10 @@ public class KafkaClusterTest {
         Ingress bing = kc.generateExternalBootstrapIngresses().get(0);
         assertThat(bing.getSpec().getIngressClassName(), is("nginx-internal"));
 
-        io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress bingV1Beta1 = kc.generateExternalBootstrapIngressesV1Beta1().get(0);
-        assertThat(bingV1Beta1.getSpec().getIngressClassName(), is("nginx-internal"));
-
         // Check per pod ingress
         for (int i = 0; i < REPLICAS; i++)  {
             Ingress ing = kc.generateExternalIngresses(i).get(0);
             assertThat(ing.getSpec().getIngressClassName(), is("nginx-internal"));
-
-            io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress ingV1Beta1 = kc.generateExternalIngressesV1Beta1(i).get(0);
-            assertThat(ingV1Beta1.getSpec().getIngressClassName(), is("nginx-internal"));
         }
     }
 
