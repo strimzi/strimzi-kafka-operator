@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
@@ -54,7 +55,6 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -81,11 +81,13 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -962,45 +964,394 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
             supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        JsonObject status = new JsonObject();
-        status.put("connector", Map.of("state", "FAILED"));
-
         // Should restart after minute 2 when auto restart count is 1
         var autoRestartStatus =  new AutoRestartStatusBuilder()
             .withCount(1)
             .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(DateTimeFormatter.ISO_INSTANT))
             .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(true));
+        assertThat(op.shouldAutoRestart(autoRestartStatus), is(true));
 
         // Should not restart before minute 2 when auto restart count is 1
         autoRestartStatus =  new AutoRestartStatusBuilder()
             .withCount(1)
             .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(1).format(DateTimeFormatter.ISO_INSTANT))
             .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
+        assertThat(op.shouldAutoRestart(autoRestartStatus), is(false));
 
         // Should restart after minute 12 when auto restart count is 3
         autoRestartStatus =  new AutoRestartStatusBuilder()
             .withCount(3)
             .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(13).format(DateTimeFormatter.ISO_INSTANT))
             .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(true));
+        assertThat(op.shouldAutoRestart(autoRestartStatus), is(true));
 
         // Should not restart before minute 12 when auto restart count is 3
         autoRestartStatus =  new AutoRestartStatusBuilder()
             .withCount(3)
             .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(10).format(DateTimeFormatter.ISO_INSTANT))
             .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
+        assertThat(op.shouldAutoRestart(autoRestartStatus), is(false));
 
         // Should not restart after 6 attempts
         autoRestartStatus =  new AutoRestartStatusBuilder()
             .withCount(7)
             .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusDays(1).format(DateTimeFormatter.ISO_INSTANT))
             .build();
-        assertThat(op.shouldAutoRestart(autoRestartStatus, status), is(false));
+        assertThat(op.shouldAutoRestart(autoRestartStatus), is(false));
 
         context.completeNow();
+    }
+
+    @Test
+    public void testShouldResetAutoRestartStatus(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        // Should reset after minute 2 when auto restart count is 1
+        var autoRestartStatus =  new AutoRestartStatusBuilder()
+                .withCount(1)
+                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(DateTimeFormatter.ISO_INSTANT))
+                .build();
+        assertThat(op.shouldResetAutoRestartStatus(autoRestartStatus), is(true));
+
+        // Should not reset before minute 2 when auto restart count is 1
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+                .withCount(1)
+                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(1).format(DateTimeFormatter.ISO_INSTANT))
+                .build();
+        assertThat(op.shouldResetAutoRestartStatus(autoRestartStatus), is(false));
+
+        // Should reset after minute 12 when auto restart count is 3
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+                .withCount(3)
+                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(13).format(DateTimeFormatter.ISO_INSTANT))
+                .build();
+        assertThat(op.shouldResetAutoRestartStatus(autoRestartStatus), is(true));
+
+        // Should not reset before minute 12 when auto restart count is 3
+        autoRestartStatus =  new AutoRestartStatusBuilder()
+                .withCount(3)
+                .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(10).format(DateTimeFormatter.ISO_INSTANT))
+                .build();
+        assertThat(op.shouldResetAutoRestartStatus(autoRestartStatus), is(false));
+
+        context.completeNow();
+    }
+
+    @Test
+    public void testAutoRestartWhenDisabled(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of());
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .build();
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(nullValue()));
+
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, never()).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRestartWhenEnabledAndNotFailed(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of());
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewAutoRestart()
+                        .withEnabled()
+                    .endAutoRestart()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .withNewStatus()
+                .endStatus()
+                .build();
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(nullValue()));
+
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, times(1)).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRestartWhenEnabledAndFailedFirstRestart(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of()));
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of("connector", Map.of("state", "FAILED")));
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewAutoRestart()
+                        .withEnabled()
+                    .endAutoRestart()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .withNewStatus()
+                .endStatus()
+                .build();
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(notNullValue()));
+                    assertThat(r.autoRestart.getCount(), is(1));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(notNullValue()));
+
+                    verify(mockConnectApi, times(1)).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, times(1)).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRestartWhenEnabledAndFailedSecondRestart(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        when(mockConnectApi.restart(any(), anyInt(), any(), anyBoolean(), anyBoolean())).thenReturn(Future.succeededFuture(Map.of()));
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of("connector", Map.of("state", "FAILED")));
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewAutoRestart()
+                        .withEnabled()
+                    .endAutoRestart()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .withNewStatus()
+                    .withNewAutoRestart()
+                        .withCount(1)
+                        .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(3).format(DateTimeFormatter.ISO_INSTANT))
+                    .endAutoRestart()
+                .endStatus()
+                .build();
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(notNullValue()));
+                    assertThat(r.autoRestart.getCount(), is(2));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(notNullValue()));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(not(connector.getStatus().getAutoRestart().getLastRestartTimestamp()))); // Timestamp changed
+
+                    verify(mockConnectApi, times(1)).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, times(1)).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRestartWhenEnabledAndFailedTooEarlyForSecondRestart(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of("connector", Map.of("state", "FAILED")));
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewAutoRestart()
+                        .withEnabled()
+                    .endAutoRestart()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .withNewStatus()
+                    .withNewAutoRestart()
+                        .withCount(1)
+                        .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(1).format(DateTimeFormatter.ISO_INSTANT))
+                    .endAutoRestart()
+                .endStatus()
+                .build();
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(notNullValue()));
+                    assertThat(r.autoRestart.getCount(), is(1));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(notNullValue()));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(connector.getStatus().getAutoRestart().getLastRestartTimestamp())); // Timestamp changed
+
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, times(1)).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRestartReset(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of());
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewAutoRestart()
+                        .withEnabled()
+                    .endAutoRestart()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .withNewStatus()
+                    .withNewAutoRestart()
+                        .withCount(2)
+                        .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(8).format(DateTimeFormatter.ISO_INSTANT))
+                    .endAutoRestart()
+                .endStatus()
+                .build();
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(nullValue()));
+
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, times(1)).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
+    }
+
+    @Test
+    public void testAutoRestartTooEarlyForReset(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaConnectApi mockConnectApi = mock(KafkaConnectApi.class);
+        AbstractConnectOperator.ConnectorStatusAndConditions statusAndConditions = new AbstractConnectOperator.ConnectorStatusAndConditions(Map.of());
+        KafkaConnector connector = new KafkaConnectorBuilder()
+                .withNewMetadata()
+                    .withName("my-connector")
+                    .withNamespace("my-namespace")
+                .endMetadata()
+                .withNewSpec()
+                    .withNewAutoRestart()
+                        .withEnabled()
+                    .endAutoRestart()
+                    .withClassName("MyClass")
+                    .withTasksMax(3)
+                    .withConfig(Map.of("topic", "my-topic"))
+                .endSpec()
+                .withNewStatus()
+                    .withNewAutoRestart()
+                        .withCount(2)
+                        .withLastRestartTimestamp(ZonedDateTime.now(ZoneOffset.UTC).minusMinutes(5).format(DateTimeFormatter.ISO_INSTANT))
+                    .endAutoRestart()
+                .endStatus()
+                .build();
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
+
+        Checkpoint checkpoint = context.checkpoint();
+
+        op.autoRestartFailedConnectorAndTasks(Reconciliation.DUMMY_RECONCILIATION, "my-connect-host", mockConnectApi, "my-connector", connector.getSpec(), statusAndConditions, connector)
+                .onComplete(context.succeeding(r -> context.verify(() -> {
+                    assertThat(r.autoRestart, is(notNullValue()));
+                    assertThat(r.autoRestart.getCount(), is(2));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(notNullValue()));
+                    assertThat(r.autoRestart.getLastRestartTimestamp(), is(connector.getStatus().getAutoRestart().getLastRestartTimestamp())); // Timestamp changed
+
+                    verify(mockConnectApi, never()).restart(any(), anyInt(), any(), anyBoolean(), anyBoolean());
+                    verify(supplier.kafkaConnectorOperator, times(1)).getAsync(any(), any());
+
+                    checkpoint.flag();
+                })));
     }
 
     @Test

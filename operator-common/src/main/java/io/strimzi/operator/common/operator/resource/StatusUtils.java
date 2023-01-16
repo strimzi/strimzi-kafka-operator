@@ -8,6 +8,7 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.AutoRestartStatus;
+import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
@@ -302,12 +303,18 @@ public class StatusUtils {
      * @return the AutoRestart status updated or a new one if it was null
      */
     public static AutoRestartStatus incrementAutoRestartStatus(AutoRestartStatus autoRestart)  {
+        AutoRestartStatus newStatus;
+
         if (autoRestart == null)  {
-            autoRestart = new AutoRestartStatus();
-            autoRestart.setCount(0);
+            newStatus = new AutoRestartStatus();
+            newStatus.setCount(1);
+        } else {
+            newStatus = new AutoRestartStatusBuilder(autoRestart).build();
+            newStatus.setCount(autoRestart.getCount() + 1);
         }
-        autoRestart.setCount(autoRestart.getCount() + 1);
-        autoRestart.setLastRestartTimestamp(iso8601Now());
-        return autoRestart;
+
+        newStatus.setLastRestartTimestamp(iso8601Now());
+
+        return newStatus;
     }
 }
