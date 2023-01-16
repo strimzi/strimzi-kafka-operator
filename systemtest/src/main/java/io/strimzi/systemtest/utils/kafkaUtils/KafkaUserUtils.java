@@ -19,7 +19,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -115,5 +117,20 @@ public class KafkaUserUtils {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void waitForAllUsersWithPrefixReady(String namespaceName, String usersPrefix) {
+        TestUtils.waitFor("all users to become ready", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,() -> {
+            List<KafkaUser> listOfUsers = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList();
+            listOfUsers = listOfUsers.stream().filter(kafkaUser -> !(kafkaUser.getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(Ready.toString()) && condition.getStatus().equals("True")))).toList();
+            if (listOfUsers.size() != 0) {
+                LOGGER.warn("There are still {} users with prefix {}, which are not in {} status", listOfUsers.size(), usersPrefix, Ready.toString());
+                return false;
+            }
+
+            LOGGER.info("All KafkaUsers with prefix {} are ready", usersPrefix);
+            return true;
+        }, () -> LOGGER.error("Failed to wait for readiness state of these users: {}",
+                KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList()));
     }
 }

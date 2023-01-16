@@ -152,38 +152,6 @@ class UserST extends AbstractST {
         KafkaUserUtils.waitForKafkaUserDeletion(namespace, userName);
     }
 
-    @Tag(SCALABILITY)
-    @IsolatedTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
-    void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        int numberOfUsers = 100;
-        int producerRate = 1000;
-        int consumerRate = 1500;
-        int requestsPercentage = 42;
-        double mutationRate = 3.0;
-
-        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", numberOfUsers);
-        alterBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", numberOfUsers,
-                producerRate, consumerRate, requestsPercentage, mutationRate);
-    }
-
-    @Tag(SCALABILITY)
-    @IsolatedTest
-    void testAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-
-        int numberOfUsers = 100;
-        int producerRate = 1000;
-        int consumerRate = 1500;
-        int requestsPercentage = 42;
-        double mutationRate = 3.0;
-
-        createBigAmountOfUsers(extensionContext, userName, "TLS", numberOfUsers);
-        alterBigAmountOfUsers(extensionContext, userName, "TLS", numberOfUsers,
-                producerRate, consumerRate, requestsPercentage, mutationRate);
-    }
-
     @ParallelTest
     @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964")
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
@@ -423,83 +391,6 @@ class UserST extends AbstractST {
         KafkaUser user = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get();
 
         assertThat(user.getStatus().getUsername(), is("CN=" + userName));
-    }
-
-    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers) {
-        LOGGER.info("Creating {} KafkaUsers", numberOfUsers);
-        for (int i = 0; i < numberOfUsers; i++) {
-            String userNameWithSuffix = userName + "-" + i;
-
-            if (typeOfUser.equals("TLS")) {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userNameWithSuffix)
-                    .editMetadata()
-                        .withNamespace(namespace)
-                    .endMetadata()
-                    .build());
-            } else {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespace, userClusterName, userNameWithSuffix)
-                    .editMetadata()
-                        .withNamespace(namespace)
-                    .endMetadata()
-                    .build());
-            }
-
-            LOGGER.debug("Checking status of KafkaUser {}", userNameWithSuffix);
-            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userNameWithSuffix).get()
-                    .getStatus().getConditions().get(0);
-            LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
-            LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
-            assertThat(kafkaCondition.getType(), is(Ready.toString()));
-            LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
-        }
-    }
-
-    synchronized void alterBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers,
-                                            int producerRate, int consumerRate, int requestsPercentage, double mutationRate) {
-        KafkaUserQuotas kuq = new KafkaUserQuotas();
-        kuq.setConsumerByteRate(consumerRate);
-        kuq.setProducerByteRate(producerRate);
-        kuq.setRequestPercentage(requestsPercentage);
-        kuq.setControllerMutationRate(mutationRate);
-
-        LOGGER.info("Updating of existing KafkaUsers");
-        for (int i = 0; i < numberOfUsers; i++) {
-            String userNameWithSuffix = userName + "-" + i;
-            if (typeOfUser.equals("TLS")) {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userNameWithSuffix)
-                    .editMetadata()
-                        .withNamespace(namespace)
-                    .endMetadata()
-                        .editSpec()
-                            .withQuotas(kuq)
-                        .endSpec()
-                    .build());
-            } else {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespace, userClusterName, userNameWithSuffix)
-                    .editMetadata()
-                        .withNamespace(namespace)
-                    .endMetadata()
-                        .editSpec()
-                            .withQuotas(kuq)
-                        .endSpec()
-                    .build());
-            }
-
-            LOGGER.info("[After update] Checking status of KafkaUser {}", userNameWithSuffix);
-            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userNameWithSuffix).get()
-                    .getStatus().getConditions().get(0);
-            LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
-            LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
-            assertThat(kafkaCondition.getType(), is(Ready.toString()));
-            LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
-
-            KafkaUserQuotas kuqAfter = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userNameWithSuffix).get().getSpec().getQuotas();
-            LOGGER.debug("Check altered KafkaUser {} new quotas.", userNameWithSuffix);
-            assertThat(kuqAfter.getRequestPercentage(), is(requestsPercentage));
-            assertThat(kuqAfter.getConsumerByteRate(), is(consumerRate));
-            assertThat(kuqAfter.getProducerByteRate(), is(producerRate));
-            assertThat(kuqAfter.getControllerMutationRate(), is(mutationRate));
-        }
     }
 
     @BeforeAll
