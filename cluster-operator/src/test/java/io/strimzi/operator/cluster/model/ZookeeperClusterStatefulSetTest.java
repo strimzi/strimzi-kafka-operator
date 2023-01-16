@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -108,7 +109,7 @@ public class ZookeeperClusterStatefulSetTest {
         assertThat(sts.getMetadata().getNamespace(), is(NAMESPACE));
         // ... with these labels
         assertThat(sts.getMetadata().getLabels(), is(expectedLabels()));
-        assertThat(sts.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(KAFKA.getSpec().getZookeeper().getStorage())));
+        assertThat(sts.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(KAFKA.getSpec().getZookeeper().getStorage())));
 
         assertThat(sts.getSpec().getSelector().getMatchLabels(), is(expectedSelectorLabels()));
 

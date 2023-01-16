@@ -69,6 +69,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -227,6 +228,7 @@ public class KafkaCluster extends AbstractModel {
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
+    private ResourceTemplate templatePersistentVolumeClaims;
     protected Map<String, String> templateExternalBootstrapServiceLabels;
     protected Map<String, String> templateExternalBootstrapServiceAnnotations;
     protected Map<String, String> templatePerPodServiceLabels;
@@ -487,12 +489,6 @@ public class KafkaCluster extends AbstractModel {
                 result.templateClusterRoleBindingAnnotations = template.getClusterRoleBinding().getMetadata().getAnnotations();
             }
 
-            if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
-                result.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
-                        result.templateStatefulSetLabels);
-                result.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
-            }
-
             if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {
                 result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
             }
@@ -520,6 +516,7 @@ public class KafkaCluster extends AbstractModel {
             }
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+            result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
         }
 
         result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
@@ -1134,7 +1131,7 @@ public class KafkaCluster extends AbstractModel {
     private Map<String, String> prepareControllerAnnotations()   {
         Map<String, String> controllerAnnotations = new HashMap<>(2);
         controllerAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
-        controllerAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+        controllerAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
 
         return controllerAnnotations;
     }
@@ -1294,7 +1291,8 @@ public class KafkaCluster extends AbstractModel {
      * @return The PersistentVolumeClaims.
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
-        return createPersistentVolumeClaims(storage, false);
+        return PersistentVolumeClaimUtils
+                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSetLabels);
     }
 
     /**

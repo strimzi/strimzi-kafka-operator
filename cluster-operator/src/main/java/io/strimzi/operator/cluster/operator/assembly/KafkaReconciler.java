@@ -92,7 +92,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
 
 /**
@@ -817,7 +816,7 @@ public class KafkaReconciler {
 
         // Storage annotation on Pods is used only for StatefulSets
         if (storageAnnotation) {
-            podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(kafka.getStorage()));
+            podAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(kafka.getStorage()));
         }
 
         return podAnnotations;
@@ -958,7 +957,7 @@ public class KafkaReconciler {
     private RestartReasons needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
         if (pod != null
                 && pod.getMetadata() != null) {
-            String jsonStorage = Annotations.stringAnnotation(pod, ANNO_STRIMZI_IO_STORAGE, null);
+            String jsonStorage = Annotations.stringAnnotation(pod, Annotations.ANNO_STRIMZI_IO_STORAGE, null);
 
             if (jsonStorage != null) {
                 Storage currentStorage = ModelUtils.decodeStorageFromJson(jsonStorage);

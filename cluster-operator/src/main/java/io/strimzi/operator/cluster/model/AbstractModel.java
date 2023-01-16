@@ -20,16 +20,13 @@ import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -64,16 +61,14 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
+import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
@@ -82,7 +77,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -155,16 +149,6 @@ public abstract class AbstractModel {
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
-
-    /**
-     * Annotation on PVCs storing the original configuration. It is used to revert any illegal changes.
-     */
-    public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
-
-    /**
-     * Annotation for storing the information whether the PVC should be deleted when the node is scaled down or when the cluster is deleted.
-     */
-    public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
 
     /**
      * Configure statically defined environment variables which are passed to all operands.
@@ -290,8 +274,6 @@ public abstract class AbstractModel {
     protected List<LocalObjectReference> templateImagePullSecrets;
     protected PodSecurityContext templateSecurityContext;
     protected int templateTerminationGracePeriodSeconds = 30;
-    protected Map<String, String> templatePersistentVolumeClaimLabels;
-    protected Map<String, String> templatePersistentVolumeClaimAnnotations;
     protected String templatePodPriorityClassName;
     protected String templatePodSchedulerName;
     protected List<HostAlias> templatePodHostAliases;
@@ -696,20 +678,17 @@ public abstract class AbstractModel {
      * @throws InvalidResourceException if validations fails for any reason
      */
     protected static void validatePersistentStorage(Storage storage)   {
-        if (storage instanceof PersistentClaimStorage) {
-            PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) storage;
+        if (storage instanceof PersistentClaimStorage persistentClaimStorage) {
             checkPersistentStorageSizeIsValid(persistentClaimStorage);
 
-        } else if (storage instanceof JbodStorage)  {
-            JbodStorage jbodStorage = (JbodStorage) storage;
+        } else if (storage instanceof JbodStorage jbodStorage)  {
 
             if (jbodStorage.getVolumes().size() == 0)   {
                 throw new InvalidResourceException("JbodStorage needs to contain at least one volume!");
             }
 
             for (Storage jbodVolume : jbodStorage.getVolumes()) {
-                if (jbodVolume instanceof PersistentClaimStorage) {
-                    PersistentClaimStorage persistentClaimStorage = (PersistentClaimStorage) jbodVolume;
+                if (jbodVolume instanceof PersistentClaimStorage persistentClaimStorage) {
                     checkPersistentStorageSizeIsValid(persistentClaimStorage);
                 }
             }
@@ -871,97 +850,6 @@ public abstract class AbstractModel {
         ServicePort servicePort = builder.build();
         LOGGER.traceCr(reconciliation, "Created service port {}", servicePort);
         return servicePort;
-    }
-
-    /**
-     * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka and Zoo). This method calls itself
-     * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
-     * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
-     *
-     * @param storage   The storage configuration
-     * @param jbod      Indicator whether the {@code storage} is part of JBOD array or not
-     *
-     * @return          List with Persistent Volume Claims
-     */
-    protected List<PersistentVolumeClaim> createPersistentVolumeClaims(Storage storage, boolean jbod)   {
-        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof PersistentClaimStorage) {
-                PersistentClaimStorage persistentStorage = (PersistentClaimStorage) storage;
-                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + componentName;
-
-                for (int i = 0; i < replicas; i++) {
-                    pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, persistentStorage));
-                }
-            } else if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(createPersistentVolumeClaims(volume, true));
-                }
-            }
-        }
-
-        return pvcs;
-    }
-
-    /**
-     * createPersistentVolumeClaim is called uniquely for each ordinal (Broker ID) of a stateful set
-     *
-     * @param ordinalId the ordinal of the pod/broker for which the persistent volume claim is being created
-     *                  used to retrieve the optional broker storage overrides for each broker
-     * @param name      the name of the persistent volume claim to be created
-     * @param storage   the user supplied configuration of the PersistentClaimStorage
-     *
-     * @return PersistentVolumeClaim
-     */
-    protected PersistentVolumeClaim createPersistentVolumeClaim(int ordinalId, String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>(1);
-        requests.put("storage", new Quantity(storage.getSize(), null));
-
-        LabelSelector selector = null;
-        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
-            selector = new LabelSelector(null, storage.getSelector());
-        }
-
-        String storageClass = storage.getStorageClass();
-        if (storage.getOverrides() != null) {
-            storageClass = storage.getOverrides().stream()
-                    .filter(broker -> broker != null
-                            && broker.getBroker() != null
-                            && broker.getBroker() == ordinalId
-                            && broker.getStorageClass() != null)
-                    .map(PersistentClaimStorageOverride::getStorageClass)
-                    .findAny()
-                    // if none are found for broker do not change storage class from overrides
-                    .orElse(storageClass);
-        }
-
-        PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    // labels with the Strimzi name label of the component (this.name)
-                    .withLabels(labels.withAdditionalLabels(templatePersistentVolumeClaimLabels).toMap())
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
-                .endMetadata()
-                .withNewSpec()
-                    .withAccessModes("ReadWriteOnce")
-                    .withNewResources()
-                        .withRequests(requests)
-                    .endResources()
-                    .withStorageClassName(storageClass)
-                    .withSelector(selector)
-                    .withVolumeMode("Filesystem")
-                .endSpec()
-                .build();
-
-        // if the persistent volume claim has to be deleted when the cluster is un-deployed then set an owner reference of the CR
-        if (storage.isDeleteClaim())    {
-            pvc.getMetadata().setOwnerReferences(Collections.singletonList(ownerReference));
-        }
-
-        return pvc;
     }
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {

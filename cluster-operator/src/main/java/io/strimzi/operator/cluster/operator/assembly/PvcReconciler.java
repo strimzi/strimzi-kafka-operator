@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -174,7 +173,7 @@ public class PvcReconciler {
     private Future<Void> considerPersistentClaimDeletion(String pvcName)   {
         return pvcOperator.getAsync(reconciliation.namespace(), pvcName)
                 .compose(pvc -> {
-                    if (Annotations.booleanAnnotation(pvc, AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
+                    if (Annotations.booleanAnnotation(pvc, Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, false)) {
                         LOGGER.infoCr(reconciliation, "Deleting PVC {}", pvcName);
                         return pvcOperator.reconcile(reconciliation, reconciliation.namespace(), pvcName, null)
                                 .map((Void) null);
