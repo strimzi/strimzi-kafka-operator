@@ -246,10 +246,7 @@ Commonly used Make targets:
 
 ### Java versions
 
-To use different Java version for the Maven build, you can specify the environment variable `JAVA_VERSION_BUILD` and set
-it to the desired Java version. For example, for building with Java 17 you can use `export JAVA_VERSION_BUILD=17`.
-
-> *Note*: Strimzi currently developed and tested with Java 17.
+Strimzi currently developed and tested with Java 17.
 
 ### Building Docker images
 
@@ -278,12 +275,6 @@ To configure the `docker_tag` and `docker_push` targets you can set following en
 ### Docker build options
 
 When building the Docker images you can use an alternative JRE or use an alternate base image.
-
-#### Alternative Docker image JRE
-
-The docker images can be built with an alternative Java version by setting the environment variable `JAVA_VERSION`. For
-example, to build docker images that have the Java 19 JRE installed use `JAVA_VERSION=19 make docker_build`. If not
-present, the container images will use Java **17** by default.
 
 #### Alternative `docker` command
 
