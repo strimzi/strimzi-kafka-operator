@@ -776,7 +776,7 @@ public class KafkaListenersReconciler {
                                 } else  {
                                     byte[] publicKeyBytes = Base64.getDecoder().decode(secret.getData().get(customCert.getCertificate()));
                                     customListenerCertificates.put(listener.getName(), new String(publicKeyBytes, StandardCharsets.US_ASCII));
-                                    result.customListenerCertificateThumbprints.put(listener.getName(), CertUtils.getCertificateThumbprint(secret, customCert.getCertificate()));
+                                    result.customListenerCertificateThumbprints.put(listener.getName(), CertUtils.getCertificateShortThumbprint(secret, customCert.getCertificate()));
                                 }
                             } else {
                                 errors.add("Secret " + customCert.getSecretName() + " with custom TLS certificate does not exist.");

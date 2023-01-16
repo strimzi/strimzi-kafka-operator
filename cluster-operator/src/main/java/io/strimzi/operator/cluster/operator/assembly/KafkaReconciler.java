@@ -733,9 +733,15 @@ public class KafkaReconciler {
                                         // The secret is patched and some changes to the existing certificates actually occurred
                                         existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     }
-
                                     IntStream.range(0, kafka.getReplicas())
-                                            .forEach(brokerId -> kafkaServerCertificateHash.put(brokerId, CertUtils.getCertificateThumbprintForServer(patchResult.resource(), KafkaResources.kafkaPodName(reconciliation.name(), brokerId))));
+                                            .forEach(brokerId -> {
+                                                var podName = KafkaResources.kafkaPodName(reconciliation.name(), brokerId);
+                                                kafkaServerCertificateHash.put(
+                                                        brokerId,
+                                                        CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                                                Ca.SecretEntry.getNameForPod(podName, Ca.SecretEntry.CRT)
+                                                        ));
+                                            });
                                 }
                                 return Future.succeededFuture();
                             });
@@ -802,6 +808,7 @@ public class KafkaReconciler {
      * Prepares annotations for Kafka pods within a StrimziPodSet which are known only in the KafkaAssemblyOperator level.
      * These are later passed to KafkaCluster where there are used when creating the Pod definitions.
      *
+     * @param brokerId ID of the broker, the annotations of which are being prepared.
      * @return Map with Pod annotations
      */
     private Map<String, String> podSetPodAnnotations(int brokerId) {
@@ -831,6 +838,7 @@ public class KafkaReconciler {
     /**
      * Prepares the Kafka pods' annotations that are common between StatefulSets and StrimziPodSets.
      *
+     * @param brokerId ID of the broker, the annotations of which are being prepared.
      * @return Map with Pod annotations
      */
     private Map<String, String> commonKafkaPodAnnotations(int brokerId) {
@@ -1115,13 +1123,9 @@ public class KafkaReconciler {
             LOGGER.infoCr(reconciliation, "Scaling Kafka up from {} to {} replicas", currentReplicas, kafka.getReplicas());
 
             if (featureGates.useStrimziPodSetsEnabled()) {
-
-                return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()))
-                        .compose(secret -> {
-                            StrimziPodSet kafkaPodSet = kafka.generatePodSet(kafka.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
-                            return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaPodSet)
-                                    .map((Void) null);
-                        });
+                StrimziPodSet kafkaPodSet = kafka.generatePodSet(kafka.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
+                return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaPodSet)
+                        .map((Void) null);
             } else {
                 return stsOperator.scaleUp(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.getReplicas())
                         .map((Void) null);

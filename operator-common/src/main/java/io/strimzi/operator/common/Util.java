@@ -552,20 +552,20 @@ public class Util {
      * Gets the first 8 characters from a SHA-1 hash of the provided byte array
      *
      * @param   toBeHashed  Byte array for which the hash will be returned
-     *
      * @return              First 8 characters of the SHA-1 hash
      */
     public static String hashStub(byte[] toBeHashed)   {
-        byte[] digest = getSHA1(toBeHashed);
+        byte[] digest = sha1Digest(toBeHashed);
         return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
     }
 
     /**
      * Get a SHA-1 hash of the provided byte array
+     *
      * @param toBeHashed    Byte array for which the hash will be returned
      * @return              SHA-1 hash
      */
-    public static byte[] getSHA1(byte[] toBeHashed) {
+    public static byte[] sha1Digest(byte[] toBeHashed) {
         try {
             // This is used to generate unique identifier which is not used for security => using SHA-1 is ok
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
