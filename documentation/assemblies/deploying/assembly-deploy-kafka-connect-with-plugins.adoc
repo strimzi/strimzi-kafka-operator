@@ -26,8 +26,6 @@ After plugins have been added to the container image, you can manage the running
 
 You can also create new connector instances using these options.
 
-IMPORTANT: You create the configuration for connectors directly using `KafkaConnector` custom resources or the Kafka Connect REST API.
-
 //Procedure to create container images using Strimzi and Kafka Connect build
 include::../../modules/deploying/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]
 //Procedure to create container images from base image

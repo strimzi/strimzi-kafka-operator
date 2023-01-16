@@ -7,8 +7,8 @@
 = Deploying Kafka Connect
 
 [role="_abstract"]
-link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and external systems.
-Kafka Connect is typically used to integrate Kafka with external databases and storage and messaging systems.
+link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and other systems.
+For example, Kafka Connect might integrate Kafka with external databases or storage and messaging systems.
 
 In Strimzi, Kafka Connect is deployed in distributed mode.
 Kafka Connect can also work in standalone mode, but this is not supported by Strimzi.

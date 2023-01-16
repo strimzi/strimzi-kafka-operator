@@ -10,8 +10,6 @@ If the restart fails after the final attempt, there is likely to be a problem wi
 The connector and tasks remain in a `FAILED` state.
 It means that you have to restart the connector and tasks manually, for example, by annotating KafKaConnector CR with `strimzi.io/restart: "true"`.
 
-NOTE: If you are using a Kafka version earlier than 3.0.0, only a failed connector is restarted and not failed tasks.
-
 For Kafka Connect connectors, use the `autoRestart` property of the `KafkaConnector` resource to enable automatic restarts of failed connectors and tasks.
 
 .Enabling automatic restarts of failed connectors for Kafka Connect

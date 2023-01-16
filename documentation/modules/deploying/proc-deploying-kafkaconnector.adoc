@@ -20,23 +20,20 @@ This enables automatic restarts of failed connectors and tasks.
 Up to seven restart attempts are made, after which restarts must be made manually.
 You annotate the `KafkaConnector` resource to xref:proc-manual-restart-connector-str[restart a connector] or xref:proc-manual-restart-connector-task-str[restart a connector task] manually.
 
-NOTE: If you are using a Kafka version earlier than 3.0.0, only a failed connector is restarted and not failed tasks.
-
 .Example connectors
 
 You can use your own connectors or try the examples provided by Strimzi.
-Strimzi provides an xref:deploy-examples-{context}[example `KafkaConnector` configuration file] (`examples/connect/source-connector.yaml`).
-In this procedure, we show how to use the example file to create the following connector instances as `KafkaConnector` resources:
+Up until Apache Kafka 3.1.0, example file connector plugins were included with Apache Kafka. 
+Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be xref:using-kafka-connect-with-plug-ins-str[added to the plugin path as any other connector]. 
+
+Strimzi provides an xref:deploy-examples-{context}[example `KafkaConnector` configuration file] (`examples/connect/source-connector.yaml`) for the example file connector plugins, which creates the following connector instances as `KafkaConnector` resources:
 
 * A `FileStreamSourceConnector` instance that reads each line from the Kafka license file (the source) and writes the data as messages to a single Kafka topic.
 * A `FileStreamSinkConnector` instance that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
 
-Alternatively, you can use the `examples/connect/kafka-connect-build.yaml` file to build a new Kafka Connect image with the file connectors. 
+We use the example file to create connectors in this procedure. 
 
-Up until Apache Kafka 3.1.0, the example file connector plugins were included with Apache Kafka. Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be xref:using-kafka-connect-with-plug-ins-str[added to the plugin path as any other connector]. 
-
-NOTE: In a production environment, you prepare container images with the required Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
-Running the example connectors in containers as described here is unlikely to be suitable for production use cases.
+NOTE: The example connectors are not intended for use in a production environment.  
 
 .Prerequisites
 
@@ -44,6 +41,11 @@ Running the example connectors in containers as described here is unlikely to be
 * The Cluster Operator is running
 
 .Procedure
+
+. Add the `FileStreamSourceConnector` and `FileStreamSinkConnector` plugins to Kafka Connect in one of the following ways:
++
+* xref:creating-new-image-using-kafka-connect-build-{context}[Configure Kafka Connect to build a new container image with plugins automatically]
+* xref:creating-new-image-from-base-{context}[Create a Docker image from the base Kafka Connect image] (manually or using continuous integration)
 
 . Set the `strimzi.io/use-connector-resources annotation` to `true` in the Kafka Connect configuration.
 +
