@@ -19,7 +19,7 @@ Add connector plugins to Kafka Connect in one of the following ways:
 * xref:creating-new-image-using-kafka-connect-build-{context}[Configure Kafka Connect to build a new container image with plugins automatically]
 * xref:creating-new-image-from-base-{context}[Create a Docker image from the base Kafka Connect image] (manually or using continuous integration)
 
-After plugins have been added to the container image, you can manage the running of connector instances in the following ways:
+After plugins have been added to the container image, you can start, stop, and manage connector instances in the following ways:
 
 * xref:proc-deploying-kafkaconnector-{context}[Using Strimzi’s `KafkaConnector` custom resource]
 * xref:con-exposing-kafka-connect-api-{context}[Using the Kafka Connect API] 
