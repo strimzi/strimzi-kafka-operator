@@ -1271,22 +1271,24 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 
 [options="header"]
 |====
-|Property                          |Description
-|deployment                 1.2+<.<a|Template for Entity Operator `Deployment`.
+|Property                         |Description
+|deployment                1.2+<.<a|Template for Entity Operator `Deployment`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|pod                        1.2+<.<a|Template for Entity Operator `Pods`.
+|pod                       1.2+<.<a|Template for Entity Operator `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|topicOperatorContainer     1.2+<.<a|Template for the Entity Topic Operator container.
+|topicOperatorContainer    1.2+<.<a|Template for the Entity Topic Operator container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|userOperatorContainer      1.2+<.<a|Template for the Entity User Operator container.
+|userOperatorContainer     1.2+<.<a|Template for the Entity User Operator container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|tlsSidecarContainer        1.2+<.<a|Template for the Entity Operator TLS sidecar container.
+|tlsSidecarContainer       1.2+<.<a|Template for the Entity Operator TLS sidecar container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|serviceAccount             1.2+<.<a|Template for the Entity Operator service account.
+|serviceAccount            1.2+<.<a|Template for the Entity Operator service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|entityOperatorRole         1.2+<.<a|Template for the Entity Operator Role.
+|entityOperatorRole        1.2+<.<a|Template for the Entity Operator Role.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|entityOperatorRoleBinding  1.2+<.<a|Template for the Entity Operator RoleBinding.
+|topicOperatorRoleBinding  1.2+<.<a|Template for the Entity Topic Operator RoleBinding.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|userOperatorRoleBinding   1.2+<.<a|Template for the Entity Topic Operator RoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
@@ -2987,6 +2989,8 @@ Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`]
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
 |bridgeContainer      1.2+<.<a|Template for the Kafka Bridge container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|clusterRoleBinding   1.2+<.<a|Template for the Kafka Bridge ClusterRoleBinding.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |serviceAccount       1.2+<.<a|Template for the Kafka Bridge service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |initContainer        1.2+<.<a|Template for the Kafka Bridge init container.

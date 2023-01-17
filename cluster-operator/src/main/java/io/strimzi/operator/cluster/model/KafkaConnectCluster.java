@@ -54,6 +54,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -149,6 +150,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
+    protected ResourceTemplate templateInitClusterRoleBinding;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -293,11 +295,6 @@ public class KafkaConnectCluster extends AbstractModel {
             ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
             ModelUtils.parseInternalServiceTemplate(kafkaConnect, template.getApiService());
 
-            if (template.getClusterRoleBinding() != null && template.getClusterRoleBinding().getMetadata() != null) {
-                kafkaConnect.templateClusterRoleBindingLabels = template.getClusterRoleBinding().getMetadata().getLabels();
-                kafkaConnect.templateClusterRoleBindingAnnotations = template.getClusterRoleBinding().getMetadata().getAnnotations();
-            }
-
             if (template.getConnectContainer() != null && template.getConnectContainer().getEnv() != null) {
                 kafkaConnect.templateContainerEnvVars = template.getConnectContainer().getEnv();
             }
@@ -325,6 +322,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
 
             kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+            kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -893,23 +891,24 @@ public class KafkaConnectCluster extends AbstractModel {
      * @return The cluster role binding.
      */
     public ClusterRoleBinding generateClusterRoleBinding() {
-        if (rack == null) {
+        if (rack != null) {
+            Subject subject = new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName(getServiceAccountName())
+                    .withNamespace(namespace)
+                    .build();
+
+            RoleRef roleRef = new RoleRefBuilder()
+                    .withName("strimzi-kafka-client")
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .build();
+
+            return RbacUtils
+                    .createClusterRoleBinding(getInitContainerClusterRoleBindingName(), roleRef, List.of(subject), labels, templateInitClusterRoleBinding);
+        } else {
             return null;
         }
-
-        Subject subject = new SubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(getServiceAccountName())
-                .withNamespace(namespace)
-                .build();
-
-        RoleRef roleRef = new RoleRefBuilder()
-                .withName("strimzi-kafka-client")
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .build();
-
-        return getClusterRoleBinding(getInitContainerClusterRoleBindingName(), subject, roleRef);
     }
 
     @Override

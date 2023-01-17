@@ -40,6 +40,7 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -131,6 +132,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
+    private ResourceTemplate templateInitClusterRoleBinding;
     private SecurityContext templateInitContainerSecurityContext;
 
     private Tracing tracing;
@@ -271,6 +273,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         kafkaBridgeCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+        kafkaBridgeCluster.templateInitClusterRoleBinding = template.getClusterRoleBinding();
     }
 
     /**
@@ -579,23 +582,24 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @return The cluster role binding.
      */
     public ClusterRoleBinding generateClusterRoleBinding() {
-        if (rack == null) {
+        if (rack != null) {
+            Subject subject = new SubjectBuilder()
+                    .withKind("ServiceAccount")
+                    .withName(getServiceAccountName())
+                    .withNamespace(namespace)
+                    .build();
+
+            RoleRef roleRef = new RoleRefBuilder()
+                    .withName("strimzi-kafka-client")
+                    .withApiGroup("rbac.authorization.k8s.io")
+                    .withKind("ClusterRole")
+                    .build();
+
+            return RbacUtils
+                    .createClusterRoleBinding(KafkaBridgeResources.initContainerClusterRoleBindingName(cluster, namespace), roleRef, List.of(subject), labels, templateInitClusterRoleBinding);
+        } else {
             return null;
         }
-
-        Subject subject = new SubjectBuilder()
-                .withKind("ServiceAccount")
-                .withName(getServiceAccountName())
-                .withNamespace(namespace)
-                .build();
-
-        RoleRef roleRef = new RoleRefBuilder()
-                .withName("strimzi-kafka-client")
-                .withApiGroup("rbac.authorization.k8s.io")
-                .withKind("ClusterRole")
-                .build();
-
-        return getClusterRoleBinding(KafkaBridgeResources.initContainerClusterRoleBindingName(getCluster(), namespace), subject, roleRef);
     }
 
     @Override

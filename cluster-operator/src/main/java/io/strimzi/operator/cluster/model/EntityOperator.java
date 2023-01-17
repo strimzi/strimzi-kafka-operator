@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -83,6 +84,7 @@ public class EntityOperator extends AbstractModel {
 
     private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     private SecurityContext templateTlsSidecarContainerSecurityContext;
+    private ResourceTemplate templateRole;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -146,16 +148,6 @@ public class EntityOperator extends AbstractModel {
 
                 ModelUtils.parsePodTemplate(result, template.getPod());
 
-                if (template.getEntityOperatorRole() != null && template.getEntityOperatorRole().getMetadata() != null) {
-                    result.templateEntityOperatorRoleLabels = template.getEntityOperatorRole().getMetadata().getLabels();
-                    result.templateEntityOperatorRoleAnnotations = template.getEntityOperatorRole().getMetadata().getAnnotations();
-                }
-
-                if (template.getEntityOperatorRoleBinding() != null && template.getEntityOperatorRoleBinding().getMetadata() != null) {
-                    result.templateEntityOperatorRoleBindingLabels = template.getEntityOperatorRoleBinding().getMetadata().getLabels();
-                    result.templateEntityOperatorRoleBindingAnnotations = template.getEntityOperatorRoleBinding().getMetadata().getAnnotations();
-                }
-
                 if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getEnv() != null) {
                     topicOperator.templateContainerEnvVars = template.getTopicOperatorContainer().getEnv();
                 }
@@ -184,6 +176,8 @@ public class EntityOperator extends AbstractModel {
                     result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
                     result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
+
+                result.templateRole = template.getEntityOperatorRole();
             }
 
             result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
@@ -324,11 +318,6 @@ public class EntityOperator extends AbstractModel {
         return super.generateServiceAccount();
     }
 
-    @Override
-    protected String getRoleName() {
-        return KafkaResources.entityOperatorDeploymentName(cluster);
-    }
-
     /**
      * Read the entity operator ClusterRole, and use the rules to create a new Role.
      * This is done to avoid duplication of the rules set defined in source code.
@@ -358,7 +347,7 @@ public class EntityOperator extends AbstractModel {
             throw new RuntimeException(e);
         }
 
-        Role role = super.generateRole(namespace, rules);
+        Role role = RbacUtils.createRole(componentName, namespace, rules, labels, ownerReference, templateRole);
 
         // We set OwnerReference only within the same namespace since it does not work cross-namespace
         if (!namespace.equals(ownerNamespace)) {
