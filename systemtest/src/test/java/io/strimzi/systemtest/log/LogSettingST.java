@@ -61,7 +61,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CC_LOG_CONFIG_RELOAD;
 import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_MEDIUM;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -77,11 +76,6 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
-@Tag(CONNECT)
-@Tag(MIRROR_MAKER)
-@Tag(MIRROR_MAKER2)
-@Tag(BRIDGE)
-@Tag(CONNECT_COMPONENTS)
 @TestMethodOrder(OrderAnnotation.class)
 @ParallelSuite
 class LogSettingST extends AbstractST {
@@ -104,7 +98,7 @@ class LogSettingST extends AbstractST {
         .withGcLoggingEnabled(false)
         .build();
 
-    private static final Map<String, String> KAFKA_LOGGERS = new HashMap<String, String>() {
+    private static final Map<String, String> KAFKA_LOGGERS = new HashMap<>() {
         {
             put("kafka.root.logger.level", INFO);
             put("test.kafka.logger.level", INFO);
@@ -124,14 +118,14 @@ class LogSettingST extends AbstractST {
         }
     };
 
-    private static final Map<String, String> ZOOKEEPER_LOGGERS = new HashMap<String, String>() {
+    private static final Map<String, String> ZOOKEEPER_LOGGERS = new HashMap<>() {
         {
             put("zookeeper.root.logger", OFF);
             put("test.zookeeper.logger.level", DEBUG);
         }
     };
 
-    private static final Map<String, String> CONNECT_LOGGERS = new HashMap<String, String>() {
+    private static final Map<String, String> CONNECT_LOGGERS = new HashMap<>() {
         {
             put("connect.root.logger.level", INFO);
             put("test.connect.logger.level", DEBUG);
@@ -140,21 +134,21 @@ class LogSettingST extends AbstractST {
         }
     };
 
-    private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<String, String>() {
+    private static final Map<String, String> OPERATORS_LOGGERS = new HashMap<>() {
         {
             put("rootLogger.level", DEBUG);
             put("test.operator.logger.level", DEBUG);
         }
     };
 
-    private static final Map<String, String> MIRROR_MAKER_LOGGERS = new HashMap<String, String>() {
+    private static final Map<String, String> MIRROR_MAKER_LOGGERS = new HashMap<>() {
         {
             put("mirrormaker.root.logger", TRACE);
             put("test.mirrormaker.logger.level", TRACE);
         }
     };
 
-    private static final Map<String, String> BRIDGE_LOGGERS = new HashMap<String, String>() {
+    private static final Map<String, String> BRIDGE_LOGGERS = new HashMap<>() {
         {
             put("logger.createConsumer.name", "http.openapi.operation.createConsumer");
             put("logger.createConsumer.level", INFO);
@@ -273,6 +267,7 @@ class LogSettingST extends AbstractST {
     }
 
     @ParallelTest
+    @Tag(CONNECT)
     void testConnectLogSetting(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String connectClusterName = clusterName + "-connect";
@@ -308,6 +303,7 @@ class LogSettingST extends AbstractST {
     }
 
     @ParallelTest
+    @Tag(MIRROR_MAKER)
     void testMirrorMakerLogSetting(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMakerName = clusterName + "-mirror-maker";
@@ -343,6 +339,7 @@ class LogSettingST extends AbstractST {
     }
 
     @ParallelTest
+    @Tag(MIRROR_MAKER2)
     void testMirrorMaker2LogSetting(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMaker2Name = clusterName + "-mirror-maker-2";
@@ -378,6 +375,7 @@ class LogSettingST extends AbstractST {
     }
 
     @ParallelTest
+    @Tag(BRIDGE)
     void testBridgeLogSetting(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String bridgeName = clusterName + "-bridge";
