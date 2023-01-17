@@ -543,6 +543,12 @@ public abstract class Ca {
         return certs;
     }
 
+    /**
+     * Check if this secret is coming from newer versions of the operator or older ones. Secrets from an older version don't have a keystore and password.
+     * @param secret Secret resource to check
+     * @param podName Name of the pod with certificate and key entries in the secret
+     * @return True if this secret was created by a newer version of the operator and false otherwise.
+     */
     private boolean isNewVersion(Secret secret, String podName) {
         String store = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE);
         String password = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE_PASSWORD);
