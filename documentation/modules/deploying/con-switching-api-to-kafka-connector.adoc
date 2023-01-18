@@ -16,3 +16,7 @@ WARNING: If you enable `KafkaConnector` resources before creating them, you dele
 
 To switch from using `KafkaConnector` resources to using the Kafka Connect API, first remove the annotation that enables the `KafkaConnector` resources from your Kafka Connect configuration.
 Otherwise, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.
+
+When making the switch, link:{BookURLConfiguring}#con-custom-resources-status-str[check the status of the `KafkaConnect` resource^].
+The value of `metadata.generation` (the current version of the deployment) must match `status.observedGeneration` (the latest reconciliation of the resource).  
+When the Kafka Connect cluster is `Ready`, you can delete the `KafkaConnector` resources. 
