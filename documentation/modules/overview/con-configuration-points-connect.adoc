@@ -238,7 +238,7 @@ curl -X POST \
 
 If KafkaConnectors are enabled, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.
 
-The operations supported by the REST API are described in the http://kafka.apache.org[Apache Kafka documentation^].
+The operations supported by the REST API are described in the {ApacheKafkaConnectAPI}.
 
 NOTE: You can expose the Kafka Connect API service outside Kubernetes.
 You do this by creating a service that uses a connection mechanism that provides the access, such as an ingress or route.

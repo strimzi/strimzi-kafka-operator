@@ -237,4 +237,4 @@ You can use these metrics to gauge whether or not you need to tune your configur
 .Additional resources
 
 * link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards^]
-* link:{BookURLDeploying}#assembly-creating-managing-connectors-{context}[Creating and managing connectors^]
+* link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-{context}[Adding connectors^]

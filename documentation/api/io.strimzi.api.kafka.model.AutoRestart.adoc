@@ -1,30 +1,27 @@
 Configures automatic restarts for connectors and tasks that are in a `FAILED` state.
 
-Once enabled, a back-off algorithm applies the automatic restart to each failed connector and its tasks.
+When enabled, a back-off algorithm applies the automatic restart to each failed connector and its tasks.
 
 The operator attempts an automatic restart on reconciliation. 
 If the first attempt fails, the operator makes up to six more attempts. 
 The duration between each restart attempt increases from 2 to 30 minutes.
-After each restart failed connectors and tasks transit from `FAILED` to `RESTARTING`.
+After each restart, failed connectors and tasks transit from `FAILED` to `RESTARTING`.
 If the restart fails after the final attempt, there is likely to be a problem with the connector configuration. 
 The connector and tasks remain in a `FAILED` state.
-It means that you will have to restart connector/tasks manually, for example by annotating KafKaConnector CR with `strimzi.io/restart: "true"`
-
-
-If you are using a Kafka version earlier than 3.0.0, only the failed connector is restarted not failed tasks.
+It means that you have to restart the connector and tasks manually, for example, by annotating KafKaConnector CR with `strimzi.io/restart: "true"`.
 
 For Kafka Connect connectors, use the `autoRestart` property of the `KafkaConnector` resource to enable automatic restarts of failed connectors and tasks.
 
 .Enabling automatic restarts of failed connectors for Kafka Connect
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: strimzi.io/v1alpha1
+apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
-    name: my-source-connector
+  name: my-source-connector
 spec:
-    autoRestart:
-        enabled: true
+  autoRestart:
+    enabled: true
 ----
 
 For MirrorMaker 2.0, use the `autoRestart` property of connectors in the `KafkaMirrorMaker2` resource to enable automatic restarts of failed connectors and tasks.
@@ -32,7 +29,7 @@ For MirrorMaker 2.0, use the `autoRestart` property of connectors in the `KafkaM
 .Enabling automatic restarts of failed connectors for MirrorMaker 2.0
 [source,yaml,subs="attributes+"]
 ----
-apiVersion: strimzi.io/v1alpha1
+apiVersion: {KafkaMirrorMaker2ApiVersion}
 kind: KafkaMirrorMaker2
 metadata:
   name: my-mm2-cluster

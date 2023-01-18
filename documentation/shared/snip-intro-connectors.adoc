@@ -1,0 +1,8 @@
+//standard connector intro text
+Kafka Connect uses a plugin architecture to provide the implementation artifacts for connectors.
+Plugins allow connections to other systems and provide additional configuration to manipulate data.
+Plugins include connectors and other components, such as data converters and transforms.
+A connector operates with a specific type of external system.
+Each connector defines a schema for its configuration.
+You supply the configuration to Kafka Connect to create a connector instance within Kafka Connect.
+Connector instances then define a set of tasks for moving data between systems.

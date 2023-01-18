@@ -1,36 +1,68 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-connect.adoc
+// assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying example KafkaConnector resources
+= Deploying KafkaConnector resources
 
 [role="_abstract"]
-The `KafkaConnector` resource offers a Kubernetes-native approach to management of connectors by the Cluster Operator. 
-Strimzi provides xref:deploy-examples-{context}[example configuration files].
-In this procedure, we use the `examples/connect/source-connector.yaml` file to create the following connector instances as `KafkaConnector` resources:
+Deploy `KafkaConnector` resources to manage connectors.
+The `KafkaConnector` custom resource offers a Kubernetes-native approach to management of connectors by the Cluster Operator.
+You don't need to send HTTP requests to manage connectors, as with the Kafka Connect REST API.
+You manage a running connector instance by updating its corresponding `KafkaConnector` resource, and then applying the updates.
+The Cluster Operator updates the configurations of the running connector instances. 
+You remove a connector by deleting its corresponding `KafkaConnector`.
+
+`KafkaConnector` resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
+
+In the configuration shown in this procedure, the `autoRestart` property is set to `true`.
+This enables automatic restarts of failed connectors and tasks. 
+Up to seven restart attempts are made, after which restarts must be made manually.
+You annotate the `KafkaConnector` resource to xref:proc-manual-restart-connector-str[restart a connector] or xref:proc-manual-restart-connector-task-str[restart a connector task] manually.
+
+.Example connectors
+
+You can use your own connectors or try the examples provided by Strimzi.
+Up until Apache Kafka 3.1.0, example file connector plugins were included with Apache Kafka. 
+Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be xref:using-kafka-connect-with-plug-ins-str[added to the plugin path as any other connector]. 
+
+Strimzi provides an xref:deploy-examples-{context}[example `KafkaConnector` configuration file] (`examples/connect/source-connector.yaml`) for the example file connector plugins, which creates the following connector instances as `KafkaConnector` resources:
 
 * A `FileStreamSourceConnector` instance that reads each line from the Kafka license file (the source) and writes the data as messages to a single Kafka topic.
 * A `FileStreamSinkConnector` instance that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
 
-Alternatively, you can use the `examples/connect/kafka-connect-build.yaml` file to build a new Kafka Connect image with the file connectors. 
+We use the example file to create connectors in this procedure. 
 
-Up until Apache Kafka 3.1.0, the example file connector plugins were included with Apache Kafka. Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be added to the plugin path as any other connector. See xref:using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with connector plugins] for more details.
-
-[NOTE]
-====
-In a production environment, you prepare container images with the required Kafka Connect connectors, as described in xref:using-kafka-connect-with-plug-ins-{context}[].
-
-The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as examples. Running these connectors in containers as described here is unlikely to be suitable for production use cases.
-====
+NOTE: The example connectors are not intended for use in a production environment.  
 
 .Prerequisites
 
 * A Kafka Connect deployment
-* link:{BookURLConfiguring}#proc-kafka-connect-config-str[KafkaConnectors are enabled in the Kafka Connect deployment^]
 * The Cluster Operator is running
 
 .Procedure
+
+. Add the `FileStreamSourceConnector` and `FileStreamSinkConnector` plugins to Kafka Connect in one of the following ways:
++
+* xref:creating-new-image-using-kafka-connect-build-{context}[Configure Kafka Connect to build a new container image with plugins automatically]
+* xref:creating-new-image-from-base-{context}[Create a Docker image from the base Kafka Connect image] (manually or using continuous integration)
+
+. Set the `strimzi.io/use-connector-resources annotation` to `true` in the Kafka Connect configuration.
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect <1>
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true" 
+spec:
+    # ...
+----
++
+With the `KafkaConnector` resources enabled, the Cluster Operator watches for them.
+
 
 . Edit the `examples/connect/source-connector.yaml` file:
 +
@@ -39,25 +71,28 @@ The `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as ex
 apiVersion: {KafkaConnectorApiVersion}
 kind: KafkaConnector
 metadata:
-  name: my-source-connector <1>
+  name: my-source-connector # <1>
   labels:
-    strimzi.io/cluster: my-connect-cluster <2>
+    strimzi.io/cluster: my-connect-cluster # <2>
 spec:
-  class: org.apache.kafka.connect.file.FileStreamSourceConnector <3>
-  tasksMax: 2 <4>
-  config: <5>
-    file: "/opt/kafka/LICENSE" <6>
-    topic: my-topic <7>
+  class: org.apache.kafka.connect.file.FileStreamSourceConnector # <3>
+  tasksMax: 2 # <4>
+  autoRestart: # <5>
+    enabled: true
+  config: # <6>
+    file: "/opt/kafka/LICENSE" # <7>
+    topic: my-topic <8>
     # ...
 ----
 +
 <1> Name of the `KafkaConnector` resource, which is used as the name of the connector. Use any name that is valid for a Kubernetes resource.
 <2> Name of the Kafka Connect cluster to create the connector instance in. Connectors must be deployed to the same namespace as the Kafka Connect cluster they link to.
 <3> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
-<4> Maximum number of Kafka Connect `Tasks` that the connector can create.
-<5> xref:kafkaconnector-configs[Connector configuration] as key-value pairs.
-<6> This example source connector configuration reads data from the `/opt/kafka/LICENSE` file.
-<7> Kafka topic to publish the source data to.
+<4> Maximum number of Kafka Connect tasks that the connector can create.
+<5> Enables automatic restarts of failed connectors and tasks.
+<6> xref:kafkaconnector-configs[Connector configuration] as key-value pairs.
+<7> This example source connector configuration reads data from the `/opt/kafka/LICENSE` file.
+<8> Kafka topic to publish the source data to.
 
 . Create the source `KafkaConnector` in your Kubernetes cluster:
 +
@@ -107,20 +142,22 @@ kubectl apply -f examples/connect/sink-connector.yaml
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get kctr --selector strimzi.io/cluster=_MY-CONNECT-CLUSTER_ -o name
+kubectl get kctr --selector strimzi.io/cluster=<my_connect_cluster> -o name
 
 my-source-connector
 my-sink-connector
 ----
 +
-Replace _MY-CONNECT-CLUSTER_ with your Kafka Connect cluster.
+Replace <my_connect_cluster> with the name of your Kafka Connect cluster.
 
 . In the container, execute `kafka-console-consumer.sh` to read the messages that were written to the topic by the source connector:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl exec _MY-CLUSTER_-kafka-0 -i -t -- bin/kafka-console-consumer.sh --bootstrap-server _MY-CLUSTER_-kafka-bootstrap._NAMESPACE_.svc:9092 --topic my-topic --from-beginning
+kubectl exec <my_kafka_cluster>-kafka-0 -i -t -- bin/kafka-console-consumer.sh --bootstrap-server <my_kafka_cluster>-kafka-bootstrap._NAMESPACE_.svc:9092 --topic my-topic --from-beginning
 ----
++
+Replace <my_kafka_cluster> with the name of your Kafka cluster.
 
 [[kafkaconnector-configs]]
 [discrete]

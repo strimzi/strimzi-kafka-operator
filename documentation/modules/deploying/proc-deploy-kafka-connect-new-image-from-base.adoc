@@ -1,11 +1,13 @@
 // Module included in the following assemblies:
 //
-// assembly-using-kafka-connect-with-plugins.adoc
+// assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='creating-new-image-from-base-{context}']
-= Creating a Docker image from the Kafka Connect base image
+= Building a new container image with connector plugins from the Kafka Connect base image
 
-This procedure shows how to create a custom image and add it to the `/opt/kafka/plugins` directory.
+[role="_abstract"]
+Create a custom Docker image with connector plugins from the Kafka Connect base image
+Add the custom image to the `/opt/kafka/plugins` directory.
 
 You can use the Kafka container image on {DockerRepository} as a base image for creating your own custom image with additional connector plugins.
 
@@ -27,46 +29,49 @@ COPY ./_my-plugins_/ /opt/kafka/plugins/
 USER {DockerImageUser}
 ----
 +
-.Example plug-in file
+.Example plugins file
 [source,subs="+quotes"]
 ----
 $ tree ./_my-plugins_/
 ./_my-plugins_/
 ├── debezium-connector-mongodb
-│   ├── bson-3.4.2.jar
+│   ├── bson-<version>.jar
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mongodb-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mongodb-<version>.jar
+│   ├── debezium-core-<version>.jar
 │   ├── LICENSE.txt
-│   ├── mongodb-driver-3.4.2.jar
-│   ├── mongodb-driver-core-3.4.2.jar
-│   └── README.md
+│   ├── mongodb-driver-core-<version>.jar
+│   ├── README.md
+│   └── # ...
 ├── debezium-connector-mysql
 │   ├── CHANGELOG.md
 │   ├── CONTRIBUTE.md
 │   ├── COPYRIGHT.txt
-│   ├── debezium-connector-mysql-0.7.1.jar
-│   ├── debezium-core-0.7.1.jar
+│   ├── debezium-connector-mysql-<version>.jar
+│   ├── debezium-core-<version>.jar
 │   ├── LICENSE.txt
-│   ├── mysql-binlog-connector-java-0.13.0.jar
-│   ├── mysql-connector-java-5.1.40.jar
+│   ├── mysql-binlog-connector-java-<version>.jar
+│   ├── mysql-connector-java-<version>.jar
 │   ├── README.md
-│   └── wkb-1.0.2.jar
+│   └── # ...
 └── debezium-connector-postgres
     ├── CHANGELOG.md
     ├── CONTRIBUTE.md
     ├── COPYRIGHT.txt
-    ├── debezium-connector-postgres-0.7.1.jar
-    ├── debezium-core-0.7.1.jar
+    ├── debezium-connector-postgres-<version>.jar
+    ├── debezium-core-<version>.jar
     ├── LICENSE.txt
-    ├── postgresql-42.0.0.jar
-    ├── protobuf-java-2.6.1.jar
-    └── README.md
+    ├── postgresql-<version>.jar
+    ├── protobuf-java-<version>.jar
+    ├── README.md
+    └── # ...
 ----
 +
-NOTE: This example uses the Debezium connectors for MongoDB, MySQL, and PostgreSQL. Debezium running in Kafka Connect looks the same as any other Kafka Connect task.
+The COPY command points to the plugin files to copy to the container image.
++
+This example adds plugins for Debezium connectors (MongoDB, MySQL, and PostgreSQL), though not all files are listed for brevity. Debezium running in Kafka Connect looks the same as any other Kafka Connect task.
 
 . Build the container image.
 
@@ -74,11 +79,11 @@ NOTE: This example uses the Debezium connectors for MongoDB, MySQL, and PostgreS
 
 . Point to the new container image.
 +
-You can either:
+You can point to the image in one of the following ways:
 +
 * Edit the `KafkaConnect.spec.image` property of the `KafkaConnect` custom resource.
 +
-If set, this property overrides the `STRIMZI_KAFKA_CONNECT_IMAGES` variable in the Cluster Operator.
+If set, this property overrides the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the Cluster Operator.
 +
 [source,yaml,subs=attributes+]
 ----
@@ -96,9 +101,7 @@ spec: <1>
 <2> The docker image for the pods.
 <3> Configuration of the Kafka Connect _workers_ (not connectors).
 +
-or
-+
-* In the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file, edit the `STRIMZI_KAFKA_CONNECT_IMAGES` variable to point to the new container image, and then reinstall the Cluster Operator.
+* Edit the `STRIMZI_KAFKA_CONNECT_IMAGES` environment variable in the `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` file to point to the new container image, and then reinstall the Cluster Operator.
 
 [role="_additional-resources"]
 .Additional resources
