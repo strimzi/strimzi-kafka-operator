@@ -13,6 +13,7 @@
 * `ImageStream` validation for Kafka Connect builds on OpenShift
 * Support for configuring the metadata for the Role / RoleBinding of Entity Operator
 * Add liveness and readiness probes specifically for nodes running in KRaft combined mode
+* Upgrade HTTP bridge to latest 0.24.0 release
 
 ### Changes, deprecations and removals
 
