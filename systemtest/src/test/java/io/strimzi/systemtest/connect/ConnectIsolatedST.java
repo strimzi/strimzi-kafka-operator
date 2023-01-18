@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -83,7 +84,6 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SANITY;
-import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.Constants.SMOKE;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -399,7 +399,7 @@ class ConnectIsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(SCALABILITY)
+    @Tag(COMPONENT_SCALING)
     void testKafkaConnectScaleUpScaleDown(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -903,7 +903,7 @@ class ConnectIsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(SCALABILITY)
+    @Tag(COMPONENT_SCALING)
     void testScaleConnectWithoutConnectorToZero(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -930,8 +930,8 @@ class ConnectIsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(SCALABILITY)
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(COMPONENT_SCALING)
     void testScaleConnectWithConnectorToZero(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -976,8 +976,8 @@ class ConnectIsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(SCALABILITY)
     @Tag(CONNECTOR_OPERATOR)
+    @Tag(COMPONENT_SCALING)
     void testScaleConnectAndConnectorSubresource(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

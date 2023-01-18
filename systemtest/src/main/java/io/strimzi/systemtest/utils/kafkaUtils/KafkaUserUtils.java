@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -21,7 +22,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -120,15 +120,40 @@ public class KafkaUserUtils {
     }
 
     public static void waitForAllUsersWithPrefixReady(String namespaceName, String usersPrefix) {
-        TestUtils.waitFor("all users to become ready", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,() -> {
+        LOGGER.info("Waiting for all users with prefix: {} to become ready", usersPrefix);
+
+        TestUtils.waitFor("all users to become ready", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT, () -> {
             List<KafkaUser> listOfUsers = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList();
-            listOfUsers = listOfUsers.stream().filter(kafkaUser -> !(kafkaUser.getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(Ready.toString()) && condition.getStatus().equals("True")))).toList();
+            try {
+                listOfUsers = listOfUsers.stream().filter(kafkaUser -> !(kafkaUser.getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(Ready.toString()) && condition.getStatus().equals("True")))).toList();
+                if (listOfUsers.size() != 0) {
+                    LOGGER.warn("There are still {} users with prefix {}, which are not in {} state", listOfUsers.size(), usersPrefix, Ready.toString());
+                    return false;
+                }
+            } catch (Exception e) {
+                LOGGER.warn("There are still users with prefix {}, which are not in {} state", usersPrefix, Ready.toString());
+                return false;
+            }
+            LOGGER.info("All KafkaUsers with prefix {} are ready", usersPrefix);
+            return true;
+        }, () -> LOGGER.error("Failed to wait for readiness state of these users: {}",
+                KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList()));
+    }
+
+    public static void waitForConfigToBeChangedInAllUsersWithPrefix(String namespaceName, String usersPrefix, KafkaUserSpec desiredUserSpec) {
+        LOGGER.info("Waiting for all users with prefix: {} containing desired config", usersPrefix);
+
+        TestUtils.waitFor("all users to become ready", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT, () -> {
+            List<KafkaUser> listOfUsers = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList();
+
+            listOfUsers = listOfUsers.stream().filter(kafkaUser -> !kafkaUser.getSpec().equals(desiredUserSpec)).toList();
+
             if (listOfUsers.size() != 0) {
-                LOGGER.warn("There are still {} users with prefix {}, which are not in {} status", listOfUsers.size(), usersPrefix, Ready.toString());
+                LOGGER.warn("There are still {} users with prefix {}, which are not containing desired config", listOfUsers.size(), usersPrefix);
                 return false;
             }
 
-            LOGGER.info("All KafkaUsers with prefix {} are ready", usersPrefix);
+            LOGGER.info("All KafkaUsers with prefix {} are containing desired config", usersPrefix);
             return true;
         }, () -> LOGGER.error("Failed to wait for readiness state of these users: {}",
                 KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList()));
