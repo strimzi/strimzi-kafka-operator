@@ -1,7 +1,7 @@
 ## Log dump script
 
 This script is just a wrapper around `kafka-dump-log.sh`, and is supposed to make partition dumping easier on Strimzi.
-Every topic partition is composed by multiple segments, that are replicated to a number of brokers, and they can be in any of the attached disks.
+Every topic partition is composed of multiple segments, that are replicated to a number of brokers, and they can be in any of the attached volumes.
 Moreover, when dealing with internal topics, you have to identify which partition is needed to avoid downloading all of them in the worst case.
 
 ## Requirements
