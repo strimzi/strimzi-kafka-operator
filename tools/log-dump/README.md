@@ -1,12 +1,8 @@
-## Kafka log dump
+## Log dump script
 
-Bash script for topic's partitions dump.
-
-Dumping partitions is not easy, because a single partition is composed by X segments, all segments are replicated in the same set of brokers, and they can be in any of the attached disks. 
-
-When dealing with the internal topics `__consumer_offsets` and `__transaction_state`, you need a way to identify which partition is needed, so that you don't have to download all 50 partitions (default value).
-
-Partition dumps can be useful to troubleshoot Kafka issues. For example, we can identify a pending transaction causing `read_committed` consumers to hang and last stable offset (LSO) to grow indefinitely.
+This script is just a wrapper around `kafka-dump-log.sh`, and is supposed to make partition dumping easier on Strimzi.
+Every topic partition is composed of multiple segments, that are replicated to a number of brokers, and they can be in any of the attached volumes.
+Moreover, when dealing with internal topics, you have to identify which partition is needed to avoid downloading all of them in the worst case.
 
 ## Requirements
 
@@ -15,43 +11,10 @@ Partition dumps can be useful to troubleshoot Kafka issues. For example, we can 
 - yq 4.6+ (YAML processor)
 - jshell (JDK 9+)
 
-## Additional logging
-
-Advanced analysis also requires correlation with Kafka broker logs. If transactions are enabled, then also logs from producer's `TransactionManager` are useful.
-
-```shell
-# Kafka broker
-kubectl edit k $CLUSTER_NAME
-spec:
-  kafka:
-    logging:
-      type: inline
-      loggers:
-        kafka.root.logger.level: "INFO"
-        log4j.logger.kafka.coordinator.transaction: "DEBUG"
-        log4j.logger.kafka.request.logger: "DEBUG"
-        log4j.logger.kafka.log.LogCleaner: "DEBUG"
-        
-# Logback client application
-cat <<EOF > src/main/resources/logback.xml
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d %highlight(%p) [%t] %c{0} - %m%n</pattern>
-        </encoder>
-    </appender>
-    <root level="INFO">
-        <appender-ref ref="STDOUT" />
-    </root>
-    <logger name="org.apache.kafka.clients.producer.internals.TransactionManager" level="DEBUG" />
-</configuration>
-EOF
-```
-
 ## Usage example
 
-This example shows how to dump partitions related to a simple word count transactional application running on Kubernetes. In this case we have 2 disks per broker and an output topic with 1 partition and RF=1.
+This example shows how to dump partitions related to a simple word count transactional application running on Kubernetes. 
+In this case we have 2 disks per broker and an output topic with 1 partition and RF=1.
 
 ```shell
 # Print topic partition segments

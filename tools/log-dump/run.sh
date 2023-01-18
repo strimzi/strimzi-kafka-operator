@@ -6,127 +6,117 @@ if [[ $(uname -s) == "Darwin" ]]; then
   alias tar="gtar"; alias sed="gsed"; alias date="gdate"; alias wc="gwc"
 fi
 
-readonly CO_TOPIC="__consumer_offsets"
-readonly TS_TOPIC="__transaction_state"
-readonly CM_TOPIC="__cluster_metadata"
-KAFKA_BROKERS=0
-STORAGE_TYPE=""
-JBOD_DISKS=0
-COMMAND=""
-OUT_PATH="/tmp/log-dump"
-NAMESPACE=""
-CLUSTER=""
-TOPIC=""
-PARTITION=0
-SEGMENT=""
-GROUP_ID=""
-TXN_ID=""
-TOT_PART=50
-DRY_RUN=false
-DATA=false
+LD_KAFKA_BROKERS=0
+LD_STORAGE_TYPE=""
+LD_JBOD_DISKS=0
+LD_OUT_PATH="/tmp/log-dump"
+LD_NAMESPACE=""
+LD_CLUSTER=""
+LD_TOPIC=""
+LD_TOPIC_CO="__consumer_offsets" && readonly LD_TOPIC_CO
+LD_TOPIC_TS="__transaction_state" && readonly LD_TOPIC_TS
+LD_TOPIC_CM="__cluster_metadata" && readonly LD_TOPIC_CM
+LD_PARTITION=0
+LD_SEGMENT=""
+LD_GROUP_ID=""
+LD_TXN_ID=""
+LD_TOT_PART=50
+LD_DRY_RUN=false
+LD_DATA=false
 
 error() {
-  echo "$@" 1>&2
-  exit 1
+  echo -e "$@" 1>&2 && exit 1
 }
 
 check_number() {
-  local value="$1"
-  local regex='^[0-9]+$'
+  local value="$1" regex='^[0-9]+$'
   if ! [[ $value =~ $regex ]]; then
     error "Not a number"
   fi
 }
 
 check_kube_conn() {
-  kubectl version --request-timeout=10s 1>/dev/null
+  kubectl version --output=yaml --request-timeout=10s 1>/dev/null
 }
 
 get_kafka_setup() {
-  local kafka_yaml && kafka_yaml=$(kubectl -n "$NAMESPACE" get kafka "$CLUSTER" -o yaml ||true)
-  KAFKA_BROKERS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.replicas" -)
-  STORAGE_TYPE=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.type" -)
-  JBOD_DISKS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.volumes | length" -)
-  if [[ -n $KAFKA_BROKERS && $KAFKA_BROKERS != "null" ]]; then
-    echo "brokers: $KAFKA_BROKERS, storage: $STORAGE_TYPE, disks: $JBOD_DISKS"
+  local kafka_yaml && kafka_yaml=$(kubectl -n "$LD_NAMESPACE" get kafka "$LD_CLUSTER" -o yaml ||true)
+  LD_KAFKA_BROKERS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.replicas" -)
+  LD_STORAGE_TYPE=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.type" -)
+  LD_JBOD_DISKS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.volumes | length" -)
+  if [[ -n $LD_KAFKA_BROKERS && $LD_KAFKA_BROKERS != "null" ]]; then
+    echo "brokers: $LD_KAFKA_BROKERS, storage: $LD_STORAGE_TYPE, disks: $LD_JBOD_DISKS"
   else
-    error "Kafka cluster $CLUSTER not found in namespace $NAMESPACE"
+    error "Kafka cluster $LD_CLUSTER not found in namespace $LD_NAMESPACE"
   fi
 }
 
 coord_partition() {
-  local id="$1"
-  local part="${2-$TOT_PART}"
-  if [[ -n $id && -n $part ]]; then
-    echo 'public void run(String id, int part) { System.out.println(abs(id.hashCode()) % part); }    
-      private int abs(int n) { return (n == Integer.MIN_VALUE) ? 0 : Math.abs(n); } 
-      run("'"$id"'", '"$part"');' \
-      | jshell -
-  fi
+  local id="${1-}" part="${2-50}"
+  if [[ -z $id ]]; then echo "Missing id parameter" && return; fi
+  echo 'public void run(String id, int part) { System.out.println(abs(id.hashCode()) % part); }
+    private int abs(int n) { return (n == Integer.MIN_VALUE) ? 0 : Math.abs(n); }
+    run("'"$id"'", '"$part"');' | jshell -
 }
 
 find_segments() {
-  local broker="$1"
-  local log_dir="$2"
+  local broker="$1" log_dir="$2"
   if [[ -z $broker || -z $log_dir ]]; then
     error "Missing parameters"
   fi
-  local seg_files && seg_files=$(kubectl -n "$NAMESPACE" exec "$CLUSTER"-kafka-"$broker" -- \
+  local seg_files && seg_files=$(kubectl -n "$LD_NAMESPACE" exec "$LD_CLUSTER"-kafka-"$broker" -- \
     find "$log_dir" -printf "%f\n" 2>/dev/null | grep ".log")
   echo "$seg_files"
 }
 
 dump_segments() {
-  local topic="$1"
-  local seg_files="$2"
+  local topic="$1" seg_files="$2"
   if [[ -z $seg_files || $(echo "$seg_files" | sed '/^\s*$/d' | wc -l) -eq 0 ]]; then
     echo "No segment found"
   fi
   local flags="--deep-iteration"
-  if [[ $DATA == true ]]; then
+  if [[ $LD_DATA == true ]]; then
     flags="$flags --print-data-log"
   fi
   case "$topic" in
-    "$CO_TOPIC")
+    "$LD_TOPIC_CO")
       flags="$flags --offsets-decoder"
       ;;
-    "$TS_TOPIC")
+    "$LD_TOPIC_TS")
       flags="$flags --transaction-log-decoder"
       ;;
-    "$CM_TOPIC")
+    "$LD_TOPIC_CM")
       flags="$flags --cluster-metadata-decoder"
       ;;
   esac
   flags="$flags --files"
   for seg_file in $seg_files; do
-    if [[ -n $SEGMENT && $SEGMENT != "${seg_file%.log}" ]]; then
+    if [[ -n $LD_SEGMENT && $LD_SEGMENT != "${seg_file%.log}" ]]; then
       continue
     fi
     echo "$seg_file"
-    if [[ $DRY_RUN == false ]]; then
+    if [[ $LD_DRY_RUN == false ]]; then
       mkdir -p "$out_dir"
-      kubectl -n "$NAMESPACE" exec "$CLUSTER"-kafka-"$i" -- \
-        bash -c "./bin/kafka-dump-log.sh $flags $log_dir/$seg_file" > "$out_dir/$seg_file"
+      kubectl -n "$LD_NAMESPACE" exec "$LD_CLUSTER"-kafka-"$i" -- \
+        bash -c "cd $log_dir && /opt/kafka/bin/kafka-dump-log.sh $flags $seg_file" \
+          > "$out_dir/$seg_file"
     fi
   done
 }
 
 dump_partition() {
-  local topic="$1"
-  local partition="$2"
-  local broker="$3"
-  local disk="${4-}"
+  local topic="$1" partition="$2" broker="$3" disk="${4-}"
   if [[ -z $topic || -z $partition || -z $broker ]]; then
     error "Missing parameters"
   fi
   # context setup
   local disk_label="$topic-$partition segments in kafka-$broker"
   local log_dir="/var/lib/kafka/data/kafka-log$broker/$topic-$partition"
-  local out_dir="$OUT_PATH/$topic/kafka-$broker-$topic-$partition"
+  local out_dir="$LD_OUT_PATH/$topic/kafka-$broker-$topic-$partition"
   if [[ -n $disk && $disk -ge 0 ]]; then
     disk_label="$topic-$partition segments in kafka-$broker-disk-$disk"
     log_dir="/var/lib/kafka/data-$disk/kafka-log$broker/$topic-$partition";
-    out_dir="$OUT_PATH/$topic/kafka-$broker-disk-$disk-$topic-$partition"
+    out_dir="$LD_OUT_PATH/$topic/kafka-$broker-disk-$disk-$topic-$partition"
   fi
   # segment dump
   local seg_files && seg_files=$(find_segments "$broker" "$log_dir")
@@ -135,78 +125,78 @@ dump_partition() {
 }
 
 partition() {
-  if [[ -z $NAMESPACE || -z $CLUSTER || -z $TOPIC || -z $PARTITION ]]; then
+  if [[ -z $LD_NAMESPACE || -z $LD_CLUSTER || -z $LD_TOPIC || -z $LD_PARTITION ]]; then
     error "Missing parameters"
-  fi  
+  fi
   check_kube_conn
-  get_kafka_setup  
+  get_kafka_setup
   # dump topic partition across the cluster (including replicas)
-  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
-    if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $((JBOD_DISKS-1))); do
-        dump_partition "$TOPIC" "$PARTITION" "$i" "$j"
+  for i in $(seq 0 $((LD_KAFKA_BROKERS-1))); do
+    if [[ $LD_STORAGE_TYPE == "jbod" ]]; then
+      for j in $(seq 0 $((LD_JBOD_DISKS-1))); do
+        dump_partition "$LD_TOPIC" "$LD_PARTITION" "$i" "$j"
       done
-    else 
-      dump_partition "$TOPIC" "$PARTITION" "$i"
+    else
+      dump_partition "$LD_TOPIC" "$LD_PARTITION" "$i"
     fi
   done
 }
 
 cg_offsets() {
-  if [[ -z $NAMESPACE || -z $CLUSTER || -z $GROUP_ID ]]; then
+  if [[ -z $LD_NAMESPACE || -z $LD_CLUSTER || -z $LD_GROUP_ID ]]; then
     error "Missing parameters"
   fi
   check_kube_conn
   get_kafka_setup
   # dump CG offsets coordinating partition across the cluster (including replicas)
-  local partition && partition=$(coord_partition "$GROUP_ID" "$TOT_PART")
-  echo "$GROUP_ID coordinating partition: $partition"
-  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
-    if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $((JBOD_DISKS-1))); do
-        dump_partition "$CO_TOPIC" "$partition" "$i" "$j"
+  local partition && partition=$(coord_partition "$LD_GROUP_ID" "$LD_TOT_PART")
+  echo "$LD_GROUP_ID coordinating partition: $partition"
+  for i in $(seq 0 $((LD_KAFKA_BROKERS-1))); do
+    if [[ $LD_STORAGE_TYPE == "jbod" ]]; then
+      for j in $(seq 0 $((LD_JBOD_DISKS-1))); do
+        dump_partition "$LD_TOPIC_CO" "$partition" "$i" "$j"
       done
     else
-      dump_partition "$CO_TOPIC" "$partition" "$i"
+      dump_partition "$LD_TOPIC_CO" "$partition" "$i"
     fi
   done
 }
 
 txn_state() {
-  if [[ -z $NAMESPACE || -z $CLUSTER || -z $TXN_ID ]]; then
+  if [[ -z $LD_NAMESPACE || -z $LD_CLUSTER || -z $LD_TXN_ID ]]; then
     error "Missing parameters"
   fi
   check_kube_conn
-  get_kafka_setup    
+  get_kafka_setup
   # dump TX state coordinating partition across the cluster (including replicas)
-  local partition && partition=$(coord_partition "$TXN_ID" "$TOT_PART")
-  echo "$TXN_ID coordinating partition: $partition"
-  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
-    if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $((JBOD_DISKS-1))); do
-        dump_partition "$TS_TOPIC" "$partition" "$i" "$j"
+  local partition && partition=$(coord_partition "$LD_TXN_ID" "$LD_TOT_PART")
+  echo "$LD_TXN_ID coordinating partition: $partition"
+  for i in $(seq 0 $((LD_KAFKA_BROKERS-1))); do
+    if [[ $LD_STORAGE_TYPE == "jbod" ]]; then
+      for j in $(seq 0 $((LD_JBOD_DISKS-1))); do
+        dump_partition "$LD_TOPIC_TS" "$partition" "$i" "$j"
       done
     else
-      dump_partition "$TS_TOPIC" "$partition" "$i"
+      dump_partition "$LD_TOPIC_TS" "$partition" "$i"
     fi
   done
 }
 
 cluster_meta() {
-  if [[ -z $NAMESPACE || -z $CLUSTER ]]; then
+  if [[ -z $LD_NAMESPACE || -z $LD_CLUSTER ]]; then
     error "Missing parameters"
   fi
   check_kube_conn
   get_kafka_setup
   # dump cluster metadata partition across the cluster (including replicas)
   local partition="0"
-  for i in $(seq 0 $((KAFKA_BROKERS-1))); do
-    if [[ $STORAGE_TYPE == "jbod" ]]; then
-      for j in $(seq 0 $((JBOD_DISKS-1))); do
-        dump_partition "$CM_TOPIC" "$partition" "$i" "$j"
+  for i in $(seq 0 $((LD_KAFKA_BROKERS-1))); do
+    if [[ $LD_STORAGE_TYPE == "jbod" ]]; then
+      for j in $(seq 0 $((LD_JBOD_DISKS-1))); do
+        dump_partition "$LD_TOPIC_CM" "$partition" "$i" "$j"
       done
     else
-      dump_partition "$CM_TOPIC" "$partition" "$i"
+      dump_partition "$LD_TOPIC_CM" "$partition" "$i"
     fi
   done
 }
@@ -215,79 +205,79 @@ readonly USAGE="
 Usage: $0 [command] [params]
 
   partition       Dump topic partition
-    --namespace     Kubernetes namespace
-    --cluster       Kafka cluster name
-    --topic         Data topic name
-    --partition     Partition number (zero-based)
-    --segment       Filter by segment name
-    --out-path      Output path (default: $OUT_PATH)
-    --dry-run       Run without dumping (default: $DRY_RUN)
-    --data          Include record payload (default: $DATA)
+    -n, --namespace     Kubernetes namespace
+    -c, --cluster       Kafka cluster name
+    -t, --topic         Topic name
+    -p, --partition     Partition number (zero-based)
+    -s, --segment       Filter by segment name
+    -O, --out-path      Output path (default: $LD_OUT_PATH)
+    -D, --dry-run       Run without dumping (default: $LD_DRY_RUN)
+    -A, --data          Include record payload (default: $LD_DATA)
 
   cg_offsets      Dump consumer group offsets partition by group.id
-    --namespace     Kubernetes namespace
-    --cluster       Kafka cluster name
-    --group-id      Consumer group id
-    --tot-part      Number of __consumer_offsets partitions (default: $TOT_PART)
-    --out-path      Output path (default: $OUT_PATH)
-    --dry-run       Run without dumping (default: $DRY_RUN)
-  
+    -n, --namespace     Kubernetes namespace
+    -c, --cluster       Kafka cluster name
+    -G, --group-id      Consumer group id
+    -T, --tot-part      Number of __consumer_offsets partitions (default: $LD_TOT_PART)
+    -O, --out-path      Output path (default: $LD_OUT_PATH)
+    -D, --dry-run       Run without dumping (default: $LD_DRY_RUN)
+
   txn_state       Dump transactions state partition by transactional.id
-    --namespace     Kubernetes namespace
-    --cluster       Kafka cluster name
-    --txn-id        Transactional id
-    --tot-part      Number of __transaction_state partitions (default: $TOT_PART)
-    --out-path      Output path (default: $OUT_PATH)
-    --dry-run       Run without dumping (default: $DRY_RUN)
-    
-  cluster_meta    Dump cluster metadata (KRaft)
-    --namespace     Kubernetes namespace
-    --cluster       Kafka cluster name
-    --out-path      Output path (default: $OUT_PATH)
-    --dry-run       Run without dumping (default: $DRY_RUN)
+    -n, --namespace     Kubernetes namespace
+    -c, --cluster       Kafka cluster name
+    -X, --txn-id        Transactional id
+    -T, --tot-part      Number of __transaction_state partitions (default: $LD_TOT_PART)
+    -O, --out-path      Output path (default: $LD_OUT_PATH)
+    -D, --dry-run       Run without dumping (default: $LD_DRY_RUN)
+
+  cluster_meta    Dump cluster metadata partition (KRaft)
+    -n, --namespace     Kubernetes namespace
+    -c, --cluster       Kafka cluster name
+    -O, --out-path      Output path (default: $LD_OUT_PATH)
+    -D, --dry-run       Run without dumping (default: $LD_DRY_RUN)
 "
 readonly PARAMS=("$@")
 i=0; for param in "${PARAMS[@]}"; do
   i=$((i+1))
   case $param in
-    --namespace)
-      readonly NAMESPACE=${PARAMS[i]} && export NAMESPACE
+    -n|--namespace)
+      LD_NAMESPACE=${PARAMS[i]} && readonly LD_NAMESPACE
       ;;
-    --cluster)
-      readonly CLUSTER=${PARAMS[i]} && export CLUSTER
+    -c|--cluster)
+      LD_CLUSTER=${PARAMS[i]} && readonly LD_CLUSTER
       ;;
-    --topic)
-      readonly TOPIC=${PARAMS[i]} && export TOPIC
+    -t|--topic)
+      LD_TOPIC=${PARAMS[i]} && readonly LD_TOPIC
       ;;
-    --partition)
-      readonly PARTITION=${PARAMS[i]} && export PARTITION
-      check_number "$PARTITION"
+    -p|--partition)
+      LD_PARTITION=${PARAMS[i]} && readonly LD_PARTITION
+      check_number "$LD_PARTITION"
       ;;
-    --segment)
-      readonly SEGMENT=${PARAMS[i]} && export SEGMENT
+    -s|--segment)
+      LD_SEGMENT=${PARAMS[i]} && readonly LD_SEGMENT
       ;;
-    --group-id)
-      readonly GROUP_ID=${PARAMS[i]} && export GROUP_ID
+    -G|--group-id)
+      LD_GROUP_ID=${PARAMS[i]} && readonly LD_GROUP_ID
       ;;
-    --txn-id)
-      readonly TXN_ID=${PARAMS[i]} && export TXN_ID
+    -X|--txn-id)
+      LD_TXN_ID=${PARAMS[i]} && readonly LD_TXN_ID
       ;;
-    --tot-part)
-      readonly TOT_PART=${PARAMS[i]} && export TOT_PART
-      check_number "$TOT_PART"
+    -T|--tot-part)
+      LD_TOT_PART=${PARAMS[i]} && readonly LD_TOT_PART
+      check_number "$LD_TOT_PART"
       ;;
-    --out-path)
-      readonly OUT_PATH=${PARAMS[i]} && export OUT_PATH
+    -O|--out-path)
+      LD_OUT_PATH=${PARAMS[i]} && readonly LD_OUT_PATH
       ;;
-    --dry-run)
-      readonly DRY_RUN=true && export DRY_RUN
+    -D|--dry-run)
+      LD_DRY_RUN=true && readonly LD_DRY_RUN
       ;;
-    --data)
-      readonly DATA=true && export DATA
+    -A|--data)
+      LD_DATA=true && readonly LD_DATA
       ;;
     *)
-      if [[ $param == --* ]]; then
-        error "Unknown parameter $param" 
+      if [[ $param == -* || $param == --* ]]; then
+        error "Unknown parameter: $param"
       fi
       ;;
   esac
@@ -296,9 +286,8 @@ readonly COMMAND="${1-}"
 if [[ -z "$COMMAND" ]]; then
   error "$USAGE"
 else
-  if (declare -F "$COMMAND" >/dev/null); then
-    "$COMMAND"
-  else
+  if (! declare -F "$COMMAND" >/dev/null); then
     error "Invalid command"
   fi
+  eval "$COMMAND"
 fi
