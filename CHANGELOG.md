@@ -2,6 +2,7 @@
 
 ## 0.33.0
 
+* Add support for Kafka 3.3.2
 * Support loadBalancerClass attribute in service with type loadBalancer
 * Support for automatically restarting failed Connect or Mirror Maker 2 connectors
 * Redesign of Strimzi User Operator to improve its scalability

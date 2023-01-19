@@ -219,8 +219,7 @@ public class TopicSerializationTest {
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: " +
-                    "Topic name is illegal, it can't be longer than 249 characters, Topic name: " +
-                    illegalAsATopicName));
+                    "Topic name is invalid: the length of '" + illegalAsATopicName + "' is longer than the max allowed length 249"));
         }
     }
 
@@ -238,7 +237,8 @@ public class TopicSerializationTest {
             TopicSerialization.fromTopicResource(kafkaTopic);
             fail("Should throw");
         } catch (InvalidTopicException e) {
-            assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'"));
+            assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is invalid as a topic name: " +
+                    "Topic name is invalid: 'An invalid topic name!' contains one or more characters other than ASCII alphanumerics, '.', '_' and '-'"));
         }
     }
 
