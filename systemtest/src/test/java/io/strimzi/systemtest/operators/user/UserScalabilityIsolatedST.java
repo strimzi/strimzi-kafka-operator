@@ -33,8 +33,8 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 @Tag(SCALABILITY)
 public class UserScalabilityIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(UserScalabilityIsolatedST.class);
-    private static String clusterName = "";
-    private static String topicName = "";
+    private static String clusterName;
+    private static String topicName;
 
     @IsolatedTest
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
