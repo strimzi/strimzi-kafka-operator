@@ -140,6 +140,14 @@ public class KafkaUserUtils {
                 KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList()));
     }
 
+    /**
+     * Method which waits for all KafkaUser with specific prefix will contain desired KafkaUserSpec inside the
+     * KafkaUser CR in specified namespace.
+     *
+     * @param namespaceName name of namespace, where KafkaUsers should be checked
+     * @param usersPrefix prefix of KafkaUsers for which KafkaUserSpec will be checked
+     * @param desiredUserSpec desired KafkaUserSpec for which we are waiting for
+     */
     public static void waitForConfigToBeChangedInAllUsersWithPrefix(String namespaceName, String usersPrefix, KafkaUserSpec desiredUserSpec) {
         LOGGER.info("Waiting for all users with prefix: {} containing desired config", usersPrefix);
 
