@@ -77,6 +77,11 @@ public class Util {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
     /**
+     * Length of a hash stub. One example usage is when generating an annotation with a certificate short thumbprint.
+     */
+    public static final int HASH_STUB_LENGTH = 8;
+
+    /**
      * Executes blocking code asynchronously
      *
      * @param vertx     Vert.x instance
@@ -556,7 +561,7 @@ public class Util {
      */
     public static String hashStub(byte[] toBeHashed)   {
         byte[] digest = sha1Digest(toBeHashed);
-        return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
+        return String.format("%040x", new BigInteger(1, digest)).substring(0, HASH_STUB_LENGTH);
     }
 
     /**

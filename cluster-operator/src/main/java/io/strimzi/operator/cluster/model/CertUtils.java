@@ -23,7 +23,7 @@ public class CertUtils {
      */
     public static String getCertificateShortThumbprint(Secret certSecret, String key) {
         var thumbprint = getCertificateThumbprint(certSecret, key);
-        return thumbprint == null ? null : thumbprint.substring(0, 8);
+        return thumbprint == null ? null : thumbprint.substring(0, Util.HASH_STUB_LENGTH);
     }
 
     /**
