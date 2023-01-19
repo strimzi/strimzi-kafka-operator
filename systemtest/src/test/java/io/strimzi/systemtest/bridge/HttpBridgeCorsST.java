@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 @Tag(BRIDGE)
+@Tag(REGRESSION)
 @ParallelSuite
 public class HttpBridgeCorsST extends AbstractST {
 

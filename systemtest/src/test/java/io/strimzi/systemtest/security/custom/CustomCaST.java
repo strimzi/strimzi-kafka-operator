@@ -30,6 +30,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -44,6 +45,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -58,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @see <a href="https://strimzi.io/docs/operators/in-development/configuring.html#installing-your-own-ca-certificates-str">Installing your own ca certificates</a>
  * @see <a href="https://strimzi.io/docs/operators/in-development/configuring.html#proc-replacing-your-own-private-keys-str">Replacing your own private keys</a>
  */
+@Tag(REGRESSION)
 @ParallelSuite
 public class CustomCaST extends AbstractST {
 
