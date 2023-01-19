@@ -514,5 +514,20 @@
                 </it.test>
             </properties>
         </profile>
+
+        <profile>
+            <id>azp_non_regression</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>
+                    all,
+                    !regression
+                </groups>
+                <it.test>
+                    !upgrade/**/*ST,
+                    !olm/**/*ST
+                </it.test>
+            </properties>
+        </profile>
     </profiles>
 </project>
