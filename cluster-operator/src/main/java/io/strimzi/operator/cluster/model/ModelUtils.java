@@ -21,18 +21,15 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.SystemProperty;
-import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
-import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -232,39 +229,6 @@ public class ModelUtils {
     }
 
     /**
-     * Parses the values from the PodTemplate in CRD model into the component model
-     *
-     * @param model AbstractModel class where the values from the PodTemplate should be set
-     * @param pod PodTemplate with the values form the CRD
-     */
-    public static void parsePodTemplate(AbstractModel model, PodTemplate pod)   {
-        if (pod != null)  {
-            if (pod.getMetadata() != null) {
-                model.templatePodLabels = pod.getMetadata().getLabels();
-                model.templatePodAnnotations = pod.getMetadata().getAnnotations();
-            }
-
-            if (pod.getAffinity() != null)  {
-                model.setUserAffinity(pod.getAffinity());
-            }
-
-            if (pod.getTolerations() != null)   {
-                model.setTolerations(removeEmptyValuesFromTolerations(pod.getTolerations()));
-            }
-
-            model.templateTerminationGracePeriodSeconds = pod.getTerminationGracePeriodSeconds();
-            model.templateImagePullSecrets = pod.getImagePullSecrets();
-            model.templateSecurityContext = pod.getSecurityContext();
-            model.templatePodPriorityClassName = pod.getPriorityClassName();
-            model.templatePodSchedulerName = pod.getSchedulerName();
-            model.templatePodHostAliases = pod.getHostAliases();
-            model.templatePodTopologySpreadConstraints = pod.getTopologySpreadConstraints();
-            model.templatePodEnableServiceLinks = pod.getEnableServiceLinks();
-            model.templateTmpDirSizeLimit = pod.getTmpDirSizeLimit();
-        }
-    }
-
-    /**
      * Parses the values from the InternalServiceTemplate in CRD model into the component model
      *
      * @param model AbstractModel class where the values from the PodTemplate should be set
@@ -297,27 +261,6 @@ public class ModelUtils {
 
             model.templateHeadlessServiceIpFamilyPolicy = service.getIpFamilyPolicy();
             model.templateHeadlessServiceIpFamilies = service.getIpFamilies();
-        }
-    }
-
-    /**
-     * Parses the values from the DeploymentTemplate in CRD model into the component model
-     *
-     * @param model AbstractModel class where the values from the DeploymentTemplate should be set
-     * @param template DeploymentTemplate with the values form the CRD
-     */
-    public static void parseDeploymentTemplate(AbstractModel model, DeploymentTemplate template)   {
-        if (template != null) {
-            if (template.getMetadata() != null) {
-                model.templateDeploymentLabels = template.getMetadata().getLabels();
-                model.templateDeploymentAnnotations = template.getMetadata().getAnnotations();
-            }
-
-            if (template.getDeploymentStrategy() != null)   {
-                model.templateDeploymentStrategy = template.getDeploymentStrategy();
-            } else {
-                model.templateDeploymentStrategy = io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
-            }
         }
     }
 
@@ -595,24 +538,6 @@ public class ModelUtils {
         String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
         if (!kafkaHeapOptsString.isEmpty()) {
             envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
-        }
-    }
-
-    /**
-     * If the toleration.value is an empty string, set it to null. That solves an issue when built STS contains a filed
-     * with an empty property value. K8s is removing properties like this and thus we cannot fetch an equal STS which was
-     * created with (some) empty value.
-     *
-     * @param tolerations   Tolerations list to check whether toleration.value is an empty string and eventually replace it by null
-     *
-     * @return              List of tolerations with fixed empty strings
-     */
-    public static List<Toleration> removeEmptyValuesFromTolerations(List<Toleration> tolerations) {
-        if (tolerations != null) {
-            tolerations.stream().filter(toleration -> toleration.getValue() != null && toleration.getValue().isEmpty()).forEach(emptyValTol -> emptyValTol.setValue(null));
-            return tolerations;
-        } else {
-            return null;
         }
     }
 

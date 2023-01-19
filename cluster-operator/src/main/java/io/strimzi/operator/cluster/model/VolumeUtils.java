@@ -33,13 +33,21 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Util;
 
 /**
  * Shared methods for working with Volume
  */
 public class VolumeUtils {
-    private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
+    /*
+     * Default values for the Strimzi temporary directory
+     */
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
+
+    private static final Pattern VOLUME_NAME_PATTERN = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     private VolumeUtils() { }
 
@@ -199,6 +207,30 @@ public class VolumeUtils {
     }
 
     /**
+     * Creates a volume for the temp directory with the default name
+     *
+     * @param template  Pod template which might contain a custom configuration for the size of the temp directory
+     *
+     * @return  Temp directory volume
+     */
+    public static Volume createTempDirVolume(PodTemplate template) {
+        return createTempDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, template);
+    }
+
+    /**
+     * Creates a volume for the temp directory with custom name. The custom volume is important when running multiple
+     * containers in a single pod which need different voleme names each.
+     *
+     * @param volumeName    Name of the volume
+     * @param template      Pod template which might contain a custom configuration for the size of the temp directory
+     *
+     * @return  Temp directory volume
+     */
+    public static Volume createTempDirVolume(String volumeName, PodTemplate template) {
+        return VolumeUtils.createEmptyDirVolume(volumeName, template != null && template.getTmpDirSizeLimit() != null ? template.getTmpDirSizeLimit() : STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE, "Memory");
+    }
+
+    /**
      * Creates a volume referencing a PVC
      *
      * @param name      Name of the Volume
@@ -232,6 +264,27 @@ public class VolumeUtils {
                 .withMountPath(path)
                 .build();
         return volumeMount;
+    }
+
+    /**
+     * Creates the volume mount for the temp directory with a default volume name
+     *
+     * @return  Volume mount for the temp directory
+     */
+    public static VolumeMount createTempDirVolumeMount() {
+        return createTempDirVolumeMount(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
+    }
+
+    /**
+     * Creates the volume mount for the temp directory with a custom volume name. This is useful when running multiple
+     * containers in the same pod and needing to use different volume name for each of them.
+     *
+     * @param volumeName    Name of the volume
+     *
+     * @return  Volume mount for the temp directory
+     */
+    public static VolumeMount createTempDirVolumeMount(String volumeName) {
+        return createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
     }
 
     /**
@@ -440,7 +493,7 @@ public class VolumeUtils {
             throw new RuntimeException("Volume name cannot be null");
         }
 
-        if (volumeNamePattern.matcher(originalName).matches()) {
+        if (VOLUME_NAME_PATTERN.matcher(originalName).matches()) {
             return originalName;
         } else {
             return makeValidVolumeName(originalName);

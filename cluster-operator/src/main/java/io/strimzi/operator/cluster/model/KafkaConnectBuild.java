@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.connect.build.DockerOutput;
 import io.strimzi.api.kafka.model.connect.build.ImageStreamOutput;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
@@ -61,6 +62,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private SecurityContext templateBuildContainerSecurityContext;
     private Map<String, String> templateBuildConfigLabels;
     private Map<String, String> templateBuildConfigAnnotations;
+    private PodTemplate templatePod;
     /*test*/ String baseImage;
     private List<String> additionalKanikoOptions;
     private String pullSecret;
@@ -121,8 +123,6 @@ public class KafkaConnectBuild extends AbstractModel {
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
 
-            ModelUtils.parsePodTemplate(build, template.getBuildPod());
-
             if (template.getBuildContainer() != null && template.getBuildContainer().getEnv() != null) {
                 build.templateBuildContainerEnvVars = template.getBuildContainer().getEnv();
             }
@@ -149,8 +149,9 @@ public class KafkaConnectBuild extends AbstractModel {
                 build.templateServiceAccountLabels = template.getBuildServiceAccount().getMetadata().getLabels();
                 build.templateServiceAccountAnnotations = template.getBuildServiceAccount().getMetadata().getAnnotations();
             }
+
+            build.templatePod = template.getBuildPod();
         }
-        build.templatePodLabels = Util.mergeLabelsOrAnnotations(build.templatePodLabels, DEFAULT_POD_LABELS);
 
         build.build = spec.getBuild();
 
@@ -251,14 +252,20 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  Pod which will build the new container image
      */
     public Pod generateBuilderPod(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, String newBuildRevision) {
-        return createPod(
-                KafkaConnectResources.buildPodName(cluster),
-                Collections.singletonMap(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
-                getVolumes(isOpenShift),
-                null,
+        return WorkloadUtils.createPod(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePod,
+                DEFAULT_POD_LABELS,
+                Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
+                templatePod != null ? templatePod.getAffinity() : null,
+                getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
+                getVolumes(isOpenShift),
                 imagePullSecrets,
-                securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext))
+                securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
         );
     }
 

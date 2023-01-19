@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -43,8 +44,9 @@ public class PersistentVolumeClaimUtils {
      * @param labels                    Labels of the PVC
      * @param ownerReference            OwnerReference of the PVC
      * @param template                  PVC template with user's custom configuration
-     * @param statefulSetTemplateLabels User configured labels from StatefulSet template. These are added to the PVC
-     *                                  labels for historical reasons. This should be removed when removing StatefulSet support.
+     * @param stsTemplate               StatefulSet template with user configured labels. These are added to the PVC
+     *                                  labels for historical reasons. This should be removed when removing StatefulSet
+     *                                  support.
      *
      * @return  List with Persistent Volume Claims
      */
@@ -57,7 +59,7 @@ public class PersistentVolumeClaimUtils {
             Labels labels,
             OwnerReference ownerReference,
             ResourceTemplate template,
-            Map<String, String> statefulSetTemplateLabels
+            StatefulSetTemplate stsTemplate
     )   {
         List<PersistentVolumeClaim> pvcs = new ArrayList<>();
 
@@ -66,12 +68,12 @@ public class PersistentVolumeClaimUtils {
                 String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + componentName;
 
                 for (int brokerId = 0; brokerId < replicas; brokerId++) {
-                    pvcs.add(createPersistentVolumeClaim(pvcBaseName + "-" + brokerId, namespace, brokerId, persistentStorage, labels, ownerReference, template, statefulSetTemplateLabels));
+                    pvcs.add(createPersistentVolumeClaim(pvcBaseName + "-" + brokerId, namespace, brokerId, persistentStorage, labels, ownerReference, template, TemplateUtils.labels(stsTemplate)));
                 }
             } else if (storage instanceof JbodStorage jbodStorage) {
                 for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
                     // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(createPersistentVolumeClaims(componentName, namespace, replicas, volume, true, labels, ownerReference, template, statefulSetTemplateLabels));
+                    pvcs.addAll(createPersistentVolumeClaims(componentName, namespace, replicas, volume, true, labels, ownerReference, template, stsTemplate));
                 }
             }
         }

@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
@@ -18,15 +17,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.HostAlias;
-import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
@@ -35,18 +26,6 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -55,18 +34,14 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
-import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -86,7 +61,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -133,13 +107,6 @@ public abstract class AbstractModel {
     protected static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     protected static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
     protected static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
-
-    /*
-     * Default values for the Strimzi temporary directory
-     */
-    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
-    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
-    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
 
     /**
      * Configure statically defined environment variables which are passed to all operands.
@@ -233,8 +200,6 @@ public abstract class AbstractModel {
     protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
     protected String livenessPath;
     protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
-    private Affinity userAffinity;
-    private List<Toleration> tolerations;
 
     /**
      * PodSecurityProvider
@@ -245,15 +210,6 @@ public abstract class AbstractModel {
      * Template configuration
      * Used to allow all components to have configurable labels, annotations, security context etc
      */
-    protected Map<String, String> templateStatefulSetLabels;
-    protected Map<String, String> templateStatefulSetAnnotations;
-    protected Map<String, String> templatePodSetLabels;
-    protected Map<String, String> templatePodSetAnnotations;
-    protected Map<String, String> templateDeploymentLabels;
-    protected Map<String, String> templateDeploymentAnnotations;
-    protected io.strimzi.api.kafka.model.template.DeploymentStrategy templateDeploymentStrategy = io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
-    protected Map<String, String> templatePodLabels;
-    protected Map<String, String> templatePodAnnotations;
     protected Map<String, String> templateServiceLabels;
     protected Map<String, String> templateServiceAnnotations;
     protected IpFamilyPolicy templateServiceIpFamilyPolicy;
@@ -262,20 +218,10 @@ public abstract class AbstractModel {
     protected Map<String, String> templateHeadlessServiceAnnotations;
     protected IpFamilyPolicy templateHeadlessServiceIpFamilyPolicy;
     protected List<IpFamily> templateHeadlessServiceIpFamilies;
-    protected List<LocalObjectReference> templateImagePullSecrets;
-    protected PodSecurityContext templateSecurityContext;
-    protected int templateTerminationGracePeriodSeconds = 30;
-    protected String templatePodPriorityClassName;
-    protected String templatePodSchedulerName;
-    protected List<HostAlias> templatePodHostAliases;
-    protected List<TopologySpreadConstraint> templatePodTopologySpreadConstraints;
-    protected PodManagementPolicy templatePodManagementPolicy = PodManagementPolicy.PARALLEL;
-    protected Boolean templatePodEnableServiceLinks;
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
     protected Map<String, String> templateJmxSecretLabels;
     protected Map<String, String> templateJmxSecretAnnotations;
-    protected String templateTmpDirSizeLimit;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -736,52 +682,8 @@ public abstract class AbstractModel {
      * @param podId The Id (ordinal) of the pod.
      * @return The name of the pod with the given name.
      */
-    public String getPodName(int podId) {
+    public String getPodName(Integer podId) {
         return componentName + "-" + podId;
-    }
-
-    /**
-     * Sets the affinity as configured by the user in the cluster CR.
-     *
-     * @param affinity  Affinity configured by the user
-     */
-    protected void setUserAffinity(Affinity affinity) {
-        this.userAffinity = affinity;
-    }
-
-    /**
-     * Gets the affinity as configured by the user in the cluster CR.
-     */
-    protected Affinity getUserAffinity() {
-        return this.userAffinity;
-    }
-
-    /**
-     * Gets the tolerations as configured by the user in the cluster CR.
-     *
-     * @return The tolerations.
-     */
-    public List<Toleration> getTolerations() {
-        return tolerations;
-    }
-
-    /**
-     * Sets the tolerations as configured by the user in the cluster CR.
-     *
-     * @param tolerations The tolerations.
-     */
-    public void setTolerations(List<Toleration> tolerations) {
-        this.tolerations = tolerations;
-    }
-
-    /**
-     * Gets the affinity to use in a Pod template (nested in a StatefulSet, or Deployment).
-     * In general this may include extra rules than just the {@link #userAffinity}.
-     *
-     * By default it is just the {@link #userAffinity}.
-     */
-    protected Affinity getMergedAffinity() {
-        return getUserAffinity();
     }
 
     /**
@@ -926,270 +828,6 @@ public abstract class AbstractModel {
 
         LOGGER.traceCr(reconciliation, "Created headless service {}", service);
         return service;
-    }
-
-    protected StatefulSet createStatefulSet(
-            Map<String, String> stsAnnotations,
-            Map<String, String> podAnnotations,
-            List<Volume> volumes,
-            List<PersistentVolumeClaim> volumeClaims,
-            Affinity affinity,
-            List<Container> initContainers,
-            List<Container> containers,
-            List<LocalObjectReference> imagePullSecrets,
-            PodSecurityContext podSecurityContext) {
-        StatefulSet statefulSet = new StatefulSetBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templateStatefulSetLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(stsAnnotations, templateStatefulSetAnnotations))
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withPodManagementPolicy(templatePodManagementPolicy.toValue())
-                    .withUpdateStrategy(new StatefulSetUpdateStrategyBuilder().withType("OnDelete").build())
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                    .withServiceName(headlessServiceName)
-                    .withReplicas(replicas)
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .withName(componentName)
-                            .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
-                            .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
-                        .endMetadata()
-                        .withNewSpec()
-                            .withServiceAccountName(getServiceAccountName())
-                            .withEnableServiceLinks(templatePodEnableServiceLinks)
-                            .withAffinity(affinity)
-                            .withInitContainers(initContainers)
-                            .withContainers(containers)
-                            .withVolumes(volumes)
-                            .withTolerations(getTolerations())
-                            .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                            .withSecurityContext(podSecurityContext)
-                            .withPriorityClassName(templatePodPriorityClassName)
-                            .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
-                            .withHostAliases(templatePodHostAliases)
-                            .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
-                        .endSpec()
-                    .endTemplate()
-                    .withVolumeClaimTemplates(volumeClaims)
-                .endSpec()
-                .build();
-
-        return statefulSet;
-    }
-
-    /**
-     * Creates the StrimziPodSet with the Pods which currently correspond to the existing StatefulSet pods.
-     *
-     * @param replicas                  Defines how many pods should be generated and stored in this StrimziPodSet
-     * @param setAnnotations            Map with annotations which should be set on the StrimziPodSet
-     * @param podAnnotationsProvider    Function which provides annotation map for a specific Pod. A function is used
-     *                                  instead of providing a map because in some cases, each pod might have different
-     *                                  annotations. So they need to be generated per-pod.
-     * @param volumes                   Function which returns a list of volumes which should be used by the Pod and its containers
-     * @param affinity                  Affinity rules for the pods
-     * @param initContainers            List of init containers which should be used in the pods
-     * @param containers                List of containers which should be used in the pods
-     * @param imagePullSecrets          List of image pull secrets with container registry credentials
-     * @param podSecurityContext        PodSecurityContext which should be used for the pod
-     *
-     * @return                          Generated StrimziPodSet with all pods
-     */
-    protected StrimziPodSet createPodSet(
-            int replicas,
-            Map<String, String> setAnnotations,
-            Function<Integer, Map<String, String>> podAnnotationsProvider,
-            Function<String, List<Volume>> volumes,
-            Affinity affinity,
-            List<Container> initContainers,
-            List<Container> containers,
-            List<LocalObjectReference> imagePullSecrets,
-            PodSecurityContext podSecurityContext
-    )  {
-        List<Map<String, Object>> pods = new ArrayList<>(replicas);
-
-        for (int i = 0; i < replicas; i++)  {
-            String podName = getPodName(i);
-            Pod pod = createStatefulPod(
-                    componentName,
-                    podName,
-                    podAnnotationsProvider.apply(i),
-                    volumes.apply(podName),
-                    affinity,
-                    initContainers,
-                    containers,
-                    imagePullSecrets,
-                    podSecurityContext);
-
-            pods.add(PodSetUtils.podToMap(pod));
-        }
-
-        return new StrimziPodSetBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templatePodSetLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templatePodSetAnnotations))
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                    .addAllToPods(pods)
-                .endSpec()
-                .build();
-    }
-
-    /**
-     * Generates a stateful Pod. Unlike regular pods or pod templates, it uses some additional fields to configure
-     * things such as subdomain etc. which are normally generated by StatefulSets.
-     *
-     * @param strimziPodSetName     Name of the StrimziPodSet which will control this pod. This is used for labeling
-     * @param podName               Name of the pod
-     * @param podAnnotations        Map with annotation which should be set on the Pods
-     * @param volumes               Function which returns a list of volumes which should be used by the Pod and its containers
-     * @param affinity              Affinity rules for the pods
-     * @param initContainers        List of init containers which should be used in the pods
-     * @param containers            List of containers which should be used in the pods
-     * @param imagePullSecrets      List of image pull secrets with container registry credentials
-     * @param podSecurityContext    PodSecurityContext which should be used for the pod
-     *
-     * @return                  Generated pod for a use within StrimziPodSet
-     */
-    protected Pod createStatefulPod(
-            String strimziPodSetName,
-            String podName,
-            Map<String, String> podAnnotations,
-            List<Volume> volumes,
-            Affinity affinity,
-            List<Container> initContainers,
-            List<Container> containers,
-            List<LocalObjectReference> imagePullSecrets,
-            PodSecurityContext podSecurityContext
-    ) {
-        Pod pod = new PodBuilder()
-                .withNewMetadata()
-                    .withName(podName)
-                    .withLabels(labels.withStrimziPodName(podName).withAdditionalLabels(templatePodLabels).withStatefulSetPod(podName).withStrimziPodSetController(strimziPodSetName).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
-                .endMetadata()
-                .withNewSpec()
-                    .withRestartPolicy("Always")
-                    .withHostname(podName)
-                    .withSubdomain(headlessServiceName)
-                    .withServiceAccountName(getServiceAccountName())
-                    .withEnableServiceLinks(templatePodEnableServiceLinks)
-                    .withAffinity(affinity)
-                    .withInitContainers(initContainers)
-                    .withContainers(containers)
-                    .withVolumes(volumes)
-                    .withTolerations(getTolerations())
-                    .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                    .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                    .withSecurityContext(podSecurityContext)
-                    .withPriorityClassName(templatePodPriorityClassName)
-                    .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
-                    .withHostAliases(templatePodHostAliases)
-                    .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
-                .endSpec()
-                .build();
-
-        // Set the pod revision annotation
-        pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, PodRevision.getRevision(reconciliation, pod));
-
-        return pod;
-    }
-
-    protected Pod createPod(
-            String name,
-            Map<String, String> podAnnotations,
-            List<Volume> volumes,
-            List<Container> initContainers,
-            List<Container> containers,
-            List<LocalObjectReference> imagePullSecrets,
-            PodSecurityContext podSecurityContext
-    ) {
-        Pod pod = new PodBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withRestartPolicy("Never")
-                    .withServiceAccountName(getServiceAccountName())
-                    .withEnableServiceLinks(templatePodEnableServiceLinks)
-                    .withAffinity(getUserAffinity())
-                    .withInitContainers(initContainers)
-                    .withContainers(containers)
-                    .withVolumes(volumes)
-                    .withTolerations(getTolerations())
-                    .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                    .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                    .withSecurityContext(podSecurityContext)
-                    .withPriorityClassName(templatePodPriorityClassName)
-                    .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
-                .endSpec()
-                .build();
-
-        return pod;
-    }
-
-    protected Deployment createDeployment(
-            DeploymentStrategy updateStrategy,
-            Map<String, String> deploymentAnnotations,
-            Map<String, String> podAnnotations,
-            Affinity affinity,
-            List<Container> initContainers,
-            List<Container> containers,
-            List<Volume> volumes,
-            List<LocalObjectReference> imagePullSecrets,
-            PodSecurityContext podSecurityContext
-    ) {
-        Deployment dep = new DeploymentBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withLabels(labels.withAdditionalLabels(templateDeploymentLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(deploymentAnnotations, templateDeploymentAnnotations))
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withStrategy(updateStrategy)
-                    .withReplicas(replicas)
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .withLabels(labels.withAdditionalLabels(templatePodLabels).toMap())
-                            .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
-                        .endMetadata()
-                        .withNewSpec()
-                            .withAffinity(affinity)
-                            .withServiceAccountName(getServiceAccountName())
-                            .withEnableServiceLinks(templatePodEnableServiceLinks)
-                            .withInitContainers(initContainers)
-                            .withContainers(containers)
-                            .withVolumes(volumes)
-                            .withTolerations(getTolerations())
-                            .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
-                            .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
-                            .withSecurityContext(podSecurityContext)
-                            .withPriorityClassName(templatePodPriorityClassName)
-                            .withSchedulerName(templatePodSchedulerName)
-                            .withHostAliases(templatePodHostAliases)
-                            .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
-
-        return dep;
     }
 
     /**
@@ -1402,40 +1040,5 @@ public abstract class AbstractModel {
      */
     public List<Condition> getWarningConditions() {
         return warningConditions;
-    }
-
-    /**
-     * @return  The deployment strategy which should be used in deployments
-     */
-    protected DeploymentStrategy getDeploymentStrategy() {
-        if (templateDeploymentStrategy == io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE) {
-            return new DeploymentStrategyBuilder()
-                    .withType("RollingUpdate")
-                    .withRollingUpdate(new RollingUpdateDeploymentBuilder()
-                            .withMaxSurge(new IntOrString(1))
-                            .withMaxUnavailable(new IntOrString(0))
-                            .build())
-                    .build();
-        } else {
-            return new DeploymentStrategyBuilder()
-                    .withType("Recreate")
-                    .build();
-        }
-    }
-
-    protected Volume createTempDirVolume() {
-        return createTempDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
-    }
-
-    protected Volume createTempDirVolume(String volumeName) {
-        return VolumeUtils.createEmptyDirVolume(volumeName, templateTmpDirSizeLimit == null ? STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE : templateTmpDirSizeLimit, "Memory");
-    }
-
-    protected VolumeMount createTempDirVolumeMount() {
-        return createTempDirVolumeMount(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
-    }
-
-    protected VolumeMount createTempDirVolumeMount(String volumeName) {
-        return VolumeUtils.createVolumeMount(volumeName, STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH);
     }
 }

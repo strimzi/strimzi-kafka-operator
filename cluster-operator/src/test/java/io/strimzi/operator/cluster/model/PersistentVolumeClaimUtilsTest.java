@@ -16,6 +16,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
+import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
+import io.strimzi.api.kafka.model.template.StatefulSetTemplateBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -161,8 +163,14 @@ public class PersistentVolumeClaimUtilsTest {
                         .build())
                 .build();
 
+        StatefulSetTemplate stsTemplate = new StatefulSetTemplateBuilder()
+                .withNewMetadata()
+                    .withLabels(Map.of("sts-labela-1", "value-from-sts-1"))
+                .endMetadata()
+                .build();
+
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, TEMPLATE, Map.of("sts-labela-1", "value-from-sts-1"));
+                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, TEMPLATE, stsTemplate);
 
         assertThat(pvcs.size(), is(1));
 
@@ -188,8 +196,14 @@ public class PersistentVolumeClaimUtilsTest {
                         .build())
                 .build();
 
+        StatefulSetTemplate stsTemplate = new StatefulSetTemplateBuilder()
+                .withNewMetadata()
+                    .withLabels(Map.of("sts-labela-1", "value-from-sts-1"))
+                .endMetadata()
+                .build();
+
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, null, Map.of("sts-labela-1", "value-from-sts-1"));
+                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, null, stsTemplate);
 
         assertThat(pvcs.size(), is(1));
 

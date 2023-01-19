@@ -32,7 +32,7 @@ import java.util.Map;
 public class CruiseControlTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private ResourceTemplate deployment;
+    private DeploymentTemplate deployment;
     private PodTemplate pod;
     private InternalServiceTemplate apiService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
@@ -43,11 +43,11 @@ public class CruiseControlTemplate implements Serializable, UnknownPropertyPrese
 
     @Description("Template for Cruise Control `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getDeployment() {
+    public DeploymentTemplate getDeployment() {
         return deployment;
     }
 
-    public void setDeployment(ResourceTemplate deployment) {
+    public void setDeployment(DeploymentTemplate deployment) {
         this.deployment = deployment;
     }
 

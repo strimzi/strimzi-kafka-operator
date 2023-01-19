@@ -24,8 +24,10 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -35,10 +37,11 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 
 /**
  * Kafka Mirror Maker 1 model
@@ -117,6 +120,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private DeploymentTemplate templateDeployment;
+    private PodTemplate templatePod;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -224,14 +229,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                     kafkaMirrorMakerCluster.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
 
-                ModelUtils.parseDeploymentTemplate(kafkaMirrorMakerCluster, template.getDeployment());
-                ModelUtils.parsePodTemplate(kafkaMirrorMakerCluster, template.getPod());
                 kafkaMirrorMakerCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+                kafkaMirrorMakerCluster.templateDeployment = template.getDeployment();
+                kafkaMirrorMakerCluster.templatePod = template.getPod();
             }
 
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
         }
-        kafkaMirrorMakerCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaMirrorMakerCluster.templatePodLabels, DEFAULT_POD_LABELS);
 
         return kafkaMirrorMakerCluster;
     }
@@ -248,7 +252,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
 
-        volumeList.add(createTempDirVolume());
+        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (producer.getTls() != null) {
@@ -267,7 +271,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
-        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         /* producer auth*/
         if (producer.getTls() != null) {
@@ -295,16 +299,28 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      * @return  Generated Deployment
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        return createDeployment(
-                getDeploymentStrategy(),
-                Collections.emptyMap(),
-                annotations,
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
-                imagePullSecrets,
-                securityProvider.kafkaMirrorMakerPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
+        return WorkloadUtils.createDeployment(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateDeployment,
+                replicas,
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        annotations,
+                        templatePod != null ? templatePod.getAffinity() : null,
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.kafkaMirrorMakerPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     @Override

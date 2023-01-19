@@ -3827,30 +3827,30 @@ public class KafkaClusterTest {
     @ParallelTest
     public void withAffinityWithoutRack() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withAffinityWithoutRack");
-        resourceTester.assertDesiredResource(".yaml", KafkaCluster::getMergedAffinity);
+        resourceTester.assertDesiredModel(".yaml", KafkaCluster::getMergedAffinity);
     }
 
     @ParallelTest
     public void withRackWithoutAffinity() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withRackWithoutAffinity");
-        resourceTester.assertDesiredResource(".yaml", KafkaCluster::getMergedAffinity);
+        resourceTester.assertDesiredModel(".yaml", KafkaCluster::getMergedAffinity);
     }
 
     @ParallelTest
     public void withRackAndAffinityWithMoreTerms() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withRackAndAffinityWithMoreTerms");
-        resourceTester.assertDesiredResource(".yaml", KafkaCluster::getMergedAffinity);
+        resourceTester.assertDesiredModel(".yaml", KafkaCluster::getMergedAffinity);
     }
 
     @ParallelTest
     public void withRackAndAffinity() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withRackAndAffinity");
-        resourceTester.assertDesiredResource(".yaml", KafkaCluster::getMergedAffinity);
+        resourceTester.assertDesiredModel(".yaml", KafkaCluster::getMergedAffinity);
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withTolerations");
-        resourceTester.assertDesiredResource(".yaml", AbstractModel::getTolerations);
+        resourceTester.assertDesiredResource(".yaml", cr -> cr.getSpec().getKafka().getTemplate().getPod().getTolerations());
     }
 }

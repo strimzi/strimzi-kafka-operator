@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
@@ -75,10 +74,6 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
         }
     }
 
-    private static ObjectMeta templateMetadata(StatefulSet resource) {
-        return resource.getSpec().getTemplate().getMetadata();
-    }
-
     /**
      * The name of the given pod given by {@code podId} in the given StatefulSet.
      * @param desired The StatefulSet
@@ -86,7 +81,7 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
      * @return The name of the pod.
      */
     public String getPodName(StatefulSet desired, int podId) {
-        return templateMetadata(desired).getName() + "-" + podId;
+        return desired.getMetadata().getName() + "-" + podId;
     }
 
     private void setGeneration(StatefulSet desired, int nextGeneration) {

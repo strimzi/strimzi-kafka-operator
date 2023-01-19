@@ -399,13 +399,13 @@ public class ZookeeperClusterTest {
     @ParallelTest
     public void withAffinity() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, versions), this.getClass().getSimpleName() + ".withAffinity");
-        resourceTester.assertDesiredResource(".yaml", AbstractModel::getMergedAffinity);
+        resourceTester.assertDesiredResource(".yaml", cr -> cr.getSpec().getZookeeper().getTemplate().getPod().getAffinity());
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
         ResourceTester<Kafka, ZookeeperCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly, versions) -> ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, versions), this.getClass().getSimpleName() + ".withTolerations");
-        resourceTester.assertDesiredResource(".yaml", AbstractModel::getTolerations);
+        resourceTester.assertDesiredResource(".yaml", cr -> cr.getSpec().getZookeeper().getTemplate().getPod().getTolerations());
     }
 
     @ParallelTest
