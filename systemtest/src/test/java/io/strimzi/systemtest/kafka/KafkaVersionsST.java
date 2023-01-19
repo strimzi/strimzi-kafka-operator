@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -48,6 +49,7 @@ public class KafkaVersionsST extends AbstractST {
      */
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
+    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion, ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
