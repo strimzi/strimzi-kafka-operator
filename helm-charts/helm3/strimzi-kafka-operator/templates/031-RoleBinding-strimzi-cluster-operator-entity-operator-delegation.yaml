@@ -1,3 +1,4 @@
+{{- if .Values.rbac.create }}
 {{- $root := . -}}
 {{- range append .Values.watchNamespaces .Release.Namespace }}
 ---
@@ -20,10 +21,11 @@ metadata:
 # This must be done to avoid escalating privileges which would be blocked by Kubernetes.
 subjects:
   - kind: ServiceAccount
-    name: strimzi-cluster-operator
+    name: {{ $root.Values.serviceAccount }}
     namespace: {{ $root.Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: strimzi-entity-operator
   apiGroup: rbac.authorization.k8s.io
+{{- end }}
 {{- end }}

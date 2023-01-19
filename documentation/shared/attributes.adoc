@@ -23,9 +23,9 @@
 :KubernetesVersion: 1.19 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 3.3.1
+:DefaultKafkaVersion: 3.3.2
 :KafkaVersionLower: 3.2.3
-:KafkaVersionHigher: 3.3.1
+:KafkaVersionHigher: 3.3.2
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 //inter-broker protocol and log message version
