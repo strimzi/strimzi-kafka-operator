@@ -1149,7 +1149,8 @@ public class KafkaRebalanceAssemblyOperator
         String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String clusterNamespace = kafkaRebalance.getMetadata().getNamespace();
         if (clusterName == null) {
-            LOGGER.warnCr(reconciliation, "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance.");
+            String errorString = "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance.";
+            LOGGER.warnCr(reconciliation, errorString);
             KafkaRebalanceStatus status = new KafkaRebalanceStatus();
             return updateStatus(reconciliation, kafkaRebalance, status,
                     new InvalidResourceException(CruiseControlIssues.clusterLabelMissing.getMessage())).mapEmpty();
@@ -1397,7 +1398,7 @@ public class KafkaRebalanceAssemblyOperator
         /**
          * The Kafka cluster label is missing .
          */
-        clusterLabelMissing("Resource lacks label"),
+        clusterLabelMissing("Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance."),
 
         /**
          * Cruise Control was not declared in the Kafka Resource

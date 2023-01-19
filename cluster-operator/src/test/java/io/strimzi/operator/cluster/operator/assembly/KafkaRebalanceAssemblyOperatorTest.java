@@ -1530,7 +1530,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 // the resource moved from New to NotReady due to the error
                 assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME,
                         KafkaRebalanceState.NotReady, InvalidResourceException.class,
-                        "Resource lacks label");
+                        "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance.");
                 checkpoint.flag();
             })));
     }
