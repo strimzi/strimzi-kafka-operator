@@ -525,7 +525,8 @@
                 </groups>
                 <it.test>
                     !upgrade/**/*ST,
-                    !olm/**/*ST
+                    !olm/**/*ST,
+                    !kafka/**/KafkaVersionsST
                 </it.test>
             </properties>
         </profile>
