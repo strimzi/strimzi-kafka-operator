@@ -516,7 +516,7 @@
         </profile>
 
         <profile>
-            <id>azp_non_regression</id>
+            <id>non_regression</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
