@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
-import org.hamcrest.CoreMatchers;
 
 import java.util.Arrays;
 import java.util.Collections;
