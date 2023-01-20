@@ -40,7 +40,7 @@ endif::Downloading[]
 ifndef::Downloading[]
 * An OpenShift {OpenShiftVersion} cluster.
 +
-Strimzi is based on Strimzi {StrimziVersion}.
+Strimzi is based on {StrimziVersion}.
 
 * The `oc` command-line tool is installed and configured to connect to the running cluster.
 endif::Downloading[]

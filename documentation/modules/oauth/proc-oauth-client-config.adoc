@@ -96,7 +96,7 @@ sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginMo
 <6> Client secret created when creating the _client_ in the authorization server.
 <7> The location contains the public key certificate (`truststore.p12`) for the authorization server.
 <8> The password for accessing the truststore.
-<9> the truststore type.
+<9> The truststore type.
 <10> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
 <11> (Optional) The `audience` for requesting the token from the token endpoint.

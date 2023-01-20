@@ -86,7 +86,7 @@ include::../install/cluster-operator/022-ClusterRole-strimzi-cluster-operator-ro
 # ...      
 ----
 
-. (optional) Edit the the `RoleBinding` resource in the `022-RoleBinding-strimzi-cluster-operator.yaml` file.
+. (optional) Edit the `RoleBinding` resource in the `022-RoleBinding-strimzi-cluster-operator.yaml` file.
 +
 Update `subjects.name` and `subjects.namespace` with the name of the `Lease` resource and the namespace where it was created.
 + 
