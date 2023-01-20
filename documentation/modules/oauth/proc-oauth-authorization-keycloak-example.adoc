@@ -285,17 +285,6 @@ STOREPASS=storepass
 
 echo "Q" | openssl s_client -showcerts -connect $KAFKA_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/my-cluster-kafka.pem
 ----
-
-+
-If the client accesses the Kafka cluster over the ingress or OpenShift route, the Kafka bootstrap hostname is different, and you may need to specify it as an extra argument to the `openssl` command in order to get the certificate containing the proper SNA records:
-+
-[source,shell]
-----
-KAFKA_BOOTSTRAP_EXTERNAL=kafka-bootstrap-addr.my-domain.ext
-STOREPASS=storepass
-
-echo "Q" | openssl s_client -showcerts -servername $KAFKA_BOOTSTRAP_EXTERNAL -connect $KAFKA_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/my-cluster-kafka.pem
-----
 +
 The obtained `.pem` file is usually not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/my-cluster-kafka.pem`.
 You can extract it manually or using the following command:
@@ -309,6 +298,10 @@ cp $(ls kafka-* | sort -r | head -n 1) my-cluster-kafka-ca.crt
 ----
 +
 NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
+      For this example we assume the client is running in a pod in the same namespace where the Kafka cluster was deployed.
+      If the client accessed the Kafka cluster from outside the Kubernetes cluster you would have to first determine the bootstrap address.
+      In that case you can also get the cluster certificate directly from the Kubernetes Secret, no need for `openssl`.
+      See: https://strimzi.io/docs/operators/latest/configuring.html#assembly-accessing-kafka-outside-cluster-str for more information.
 
 . Add the certificate for the Kafka broker to the truststore.
 +
