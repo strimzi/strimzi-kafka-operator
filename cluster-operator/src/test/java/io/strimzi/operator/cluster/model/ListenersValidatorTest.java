@@ -19,7 +19,9 @@ import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.hamcrest.CoreMatchers;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -193,6 +195,7 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewConfiguration()
+                    .withCreateBootstrapService(false)
                     .withNewBrokerCertChainAndKey()
                         .withCertificate("cert")
                         .withKey("key")
@@ -216,6 +219,7 @@ public class ListenersValidatorTest {
                 .withNewConfiguration()
                     .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
+                    .withCreateBootstrapService(false)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                     .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
@@ -366,6 +370,7 @@ public class ListenersValidatorTest {
                 .withNewConfiguration()
                     .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
+                    .withCreateBootstrapService(false)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                     .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
@@ -448,6 +453,7 @@ public class ListenersValidatorTest {
                 .withNewConfiguration()
                     .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
+                    .withCreateBootstrapService(false)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                     .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
@@ -500,6 +506,8 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
         );
 
+        ListenersValidator.validateAndGetErrorMessages(3, listeners);
+
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
@@ -516,6 +524,7 @@ public class ListenersValidatorTest {
                     .withNewBootstrap()
                         .withHost("my-host")
                     .endBootstrap()
+                    .withCreateBootstrapService(false)
                     .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(0)
                                     .withHost("my-host")
@@ -548,6 +557,7 @@ public class ListenersValidatorTest {
                 .withNewConfiguration()
                     .withControllerClass("my-ingress")
                     .withUseServiceDnsDomain(true)
+                    .withCreateBootstrapService(false)
                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                     .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                     .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
@@ -611,6 +621,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)), containsInAnyOrder("listener ingress is missing a configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withCreateBootstrapService(false)
                 .withBrokers((List<GenericKafkaListenerConfigurationBroker>) null)
                 .build());
 
@@ -618,6 +629,7 @@ public class ListenersValidatorTest {
                 "listener ingress is missing a broker configuration with host names which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withCreateBootstrapService(false)
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
                                 .build())
                 .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
@@ -633,6 +645,7 @@ public class ListenersValidatorTest {
                 "listener ingress is missing a broker host name for broker with ID 1 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withCreateBootstrapService(false)
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
                         .withHost("bootstrap-host")
                         .build())
@@ -645,6 +658,7 @@ public class ListenersValidatorTest {
         assertThat(ListenersValidator.validateAndGetErrorMessages(2, asList(listener)), containsInAnyOrder("listener ingress is missing a broker host name for broker with ID 0 which is required for Ingress based listeners"));
 
         listener.setConfiguration(new GenericKafkaListenerConfigurationBuilder()
+                .withCreateBootstrapService(false)
                 .withBootstrap(new GenericKafkaListenerConfigurationBootstrapBuilder()
                         .withHost("bootstrap-host")
                         .build())
@@ -671,16 +685,17 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(false)
                 .withNewConfiguration()
-                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                                .withBroker(0)
-                                .withAdvertisedHost("my-host")
-                                .withAdvertisedPort(12345)
-                                .build(),
-                        new GenericKafkaListenerConfigurationBrokerBuilder()
-                                .withBroker(1)
-                                .withAdvertisedHost("my-host")
-                                .withAdvertisedPort(12346)
-                                .build())
+                    .withCreateBootstrapService(false)
+                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(0)
+                                    .withAdvertisedHost("my-host")
+                                    .withAdvertisedPort(12345)
+                                    .build(),
+                            new GenericKafkaListenerConfigurationBrokerBuilder()
+                                    .withBroker(1)
+                                    .withAdvertisedHost("my-host")
+                                    .withAdvertisedPort(12346)
+                                    .build())
                 .endConfiguration()
                 .build();
 
@@ -701,6 +716,7 @@ public class ListenersValidatorTest {
                 .withNewConfiguration()
                 .withControllerClass("my-ingress")
                 .withUseServiceDnsDomain(true)
+                .withCreateBootstrapService(false)
                 .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                 .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                 .withIpFamilies(IpFamily.IPV4, IpFamily.IPV6)
@@ -830,6 +846,7 @@ public class ListenersValidatorTest {
                     .withNewBootstrap()
                         .withHost("my-host")
                     .endBootstrap()
+                    .withCreateBootstrapService(false)
                     .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
                                     .withBroker(0)
                                     .withHost("my-host")
@@ -1001,5 +1018,55 @@ public class ListenersValidatorTest {
         assertThat(exception.getMessage(), allOf(
                 not(containsString("listener listener1: 'readTimeoutSeconds' needs to be a positive integer"))));
 
+    }
+
+    @ParallelTest
+    public void testValidateCreateBootstrapService() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withNewConfiguration()
+                    .withCreateBootstrapService()
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
+                .withName("listener2")
+                .withPort(9910)
+                .withType(KafkaListenerType.CLUSTER_IP)
+                .withNewConfiguration()
+                    .withCreateBootstrapService()
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
+                .withName("listener3")
+                .withPort(9920)
+                .withType(KafkaListenerType.NODEPORT)
+                .withNewConfiguration()
+                    .withCreateBootstrapService()
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = Arrays.asList(listener1, listener2, listener3);
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(
+                "listener listener1 cannot configure createBootstrapService because it is not load balancer listener",
+                        "listener listener2 cannot configure createBootstrapService because it is not load balancer listener",
+                        "listener listener3 cannot configure createBootstrapService because it is not load balancer listener"));
+
+        // positive scenario
+        GenericKafkaListener listener5 = new GenericKafkaListenerBuilder()
+            .withName("listener4")
+            .withPort(9930)
+            .withType(KafkaListenerType.LOADBALANCER)
+            .withNewConfiguration()
+            .withCreateBootstrapService()
+            .endConfiguration()
+            .build();
+
+        // it should not contain any errors
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, Collections.singletonList(listener5)), empty());
     }
 }

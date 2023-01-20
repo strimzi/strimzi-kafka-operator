@@ -747,7 +747,30 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
+    }
 
+    @ParallelNamespaceTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testClusteeerIpTls(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName(Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME)
+                        .withPort(9103)
+                        .withType(KafkaListenerType.NODEPORT)
+                        .withTls(true)
+                        .withNewConfiguration()
+                            .withUseServiceDnsDomain(true)
+                        .endConfiguration()
+                        .withAuth(new KafkaListenerAuthenticationTls())
+                        .build())
+                .withConfig(Collections.singletonMap("default.replication.factor", 3))
+                .endKafka()
+                .endSpec()
+                .build());
     }
 
 //    ##########################################
