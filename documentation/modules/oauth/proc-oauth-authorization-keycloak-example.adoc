@@ -301,7 +301,7 @@ NOTE: The proper way to obtain the trusted CA certificate is from a trusted sour
       For this example we assume the client is running in a pod in the same namespace where the Kafka cluster was deployed.
       If the client accessed the Kafka cluster from outside the Kubernetes cluster you would have to first determine the bootstrap address.
       In that case you can also get the cluster certificate directly from the Kubernetes Secret, no need for `openssl`.
-      See: https://strimzi.io/docs/operators/latest/configuring.html#assembly-accessing-kafka-outside-cluster-str for more information.
+      See xref:assembly-accessing-kafka-outside-cluster-str[] for more information.
 
 . Add the certificate for the Kafka broker to the truststore.
 +
