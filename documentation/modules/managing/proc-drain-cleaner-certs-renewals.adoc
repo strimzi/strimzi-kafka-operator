@@ -1,0 +1,86 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-drain-cleaner.adoc
+
+[id='proc-drain-cleaner-certs-renewing-{context}']
+= Watching the TLS certificates used by the Strimzi Drain Cleaner
+
+[role="_abstract"]
+By default, the Drain Cleaner deployment watches the secret containing the TLS certificates its uses for authentication.
+The Drain Cleaner watches for changes, such as certificate renewals.
+If it detects a change, it restarts to reload the TLS certificates.
+The Drain Cleaner installation files enable this behavior by default.
+But you can disable the watching of certificates by setting the `STRIMZI_CERTIFICATE_WATCH_ENABLED` environment variable to `false` in the `Deployment` configuration (`060-Deployment.yaml`) of the Drain Cleaner installation files.
+
+With `STRIMZI_CERTIFICATE_WATCH_ENABLED` enabled, you can also use the following environment variables for watching TLS certificates.
+
+.Drain Cleaner environment variables for watching TLS certificates
+[cols="5m,4,2",options="header"]
+|===
+
+| Environment Variable              
+| Description                                                                               
+| Default
+
+| STRIMZI_CERTIFICATE_WATCH_ENABLED      
+| Enables or disables the certificate watch                                                 
+| `false`
+
+| STRIMZI_CERTIFICATE_WATCH_NAMESPACE    
+| The namespace where the Drain Cleaner is deployed and where the certificate secret exists 
+| `strimzi-drain-cleaner`
+
+| STRIMZI_CERTIFICATE_WATCH_POD_NAME     
+| The Drain Cleaner pod name                                                                
+| -                      
+
+| STRIMZI_CERTIFICATE_WATCH_SECRET_NAME  
+| The name of the secret containing TLS certificates                                             
+| `strimzi-drain-cleaner` 
+
+| STRIMZI_CERTIFICATE_WATCH_SECRET_KEYS  
+| The list of fields inside the secret that contain the TLS certificates                   
+| `tls.crt, tls.key`   
+
+|===
+
+.Example environment variable configuration to control watch operations
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-drain-cleaner
+  labels:
+    app: strimzi-drain-cleaner
+  namespace: strimzi-drain-cleaner
+spec:
+  # ...
+    spec:
+      serviceAccountName: strimzi-drain-cleaner
+      containers:
+        - name: strimzi-drain-cleaner
+          # ...
+          env:
+            - name: STRIMZI_DRAIN_KAFKA
+              value: "true"
+            - name: STRIMZI_DRAIN_ZOOKEEPER
+              value: "true"
+            - name: STRIMZI_CERTIFICATE_WATCH_ENABLED
+              value: "true"
+            - name: STRIMZI_CERTIFICATE_WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_CERTIFICATE_WATCH_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+              # ...
+----
+
+TIP: Use the {K8sDownwardAPI} mechanism to configure `STRIMZI_CERTIFICATE_WATCH_NAMESPACE` and `STRIMZI_CERTIFICATE_WATCH_POD_NAME`.
+
+
+
+
