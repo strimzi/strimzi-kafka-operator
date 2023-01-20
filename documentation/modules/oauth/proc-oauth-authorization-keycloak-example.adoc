@@ -178,7 +178,7 @@ echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk
 The certificate is required as Kubernetes ingress is used to make a secure (HTTPS) connection.
 +
 Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/sso.pem`.
-You can extract it manually or using  an OpenSSL `split` command:
+You can extract it manually or using the following commands:
 +
 .Example command to extract the top CA certificate in a certificate chain
 [source,shell,subs="+quotes"]
@@ -257,6 +257,7 @@ echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk
 Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/sso.pem`.
 You can extract it manually or using the following command:
 +
+.Example command to extract the top CA certificate in a certificate chain
 [source,shell,subs="+quotes"]
 ----
 split -p "-----BEGIN CERTIFICATE-----" sso.pem sso-
@@ -295,6 +296,7 @@ echo "Q" | openssl s_client -showcerts -servername $KAFKA_BOOTSTRAP_EXTERNAL -co
 The obtained `.pem` file is usually not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/my-cluster-kafka.pem`.
 You can extract it manually or using the following command:
 +
+.Example command to extract the top CA certificate in a certificate chain
 [source,shell,subs="+quotes"]
 ----
 split -p "-----BEGIN CERTIFICATE-----" /tmp/my-cluster-kafka.pem kafka-
