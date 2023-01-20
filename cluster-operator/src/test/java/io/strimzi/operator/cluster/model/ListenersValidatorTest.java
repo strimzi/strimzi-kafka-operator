@@ -506,8 +506,6 @@ public class ListenersValidatorTest {
                 "listener " + name + " cannot configure brokers[].nodePort because it is not NodePort based listener"
         );
 
-        ListenersValidator.validateAndGetErrorMessages(3, listeners);
-
         assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(expectedErrors.toArray()));
     }
 
