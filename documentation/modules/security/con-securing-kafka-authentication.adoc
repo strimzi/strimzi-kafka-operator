@@ -68,10 +68,10 @@ spec:
           type: scram-sha-512
       - name: tls
         port: 9093
-       type: internal
-       tls: true
-       authentication:
-         type: tls
+        type: internal
+        tls: true
+        authentication:
+          type: tls
       - name: external
         port: 9094
         type: loadbalancer

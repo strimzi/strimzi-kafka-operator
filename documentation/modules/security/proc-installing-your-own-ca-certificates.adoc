@@ -13,7 +13,7 @@ By default, Strimzi uses the following xref:con-certificates-{context}[cluster C
 * Cluster CA secrets
 ** `_<cluster_name>_-cluster-ca`
 ** `_<cluster_name>_-cluster-ca-cert`
-* Clients CA
+* Clients CA secrets
 ** `_<cluster_name>_-clients-ca`
 ** `_<cluster_name>_-clients-ca-cert`
 

@@ -70,7 +70,7 @@ kubectl get kafkarebalance -o wide -w -n _<namespace>_
 ----
 +
 --
-`Rebalancing`:: A `Rebalancing` status means the the rebalancing is in progress.
+`Rebalancing`:: A `Rebalancing` status means the rebalancing is in progress.
 `Ready`:: A `Ready` status means the rebalance is complete.
 `NotReady`:: A `NotReady` status means an error occurred--see xref:proc-fixing-problems-with-kafkarebalance-{context}[Fixing problems with a `KafkaRebalance` resource].
 --
