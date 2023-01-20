@@ -187,6 +187,8 @@ split -p "-----BEGIN CERTIFICATE-----" sso.pem sso-
 for f in $(ls sso-*); do mv $f $f.pem; done
 cp $(ls sso-* | sort -r | head -n 1) sso-ca.crt
 ----
++
+NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
 
 
 . Deploy the certificate to Kubernetes as a secret.
@@ -265,6 +267,8 @@ for f in $(ls sso-*); do mv $f $f.pem; done
 cp $(ls sso-* | sort -r | head -n 1) sso-ca.crt
 ----
 +
+NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
++
 . Create a truststore for TLS connection to the Kafka brokers.
 +
 [source,shell,subs="+quotes"]
@@ -303,7 +307,8 @@ split -p "-----BEGIN CERTIFICATE-----" /tmp/my-cluster-kafka.pem kafka-
 for f in $(ls kafka-*); do mv $f $f.pem; done
 cp $(ls kafka-* | sort -r | head -n 1) my-cluster-kafka-ca.crt
 ----
-
++
+NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
 
 . Add the certificate for the Kafka broker to the truststore.
 +
