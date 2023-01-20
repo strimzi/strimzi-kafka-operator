@@ -747,6 +747,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
+
     }
 
 //    ##########################################

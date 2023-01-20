@@ -673,16 +673,16 @@ public class ListenersValidatorTest {
                 .withType(KafkaListenerType.CLUSTER_IP)
                 .withTls(false)
                 .withNewConfiguration()
-                    .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
-                                    .withBroker(0)
-                                    .withAdvertisedHost("my-host")
-                                    .withAdvertisedPort(12345)
-                                    .build(),
-                            new GenericKafkaListenerConfigurationBrokerBuilder()
-                                    .withBroker(1)
-                                    .withAdvertisedHost("my-host")
-                                    .withAdvertisedPort(12346)
-                                    .build())
+                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(0)
+                                .withAdvertisedHost("my-host")
+                                .withAdvertisedPort(12345)
+                                .build(),
+                        new GenericKafkaListenerConfigurationBrokerBuilder()
+                                .withBroker(1)
+                                .withAdvertisedHost("my-host")
+                                .withAdvertisedPort(12346)
+                                .build())
                 .endConfiguration()
                 .build();
 
