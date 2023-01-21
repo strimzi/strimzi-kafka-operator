@@ -45,7 +45,7 @@
 * When OpenTelemetry is enabled for tracing, starting from this release, the operator configures the OTLP exporter instead of the Jaeger one by default.
   The Jaeger exporter is even not included in the Kafka images anymore, so if you want to use it you have to add the binary by yourself.
   The `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable has to be used instead of the `OTEL_EXPORTER_JAEGER_ENDPOINT` in order to specify the OTLP endpoint to send traces to.
-  If you are using Jaeger as the backend system for tracing, you need to have 1.35 release at least which is the first one exposing an OLTP endpoint.
+  If you are using Jaeger as the backend system for tracing, you need to have 1.35 release at least which is the first one exposing an OTLP endpoint.
 
 ## 0.32.0
 
