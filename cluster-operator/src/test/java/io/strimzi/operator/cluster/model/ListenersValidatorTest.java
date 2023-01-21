@@ -20,6 +20,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -1001,5 +1002,42 @@ public class ListenersValidatorTest {
         assertThat(exception.getMessage(), allOf(
                 not(containsString("listener listener1: 'readTimeoutSeconds' needs to be a positive integer"))));
 
+    }
+
+    @ParallelTest
+    public void testValidateCreateBootstrapService() {
+        GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
+                .withName("listener1")
+                .withPort(9900)
+                .withType(KafkaListenerType.INTERNAL)
+                .withNewConfiguration()
+                .withCreateBootstrapService(false)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener2 = new GenericKafkaListenerBuilder()
+                .withName("listener2")
+                .withPort(9910)
+                .withType(KafkaListenerType.CLUSTER_IP)
+                .withNewConfiguration()
+                .withCreateBootstrapService(false)
+                .endConfiguration()
+                .build();
+
+        GenericKafkaListener listener3 = new GenericKafkaListenerBuilder()
+                .withName("listener3")
+                .withPort(9920)
+                .withType(KafkaListenerType.NODEPORT)
+                .withNewConfiguration()
+                .withCreateBootstrapService(false)
+                .endConfiguration()
+                .build();
+
+        List<GenericKafkaListener> listeners = Arrays.asList(listener1, listener2, listener3);
+
+        assertThat(ListenersValidator.validateAndGetErrorMessages(3, listeners), containsInAnyOrder(
+                "listener listener1 cannot configure createBootstrapService because it is not load balancer listener",
+                "listener listener2 cannot configure createBootstrapService because it is not load balancer listener",
+                "listener listener3 cannot configure createBootstrapService because it is not load balancer listener"));
     }
 }
