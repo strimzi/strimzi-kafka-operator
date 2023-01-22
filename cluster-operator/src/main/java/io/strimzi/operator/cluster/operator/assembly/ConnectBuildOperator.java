@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectBuildUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectDockerfile;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -336,8 +337,7 @@ public class ConnectBuildOperator {
             return imageStreamOperations.getAsync(namespace, imageName)
                 .compose(is -> {
                     if (is == null) {
-                        return Future.failedFuture(
-                            String.format("The build can't start because there is no image stream with name %s", imageName));
+                        return Future.failedFuture(new InvalidConfigurationException(String.format("The build can't start because there is no image stream with name %s", imageName)));
                     } else {
                         return Future.succeededFuture();
                     }
