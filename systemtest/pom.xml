@@ -514,5 +514,15 @@
                 </it.test>
             </properties>
         </profile>
+
+        <profile>
+            <id>scalability</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>
+                    all,scalability
+                </groups>
+            </properties>
+        </profile>
     </profiles>
 </project>

@@ -58,10 +58,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
-import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -244,7 +244,7 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
-    @Tag(SCALABILITY)
+    @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
@@ -356,7 +356,7 @@ class RollingUpdateST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Tag(SCALABILITY)
+    @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);

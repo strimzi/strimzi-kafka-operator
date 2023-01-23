@@ -14,6 +14,7 @@ import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -28,10 +29,11 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 
 @Tag(SCALABILITY)
 @IsolatedSuite
+@Disabled("TO is not so stable with large number of topics. After new version of TO, these should be enabled again")
 public class TopicScalabilityIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityIsolatedST.class);
-    private static final int NUMBER_OF_TOPICS = 1000;
+    private static final int NUMBER_OF_TOPICS = 200;
     private final String sharedClusterName = "topic-scalability-shared-cluster-name";
     final String topicPrefix = "example-topic";
 

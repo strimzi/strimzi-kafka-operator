@@ -300,35 +300,36 @@ You need to use the `groups` system property to execute a group of system tests.
 If `-Dgroups` system property isn't defined, all tests without an explicitly declared test group will be executed.
 The following table shows currently used tags:
 
-| Name               | Description                                                                        |
-| :----------------: | :--------------------------------------------------------------------------------: |
+| Name               |                                      Description                                      |
+| :----------------: |:-------------------------------------------------------------------------------------:|
 | acceptance         | Acceptance tests, which guarantee that the basic functionality of Strimzi is working. |
-| regression         | Regression tests, which contains all non-flaky tests.                              |
-| upgrade            | Upgrade tests for specific versions of the Strimzi.                                |
-| smoke              | Execute all smoke tests                                                            |
-| flaky              | Execute all flaky tests (tests, which are failing from time to time)               |
-| scalability        | Execute scalability tests                                                          |
-| specific           | Specific tests, which cannot be easily added to other categories                   |
-| nodeport           | Execute tests which use external lister of type nodeport                           |
-| loadbalancer       | Execute tests which use external lister of type loadbalancer                       |
-| networkpolicies    | Execute tests that use Kafka with Network Policies                                |
-| prometheus         | Execute tests for Kafka with Prometheus                                            |
-| tracing            | Execute tests for Tracing                                                          |
-| helm               | Execute tests that use Helm for deploy cluster operator                           |
-| oauth              | Execute tests that use OAuth                                                      |
-| recovery           | Execute recovery tests                                                             |
-| connectoroperator  | Execute tests that deploy KafkaConnector resource                                 |
-| connect            | Execute tests that deploy KafkaConnect resource                                   |
-| mirrormaker        | Execute tests that deploy KafkaMirrorMaker resource                               |
-| mirrormaker2       | Execute tests that deploy KafkaMirrorMaker2 resource                              |
-| conneccomponents   | Execute tests that deploy KafkaConnect, KafkaMirrorMaker2, KafkaConnector resources |
-| bridge             | Execute tests that use Kafka Bridge                                               |
-| internalclients    | Execute tests that use internal (from the Pod) Kafka clients in tests                 |
-| externalclients    | Execute tests that use external (from code) Kafka clients in tests                |
-| olm                | Execute tests that test examples from Strimzi manifests                          |
-| metrics            | Execute tests where metrics are used                                               |
-| cruisecontrol      | Execute tests that deploy CruiseControl resource                                  |
-| rollingupdate      | Execute tests where is rolling update triggered                                    |
+| regression         |                 Regression tests, which contains all non-flaky tests.                 |
+| upgrade            |                  Upgrade tests for specific versions of the Strimzi.                  |
+| smoke              |                                Execute all smoke tests                                |
+| flaky              |         Execute all flaky tests (tests, which are failing from time to time)          |
+| scalability        |                               Execute scalability tests                               |
+| componentscaling   |                            Execute component scaling tests                            |
+| specific           |           Specific tests, which cannot be easily added to other categories            |
+| nodeport           |               Execute tests which use external lister of type nodeport                |
+| loadbalancer       |             Execute tests which use external lister of type loadbalancer              |
+| networkpolicies    |                  Execute tests that use Kafka with Network Policies                   |
+| prometheus         |                        Execute tests for Kafka with Prometheus                        |
+| tracing            |                               Execute tests for Tracing                               |
+| helm               |                Execute tests that use Helm for deploy cluster operator                |
+| oauth              |                             Execute tests that use OAuth                              |
+| recovery           |                                Execute recovery tests                                 |
+| connectoroperator  |                   Execute tests that deploy KafkaConnector resource                   |
+| connect            |                    Execute tests that deploy KafkaConnect resource                    |
+| mirrormaker        |                  Execute tests that deploy KafkaMirrorMaker resource                  |
+| mirrormaker2       |                 Execute tests that deploy KafkaMirrorMaker2 resource                  |
+| conneccomponents   |  Execute tests that deploy KafkaConnect, KafkaMirrorMaker2, KafkaConnector resources  |
+| bridge             |                          Execute tests that use Kafka Bridge                          |
+| internalclients    |         Execute tests that use internal (from the Pod) Kafka clients in tests         |
+| externalclients    |          Execute tests that use external (from code) Kafka clients in tests           |
+| olm                |                Execute tests that test examples from Strimzi manifests                |
+| metrics            |                         Execute tests where metrics are used                          |
+| cruisecontrol      |                   Execute tests that deploy CruiseControl resource                    |
+| rollingupdate      |                    Execute tests where is rolling update triggered                    |
 
 If your Kubernetes cluster doesn't support Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 

@@ -226,6 +226,11 @@ public interface Constants {
     String SCALABILITY = "scalability";
 
     /**
+     * Tag for tests containing scaling of particular component (scaling up and down)
+     */
+    String COMPONENT_SCALING = "componentscaling";
+
+    /**
      * Tag for tests, which are working only on specific environment and we usually don't want to execute them on all environments.
      */
     String SPECIFIC = "specific";
