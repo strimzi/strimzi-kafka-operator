@@ -102,11 +102,11 @@ kubectl apply -f <kafka_configuration_file>
 +
 --
 ifdef::Section[]
-* If you are using `cert-manager` with Kubernetes, apply the resources in the `/install/certmanager` directory.
+* If you are using `cert-manager` with Kubernetes, apply the resources in the `/install/drain-cleaner/certmanager` directory.
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f ./install/certmanager
+kubectl apply -f ./install/drain-cleaner/certmanager
 ----
 +
 The TLS certificates for the webhook are generated automatically and injected into the webhook configuration.
@@ -117,18 +117,18 @@ The TLS certificates for the webhook are generated automatically and injected in
 +
 Any certificates you add must be renewed before they expire. 
 +
-.. Apply the resources in the `/install/kubernetes` directory.
+.. Apply the resources in the `/install/drain-cleaner/kubernetes` directory.
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f ./install/kubernetes
+kubectl apply -f ./install/drain-cleaner/kubernetes
 ----
 endif::Section[]
 --
 +
-* To run the Drain Cleaner on OpenShift, apply the resources in the `/install/openshift` directory.
+* To run the Drain Cleaner on OpenShift, apply the resources in the `/install/drain-cleaner/openshift` directory.
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f ./install/openshift
+kubectl apply -f ./install/drain-cleaner/openshift
 ----
