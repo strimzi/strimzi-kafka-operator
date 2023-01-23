@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.operators.user;
 
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
@@ -139,7 +141,23 @@ public class UserScalabilityIsolatedST extends AbstractST {
                 .editOrNewKafka()
                     .withNewKafkaAuthorizationSimple()
                     .endKafkaAuthorizationSimple()
+                    .withResources(new ResourceRequirementsBuilder()
+                        .addToLimits("memory", new Quantity("2Gi"))
+                        .addToRequests("memory", new Quantity("2Gi"))
+                        .addToLimits("cpu", new Quantity("1"))
+                        .addToRequests("cpu", new Quantity("500m"))
+                        .build())
                 .endKafka()
+                .editEntityOperator()
+                    .editUserOperator()
+                        .withResources(new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("512Mi"))
+                            .addToRequests("memory", new Quantity("512Mi"))
+                            .addToLimits("cpu", new Quantity("0.5"))
+                            .addToRequests("cpu", new Quantity("0.2"))
+                            .build())
+                    .endUserOperator()
+                .endEntityOperator()
             .endSpec()
             .build(),
             KafkaTopicTemplates.topic(clusterName, topicName).build()
