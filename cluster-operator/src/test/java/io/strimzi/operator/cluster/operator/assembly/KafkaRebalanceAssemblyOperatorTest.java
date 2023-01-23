@@ -1422,7 +1422,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     // the resource moved from New to NotReady due to the error
                     assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME,
                             KafkaRebalanceState.NotReady, InvalidResourceException.class,
-                            "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
+                            "Kafka resource lacks 'cruiseControl' declaration");
                     checkpoint.flag();
                 })));
     }
@@ -1462,7 +1462,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 // the resource moved from New to NotReady due to the error
                 assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME,
                         KafkaRebalanceState.NotReady, InvalidResourceException.class,
-                        "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
+                        "Kafka resource lacks 'cruiseControl' declaration");
             })))
                 .compose(v -> {
                     try {

@@ -1149,13 +1149,11 @@ public class KafkaRebalanceAssemblyOperator
         String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String clusterNamespace = kafkaRebalance.getMetadata().getNamespace();
         if (clusterName == null) {
-
             String errorString = "Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance.";
             LOGGER.warnCr(reconciliation, errorString);
             KafkaRebalanceStatus status = new KafkaRebalanceStatus();
-            status.addCondition(StatusUtils.buildWarningCondition(CruiseControlIssues.clusterLabelMissing.getReason(), errorString));
             return updateStatus(reconciliation, kafkaRebalance, status,
-                    new InvalidResourceException(errorString)).mapEmpty();
+                    new InvalidResourceException(CruiseControlIssues.clusterLabelMissing.getMessage())).mapEmpty();
         }
 
         // Get associated Kafka cluster state
@@ -1171,21 +1169,18 @@ public class KafkaRebalanceAssemblyOperator
                     } else if (kafka.getStatus() == null
                             || kafka.getStatus().getConditions() == null
                             || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) {
-                        String errorString = "Kafka cluster is not Ready";
-                        LOGGER.warnCr(reconciliation, errorString);
+                        LOGGER.warnCr(reconciliation, "Kafka cluster is not Ready");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return updateStatus(reconciliation, kafkaRebalance, status,
-                                new RuntimeException(CruiseControlIssues.kafkaClusterNotReady.getReason())).mapEmpty();
+                                new RuntimeException(CruiseControlIssues.kafkaClusterNotReady.getMessage())).mapEmpty();
                     } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.get().getMatchLabels());
                         return Future.succeededFuture();
                     } else if (kafka.getSpec().getCruiseControl() == null) {
-                        String errorString = "Kafka resource lacks 'cruiseControl' declaration " + ": No deployed Cruise Control for doing a rebalance.";
-                        LOGGER.warnCr(reconciliation, errorString);
+                        LOGGER.warnCr(reconciliation, "Kafka resource lacks 'cruiseControl' declaration" + ": No deployed Cruise Control for doing a rebalance.");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
-                        status.addCondition(StatusUtils.buildWarningCondition(CruiseControlIssues.cruiseControlDisabled.getReason(), errorString));
                         return updateStatus(reconciliation, kafkaRebalance, status,
-                                new InvalidResourceException(errorString)).mapEmpty();
+                                new InvalidResourceException(CruiseControlIssues.cruiseControlDisabled.getMessage())).mapEmpty();
                     }
 
                     if (kafka.getSpec().getKafka().getStorage() instanceof JbodStorage) {
@@ -1403,31 +1398,31 @@ public class KafkaRebalanceAssemblyOperator
         /**
          * The Kafka cluster label is missing .
          */
-        clusterLabelMissing("Cluster Label missing"),
+        clusterLabelMissing("Resource lacks label '" + Labels.STRIMZI_CLUSTER_LABEL + "': No cluster related to a possible rebalance."),
 
         /**
          * Cruise Control was not declared in the Kafka Resource
          */
-        cruiseControlDisabled("Cruise Control disabled"),
+        cruiseControlDisabled("Kafka resource lacks 'cruiseControl' declaration"),
 
         /**
          * Kafka Cluster is not ready
          */
         kafkaClusterNotReady("Kafka cluster is not Ready");
 
-        public String getReason() {
-            return reason;
+        public String getMessage() {
+            return message;
         }
 
-        private final String reason;
+        private final String message;
 
-        CruiseControlIssues(String reason) {
-            this.reason = reason;
+        CruiseControlIssues(String message) {
+            this.message = message;
         }
 
         public static boolean checkForMatch(List<Condition> conditions) {
             for (CruiseControlIssues issue : CruiseControlIssues.values()) {
-                if (conditions.stream().anyMatch(condition -> issue.getReason().equals(condition.getReason()))) {
+                if (conditions.stream().anyMatch(condition -> issue.getMessage().equals(condition.getMessage()))) {
                     return true;
                 }
             }
