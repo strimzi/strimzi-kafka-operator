@@ -390,7 +390,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 is currently not rollable",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 cannot be updated right now.",
                 // Controller last, broker 1 never restarted
                 asList(0, 3, 4, 2));
         // TODO assert subsequent rolls
@@ -401,7 +401,7 @@ public class KafkaRollerTest {
         clearRestarted();
         doFailingRollingRestart(testContext, kafkaRoller,
                 singletonList(1),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 is currently not rollable",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-1 cannot be updated right now.",
                 // Controller last, broker 1 never restarted
                 emptyList());
     }
@@ -418,7 +418,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 is currently not rollable",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
                 // We expect all non-controller pods to be rolled
                 asList(0, 1, 3, 4));
         clearRestarted();
@@ -429,7 +429,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
                 singletonList(2),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 is currently not rollable",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
                 // We expect all non-controller pods to be rolled
                 emptyList());
     }
@@ -496,7 +496,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
             asList(0, 1, 2, 3, 4),
-            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to roll",
+            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to verify.",
             // We expect all non-controller pods to be rolled
             asList(0, 1, 4));
     }
@@ -756,8 +756,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
-            ForceableProblem problem = alterConfigsException.apply(podId);
+        protected void dynamicUpdateBrokerConfig(PodRef podRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
+            ForceableProblem problem = alterConfigsException.apply(podRef.getPodId());
             if (problem != null) {
                 throw problem;
             }

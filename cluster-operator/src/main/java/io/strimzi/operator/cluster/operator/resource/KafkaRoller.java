@@ -368,7 +368,7 @@ public class KafkaRoller {
                 } else {
                     if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        if (restartContext.forceRestart || !maybeDynamicUpdateBrokerConfig(podRef.getPodId(), restartContext)) {
+                        if (restartContext.forceRestart || !maybeDynamicUpdateBrokerConfig(podRef, restartContext)) {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", podRef);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                         } else {
@@ -435,17 +435,17 @@ public class KafkaRoller {
 
     /**
      * Dynamically update the broker config if the plan says we can.
-     * Return false if the broker was successfully updated dynamically.
+     * Return true if the broker was successfully updated dynamically.
      */
-    private boolean maybeDynamicUpdateBrokerConfig(int podId, RestartContext restartContext) throws InterruptedException {
+    private boolean maybeDynamicUpdateBrokerConfig(PodRef podRef, RestartContext restartContext) throws InterruptedException {
         boolean updatedDynamically;
 
         if (restartContext.needsReconfig) {
             try {
-                dynamicUpdateBrokerConfig(podId, allClient, restartContext.diff, restartContext.logDiff);
+                dynamicUpdateBrokerConfig(podRef, allClient, restartContext.diff, restartContext.logDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
-                LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", podId, e);
+                LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", podRef, e);
                 updatedDynamically = false;
             }
         } else {
@@ -568,14 +568,15 @@ public class KafkaRoller {
         );
     }
 
-    protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
+    protected void dynamicUpdateBrokerConfig(PodRef podRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff)
             throws ForceableProblem, InterruptedException {
         Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig = new HashMap<>(2);
+        var podId = podRef.podId;
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        LOGGER.debugCr(reconciliation, "Altering broker configuration {}", podId);
-        LOGGER.traceCr(reconciliation, "Altering broker configuration {} with {}", podId, updatedConfig);
+        LOGGER.debugCr(reconciliation, "Altering broker configuration {}", podRef);
+        LOGGER.traceCr(reconciliation, "Altering broker configuration {} with {}", podRef, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
@@ -587,17 +588,17 @@ public class KafkaRoller {
             });
         await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.errorCr(reconciliation, "Error performing dynamic logging update for pod {}", podId, error);
-                return new ForceableProblem("Error performing dynamic logging update for pod " + podId, error);
+                LOGGER.errorCr(reconciliation, "Error performing dynamic logging update for pod {}", podRef, error);
+                return new ForceableProblem("Error performing dynamic logging update for pod " + podRef, error);
             });
 
-        LOGGER.infoCr(reconciliation, "Dynamic reconfiguration for broker {} was successful.", podId);
+        LOGGER.infoCr(reconciliation, "Dynamic reconfiguration for broker {} was successful.", podRef);
     }
 
     private KafkaBrokerLoggingConfigurationDiff logging(PodRef podRef)
             throws ForceableProblem, InterruptedException {
         Config brokerLogging = brokerLogging(podRef.getPodId());
-        LOGGER.traceCr(reconciliation, "Broker {}: logging description {}", podRef, brokerLogging);
+        LOGGER.traceCr(reconciliation, "Pod {}: logging description {}", podRef, brokerLogging);
         return new KafkaBrokerLoggingConfigurationDiff(reconciliation, brokerLogging, kafkaLogging);
     }
 
