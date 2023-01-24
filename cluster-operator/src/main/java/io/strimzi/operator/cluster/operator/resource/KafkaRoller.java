@@ -620,7 +620,11 @@ public class KafkaRoller {
 
         @Override
         public String toString() {
-            var name = getClass().getSimpleName();
+            /**
+             * This is a static nested class, so we want to prevent the Outer$Nested
+             * name returned by getSimpleName()
+             */
+            var name = "ForeseeableProblem";
             var message = getMessage();
             return ( message != null) ? (name + ": " + message) : name;
         }
