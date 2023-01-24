@@ -439,7 +439,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
-                noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForeseeableProblem("could not get config exception") : null,
+                noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, 2);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -453,7 +453,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
             noException(), null,
-            noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForeseeableProblem("could not get config exception") : null,
+            noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, controller);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -466,7 +466,7 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
-                noException(), podId -> new KafkaRoller.ForeseeableProblem("could not get alter exception"), noException(),
+                noException(), podId -> new KafkaRoller.ForceableProblem("could not get alter exception"), noException(),
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, 2);
         // The algorithm should carry on rolling the pods
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -496,7 +496,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
             asList(0, 1, 2, 3, 4),
-            KafkaRoller.ForeseeableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to verify",
+            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to verify",
             // We expect all non-controller pods to be rolled
             asList(0, 1, 4));
     }
@@ -628,8 +628,8 @@ public class KafkaRollerTest {
         private final Throwable acCloseException;
         private final Function<Integer, Future<Boolean>> canRollFn;
         private final Function<Integer, Throwable> controllerException;
-        private final Function<Integer, ForeseeableProblem> alterConfigsException;
-        private final Function<Integer, ForeseeableProblem> getConfigsException;
+        private final Function<Integer, ForceableProblem> alterConfigsException;
+        private final Function<Integer, ForceableProblem> getConfigsException;
         private boolean delegateControllerCall;
         private boolean delegateAdminClientCall;
         private final int[] controllers;
@@ -641,8 +641,8 @@ public class KafkaRollerTest {
                                    Function<List<Integer>, RuntimeException> acOpenException,
                                    Throwable acCloseException,
                                    Function<Integer, Throwable> controllerException,
-                                   Function<Integer, ForeseeableProblem> alterConfigsException,
-                                   Function<Integer, ForeseeableProblem> getConfigsException,
+                                   Function<Integer, ForceableProblem> alterConfigsException,
+                                   Function<Integer, ForceableProblem> getConfigsException,
                                    Function<Integer, Future<Boolean>> canRollFn,
                                    boolean delegateControllerCall,
                                    AdminClientProvider adminClientProvider,
@@ -679,13 +679,13 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(List<Integer> bootstrapBrokers, boolean b) throws ForeseeableProblem, FatalProblem {
+        protected Admin adminClient(List<Integer> bootstrapBrokers, boolean b) throws ForceableProblem, FatalProblem {
             if (delegateAdminClientCall) {
                 return super.adminClient(bootstrapBrokers, b);
             }
             RuntimeException exception = acOpenException.apply(bootstrapBrokers);
             if (exception != null) {
-                throw new ForeseeableProblem("An error while try to create the admin client", exception);
+                throw new ForceableProblem("An error while try to create the admin client", exception);
             }
             Admin ac = mock(AdminClient.class, invocation -> {
                 if ("close".equals(invocation.getMethod().getName())) {
@@ -729,7 +729,7 @@ public class KafkaRollerTest {
             }
             Throwable throwable = controllerException.apply(podRef.getPodId());
             if (throwable != null) {
-                throw new ForeseeableProblem("An error while trying to determine the cluster controller from pod " + podRef.getPodName(), throwable);
+                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podRef.getPodName(), throwable);
             } else {
                 int index;
                 if (controllerCall < controllers.length) {
@@ -743,8 +743,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(PodRef podRef) throws ForeseeableProblem {
-            ForeseeableProblem problem = getConfigsException.apply(podRef.getPodId());
+        protected Config brokerConfig(PodRef podRef) throws ForceableProblem {
+            ForceableProblem problem = getConfigsException.apply(podRef.getPodId());
             if (problem != null) {
                 throw problem;
             } else return new Config(emptyList());
@@ -756,8 +756,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(PodRef podRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForeseeableProblem {
-            ForeseeableProblem problem = alterConfigsException.apply(podRef.getPodId());
+        protected void dynamicUpdateBrokerConfig(PodRef podRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
+            ForceableProblem problem = alterConfigsException.apply(podRef.getPodId());
             if (problem != null) {
                 throw problem;
             }
