@@ -18,6 +18,27 @@
 * Add liveness and readiness probes specifically for nodes running in KRaft combined mode
 * Upgrade HTTP bridge to latest 0.24.0 release
 
+### Known issues
+
+* The TLS passthrough feature of the Ingress-NGINX Controller for Kubernetes is not compatible with some new TLS features supported by Java 17 such as the _session tickets extension_.
+  If you use `type: ingress` listener with enabled mTLS authentication, we recommend you to test if your clients are affected or not.
+  If needed, you can also disable the _session ticket extension_ in the Kafka brokers in your `Kafka` custom resource by setting the `jdk.tls.server.enableSessionTicketExtension` Java system property to `false`:
+  ```yaml
+  apiVersion: kafka.strimzi.io/v1beta2
+  kind: Kafka
+  metadata:
+    # ...
+  spec:
+    # ...
+    kafka:
+      jvmOptions:
+        javaSystemProperties:
+          - name: jdk.tls.server.enableSessionTicketExtension
+            value: "false"
+    # ...
+  ```
+  For more details, see [kubernetes/ingress-nginx#9540](https://github.com/kubernetes/ingress-nginx/issues/9540).
+
 ### Changes, deprecations and removals
 
 * The `UseStrimziPodSet` feature gate will move to GA in Strimzi 0.35.
