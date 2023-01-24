@@ -217,7 +217,7 @@ public class KafkaRoller {
         this.podNeedsRestart = podNeedsRestart;
         Promise<Void> result = Promise.promise();
         singleExecutor.submit(() -> {
-            LOGGER.infoCr(reconciliation, "Verifying cluster pods are up-to-date.");
+            LOGGER.debugCr(reconciliation, "Verifying cluster pods are up-to-date.");
             List<PodRef> pods = new ArrayList<>(podList.size());
 
             for (int podIndex = 0; podIndex < podList.size(); podIndex++) {
