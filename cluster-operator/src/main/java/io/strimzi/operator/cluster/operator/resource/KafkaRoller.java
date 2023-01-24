@@ -326,7 +326,7 @@ public class KafkaRoller {
                     long delay1 = ctx.backOff.delayMs();
                     if (e instanceof ForceableProblem) {
                         LOGGER.debugCr(reconciliation, "Will temporarily skip verifying pod {} is up-to-date due to {}, retrying after at least {}ms",
-                                podRef, e, delay1);
+                                podRef, e.getMessage(), delay1);
                     } else {
                         LOGGER.infoCr(reconciliation, "Will temporarily skip verifying pod {} is up-to-date due to {}, retrying after at least {}ms",
                                 podRef, e, delay1);
@@ -368,7 +368,7 @@ public class KafkaRoller {
             checkReconfigurability(podRef, pod, restartContext);
             if (restartContext.forceRestart || restartContext.needsRestart || restartContext.needsReconfig) {
                 if (!restartContext.forceRestart && deferController(podRef, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Will favor trying to verify non-controller pods first.", podRef);
+                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Will favor trying to verify non-controller pods first", podRef);
                     throw new ForceableProblem("Pod " + podRef.getPodName() + " is currently the controller and there are other pods still to verify.");
                 } else {
                     if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
