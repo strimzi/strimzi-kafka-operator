@@ -1,3 +1,4 @@
+{{- if .Values.rbac.create -}}
 {{- $root := . -}}
 {{- range append .Values.watchNamespaces .Release.Namespace }}
 ---
@@ -22,10 +23,11 @@ metadata:
     heritage: {{ $root.Release.Service }}
 subjects:
   - kind: ServiceAccount
-    name: strimzi-cluster-operator
+    name: {{ $root.Values.serviceAccount }}
     namespace: {{ $root.Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: strimzi-cluster-operator-namespaced
   apiGroup: rbac.authorization.k8s.io
+{{- end }}
 {{- end }}

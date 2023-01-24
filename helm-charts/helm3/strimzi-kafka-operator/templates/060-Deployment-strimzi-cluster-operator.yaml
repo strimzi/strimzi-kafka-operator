@@ -28,7 +28,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: strimzi-cluster-operator
+      serviceAccountName: {{ .Values.serviceAccount }}
       {{- if .Values.image.imagePullSecrets }}
       imagePullSecrets:
         - name: {{ .Values.image.imagePullSecrets }}
@@ -173,5 +173,3 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-  strategy:
-    type: Recreate

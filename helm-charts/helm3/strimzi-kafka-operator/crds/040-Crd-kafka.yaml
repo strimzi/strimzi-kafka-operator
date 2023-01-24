@@ -86,7 +86,7 @@ spec:
                               - nodeport
                               - ingress
                               - cluster-ip
-                            description: "Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrought.\n* `cluster-ip` type uses ClusterIP service with per broker port number. Can be exposed over Nginx Ingress Controller with tcp port config.\n"
+                            description: "Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. \n\n* `internal` type exposes Kafka internally only within the Kubernetes cluster.\n* `route` type uses OpenShift Routes to expose Kafka.\n* `loadbalancer` type uses LoadBalancer type services to expose Kafka.\n* `nodeport` type uses NodePort type services to expose Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka with TLS passthrough.\n* `cluster-ip` type uses a per-broker `ClusterIP` service.\n"
                           tls:
                             type: boolean
                             description: Enables TLS encryption on the listener. This is a required property.
@@ -364,7 +364,7 @@ spec:
                                 description: Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
                               class:
                                 type: string
-                                description: "Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used."
+                                description: "Configures a specific class for `Ingress` and `LoadBalancer` that defines which controller will be used. This field can only be used with `ingress` and `loadbalancer` type listeners. If not specified, the default controller is used. For an `ingress` listener, set the `ingressClassName` property in the `Ingress` resources. For a `loadbalancer` listener, set the `loadBalancerClass` property  in the `Service` resources."
                               finalizers:
                                 type: array
                                 items:
@@ -396,7 +396,7 @@ spec:
                                   This field is used to select the preferred address type, which is checked first. If no address is found for this address type, the other types are checked in the default order. This field can only be used with `nodeport` type listener.
                               useServiceDnsDomain:
                                 type: boolean
-                                description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` type listener."
+                                description: "Configures whether the Kubernetes service DNS domain should be used or not. If set to `true`, the generated addresses will contain the service DNS domain suffix (by default `.cluster.local`, can be configured using environment variable `KUBERNETES_SERVICE_DNS_DOMAIN`). Defaults to `false`.This field can be used only with `internal` and `cluster-ip` type listeners."
                             description: Additional listener configuration.
                           networkPolicyPeers:
                             type: array
@@ -460,7 +460,7 @@ spec:
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
-                      description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers,node.id, process.roles, controller. (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, sasl.server.max.receive.size,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas,controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
+                      description: "Kafka broker config properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers,node.id, process.roles, controller. (with the exception of: zookeeper.connection.timeout.ms, sasl.server.max.receive.size,ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, ssl.secure.random.implementation,cruise.control.metrics.topic.num.partitions, cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries, cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas,controller.quorum.election.backoff.max.ms, controller.quorum.election.timeout.ms, controller.quorum.fetch.timeout.ms)."
                     storage:
                       type: object
                       properties:
@@ -3743,6 +3743,54 @@ spec:
                                   description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                               description: Metadata applied to the resource.
                           description: Template for the Entity Operator service account.
+                        entityOperatorRole:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                                annotations:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Metadata applied to the resource.
+                          description: Template for the Entity Operator Role.
+                        topicOperatorRoleBinding:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                                annotations:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Metadata applied to the resource.
+                          description: Template for the Entity Topic Operator RoleBinding.
+                        userOperatorRoleBinding:
+                          type: object
+                          properties:
+                            metadata:
+                              type: object
+                              properties:
+                                labels:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                                annotations:
+                                  x-kubernetes-preserve-unknown-fields: true
+                                  type: object
+                                  description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Metadata applied to the resource.
+                          description: Template for the Entity Topic Operator RoleBinding.
                       description: Template for Entity Operator resources. The template allows users to specify how a `Deployment` and `Pod` is generated.
                   description: Configuration of the Entity Operator.
                 clusterCa:
@@ -5400,7 +5448,7 @@ spec:
                                   type: object
                                   description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                               description: Metadata applied to the resource.
-                          description: Template for the JMX Trans service account.
+                          description: Template for the JmxTrans service account.
                       description: Template for JmxTrans resources.
                   required:
                     - outputDefinitions
@@ -5452,6 +5500,12 @@ spec:
                                   type: object
                                   description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                               description: Metadata applied to the resource.
+                            deploymentStrategy:
+                              type: string
+                              enum:
+                                - RollingUpdate
+                                - Recreate
+                              description: Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
                           description: Template for Kafka Exporter `Deployment`.
                         pod:
                           type: object
