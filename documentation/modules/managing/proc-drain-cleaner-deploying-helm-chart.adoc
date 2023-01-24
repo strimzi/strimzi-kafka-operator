@@ -25,7 +25,7 @@ If you don't want to use the default configuration, you can override the default
 You specify values in the format `--set key=value[,key=value]`.
 The `values.yaml` file supplied with the Helm deployment files describes the available configuration parameters, including those shown in the following table. 
 
-As you can see, you can override the default image settings.
+You can override the default image settings.
 You can also set `secret.create` as `true` and add your own TLS certificates instead of using `cert-manager` to generate the certificates. 
 For information on using OpenSSL to generate certificates, see xref:proc-drain-cleaner-certs-{context}[].
 
