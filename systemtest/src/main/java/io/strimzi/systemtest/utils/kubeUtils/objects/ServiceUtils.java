@@ -57,7 +57,7 @@ public class ServiceUtils {
     public static void waitForServiceRecovery(String namespaceName, String serviceName, String serviceUid) {
         LOGGER.info("Waiting when Service {}/{}-{} will be recovered", namespaceName, serviceName, serviceUid);
 
-        TestUtils.waitFor("service " + serviceName + "/" + namespaceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
+        TestUtils.waitFor("Service " + serviceName + "/" + namespaceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getServiceUid(serviceName).equals(serviceUid));
         LOGGER.info("Service {}/{} is recovered", namespaceName, serviceName);
     }
