@@ -626,7 +626,7 @@ public class KafkaRoller {
              */
             var name = "ForeseeableProblem";
             var message = getMessage();
-            return ( message != null) ? (name + ": " + message) : name;
+            return (message != null) ? (name + ": " + message) : name;
         }
     }
 
