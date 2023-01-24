@@ -324,13 +324,8 @@ public class KafkaRoller {
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();
-                    if (e instanceof ForeseeableProblem) {
-                        LOGGER.debugCr(reconciliation, "Will temporarily skip verifying pod {} is up-to-date due to {}, retrying after at least {}ms",
-                                podRef, e.getMessage(), delay1);
-                    } else {
-                        LOGGER.infoCr(reconciliation, "Will temporarily skip verifying pod {} is up-to-date due to {}, retrying after at least {}ms",
-                                podRef, e, delay1);
-                    }
+                    LOGGER.infoCr(reconciliation, "Will temporarily skip verifying pod {} is up-to-date due to {}, retrying after at least {}ms",
+                            podRef, e, delay1);
                     schedule(podRef, delay1, TimeUnit.MILLISECONDS);
                 }
             }
@@ -622,6 +617,13 @@ public class KafkaRoller {
             super(msg, cause);
             this.forceNow = forceNow;
         }
+
+        @Override
+        public String toString() {
+            var name = getClass().getSimpleName();
+            var message = getMessage();
+            return ( message != null) ? (name + ": " + message) : name;
+        }
     }
 
     /** Exceptions which we're prepared to ignore in the final attempt */
@@ -869,9 +871,7 @@ public class KafkaRoller {
 
         @Override
         public String toString() {
-            return "{" +
-                    podName +
-                    '}';
+            return podName;
         }
 
         @Override
