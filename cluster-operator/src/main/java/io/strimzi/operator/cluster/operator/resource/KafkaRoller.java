@@ -368,8 +368,8 @@ public class KafkaRoller {
             checkReconfigurability(podRef, pod, restartContext);
             if (restartContext.forceRestart || restartContext.needsRestart || restartContext.needsReconfig) {
                 if (!restartContext.forceRestart && deferController(podRef, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Will favor trying to verify non-controller pods first", podRef);
-                    throw new ForceableProblem("Pod " + podRef.getPodName() + " is currently the controller and there are other pods still to verify.");
+                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Verify non-controller pods first will be prioritized.", podRef);
+                    throw new ForceableProblem("Pod " + podRef.getPodName() + " is currently the controller and there are other pods still to verify");
                 } else {
                     if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
