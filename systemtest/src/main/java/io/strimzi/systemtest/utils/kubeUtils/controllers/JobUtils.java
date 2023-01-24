@@ -42,10 +42,10 @@ public class JobUtils {
      * @param name The name of the Job
      */
     public static void waitForJobDeletion(final String namespaceName, String name) {
-        LOGGER.debug("Waiting for ReplicaSet of Deployment {} deletion", name);
-        TestUtils.waitFor("ReplicaSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
+        LOGGER.debug("Waiting for Job {}/{} deletion", namespaceName, name);
+        TestUtils.waitFor("Job " + namespaceName + "/" + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, "job-name", name).isEmpty());
-        LOGGER.debug("Job {} was deleted", name);
+        LOGGER.debug("Job {}/{} was deleted", namespaceName, name);
     }
 
     /**
@@ -75,7 +75,7 @@ public class JobUtils {
      * @param timeout timeout in ms after which we assume that job failed
      */
     public static void waitForJobFailure(String jobName, String namespace, long timeout) {
-        LOGGER.info("Waiting for job: {} will be in error state", jobName);
+        LOGGER.info("Waiting for Job {}/{} will be in error state", namespace, jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
             () -> kubeClient().checkFailedJobStatus(namespace, jobName, 1));
     }
@@ -86,7 +86,7 @@ public class JobUtils {
      * @param namespace namespace
      */
     public static boolean waitForJobRunning(String jobName, String namespace) {
-        LOGGER.info("Waiting for job: {} will be in active state", jobName);
+        LOGGER.info("Waiting for Job {}/{} will be in active state", namespace, jobName);
         TestUtils.waitFor("job active", Constants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForResourceReadiness(Constants.JOB),
             () -> {
                 JobStatus jb = kubeClient().namespace(namespace).getJobStatus(jobName);

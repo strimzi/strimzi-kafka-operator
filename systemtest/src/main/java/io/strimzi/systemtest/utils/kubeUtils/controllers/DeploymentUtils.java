@@ -77,7 +77,7 @@ public class DeploymentUtils {
         TestUtils.waitFor("stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 if (!DeploymentUtils.depHasRolled(namespaceName, deploymentName, pods)) {
-                    LOGGER.info("{} pods not rolling waiting, remaining seconds for stability {}", pods.toString(),
+                    LOGGER.info("{}/{} pods not rolling waiting, remaining seconds for stability {}", namespaceName, pods.toString(),
                         Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
                 } else {
@@ -106,16 +106,16 @@ public class DeploymentUtils {
      * @return true when the pods for Deployment are recreated
      */
     public static boolean depHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
-        LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
+        LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
         Map<String, String> map = PodUtils.podSnapshot(namespaceName, kubeClient(namespaceName).getDeployment(namespaceName, name).getSpec().getSelector());
-        LOGGER.debug("Current  snapshot: {}", new TreeMap<>(map));
+        LOGGER.debug("Current  snapshot: {}/{}", namespaceName, new TreeMap<>(map));
         int current = map.size();
         map.keySet().retainAll(snapshot.keySet());
         if (current == snapshot.size() && map.isEmpty()) {
             LOGGER.debug("All pods seem to have rolled");
             return true;
         } else {
-            LOGGER.debug("Some pods still need to roll: {}", map);
+            LOGGER.debug("Some pods still need to roll: {}/{}", namespaceName, map);
             return false;
         }
     }
@@ -132,13 +132,13 @@ public class DeploymentUtils {
         Map<String, String> newDepSnapshot = waitTillDepHasRolled(namespaceName, name, snapshot);
         waitForDeploymentAndPodsReady(namespaceName, name, expectedPods);
 
-        LOGGER.info("Deployment {} rolling update finished", name);
+        LOGGER.info("Deployment {}/{} rolling update finished", namespaceName, name);
         return newDepSnapshot;
     }
 
     public static Map<String, String> waitTillDepHasRolled(String namespaceName, String deploymentName, Map<String, String> snapshot) {
-        LOGGER.info("Waiting for Deployment {} rolling update", deploymentName);
-        TestUtils.waitFor("Deployment " + deploymentName + " rolling update in namespace:" + namespaceName,
+        LOGGER.info("Waiting for Deployment {}/{} rolling update", namespaceName, deploymentName);
+        TestUtils.waitFor("Deployment " + namespaceName + "/" + deploymentName + " rolling update",
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()),
                 () -> depHasRolled(namespaceName, deploymentName, snapshot));
 
@@ -150,21 +150,21 @@ public class DeploymentUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentRecovery(String namespaceName, String name, String deploymentUid) {
-        LOGGER.info("Waiting for Deployment {}-{} recovery in namespace {}", name, deploymentUid, namespaceName);
-        TestUtils.waitFor("deployment " + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
+        LOGGER.info("Waiting for Deployment {}/{}-{} recovery", namespaceName, name, deploymentUid);
+        TestUtils.waitFor("deployment " + namespaceName + "/" + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getDeploymentUid(namespaceName, name).equals(deploymentUid));
-        LOGGER.info("Deployment {} was recovered", name);
+        LOGGER.info("Deployment {}/{} was recovered", namespaceName, name);
     }
 
     public static boolean waitForDeploymentReady(String namespaceName, String deploymentName) {
-        LOGGER.info("Wait for Deployment: {} will be ready", deploymentName);
+        LOGGER.info("Wait for Deployment: {}/{} will be ready", namespaceName, deploymentName);
 
-        TestUtils.waitFor(String.format("Wait for Deployment: %s will be ready", deploymentName),
+        TestUtils.waitFor(String.format("Deployment %s#%s will be ready", namespaceName, deploymentName),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getDeploymentStatus(namespaceName, deploymentName),
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient().getDeployment(namespaceName, deploymentName), namespaceName));
 
-        LOGGER.info("Deployment: {} is ready", deploymentName);
+        LOGGER.info("Deployment {}/{} is ready", namespaceName, deploymentName);
         return true;
     }
 
@@ -177,10 +177,10 @@ public class DeploymentUtils {
     public static boolean waitForDeploymentAndPodsReady(String namespaceName, String deploymentName, int expectPods) {
         waitForDeploymentReady(namespaceName, deploymentName);
 
-        LOGGER.info("Waiting for {} Pod(s) of Deployment {} to be ready", expectPods, deploymentName);
+        LOGGER.info("Waiting for {} Pod(s) of Deployment {}/{} to be ready", expectPods, namespaceName, deploymentName);
         PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, deploymentName), expectPods, true,
             () -> DeploymentUtils.logCurrentDeploymentStatus(kubeClient(namespaceName).getDeployment(namespaceName, deploymentName), namespaceName));
-        LOGGER.info("Deployment {} is ready", deploymentName);
+        LOGGER.info("Deployment {}/{} is ready", namespaceName, deploymentName);
         return true;
     }
 
@@ -190,17 +190,17 @@ public class DeploymentUtils {
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentDeletion(String namespaceName, String name) {
-        LOGGER.debug("Waiting for Deployment {} deletion", name);
-        TestUtils.waitFor("Deployment " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
+        LOGGER.debug("Waiting for Deployment {}/{} deletion", namespaceName, name);
+        TestUtils.waitFor("Deployment " + namespaceName + "/" + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
             () -> {
                 if (kubeClient(namespaceName).getDeployment(namespaceName, name) == null) {
                     return true;
                 } else {
-                    LOGGER.warn("Deployment {} is not deleted yet! Triggering force delete by cmd client!", name);
+                    LOGGER.warn("Deployment {}/{} is not deleted yet! Triggering force delete by cmd client!", namespaceName, name);
                     cmdKubeClient(namespaceName).deleteByName(Constants.DEPLOYMENT, name);
                     return false;
                 }
             });
-        LOGGER.debug("Deployment {} was deleted", name);
+        LOGGER.debug("Deployment {}/{} was deleted", namespaceName, name);
     }
 }

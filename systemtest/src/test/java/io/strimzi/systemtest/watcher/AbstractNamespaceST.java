@@ -43,7 +43,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
     void checkKafkaInDiffNamespaceThanCO(String clusterName, String namespace) {
         String previousNamespace = cluster.setNamespace(namespace);
-        LOGGER.info("Check if Kafka Cluster {} in namespace {}", clusterName, namespace);
+        LOGGER.info("Check if Kafka {}/{} is READY", namespace, clusterName);
 
         KafkaUtils.waitForKafkaReady(namespace, clusterName);
 
@@ -58,7 +58,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetName, 1, 1).build());
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(MAIN_NAMESPACE_CLUSTER_NAME, kafkaSourceName, kafkaTargetName, "my-group", 1, false).build());
 
-        LOGGER.info("Waiting for creation {} in namespace {}", MAIN_NAMESPACE_CLUSTER_NAME + "-mirror-maker", SECOND_NAMESPACE);
+        LOGGER.info("Waiting for creation {}/{}", SECOND_NAMESPACE, MAIN_NAMESPACE_CLUSTER_NAME + "-mirror-maker");
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(SECOND_NAMESPACE, MAIN_NAMESPACE_CLUSTER_NAME);
         cluster.setNamespace(previousNamespace);
     }

@@ -39,19 +39,19 @@ public class SecretUtils {
     private SecretUtils() { }
 
     public static void waitForSecretReady(String namespaceName, String secretName, Runnable onTimeout) {
-        LOGGER.info("Waiting for Secret {}", secretName);
+        LOGGER.info("Waiting for Secret {}/{}", namespaceName, secretName);
         TestUtils.waitFor("Expected secret " + secretName + " exists", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) != null,
             onTimeout);
-        LOGGER.info("Secret {} created", secretName);
+        LOGGER.info("Secret {}/{} created", namespaceName, secretName);
     }
 
     public static void waitForSecretDeletion(final String namespaceName, String secretName, Runnable onTimeout) {
-        LOGGER.info("Waiting for Secret deletion {}", secretName);
-        TestUtils.waitFor("Expected secret " + secretName + " deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+        LOGGER.info("Waiting for Secret {}/{} deletion", namespaceName, secretName);
+        TestUtils.waitFor("secret " + namespaceName + "/" + secretName + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) == null,
             onTimeout);
-        LOGGER.info("Secret {} deleted", secretName);
+        LOGGER.info("Secret {}/{} deleted", namespaceName, secretName);
     }
 
     public static void waitForSecretDeletion(final String namespaceName, String secretName) {
@@ -143,14 +143,14 @@ public class SecretUtils {
     }
 
     public static void waitForCertToChange(String namespaceName, String originalCert, String secretName) {
-        LOGGER.info("Waiting for Secret {} certificate change", secretName);
-        TestUtils.waitFor("Cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        LOGGER.info("Waiting for Secret {}/{} certificate change", namespaceName, secretName);
+        TestUtils.waitFor("cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
                 boolean changed = !originalCert.equals(currentCert);
                 if (changed) {
-                    LOGGER.info("Certificate in Secret {} has changed, was {}, is now {}", secretName, originalCert, currentCert);
+                    LOGGER.info("Certificate in Secret {}/{} has changed, was {}, is now {}", namespaceName, secretName, originalCert, currentCert);
                 }
                 return changed;
             } else {
@@ -162,11 +162,11 @@ public class SecretUtils {
     public static void deleteSecretWithWait(String secretName, String namespace) {
         kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
 
-        LOGGER.info("Waiting for Secret: {} to be deleted", secretName);
-        TestUtils.waitFor(String.format("Deletion of secret: %s", secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+        LOGGER.info("Waiting for Secret {}/{} to be deleted", namespace, secretName);
+        TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespace, secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> kubeClient().getSecret(secretName) == null);
 
-        LOGGER.info("Secret: {} successfully deleted", secretName);
+        LOGGER.info("Secret {}/{} successfully deleted", namespace, secretName);
     }
 
     public static X509Certificate getCertificateFromSecret(Secret secret, String dataKey) {
@@ -183,16 +183,16 @@ public class SecretUtils {
     }
 
     public static void waitForUserPasswordChange(String namespaceName, String secretName, String expectedEncodedPassword) {
-        LOGGER.info("Waiting for user password will be changed to {} in secret: {}", expectedEncodedPassword, secretName);
-        TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s", expectedEncodedPassword, secretName),
+        LOGGER.info("Waiting for user password will be changed to {} in secret {}/{}", expectedEncodedPassword, namespaceName, secretName);
+        TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s(%s)", expectedEncodedPassword, namespaceName, secretName),
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
     }
 
-    public static String annotateSecret(String namespaceName, String resourceName, String annotationKey, String annotationValue) {
-        LOGGER.info("Annotating Secret:{} with annotation {}={}", resourceName, annotationKey, annotationValue);
+    public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
+        LOGGER.info("Annotating Secret {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "secret", resourceName, annotationKey + "=" + annotationValue)
+                .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
     }

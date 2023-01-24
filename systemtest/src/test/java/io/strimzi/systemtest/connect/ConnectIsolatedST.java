@@ -406,8 +406,6 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
-        LOGGER.info("Running kafkaConnectScaleUP {} in namespace", namespaceName);
-
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1).build());
 
         String deploymentName = KafkaConnectResources.deploymentName(clusterName);
