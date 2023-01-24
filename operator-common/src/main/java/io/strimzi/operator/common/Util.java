@@ -77,6 +77,11 @@ public class Util {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
     /**
+     * Length of a hash stub. One example usage is when generating an annotation with a certificate short thumbprint.
+     */
+    public static final int HASH_STUB_LENGTH = 8;
+
+    /**
      * Executes blocking code asynchronously
      *
      * @param vertx     Vert.x instance
@@ -552,16 +557,24 @@ public class Util {
      * Gets the first 8 characters from a SHA-1 hash of the provided byte array
      *
      * @param   toBeHashed  Byte array for which the hash will be returned
-     *
      * @return              First 8 characters of the SHA-1 hash
      */
     public static String hashStub(byte[] toBeHashed)   {
+        byte[] digest = sha1Digest(toBeHashed);
+        return String.format("%040x", new BigInteger(1, digest)).substring(0, HASH_STUB_LENGTH);
+    }
+
+    /**
+     * Get a SHA-1 hash of the provided byte array
+     *
+     * @param toBeHashed    Byte array for which the hash will be returned
+     * @return              SHA-1 hash
+     */
+    public static byte[] sha1Digest(byte[] toBeHashed) {
         try {
             // This is used to generate unique identifier which is not used for security => using SHA-1 is ok
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            byte[] digest = sha1.digest(toBeHashed);
-
-            return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
+            return sha1.digest(toBeHashed);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to get SHA-1 hash", e);
         }

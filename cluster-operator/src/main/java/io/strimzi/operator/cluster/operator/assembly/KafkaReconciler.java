@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -149,6 +150,7 @@ public class KafkaReconciler {
     private String logging = "";
     private String loggingHash = "";
     private final Map<Integer, String> brokerConfigurationHash = new HashMap<>();
+    private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     @SuppressFBWarnings(value = "SS_SHOULD_BE_STATIC", justification = "Field cannot be static in inner class in Java 11")
     private final int sharedConfigurationId = -1; // "Fake" broker ID used to indicate hash stored for all brokers when shared configuration is used
 
@@ -725,13 +727,22 @@ public class KafkaReconciler {
                             .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaSecretName(reconciliation.name()),
                                     kafka.generateCertificatesSecret(clusterCa, clientsCa, listenerReconciliationResults.bootstrapDnsNames, listenerReconciliationResults.brokerDnsNames, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                             .compose(patchResult -> {
-                                if (patchResult instanceof ReconcileResult.Patched) {
-                                    // The secret is patched and some changes to the existing certificates actually occurred
-                                    existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                } else {
+                                if (patchResult != null) {
                                     existingCertsChanged = false;
+                                    if (patchResult instanceof ReconcileResult.Patched) {
+                                        // The secret is patched and some changes to the existing certificates actually occurred
+                                        existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                    }
+                                    IntStream.range(0, kafka.getReplicas())
+                                            .forEach(brokerId -> {
+                                                var podName = KafkaResources.kafkaPodName(reconciliation.name(), brokerId);
+                                                kafkaServerCertificateHash.put(
+                                                        brokerId,
+                                                        CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                                                Ca.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
+                                                        ));
+                                            });
                                 }
-
                                 return Future.succeededFuture();
                             });
                 });
@@ -794,12 +805,43 @@ public class KafkaReconciler {
     }
 
     /**
-     * Prepares annotations for Kafka pods which are known only in the KafkaAssemblyOperator level. These are later
-     * passed to KafkaCluster where there are used when creating the Pod definitions.
+     * Prepares annotations for Kafka pods within a StrimziPodSet which are known only in the KafkaAssemblyOperator level.
+     * These are later passed to KafkaCluster where there are used when creating the Pod definitions.
      *
-     * @return  Map with Pod annotations
+     * @param brokerId ID of the broker, the annotations of which are being prepared.
+     * @return Map with Pod annotations
      */
-    private Map<String, String> kafkaPodAnnotations(int brokerId, boolean storageAnnotation)    {
+    private Map<String, String> podSetPodAnnotations(int brokerId) {
+        Map<String, String> podAnnotations = commonKafkaPodAnnotations(brokerId);
+
+        // Annotation of broker certificate hash
+        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(brokerId));
+
+        return podAnnotations;
+    }
+
+    /**
+     * Prepares annotations for Kafka pods within a StatefulSet which are known only in the KafkaAssemblyOperator level.
+     * These are later passed to KafkaCluster where there are used when creating the Pod definitions.
+     *
+     * @return Map with Pod annotations
+     */
+    private Map<String, String> statefulSetPodAnnotations() {
+        Map<String, String> podAnnotations = commonKafkaPodAnnotations(sharedConfigurationId);
+
+        // Storage annotation on Pods is used only for StatefulSets
+        podAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(kafka.getStorage()));
+
+        return podAnnotations;
+    }
+
+    /**
+     * Prepares the Kafka pods' annotations that are common between StatefulSets and StrimziPodSets.
+     *
+     * @param brokerId ID of the broker, the annotations of which are being prepared.
+     * @return Map with Pod annotations
+     */
+    private Map<String, String> commonKafkaPodAnnotations(int brokerId) {
         Map<String, String> podAnnotations = new LinkedHashMap<>(9);
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clientsCa)));
@@ -814,11 +856,6 @@ public class KafkaReconciler {
             podAnnotations.put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, listenerReconciliationResults.customListenerCertificateThumbprints.toString());
         }
 
-        // Storage annotation on Pods is used only for StatefulSets
-        if (storageAnnotation) {
-            podAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(kafka.getStorage()));
-        }
-
         return podAnnotations;
     }
 
@@ -830,7 +867,7 @@ public class KafkaReconciler {
     protected Future<Void> statefulSet() {
         if (!featureGates.useStrimziPodSetsEnabled()) {
             // StatefulSets are enabled => make sure the StatefulSet exists with the right settings
-            StatefulSet kafkaSts = kafka.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, kafkaPodAnnotations(sharedConfigurationId, true));
+            StatefulSet kafkaSts = kafka.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, statefulSetPodAnnotations());
             return stsOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaSts)
                     .compose(rr -> {
                         statefulSetDiff = rr;
@@ -887,7 +924,7 @@ public class KafkaReconciler {
                 replicas = kafka.getReplicas();
             }
 
-            StrimziPodSet kafkaPodSet = kafka.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, brokerId -> kafkaPodAnnotations(brokerId, false));
+            StrimziPodSet kafkaPodSet = kafka.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
             return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaPodSet)
                     .compose(rr -> {
                         podSetDiff = rr;
@@ -1085,8 +1122,8 @@ public class KafkaReconciler {
             //   => we need to do scale-up
             LOGGER.infoCr(reconciliation, "Scaling Kafka up from {} to {} replicas", currentReplicas, kafka.getReplicas());
 
-            if (featureGates.useStrimziPodSetsEnabled())   {
-                StrimziPodSet kafkaPodSet = kafka.generatePodSet(kafka.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, brokerId -> kafkaPodAnnotations(brokerId, false));
+            if (featureGates.useStrimziPodSetsEnabled()) {
+                StrimziPodSet kafkaPodSet = kafka.generatePodSet(kafka.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
                 return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaPodSet)
                         .map((Void) null);
             } else {

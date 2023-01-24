@@ -67,6 +67,42 @@ import static java.util.Collections.singletonMap;
 @SuppressWarnings("checkstyle:CyclomaticComplexity")
 public abstract class Ca {
 
+    /**
+     * A certificate entry in a ConfigMap. Each entry contains an entry name and data.
+     */
+    public enum SecretEntry {
+        /**
+         * A 64-bit encoded X509 Cretificate
+         */
+        CRT(".crt"),
+        /**
+         * Entity private key
+         */
+        KEY(".key"),
+        /**
+         * Entity certificate and key as a P12 keystore
+         */
+        P12_KEYSTORE(".p12"),
+        /**
+         * P12 keystore password
+         */
+        P12_KEYSTORE_PASSWORD(".password");
+
+        final String suffix;
+
+        SecretEntry(String suffix) {
+            this.suffix = suffix;
+        }
+
+        /**
+         * @return The suffix of the entry name in the Secret
+         */
+        public String getSuffix() {
+            return suffix;
+        }
+
+    }
+
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
 
     private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile(
@@ -454,19 +490,14 @@ public abstract class Ca {
             Subject subject = subjectFn.apply(i);
 
             CertAndKey certAndKey;
-            if (secret.getData().get(podName + ".p12") != null &&
-                    !secret.getData().get(podName + ".p12").isEmpty() &&
-                    secret.getData().get(podName + ".password") != null &&
-                    !secret.getData().get(podName + ".password").isEmpty()) {
 
-                certAndKey = asCertAndKey(secret,
-                        podName + ".key", podName + ".crt",
-                        podName + ".p12", podName + ".password");
+            if (isNewVersion(secret, podName)) {
+                certAndKey = asCertAndKey(secret, podName);
             } else {
                 // coming from an older operator version, the secret exists but without keystore and password
                 certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
-                        Base64.getDecoder().decode(secret.getData().get(podName + ".key")),
-                        Base64.getDecoder().decode(secret.getData().get(podName + ".crt")));
+                        Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
+                        Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
             }
 
             List<String> reasons = new ArrayList<>(2);
@@ -510,6 +541,32 @@ public abstract class Ca {
         delete(reconciliation, brokerKeyStoreFile);
 
         return certs;
+    }
+
+    /**
+     * Check if this secret is coming from newer versions of the operator or older ones. Secrets from an older version don't have a keystore and password.
+     * @param secret Secret resource to check
+     * @param podName Name of the pod with certificate and key entries in the secret
+     * @return True if this secret was created by a newer version of the operator and false otherwise.
+     */
+    private boolean isNewVersion(Secret secret, String podName) {
+        String store = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE);
+        String password = secretEntryDataForPod(secret, podName, SecretEntry.P12_KEYSTORE_PASSWORD);
+
+        return store != null && !store.isEmpty() && password != null && !password.isEmpty();
+    }
+
+    /**
+     * Return given secret for pod as a CertAndKey object
+     * @param secret Kubernetes Secret
+     * @param podName Name of the pod
+     * @return CertAndKey instance
+     */
+    public static CertAndKey asCertAndKey(Secret secret, String podName) {
+        return asCertAndKey(secret, secretEntryNameForPod(podName, SecretEntry.KEY),
+                secretEntryNameForPod(podName, SecretEntry.CRT),
+                secretEntryNameForPod(podName, SecretEntry.P12_KEYSTORE),
+                secretEntryNameForPod(podName, SecretEntry.P12_KEYSTORE_PASSWORD));
     }
 
     /**
@@ -1186,5 +1243,26 @@ public abstract class Ca {
             return caCertGenerationAnno != null && Integer.parseInt(caCertGenerationAnno) != currentCaCertGeneration;
         }
         return false;
+    }
+
+    /**
+     * Retrieve a specific secret entry for pod from the given Secret.
+     * @param secret Kubernetes Secret containing desired entry
+     * @param podName Name of the pod which secret entry is looked for
+     * @param entry The SecretEntry type
+     * @return the data of the secret entry if found or null otherwise
+     */
+    public static String secretEntryDataForPod(Secret secret, String podName, SecretEntry entry) {
+        return secret.getData().get(secretEntryNameForPod(podName, entry));
+    }
+
+    /**
+     * Get the name of secret entry of given SecretEntry type for podName
+     * @param podName Name of the pod which secret entry is looked for
+     * @param entry The SecretEntry type
+     * @return the name of the secret entry
+     */
+    public static String secretEntryNameForPod(String podName, SecretEntry entry) {
+        return podName + entry.suffix;
     }
 }
