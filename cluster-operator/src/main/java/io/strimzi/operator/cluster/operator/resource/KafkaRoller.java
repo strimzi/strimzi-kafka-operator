@@ -300,7 +300,7 @@ public class KafkaRoller {
         RestartContext ctx = podToContext.computeIfAbsent(podRef.getPodName(),
             k -> new RestartContext(backoffSupplier));
         singleExecutor.schedule(() -> {
-            LOGGER.debugCr(reconciliation, "Considering updating pod {} after delay of {} {}", podRef, delay, unit);
+            LOGGER.debugCr(reconciliation, "Considering updating pod {} after a delay of {} {}", podRef, delay, unit);
             try {
                 restartIfNecessary(podRef, ctx);
                 ctx.promise.complete();
