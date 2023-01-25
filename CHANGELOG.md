@@ -2,6 +2,7 @@
 
 ## 0.34.0
 
+* Add support for Kafka 3.4.0 and remove support for Kafka 3.2.x
 * Use JDK HTTP client in the Kubernetes client instead of the OkHttp client
 * Add truststore configuration for HTTPS connections to OPA server
 
