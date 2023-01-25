@@ -199,7 +199,7 @@
   checksum: 736A129823B058DC10788D0893BDE47B6F39B9E4972F9EAC2D5C9E85E51E477344C6F1E1EBD126CE34D5FD430EB07E55FDD60D60CB541F1D48655C0EBC0A4778
   zookeeper: 3.6.3
   third-party-libs: 3.2.x
-  supported: true
+  supported: false
   default: false
 - version: 3.2.1
   format: 3.2
@@ -208,7 +208,7 @@
   checksum: 9B7EE73C9C088E2B1D15685CD1330546054BCF1F025F4825FADCCD5076763230229480D87900CA4A8317CD01A36BEC1082FCADFAB7D220A415787E1BA2E3C9CF
   zookeeper: 3.6.3
   third-party-libs: 3.2.x
-  supported: true
+  supported: false
   default: false
 - version: 3.2.3
   format: 3.2
@@ -217,7 +217,7 @@
   checksum: 4A57D69F8D3B5158DDCA9C64AC366C2975CA55F4C2EF02CD3B122E127016AD1A5AA1DE92E7E2F392FDC3B57AABE75D4631373D77A3A5958C28D911F4034A136F
   zookeeper: 3.6.3
   third-party-libs: 3.2.3 # Kafka 3.2.3 uses a separate 3rd party libs directory because it uses Jackson 2.13 rather than 2.12 used by previous Kafka 3.2.x versions
-  supported: true
+  supported: false
   default: false
 - version: 3.3.1
   format: 3.3
@@ -235,5 +235,14 @@
   checksum: F56657105A67F6195C1D4795B5FB4A00FC5E2F5CCE061D7F7A504063778187B325C6FBE51D7C59F57CD7EF323A37D4C2C780C27A5609A2008852CBFA944287B3
   zookeeper: 3.6.3
   third-party-libs: 3.3.x
+  supported: true
+  default: false
+- version: 3.4.0
+  format: 3.4
+  protocol: 3.4
+  url: https://home.apache.org/~ableegoldman/kafka-3.4.0-rc1/kafka_2.13-3.4.0.tgz
+  checksum: 46B8DD40DA25B431C9742053F136B315BE5723CB1B7851BC219249C88237AD413F2AF0D60C4DA722219104E2DD37427CEC36AEE6753E8DC2C602D24C01307AB0
+  zookeeper: 3.6.3
+  third-party-libs: 3.4.x
   supported: true
   default: true
