@@ -196,7 +196,8 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     KubernetesClient buildKubernetesClient(String masterUrl)    {
-        return new KubernetesClientBuilder().withConfig(new ConfigBuilder().withMasterUrl(masterUrl).build()).build();
+        // We have to disable HTTP2 => the mock webserver used here does not support HTTP2 without TLS
+        return new KubernetesClientBuilder().withConfig(new ConfigBuilder().withMasterUrl(masterUrl).withHttp2Disable().build()).build();
     }
 
     void startMockApi(Vertx vertx, String version, List<APIGroup> apis) throws InterruptedException, ExecutionException {

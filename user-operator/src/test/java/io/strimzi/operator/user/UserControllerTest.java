@@ -275,7 +275,8 @@ public class UserControllerTest {
                     10_000,
                     () -> {
                         KafkaUser u = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
-                        return u.getStatus() != null
+                        return u != null
+                                && u.getStatus() != null
                                 && u.getStatus().getConditions() != null
                                 && u.getStatus().getConditions().stream().filter(c -> "NotReady".equals(c.getType())).findFirst().orElse(null) != null;
                     }

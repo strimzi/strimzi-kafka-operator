@@ -75,13 +75,13 @@ public class MockKube2 {
     private void registerCrd(String apiVersion, String kind, Class<? extends KubernetesResource> crdClass, String crdPath)  {
         KubernetesDeserializer.registerCustomKind(apiVersion, kind, crdClass);
 
-        CustomResourceDefinition kafkaCrd = client
+        CustomResourceDefinition crd = client
                 .apiextensions().v1()
                 .customResourceDefinitions()
                 .load(crdPath)
                 .get();
 
-        client.apiextensions().v1().customResourceDefinitions().resource(kafkaCrd).create();
+        client.apiextensions().v1().customResourceDefinitions().resource(crd).create();
     }
 
     /**
