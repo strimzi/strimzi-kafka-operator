@@ -400,7 +400,7 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalance != null && kafkaRebalance.getStatus() != null
                 && "Ready".equals(rebalanceStateConditionType(kafkaRebalance.getStatus()))
                 && rawRebalanceAnnotation(kafkaRebalance) == null) {
-            LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the  `refresh` annotation to ask for a new rebalance request");
+            LOGGER.infoCr(reconciliation, "Rebalancing is completed. You can use the `refresh` annotation to ask for a new rebalance request");
         } else {
             LOGGER.infoCr(reconciliation, "Rebalance action is performed and KafkaRebalance resource is currently in [{}] state", currentState);
         }
