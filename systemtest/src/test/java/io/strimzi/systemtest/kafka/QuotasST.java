@@ -49,8 +49,8 @@ public class QuotasST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .addToConfig("client.quota.callback.class", "io.strimzi.kafka.quotas.StaticQuotaCallback")
-                    .addToConfig("client.quota.callback.static.storage.hard", "55000000")
-                    .addToConfig("client.quota.callback.static.storage.soft", "50000000")
+                    .addToConfig("client.quota.callback.static.storage.hard", "14000000000")  //  14 GBs
+                    .addToConfig("client.quota.callback.static.storage.soft", "13090000000")  //  13.09 Gbs
                     .addToConfig("client.quota.callback.static.storage.check-interval", "5")
                     .withNewPersistentClaimStorage()
                         .withSize("1Gi")
