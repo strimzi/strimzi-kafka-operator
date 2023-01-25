@@ -325,7 +325,7 @@ public class KafkaUserOperator {
             throw new InvalidConfigurationException("CA certificate secret " + config.get(UserOperatorConfig.CA_CERT_SECRET_NAME) + " in namespace " + config.get(UserOperatorConfig.CA_NAMESPACE) + " not found");
         }
 
-        Secret caKey = client.secrets().inNamespace(config.get(UserOperatorConfig.CA_NAMESPACE)).withName(config.get(UserOperatorConfig.CA_CERT_SECRET_NAME)).get();
+        Secret caKey = client.secrets().inNamespace(config.get(UserOperatorConfig.CA_NAMESPACE)).withName(config.get(UserOperatorConfig.CA_KEY_SECRET_NAME)).get();
         if (caKey == null) {
             throw new InvalidConfigurationException("CA certificate secret " + config.get(UserOperatorConfig.CA_KEY_SECRET_NAME) + " in namespace " + config.get(UserOperatorConfig.CA_NAMESPACE) + " not found");
         }
