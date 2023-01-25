@@ -36,6 +36,9 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
+import io.fabric8.openshift.client.OpenShiftClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -826,5 +829,35 @@ public class KubeClient {
 
     public void deleteValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
         client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).delete();
+    }
+
+    // =====================================================
+    // ---------------> OPENSHIFT RESOURCES <---------------
+    // =====================================================
+
+    public InstallPlan getInstallPlan(String namespaceName, String csvPrefix) {
+        return client.adapt(OpenShiftClient.class).operatorHub().installPlans()
+            .inNamespace(namespaceName).list().getItems().stream().filter(installPlan -> installPlan.getSpec().getClusterServiceVersionNames().contains(csvPrefix)).findFirst().get();
+    }
+
+    public String getCSVInInstallPlan(String namespaceName, String csvPrefix) {
+        return getInstallPlan(namespaceName, csvPrefix).getSpec().getClusterServiceVersionNames().stream().findFirst().get();
+    }
+
+    public void approveInstallPlan(String namespaceName, String installPlanName) {
+        client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName);
+    }
+
+    public InstallPlan getNonApprovedInstallPlan(String namespaceName) {
+        return client.adapt(OpenShiftClient.class).operatorHub().installPlans()
+            .inNamespace(namespaceName).list().getItems().stream().filter(installPlan -> !installPlan.getSpec().getApproved()).findFirst().get();
+    }
+
+    public ClusterServiceVersion getCsv(String namespaceName, String csvName) {
+        return client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).get();
+    }
+
+    public void deleteCsv(String namespaceName, String csvName) {
+        client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).delete();
     }
 }

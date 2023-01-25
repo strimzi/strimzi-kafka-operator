@@ -27,7 +27,8 @@
               files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
     <suppress checks=".*"
               files="io[/\\]strimzi[/\\]systemtest[/\\]kafkaclients[/\\]internalClients[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
-
+    <suppress checks=".*"
+              files="io[/\\]strimzi[/\\]systemtest[/\\]resources[/\\]operator[/\\]configuration[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
     <!-- Unnecessary parentheses sometimes make the code more readable -->
     <suppress checks="UnnecessaryParentheses"
               files="io[/\\]strimzi[/\\].*"/>
