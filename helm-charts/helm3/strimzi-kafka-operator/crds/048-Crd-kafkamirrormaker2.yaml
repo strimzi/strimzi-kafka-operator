@@ -251,6 +251,13 @@ spec:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                          autoRestart:
+                            type: object
+                            properties:
+                              enabled:
+                                type: boolean
+                                description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
+                            description: Automatic restart of connector and tasks configuration.
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
@@ -266,6 +273,13 @@ spec:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                          autoRestart:
+                            type: object
+                            properties:
+                              enabled:
+                                type: boolean
+                                description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
+                            description: Automatic restart of connector and tasks configuration.
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
@@ -281,6 +295,13 @@ spec:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
                             description: "The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max."
+                          autoRestart:
+                            type: object
+                            properties:
+                              enabled:
+                                type: boolean
+                                description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
+                            description: Automatic restart of connector and tasks configuration.
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
@@ -489,7 +510,7 @@ spec:
                           enum:
                             - RollingUpdate
                             - Recreate
-                          description: DeploymentStrategy which will be used for this Deployment. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
+                          description: Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
                       description: Template for Kafka Connect `Deployment`.
                     pod:
                       type: object
@@ -1910,6 +1931,21 @@ spec:
                 url:
                   type: string
                   description: The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
+                autoRestartStatuses:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      count:
+                        type: integer
+                        description: The number of times the connector or task is restarted.
+                      connectorName:
+                        type: string
+                        description: The name of the connector being restarted.
+                      lastRestartTimestamp:
+                        type: string
+                        description: The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
+                  description: List of MirrorMaker 2.0 connector auto restart statuses.
                 connectorPlugins:
                   type: array
                   items:

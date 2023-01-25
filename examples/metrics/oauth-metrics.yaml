@@ -1,0 +1,79 @@
+# Example ConfigMap for exposing OAuth metrics
+#
+# This is not supposed to be used stand-alone, but to serve as a list of mapping rules that need to be manually copied into the target component's
+# `metrics-config.yml`. For example, into `kafka-metrics-config.yml` ConfigMap key inside `oauth-metrics.yaml` file,
+# or into `metrics-config.yml` configMap key inside `kafka-connect-metrics.yaml`.
+#
+# See `../security/keycloak-authorization/kafka-ephemeral-oauth-single-keycloak-authz-metrics.yaml` for a working example.
+#
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: oauth-metrics
+  labels:
+    app: strimzi
+data:
+  metrics-config.yml: |
+    lowercaseOutputName: true
+    rules:
+    # OAuth Metrics
+    - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+), (.+)=(.+)><>(count|totalTimeMs):"
+      name: "strimzi_oauth_$1_$12"
+      type: COUNTER
+      labels:
+        context: "$2"
+        kind: "$3"
+        host: "$4"
+        path: "$5"
+        "$6": "$7"
+        "$8": "$9"
+        "$10": "$11"
+    - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+)><>(count|totalTimeMs):"
+      name: "strimzi_oauth_$1_$10"
+      type: COUNTER
+      labels:
+        context: "$2"
+        kind: "$3"
+        host: "$4"
+        path: "$5"
+        "$6": "$7"
+        "$8": "$9"
+    - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+)><>(count|totalTimeMs):"
+      name: "strimzi_oauth_$1_$8"
+      type: COUNTER
+      labels:
+        context: "$2"
+        kind: "$3"
+        host: "$4"
+        path: "$5"
+        "$6": "$7"
+    - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+), (.+)=(.+)><>(.+):"
+      name: "strimzi_oauth_$1_$12"
+      type: GAUGE
+      labels:
+        context: "$2"
+        kind: "$3"
+        host: "$4"
+        path: "$5"
+        "$6": "$7"
+        "$8": "$9"
+        "$10": "$11"
+    - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+), (.+)=(.+)><>(.+):"
+      name: "strimzi_oauth_$1_$10"
+      type: GAUGE
+      labels:
+        context: "$2"
+        kind: "$3"
+        host: "$4"
+        path: "$5"
+        "$6": "$7"
+        "$8": "$9"
+    - pattern: "strimzi.oauth<type=(.+), context=(.+), kind=(.+), host=\"(.+)\", path=\"(.+)\", (.+)=(.+)><>(.+):"
+      name: "strimzi_oauth_$1_$8"
+      type: GAUGE
+      labels:
+        context: "$2"
+        kind: "$3"
+        host: "$4"
+        path: "$5"
+        "$6": "$7"

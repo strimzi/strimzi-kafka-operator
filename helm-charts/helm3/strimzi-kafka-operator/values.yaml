@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.32.0
+defaultImageTag: 0.33.0
 
 image:
   registry: ""
@@ -43,6 +43,10 @@ priorityClassName: ""
 
 podSecurityContext: {}
 securityContext: {}
+rbac:
+  create: yes
+serviceAccountCreate: yes
+serviceAccount: strimzi-cluster-operator
 
 # Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
 # repository name with your registry URL.
@@ -94,7 +98,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.22.3
+    tag: 0.24.0
 kafkaExporter:
   image:
     registry: ""

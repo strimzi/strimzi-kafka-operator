@@ -60,6 +60,13 @@ spec:
                   type: integer
                   minimum: 1
                   description: The maximum number of tasks for the Kafka Connector.
+                autoRestart:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
+                  description: Automatic restart of connector and tasks configuration.
                 config:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object
@@ -95,6 +102,19 @@ spec:
                 observedGeneration:
                   type: integer
                   description: The generation of the CRD that was last reconciled by the operator.
+                autoRestart:
+                  type: object
+                  properties:
+                    count:
+                      type: integer
+                      description: The number of times the connector or task is restarted.
+                    connectorName:
+                      type: string
+                      description: The name of the connector being restarted.
+                    lastRestartTimestamp:
+                      type: string
+                      description: The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
+                  description: The auto restart status.
                 connectorStatus:
                   x-kubernetes-preserve-unknown-fields: true
                   type: object

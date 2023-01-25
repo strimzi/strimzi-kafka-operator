@@ -4,7 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 3.3.1
+    version: 3.3.2
     replicas: 1
     listeners:
       - name: tls
@@ -29,7 +29,7 @@ spec:
           certificate: sso.crt
       delegateToKafkaAcls: true
       superUsers:
-        - User:service-account-kafka
+        - service-account-kafka
     logging:
       type: inline
       loggers:

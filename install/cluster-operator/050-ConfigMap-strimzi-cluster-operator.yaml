@@ -29,3 +29,7 @@ data:
     # Keeps separate level for Netty logging -> to not be changed by the root logger
     logger.netty.name = io.netty
     logger.netty.level = INFO
+
+    # Keeps separate log level for OkHttp client
+    logger.okhttp3.name = okhttp3
+    logger.okhttp3.level = INFO
