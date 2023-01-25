@@ -45,7 +45,7 @@
 - fromVersion: 0.33.0
   fromExamples: strimzi-0.33.0
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.32.0/strimzi-0.32.0.zip
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.0/strimzi-0.33.0.zip
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.3.2
