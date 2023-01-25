@@ -23,10 +23,10 @@
 #  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  --- Structure ---
 
-- fromVersion: 0.32.0
-  fromExamples: strimzi-0.32.0
+- fromVersion: 0.33.0
+  fromExamples: strimzi-0.33.0
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.32.0/strimzi-0.32.0.zip
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.0/strimzi-0.33.0.zip
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.3.2
@@ -42,10 +42,10 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: ""
   featureGatesAfter: ""
-- fromVersion: 0.32.0
-  fromExamples: strimzi-0.32.0
+- fromVersion: 0.33.0
+  fromExamples: strimzi-0.33.0
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.32.0/strimzi-0.32.0.zip
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.0/strimzi-0.33.0.zip
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.3.2
