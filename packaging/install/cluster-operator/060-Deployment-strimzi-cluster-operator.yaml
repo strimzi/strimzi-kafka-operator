@@ -88,7 +88,7 @@ spec:
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
               value: quay.io/strimzi/operator:latest
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: quay.io/strimzi/kafka-bridge:0.24.0
+              value: quay.io/ppatierno/kafka-bridge:endpoints-refactoring
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: quay.io/strimzi/jmxtrans:latest
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
