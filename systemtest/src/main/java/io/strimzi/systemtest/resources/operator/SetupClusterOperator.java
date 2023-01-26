@@ -573,7 +573,6 @@ public class SetupClusterOperator {
             }
 
             final String resourceType = createFile.getName().split("-")[1];
-            LOGGER.debug("Installation resource type: {}", resourceType);
 
             switch (resourceType) {
                 case Constants.ROLE:

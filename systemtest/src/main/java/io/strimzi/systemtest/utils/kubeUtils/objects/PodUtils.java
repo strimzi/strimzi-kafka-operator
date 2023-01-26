@@ -62,6 +62,7 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
+        final int stableCount = 10;
         int[] counter = {0};
 
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
@@ -73,33 +74,40 @@ public class PodUtils {
                     return true;
                 }
                 if (pods.isEmpty()) {
-                    LOGGER.debug("Not ready (no pods matching {})", selector);
+                    LOGGER.debug("Not ready (no pods matching {}/{})", namespaceName, selector);
                     return false;
                 }
                 if (pods.size() != expectPods) {
-                    LOGGER.debug("Expected pods {} are not ready", selector);
+                    LOGGER.debug("Expected pods {}/{} are not ready", namespaceName, selector);
                     return false;
                 }
                 for (Pod pod : pods) {
                     if (!Readiness.isPodReady(pod)) {
-                        LOGGER.debug("Not ready (at least 1 pod not ready: {})", pod.getMetadata().getName());
+                        LOGGER.debug("Not ready (at least 1 pod not ready: {}/{})", namespaceName, pod.getMetadata().getName());
                         counter[0] = 0;
                         return false;
                     } else {
                         if (containers) {
                             for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
-                                LOGGER.debug("Not ready (at least 1 container of pod {} not ready: {})", pod.getMetadata().getName(), cs.getName());
                                 if (!Boolean.TRUE.equals(cs.getReady())) {
+                                    LOGGER.debug("Not ready (at least 1 container of pod {}/{} not ready: {})", namespaceName, pod.getMetadata().getName(), cs.getName());
                                     return false;
                                 }
                             }
                         }
                     }
                 }
-                LOGGER.debug("Pods {} are ready",
-                    pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
                 // When pod is up, it will check that are rolled pods are stable for next 10 polls and then it return true
-                return ++counter[0] > 10;
+                if (++counter[0] > stableCount) {
+                    LOGGER.debug("Pods {} are ready",
+                            pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
+                    return true;
+                } else {
+                    LOGGER.debug("Pods {} are ready, waiting for stabilization ({}/{})",
+                            pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")),
+                            counter[0], stableCount);
+                    return false;
+                }
             }, onTimeout);
     }
 

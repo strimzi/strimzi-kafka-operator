@@ -165,11 +165,10 @@ public class Exec {
             ret = executor.execute(input, command, timeout);
             synchronized (LOCK) {
                 String log = ret != 0 ? "Failed to exec command" : "Command";
-                logData(logLevel, String.format("%s: %s", log, String.join(" ", command)));
+                logData(logLevel, String.format("%s: '%s' (return code: %s)", log, String.join(" ", command), ret));
                 if (input != null && !input.contains("CustomResourceDefinition")) {
                     logData(logLevel, String.format("Input: %s", input.trim()));
                 }
-                logData(logLevel, String.format("Return code: %s", ret));
                 if (ret != 0) {
                     if (!executor.out().isEmpty()) {
                         logData(logLevel, "======STDOUT START=======");
