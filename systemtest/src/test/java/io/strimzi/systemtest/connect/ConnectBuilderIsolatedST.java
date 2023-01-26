@@ -59,6 +59,14 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_CLASS_NAME;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_CONNECTOR_NAME;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_FILE_NAME;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_CHECKSUM;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_URL;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_WRONG_CHECKSUM;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_TGZ_CHECKSUM;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_TGZ_URL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -80,25 +88,12 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectBuilderIsolatedST.class);
 
-    private static final String ECHO_SINK_CLASS_NAME = "cz.scholz.kafka.connect.echosink.EchoSinkConnector";
     private static final String CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME = "org.apache.camel.kafkaconnector.http.CamelHttpSinkConnector";
     private static final String CAMEL_CONNECTOR_TIMER_CLASS_NAME = "org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector";
-
-    private static final String ECHO_SINK_JAR_URL = "https://github.com/scholzj/echo-sink/releases/download/1.1.0/echo-sink-1.1.0.jar";
-    private static final String ECHO_SINK_JAR_CHECKSUM = "b7da48d5ecd1e4199886d169ced1bf702ffbdfd704d69e0da97e78ff63c1bcece2f59c2c6c751f9c20be73472b8cb6a31b6fd4f75558c1cb9d96daa9e9e603d2";
-    private static final String ECHO_SINK_FILE_NAME = "echo-sink-test.jar";
-
-    private static final String ECHO_SINK_JAR_WRONG_CHECKSUM = "f1f167902325062efc8c755647bc1b782b2b067a87a6e507ff7a3f6205803220";
-
-    private static final String ECHO_SINK_TGZ_URL = "https://github.com/scholzj/echo-sink/archive/1.1.0.tar.gz";
-    private static final String ECHO_SINK_TGZ_CHECKSUM = "5318b1f031d4e5eeab6f8b774c76de297237574fc51d1e81b03a10e0b5d5435a46a108b85fdb604c644529f38830ae83239c17b6ec91c90a60ac790119bb2950";
-
     private static final String CAMEL_CONNECTOR_TGZ_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.tar.gz";
     private static final String CAMEL_CONNECTOR_TGZ_CHECKSUM = "d0bb8c6a9e50b68eee3e4d70b6b7e5ae361373883ed3156bc11771330095b66195ac1c12480a0669712da4e5f38e64f004ffecabca4bf70d312f3f7ae0ad51b5";
-
     private static final String CAMEL_CONNECTOR_ZIP_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.zip";
     private static final String CAMEL_CONNECTOR_ZIP_CHECKSUM = "bc15135b8ef7faccd073508da0510c023c0f6fa3ec7e48c98ad880dd112b53bf106ad0a47bcb353eed3ec03bb3d273da7de356f3f7f1766a13a234a6bc28d602";
-
     private static final String CAMEL_CONNECTOR_MAVEN_GROUP_ID = "org.apache.camel.kafkaconnector";
     private static final String CAMEL_CONNECTOR_MAVEN_ARTIFACT_ID = "camel-timer-kafka-connector";
     private static final String CAMEL_CONNECTOR_MAVEN_VERSION = "0.9.0";
@@ -330,7 +325,6 @@ class ConnectBuilderIsolatedST extends AbstractST {
     void testUpdateConnectWithAnotherPlugin(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
-        String echoConnector = "echo-sink-connector";
         String camelConnector = "camel-http-connector";
         final String imageName = getImageNameForTestCase();
 
@@ -377,7 +371,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         echoSinkConfig.put("level", "INFO");
 
         LOGGER.info("Creating EchoSink connector");
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(echoConnector, testStorage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)

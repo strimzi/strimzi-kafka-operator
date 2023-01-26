@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.AutoRestartBuilder;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -23,6 +24,9 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
+import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.Plugin;
+import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -31,6 +35,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -66,18 +71,23 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_CLASS_NAME;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_CHECKSUM;
+import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_URL;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -95,7 +105,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -592,6 +604,84 @@ class ConnectIsolatedST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+    }
+
+    @ParallelNamespaceTest
+    void testConnectorTaskAutoRestart(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), 3).build());
+
+        String echoSinkConnector = "echo-sink-connector";
+        String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName()).build());
+
+        final Plugin echoSinkPlugin = new PluginBuilder()
+            .withName(echoSinkConnector)
+            .withArtifacts(
+                new JarArtifactBuilder()
+                    .withUrl(ECHO_SINK_JAR_URL)
+                    .withSha512sum(ECHO_SINK_JAR_CHECKSUM)
+                    .build())
+            .build();
+
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editOrNewSpec()
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withNewBuild()
+                    .withPlugins(echoSinkPlugin)
+                    .withNewDockerOutput()
+                        .withImage(imageName)
+                    .endDockerOutput()
+                .endBuild()
+            .endSpec()
+            .build();
+
+        resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+
+        Map<String, Object> echoSinkConfig = new HashMap<>();
+        echoSinkConfig.put("topics", testStorage.getTopicName());
+        echoSinkConfig.put("level", "INFO");
+        echoSinkConfig.put("fail.task.after.records", "1");
+
+        LOGGER.info("Creating EchoSink connector");
+        resourceManager.createResource(extensionContext,KafkaConnectorTemplates.kafkaConnector(echoSinkConnector, testStorage.getClusterName())
+            .editOrNewSpec()
+                .withTasksMax(1)
+                .withClassName(ECHO_SINK_CLASS_NAME)
+                .withConfig(echoSinkConfig)
+                .withAutoRestart(new AutoRestartBuilder().withEnabled().build())
+            .endSpec()
+            .build());
+
+        // Send Messages to topic
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(10)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getNamespaceName()))
+            .withProducerName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+        // Wait for echo-sink connector to pick up messages and fail tasks
+        KafkaConnectorUtils.waitForConnectorStatus(testStorage.getNamespaceName(), echoSinkConnector, NotReady);
+
+        KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(echoSinkConnector).get().getStatus();
+        String connectorTaskState = ((ArrayList<Map<String, String>>) connectorState.getConnectorStatus().get("tasks")).get(0).get("state");
+
+        assertEquals(connectorTaskState, "FAILED");
+        assertThat(connectorState.getAutoRestart().getCount(), is(not(0)));
     }
 
     @ParallelNamespaceTest
