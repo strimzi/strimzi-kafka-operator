@@ -85,9 +85,6 @@ import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.ECHO_SINK_CLASS_NAME;
-import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_CHECKSUM;
-import static io.strimzi.systemtest.Constants.ECHO_SINK_JAR_URL;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -608,25 +605,24 @@ class ConnectIsolatedST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConnectorTaskAutoRestart(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getNamespaceName(), 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        String echoSinkConnector = "echo-sink-connector";
         String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
         final Plugin echoSinkPlugin = new PluginBuilder()
-            .withName(echoSinkConnector)
+            .withName(Constants.ECHO_SINK_CONNECTOR_NAME)
             .withArtifacts(
                 new JarArtifactBuilder()
-                    .withUrl(ECHO_SINK_JAR_URL)
-                    .withSha512sum(ECHO_SINK_JAR_CHECKSUM)
+                    .withUrl(Constants.ECHO_SINK_JAR_URL)
+                    .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
                     .build())
             .build();
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -648,26 +644,29 @@ class ConnectIsolatedST extends AbstractST {
         LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
+        // How many messages should be sent and at what count should the test connector fail
+        int failMessageCount = 1;
+
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", testStorage.getTopicName());
         echoSinkConfig.put("level", "INFO");
-        echoSinkConfig.put("fail.task.after.records", "1");
+        echoSinkConfig.put("fail.task.after.records", Integer.toString(failMessageCount));
 
         LOGGER.info("Creating EchoSink connector");
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(echoSinkConnector, testStorage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editOrNewSpec()
                 .withTasksMax(1)
-                .withClassName(ECHO_SINK_CLASS_NAME)
+                .withClassName(Constants.ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)
                 .withAutoRestart(new AutoRestartBuilder().withEnabled().build())
             .endSpec()
             .build());
 
-        // Send Messages to topic
+        // Send messages to topic
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(10)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getNamespaceName()))
+            .withMessageCount(failMessageCount)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withNamespaceName(testStorage.getNamespaceName())
             .build();
@@ -675,12 +674,15 @@ class ConnectIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
         // Wait for echo-sink connector to pick up messages and fail tasks
-        KafkaConnectorUtils.waitForConnectorStatus(testStorage.getNamespaceName(), echoSinkConnector, NotReady);
+        KafkaConnectorUtils.waitForConnectorStatus(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, NotReady);
 
-        KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(echoSinkConnector).get().getStatus();
+        KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(Constants.ECHO_SINK_CONNECTOR_NAME).get().getStatus();
         String connectorTaskState = ((ArrayList<Map<String, String>>) connectorState.getConnectorStatus().get("tasks")).get(0).get("state");
 
+        // After task of echo-sink picks up messages from topic, it should fail.
         assertEquals(connectorTaskState, "FAILED");
+        // Topic contains sent messages the whole test, so after the task auto-restarts,
+        // it still picks up messages and is supposed to fail again.
         assertThat(connectorState.getAutoRestart().getCount(), is(not(0)));
     }
 
