@@ -107,13 +107,13 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
 @Tag(CONNECT)
 @Tag(CONNECT_COMPONENTS)
 @IsolatedSuite
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 class ConnectIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectIsolatedST.class);
@@ -654,7 +654,7 @@ class ConnectIsolatedST extends AbstractST {
         echoSinkConfig.put("fail.task.after.records", "1");
 
         LOGGER.info("Creating EchoSink connector");
-        resourceManager.createResource(extensionContext,KafkaConnectorTemplates.kafkaConnector(echoSinkConnector, testStorage.getClusterName())
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(echoSinkConnector, testStorage.getClusterName())
             .editOrNewSpec()
                 .withTasksMax(1)
                 .withClassName(ECHO_SINK_CLASS_NAME)
