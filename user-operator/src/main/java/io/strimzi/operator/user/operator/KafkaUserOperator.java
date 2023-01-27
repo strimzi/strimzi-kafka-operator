@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.operator;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -161,7 +162,7 @@ public class KafkaUserOperator {
                 .supplyAsync(() -> Crds.kafkaUserOperation(client)
                                 .inNamespace(namespace)
                                 .withLabelSelector(selector)
-                                .list()
+                                .list(new ListOptionsBuilder().withResourceVersion("0").build())
                                 .getItems()
                                 .stream()
                                 .map(resource -> resource.getMetadata().getName())

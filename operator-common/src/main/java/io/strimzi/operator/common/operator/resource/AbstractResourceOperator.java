@@ -7,6 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Listable;
@@ -160,7 +161,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return  List of resources
      */
     protected List<T> list(Listable<L> listable)    {
-        return listable.list().getItems();
+        return listable.list(new ListOptionsBuilder().withResourceVersion("0").build()).getItems();
     }
 
     /**

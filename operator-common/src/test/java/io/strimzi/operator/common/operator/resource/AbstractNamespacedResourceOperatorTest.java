@@ -555,7 +555,7 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
         when(mockResourceList.getItems()).thenReturn(List.of(resource1, resource2));
 
         FilterWatchListDeletable mockListable = mock(FilterWatchListDeletable.class);
-        when(mockListable.list()).thenReturn((L) mockResourceList);
+        when(mockListable.list(any())).thenReturn((L) mockResourceList);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withLabels(eq(selector))).thenReturn(mockListable);

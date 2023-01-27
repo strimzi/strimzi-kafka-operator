@@ -64,7 +64,7 @@ public class K8sImplTest {
         when(mockClient.resources(any(Class.class), any(Class.class))).thenReturn(mockResources);
         when(mockResources.withLabels(any())).thenReturn(mockResources);
         when(mockResources.inNamespace(any())).thenReturn(mockResources);
-        when(mockResources.list()).thenAnswer(invocation -> {
+        when(mockResources.list(any())).thenAnswer(invocation -> {
             KafkaTopicList ktl = new KafkaTopicList();
             ktl.setItems(mockKafkaTopicsList);
             return ktl;

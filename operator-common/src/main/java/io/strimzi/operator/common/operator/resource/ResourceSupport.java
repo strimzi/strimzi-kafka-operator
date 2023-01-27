@@ -6,6 +6,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
@@ -272,7 +273,7 @@ public class ResourceSupport {
         return executeBlocking(
             blockingFuture -> {
                 try {
-                    blockingFuture.complete(resource.list().getItems());
+                    blockingFuture.complete(resource.list(new ListOptionsBuilder().withResourceVersion("0").build()).getItems());
                 } catch (Throwable t) {
                     blockingFuture.fail(t);
                 }
