@@ -55,9 +55,6 @@ However, this can be considered when configuring authorization, for example, by 
 .Additional resources
 
 * xref:con-oauth-authentication-broker-{context}[]
-
 * xref:proc-oauth-authentication-broker-config-{context}[]
-
-* xref:type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
-
+* link:{BookURLConfiguring}#type-KafkaListenerAuthenticationOAuth-reference[`KafkaListenerAuthenticationOAuth` schema reference^]
 * link:https://cwiki.apache.org/confluence/display/KAFKA/KIP-368%3A+Allow+SASL+Connections+to+Periodically+Re-Authenticate[KIP-368^]

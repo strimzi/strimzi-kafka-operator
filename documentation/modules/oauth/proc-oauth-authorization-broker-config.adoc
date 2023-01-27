@@ -17,7 +17,7 @@ And roles are used to match users based on their function.
 With Keycloak, you can store users and groups in LDAP, whereas clients and roles cannot be stored this way.
 Storage and access to user data may be a factor in how you choose to configure authorization policies.
 
-NOTE: xref:property-simple-authorization-superusers-reference[Super users] always have unconstrained access to a Kafka broker regardless of the authorization implemented on the Kafka broker.
+NOTE: link:{BookURLConfiguring}#property-simple-authorization-superusers-reference[Super users^] always have unconstrained access to a Kafka broker regardless of the authorization implemented on the Kafka broker.
 
 .Prerequisites
 
@@ -77,7 +77,7 @@ The hostname for the `tokenEndpointUri` URI must be the same.
 <4> (Optional) Delegate authorization to Kafka `AclAuthorizer` if access is denied by Keycloak Authorization Services policies.
 Default is `false`.
 <5> (Optional) Disable TLS hostname verification. Default is `false`.
-<6> (Optional) Designated xref:property-simple-authorization-superusers-reference[super users].
+<6> (Optional) Designated super users.
 <7> (Optional) Trusted certificates for TLS connection to the authorization server.
 <8> (Optional) The time between two consecutive grants refresh runs. That is the maximum time for active sessions to detect any permissions changes for the user on Keycloak. The default value is 60.
 <9> (Optional) The number of threads to use to refresh (in parallel) the grants for the active sessions. The default value is 5.

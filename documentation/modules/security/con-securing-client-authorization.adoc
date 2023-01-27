@@ -40,7 +40,7 @@ For example, for the `AclAuthorizer` this is determined by its `allow.everyone.i
 
 ACL rules grant access rights to the user, which you specify in the `acls` property.
 
-For more information about the `AclRule` object, see the xref:type-AclRule-reference[`AclRule` schema reference].
+For more information about the `AclRule` object, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
 
 == Super user access to Kafka brokers
 
@@ -77,4 +77,4 @@ spec:
 <3> CPU utilization limit as a percentage of time for a client group
 <4> Number of concurrent partition creation and deletion operations (mutations) allowed per second
 
-For more information on these properties, see the xref:type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference].
+For more information on these properties, see the link:{BookURLConfiguring}#type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference^].

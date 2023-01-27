@@ -16,7 +16,6 @@ IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.aut
 [id='property-custom-authorization-superusers-{context}']
 === `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
-For more information see xref:con-securing-kafka-authorization-str[Kafka authorization].
 
 You can add configuration for initializing the custom authorizer using `Kafka.spec.kafka.config`.
 

@@ -15,7 +15,7 @@ The list of grants (permissions) is fetched from the Keycloak server as the firs
 The list is refreshed in the background so that changes to the grants are detected.
 Grants are cached and enforced locally on the Kafka broker for each user session to provide fast authorization decisions.
 
-Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files].
+Strimzi provides xref:deploy-examples-{context}[example configuration files].
 These include the following example files for setting up Keycloak:
 
 `kafka-ephemeral-oauth-single-keycloak-authz.yaml`:: An example `Kafka` custom resource configured for OAuth 2.0 token-based authorization using Keycloak.
@@ -177,7 +177,7 @@ echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk
 +
 The certificate is required as Kubernetes ingress is used to make a secure (HTTPS) connection.
 +
-Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/sso.pem`.
+Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA, which is listed last in the `/tmp/sso.pem` file.
 You can extract it manually or using the following commands:
 +
 .Example command to extract the top CA certificate in a certificate chain
@@ -188,8 +188,7 @@ for f in $(ls sso-\*); do mv $f $f.pem; done
 cp $(ls sso-* | sort -r | head -n 1) sso-ca.crt
 ----
 +
-NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
-
+NOTE: A trusted CA certificate is normally obtained from a trusted source, and not by using the `openssl` command.
 
 . Deploy the certificate to Kubernetes as a secret.
 +
@@ -256,7 +255,7 @@ STOREPASS=storepass
 echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/sso.pem
 ----
 +
-Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/sso.pem`.
+Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA, which is listed last in the `/tmp/sso.pem` file.
 You can extract it manually or using the following command:
 +
 .Example command to extract the top CA certificate in a certificate chain
@@ -267,8 +266,8 @@ for f in $(ls sso-\*); do mv $f $f.pem; done
 cp $(ls sso-* | sort -r | head -n 1) sso-ca.crt
 ----
 +
-NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
-+
+NOTE: A trusted CA certificate is normally obtained from a trusted source, and not by using the `openssl` command.
+
 . Create a truststore for TLS connection to the Kafka brokers.
 +
 [source,shell,subs="+quotes"]
@@ -286,7 +285,7 @@ STOREPASS=storepass
 echo "Q" | openssl s_client -showcerts -connect $KAFKA_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/my-cluster-kafka.pem
 ----
 +
-The obtained `.pem` file is usually not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA which is listed as last in the `/tmp/my-cluster-kafka.pem`.
+The obtained `.pem` file is usually not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA, which is listed last in the `/tmp/my-cluster-kafka.pem` file.
 You can extract it manually or using the following command:
 +
 .Example command to extract the top CA certificate in a certificate chain
@@ -297,11 +296,11 @@ for f in $(ls kafka-\*); do mv $f $f.pem; done
 cp $(ls kafka-* | sort -r | head -n 1) my-cluster-kafka-ca.crt
 ----
 +
-NOTE: The proper way to obtain the trusted CA certificate is from a trusted source, and not by using the `openssl` command.
+NOTE: A trusted CA certificate is normally obtained from a trusted source, and not by using the `openssl` command.
       For this example we assume the client is running in a pod in the same namespace where the Kafka cluster was deployed.
-      If the client accessed the Kafka cluster from outside the Kubernetes cluster you would have to first determine the bootstrap address.
-      In that case you can also get the cluster certificate directly from the Kubernetes Secret, no need for `openssl`.
-      See xref:assembly-accessing-kafka-outside-cluster-{context}[] for more information.
+      If the client is accessing the Kafka cluster from outside the Kubernetes cluster, you would have to first determine the bootstrap address.
+      In that case you can also get the cluster certificate directly from the Kubernetes secret, and there is no need for `openssl`.
+      For more information, see xref:deploy-client-access-{context}[].
 
 . Add the certificate for the Kafka broker to the truststore.
 +

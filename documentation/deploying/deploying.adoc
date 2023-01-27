@@ -21,7 +21,9 @@ include::modules/deploying/con-deploy-cluster-operator-from-operator-hub.adoc[le
 //Deployment using Helm
 include::modules/deploying/proc-deploy-cluster-operator-helm-chart.adoc[leveloffset=+1]
 //Verifying the deployment and providing access to an external client
-include::assemblies/deploying/assembly-deploy-verify.adoc[leveloffset=+1]
+include::assemblies/deploying/assembly-deploy-client-access.adoc[leveloffset=+1]
+//Securing the deployment
+include::assemblies/security/assembly-securing-access.adoc[leveloffset=+1]
 //Introduce metrics and monitoring to your deployment
 include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 //Introduce tracing to your deployment
