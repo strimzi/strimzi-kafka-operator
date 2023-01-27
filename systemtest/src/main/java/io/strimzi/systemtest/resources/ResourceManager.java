@@ -153,8 +153,13 @@ public class ResourceManager {
         public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
-            LOGGER.info("Create/Update {} {} in namespace {}",
-                resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
+            if (resource.getMetadata().getNamespace() == null) {
+                LOGGER.info("Create/Update {} {}",
+                        resource.getKind(), resource.getMetadata().getName());
+            } else {
+                LOGGER.info("Create/Update {} {}/{}",
+                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+            }
 
             if (Environment.isKRaftModeEnabled()) {
                 if (Objects.equals(resource.getKind(), Kafka.RESOURCE_KIND)) {
@@ -240,7 +245,7 @@ public class ResourceManager {
                     continue;
                 }
                 assertTrue(waitResourceCondition(resource, ResourceCondition.readiness(type)),
-                    String.format("Timed out waiting for %s %s in namespace %s to be ready", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
+                    String.format("Timed out waiting for %s %s/%s to be ready", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
             }
         }
     }
@@ -254,15 +259,24 @@ public class ResourceManager {
                 continue;
             }
 
-            LOGGER.info("Delete of {} {} in namespace {}",
-                resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
+            if (resource.getMetadata().getNamespace() == null) {
+                LOGGER.info("Deleting of {} {}",
+                        resource.getKind(), resource.getMetadata().getName());
+            } else {
+                LOGGER.info("Deleting of {} {}/{}",
+                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+            }
 
             try {
                 type.delete(resource);
                 assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
-                        String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
+                        String.format("Timed out deleting %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
             } catch (Exception e)   {
-                LOGGER.error("Failed to delete {} {} in namespace {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace(), e);
+                if (resource.getMetadata().getNamespace() == null) {
+                    LOGGER.error("Failed to delete {} {}", resource.getKind(), resource.getMetadata().getName(), e);
+                } else {
+                    LOGGER.error("Failed to delete {} {}/{}", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), e);
+                }
             }
 
         }
@@ -441,9 +455,9 @@ public class ResourceManager {
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
-        LOGGER.info("Wait for {}: {} will have desired state: {}", kind, name, status);
+        LOGGER.info("Wait for {}: {}/{} will have desired state: {}", kind, namespace, name, status);
 
-        TestUtils.waitFor(String.format("%s: %s will have desired state: %s", kind, name, status),
+        TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
@@ -452,7 +466,7 @@ public class ResourceManager {
                 .withName(name)
                 .get()));
 
-        LOGGER.info("{}: {} is in desired state: {}", kind, name, status);
+        LOGGER.info("{}: {}/{} is in desired state: {}", kind, namespace, name, status);
         return true;
     }
 
@@ -489,9 +503,9 @@ public class ResourceManager {
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, String message, long resourceTimeoutMs) {
-        LOGGER.info("Wait for {}: {} will contain desired status message: {}", kind, name, message);
+        LOGGER.info("Wait for {}: {}/{} will contain desired status message: {}", kind, namespace, name, message);
 
-        TestUtils.waitFor(String.format("%s: %s will contain desired status message: %s", kind, name, message),
+        TestUtils.waitFor(String.format("%s: %s#%s will contain desired status message: %s", kind, namespace, name, message),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
@@ -500,7 +514,7 @@ public class ResourceManager {
                 .withName(name)
                 .get()));
 
-        LOGGER.info("{}: {} contains desired message in status: {}", kind, name, message);
+        LOGGER.info("{}: {}/{} contains desired message in status: {}", kind, namespace, name, message);
         return true;
     }
 

@@ -123,7 +123,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
 
         String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
-        LOGGER.info("Old deployment name of cluster operator is {}", clusterOperatorDeploymentName);
+        LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
 
         // ======== Cluster Operator upgrade starts ========
         makeSnapshots();
@@ -143,7 +143,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         // ======== Cluster Operator upgrade ends ========
 
         clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
-        LOGGER.info("New deployment name of cluster operator is {}", clusterOperatorDeploymentName);
+        LOGGER.info("New deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);
         ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
 
         // verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]

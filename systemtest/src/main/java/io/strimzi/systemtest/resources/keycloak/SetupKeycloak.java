@@ -43,7 +43,7 @@ public class SetupKeycloak {
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
     public static void deployKeycloakOperator(ExtensionContext extensionContext, final String deploymentNamespace, final String watchNamespace) {
-        LOGGER.info("Prepare Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
+        LOGGER.info("Prepare Keycloak Operator in namespace {} with watching namespace {}", deploymentNamespace, watchNamespace);
 
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.getValidKeycloakVersion(), watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
@@ -54,7 +54,7 @@ public class SetupKeycloak {
     }
 
     public static void deleteKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
-        LOGGER.info("Teardown Keycloak Operator in namespace: {} with watching namespace: {}", deploymentNamespace, watchNamespace);
+        LOGGER.info("Teardown Keycloak Operator in namespace {} with watching namespace {}", deploymentNamespace, watchNamespace);
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, KeycloakUtils.getValidKeycloakVersion(), watchNamespace);
         DeploymentUtils.waitForDeploymentDeletion(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME);
     }
@@ -116,7 +116,7 @@ public class SetupKeycloak {
     }
 
     private static void deleteKeycloak(String namespaceName) {
-        LOGGER.info("Deleting Keycloak in namespace: {}", namespaceName);
+        LOGGER.info("Deleting Keycloak in namespace {}", namespaceName);
         cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
     }

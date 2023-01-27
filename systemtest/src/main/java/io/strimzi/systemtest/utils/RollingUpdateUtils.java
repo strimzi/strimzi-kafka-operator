@@ -32,22 +32,22 @@ public class RollingUpdateUtils {
      * @return true when the pods for StatefulSet are recreated
      */
     public static boolean componentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
-        LOGGER.debug("Existing snapshot: {}", new TreeMap<>(snapshot));
+        LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
 
         Map<String, String> currentSnapshot = PodUtils.podSnapshot(namespaceName, selector);
 
-        LOGGER.debug("Current snapshot: {}", new TreeMap<>(currentSnapshot));
+        LOGGER.debug("Current snapshot: {}/{}", namespaceName, new TreeMap<>(currentSnapshot));
         // rolled when all the pods in snapshot have a different version in map
 
         currentSnapshot.keySet().retainAll(snapshot.keySet());
 
-        LOGGER.debug("Pods in common: {}", new TreeMap<>(currentSnapshot));
+        LOGGER.debug("Pods in common: {}/{}", namespaceName, new TreeMap<>(currentSnapshot));
         for (Map.Entry<String, String> podSnapshot : currentSnapshot.entrySet()) {
             String currentPodVersion = podSnapshot.getValue();
             String podName = podSnapshot.getKey();
             String oldPodVersion = snapshot.get(podName);
             if (oldPodVersion.equals(currentPodVersion)) {
-                LOGGER.debug("At least {} hasn't rolled", podName);
+                LOGGER.debug("At least {}/{} hasn't rolled", namespaceName, podName);
                 return false;
             }
         }
@@ -66,10 +66,10 @@ public class RollingUpdateUtils {
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
 
-        LOGGER.info("Waiting for component with name: {} rolling update", componentName);
+        LOGGER.info("Waiting for component: {}/{} rolling update", namespaceName, componentName);
         LOGGER.debug("Waiting for rolling update of component matching LabelSelector: {}", selector);
 
-        TestUtils.waitFor("component with name " + componentName + " rolling update",
+        TestUtils.waitFor("component " + namespaceName + "/" + componentName + " rolling update",
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
                     return componentHasRolled(namespaceName, selector, snapshot);
@@ -79,8 +79,8 @@ public class RollingUpdateUtils {
                 }
             });
 
-        LOGGER.info("Component with name: {} has been successfully rolled", componentName);
-        LOGGER.debug("Component matching LabelSelector: {} successfully rolled", selector);
+        LOGGER.info("Component {}/{} has been successfully rolled", namespaceName, componentName);
+        LOGGER.debug("Component matching LabelSelector {} successfully rolled", selector);
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
@@ -90,7 +90,7 @@ public class RollingUpdateUtils {
 
         waitTillComponentHasRolled(namespaceName, selector, snapshot);
 
-        LOGGER.info("Waiting for {} Pod(s) of {} to be ready", expectedPods, componentName);
+        LOGGER.info("Waiting for {} Pod(s) of {}/{} to be ready", expectedPods, namespaceName, componentName);
         PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true,
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get()));
 
@@ -108,12 +108,12 @@ public class RollingUpdateUtils {
         String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
 
-        LOGGER.info("Waiting for {} Pod(s) of {} to be ready", expectedPods, componentName);
+        LOGGER.info("Waiting for {} Pod(s) of {}/{} to be ready", expectedPods, namespaceName, componentName);
         PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true,
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get()));
 
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-        LOGGER.info("Kafka: {} is ready", clusterName);
+        LOGGER.info("Kafka: {}/{} is ready", namespaceName, clusterName);
     }
 
     public static void waitForNoRollingUpdate(String namespaceName, LabelSelector selector, Map<String, String> pods) {
@@ -124,7 +124,7 @@ public class RollingUpdateUtils {
         TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 if (!componentHasRolled(namespaceName, selector, pods)) {
-                    LOGGER.info("{} pods didn't roll. Remaining seconds for stability: {}", pods.toString(),
+                    LOGGER.info("{}/{} pods didn't roll. Remaining seconds for stability: {}", namespaceName, pods.toString(),
                         Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
                 } else {

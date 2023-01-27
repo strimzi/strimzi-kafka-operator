@@ -573,7 +573,6 @@ public class SetupClusterOperator {
             }
 
             final String resourceType = createFile.getName().split("-")[1];
-            LOGGER.debug("Installation resource type: {}", resourceType);
 
             switch (resourceType) {
                 case Constants.ROLE:
@@ -750,11 +749,11 @@ public class SetupClusterOperator {
     public synchronized void unInstall() {
         if (IS_EMPTY.test(this)) {
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.info("Skip un-installation of the cluster operator");
+            LOGGER.info("Skip un-installation of the Cluster Operator");
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         } else {
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.info("Un-installing cluster operator from {} namespace", namespaceInstallTo);
+            LOGGER.info("Un-installing Cluster Operator from namespace {}", namespaceInstallTo);
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
             BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
 

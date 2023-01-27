@@ -324,7 +324,7 @@ public class OlmResource implements SpecificResourceType {
         if (ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME) != null) {
             DeploymentUtils.waitForDeploymentDeletion(namespace, deploymentName);
         } else {
-            LOGGER.info("Cluster Operator deployment: {} is already deleted in namespace: {}", deploymentName, namespace);
+            LOGGER.info("Cluster Operator Deployment {}/{} is already deleted}", namespace, deploymentName);
         }
         LOGGER.info("Deleting Subscription, OperatorGroups and ClusterServiceVersion from namespace: {}", namespace);
         ResourceManager.cmdKubeClient().exec(false, "delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
@@ -333,9 +333,9 @@ public class OlmResource implements SpecificResourceType {
     }
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {
-        LOGGER.info("Waiting for deployment {} in namespace {}", deploymentName, namespace);
+        LOGGER.info("Waiting for deployment {}/{}", namespace, deploymentName);
         DeploymentUtils.waitForDeploymentAndPodsReady(namespace, deploymentName, replicas);
-        LOGGER.info("Deployment {} in namespace {} is ready", deploymentName, namespace);
+        LOGGER.info("Deployment {}/{} is ready", namespace, deploymentName);
     }
 
     private static Map<String, JsonObject> parseExamplesFromCsv(String csvName, String namespace) {

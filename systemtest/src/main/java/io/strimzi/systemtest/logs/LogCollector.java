@@ -7,7 +7,6 @@ package io.strimzi.systemtest.logs;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -200,13 +199,13 @@ public class LogCollector {
     private final void collectLogsForTestSuite(final Pod pod) {
         if (pod.getMetadata().getLabels().containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
             if (pod.getMetadata().getLabels().get(Constants.TEST_SUITE_NAME_LABEL).equals(StUtils.removePackageName(this.collectorElement.getTestClassName()))) {
-                LOGGER.debug("Collecting logs for TestSuite: {}, and Pod: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+                LOGGER.debug("Collecting logs for TestSuite: {}, and Pod {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
         // Tracing pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
         } else if (pod.getMetadata().getName().contains("jaeger") || pod.getMetadata().getName().contains("cert-manager")) {
-            LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger Pods: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+            LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger Pods {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
                 containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
         }
@@ -218,7 +217,7 @@ public class LogCollector {
             // startWith is used because when we put inside Pod label with test case sometimes this test case exceed 63
             // characters and we have to cut it to avoid exception
             if (this.collectorElement.getTestMethodName().startsWith(pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL))) {
-                LOGGER.debug("Collecting logs for TestCase: {}, and Pod: {}", this.collectorElement.getTestMethodName(), pod.getMetadata().getName());
+                LOGGER.debug("Collecting logs for TestCase: {}, and Pod {}/{}", this.collectorElement.getTestMethodName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
@@ -226,24 +225,23 @@ public class LogCollector {
     }
 
     private void collectLogsFromPods(String namespace) {
-        try {
-            LOGGER.info("Collecting logs for Pod(s) in Namespace {}", namespace);
+        LOGGER.info("Collecting logs for Pod(s) in Namespace {}", namespace);
 
-            // in case we are in the cluster operator namespace we wants shared logs for whole test suite
-            if (namespace.equals(this.clusterOperatorNamespace)) {
-                kubeClient.listPods(namespace).forEach(pod -> {
-                    final String podName = pod.getMetadata().getName();
-                    if (pod.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL).equals("cluster-operator")) {
-                        pod.getStatus().getContainerStatuses().forEach(
-                            containerStatus -> scrapeAndCreateLogs(testSuite, podName, containerStatus, namespace));
-                    } else {
-                        pod.getStatus().getContainerStatuses().forEach(
+        // in case we are in the cluster operator namespace we wants shared logs for whole test suite
+        if (namespace.equals(this.clusterOperatorNamespace)) {
+            kubeClient.listPods(namespace).forEach(pod -> {
+                final String podName = pod.getMetadata().getName();
+                try {
+                    pod.getStatus().getContainerStatuses().forEach(
                             containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
-                    }
-                });
-            // scrape for Pods, which are not in `cluster-operator` namespace
-            } else {
-                kubeClient.listPods(namespace).forEach(pod -> {
+                } catch (Exception ex) {
+                    LOGGER.warn("Failed to collect logs from Pod {}/{}", namespace, podName);
+                }
+            });
+        // scrape for Pods, which are not in `cluster-operator` namespace
+        } else {
+            kubeClient.listPods(namespace).forEach(pod -> {
+                try {
                     // we are collecting inside for test case
                     if (extensionContext.getTestMethod().isPresent()) {
                         // pods, which are created by ResourceManager
@@ -254,10 +252,10 @@ public class LogCollector {
                         // pods, which are shared between test cases (@BeforeAll, @AfterAll)
                         collectLogsForTestSuite(pod);
                     }
-                });
-            }
-        } catch (Exception allExceptions) {
-            LOGGER.warn("Searching for logs in all pods failed! Some of the logs will not be stored. Exception message" + allExceptions.getMessage());
+                } catch (Exception ex) {
+                    LOGGER.warn("Failed to collect logs from Pod {}/{}", namespace, pod.getMetadata().getName());
+                }
+            });
         }
     }
 

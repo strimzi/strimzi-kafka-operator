@@ -117,7 +117,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = kubeClient(namespace).getPod(namespace, podName);
-        assertThat("Not found an expected pod  " + podName + " in namespace " + namespace + " but found " +
+        assertThat("Not found an expected Pod  " + namespace + "/" + podName + " but found " +
             kubeClient(namespace).listPods(namespace).stream().map(p -> p.getMetadata().getName()).collect(Collectors.toList()), po, is(notNullValue()));
 
         Optional optional = po.getSpec().getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst();
@@ -654,7 +654,7 @@ public abstract class AbstractST implements TestSeparator {
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("[{} - Before Each] - Setup test case environment", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("————————————  {}@efore Each - Setup test case environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeEachMustExecute(extensionContext);
         beforeEachMayOverride(extensionContext);
     }
@@ -662,7 +662,7 @@ public abstract class AbstractST implements TestSeparator {
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("[{} - Before All] - Setup test suite environment", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("———————————— {}@Before All - Setup test suite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeAllMayOverride(extensionContext);
         beforeAllMustExecute(extensionContext);
     }
@@ -670,7 +670,7 @@ public abstract class AbstractST implements TestSeparator {
     @AfterEach
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("[{} - After Each] - Clean up after test", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("———————————— {}@After Each - Clean up after test ————————————", StUtils.removePackageName(this.getClass().getName()));
         // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
         // results in `Timeout after 480000 ms waiting for Namespace namespace-136 removal` it throws WaitException and
         // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
@@ -685,7 +685,7 @@ public abstract class AbstractST implements TestSeparator {
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("[{} - After All] - Clean up after test suite", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("———————————— {}@After All - Clean up after test suite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride(extensionContext);
         afterAllMustExecute(extensionContext);
     }

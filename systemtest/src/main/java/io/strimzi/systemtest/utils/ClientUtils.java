@@ -73,10 +73,10 @@ public class ClientUtils {
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount, boolean deleteAfterSuccess) {
-        LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
+        LOGGER.info("Waiting for producer/consumer {}/{} to finished", namespace, jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> {
-                LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
+                LOGGER.debug("Job {}/{} has status {}", namespace, jobName, kubeClient().namespace(namespace).getJobStatus(jobName));
                 return kubeClient().checkSucceededJobStatus(namespace, jobName, 1);
             },
             () -> JobUtils.logCurrentJobStatus(jobName, namespace));
@@ -108,7 +108,7 @@ public class ClientUtils {
     }
 
     public static void waitForClientTimeout(String jobName, String namespace, int messageCount, boolean deleteAfterSuccess) {
-        LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
+        LOGGER.info("Waiting for producer/consumer {}/{} to finish with failure", namespace, jobName);
         try {
             TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
                 () -> kubeClient().checkFailedJobStatus(namespace, jobName, 1),
@@ -119,7 +119,7 @@ public class ClientUtils {
             }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
-                LOGGER.info("Client job '{}' finished with expected timeout.", jobName);
+                LOGGER.info("Client Job {}/{} finished with expected timeout", namespace, jobName);
                 if (deleteAfterSuccess) {
                     JobUtils.deleteJobWithWait(namespace, jobName);
                 }
@@ -140,7 +140,7 @@ public class ClientUtils {
     }
 
     public static void waitForClientsTimeout(String producerName, String consumerName, String namespace, int messageCount, boolean deleteAfterSuccess) {
-        LOGGER.info("Waiting for producer: {} and consumer: {} to finish with failure.", producerName, consumerName);
+        LOGGER.info("Waiting for producer {}/{} and consumer {}/{} to finish with failure.", namespace, producerName, namespace, consumerName);
 
         try {
             TestUtils.waitFor("clients timeout", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
@@ -156,7 +156,7 @@ public class ClientUtils {
             }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
-                LOGGER.info("Both jobs - {} and {} - hit the wait timeout - as expected", producerName, consumerName);
+                LOGGER.info("Both Jobs - {}/{} and {}/{} - hit the wait timeout - as expected", namespace, producerName, namespace, consumerName);
                 if (deleteAfterSuccess) {
                     JobUtils.deleteJobsWithWait(namespace, producerName, consumerName);
                 }
@@ -172,7 +172,7 @@ public class ClientUtils {
 
     public static void waitForClientContainsMessage(String jobName, String namespace, String message, boolean deleteAfterSuccess) {
         String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
-        LOGGER.info("Waiting for client:{} will contain message: {}", jobName, message);
+        LOGGER.info("Waiting for client {}/{} will contain message: {}", namespace, jobName, message);
 
         TestUtils.waitFor("job contains message " + message, Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT,
             () -> kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message),

@@ -1161,10 +1161,10 @@ class KafkaST extends AbstractST {
         verifyPresentLabels(labels, service.getMetadata().getLabels());
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
-            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have new labels: {}", cmName, testStorage.getNamespaceName(), labels);
+            LOGGER.info("Waiting for Kafka ConfigMap {}/{} to have new labels: {}", testStorage.getNamespaceName(), cmName, labels);
             ConfigMapUtils.waitForConfigMapLabelsChange(testStorage.getNamespaceName(), cmName, labels);
 
-            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, testStorage.getNamespaceName());
+            LOGGER.info("Verifying Kafka labels on ConfigMap {}/{}", testStorage.getNamespaceName(), cmName);
             ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
             verifyPresentLabels(labels, configMap.getMetadata().getLabels());
@@ -1211,10 +1211,10 @@ class KafkaST extends AbstractST {
         verifyNullLabels(labelKeys, service);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
-            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have labels removed: {}", cmName, testStorage.getNamespaceName(), labelKeys);
+            LOGGER.info("Waiting for Kafka ConfigMap {}/{} to have labels removed: {}", testStorage.getNamespaceName(), cmName, labelKeys);
             ConfigMapUtils.waitForConfigMapLabelsDeletion(testStorage.getNamespaceName(), cmName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
-            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, testStorage.getNamespaceName());
+            LOGGER.info("Verifying Kafka labels on ConfigMap {}/{}", testStorage.getNamespaceName(), cmName);
             ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
             verifyNullLabels(labelKeys, configMap);
@@ -1331,17 +1331,17 @@ class KafkaST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, firstClusterName, userName).build());
 
-        LOGGER.info("Verifying that user {} in cluster {} is created", userName, firstClusterName);
+        LOGGER.info("Verifying that KafkaUser {} in cluster {} is created", userName, firstClusterName);
         String entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0);
         String uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, containsString("User " + userName + " in namespace " + namespaceName + " was ADDED"));
+        assertThat(uOLogs, containsString("KafkaUser " + namespaceName + "/" + userName + " was ADDED"));
 
-        LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
+        LOGGER.info("Verifying that KafkaUser {} in cluster {} is not created", userName, secondClusterName);
         entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0);
         uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, not(containsString("User " + userName + " in namespace " + namespaceName + " was ADDED")));
+        assertThat(uOLogs, not(containsString("KafkaUser " + namespaceName + "/" + userName + " was ADDED")));
 
-        LOGGER.info("Verifying that user belongs to {} cluster", firstClusterName);
+        LOGGER.info("Verifying that KafkaUser belongs to {} cluster", firstClusterName);
         String kafkaUserResource = cmdKubeClient(namespaceName).getResourceAsYaml("kafkauser", userName);
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
