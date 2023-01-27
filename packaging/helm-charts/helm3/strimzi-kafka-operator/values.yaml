@@ -96,7 +96,7 @@ kafkaMirrorMaker:
 kafkaBridge:
   image:
     registry: ""
-    repository:
+    repository: "ppatierno"
     name: kafka-bridge
     tag: endpoints-refactoring
 kafkaExporter:
