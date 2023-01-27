@@ -98,7 +98,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.24.0
+    tag: endpoints-refactoring
 kafkaExporter:
   image:
     registry: ""
