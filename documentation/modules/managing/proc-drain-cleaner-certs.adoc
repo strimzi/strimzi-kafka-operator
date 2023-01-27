@@ -8,14 +8,14 @@
 [role="_abstract"]
 The Drain Cleaner uses a webhook to receive eviction notifications from the Kubernetes API.
 The webhook uses a secure TLS connection and authenticates using TLS certificates.
-If you are not using `cert-manager` to deploy the Drain Cleaner, you need to generate the TLS certificates. 
+If you are not deploying the Drain Cleaner using the `cert-manager` or on Openshift, you must create and renew the TLS certificates.  
 You must then add them to the files used to deploy the Drain Cleaner.   
 The certificates must also be renewed before they expire. 
 To renew the certificates, you repeat the steps used to generate and add the certificates to the initial deployment of the Drain Cleaner. 
 
 Generate and add certificates to the standard installation files or your Helm configuration when deploying the Drain Cleaner on Kubernetes without `cert-manager`.
 
-NOTE: If you are using `cert-manager` to deploy the Drain Cleaner, you don't need to perform these steps. Certificates are generated automatically when you deploy the Drain Cleaner. `cert-manager` can also renew certificates automatically.  
+NOTE: If you are using `cert-manager` to deploy the Drain Cleaner, you don't need to add or renew TLS certificates. The same applies when deploying the Drain Cleaner on OpenShift, as OpenShift injects the certificates. In both cases, TLS certificates are added and renewed automatically.   
 
 .Prerequisites
 
