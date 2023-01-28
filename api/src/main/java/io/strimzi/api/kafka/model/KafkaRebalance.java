@@ -168,6 +168,9 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
      * @return a predicate that checks if a KafkaRebalance is in a particular state
      */
     public static Predicate<KafkaRebalance> isInState(KafkaRebalanceState state) {
+        if(state==KafkaRebalanceState.Ready){
+           return CustomResourceConditions.isReady();
+        }
         return CustomResourceConditions.isLatestGenerationAndAnyConditionMatches(state.name(), "True");
     }
 }
