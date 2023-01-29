@@ -104,6 +104,7 @@ import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_MET
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
@@ -240,6 +241,7 @@ public class KafkaCluster extends AbstractModel {
     private StatefulSetTemplate templateStatefulSet;
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
+    private ResourceTemplate templateJmxSecret;
     protected Map<String, String> templateExternalBootstrapServiceLabels;
     protected Map<String, String> templateExternalBootstrapServiceAnnotations;
     protected Map<String, String> templatePerPodServiceLabels;
@@ -499,17 +501,13 @@ public class KafkaCluster extends AbstractModel {
                 result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
-            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
-                result.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
-                result.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
-            }
-
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
             result.templateStatefulSet = template.getStatefulset();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
+            result.templateJmxSecret = template.getJmxSecret();
         }
 
         // Should run at the end when everything is set
@@ -1248,14 +1246,17 @@ public class KafkaCluster extends AbstractModel {
             data.put(KafkaResources.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
 
-        return createSecret(
+        return ModelUtils.createSecret(
                 KafkaResources.kafkaSecretName(cluster),
+                namespace,
+                labels,
+                ownerReference,
                 data,
                 Map.of(
                         clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration()),
                         clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.certGeneration())
-                )
-        );
+                ),
+                emptyMap());
     }
 
     /**
@@ -1278,7 +1279,15 @@ public class KafkaCluster extends AbstractModel {
                 data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
             }
 
-            return createJmxSecret(KafkaResources.kafkaJmxSecretName(cluster), data);
+            return ModelUtils.createSecret(
+                    KafkaResources.kafkaJmxSecretName(cluster),
+                    namespace,
+                    labels,
+                    ownerReference,
+                    data,
+                    TemplateUtils.annotations(templateJmxSecret),
+                    TemplateUtils.labels(templateJmxSecret)
+            );
         } else {
             return null;
         }
@@ -1575,11 +1584,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     @Override
-    public String getServiceAccountName() {
-        return KafkaResources.kafkaStatefulSetName(cluster);
-    }
-
-    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
@@ -1637,7 +1641,7 @@ public class KafkaCluster extends AbstractModel {
         if (rack != null || isExposedWithNodePort()) {
             Subject subject = new SubjectBuilder()
                     .withKind("ServiceAccount")
-                    .withName(getServiceAccountName())
+                    .withName(componentName)
                     .withNamespace(assemblyNamespace)
                     .build();
 

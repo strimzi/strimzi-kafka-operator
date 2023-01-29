@@ -157,6 +157,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected ResourceTemplate templateInitClusterRoleBinding;
     protected DeploymentTemplate templateDeployment;
     protected PodTemplate templatePod;
+    protected ResourceTemplate templateJmxSecret;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -320,15 +321,11 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
-            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
-                kafkaConnect.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
-                kafkaConnect.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
-            }
-
             kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
             kafkaConnect.templateDeployment = template.getDeployment();
             kafkaConnect.templatePod = template.getPod();
+            kafkaConnect.templateJmxSecret = template.getJmxSecret();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -742,11 +739,6 @@ public class KafkaConnectCluster extends AbstractModel {
         return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
-    @Override
-    public String getServiceAccountName() {
-        return KafkaConnectResources.serviceAccountName(cluster);
-    }
-
     /**
      * @return  Name of the ClusterRoleBinding for the Connect init container
      */
@@ -802,7 +794,15 @@ public class KafkaConnectCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createJmxSecret(KafkaConnectCluster.jmxSecretName(cluster), data);
+        return ModelUtils.createSecret(
+                KafkaConnectCluster.jmxSecretName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                data,
+                TemplateUtils.annotations(templateJmxSecret),
+                TemplateUtils.labels(templateJmxSecret)
+        );
     }
 
     /**
@@ -909,7 +909,7 @@ public class KafkaConnectCluster extends AbstractModel {
         if (rack != null) {
             Subject subject = new SubjectBuilder()
                     .withKind("ServiceAccount")
-                    .withName(getServiceAccountName())
+                    .withName(componentName)
                     .withNamespace(namespace)
                     .build();
 

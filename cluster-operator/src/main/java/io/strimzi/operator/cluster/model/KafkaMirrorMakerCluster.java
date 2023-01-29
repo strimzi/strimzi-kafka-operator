@@ -514,11 +514,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     @Override
-    protected String getServiceAccountName() {
-        return KafkaMirrorMakerResources.serviceAccountName(cluster);
-    }
-
-    @Override
     protected boolean shouldPatchLoggerAppender() {
         return true;
     }

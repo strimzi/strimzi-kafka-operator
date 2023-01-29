@@ -3263,7 +3263,7 @@ public class KafkaClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaResources.initContainerClusterRoleBindingName(CLUSTER, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.componentName));
     }
 
     @ParallelTest
@@ -3287,7 +3287,7 @@ public class KafkaClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaResources.initContainerClusterRoleBindingName(CLUSTER, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(kc.getServiceAccountName()));
+        assertThat(crb.getSubjects().get(0).getName(), is(kc.componentName));
     }
 
     @ParallelTest

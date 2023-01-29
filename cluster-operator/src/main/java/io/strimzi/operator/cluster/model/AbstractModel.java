@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
@@ -62,8 +61,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static java.util.Collections.emptyMap;
 
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
@@ -220,8 +217,6 @@ public abstract class AbstractModel {
     protected List<IpFamily> templateHeadlessServiceIpFamilies;
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
-    protected Map<String, String> templateJmxSecretLabels;
-    protected Map<String, String> templateJmxSecretAnnotations;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -663,13 +658,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return the name of the service account used by the deployed cluster for Kubernetes API operations.
-     */
-    protected String getServiceAccountName() {
-        return null;
-    }
-
-    /**
      * @return the cluster name.
      */
     public String getCluster() {
@@ -746,14 +734,6 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withData(data)
                 .build();
-    }
-
-    protected Secret createSecret(String name, Map<String, String> data, Map<String, String> customAnnotations) {
-        return ModelUtils.createSecret(name, namespace, labels, ownerReference, data, customAnnotations, emptyMap());
-    }
-
-    protected Secret createJmxSecret(String name, Map<String, String> data) {
-        return ModelUtils.createSecret(name, namespace, labels, ownerReference, data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
@@ -984,7 +964,7 @@ public abstract class AbstractModel {
     public ServiceAccount generateServiceAccount() {
         return new ServiceAccountBuilder()
                 .withNewMetadata()
-                    .withName(getServiceAccountName())
+                    .withName(componentName)
                     .withNamespace(namespace)
                     .withOwnerReferences(ownerReference)
                     .withLabels(labels.withAdditionalLabels(templateServiceAccountLabels).toMap())

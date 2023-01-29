@@ -867,7 +867,7 @@ public class KafkaBridgeClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaBridgeResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(bridgeCluster.getServiceAccountName()));
+        assertThat(crb.getSubjects().get(0).getName(), is(bridgeCluster.componentName));
     }
 
     @ParallelTest

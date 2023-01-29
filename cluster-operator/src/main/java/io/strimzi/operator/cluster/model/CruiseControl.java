@@ -451,11 +451,6 @@ public class CruiseControl extends AbstractModel {
         return "cruiseControlDefaultLoggingProperties";
     }
 
-    @Override
-    protected String getServiceAccountName() {
-        return CruiseControlResources.serviceAccountName(cluster);
-    }
-
     /**
      * Creates Cruise Control API auth usernames, passwords, and credentials file
      *
@@ -523,8 +518,15 @@ public class CruiseControl extends AbstractModel {
         data.put(keyCertName + ".p12", cert.keyStoreAsBase64String());
         data.put(keyCertName + ".password", cert.storePasswordAsBase64String());
 
-        return createSecret(CruiseControlResources.secretName(cluster), data,
-                Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())));
+        return ModelUtils.createSecret(
+                CruiseControlResources.secretName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                data,
+                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())),
+                Map.of()
+        );
     }
 
     /**
