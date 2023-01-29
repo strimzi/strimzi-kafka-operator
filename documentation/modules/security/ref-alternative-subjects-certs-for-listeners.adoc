@@ -1,12 +1,13 @@
 // Module included in the following assemblies:
 //
-// assembly-security.adoc
+// assembly-securing-kafka.adoc
 
 [id='ref-alternative-subjects-certs-for-listeners-{context}']
 
 = Alternative subjects in server certificates for Kafka listeners
 
-In order to use TLS hostname verification with your own xref:kafka-listener-certificates-{context}[Kafka listener certificates], you must use the correct Subject Alternative Names (SANs) for each listener. The certificate SANs must specify hostnames for:
+[role="_abstract"]
+In order to use TLS hostname verification with your own xref:proc-installing-certs-per-listener-{context}[Kafka listener certificates], you must use the correct Subject Alternative Names (SANs) for each listener. The certificate SANs must specify hostnames for the following:
 
 * All of the Kafka brokers in your cluster
 

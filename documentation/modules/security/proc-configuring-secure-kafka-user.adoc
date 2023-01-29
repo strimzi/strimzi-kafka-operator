@@ -24,7 +24,7 @@ For example, it is not possible to authenticate a user with mTLS if it is not al
 .Prerequisites
 
 * A running Kafka cluster xref:con-mutual-tls-authentication-{context}[configured with a Kafka broker listener using mTLS authentication and TLS encryption].
-* A running User Operator (typically xref:assembly-kafka-entity-operator-str[deployed with the Entity Operator]).
+* A running User Operator (typically deployed with the Entity Operator).
 
 The authentication type in `KafkaUser` should match the authentication configured in `Kafka` brokers.
 
@@ -73,4 +73,4 @@ kubectl apply -f _<user_config_file>_
 The user is created, as well as a Secret with the same name as the `KafkaUser` resource.
 The Secret contains a private and public key for mTLS authentication.
 
-For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see link:{BookURLDeploying}#setup-external-clients-str[Setting up client access to a Kafka cluster using listeners^].
+For information on configuring a Kafka client with properties for secure connection to Kafka brokers, see xref:setup-external-clients-str[].
