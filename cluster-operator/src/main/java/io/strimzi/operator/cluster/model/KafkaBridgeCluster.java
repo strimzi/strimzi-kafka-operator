@@ -38,8 +38,11 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -61,6 +64,7 @@ import java.util.Map;
 /**
  * Kafka Bridge model class
  */
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class KafkaBridgeCluster extends AbstractModel {
     /**
      * HTTP port configuration
@@ -134,6 +138,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private ResourceTemplate templateInitClusterRoleBinding;
     private SecurityContext templateInitContainerSecurityContext;
+    private DeploymentTemplate templateDeployment;
+    private PodTemplate templatePod;
 
     private Tracing tracing;
 
@@ -228,7 +234,6 @@ public class KafkaBridgeCluster extends AbstractModel {
             fromCrdTemplate(kafkaBridgeCluster, spec);
         }
 
-        kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, DEFAULT_POD_LABELS);
         if (spec.getHttp() != null) {
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
@@ -242,8 +247,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     private static void fromCrdTemplate(final KafkaBridgeCluster kafkaBridgeCluster, final KafkaBridgeSpec spec) {
         KafkaBridgeTemplate template = spec.getTemplate();
 
-        ModelUtils.parseDeploymentTemplate(kafkaBridgeCluster, template.getDeployment());
-        ModelUtils.parsePodTemplate(kafkaBridgeCluster, template.getPod());
         ModelUtils.parseInternalServiceTemplate(kafkaBridgeCluster, template.getApiService());
 
         if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
@@ -274,6 +277,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         kafkaBridgeCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
         kafkaBridgeCluster.templateInitClusterRoleBinding = template.getClusterRoleBinding();
+        kafkaBridgeCluster.templateDeployment = template.getDeployment();
+        kafkaBridgeCluster.templatePod = template.getPod();
     }
 
     /**
@@ -326,7 +331,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
-        volumeList.add(createTempDirVolume());
+        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (tls != null) {
@@ -342,7 +347,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
-        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         if (tls != null) {
             VolumeUtils.createSecretVolumeMount(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
@@ -365,16 +370,28 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @return  Generated Kubernetes Deployment resource
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        return createDeployment(
-                getDeploymentStrategy(),
-                Collections.emptyMap(),
-                annotations,
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
-                imagePullSecrets,
-                securityProvider.bridgePodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
+        return WorkloadUtils.createDeployment(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateDeployment,
+                replicas,
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, DeploymentStrategy.ROLLING_UPDATE)),
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        annotations,
+                        getMergedAffinity(),
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.bridgePodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     @Override
@@ -563,12 +580,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
+     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
      */
-    @Override
     protected Affinity getMergedAffinity() {
-        Affinity userAffinity = getUserAffinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
+        Affinity userAffinity = templatePod != null && templatePod.getAffinity() != null ? templatePod.getAffinity() : new Affinity();
+        AffinityBuilder builder = new AffinityBuilder(userAffinity);
         if (rack != null) {
             builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
         }

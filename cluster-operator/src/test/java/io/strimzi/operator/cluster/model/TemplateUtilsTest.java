@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -54,5 +57,12 @@ public class TemplateUtilsTest {
                 .build();
 
         assertThat(TemplateUtils.labels(template), is(Map.of("label-1", "value-1", "label-2", "value-2")));
+    }
+
+    @ParallelTest
+    public void testDeploymentStrategy() {
+        assertThat(TemplateUtils.deploymentStrategy(null, DeploymentStrategy.RECREATE), is(DeploymentStrategy.RECREATE));
+        assertThat(TemplateUtils.deploymentStrategy(new DeploymentTemplate(), DeploymentStrategy.ROLLING_UPDATE), is(DeploymentStrategy.ROLLING_UPDATE));
+        assertThat(TemplateUtils.deploymentStrategy(new DeploymentTemplateBuilder().withDeploymentStrategy(DeploymentStrategy.RECREATE).build(), DeploymentStrategy.ROLLING_UPDATE), is(DeploymentStrategy.RECREATE));
     }
 }

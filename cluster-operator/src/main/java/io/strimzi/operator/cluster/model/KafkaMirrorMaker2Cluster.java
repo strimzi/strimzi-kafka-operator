@@ -113,7 +113,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         }        
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
         KafkaMirrorMaker2Cluster mm2 = fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
-        mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, DEFAULT_POD_LABELS);
+
         return mm2;
     }
 

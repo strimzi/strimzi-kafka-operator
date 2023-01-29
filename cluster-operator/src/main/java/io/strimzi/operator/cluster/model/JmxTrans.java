@@ -12,15 +12,11 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.JmxTransSpec;
@@ -29,9 +25,11 @@ import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
@@ -44,10 +42,11 @@ import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 
 /**
  * Class for handling JmxTrans configuration passed by the user. Used to get the resources needed to create the
@@ -91,6 +90,8 @@ public class JmxTrans extends AbstractModel {
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private DeploymentTemplate templateDeployment;
+    private PodTemplate templatePod;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -152,13 +153,6 @@ public class JmxTrans extends AbstractModel {
             if (jmxTransSpec.getTemplate() != null) {
                 JmxTransTemplate template = jmxTransSpec.getTemplate();
 
-                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
-                    result.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                    result.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-                }
-
-                ModelUtils.parsePodTemplate(result, template.getPod());
-
                 if (template.getContainer() != null && template.getContainer().getEnv() != null) {
                     result.templateContainerEnvVars = template.getContainer().getEnv();
                 }
@@ -171,9 +165,10 @@ public class JmxTrans extends AbstractModel {
                     result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
                     result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
-            }
 
-            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
+                result.templateDeployment = template.getDeployment();
+                result.templatePod = template.getPod();
+            }
 
             return result;
         } else {
@@ -190,24 +185,27 @@ public class JmxTrans extends AbstractModel {
      * @return  Kubernetes Deployment with the JMX Trans
      */
     public Deployment generateDeployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
-                .withType("RollingUpdate")
-                .withRollingUpdate(new RollingUpdateDeploymentBuilder()
-                        .withMaxSurge(new IntOrString(1))
-                        .withMaxUnavailable(new IntOrString(0))
-                        .build())
-                .build();
-
-        return createDeployment(
-                updateStrategy,
-                Collections.emptyMap(),
-                Collections.emptyMap(),
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(),
-                imagePullSecrets,
-                securityProvider.jmxTransPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext))
+        return WorkloadUtils.createDeployment(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateDeployment,
+                replicas,
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        Map.of(),
+                        templatePod != null ? templatePod.getAffinity() : null,
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getVolumes(),
+                        imagePullSecrets,
+                        securityProvider.jmxTransPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                )
         );
     }
 
@@ -320,7 +318,7 @@ public class JmxTrans extends AbstractModel {
     private List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>(2);
 
-        volumes.add(createTempDirVolume());
+        volumes.add(VolumeUtils.createTempDirVolume(templatePod));
         volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, JmxTransResources.configMapName(cluster)));
 
         return volumes;
@@ -329,7 +327,7 @@ public class JmxTrans extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
-        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(JMXTRANS_VOLUME_NAME, JMX_FILE_PATH));
         return volumeMountList;
     }

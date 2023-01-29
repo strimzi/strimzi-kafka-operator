@@ -42,7 +42,9 @@ import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -130,6 +132,9 @@ public class ZookeeperCluster extends AbstractModel {
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private ResourceTemplate templatePersistentVolumeClaims;
+    private StatefulSetTemplate templateStatefulSet;
+    private ResourceTemplate templatePodSet;
+    private PodTemplate templatePod;
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
@@ -276,23 +281,6 @@ public class ZookeeperCluster extends AbstractModel {
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
-            if (template.getStatefulset() != null) {
-                if (template.getStatefulset().getPodManagementPolicy() != null) {
-                    zk.templatePodManagementPolicy = template.getStatefulset().getPodManagementPolicy();
-                }
-
-                if (template.getStatefulset().getMetadata() != null) {
-                    zk.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
-                    zk.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
-                }
-            }
-
-            if (template.getPodSet() != null && template.getPodSet().getMetadata() != null) {
-                zk.templatePodSetLabels = template.getPodSet().getMetadata().getLabels();
-                zk.templatePodSetAnnotations = template.getPodSet().getMetadata().getAnnotations();
-            }
-
-            ModelUtils.parsePodTemplate(zk, template.getPod());
             ModelUtils.parseInternalServiceTemplate(zk, template.getClientService());
             ModelUtils.parseInternalHeadlessServiceTemplate(zk, template.getNodesService());
 
@@ -316,9 +304,10 @@ public class ZookeeperCluster extends AbstractModel {
 
             zk.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             zk.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
+            zk.templateStatefulSet = template.getStatefulset();
+            zk.templatePodSet = template.getPodSet();
+            zk.templatePod = template.getPod();
         }
-
-        zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, DEFAULT_POD_LABELS);
 
         // Should run at the end when everything is set
         ZooKeeperSpecChecker specChecker = new ZooKeeperSpecChecker(zk);
@@ -471,16 +460,30 @@ public class ZookeeperCluster extends AbstractModel {
      * @return  Generated StatefulSet
      */
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        return createStatefulSet(
-                Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
-                Collections.emptyMap(),
-                getStatefulSetVolumes(isOpenShift),
+        return WorkloadUtils.createStatefulSet(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateStatefulSet,
+                replicas,
+                headlessServiceName,
+                Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 getPersistentVolumeClaimTemplates(),
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                imagePullSecrets,
-                securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        Map.of(),
+                        templatePod != null ? templatePod.getAffinity() : null,
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getStatefulSetVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     /**
@@ -501,16 +504,33 @@ public class ZookeeperCluster extends AbstractModel {
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
                                         Map<String, String> podAnnotations) {
-        return createPodSet(
-            replicas,
-            Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
-            (brokerId) -> podAnnotations,
-            podName -> getPodSetVolumes(podName, isOpenShift),
-            getMergedAffinity(),
-            getInitContainers(imagePullPolicy),
-            getContainers(imagePullPolicy),
-            imagePullSecrets,
-            securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
+        return WorkloadUtils.createPodSet(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePodSet,
+                replicas,
+                Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+                brokerId -> WorkloadUtils.createStatefulPod(
+                        reconciliation,
+                        getPodName(brokerId),
+                        namespace,
+                        labels,
+                        componentName,
+                        componentName,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        podAnnotations,
+                        headlessServiceName,
+                        templatePod != null ? templatePod.getAffinity() : null,
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getPodSetVolumes(getPodName(brokerId), isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     /**
@@ -639,7 +659,7 @@ public class ZookeeperCluster extends AbstractModel {
     private List<Volume> getNonDataVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(4);
 
-        volumeList.add(createTempDirVolume());
+        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
@@ -696,13 +716,13 @@ public class ZookeeperCluster extends AbstractModel {
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims() {
         return PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSetLabels);
+                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSet);
     }
 
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(5);
 
-        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         // ZooKeeper uses mount path which is different from the one used by Kafka.
         // As a result it cannot use VolumeUtils.getVolumeMounts and creates the volume mount directly
         volumeMountList.add(VolumeUtils.createVolumeMount(VOLUME_NAME, mountPath));

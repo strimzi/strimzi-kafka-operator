@@ -69,7 +69,9 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
@@ -235,6 +237,9 @@ public class KafkaCluster extends AbstractModel {
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private ResourceTemplate templatePersistentVolumeClaims;
     private ResourceTemplate templateInitClusterRoleBinding;
+    private StatefulSetTemplate templateStatefulSet;
+    private ResourceTemplate templatePodSet;
+    private PodTemplate templatePod;
     protected Map<String, String> templateExternalBootstrapServiceLabels;
     protected Map<String, String> templateExternalBootstrapServiceAnnotations;
     protected Map<String, String> templatePerPodServiceLabels;
@@ -436,23 +441,6 @@ public class KafkaCluster extends AbstractModel {
         if (kafkaClusterSpec.getTemplate() != null) {
             KafkaClusterTemplate template = kafkaClusterSpec.getTemplate();
 
-            if (template.getStatefulset() != null) {
-                if (template.getStatefulset().getPodManagementPolicy() != null) {
-                    result.templatePodManagementPolicy = template.getStatefulset().getPodManagementPolicy();
-                }
-
-                if (template.getStatefulset().getMetadata() != null) {
-                    result.templateStatefulSetLabels = template.getStatefulset().getMetadata().getLabels();
-                    result.templateStatefulSetAnnotations = template.getStatefulset().getMetadata().getAnnotations();
-                }
-            }
-
-            if (template.getPodSet() != null && template.getPodSet().getMetadata() != null) {
-                result.templatePodSetLabels = template.getPodSet().getMetadata().getLabels();
-                result.templatePodSetAnnotations = template.getPodSet().getMetadata().getAnnotations();
-            }
-
-            ModelUtils.parsePodTemplate(result, template.getPod());
             ModelUtils.parseInternalServiceTemplate(result, template.getBootstrapService());
             ModelUtils.parseInternalHeadlessServiceTemplate(result, template.getBrokersService());
 
@@ -519,9 +507,10 @@ public class KafkaCluster extends AbstractModel {
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
+            result.templateStatefulSet = template.getStatefulset();
+            result.templatePodSet = template.getPodSet();
+            result.templatePod = template.getPod();
         }
-
-        result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
 
         // Should run at the end when everything is set
         KafkaSpecChecker specChecker = new KafkaSpecChecker(kafkaSpec, versions, result);
@@ -1152,16 +1141,30 @@ public class KafkaCluster extends AbstractModel {
                                            ImagePullPolicy imagePullPolicy,
                                            List<LocalObjectReference> imagePullSecrets,
                                            Map<String, String> podAnnotations) {
-        return createStatefulSet(
+        return WorkloadUtils.createStatefulSet(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateStatefulSet,
+                replicas,
+                headlessServiceName,
                 prepareControllerAnnotations(),
-                podAnnotations,
-                getStatefulSetVolumes(isOpenShift),
                 getPersistentVolumeClaimTemplates(),
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                imagePullSecrets,
-                securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        podAnnotations,
+                        getMergedAffinity(),
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getStatefulSetVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     /**
@@ -1185,16 +1188,33 @@ public class KafkaCluster extends AbstractModel {
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
                                         Function<Integer, Map<String, String>> podAnnotationsProvider) {
-        return createPodSet(
+        return WorkloadUtils.createPodSet(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePodSet,
                 replicas,
                 prepareControllerAnnotations(),
-                podAnnotationsProvider,
-                podName -> getPodSetVolumes(podName, isOpenShift),
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                imagePullSecrets,
-                securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templateSecurityContext)));
+                brokerId -> WorkloadUtils.createStatefulPod(
+                        reconciliation,
+                        getPodName(brokerId),
+                        namespace,
+                        labels,
+                        componentName,
+                        componentName,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        podAnnotationsProvider.apply(brokerId),
+                        headlessServiceName,
+                        getMergedAffinity(),
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getPodSetVolumes(getPodName(brokerId), isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     /**
@@ -1294,7 +1314,7 @@ public class KafkaCluster extends AbstractModel {
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
         return PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSetLabels);
+                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSet);
     }
 
     /**
@@ -1318,7 +1338,7 @@ public class KafkaCluster extends AbstractModel {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
-        volumeList.add(createTempDirVolume());
+        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaResources.kafkaSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
@@ -1418,7 +1438,7 @@ public class KafkaCluster extends AbstractModel {
         List<VolumeMount> volumeMountList = new ArrayList<>();
 
         volumeMountList.addAll(VolumeUtils.createVolumeMounts(storage, mountPath, false));
-        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
@@ -1458,12 +1478,11 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
+     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
      */
-    @Override
     protected Affinity getMergedAffinity() {
-        Affinity userAffinity = getUserAffinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
+        Affinity userAffinity = templatePod != null && templatePod.getAffinity() != null ? templatePod.getAffinity() : new Affinity();
+        AffinityBuilder builder = new AffinityBuilder(userAffinity);
         if (rack != null) {
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
             builder = builder

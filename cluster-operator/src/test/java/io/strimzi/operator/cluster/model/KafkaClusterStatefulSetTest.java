@@ -140,8 +140,8 @@ public class KafkaClusterStatefulSetTest {
         assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(5));
         assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(15));
         assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
-        assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+        assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
         assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
         assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaCluster.BROKER_CERTS_VOLUME_MOUNT));
         assertThat(containers.get(0).getVolumeMounts().get(2).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
@@ -156,7 +156,7 @@ public class KafkaClusterStatefulSetTest {
         assertThat(containers.get(0).getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
+            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
         if (kafka.getSpec().getKafka().getRack() != null) {
             Rack rack = kafka.getSpec().getKafka().getRack();
@@ -202,7 +202,7 @@ public class KafkaClusterStatefulSetTest {
 
         // Check Volumes
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().size(), is(6));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(1).getSecret().getSecretName(), is("foo-cluster-ca-cert"));
