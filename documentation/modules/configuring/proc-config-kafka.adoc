@@ -196,16 +196,16 @@ xref:scaling-clusters-{context}[scale clusters].
 <5> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <6> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running Kafka.
 <7> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<8> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:assembly-securing-kafka-brokers-str[configured as _internal_ or _external_ listeners for connection from inside or outside the Kubernetes cluster].
+<8> Listeners configure how clients connect to the Kafka cluster via bootstrap addresses. Listeners are xref:type-GenericKafkaListener-reference[configured as _internal_ or _external_ listeners for connection from inside or outside the Kubernetes cluster].
 <9> Name to identify the listener. Must be unique within the Kafka cluster.
 <10> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <11> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route`, `loadbalancer`, `nodeport` or `ingress`.
 <12> Enables TLS encryption for each listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
-<14> Listener authentication mechanism xref:assembly-securing-kafka-brokers-str[specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0].
-<15> External listener configuration specifies xref:assembly-accessing-kafka-outside-cluster-str[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
-<16> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external CA (certificate authority). The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
-<17> Authorization xref:con-securing-kafka-authorization-str[enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker.] Simple authorization uses the `AclAuthorizer` Kafka plugin.
+<14> Listener authentication mechanism xref:type-GenericKafkaListener-reference[specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0].
+<15> External listener configuration specifies xref:type-GenericKafkaListener-reference[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
+<16> Optional configuration for a link:{BookURLDeploying}#proc-installing-certs-per-listener-str[Kafka listener certificate] managed by an external CA (certificate authority). The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
+<17> Authorization xref:type-KafkaClusterSpec-reference[enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker.] Simple authorization uses the `AclAuthorizer` Kafka plugin.
 <18> Broker configuration. xref:property-kafka-config-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].
 <19> xref:con-common-configuration-ssl-reference[SSL properties for listeners with TLS encryption enabled to enable a specific _cipher suite_ or TLS version].
 <20> xref:assembly-storage-{context}[Storage] is configured as `ephemeral`, `persistent-claim` or `jbod`.

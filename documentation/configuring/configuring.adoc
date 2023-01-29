@@ -16,9 +16,7 @@ include::assemblies/configuring/assembly-external-config.adoc[leveloffset=+1]
 //security context for all pods
 include::assemblies/configuring/assembly-security-providers.adoc[leveloffset=+1]
 
-include::assemblies/security/assembly-securing-external-listeners.adoc[leveloffset=+1]
 
-include::assemblies/security/assembly-securing-access.adoc[leveloffset=+1]
 
 include::assemblies/operators/assembly-operators.adoc[leveloffset=+1]
 

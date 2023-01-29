@@ -13,7 +13,7 @@ The security implemented for Kafka brokers must be compatible with the security 
 * `Kafka.spec.kafka.authorization` matches `KafkaUser.spec.authorization`
 
 The steps show the configuration for simple authorization and a listener using mTLS authentication.
-For more information on listener configuration, see xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
+For more information on listener configuration, see the link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
 
 Alternatively, you can use SCRAM-SHA or OAuth 2.0 for xref:con-securing-kafka-authentication-{context}[listener authentication],
 and OAuth 2.0 or OPA for xref:con-securing-kafka-authorization-{context}[Kafka authorization].

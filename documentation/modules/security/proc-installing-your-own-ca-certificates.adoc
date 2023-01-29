@@ -124,4 +124,4 @@ spec:
 
 * xref:renewing-your-own-ca-certificates-{context}[].
 * xref:proc-replacing-your-own-private-keys-{context}[].
-* xref:proc-installing-certs-per-listener-{context}[].
+* link:{BookURLDeploying}#proc-installing-certs-per-listener-{context}[Providing your own Kafka listener certificates for TLS encryption^].

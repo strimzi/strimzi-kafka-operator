@@ -69,4 +69,4 @@ kubectl apply -f _<kafka_configuration_file>_
 [role="_additional-resources"]
 .Additional resources
 
-* xref:user_quotas[Setting user quotas]
+* xref:type-KafkaUserQuotas-reference[]

@@ -6,7 +6,9 @@
 [id='deploying-example-clients-{context}']
 = Deploying example clients
 
-This procedure shows how to deploy example producer and consumer clients that use the Kafka cluster you created to send and receive messages.
+[role="_abstract"]
+Deploy example producer and consumer clients to send and receive messages.
+You can use these clients to verify a deployment of Strimzi. 
 
 .Prerequisites
 
