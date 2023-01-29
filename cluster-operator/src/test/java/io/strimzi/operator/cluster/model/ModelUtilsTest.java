@@ -4,48 +4,32 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.template.DeploymentTemplate;
-import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplateBuilder;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -61,14 +45,12 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.parseMap;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
@@ -106,129 +88,6 @@ public class ModelUtilsTest {
         assertThat(m.get("discovery.3scale.net/port"), is("8080"));
         assertThat(m.get("discovery.3scale.net/path"), is("path/"));
         assertThat(m.get("discovery.3scale.net/description-path"), is("oapi/"));
-    }
-
-    @Test
-    public void testParsePodTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        LocalObjectReference secret1 = new LocalObjectReference("some-pull-secret");
-        LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
-
-        Affinity affinity = new AffinityBuilder()
-                .withNewNodeAffinity()
-                    .withNewRequiredDuringSchedulingIgnoredDuringExecution()
-                        .withNodeSelectorTerms(new NodeSelectorTermBuilder()
-                                .addNewMatchExpression()
-                                    .withKey("key1")
-                                    .withOperator("In")
-                                    .withValues("value1", "value2")
-                                .endMatchExpression()
-                                .build())
-                    .endRequiredDuringSchedulingIgnoredDuringExecution()
-                .endNodeAffinity()
-                .build();
-
-        List<Toleration> tolerations = singletonList(new TolerationBuilder()
-                .withEffect("NoExecute")
-                .withKey("key1")
-                .withOperator("Equal")
-                .withValue("value1")
-                .build());
-
-        PodTemplate template = new PodTemplateBuilder()
-                .withNewMetadata()
-                .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
-                .withLabels(Collections.singletonMap("labelKey", "labelValue"))
-                .endMetadata()
-                .withSecurityContext(new PodSecurityContextBuilder().withFsGroup(123L).withRunAsGroup(456L).withRunAsUser(789L).build())
-                .withImagePullSecrets(secret1, secret2)
-                .withTerminationGracePeriodSeconds(123)
-                .withAffinity(affinity)
-                .withTolerations(tolerations)
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parsePodTemplate(model, template);
-        assertThat(model.templatePodLabels, is(Collections.singletonMap("labelKey", "labelValue")));
-        assertThat(model.templatePodAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
-        assertThat(model.templateTerminationGracePeriodSeconds, is(123));
-        assertThat(model.templateImagePullSecrets.size(), is(2));
-        assertThat(model.templateImagePullSecrets.contains(secret1), is(true));
-        assertThat(model.templateImagePullSecrets.contains(secret2), is(true));
-        assertThat(model.templateSecurityContext, is(notNullValue()));
-        assertThat(model.templateSecurityContext.getFsGroup(), is(123L));
-        assertThat(model.templateSecurityContext.getRunAsGroup(), is(456L));
-        assertThat(model.templateSecurityContext.getRunAsUser(), is(789L));
-        assertThat(model.getUserAffinity(), is(affinity));
-        assertThat(model.getTolerations(), is(tolerations));
-    }
-
-    @Test
-    public void testParseNullPodTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parsePodTemplate(model, null);
-        assertThat(model.templatePodLabels, is(nullValue()));
-        assertThat(model.templatePodAnnotations, is(nullValue()));
-        assertThat(model.templateImagePullSecrets, is(nullValue()));
-        assertThat(model.templateSecurityContext, is(nullValue()));
-        assertThat(model.templateTerminationGracePeriodSeconds, is(30));
-    }
-
-    @Test
-    public void testParseDeploymentTemplate()  {
-        KafkaConnect connect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                .withName("my-connect-cluster")
-                .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        DeploymentTemplate template = new DeploymentTemplateBuilder()
-                .withNewMetadata()
-                    .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
-                    .withLabels(Collections.singletonMap("labelKey", "labelValue"))
-                .endMetadata()
-                .withDeploymentStrategy(DeploymentStrategy.RECREATE)
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, connect);
-
-        ModelUtils.parseDeploymentTemplate(model, template);
-        assertThat(model.templateDeploymentLabels, is(Collections.singletonMap("labelKey", "labelValue")));
-        assertThat(model.templateDeploymentAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
-        assertThat(model.templateDeploymentStrategy, is(DeploymentStrategy.RECREATE));
-    }
-
-    @Test
-    public void testParseNullDeploymentTemplate()  {
-        KafkaConnect connect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withName("my-connect-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, connect);
-
-        ModelUtils.parseDeploymentTemplate(model, null);
-        assertThat(model.templateDeploymentAnnotations, is(nullValue()));
-        assertThat(model.templateDeploymentLabels, is(nullValue()));
-        assertThat(model.templateDeploymentStrategy, is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
     @Test
@@ -446,52 +305,6 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
-    }
-
-    @ParallelTest
-    public void testEmptyTolerations() {
-        Toleration t1 = new TolerationBuilder()
-                .withValue("")
-                .withEffect("NoExecute")
-                .build();
-
-        Toleration t2 = new TolerationBuilder()
-                .withValue(null)
-                .withEffect("NoExecute")
-                .build();
-
-        PodTemplate pt1 = new PodTemplate();
-        pt1.setTolerations(singletonList(t1));
-        PodTemplate pt2 = new PodTemplate();
-        pt2.setTolerations(singletonList(t2));
-
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withNewEphemeralStorage()
-                        .endEphemeralStorage()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withPort(9092)
-                                .withName("plain")
-                                .withTls(false)
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster model1 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        ModelUtils.parsePodTemplate(model1, pt1);
-
-        KafkaCluster model2 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        ModelUtils.parsePodTemplate(model2, pt2);
-
-        assertThat(model1.getTolerations(), is(model2.getTolerations()));
     }
 
     @ParallelTest

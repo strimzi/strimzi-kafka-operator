@@ -52,8 +52,10 @@ import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
@@ -74,6 +76,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Base64;
+
+import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 
 /**
  * Kafka Connect model class
@@ -151,6 +155,8 @@ public class KafkaConnectCluster extends AbstractModel {
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
+    protected DeploymentTemplate templateDeployment;
+    protected PodTemplate templatePod;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -291,8 +297,6 @@ public class KafkaConnectCluster extends AbstractModel {
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
 
-            ModelUtils.parseDeploymentTemplate(kafkaConnect, template.getDeployment());
-            ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
             ModelUtils.parseInternalServiceTemplate(kafkaConnect, template.getApiService());
 
             if (template.getConnectContainer() != null && template.getConnectContainer().getEnv() != null) {
@@ -323,6 +327,8 @@ public class KafkaConnectCluster extends AbstractModel {
 
             kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
+            kafkaConnect.templateDeployment = template.getDeployment();
+            kafkaConnect.templatePod = template.getPod();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -336,8 +342,6 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.externalVolumes = externalConfiguration.getVolumes();
             }
         }
-
-        kafkaConnect.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaConnect.templatePodLabels, DEFAULT_POD_LABELS);
 
         return kafkaConnect;
     }
@@ -372,7 +376,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
-        volumeList.add(createTempDirVolume());
+        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (rack != null) {
@@ -433,7 +437,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
-        volumeMountList.add(createTempDirVolumeMount());
+        volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (rack != null) {
@@ -473,12 +477,11 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the {@link #getUserAffinity()}.
+     * Returns a combined affinity: Adding the affinity needed for the "kafka-rack" to the user-provided affinity.
      */
-    @Override
     protected Affinity getMergedAffinity() {
-        Affinity userAffinity = getUserAffinity();
-        AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
+        Affinity userAffinity = templatePod != null && templatePod.getAffinity() != null ? templatePod.getAffinity() : new Affinity();
+        AffinityBuilder builder = new AffinityBuilder(userAffinity);
         if (rack != null) {
             builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
         }
@@ -496,16 +499,28 @@ public class KafkaConnectCluster extends AbstractModel {
      * @return  Generated deployment
      */
     public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        return createDeployment(
-                getDeploymentStrategy(),
-                Collections.emptyMap(),
-                annotations,
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
-                imagePullSecrets,
-                securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
+        return WorkloadUtils.createDeployment(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateDeployment,
+                replicas,
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        annotations,
+                        getMergedAffinity(),
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     @Override

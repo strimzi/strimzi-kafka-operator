@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
@@ -17,9 +16,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
-import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
@@ -38,6 +34,8 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
@@ -65,6 +63,7 @@ import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUIS
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
+import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 
 /**
  * Cruise Control model
@@ -148,6 +147,8 @@ public class CruiseControl extends AbstractModel {
     // Templates
     protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
     protected SecurityContext templateCruiseControlContainerSecurityContext;
+    private DeploymentTemplate templateDeployment;
+    private PodTemplate templatePod;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -241,13 +242,7 @@ public class CruiseControl extends AbstractModel {
             if (ccSpec.getTemplate() != null) {
                 CruiseControlTemplate template = ccSpec.getTemplate();
 
-                ModelUtils.parsePodTemplate(cruiseControl, template.getPod());
                 ModelUtils.parseInternalServiceTemplate(cruiseControl, template.getApiService());
-
-                if (template.getDeployment() != null && template.getDeployment().getMetadata() != null) {
-                    cruiseControl.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
-                    cruiseControl.templateDeploymentAnnotations = template.getDeployment().getMetadata().getAnnotations();
-                }
 
                 if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getEnv() != null) {
                     cruiseControl.templateCruiseControlContainerEnvVars = template.getCruiseControlContainer().getEnv();
@@ -261,9 +256,10 @@ public class CruiseControl extends AbstractModel {
                     cruiseControl.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
                     cruiseControl.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
-            }
 
-            cruiseControl.templatePodLabels = Util.mergeLabelsOrAnnotations(cruiseControl.templatePodLabels, DEFAULT_POD_LABELS);
+                cruiseControl.templateDeployment = template.getDeployment();
+                cruiseControl.templatePod = template.getPod();
+            }
 
             return cruiseControl;
         } else {
@@ -341,7 +337,7 @@ public class CruiseControl extends AbstractModel {
     }
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
-        return List.of(createTempDirVolume(),
+        return List.of(VolumeUtils.createTempDirVolume(templatePod),
                 createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
                 createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
@@ -349,7 +345,7 @@ public class CruiseControl extends AbstractModel {
     }
 
     protected List<VolumeMount> getVolumeMounts() {
-        return List.of(createTempDirVolumeMount(),
+        return List.of(VolumeUtils.createTempDirVolumeMount(),
                 createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
@@ -366,24 +362,28 @@ public class CruiseControl extends AbstractModel {
      * @return  Cruise Control Kubernetes Deployment
      */
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
-                .withType("RollingUpdate")
-                .withRollingUpdate(new RollingUpdateDeploymentBuilder()
-                        .withMaxSurge(new IntOrString(1))
-                        .withMaxUnavailable(new IntOrString(0))
-                        .build())
-                .build();
-
-        return createDeployment(
-                updateStrategy,
-                Collections.emptyMap(),
-                Collections.emptyMap(),
-                getMergedAffinity(),
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
-                getVolumes(isOpenShift),
-                imagePullSecrets,
-                securityProvider.cruiseControlPodSecurityContext(new PodSecurityProviderContextImpl(templateSecurityContext)));
+        return WorkloadUtils.createDeployment(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateDeployment,
+                replicas,
+                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
+                WorkloadUtils.createPodTemplateSpec(
+                        componentName,
+                        labels,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        Map.of(),
+                        templatePod != null ? templatePod.getAffinity() : null,
+                        getInitContainers(imagePullPolicy),
+                        getContainers(imagePullPolicy),
+                        getVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.cruiseControlPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                )
+        );
     }
 
     @Override

@@ -58,6 +58,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 
@@ -823,6 +824,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     }
 
     @Test
+    @SuppressWarnings({"checkstyle:MethodLength"})
     public void testUpdateWithForcedRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
                 .withName("plugin1")
@@ -881,9 +883,16 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
             Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
+
+            if (dep.getMetadata().getAnnotations() != null) {
+                dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true");
+            } else {
+                dep.getMetadata().setAnnotations(Map.of(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true"));
+            }
+
             dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB);
-            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true");
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");
+
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));

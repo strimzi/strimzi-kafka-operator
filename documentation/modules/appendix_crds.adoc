@@ -1273,7 +1273,7 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |====
 |Property                         |Description
 |deployment                1.2+<.<a|Template for Entity Operator `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod                       1.2+<.<a|Template for Entity Operator `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |topicOperatorContainer    1.2+<.<a|Template for the Entity Topic Operator container.
@@ -1290,6 +1290,28 @@ Used in: xref:type-EntityOperatorSpec-{context}[`EntityOperatorSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |userOperatorRoleBinding   1.2+<.<a|Template for the Entity Topic Operator RoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|====
+
+[id='type-DeploymentTemplate-{context}']
+### `DeploymentTemplate` schema reference
+
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
+
+xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.template.DeploymentTemplate.adoc[leveloffset=+1]
+
+[id='type-DeploymentTemplate-schema-{context}']
+==== `DeploymentTemplate` schema properties
+
+
+[options="header"]
+|====
+|Property                   |Description
+|metadata            1.2+<.<a|Metadata applied to the resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|deploymentStrategy  1.2+<.<a|Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
+|string (one of [RollingUpdate, Recreate])
 |====
 
 [id='type-CertificateAuthority-{context}']
@@ -1366,7 +1388,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 |====
 |Property                       |Description
 |deployment              1.2+<.<a|Template for Cruise Control `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod                     1.2+<.<a|Template for Cruise Control `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService              1.2+<.<a|Template for Cruise Control API `Service`.
@@ -1498,7 +1520,7 @@ Used in: xref:type-JmxTransSpec-{context}[`JmxTransSpec`]
 |====
 |Property               |Description
 |deployment      1.2+<.<a|Template for JmxTrans `Deployment`.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |pod             1.2+<.<a|Template for JmxTrans `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |container       1.2+<.<a|Template for JmxTrans container.
@@ -1557,28 +1579,6 @@ Used in: xref:type-KafkaExporterSpec-{context}[`KafkaExporterSpec`]
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |serviceAccount  1.2+<.<a|Template for the Kafka Exporter service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|====
-
-[id='type-DeploymentTemplate-{context}']
-### `DeploymentTemplate` schema reference
-
-Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
-
-xref:type-DeploymentTemplate-schema-{context}[Full list of `DeploymentTemplate` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.template.DeploymentTemplate.adoc[leveloffset=+1]
-
-[id='type-DeploymentTemplate-schema-{context}']
-==== `DeploymentTemplate` schema properties
-
-
-[options="header"]
-|====
-|Property                   |Description
-|metadata            1.2+<.<a|Metadata applied to the resource.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
-|deploymentStrategy  1.2+<.<a|Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
-|string (one of [RollingUpdate, Recreate])
 |====
 
 [id='type-KafkaStatus-{context}']

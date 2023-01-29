@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.HasMetadataTemplate;
 
 import java.util.Map;
@@ -44,5 +46,17 @@ public class TemplateUtils {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Extracts the deployment strategy configuration from the Deployment template
+     *
+     * @param template      Deployment template which maybe contains custom deployment strategy configuration
+     * @param defaultValue  The default value which should be used if the deployment strategy is not set
+     *
+     * @return  Custom deployment strategy or default value if not defined
+     */
+    public static DeploymentStrategy deploymentStrategy(DeploymentTemplate template, DeploymentStrategy defaultValue)  {
+        return template != null && template.getDeploymentStrategy() != null ? template.getDeploymentStrategy() : defaultValue;
     }
 }
