@@ -535,11 +535,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
-    @Override
-    protected String getServiceAccountName() {
-        return KafkaBridgeResources.serviceAccountName(cluster);
-    }
-
     /**
      * Set Kafka AdminClient's configuration
      * @param kafkaBridgeAdminClient configuration
@@ -601,7 +596,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         if (rack != null) {
             Subject subject = new SubjectBuilder()
                     .withKind("ServiceAccount")
-                    .withName(getServiceAccountName())
+                    .withName(componentName)
                     .withNamespace(namespace)
                     .build();
 

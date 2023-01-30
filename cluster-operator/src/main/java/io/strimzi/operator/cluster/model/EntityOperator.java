@@ -312,11 +312,6 @@ public class EntityOperator extends AbstractModel {
     }
 
     @Override
-    protected String getServiceAccountName() {
-        return KafkaResources.entityOperatorDeploymentName(cluster);
-    }
-
-    @Override
     public ServiceAccount generateServiceAccount() {
         return super.generateServiceAccount();
     }
