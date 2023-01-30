@@ -1166,9 +1166,9 @@ public class KafkaRebalanceAssemblyOperator
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")).mapEmpty();
-                    } else if (kafka.getStatus() == null
+                    } else if ((kafka.getStatus() == null
                             || kafka.getStatus().getConditions() == null
-                            || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) {
+                            || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) && state(kafkaRebalance) != KafkaRebalanceState.Ready) {
                         LOGGER.warnCr(reconciliation, "Kafka cluster is not Ready");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return updateStatus(reconciliation, kafkaRebalance, status,
