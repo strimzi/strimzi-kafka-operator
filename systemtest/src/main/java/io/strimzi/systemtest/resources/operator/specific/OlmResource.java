@@ -59,8 +59,6 @@ public class OlmResource implements SpecificResourceType {
     }
 
     private void clusterOperator() {
-        ResourceManager.STORED_RESOURCES.computeIfAbsent(olmConfiguration.getExtensionContext().getDisplayName(), k -> new Stack<>());
-
         // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
         if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(olmConfiguration.getNamespaceName())) {
             createOperatorGroup();
