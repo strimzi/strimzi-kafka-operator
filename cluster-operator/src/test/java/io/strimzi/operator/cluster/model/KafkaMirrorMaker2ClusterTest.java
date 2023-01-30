@@ -78,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -243,7 +242,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaMirrorMaker2Cluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
+        assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
         TestUtils.checkOwnerReference(svc, resource);
     }

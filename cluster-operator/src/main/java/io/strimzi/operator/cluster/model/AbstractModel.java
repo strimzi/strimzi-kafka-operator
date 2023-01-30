@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
@@ -19,12 +18,8 @@ import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
-import io.fabric8.kubernetes.api.model.ServiceBuilder;
-import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -37,14 +32,11 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
@@ -142,9 +134,6 @@ public abstract class AbstractModel {
     protected final String componentName;
     protected final OwnerReference ownerReference;
 
-    protected String serviceName;
-    protected String headlessServiceName;
-
     // Docker image configuration
     protected String image;
     // Number of replicas
@@ -207,14 +196,6 @@ public abstract class AbstractModel {
      * Template configuration
      * Used to allow all components to have configurable labels, annotations, security context etc
      */
-    protected Map<String, String> templateServiceLabels;
-    protected Map<String, String> templateServiceAnnotations;
-    protected IpFamilyPolicy templateServiceIpFamilyPolicy;
-    protected List<IpFamily> templateServiceIpFamilies;
-    protected Map<String, String> templateHeadlessServiceLabels;
-    protected Map<String, String> templateHeadlessServiceAnnotations;
-    protected IpFamilyPolicy templateHeadlessServiceIpFamilyPolicy;
-    protected List<IpFamily> templateHeadlessServiceIpFamilies;
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
 
@@ -269,20 +250,6 @@ public abstract class AbstractModel {
      */
     public String getComponentName() {
         return componentName;
-    }
-
-    /**
-     * @return The Kubernetes service name.
-     */
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    /**
-     * @return The Kubernetes headless service name.
-     */
-    public String getHeadlessServiceName() {
-        return headlessServiceName;
     }
 
     /**
@@ -491,7 +458,8 @@ public abstract class AbstractModel {
                 data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
             }
         }
-        return createConfigMap(ancillaryConfigMapName, data);
+
+        return ConfigMapUtils.createConfigMap(ancillaryConfigMapName, namespace, labels, ownerReference, data);
     }
 
     /**
@@ -698,116 +666,6 @@ public abstract class AbstractModel {
                 .build();
         LOGGER.traceCr(reconciliation, "Created container port {}", containerPort);
         return containerPort;
-    }
-
-    protected ServicePort createServicePort(String name, int port, int targetPort, String protocol) {
-        ServicePort servicePort = createServicePort(name, port, targetPort, null, protocol);
-        LOGGER.traceCr(reconciliation, "Created service port {}", servicePort);
-        return servicePort;
-    }
-
-    protected ServicePort createServicePort(String name, int port, int targetPort, Integer nodePort, String protocol) {
-        ServicePortBuilder builder = new ServicePortBuilder()
-            .withName(name)
-            .withProtocol(protocol)
-            .withPort(port)
-            .withNewTargetPort(targetPort);
-        if (nodePort != null) {
-            builder.withNodePort(nodePort);
-        }
-        ServicePort servicePort = builder.build();
-        LOGGER.traceCr(reconciliation, "Created service port {}", servicePort);
-        return servicePort;
-    }
-
-    protected ConfigMap createConfigMap(String name, Map<String, String> data) {
-        return createConfigMap(name, labels.toMap(), data);
-    }
-
-    protected ConfigMap createConfigMap(String name, Map<String, String> labels, Map<String, String> data) {
-        return new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(labels)
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withData(data)
-                .build();
-    }
-
-    protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, labels.withAdditionalLabels(templateServiceLabels),
-                getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
-    }
-
-    protected Service createDiscoverableService(String type, List<ServicePort> ports, Map<String, String> additionalLabels, Map<String, String> annotations) {
-        return createService(serviceName, type, ports, labels.withAdditionalLabels(additionalLabels).withStrimziDiscovery(), getSelectorLabels(), annotations, templateServiceIpFamilyPolicy, templateServiceIpFamilies);
-    }
-
-    protected Service createService(String name, String type, List<ServicePort> ports, Labels labels, Labels selector, Map<String, String> annotations, IpFamilyPolicy ipFamilyPolicy, List<IpFamily> ipFamilies) {
-        Service service = new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withLabels(labels.toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(annotations)
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withType(type)
-                    .withSelector(selector.toMap())
-                    .withPorts(ports)
-                .endSpec()
-                .build();
-
-        if (ipFamilyPolicy != null) {
-            service.getSpec().setIpFamilyPolicy(ipFamilyPolicy.toValue());
-        }
-
-        if (ipFamilies != null && !ipFamilies.isEmpty()) {
-            service.getSpec().setIpFamilies(ipFamilies.stream().map(IpFamily::toValue).collect(Collectors.toList()));
-        }
-
-        LOGGER.traceCr(reconciliation, "Created service {}", service);
-        return service;
-    }
-
-    /**
-     * Creates a headless service
-     *
-     * Uses Alpha annotation service.alpha.kubernetes.io/tolerate-unready-endpoints for older versions of Kubernetes still supported by Strimzi,
-     * replaced by the publishNotReadyAddresses field in the spec,  annotation is ignored in later versions of Kubernetes
-     */
-    protected Service createHeadlessService(List<ServicePort> ports) {
-        Map<String, String> annotations = Collections.singletonMap("service.alpha.kubernetes.io/tolerate-unready-endpoints", "true");
-        Service service = new ServiceBuilder()
-                .withNewMetadata()
-                    .withName(headlessServiceName)
-                    .withLabels(labels.withAdditionalLabels(templateHeadlessServiceLabels).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, templateHeadlessServiceAnnotations))
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withType("ClusterIP")
-                    .withClusterIP("None")
-                    .withSelector(getSelectorLabels().toMap())
-                    .withPorts(ports)
-                    .withPublishNotReadyAddresses(true)
-                .endSpec()
-                .build();
-
-        if (templateHeadlessServiceIpFamilyPolicy != null) {
-            service.getSpec().setIpFamilyPolicy(templateHeadlessServiceIpFamilyPolicy.toValue());
-        }
-
-        if (templateHeadlessServiceIpFamilies != null && !templateHeadlessServiceIpFamilies.isEmpty()) {
-            service.getSpec().setIpFamilies(templateHeadlessServiceIpFamilies.stream().map(IpFamily::toValue).collect(Collectors.toList()));
-        }
-
-        LOGGER.traceCr(reconciliation, "Created headless service {}", service);
-        return service;
     }
 
     /**

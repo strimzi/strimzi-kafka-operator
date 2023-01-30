@@ -1163,7 +1163,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the endpoints are ready
      */
     protected Future<Void> serviceEndpointsReady() {
-        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), kafka.getServiceName(), 1_000, operationTimeoutMs);
+        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.bootstrapServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
     /**
@@ -1172,7 +1172,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the endpoints are ready
      */
     protected Future<Void> headlessServiceEndpointsReady() {
-        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), kafka.getHeadlessServiceName(), 1_000, operationTimeoutMs);
+        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
     /**

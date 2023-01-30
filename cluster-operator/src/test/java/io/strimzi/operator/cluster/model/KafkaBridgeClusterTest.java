@@ -65,7 +65,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static io.strimzi.operator.cluster.model.KafkaBridgeCluster.ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -182,7 +181,7 @@ public class KafkaBridgeClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(KafkaBridgeCluster.REST_API_PORT_NAME));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
+        assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
 
         assertThat(svc.getMetadata().getAnnotations(), is(kbc.getDiscoveryAnnotation(KafkaBridgeCluster.DEFAULT_REST_API_PORT)));
 

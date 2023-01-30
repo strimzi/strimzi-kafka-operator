@@ -67,6 +67,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -242,10 +243,10 @@ public class KafkaCluster extends AbstractModel {
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
     private ResourceTemplate templateJmxSecret;
-    protected Map<String, String> templateExternalBootstrapServiceLabels;
-    protected Map<String, String> templateExternalBootstrapServiceAnnotations;
-    protected Map<String, String> templatePerPodServiceLabels;
-    protected Map<String, String> templatePerPodServiceAnnotations;
+    private InternalServiceTemplate templateHeadlessService;
+    private InternalServiceTemplate templateService;
+    private ResourceTemplate templateExternalBootstrapService;
+    private ResourceTemplate templatePerBrokerService;
     protected Map<String, String> templateExternalBootstrapRouteLabels;
     protected Map<String, String> templateExternalBootstrapRouteAnnotations;
     protected Map<String, String> templatePerPodRouteLabels;
@@ -282,8 +283,6 @@ public class KafkaCluster extends AbstractModel {
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.serviceName = KafkaResources.bootstrapServiceName(cluster);
-        this.headlessServiceName = KafkaResources.brokersServiceName(cluster);
         this.ancillaryConfigMapName = KafkaResources.kafkaMetricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -443,23 +442,6 @@ public class KafkaCluster extends AbstractModel {
         if (kafkaClusterSpec.getTemplate() != null) {
             KafkaClusterTemplate template = kafkaClusterSpec.getTemplate();
 
-            ModelUtils.parseInternalServiceTemplate(result, template.getBootstrapService());
-            ModelUtils.parseInternalHeadlessServiceTemplate(result, template.getBrokersService());
-
-            if (template.getExternalBootstrapService() != null) {
-                if (template.getExternalBootstrapService().getMetadata() != null) {
-                    result.templateExternalBootstrapServiceLabels = template.getExternalBootstrapService().getMetadata().getLabels();
-                    result.templateExternalBootstrapServiceAnnotations = template.getExternalBootstrapService().getMetadata().getAnnotations();
-                }
-            }
-
-            if (template.getPerPodService() != null) {
-                if (template.getPerPodService().getMetadata() != null) {
-                    result.templatePerPodServiceLabels = template.getPerPodService().getMetadata().getLabels();
-                    result.templatePerPodServiceAnnotations = template.getPerPodService().getMetadata().getAnnotations();
-                }
-            }
-
             if (template.getExternalBootstrapRoute() != null && template.getExternalBootstrapRoute().getMetadata() != null) {
                 result.templateExternalBootstrapRouteLabels = template.getExternalBootstrapRoute().getMetadata().getLabels();
                 result.templateExternalBootstrapRouteAnnotations = template.getExternalBootstrapRoute().getMetadata().getAnnotations();
@@ -508,6 +490,10 @@ public class KafkaCluster extends AbstractModel {
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
             result.templateJmxSecret = template.getJmxSecret();
+            result.templateService = template.getBootstrapService();
+            result.templateHeadlessService = template.getBrokersService();
+            result.templateExternalBootstrapService = template.getExternalBootstrapService();
+            result.templatePerBrokerService = template.getPerPodService();
         }
 
         // Should run at the end when everything is set
@@ -658,10 +644,10 @@ public class KafkaCluster extends AbstractModel {
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 1);
-        ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
-            ports.add(createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
+            ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
         }
 
         return ports;
@@ -677,15 +663,15 @@ public class KafkaCluster extends AbstractModel {
         List<GenericKafkaListener> internalListeners = ListenersUtils.internalListeners(listeners);
 
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 3);
-        ports.add(createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, "TCP"));
-        ports.add(createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        ports.add(ServiceUtils.createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
-            ports.add(createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
+            ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
         }
 
         if (isJmxEnabled) {
-            ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+            ports.add(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
         return ports;
@@ -697,8 +683,16 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateService() {
-        return createDiscoverableService("ClusterIP", getServicePorts(), templateServiceLabels,
-                Util.mergeLabelsOrAnnotations(getInternalDiscoveryAnnotation(), templateServiceAnnotations));
+        return ServiceUtils.createDiscoverableClusterIpService(
+                KafkaResources.bootstrapServiceName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                templateService,
+                getServicePorts(),
+                null,
+                getInternalDiscoveryAnnotation()
+        );
     }
 
     /**
@@ -745,20 +739,24 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             List<ServicePort> ports = Collections.singletonList(
-                    createServicePort(ListenersUtils.backwardsCompatiblePortName(listener),
+                    ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener),
                             listener.getPort(),
                             listener.getPort(),
                             ListenersUtils.bootstrapNodePort(listener),
                             "TCP")
             );
 
-            Service service = createService(
+            Service service = ServiceUtils.createService(
                     serviceName,
-                    ListenersUtils.serviceType(listener),
+                    namespace,
+                    labels,
+                    ownerReference,
+                    templateExternalBootstrapService,
                     ports,
-                    labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapServiceLabels, ListenersUtils.bootstrapLabels(listener))),
-                    getSelectorLabels(),
-                    Util.mergeLabelsOrAnnotations(ListenersUtils.bootstrapAnnotations(listener), templateExternalBootstrapServiceAnnotations),
+                    labels.strimziSelectorLabels(),
+                    ListenersUtils.serviceType(listener),
+                    ListenersUtils.bootstrapLabels(listener),
+                    ListenersUtils.bootstrapAnnotations(listener),
                     ListenersUtils.ipFamilyPolicy(listener),
                     ListenersUtils.ipFamilies(listener)
             );
@@ -816,7 +814,7 @@ public class KafkaCluster extends AbstractModel {
             String serviceName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
 
             List<ServicePort> ports = Collections.singletonList(
-                    createServicePort(
+                    ServiceUtils.createServicePort(
                             ListenersUtils.backwardsCompatiblePortName(listener),
                             listener.getPort(),
                             listener.getPort(),
@@ -824,15 +822,17 @@ public class KafkaCluster extends AbstractModel {
                             "TCP")
             );
 
-            Labels selector = getSelectorLabels().withStatefulSetPod(KafkaResources.kafkaPodName(cluster, pod));
-
-            Service service = createService(
+            Service service = ServiceUtils.createService(
                     serviceName,
-                    ListenersUtils.serviceType(listener),
+                    namespace,
+                    labels,
+                    ownerReference,
+                    templatePerBrokerService,
                     ports,
-                    labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodServiceLabels, ListenersUtils.brokerLabels(listener, pod))),
-                    selector,
-                    Util.mergeLabelsOrAnnotations(ListenersUtils.brokerAnnotations(listener, pod), templatePerPodServiceAnnotations),
+                    labels.strimziSelectorLabels().withStatefulSetPod(KafkaResources.kafkaPodName(cluster, pod)),
+                    ListenersUtils.serviceType(listener),
+                    ListenersUtils.brokerLabels(listener, pod),
+                    ListenersUtils.brokerAnnotations(listener, pod),
                     ListenersUtils.ipFamilyPolicy(listener),
                     ListenersUtils.ipFamilies(listener)
             );
@@ -1109,7 +1109,14 @@ public class KafkaCluster extends AbstractModel {
      * @return The generated Service
      */
     public Service generateHeadlessService() {
-        return createHeadlessService(getHeadlessServicePorts());
+        return ServiceUtils.createHeadlessService(
+                KafkaResources.brokersServiceName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                templateHeadlessService,
+                getHeadlessServicePorts()
+        );
     }
 
     /**
@@ -1146,7 +1153,7 @@ public class KafkaCluster extends AbstractModel {
                 ownerReference,
                 templateStatefulSet,
                 replicas,
-                headlessServiceName,
+                KafkaResources.brokersServiceName(cluster),
                 prepareControllerAnnotations(),
                 getPersistentVolumeClaimTemplates(),
                 WorkloadUtils.createPodTemplateSpec(
@@ -1204,7 +1211,7 @@ public class KafkaCluster extends AbstractModel {
                         templatePod,
                         DEFAULT_POD_LABELS,
                         podAnnotationsProvider.apply(brokerId),
-                        headlessServiceName,
+                        KafkaResources.brokersServiceName(cluster),
                         getMergedAffinity(),
                         getInitContainers(imagePullPolicy),
                         getContainers(imagePullPolicy),
@@ -1983,7 +1990,7 @@ public class KafkaCluster extends AbstractModel {
         data.put(BROKER_LISTENERS_FILENAME,
                 listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
-        return createConfigMap(ancillaryConfigMapName, labels.withAdditionalLabels(Map.of()).toMap(), data);
+        return ConfigMapUtils.createConfigMap(ancillaryConfigMapName, namespace, labels, ownerReference, data);
     }
 
     /**
@@ -2064,7 +2071,7 @@ public class KafkaCluster extends AbstractModel {
             // environment variables are parsed in the container bash scripts
             data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
-            configMaps.add(createConfigMap(getPodName(brokerId), labels.withStrimziPodName(getPodName(brokerId)).toMap(), data));
+            configMaps.add(ConfigMapUtils.createConfigMap(getPodName(brokerId), namespace, labels.withStrimziPodName(getPodName(brokerId)), ownerReference, data));
         }
 
         return configMaps;
