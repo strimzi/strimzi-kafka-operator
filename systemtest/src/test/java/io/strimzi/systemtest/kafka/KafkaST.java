@@ -1334,12 +1334,12 @@ class KafkaST extends AbstractST {
         LOGGER.info("Verifying that KafkaUser {} in cluster {} is created", userName, firstClusterName);
         String entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0);
         String uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, containsString("KafkaUser " + namespaceName + "/" + userName + " was ADDED"));
+        assertThat(uOLogs, containsString("KafkaUser " + userName + " in namespace " + namespaceName + " was ADDED"));
 
-        LOGGER.info("Verifying that KafkaUser {} in cluster {} is not created", userName, secondClusterName);
+        LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
         entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0);
         uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, not(containsString("KafkaUser " + namespaceName + "/" + userName + " was ADDED")));
+        assertThat(uOLogs, not(containsString("KafkaUser " + userName + " in namespace " + namespaceName + " was ADDED")));
 
         LOGGER.info("Verifying that KafkaUser belongs to {} cluster", firstClusterName);
         String kafkaUserResource = cmdKubeClient(namespaceName).getResourceAsYaml("kafkauser", userName);
