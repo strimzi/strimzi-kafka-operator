@@ -64,6 +64,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * ZooKeeper cluster model
  */
@@ -135,6 +137,7 @@ public class ZookeeperCluster extends AbstractModel {
     private StatefulSetTemplate templateStatefulSet;
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
+    private ResourceTemplate templateJmxSecret;
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
@@ -297,16 +300,12 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
-            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
-                zk.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
-                zk.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
-            }
-
             zk.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             zk.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             zk.templateStatefulSet = template.getStatefulset();
             zk.templatePodSet = template.getPodSet();
             zk.templatePod = template.getPod();
+            zk.templateJmxSecret = template.getJmxSecret();
         }
 
         // Should run at the end when everything is set
@@ -561,8 +560,15 @@ public class ZookeeperCluster extends AbstractModel {
             secretData.put(KafkaResources.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
 
-        return createSecret(KafkaResources.zookeeperSecretName(cluster), secretData,
-                Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())));
+        return ModelUtils.createSecret(
+                KafkaResources.zookeeperSecretName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                secretData,
+                Map.of(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())),
+                emptyMap()
+        );
     }
 
     @Override
@@ -781,11 +787,6 @@ public class ZookeeperCluster extends AbstractModel {
         super.setImage(image);
     }
 
-    @Override
-    public String getServiceAccountName() {
-        return KafkaResources.zookeeperStatefulSetName(cluster);
-    }
-
     /**
      * Generates a configuration ConfigMap with metrics and logging configurations and node count.
      *
@@ -819,7 +820,15 @@ public class ZookeeperCluster extends AbstractModel {
                 data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
             }
 
-            return createJmxSecret(KafkaResources.zookeeperJmxSecretName(cluster), data);
+            return ModelUtils.createSecret(
+                    KafkaResources.zookeeperJmxSecretName(cluster),
+                    namespace,
+                    labels,
+                    ownerReference,
+                    data,
+                    TemplateUtils.annotations(templateJmxSecret),
+                    TemplateUtils.labels(templateJmxSecret)
+            );
         } else {
             return null;
         }

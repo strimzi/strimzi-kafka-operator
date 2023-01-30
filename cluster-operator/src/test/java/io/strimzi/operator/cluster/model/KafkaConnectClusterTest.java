@@ -1732,7 +1732,7 @@ public class KafkaConnectClusterTest {
         assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(clusterName, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
         assertThat(crb.getSubjects().get(0).getNamespace(), is(testNamespace));
-        assertThat(crb.getSubjects().get(0).getName(), is(cluster.getServiceAccountName()));
+        assertThat(crb.getSubjects().get(0).getName(), is(cluster.componentName));
     }
 
     @ParallelTest

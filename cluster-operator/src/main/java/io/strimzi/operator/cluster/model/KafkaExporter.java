@@ -285,11 +285,6 @@ public class KafkaExporter extends AbstractModel {
         return null;
     }
 
-    @Override
-    protected String getServiceAccountName() {
-        return KafkaExporterResources.serviceAccountName(cluster);
-    }
-
     /**
      * Generate the Secret containing the Kafka Exporter certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka and Zookeeper.
