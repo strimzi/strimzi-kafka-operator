@@ -1336,7 +1336,7 @@ class KafkaST extends AbstractST {
         String uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
         assertThat(uOLogs, containsString("KafkaUser " + userName + " in namespace " + namespaceName + " was ADDED"));
 
-        LOGGER.info("Verifying that user {} in cluster {} is not created", userName, secondClusterName);
+        LOGGER.info("Verifying that KafkaUser {} in cluster {} is not created", userName, secondClusterName);
         entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0);
         uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
         assertThat(uOLogs, not(containsString("KafkaUser " + userName + " in namespace " + namespaceName + " was ADDED")));
