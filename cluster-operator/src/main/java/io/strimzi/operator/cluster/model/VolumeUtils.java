@@ -78,12 +78,10 @@ public class VolumeUtils {
                 .withItems(keysPaths)
                 .build();
 
-        Volume volume = new VolumeBuilder()
+        return new VolumeBuilder()
                 .withName(validName)
                 .withConfigMap(configMapVolumeSource)
                 .build();
-
-        return volume;
     }
 
     /**
@@ -100,12 +98,10 @@ public class VolumeUtils {
                 .withName(configMapName)
                 .build();
 
-        Volume volume = new VolumeBuilder()
+        return new VolumeBuilder()
                 .withName(validName)
                 .withConfigMap(configMapVolumeSource)
                 .build();
-
-        return volume;
     }
 
     /**
@@ -142,11 +138,10 @@ public class VolumeUtils {
                 .withItems(keysPaths)
                 .build();
 
-        Volume volume = new VolumeBuilder()
+        return new VolumeBuilder()
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        return volume;
     }
 
     /**
@@ -170,11 +165,10 @@ public class VolumeUtils {
                 .withSecretName(secretName)
                 .build();
 
-        Volume volume = new VolumeBuilder()
+        return  new VolumeBuilder()
                 .withName(validName)
                 .withSecret(secretVolumeSource)
                 .build();
-        return volume;
     }
 
     /**
@@ -182,7 +176,7 @@ public class VolumeUtils {
      *
      * @param name      Name of the Volume
      * @param sizeLimit Volume size
-     * @param medium    Medium used for the emptryDir
+     * @param medium    Medium used for the emptyDir
      *
      * @return The Volume created
      */
@@ -199,11 +193,10 @@ public class VolumeUtils {
             emptyDirVolumeSource.setMedium(medium);
         }
 
-        Volume volume = new VolumeBuilder()
+        return new VolumeBuilder()
                 .withName(validName)
                 .withEmptyDir(emptyDirVolumeSource)
                 .build();
-        return volume;
     }
 
     /**
@@ -219,7 +212,7 @@ public class VolumeUtils {
 
     /**
      * Creates a volume for the temp directory with custom name. The custom volume is important when running multiple
-     * containers in a single pod which need different voleme names each.
+     * containers in a single pod which need different volume names each.
      *
      * @param volumeName    Name of the volume
      * @param template      Pod template which might contain a custom configuration for the size of the temp directory
@@ -259,11 +252,10 @@ public class VolumeUtils {
     public static VolumeMount createVolumeMount(String name, String path) {
         String validName = getValidVolumeName(name);
 
-        VolumeMount volumeMount = new VolumeMountBuilder()
+        return new VolumeMountBuilder()
                 .withName(validName)
                 .withMountPath(path)
                 .build();
-        return volumeMount;
     }
 
     /**
@@ -310,8 +302,7 @@ public class VolumeUtils {
                     // it's called recursively for setting the information from the current volume
                     volumes.addAll(createStatefulSetVolumes(volume, true));
                 }
-            } else if (storage instanceof EphemeralStorage) {
-                EphemeralStorage ephemeralStorage = (EphemeralStorage) storage;
+            } else if (storage instanceof EphemeralStorage ephemeralStorage) {
                 volumes.add(
                         createEmptyDirVolume(
                                 createVolumePrefix(ephemeralStorage.getId(), jbod),
@@ -346,8 +337,7 @@ public class VolumeUtils {
                     // it's called recursively for setting the information from the current volume
                     volumes.addAll(createPodSetVolumes(podName, volume, true));
                 }
-            } else if (storage instanceof EphemeralStorage) {
-                EphemeralStorage ephemeralStorage = (EphemeralStorage) storage;
+            } else if (storage instanceof EphemeralStorage ephemeralStorage) {
                 volumes.add(
                         createEmptyDirVolume(
                                 createVolumePrefix(ephemeralStorage.getId(), jbod),
@@ -383,8 +373,7 @@ public class VolumeUtils {
                     // it's called recursively for setting the information from the current volume
                     pvcs.addAll(createPersistentVolumeClaimTemplates(volume, true));
                 }
-            } else if (storage instanceof PersistentClaimStorage) {
-                PersistentClaimStorage persistentStorage = (PersistentClaimStorage) storage;
+            } else if (storage instanceof PersistentClaimStorage persistentStorage) {
                 String name = createVolumePrefix(persistentStorage.getId(), jbod);
                 pvcs.add(createPersistentVolumeClaimTemplate(name, persistentStorage));
             }
@@ -483,7 +472,7 @@ public class VolumeUtils {
      *     - start with an alphanumeric character
      *     - end with an alphanumeric character
      *
-     *  This method checkes if the volume name is a valid name and if not it will modify it to make it valid.
+     *  This method checks if the volume name is a valid name and if not it will modify it to make it valid.
      *
      * @param originalName  The original name of the volume
      * @return              Either the original volume name or a modified version to match volume name criteria
@@ -573,7 +562,7 @@ public class VolumeUtils {
     private static void addSecretVolume(List<Volume> volumeList, CertSecretSource certSecretSource, boolean isOpenShift, String alias) {
         String volumeName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
         // skipping if a volume with same name was already added
-        if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
+        if (volumeList.stream().noneMatch(v -> v.getName().equals(volumeName))) {
             volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
         }
     }
@@ -617,7 +606,7 @@ public class VolumeUtils {
     private static void addSecretVolumeMount(List<VolumeMount> volumeMountList,  CertSecretSource certSecretSource, String tlsVolumeMountPath, String alias) {
         String volumeMountName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
         // skipping if a volume mount with same Secret name was already added
-        if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
+        if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeMountName))) {
             volumeMountList.add(createVolumeMount(volumeMountName,
                     tlsVolumeMountPath + certSecretSource.getSecretName()));
         }
