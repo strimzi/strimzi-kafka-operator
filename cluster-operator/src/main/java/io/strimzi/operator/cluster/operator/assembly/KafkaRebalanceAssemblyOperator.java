@@ -1170,8 +1170,7 @@ public class KafkaRebalanceAssemblyOperator
                             || kafka.getStatus().getConditions() == null
                             || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) {
                         LOGGER.warnCr(reconciliation, "Kafka cluster is not Ready");
-                        KafkaRebalanceStatus status = new KafkaRebalanceStatus();
-                        return updateStatus(reconciliation, kafkaRebalance, status,
+                        return updateStatus(reconciliation, kafkaRebalance, null,
                                 new RuntimeException(CruiseControlIssues.kafkaClusterNotReady.getMessage())).mapEmpty();
                     } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
                         LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.get().getMatchLabels());
