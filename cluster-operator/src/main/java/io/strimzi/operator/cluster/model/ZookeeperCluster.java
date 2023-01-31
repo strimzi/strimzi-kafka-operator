@@ -71,7 +71,7 @@ import static java.util.Collections.emptyMap;
  * ZooKeeper cluster model
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class ZookeeperCluster extends AbstractModel {
+public class ZookeeperCluster extends AbstractStatefulModel {
     /**
      * Port for plaintext access for ZooKeeper clients (available inside the pod only)
      */
@@ -213,7 +213,7 @@ public class ZookeeperCluster extends AbstractModel {
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
             LOGGER.warnCr(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
-        zk.setReplicas(replicas);
+        zk.replicas = replicas;
 
         ModelUtils.validateComputeResources(zookeeperClusterSpec.getResources(), ".spec.zookeeper.resources");
 
@@ -223,25 +223,25 @@ public class ZookeeperCluster extends AbstractModel {
             image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
                     kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);
         }
-        zk.setImage(image);
+        zk.image = image;
 
         if (zookeeperClusterSpec.getReadinessProbe() != null) {
-            zk.setReadinessProbe(zookeeperClusterSpec.getReadinessProbe());
+            zk.readinessProbeOptions = zookeeperClusterSpec.getReadinessProbe();
         }
         if (zookeeperClusterSpec.getLivenessProbe() != null) {
-            zk.setLivenessProbe(zookeeperClusterSpec.getLivenessProbe());
+            zk.livenessProbeOptions = zookeeperClusterSpec.getLivenessProbe();
         }
 
         Logging logging = zookeeperClusterSpec.getLogging();
         zk.setLogging(logging == null ? new InlineLogging() : logging);
-        zk.setGcLoggingEnabled(zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled());
+        zk.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
 
         // Parse different types of metrics configurations
         ModelUtils.parseMetrics(zk, zookeeperClusterSpec);
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();
-            AbstractModel.validatePersistentStorage(newStorage);
+            StorageUtils.validatePersistentStorage(newStorage);
 
             StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
 
@@ -258,7 +258,7 @@ public class ZookeeperCluster extends AbstractModel {
                         "The desired ZooKeeper storage configuration contains changes which are not allowed. As a " +
                                 "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                                 "about the detected changes.");
-                zk.addWarningCondition(warning);
+                zk.warningConditions.add(warning);
 
                 zk.setStorage(oldStorage);
             } else {
@@ -270,9 +270,9 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.setConfiguration(new ZookeeperConfiguration(reconciliation, zookeeperClusterSpec.getConfig().entrySet()));
 
-        zk.setResources(zookeeperClusterSpec.getResources());
+        zk.resources = zookeeperClusterSpec.getResources();
 
-        zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
+        zk.jvmOptions = zookeeperClusterSpec.getJvmOptions();
 
         if (zookeeperClusterSpec.getJmxOptions() != null) {
             zk.isJmxEnabled = true;
@@ -293,11 +293,6 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateZookeeperContainerSecurityContext = template.getZookeeperContainer().getSecurityContext();
             }
 
-            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                zk.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                zk.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-            }
-
             zk.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             zk.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             zk.templateStatefulSet = template.getStatefulset();
@@ -306,6 +301,7 @@ public class ZookeeperCluster extends AbstractModel {
             zk.templateJmxSecret = template.getJmxSecret();
             zk.templateService = template.getClientService();
             zk.templateHeadlessService = template.getNodesService();
+            zk.templateServiceAccount = template.getServiceAccount();
         }
 
         // Should run at the end when everything is set
@@ -596,7 +592,7 @@ public class ZookeeperCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.execProbe(livenessProbeOptions, Collections.singletonList(livenessPath)))
                 .withReadinessProbe(ProbeGenerator.execProbe(readinessProbeOptions, Collections.singletonList(readinessPath)))
-                .withResources(getResources())
+                .withResources(resources)
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.zooKeeperContainerSecurityContext(new ContainerSecurityProviderContextImpl(storage, templateZookeeperContainerSecurityContext)))
                 .build();
@@ -621,9 +617,9 @@ public class ZookeeperCluster extends AbstractModel {
             }
         }
 
-        ModelUtils.heapOptions(varList, 75, 2L * 1024L * 1024L * 1024L, getJvmOptions(), getResources());
-        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
-        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
+        ModelUtils.heapOptions(varList, 75, 2L * 1024L * 1024L * 1024L, jvmOptions, resources);
+        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
+        ModelUtils.jvmSystemProperties(varList, jvmOptions);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers
@@ -785,17 +781,6 @@ public class ZookeeperCluster extends AbstractModel {
     @Override
     protected String getDefaultLogConfigFileName() {
         return "zookeeperDefaultLoggingProperties";
-    }
-
-    /**
-     * Sets the image used for ZooKeeper. This method is called from outside the ZooKeeper model. It overrides the
-     * method from the super class to make it public.
-     *
-     * @param image Image which should be used by ZooKeeper cluster
-     */
-    @Override
-    public void setImage(String image) {
-        super.setImage(image);
     }
 
     /**

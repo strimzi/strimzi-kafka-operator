@@ -75,9 +75,9 @@ public class AbstractModelTest {
                 .build();
 
         AbstractModel am = new Model(kafka);
-        am.setJvmOptions(opts);
+        am.jvmOptions = opts;
         List<EnvVar> envVars = new ArrayList<>(1);
-        ModelUtils.jvmPerformanceOptions(envVars, am.getJvmOptions());
+        ModelUtils.jvmPerformanceOptions(envVars, am.jvmOptions);
 
         if (!envVars.isEmpty()) {
             return envVars.get(0).getValue();

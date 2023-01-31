@@ -167,15 +167,15 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         if (spec != null) {
-            kafkaMirrorMakerCluster.setReplicas(spec.getReplicas());
-            kafkaMirrorMakerCluster.setResources(spec.getResources());
+            kafkaMirrorMakerCluster.replicas = spec.getReplicas();
+            kafkaMirrorMakerCluster.resources = spec.getResources();
 
             if (spec.getReadinessProbe() != null) {
-                kafkaMirrorMakerCluster.setReadinessProbe(spec.getReadinessProbe());
+                kafkaMirrorMakerCluster.readinessProbeOptions = spec.getReadinessProbe();
             }
 
             if (spec.getLivenessProbe() != null) {
-                kafkaMirrorMakerCluster.setLivenessProbe(spec.getLivenessProbe());
+                kafkaMirrorMakerCluster.livenessProbeOptions = spec.getLivenessProbe();
             }
 
             String whitelist = spec.getWhitelist();
@@ -203,11 +203,11 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.consumer = spec.getConsumer();
 
-            kafkaMirrorMakerCluster.setImage(versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion()));
+            kafkaMirrorMakerCluster.image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
 
             kafkaMirrorMakerCluster.setLogging(spec.getLogging());
-            kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
-            kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
+            kafkaMirrorMakerCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+            kafkaMirrorMakerCluster.jvmOptions = spec.getJvmOptions();
 
             // Parse different types of metrics configurations
             ModelUtils.parseMetrics(kafkaMirrorMakerCluster, spec);
@@ -223,14 +223,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                     kafkaMirrorMakerCluster.templateContainerSecurityContext = template.getMirrorMakerContainer().getSecurityContext();
                 }
 
-                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                    kafkaMirrorMakerCluster.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                    kafkaMirrorMakerCluster.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-                }
-
                 kafkaMirrorMakerCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
                 kafkaMirrorMakerCluster.templateDeployment = template.getDeployment();
                 kafkaMirrorMakerCluster.templatePod = template.getPod();
+                kafkaMirrorMakerCluster.templateServiceAccount = template.getServiceAccount();
             }
 
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
@@ -343,7 +339,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                             .withCommand("test", "-f", "/tmp/mirror-maker-ready")
                         .endExec().build())
                 .withVolumeMounts(getVolumeMounts())
-                .withResources(getResources())
+                .withResources(resources)
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.kafkaMirrorMakerContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build();
@@ -410,9 +406,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
-        ModelUtils.heapOptions(varList, 75, 0L, getJvmOptions(), getResources());
-        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
-        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
+        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
+        ModelUtils.jvmSystemProperties(varList, jvmOptions);
 
         /* consumer */
         addConsumerEnvVars(varList);

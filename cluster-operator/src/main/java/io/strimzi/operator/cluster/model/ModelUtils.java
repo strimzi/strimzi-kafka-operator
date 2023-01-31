@@ -591,7 +591,7 @@ public class ModelUtils {
      */
     public static void parseMetrics(AbstractModel model, HasConfigurableMetrics resourceWithMetrics)   {
         if (resourceWithMetrics.getMetricsConfig() != null)    {
-            model.setMetricsEnabled(true);
+            model.isMetricsEnabled = true;
             model.setMetricsConfigInCm(resourceWithMetrics.getMetricsConfig());
         }
     }

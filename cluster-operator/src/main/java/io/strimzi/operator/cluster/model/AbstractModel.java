@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -28,10 +27,7 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.common.MetricsAndLogging;
@@ -133,13 +129,12 @@ public abstract class AbstractModel {
     protected final String namespace;
     protected final String componentName;
     protected final OwnerReference ownerReference;
+    protected final Labels labels;
 
     // Docker image configuration
     protected String image;
     // Number of replicas
     protected int replicas;
-
-    protected Labels labels;
 
     /**
      * Application configuration
@@ -147,12 +142,7 @@ public abstract class AbstractModel {
     protected AbstractConfiguration configuration;
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
-    private JvmOptions jvmOptions;
-
-    /**
-     * Volume and Storage configuration
-     */
-    protected Storage storage;
+    protected JvmOptions jvmOptions;
 
     /**
      * Base name used to name data volumes
@@ -180,8 +170,7 @@ public abstract class AbstractModel {
     /**
      * Container configuration
      */
-    private ResourceRequirements resources;
-    protected io.strimzi.api.kafka.model.Probe startupProbeOptions;
+    protected ResourceRequirements resources;
     protected String readinessPath;
     protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
     protected String livenessPath;
@@ -193,13 +182,10 @@ public abstract class AbstractModel {
     protected PodSecurityProvider securityProvider = PodSecurityProviderFactory.getProvider();
 
     /**
-     * Template configuration
+     * Shared template configuration
      * Used to allow all components to have configurable labels, annotations, security context etc
      */
-    protected Map<String, String> templateServiceAccountLabels;
-    protected Map<String, String> templateServiceAccountAnnotations;
-
-    protected List<Condition> warningConditions = new ArrayList<>(0);
+    protected ResourceTemplate templateServiceAccount;
 
     /**
      * Constructor
@@ -225,26 +211,6 @@ public abstract class AbstractModel {
         return replicas;
     }
 
-    protected void setReplicas(int replicas) {
-        this.replicas = replicas;
-    }
-
-    protected void setImage(String image) {
-        this.image = image;
-    }
-
-    protected void setReadinessProbe(io.strimzi.api.kafka.model.Probe probe) {
-        this.readinessProbeOptions = probe;
-    }
-
-    protected void setLivenessProbe(io.strimzi.api.kafka.model.Probe probe) {
-        this.livenessProbeOptions = probe;
-    }
-
-    protected void setStartupProbe(io.strimzi.api.kafka.model.Probe probe) {
-        this.startupProbeOptions = probe;
-    }
-
     /**
      * @return the default Kubernetes resource name.
      */
@@ -264,14 +230,6 @@ public abstract class AbstractModel {
      */
     public boolean isMetricsEnabled() {
         return isMetricsEnabled;
-    }
-
-    protected void setMetricsEnabled(boolean isMetricsEnabled) {
-        this.isMetricsEnabled = isMetricsEnabled;
-    }
-
-    protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
-        this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
     protected abstract String getDefaultLogConfigFileName();
@@ -454,7 +412,7 @@ public abstract class AbstractModel {
         if (getMetricsConfigInCm() != null) {
             String parseResult = metricsConfiguration(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {
-                this.setMetricsEnabled(true);
+                this.isMetricsEnabled = true;
                 data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
             }
         }
@@ -544,62 +502,6 @@ public abstract class AbstractModel {
      */
     protected List<EnvVar> getEnvVars() {
         return null;
-    }
-
-    /**
-     * @return The storage.
-     */
-    public Storage getStorage() {
-        return storage;
-    }
-
-    /**
-     * Set the Storage
-     *
-     * @param storage Persistent Storage configuration
-     */
-    protected void setStorage(Storage storage) {
-        validatePersistentStorage(storage);
-        this.storage = storage;
-    }
-
-    /**
-     * Validates persistent storage
-     * If storage is of a persistent type, validations are made
-     * If storage is not of a persistent type, validation passes
-     *
-     * @param storage   Persistent Storage configuration
-     * @throws InvalidResourceException if validations fails for any reason
-     */
-    protected static void validatePersistentStorage(Storage storage)   {
-        if (storage instanceof PersistentClaimStorage persistentClaimStorage) {
-            checkPersistentStorageSizeIsValid(persistentClaimStorage);
-
-        } else if (storage instanceof JbodStorage jbodStorage)  {
-
-            if (jbodStorage.getVolumes().size() == 0)   {
-                throw new InvalidResourceException("JbodStorage needs to contain at least one volume!");
-            }
-
-            for (Storage jbodVolume : jbodStorage.getVolumes()) {
-                if (jbodVolume instanceof PersistentClaimStorage persistentClaimStorage) {
-                    checkPersistentStorageSizeIsValid(persistentClaimStorage);
-                }
-            }
-        }
-    }
-
-    /**
-     * Checks if the supplied PersistentClaimStorage has a valid size
-     *
-     * @param storage   PersistentClaimStorage configuration
-     *
-     * @throws InvalidResourceException if the persistent storage size is not valid
-     */
-    private static void checkPersistentStorageSizeIsValid(PersistentClaimStorage storage)   {
-        if (storage.getSize() == null || storage.getSize().isEmpty()) {
-            throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
-        }
     }
 
     /**
@@ -739,34 +641,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @param resources The resource requirements.
-     */
-    public void setResources(ResourceRequirements resources) {
-        this.resources = resources;
-    }
-
-    /**
-     * @return The resource requirements.
-     */
-    public ResourceRequirements getResources() {
-        return resources;
-    }
-
-    /**
-     * @param jvmOptions The JVM options.
-     */
-    public void setJvmOptions(JvmOptions jvmOptions) {
-        this.jvmOptions = jvmOptions;
-    }
-
-    /**
-     * @return The JVM options.
-     */
-    public JvmOptions getJvmOptions() {
-        return jvmOptions;
-    }
-
-    /**
      * When ImagePullPolicy is not specified by the user, Kubernetes will automatically set it based on the image
      *    :latest results in        Always
      *    anything else results in  IfNotPresent
@@ -820,15 +694,13 @@ public abstract class AbstractModel {
      * @return The service account.
      */
     public ServiceAccount generateServiceAccount() {
-        return new ServiceAccountBuilder()
-                .withNewMetadata()
-                    .withName(componentName)
-                    .withNamespace(namespace)
-                    .withOwnerReferences(ownerReference)
-                    .withLabels(labels.withAdditionalLabels(templateServiceAccountLabels).toMap())
-                    .withAnnotations(templateServiceAccountAnnotations)
-                .endMetadata()
-            .build();
+        return ServiceAccountUtils.createServiceAccount(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateServiceAccount
+        );
     }
 
     /**
@@ -860,23 +732,5 @@ public abstract class AbstractModel {
                 }
             }
         }
-    }
-
-    /**
-     * Adds warning condition to the list of warning conditions
-     *
-     * @param warning  Condition which will be added to the warning conditions
-     */
-    public void addWarningCondition(Condition warning) {
-        warningConditions.add(warning);
-    }
-
-    /**
-     * Returns a list of warning conditions set by the model. Returns an empty list if no warning conditions were set.
-     *
-     * @return  List of warning conditions.
-     */
-    public List<Condition> getWarningConditions() {
-        return warningConditions;
     }
 }

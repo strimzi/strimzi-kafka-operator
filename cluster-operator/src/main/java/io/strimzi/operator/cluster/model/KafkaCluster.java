@@ -113,7 +113,7 @@ import static java.util.Collections.singletonMap;
  * Kafka cluster model
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class KafkaCluster extends AbstractModel {
+public class KafkaCluster extends AbstractStatefulModel {
     protected static final String COMPONENT_TYPE = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
@@ -332,7 +332,7 @@ public class KafkaCluster extends AbstractModel {
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
-        result.setReplicas(kafkaClusterSpec.getReplicas());
+        result.replicas = kafkaClusterSpec.getReplicas();
 
         // Configures KRaft and KRaft cluster ID
         if (useKRaft)   {
@@ -346,14 +346,14 @@ public class KafkaCluster extends AbstractModel {
         validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
         validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
 
-        result.setImage(versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion()));
+        result.image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
 
         if (kafkaClusterSpec.getReadinessProbe() != null) {
-            result.setReadinessProbe(kafkaClusterSpec.getReadinessProbe());
+            result.readinessProbeOptions = kafkaClusterSpec.getReadinessProbe();
         }
 
         if (kafkaClusterSpec.getLivenessProbe() != null) {
-            result.setLivenessProbe(kafkaClusterSpec.getLivenessProbe());
+            result.livenessProbeOptions = kafkaClusterSpec.getLivenessProbe();
         }
 
         result.rack = kafkaClusterSpec.getRack();
@@ -366,8 +366,8 @@ public class KafkaCluster extends AbstractModel {
 
         Logging logging = kafkaClusterSpec.getLogging();
         result.setLogging(logging == null ? new InlineLogging() : logging);
-        result.setGcLoggingEnabled(kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled());
-        result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
+        result.gcLoggingEnabled = kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled();
+        result.jvmOptions = kafkaClusterSpec.getJvmOptions();
 
         if (kafkaClusterSpec.getJmxOptions() != null) {
             result.isJmxEnabled = true;
@@ -385,7 +385,7 @@ public class KafkaCluster extends AbstractModel {
 
         if (oldStorage != null) {
             Storage newStorage = kafkaClusterSpec.getStorage();
-            AbstractModel.validatePersistentStorage(newStorage);
+            StorageUtils.validatePersistentStorage(newStorage);
 
             StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, kafkaClusterSpec.getReplicas());
 
@@ -403,7 +403,7 @@ public class KafkaCluster extends AbstractModel {
                         "The desired Kafka storage configuration contains changes which are not allowed. As a " +
                                 "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                                 "about the detected changes.");
-                result.addWarningCondition(warning);
+                result.warningConditions.add(warning);
 
                 result.setStorage(oldStorage);
             } else {
@@ -413,7 +413,7 @@ public class KafkaCluster extends AbstractModel {
             result.setStorage(kafkaClusterSpec.getStorage());
         }
 
-        result.setResources(kafkaClusterSpec.getResources());
+        result.resources = kafkaClusterSpec.getResources();
 
         // Configure listeners
         if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().isEmpty()) {
@@ -478,11 +478,6 @@ public class KafkaCluster extends AbstractModel {
                 result.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
             }
 
-            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-            }
-
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
@@ -494,6 +489,7 @@ public class KafkaCluster extends AbstractModel {
             result.templateHeadlessService = template.getBrokersService();
             result.templateExternalBootstrapService = template.getExternalBootstrapService();
             result.templatePerBrokerService = template.getPerPodService();
+            result.templateServiceAccount = template.getServiceAccount();
         }
 
         // Should run at the end when everything is set
@@ -1556,8 +1552,8 @@ public class KafkaCluster extends AbstractModel {
                     .withSecurityContext(securityProvider.kafkaInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
                     .build();
 
-            if (getResources() != null) {
-                initContainer.setResources(getResources());
+            if (resources != null) {
+                initContainer.setResources(resources);
             }
             initContainers.add(initContainer);
         }
@@ -1581,7 +1577,7 @@ public class KafkaCluster extends AbstractModel {
                         .withNewExec()
                             .withCommand("/opt/kafka/kafka_readiness.sh")
                         .endExec().build())
-                .withResources(getResources())
+                .withResources(resources)
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withCommand("/opt/kafka/kafka_run.sh")
                 .withSecurityContext(securityProvider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(storage, templateKafkaContainerSecurityContext)))
@@ -1596,9 +1592,9 @@ public class KafkaCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        ModelUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, getJvmOptions(), getResources());
-        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
-        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
+        ModelUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, jvmOptions, resources);
+        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
+        ModelUtils.jvmSystemProperties(varList, jvmOptions);
 
         for (GenericKafkaListener listener : listeners) {
             if (isListenerWithOAuth(listener))   {

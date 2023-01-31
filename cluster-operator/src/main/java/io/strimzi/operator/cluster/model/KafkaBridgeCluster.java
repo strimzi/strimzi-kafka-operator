@@ -192,16 +192,16 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.tracing = spec.getTracing();
-        kafkaBridgeCluster.setResources(spec.getResources());
+        kafkaBridgeCluster.resources = spec.getResources();
         kafkaBridgeCluster.setLogging(spec.getLogging());
-        kafkaBridgeCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
-        kafkaBridgeCluster.setJvmOptions(spec.getJvmOptions());
+        kafkaBridgeCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+        kafkaBridgeCluster.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "quay.io/strimzi/kafka-bridge:latest");
         }
-        kafkaBridgeCluster.setImage(image);
-        kafkaBridgeCluster.setReplicas(spec.getReplicas());
+        kafkaBridgeCluster.image = image;
+        kafkaBridgeCluster.replicas = spec.getReplicas();
         kafkaBridgeCluster.setBootstrapServers(spec.getBootstrapServers());
         kafkaBridgeCluster.setKafkaAdminClientConfiguration(spec.getAdminClient());
         kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
@@ -213,14 +213,14 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
         kafkaBridgeCluster.initImage = initImage;
         if (kafkaBridge.getSpec().getLivenessProbe() != null) {
-            kafkaBridgeCluster.setLivenessProbe(kafkaBridge.getSpec().getLivenessProbe());
+            kafkaBridgeCluster.livenessProbeOptions = kafkaBridge.getSpec().getLivenessProbe();
         }
 
         if (kafkaBridge.getSpec().getReadinessProbe() != null) {
-            kafkaBridgeCluster.setReadinessProbe(kafkaBridge.getSpec().getReadinessProbe());
+            kafkaBridgeCluster.readinessProbeOptions = kafkaBridge.getSpec().getReadinessProbe();
         }
 
-        kafkaBridgeCluster.setMetricsEnabled(spec.getEnableMetrics());
+        kafkaBridgeCluster.isMetricsEnabled = spec.getEnableMetrics();
 
         kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
 
@@ -263,16 +263,12 @@ public class KafkaBridgeCluster extends AbstractModel {
             kafkaBridgeCluster.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
         }
 
-        if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-            kafkaBridgeCluster.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-            kafkaBridgeCluster.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-        }
-
         kafkaBridgeCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
         kafkaBridgeCluster.templateInitClusterRoleBinding = template.getClusterRoleBinding();
         kafkaBridgeCluster.templateDeployment = template.getDeployment();
         kafkaBridgeCluster.templatePod = template.getPod();
         kafkaBridgeCluster.templateService = template.getApiService();
+        kafkaBridgeCluster.templateServiceAccount = template.getServiceAccount();
     }
 
     /**
@@ -406,7 +402,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
                 .withVolumeMounts(getVolumeMounts())
-                .withResources(getResources())
+                .withResources(resources)
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.bridgeContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build();
@@ -421,7 +417,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        ModelUtils.javaOptions(varList, getJvmOptions());
+        ModelUtils.javaOptions(varList, jvmOptions);
 
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BRIDGE_ADMIN_CLIENT_CONFIG, kafkaBridgeAdminClient == null ? "" : new KafkaBridgeAdminClientConfiguration(reconciliation, kafkaBridgeAdminClient.getConfig().entrySet()).getConfiguration()));
@@ -626,8 +622,8 @@ public class KafkaBridgeCluster extends AbstractModel {
                     .withSecurityContext(securityProvider.bridgeInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
                     .build();
 
-            if (getResources() != null) {
-                initContainer.setResources(getResources());
+            if (resources != null) {
+                initContainer.setResources(resources);
             }
             initContainers.add(initContainer);
         }

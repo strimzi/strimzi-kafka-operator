@@ -122,14 +122,14 @@ public class KafkaExporter extends AbstractModel {
         if (spec != null) {
             KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
 
-            kafkaExporter.setResources(spec.getResources());
+            kafkaExporter.resources = spec.getResources();
 
             if (spec.getReadinessProbe() != null) {
-                kafkaExporter.setReadinessProbe(spec.getReadinessProbe());
+                kafkaExporter.readinessProbeOptions = spec.getReadinessProbe();
             }
 
             if (spec.getLivenessProbe() != null) {
-                kafkaExporter.setLivenessProbe(spec.getLivenessProbe());
+                kafkaExporter.livenessProbeOptions = spec.getLivenessProbe();
             }
 
             kafkaExporter.groupRegex = spec.getGroupRegex();
@@ -140,7 +140,7 @@ public class KafkaExporter extends AbstractModel {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
-            kafkaExporter.setImage(image);
+            kafkaExporter.image = image;
 
             kafkaExporter.logging = spec.getLogging();
             kafkaExporter.saramaLoggingEnabled = spec.getEnableSaramaLogging();
@@ -157,13 +157,9 @@ public class KafkaExporter extends AbstractModel {
                     }
                 }
 
-                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                    kafkaExporter.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                    kafkaExporter.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-                }
-
                 kafkaExporter.templateDeployment = template.getDeployment();
                 kafkaExporter.templatePod = template.getPod();
+                kafkaExporter.templateServiceAccount = template.getServiceAccount();
             }
 
             kafkaExporter.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
@@ -226,7 +222,7 @@ public class KafkaExporter extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, METRICS_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, METRICS_PORT_NAME))
-                .withResources(getResources())
+                .withResources(resources)
                 .withVolumeMounts(VolumeUtils.createTempDirVolumeMount(),
                         VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT))

@@ -142,13 +142,13 @@ public class JmxTrans extends AbstractModel {
             result.kafkaQueries = jmxTransSpec.getKafkaQueries();
             result.outputDefinitions = jmxTransSpec.getOutputDefinitions();
             result.loggingLevel = jmxTransSpec.getLogLevel() == null ? "INFO" : jmxTransSpec.getLogLevel();
-            result.setResources(jmxTransSpec.getResources());
+            result.resources = jmxTransSpec.getResources();
 
             String image = jmxTransSpec.getImage();
             if (image == null) {
                 image = System.getenv().getOrDefault(STRIMZI_DEFAULT_JMXTRANS_IMAGE, "quay.io/strimzi/jmxtrans:latest");
             }
-            result.setImage(image);
+            result.image = image;
 
             if (jmxTransSpec.getTemplate() != null) {
                 JmxTransTemplate template = jmxTransSpec.getTemplate();
@@ -161,13 +161,9 @@ public class JmxTrans extends AbstractModel {
                     result.templateContainerSecurityContext = template.getContainer().getSecurityContext();
                 }
 
-                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                    result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                    result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-                }
-
                 result.templateDeployment = template.getDeployment();
                 result.templatePod = template.getPod();
+                result.templateServiceAccount = template.getServiceAccount();
             }
 
             return result;
@@ -340,7 +336,7 @@ public class JmxTrans extends AbstractModel {
                 .withImage(getImage())
                 .withEnv(getEnvVars())
                 .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, cluster))
-                .withResources(getResources())
+                .withResources(resources)
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.jmxTransContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
