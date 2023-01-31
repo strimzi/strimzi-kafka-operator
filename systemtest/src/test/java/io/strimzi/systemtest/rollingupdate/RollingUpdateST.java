@@ -303,7 +303,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
-        assertThat((int) kubeClient().listPersistentVolumeClaims().stream().filter(
+        assertThat((int) kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             pvc -> pvc.getMetadata().getName().contains(testStorage.getKafkaStatefulSetName())).count(), is(scaleTo));
 
         final int zookeeperScaleTo = initialReplicas + 2;
