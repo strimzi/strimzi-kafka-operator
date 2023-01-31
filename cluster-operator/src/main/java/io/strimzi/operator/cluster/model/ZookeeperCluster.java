@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
@@ -138,6 +139,8 @@ public class ZookeeperCluster extends AbstractModel {
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
     private ResourceTemplate templateJmxSecret;
+    private InternalServiceTemplate templateHeadlessService;
+    private InternalServiceTemplate templateService;
     protected List<ContainerEnvVar> templateZookeeperContainerEnvVars;
     protected SecurityContext templateZookeeperContainerSecurityContext;
 
@@ -158,8 +161,6 @@ public class ZookeeperCluster extends AbstractModel {
     private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.serviceName = KafkaResources.zookeeperServiceName(cluster);
-        this.headlessServiceName = KafkaResources.zookeeperHeadlessServiceName(cluster);
         this.ancillaryConfigMapName = KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);
         this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
@@ -284,9 +285,6 @@ public class ZookeeperCluster extends AbstractModel {
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
-            ModelUtils.parseInternalServiceTemplate(zk, template.getClientService());
-            ModelUtils.parseInternalHeadlessServiceTemplate(zk, template.getNodesService());
-
             if (template.getZookeeperContainer() != null && template.getZookeeperContainer().getEnv() != null) {
                 zk.templateZookeeperContainerEnvVars = template.getZookeeperContainer().getEnv();
             }
@@ -306,6 +304,8 @@ public class ZookeeperCluster extends AbstractModel {
             zk.templatePodSet = template.getPodSet();
             zk.templatePod = template.getPod();
             zk.templateJmxSecret = template.getJmxSecret();
+            zk.templateService = template.getClientService();
+            zk.templateHeadlessService = template.getNodesService();
         }
 
         // Should run at the end when everything is set
@@ -319,10 +319,14 @@ public class ZookeeperCluster extends AbstractModel {
      * @return  Generates a ZooKeeper service
      */
     public Service generateService() {
-        List<ServicePort> ports = new ArrayList<>(1);
-        ports.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
-
-        return createService("ClusterIP", ports, templateServiceAnnotations);
+        return ServiceUtils.createClusterIpService(
+                KafkaResources.zookeeperServiceName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                templateService,
+                List.of(ServiceUtils.createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"))
+        );
     }
 
     /**
@@ -446,7 +450,14 @@ public class ZookeeperCluster extends AbstractModel {
      * @return  Generates the headless ZooKeeper service
      */
     public Service generateHeadlessService() {
-        return createHeadlessService(getServicePortList());
+        return ServiceUtils.createHeadlessService(
+                KafkaResources.zookeeperHeadlessServiceName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                templateHeadlessService,
+                getServicePortList()
+        );
     }
 
     /**
@@ -466,7 +477,7 @@ public class ZookeeperCluster extends AbstractModel {
                 ownerReference,
                 templateStatefulSet,
                 replicas,
-                headlessServiceName,
+                KafkaResources.zookeeperHeadlessServiceName(cluster),
                 Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 getPersistentVolumeClaimTemplates(),
                 WorkloadUtils.createPodTemplateSpec(
@@ -521,7 +532,7 @@ public class ZookeeperCluster extends AbstractModel {
                         templatePod,
                         DEFAULT_POD_LABELS,
                         podAnnotations,
-                        headlessServiceName,
+                        KafkaResources.zookeeperHeadlessServiceName(cluster),
                         templatePod != null ? templatePod.getAffinity() : null,
                         getInitContainers(imagePullPolicy),
                         getContainers(imagePullPolicy),
@@ -625,12 +636,12 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<ServicePort> getServicePortList() {
         List<ServicePort> portList = new ArrayList<>(4);
-        portList.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
-        portList.add(createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
-        portList.add(createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
+        portList.add(ServiceUtils.createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
+        portList.add(ServiceUtils.createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
+        portList.add(ServiceUtils.createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
 
         if (isJmxEnabled) {
-            portList.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+            portList.add(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
         return portList;

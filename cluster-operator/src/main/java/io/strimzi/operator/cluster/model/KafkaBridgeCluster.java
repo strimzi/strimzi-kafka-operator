@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -40,6 +39,7 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.KafkaBridgeTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -140,6 +140,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     private SecurityContext templateInitContainerSecurityContext;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
+    private InternalServiceTemplate templateService;
 
     private Tracing tracing;
 
@@ -164,7 +165,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.serviceName = KafkaBridgeResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/ready";
@@ -247,13 +247,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     private static void fromCrdTemplate(final KafkaBridgeCluster kafkaBridgeCluster, final KafkaBridgeSpec spec) {
         KafkaBridgeTemplate template = spec.getTemplate();
 
-        ModelUtils.parseInternalServiceTemplate(kafkaBridgeCluster, template.getApiService());
-
-        if (template.getApiService() != null && template.getApiService().getMetadata() != null)  {
-            kafkaBridgeCluster.templateServiceLabels = template.getApiService().getMetadata().getLabels();
-            kafkaBridgeCluster.templateServiceAnnotations = template.getApiService().getMetadata().getAnnotations();
-        }
-
         if (template.getBridgeContainer() != null && template.getBridgeContainer().getEnv() != null) {
             kafkaBridgeCluster.templateContainerEnvVars = template.getBridgeContainer().getEnv();
         }
@@ -279,23 +272,28 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.templateInitClusterRoleBinding = template.getClusterRoleBinding();
         kafkaBridgeCluster.templateDeployment = template.getDeployment();
         kafkaBridgeCluster.templatePod = template.getPod();
+        kafkaBridgeCluster.templateService = template.getApiService();
     }
 
     /**
      * @return  Generates and returns the Kubernetes service for the Kafka Bridge
      */
     public Service generateService() {
-        List<ServicePort> ports = new ArrayList<>(3);
-
         int port = DEFAULT_REST_API_PORT;
         if (http != null) {
             port = http.getPort();
         }
 
-        ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
-
-        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS)),
-                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS)));
+        return ServiceUtils.createDiscoverableClusterIpService(
+                KafkaBridgeResources.serviceName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                templateService,
+                List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, port, port, "TCP")),
+                ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS),
+                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS))
+        );
     }
 
     /**

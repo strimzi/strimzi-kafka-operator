@@ -67,7 +67,6 @@ import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT;
 import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT_NAME;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -142,7 +141,7 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(ZookeeperCluster.LEADER_ELECTION_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
+        assertThat(headless.getSpec().getIpFamilies(), is(nullValue()));
     }
 
     private Secret generateCertificatesSecret() {
@@ -189,8 +188,8 @@ public class ZookeeperClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
-        assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(svc.getSpec().getIpFamilies(), is(nullValue()));
+        assertThat(svc.getMetadata().getAnnotations(), is(Map.of()));
 
         TestUtils.checkOwnerReference(svc, KAFKA);
     }
@@ -214,7 +213,7 @@ public class ZookeeperClusterTest {
         assertThat(svc.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
         assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
-        assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(svc.getMetadata().getAnnotations(), is(Map.of()));
 
         TestUtils.checkOwnerReference(svc, KAFKA);
     }
@@ -254,7 +253,7 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getPorts().get(3).getPort(), is(ZookeeperCluster.JMX_PORT));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
+        assertThat(headless.getSpec().getIpFamilies(), is(nullValue()));
 
         TestUtils.checkOwnerReference(headless, KAFKA);
     }

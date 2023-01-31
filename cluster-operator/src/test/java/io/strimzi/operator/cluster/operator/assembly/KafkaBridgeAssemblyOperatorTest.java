@@ -158,7 +158,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<Service> capturedServices = serviceCaptor.getAllValues();
                 assertThat(capturedServices, hasSize(1));
                 Service service = capturedServices.get(0);
-                assertThat(service.getMetadata().getName(), is(bridge.getServiceName()));
+                assertThat(service.getMetadata().getName(), is(KafkaBridgeResources.serviceName(kbName)));
                 assertThat(service, is(bridge.generateService()));
 
                 // Verify Deployment
@@ -345,7 +345,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List<Service> capturedServices = serviceCaptor.getAllValues();
                 assertThat(capturedServices, hasSize(1));
                 Service service = capturedServices.get(0);
-                assertThat(service.getMetadata().getName(), is(compareTo.getServiceName()));
+                assertThat(service.getMetadata().getName(), is(KafkaBridgeResources.serviceName(kbName)));
                 assertThat(service, is(compareTo.generateService()));
 
                 // Verify Deployment

@@ -35,6 +35,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -149,6 +150,7 @@ public class CruiseControl extends AbstractModel {
     protected SecurityContext templateCruiseControlContainerSecurityContext;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
+    private InternalServiceTemplate templateService;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -167,7 +169,6 @@ public class CruiseControl extends AbstractModel {
     protected CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.serviceName = CruiseControlResources.serviceName(cluster);
         this.ancillaryConfigMapName = CruiseControlResources.logAndMetricsConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -242,8 +243,6 @@ public class CruiseControl extends AbstractModel {
             if (ccSpec.getTemplate() != null) {
                 CruiseControlTemplate template = ccSpec.getTemplate();
 
-                ModelUtils.parseInternalServiceTemplate(cruiseControl, template.getApiService());
-
                 if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getEnv() != null) {
                     cruiseControl.templateCruiseControlContainerEnvVars = template.getCruiseControlContainer().getEnv();
                 }
@@ -259,6 +258,7 @@ public class CruiseControl extends AbstractModel {
 
                 cruiseControl.templateDeployment = template.getDeployment();
                 cruiseControl.templatePod = template.getPod();
+                cruiseControl.templateService = template.getApiService();
             }
 
             return cruiseControl;
@@ -321,7 +321,14 @@ public class CruiseControl extends AbstractModel {
      * @return  Generates a Kuberneets Service for Cruise Control
      */
     public Service generateService() {
-        return createService("ClusterIP", List.of(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP")), templateServiceAnnotations);
+        return ServiceUtils.createClusterIpService(
+                CruiseControlResources.serviceName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                templateService,
+                List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"))
+        );
     }
 
     protected List<ContainerPort> getContainerPortList() {
