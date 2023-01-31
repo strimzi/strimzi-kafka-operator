@@ -26,6 +26,9 @@ Defines how often the cached authorization decisions are reloaded from the Open 
 In milliseconds.
 Defaults to `3600000` milliseconds (1 hour).
 
+=== `tlsTrustedCertificates`
+Trusted certificates for TLS connection to the OPA server.
+
 === `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying the open Policy Agent policy.
 

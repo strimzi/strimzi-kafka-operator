@@ -23,7 +23,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({"type", "url", "allowOnError", "initialCacheCapacity", "maximumCacheSize", "expireAfterMs", "superUsers"})
+@JsonPropertyOrder({"type", "url", "allowOnError", "initialCacheCapacity", "maximumCacheSize", "expireAfterMs", "tlsTrustedCertificates", "superUsers"})
 @EqualsAndHashCode
 public class KafkaAuthorizationOpa extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -39,6 +39,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
     private int maximumCacheSize = 50000;
     private long expireAfterMs = 3600000;
     private boolean enableMetrics = false;
+    private List<CertSecretSource> tlsTrustedCertificates;
 
     @Description("Must be `" + TYPE_OPA + "`")
     @Override
@@ -137,5 +138,15 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
 
     public void setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
+    }
+
+    @Description("Trusted certificates for TLS connection to the OPA server.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public List<CertSecretSource> getTlsTrustedCertificates() {
+        return tlsTrustedCertificates;
+    }
+
+    public void setTlsTrustedCertificates(List<CertSecretSource> tlsTrustedCertificates) {
+        this.tlsTrustedCertificates = tlsTrustedCertificates;
     }
 }

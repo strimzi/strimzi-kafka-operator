@@ -51,6 +51,7 @@ import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -1391,6 +1392,11 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
+        if (authorization instanceof KafkaAuthorizationOpa) {
+            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
+            volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-opa", opaAuthz.getTlsTrustedCertificates(), isOpenShift));
+        }
+
         if (authorization instanceof KafkaAuthorizationKeycloak) {
             KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
             volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), isOpenShift));
@@ -1476,6 +1482,11 @@ public class KafkaCluster extends AbstractModel {
                 KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
                 volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
             }
+        }
+
+        if (authorization instanceof KafkaAuthorizationOpa) {
+            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
+            volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-opa", opaAuthz.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs"));
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak) {

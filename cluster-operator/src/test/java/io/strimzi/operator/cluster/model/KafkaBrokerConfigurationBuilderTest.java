@@ -362,6 +362,40 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
+    public void testOpaAuthorizationWithTls() {
+        CertSecretSource cert = new CertSecretSourceBuilder()
+            .withSecretName("my-secret")
+            .withCertificate("my.crt")
+            .build();
+
+        KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
+            .withUrl("https://opa:8181/v1/data/kafka/allow")
+            .withAllowOnError(true)
+            .withInitialCacheCapacity(1000)
+            .withMaximumCacheSize(10000)
+            .withExpireAfterMs(60000)
+            .withTlsTrustedCertificates(cert)
+            .addToSuperUsers("jack", "CN=conor")
+            .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+            .withAuthorization("my-cluster", auth, false)
+            .build();
+
+        assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
+            "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
+            "opa.authorizer.allow.on.error=true\n" +
+            "opa.authorizer.metrics.enabled=false\n" +
+            "opa.authorizer.cache.initial.capacity=1000\n" +
+            "opa.authorizer.cache.maximum.size=10000\n" +
+            "opa.authorizer.cache.expire.after.seconds=60\n" +
+            "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12\n" +
+            "opa.authorizer.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+            "opa.authorizer.truststore.type=PKCS12\n" +
+            "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
+    }
+
+    @ParallelTest
     public void testNullUserConfiguration()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
                 .withUserConfiguration(null)

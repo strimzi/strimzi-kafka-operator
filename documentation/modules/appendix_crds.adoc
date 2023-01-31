@@ -564,22 +564,24 @@ The `type` property is a discriminator that distinguishes use of the `KafkaAutho
 It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 [options="header"]
 |====
-|Property                     |Description
-|type                  1.2+<.<a|Must be `opa`.
+|Property                      |Description
+|type                   1.2+<.<a|Must be `opa`.
 |string
-|url                   1.2+<.<a|The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer. This option is required.
+|url                    1.2+<.<a|The URL used to connect to the Open Policy Agent server. The URL has to include the policy which will be queried by the authorizer. This option is required.
 |string
-|allowOnError          1.2+<.<a|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). Defaults to `false` - all actions will be denied.
+|allowOnError           1.2+<.<a|Defines whether a Kafka client should be allowed or denied by default when the authorizer fails to query the Open Policy Agent, for example, when it is temporarily unavailable). Defaults to `false` - all actions will be denied.
 |boolean
-|initialCacheCapacity  1.2+<.<a|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
+|initialCacheCapacity   1.2+<.<a|Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
 |integer
-|maximumCacheSize      1.2+<.<a|Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
+|maximumCacheSize       1.2+<.<a|Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
 |integer
-|expireAfterMs         1.2+<.<a|The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
+|expireAfterMs          1.2+<.<a|The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
 |integer
-|superUsers            1.2+<.<a|List of super users, which is specifically a list of user principals that have unlimited access rights.
+|tlsTrustedCertificates 1.2+<.<a|Trusted certificates for TLS connection to the OPA server.
+|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
+|superUsers             1.2+<.<a|List of super users, which is specifically a list of user principals that have unlimited access rights.
 |string array
-|enableMetrics         1.2+<.<a|Defines whether the Open Policy Agent authorizer plugin should provide metrics. Defaults to `false`.
+|enableMetrics          1.2+<.<a|Defines whether the Open Policy Agent authorizer plugin should provide metrics. Defaults to `false`.
 |boolean
 |====
 
