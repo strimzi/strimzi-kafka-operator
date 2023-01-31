@@ -95,7 +95,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         // 2. Approve installation
         //   a) get name of install-plan
         //   b) approve installation
-        clusterOperator.runManualOlmInstallation(fromVersion, "strimzi-0.27.x");
+        clusterOperator.runManualOlmInstallation(fromVersion, "strimzi-0.32.x");
 
         String url = upgradeData.getUrlFrom();
         File dir = FileUtils.downloadAndUnzip(url);
@@ -151,10 +151,10 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
 
         // verification that cluster operator has correct version (install-plan) - strimzi-cluster-operator.v[version]
-        String afterUpgradeVersionOfCo = kubeClient().getCSVInInstallPlan(clusterOperator.getDeploymentNamespace(), kubeClient().getInstallPlan(clusterOperator.getDeploymentNamespace(), upgradeOlmConfig.getCsvName()).getMetadata().getName());
+        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(clusterOperator.getDeploymentNamespace(), upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
 
         // if HEAD -> 6.6.6 version
-        assertThat(afterUpgradeVersionOfCo, is(Environment.OLM_APP_BUNDLE_PREFIX + ".v" + toVersion));
+        assertThat(afterUpgradeVersionOfCo, is(toVersion));
 
         // ======== Kafka upgrade starts ========
         logPodImages(clusterName);

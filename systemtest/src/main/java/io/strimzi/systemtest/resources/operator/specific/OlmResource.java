@@ -120,7 +120,6 @@ public class OlmResource implements SpecificResourceType {
                 .withName(olmConfiguration.getOlmOperatorName())
                 .withSource(olmConfiguration.getOlmSourceName())
                 .withSourceNamespace(olmConfiguration.getOlmSourceNamespace())
-                .withStartingCSV(olmConfiguration.getCsvName())
                 .withChannel(olmConfiguration.getChannelName())
                 .withInstallPlanApproval(olmConfiguration.getOlmInstallationStrategy().toString())
                 .editOrNewConfig()
@@ -137,7 +136,7 @@ public class OlmResource implements SpecificResourceType {
      * Also updates closedMapInstallPlan map and set specific install plan to true.
      */
     private void approveNotApprovedInstallPlan() {
-        String notApprovedIPName = kubeClient().getInstallPlan(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName()).getMetadata().getName();
+        String notApprovedIPName = kubeClient().getInstallPlanNameUsingCsvPrefix(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
         kubeClient().approveInstallPlan(olmConfiguration.getNamespaceName(), notApprovedIPName);
     }
 

@@ -71,7 +71,7 @@ public class OlmConfiguration {
     }
 
     public void setChannelName(String channelName) {
-        this.channelName = operatorVersion.equals(Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION) ? "stable" : channelName;
+        this.channelName = channelName == null && operatorVersion.equals(Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION) ? "stable" : channelName;
     }
 
     public String getChannelName() {

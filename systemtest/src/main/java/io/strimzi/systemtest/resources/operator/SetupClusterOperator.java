@@ -925,7 +925,7 @@ public class SetupClusterOperator {
      */
     public String getDeploymentNamespace() {
         if (Environment.isOlmInstall() && !Environment.isNamespaceRbacScope()) {
-            return cluster.getDefaultOlmNamespace();
+            return namespaceInstallTo == null ? cluster.getDefaultOlmNamespace() : namespaceInstallTo;
         }
         return namespaceInstallTo == null ? Constants.INFRA_NAMESPACE : namespaceInstallTo;
     }

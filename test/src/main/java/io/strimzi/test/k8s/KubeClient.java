@@ -38,6 +38,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.ClusterServiceVersion;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlanBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -835,17 +836,24 @@ public class KubeClient {
     // ---------------> OPENSHIFT RESOURCES <---------------
     // =====================================================
 
-    public InstallPlan getInstallPlan(String namespaceName, String csvPrefix) {
+    public String getInstallPlanNameUsingCsvPrefix(String namespaceName, String csvPrefix) {
         return client.adapt(OpenShiftClient.class).operatorHub().installPlans()
-            .inNamespace(namespaceName).list().getItems().stream().filter(installPlan -> installPlan.getSpec().getClusterServiceVersionNames().contains(csvPrefix)).findFirst().get();
+            .inNamespace(namespaceName).list().getItems().stream()
+            .filter(installPlan -> installPlan.getSpec().getClusterServiceVersionNames().toString().contains(csvPrefix)).findFirst().get().getMetadata().getName();
     }
 
-    public String getCSVInInstallPlan(String namespaceName, String csvPrefix) {
-        return getInstallPlan(namespaceName, csvPrefix).getSpec().getClusterServiceVersionNames().stream().findFirst().get();
+    public InstallPlan getInstallPlan(String namespaceName, String installPlanName) {
+        return client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).get();
     }
 
     public void approveInstallPlan(String namespaceName, String installPlanName) {
-        client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName);
+        InstallPlan installPlan = new InstallPlanBuilder(kubeClient().getInstallPlan(namespaceName, installPlanName))
+            .editSpec()
+                .withApproved()
+            .endSpec()
+            .build();
+
+        client.adapt(OpenShiftClient.class).operatorHub().installPlans().inNamespace(namespaceName).withName(installPlanName).patch(installPlan);
     }
 
     public InstallPlan getNonApprovedInstallPlan(String namespaceName) {
@@ -855,6 +863,11 @@ public class KubeClient {
 
     public ClusterServiceVersion getCsv(String namespaceName, String csvName) {
         return client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).get();
+    }
+
+    public ClusterServiceVersion getCsvWithPrefix(String namespaceName, String csvPrefix) {
+        return client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName)
+            .list().getItems().stream().filter(csv -> csv.getMetadata().getName().contains(csvPrefix)).findFirst().get();
     }
 
     public void deleteCsv(String namespaceName, String csvName) {
