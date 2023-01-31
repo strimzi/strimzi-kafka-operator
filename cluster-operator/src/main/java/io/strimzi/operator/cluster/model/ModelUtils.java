@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
@@ -21,7 +20,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
@@ -553,34 +551,6 @@ public class ModelUtils {
                     .endNodeAffinity();
         }
         return builder;
-    }
-
-    /**
-     * Decides whether the Cluster Operator needs namespaceSelector to be configured in the network policies in order
-     * to talk with the operands. This follows the following rules:
-     *     - If it runs in the same namespace as the operand, do not set namespace selector
-     *     - If it runs in a different namespace, but user provided selector labels, use the labels
-     *     - If it runs in a different namespace, and user didn't provided selector labels, open it to COs in all namespaces
-     *
-     * @param peer                      Network policy peer where the namespace selector should be set
-     * @param operandNamespace          Namespace of the operand
-     * @param operatorNamespace         Namespace of the Strimzi CO
-     * @param operatorNamespaceLabels   Namespace labels provided by the user
-     */
-    public static void setClusterOperatorNetworkPolicyNamespaceSelector(NetworkPolicyPeer peer, String operandNamespace, String operatorNamespace, Labels operatorNamespaceLabels)   {
-        if (!operandNamespace.equals(operatorNamespace)) {
-            // If CO and the operand do not run in the same namespace, we need to handle cross namespace access
-
-            if (operatorNamespaceLabels != null && !operatorNamespaceLabels.toMap().isEmpty())    {
-                // If user specified the namespace labels, we can use them to make the network policy as tight as possible
-                LabelSelector nsLabelSelector = new LabelSelector();
-                nsLabelSelector.setMatchLabels(operatorNamespaceLabels.toMap());
-                peer.setNamespaceSelector(nsLabelSelector);
-            } else {
-                // If no namespace labels were specified, we open the network policy to COs in all namespaces
-                peer.setNamespaceSelector(new LabelSelector());
-            }
-        }
     }
 
     /**

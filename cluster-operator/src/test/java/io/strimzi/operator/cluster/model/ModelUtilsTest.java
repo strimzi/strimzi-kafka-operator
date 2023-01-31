@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -25,7 +24,6 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
@@ -36,8 +34,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.parseMap;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -190,31 +186,6 @@ public class ModelUtilsTest {
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleUpSecret), is(true));
         assertThat(ModelUtils.doExistingCertificatesDiffer(defaultSecret, changedScaleDownSecret), is(true));
-    }
-
-    @ParallelTest
-    public void testCONetworkPolicyPeerNamespaceSelectorSameNS()  {
-        NetworkPolicyPeer peer = new NetworkPolicyPeer();
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-ns", null);
-        assertThat(peer.getNamespaceSelector(), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void testCONetworkPolicyPeerNamespaceSelectorDifferentNSNoLabels()  {
-        NetworkPolicyPeer peer = new NetworkPolicyPeer();
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", null);
-        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(Map.of()));
-
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", Labels.fromMap(emptyMap()));
-        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(Map.of()));
-    }
-
-    @ParallelTest
-    public void testCONetworkPolicyPeerNamespaceSelectorDifferentNSWithLabels()  {
-        NetworkPolicyPeer peer = new NetworkPolicyPeer();
-        Labels nsLabels = Labels.fromMap(singletonMap("labelKey", "labelValue"));
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", nsLabels);
-        assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nsLabels.toMap()));
     }
 
     @ParallelTest

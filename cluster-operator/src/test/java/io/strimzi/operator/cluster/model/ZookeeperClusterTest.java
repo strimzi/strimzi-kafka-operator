@@ -578,25 +578,34 @@ public class ZookeeperClusterTest {
         NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
 
         LabelSelector podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(zc.getCluster())));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(np.getSpec().getPodSelector(), is(podSelector));
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
-        assertThat(rules.size(), is(3));
+        assertThat(rules.size(), is(4));
 
-        // Ports 2888 and 3888
+        // Ports 2888
         NetworkPolicyIngressRule zooRule = rules.get(0);
-        assertThat(zooRule.getPorts().size(), is(2));
+        assertThat(zooRule.getPorts().size(), is(1));
         assertThat(zooRule.getPorts().get(0).getPort(), is(new IntOrString(2888)));
-        assertThat(zooRule.getPorts().get(1).getPort(), is(new IntOrString(3888)));
 
         assertThat(zooRule.getFrom().size(), is(1));
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(zc.getCluster())));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(zooRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
+        // Ports 3888
+        NetworkPolicyIngressRule zooRule2 = rules.get(1);
+        assertThat(zooRule2.getPorts().size(), is(1));
+        assertThat(zooRule2.getPorts().get(0).getPort(), is(new IntOrString(3888)));
+
+        assertThat(zooRule2.getFrom().size(), is(1));
+        podSelector = new LabelSelector();
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
+        assertThat(zooRule2.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
+
         // Port 2181
-        NetworkPolicyIngressRule clientsRule = rules.get(1);
+        NetworkPolicyIngressRule clientsRule = rules.get(2);
         assertThat(clientsRule.getPorts().size(), is(1));
         assertThat(clientsRule.getPorts().get(0).getPort(), is(new IntOrString(ZookeeperCluster.CLIENT_TLS_PORT)));
 
@@ -607,7 +616,7 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(zc.getCluster())));
+        podSelector.setMatchLabels(Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, CLUSTER, Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(clientsRule.getFrom().get(1), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
@@ -619,7 +628,7 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(new LabelSelector()).build()));
 
         // Port 9404
-        NetworkPolicyIngressRule metricsRule = rules.get(2);
+        NetworkPolicyIngressRule metricsRule = rules.get(3);
         assertThat(metricsRule.getPorts().size(), is(1));
         assertThat(metricsRule.getPorts().get(0).getPort(), is(new IntOrString(9404)));
         assertThat(metricsRule.getFrom().size(), is(0));
@@ -628,13 +637,13 @@ public class ZookeeperClusterTest {
         np = zc.generateNetworkPolicy(NAMESPACE, null);
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
-        assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
+        assertThat(np.getSpec().getIngress().get(2).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => The same namespace with namespace labels
         np = zc.generateNetworkPolicy(NAMESPACE, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
-        assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
+        assertThat(np.getSpec().getIngress().get(2).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => Other namespace with namespace labels
         np = zc.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
@@ -642,7 +651,7 @@ public class ZookeeperClusterTest {
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         LabelSelector namespaceSelector = new LabelSelector();
         namespaceSelector.setMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"));
-        assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(namespaceSelector).build()));
+        assertThat(np.getSpec().getIngress().get(2).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(namespaceSelector).build()));
     }
 
     @ParallelTest
