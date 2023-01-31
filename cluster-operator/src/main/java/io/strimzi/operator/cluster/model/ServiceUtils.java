@@ -117,7 +117,7 @@ public class ServiceUtils {
      * @param ipFamilyPolicy        IP Family Policy configuration
      * @param ipFamilies            List of IP familiers
      *
-     * @return  New discoverable ClusterIP Service
+     * @return  New Service
      */
     public static Service createService(
             String name,
