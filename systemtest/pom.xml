@@ -237,7 +237,6 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-model-operatorhub</artifactId>
-            <version>${fabric8.openshift-client.version}</version>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
