@@ -71,7 +71,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -102,7 +101,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -645,12 +643,12 @@ class ConnectIsolatedST extends AbstractST {
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         // How many messages should be sent and at what count should the test connector fail
-        int failMessageCount = 1;
+        final int failMessageCount = 5;
 
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", testStorage.getTopicName());
         echoSinkConfig.put("level", "INFO");
-        echoSinkConfig.put("fail.task.after.records", Integer.toString(failMessageCount));
+        echoSinkConfig.put("fail.task.after.records", failMessageCount);
 
         LOGGER.info("Creating EchoSink connector");
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
@@ -673,17 +671,15 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
-        // Wait for echo-sink connector to pick up messages and fail tasks
-        KafkaConnectorUtils.waitForConnectorStatus(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, NotReady);
 
-        KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(Constants.ECHO_SINK_CONNECTOR_NAME).get().getStatus();
-        String connectorTaskState = ((ArrayList<Map<String, String>>) connectorState.getConnectorStatus().get("tasks")).get(0).get("state");
+        // After connector picks up messages from topic it fails task
+        // If it's the first time echo-sink task failed - it's immediately restarted and connector adds count to autoRestartCount.
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 1);
+        // Give some time to connector task to get back to running state after recovery
+        KafkaConnectorUtils.waitForConnectorTaskState(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0, "RUNNING");
+        // If task is in running state for about 2 minutes, it resets the auto-restart count back to 0
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0);
 
-        // After task of echo-sink picks up messages from topic, it should fail.
-        assertEquals(connectorTaskState, "FAILED");
-        // Topic contains sent messages the whole test, so after the task auto-restarts,
-        // it still picks up messages and is supposed to fail again.
-        assertThat(connectorState.getAutoRestart().getCount(), is(not(0)));
     }
 
     @ParallelNamespaceTest

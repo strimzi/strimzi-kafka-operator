@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -14,6 +15,10 @@ import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.GLOBAL_RECONCILIATION_COUNT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -105,6 +110,35 @@ public class KafkaConnectorUtils {
                 && (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
                 .withName(connectorName).get().getStatus().getTasksMax() == taskMax)
         );
+    }
+
+    public static void waitForConnectorTaskState(String namespaceName, String connectorName, int taskId, String state) {
+        LOGGER.info("Waiting for task with id:{} to be in state {}", taskId, state);
+        TestUtils.waitFor(String.format("Wait for KafkaConnector task status to be: %s", state), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+            () -> (getConnectorTaskState(namespaceName, connectorName, taskId).equals(state))
+        );
+    }
+
+    public static String getConnectorTaskState(String namespaceName, String connectorName, int taskId) {
+        KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get().getStatus();
+        Map<String, Object> connectorTask = ((ArrayList<Map<String, Object>>) connectorState.getConnectorStatus().get("tasks")).stream().filter(conn -> conn.get("id").equals(taskId)).collect(Collectors.toList()).get(0);
+        return  (String) connectorTask.get("state");
+    }
+
+    public static void waitForConnectorAutoRestartCount(String namespaceName, String connectorName, int restartCount) {
+        LOGGER.info("Waiting for kafkaConnector {} to have autoRestartCount {}", connectorName, restartCount);
+        TestUtils.waitFor(String.format("Wait for kafkaConnector %s to have autoRestartCount: %s", connectorName, restartCount), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+            () -> (getConnectorAutoRestartCount(namespaceName, connectorName) == restartCount)
+        );
+    }
+
+    public static int getConnectorAutoRestartCount(String namespaceName, String connectorName) {
+        KafkaConnectorStatus connectorState = KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get().getStatus();
+        // If autoRestartCount is 0 it's not present in the resource status and returns null when looked for
+        if (connectorState.getAutoRestart() != null) {
+            return connectorState.getAutoRestart().getCount();
+        }
+        return 0;
     }
 
     public static void waitForConnectorsTaskMaxChangeViaAPI(String namespaceName, String connectPodName, String connectorName, int taskMax) {
