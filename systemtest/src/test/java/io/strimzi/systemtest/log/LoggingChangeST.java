@@ -90,7 +90,7 @@ class LoggingChangeST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(LoggingChangeST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
+//    @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -247,8 +247,8 @@ class LoggingChangeST extends AbstractST {
 
         StUtils.checkLogForJSONFormat(clusterOperator.getDeploymentNamespace(), operatorSnapshot, ResourceManager.getCoDeploymentName());
         StUtils.checkLogForJSONFormat(namespaceName, kafkaPods, "kafka");
-        StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
         if (!Environment.isKRaftModeEnabled()) {
+            StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
             StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
         }
         StUtils.checkLogForJSONFormat(namespaceName, eoPods, "user-operator");
