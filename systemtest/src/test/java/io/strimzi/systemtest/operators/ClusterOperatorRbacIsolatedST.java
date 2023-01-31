@@ -12,7 +12,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -23,7 +22,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -110,7 +108,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*Forbidden!.*");
         Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
-        assertThat(kafkaStatusCondition, CoreMatchers.is(notNullValue()));
+        assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
 
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
@@ -121,7 +119,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*Forbidden!.*");
         Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
-        assertThat(kafkaConnectStatusCondition, CoreMatchers.is(notNullValue()));
+        assertThat(kafkaConnectStatusCondition, is(notNullValue()));
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("Configured service account doesn't have access."));
     }
 }
