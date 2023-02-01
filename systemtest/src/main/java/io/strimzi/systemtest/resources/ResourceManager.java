@@ -55,6 +55,8 @@ import io.strimzi.systemtest.resources.kubernetes.SecretResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceAccountResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.kubernetes.ValidatingWebhookConfigurationResource;
+import io.strimzi.systemtest.resources.openshift.OperatorGroupResource;
+import io.strimzi.systemtest.resources.openshift.SubscriptionResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -141,7 +143,9 @@ public class ResourceManager {
         new ClusterRoleResource(),
         new ClusterOperatorCustomResourceDefinition(),
         new SecretResource(),
-        new ValidatingWebhookConfigurationResource()
+        new ValidatingWebhookConfigurationResource(),
+        new SubscriptionResource(),
+        new OperatorGroupResource()
     };
 
     @SafeVarargs

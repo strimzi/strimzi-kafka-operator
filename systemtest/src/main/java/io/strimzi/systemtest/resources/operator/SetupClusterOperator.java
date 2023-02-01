@@ -31,6 +31,8 @@ import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleResource;
+import io.strimzi.systemtest.resources.operator.configuration.OlmConfiguration;
+import io.strimzi.systemtest.resources.operator.configuration.OlmConfigurationBuilder;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
@@ -249,8 +251,20 @@ public class SetupClusterOperator {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         }
-        olmResource = new OlmResource(this.namespaceInstallTo);
-        olmResource.create(this.namespaceInstallTo, OlmInstallationStrategy.Manual, fromVersion, channelName, extraEnvVars);
+
+        OlmConfiguration olmConfiguration = new OlmConfigurationBuilder()
+            .withNamespaceName(this.namespaceInstallTo)
+            .withExtensionContext(extensionContext)
+            .withOlmInstallationStrategy(OlmInstallationStrategy.Manual)
+            .withOperatorVersion(fromVersion)
+            .withChannelName(channelName)
+            .withEnvVars(extraEnvVars)
+            .withOperationTimeout(operationTimeout)
+            .withReconciliationInterval(reconciliationInterval)
+            .build();
+
+        olmResource = new OlmResource(olmConfiguration);
+        olmResource.create();
 
         return this;
     }
@@ -301,6 +315,13 @@ public class SetupClusterOperator {
 
     private void olmInstallation() {
         LOGGER.info("Install ClusterOperator via OLM");
+
+        OlmConfigurationBuilder olmConfiguration = new OlmConfigurationBuilder()
+            .withExtensionContext(extensionContext)
+            .withOperationTimeout(operationTimeout)
+            .withReconciliationInterval(reconciliationInterval)
+            .withEnvVars(extraEnvVars);
+
         // cluster-wide olm co-operator or multi-namespaces in once we also deploy cluster-wide
         if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
@@ -318,14 +339,14 @@ public class SetupClusterOperator {
 
                 createCONamespaceIfNeeded();
                 createClusterRoleBindings();
-                olmResource = new OlmResource(namespaceInstallTo);
-                olmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars);
+                olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
+                olmResource.create();
             }
             // single-namespace olm co-operator
         } else {
             createCONamespaceIfNeeded();
-            olmResource = new OlmResource(namespaceInstallTo);
-            olmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars);
+            olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
+            olmResource.create();
         }
     }
 
@@ -760,8 +781,6 @@ public class SetupClusterOperator {
             // trigger that we will again create namespace
             if (Environment.isHelmInstall()) {
                 helmResource.delete();
-            } else if (Environment.isOlmInstall()) {
-                olmResource.delete();
             } else {
                 // clear all resources related to the extension context
                 try {
@@ -906,7 +925,7 @@ public class SetupClusterOperator {
      */
     public String getDeploymentNamespace() {
         if (Environment.isOlmInstall() && !Environment.isNamespaceRbacScope()) {
-            return cluster.getDefaultOlmNamespace();
+            return namespaceInstallTo == null ? cluster.getDefaultOlmNamespace() : namespaceInstallTo;
         }
         return namespaceInstallTo == null ? Constants.INFRA_NAMESPACE : namespaceInstallTo;
     }

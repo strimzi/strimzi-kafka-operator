@@ -5,22 +5,16 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.test.TestUtils;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class OlmUtils {
 
     private OlmUtils() {}
 
-    public static void waitUntilNonUsedInstallPlanIsPresent(String currentVersion) {
+    public static void waitUntilNonUsedInstallPlanIsPresent(String namespaceName, String currentVersion) {
         TestUtils.waitFor("install plan is present in version:" + currentVersion + ".", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
-            () -> {
-                try {
-                    OlmResource.obtainInstallPlanName();
-                    return !OlmResource.getNonUsedInstallPlan().equals(OlmResource.NO_MORE_NON_USED_INSTALL_PLANS);
-                } catch (RuntimeException e)  {
-                    throw new RuntimeException("No install-plan was found upgrading from:"  + currentVersion + " version! It must exists.");
-                }
-            });
+            () -> kubeClient().getNonApprovedInstallPlan(namespaceName) != null);
     }
 }

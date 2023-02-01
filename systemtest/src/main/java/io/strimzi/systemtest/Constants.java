@@ -130,6 +130,8 @@ public interface Constants {
     String JOB = "Job";
     String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
     String REPLICA_SET = "ReplicaSet";
+    String SUBSCRIPTION = "Subscription";
+    String OPERATOR_GROUP = "OperatorGroup";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
