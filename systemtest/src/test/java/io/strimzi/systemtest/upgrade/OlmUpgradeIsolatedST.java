@@ -111,7 +111,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         this.kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, upgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
         this.kafkaUpgradeTopic.getMetadata().setName(topicUpgradeName);
         this.kafkaUpgradeTopic.getSpec().setReplicas(3);
-        this.kafkaUpgradeTopic.getSpec().setAdditionalProperty("min.insync.replicas", 2);
+        this.kafkaUpgradeTopic.getSpec().getConfig().put("min.insync.replicas", 2);
 
         LOGGER.info("Deploy KafkaTopic: {}", this.kafkaUpgradeTopic.toString());
 

@@ -73,7 +73,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
-        final String continuousTopicName = "continuous-topic";
+        final String continuousTopicName = "continuous-" + testStorage.getTopicName();
         final String continuousProducerName = "continuous-" + testStorage.getProducerName();
         final String continuousConsumerName = "continuous-" + testStorage.getConsumerName();
 
@@ -334,7 +334,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
-        final String continuousTopicName = "continuous-topic";
+        final String continuousTopicName = "continuous-" + testStorage.getTopicName();
         final String continuousProducerName = "continuous-" + testStorage.getProducerName();
         final String continuousConsumerName = "continuous-" + testStorage.getConsumerName();
 
