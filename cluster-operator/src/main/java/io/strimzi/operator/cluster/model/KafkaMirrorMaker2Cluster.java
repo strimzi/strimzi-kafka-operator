@@ -98,7 +98,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
 
-        cluster.setImage(versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion()));
+        cluster.image = versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion());
 
         List<KafkaMirrorMaker2ClusterSpec> clustersList = ModelUtils.asListOrEmptyList(spec.getClusters());
         cluster.setClusters(clustersList);
@@ -302,7 +302,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_PASSWORDS_CLUSTERS, clustersOauthPasswords.toString()));
         }
 
-        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
+        ModelUtils.jvmSystemProperties(varList, jvmOptions);
 
         return varList;
     }

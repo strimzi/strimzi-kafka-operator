@@ -80,6 +80,8 @@ public class EntityTopicOperator extends AbstractModel {
     protected SecurityContext templateContainerSecurityContext;
     private ResourceTemplate templateRoleBinding;
 
+    private io.strimzi.api.kafka.model.Probe startupProbeOptions;
+
     /**
      * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
@@ -136,17 +138,17 @@ public class EntityTopicOperator extends AbstractModel {
             result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
             result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
             result.setLogging(topicOperatorSpec.getLogging());
-            result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
-            result.setJvmOptions(topicOperatorSpec.getJvmOptions());
-            result.setResources(topicOperatorSpec.getResources());
+            result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
+            result.jvmOptions = topicOperatorSpec.getJvmOptions();
+            result.resources = topicOperatorSpec.getResources();
             if (topicOperatorSpec.getStartupProbe() != null) {
-                result.setStartupProbe(topicOperatorSpec.getStartupProbe());
+                result.startupProbeOptions = topicOperatorSpec.getStartupProbe();
             }
             if (topicOperatorSpec.getReadinessProbe() != null) {
-                result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
+                result.readinessProbeOptions = topicOperatorSpec.getReadinessProbe();
             }
             if (topicOperatorSpec.getLivenessProbe() != null) {
-                result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
+                result.livenessProbeOptions = topicOperatorSpec.getLivenessProbe();
             }
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
@@ -170,7 +172,7 @@ public class EntityTopicOperator extends AbstractModel {
                 .withStartupProbe(ProbeGenerator.httpProbe(startupProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME))
-                .withResources(getResources())
+                .withResources(resources)
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.entityTopicOperatorContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
@@ -190,7 +192,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        ModelUtils.javaOptions(varList, getJvmOptions());
+        ModelUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());

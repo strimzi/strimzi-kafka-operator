@@ -238,7 +238,7 @@ public class KafkaConnectCluster extends AbstractModel {
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C kafkaConnect) {
-        kafkaConnect.setReplicas(spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS);
+        kafkaConnect.replicas = spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS;
         kafkaConnect.tracing = spec.getTracing();
 
         AbstractConfiguration config = kafkaConnect.getConfiguration();
@@ -257,14 +257,14 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         if (kafkaConnect.getImage() == null) {
-            kafkaConnect.setImage(versions.kafkaConnectVersion(spec.getImage(), spec.getVersion()));
+            kafkaConnect.image = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
         }
 
-        kafkaConnect.setResources(spec.getResources());
+        kafkaConnect.resources = spec.getResources();
         kafkaConnect.setLogging(spec.getLogging());
-        kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
+        kafkaConnect.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
 
-        kafkaConnect.setJvmOptions(spec.getJvmOptions());
+        kafkaConnect.jvmOptions = spec.getJvmOptions();
 
         if (spec.getJmxOptions() != null) {
             kafkaConnect.setJmxEnabled(Boolean.TRUE);
@@ -272,10 +272,10 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         if (spec.getReadinessProbe() != null) {
-            kafkaConnect.setReadinessProbe(spec.getReadinessProbe());
+            kafkaConnect.readinessProbeOptions = spec.getReadinessProbe();
         }
         if (spec.getLivenessProbe() != null) {
-            kafkaConnect.setLivenessProbe(spec.getLivenessProbe());
+            kafkaConnect.livenessProbeOptions = spec.getLivenessProbe();
         }
 
         kafkaConnect.setRack(spec.getRack());
@@ -317,17 +317,13 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
             }
 
-            if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                kafkaConnect.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                kafkaConnect.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-            }
-
             kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
             kafkaConnect.templateDeployment = template.getDeployment();
             kafkaConnect.templatePod = template.getPod();
             kafkaConnect.templateJmxSecret = template.getJmxSecret();
             kafkaConnect.templateService = template.getApiService();
+            kafkaConnect.templateServiceAccount = template.getServiceAccount();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -550,7 +546,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
                 .withVolumeMounts(getVolumeMounts())
-                .withResources(getResources())
+                .withResources(resources)
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.kafkaConnectContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
                 .build();
@@ -589,8 +585,8 @@ public class KafkaConnectCluster extends AbstractModel {
                     .withSecurityContext(securityProvider.kafkaConnectInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
                     .build();
 
-            if (getResources() != null) {
-                initContainer.setResources(getResources());
+            if (resources != null) {
+                initContainer.setResources(resources);
             }
             initContainers.add(initContainer);
         }
@@ -610,9 +606,9 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        ModelUtils.heapOptions(varList, 75, 0L, getJvmOptions(), getResources());
-        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
-        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
+        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
+        ModelUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (tls != null) {
             populateTLSEnvVars(varList);

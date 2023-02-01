@@ -145,12 +145,8 @@ public class KafkaConnectBuild extends AbstractModel {
                 }
             }
 
-            if (template.getBuildServiceAccount() != null && template.getBuildServiceAccount().getMetadata() != null) {
-                build.templateServiceAccountLabels = template.getBuildServiceAccount().getMetadata().getLabels();
-                build.templateServiceAccountAnnotations = template.getBuildServiceAccount().getMetadata().getAnnotations();
-            }
-
             build.templatePod = template.getBuildPod();
+            build.templateServiceAccount = template.getBuildServiceAccount();
         }
 
         build.build = spec.getBuild();

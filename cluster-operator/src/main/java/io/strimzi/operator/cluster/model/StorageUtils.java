@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 
 /**
@@ -150,11 +151,49 @@ public class StorageUtils {
             if (isEphemeral(storage)) {
                 return true;
             }
-            if (Storage.TYPE_JBOD.equals(storage.getType()) && storage instanceof JbodStorage) {
-                JbodStorage jbodStorage = (JbodStorage) storage;
+            if (Storage.TYPE_JBOD.equals(storage.getType()) && storage instanceof JbodStorage jbodStorage) {
                 return jbodStorage.getVolumes().stream().anyMatch(StorageUtils::isEphemeral);
             }
         }
         return false;
+    }
+
+    /**
+     * Validates persistent storage
+     * If storage is of a persistent type, validations are made
+     * If storage is not of a persistent type, validation passes
+     *
+     * @param storage   Persistent Storage configuration
+     * @throws InvalidResourceException if validations fails for any reason
+     */
+    public static void validatePersistentStorage(Storage storage)   {
+        if (storage instanceof PersistentClaimStorage persistentClaimStorage) {
+            checkPersistentStorageSizeIsValid(persistentClaimStorage);
+
+        } else if (storage instanceof JbodStorage jbodStorage)  {
+
+            if (jbodStorage.getVolumes().size() == 0)   {
+                throw new InvalidResourceException("JbodStorage needs to contain at least one volume!");
+            }
+
+            for (Storage jbodVolume : jbodStorage.getVolumes()) {
+                if (jbodVolume instanceof PersistentClaimStorage persistentClaimStorage) {
+                    checkPersistentStorageSizeIsValid(persistentClaimStorage);
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if the supplied PersistentClaimStorage has a valid size
+     *
+     * @param storage   PersistentClaimStorage configuration
+     *
+     * @throws InvalidResourceException if the persistent storage size is not valid
+     */
+    private static void checkPersistentStorageSizeIsValid(PersistentClaimStorage storage)   {
+        if (storage.getSize() == null || storage.getSize().isEmpty()) {
+            throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+        }
     }
 }

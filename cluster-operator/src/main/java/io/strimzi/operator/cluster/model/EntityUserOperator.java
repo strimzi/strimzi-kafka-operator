@@ -138,14 +138,14 @@ public class EntityUserOperator extends AbstractModel {
             result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
             result.setLogging(userOperatorSpec.getLogging());
-            result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
-            result.setJvmOptions(userOperatorSpec.getJvmOptions());
-            result.setResources(userOperatorSpec.getResources());
+            result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
+            result.jvmOptions = userOperatorSpec.getJvmOptions();
+            result.resources = userOperatorSpec.getResources();
             if (userOperatorSpec.getReadinessProbe() != null) {
-                result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
+                result.readinessProbeOptions = userOperatorSpec.getReadinessProbe();
             }
             if (userOperatorSpec.getLivenessProbe() != null) {
-                result.setLivenessProbe(userOperatorSpec.getLivenessProbe());
+                result.livenessProbeOptions = userOperatorSpec.getLivenessProbe();
             }
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
@@ -190,7 +190,7 @@ public class EntityUserOperator extends AbstractModel {
                 .withPorts(List.of(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME))
-                .withResources(getResources())
+                .withResources(resources)
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.entityUserOperatorContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainerSecurityContext)))
@@ -215,7 +215,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(buildEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
         varList.add(buildEnvVar(ENV_VAR_KRAFT_ENABLED, String.valueOf(kraftEnabled)));
-        ModelUtils.javaOptions(varList, getJvmOptions());
+        ModelUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());

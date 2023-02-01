@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.SecurityContext;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -168,14 +167,10 @@ public class EntityOperator extends AbstractModel {
                     result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
                 }
 
-                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                    result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                    result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-                }
-
                 result.templateRole = template.getEntityOperatorRole();
                 result.templateDeployment = template.getDeployment();
                 result.templatePod = template.getPod();
+                result.templateServiceAccount = template.getServiceAccount();
             }
 
             return result;
@@ -309,11 +304,6 @@ public class EntityOperator extends AbstractModel {
         volumeList.add(VolumeUtils.createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
-    }
-
-    @Override
-    public ServiceAccount generateServiceAccount() {
-        return super.generateServiceAccount();
     }
 
     /**

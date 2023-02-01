@@ -199,13 +199,13 @@ public class CruiseControl extends AbstractModel {
         if (ccSpec != null) {
             CruiseControl cruiseControl = new CruiseControl(reconciliation, kafkaCr);
 
-            cruiseControl.setReplicas(DEFAULT_REPLICAS);
+            cruiseControl.replicas = DEFAULT_REPLICAS;
 
             String image = ccSpec.getImage();
             if (image == null) {
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
-            cruiseControl.setImage(image);
+            cruiseControl.image = image;
 
             cruiseControl.updateConfiguration(ccSpec);
             CruiseControlConfiguration ccConfiguration = (CruiseControlConfiguration) cruiseControl.getConfiguration();
@@ -225,20 +225,19 @@ public class CruiseControl extends AbstractModel {
             ModelUtils.parseMetrics(cruiseControl, ccSpec);
 
             if (ccSpec.getReadinessProbe() != null) {
-                cruiseControl.setReadinessProbe(ccSpec.getReadinessProbe());
+                cruiseControl.readinessProbeOptions = ccSpec.getReadinessProbe();
             }
 
             if (ccSpec.getLivenessProbe() != null) {
-                cruiseControl.setLivenessProbe(ccSpec.getLivenessProbe());
+                cruiseControl.livenessProbeOptions = ccSpec.getLivenessProbe();
             }
 
             Logging logging = ccSpec.getLogging();
             cruiseControl.setLogging(logging == null ? new InlineLogging() : logging);
 
-            cruiseControl.setGcLoggingEnabled(ccSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled());
-            cruiseControl.setJvmOptions(ccSpec.getJvmOptions());
-
-            cruiseControl.setResources(ccSpec.getResources());
+            cruiseControl.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
+            cruiseControl.jvmOptions = ccSpec.getJvmOptions();
+            cruiseControl.resources = ccSpec.getResources();
 
             if (ccSpec.getTemplate() != null) {
                 CruiseControlTemplate template = ccSpec.getTemplate();
@@ -251,14 +250,10 @@ public class CruiseControl extends AbstractModel {
                     cruiseControl.templateCruiseControlContainerSecurityContext = template.getCruiseControlContainer().getSecurityContext();
                 }
 
-                if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
-                    cruiseControl.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
-                    cruiseControl.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
-                }
-
                 cruiseControl.templateDeployment = template.getDeployment();
                 cruiseControl.templatePod = template.getPod();
                 cruiseControl.templateService = template.getApiService();
+                cruiseControl.templateServiceAccount = template.getServiceAccount();
             }
 
             return cruiseControl;
@@ -411,7 +406,7 @@ public class CruiseControl extends AbstractModel {
                             .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
                         .endExec()
                         .build())
-                .withResources(getResources())
+                .withResources(resources)
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(securityProvider.cruiseControlContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateCruiseControlContainerSecurityContext)))
@@ -437,9 +432,9 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
-        ModelUtils.heapOptions(varList, 75, 0L, getJvmOptions(), getResources());
-        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
-        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
+        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
+        ModelUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
