@@ -363,8 +363,8 @@ public class KafkaRoller {
             checkReconfigurability(podRef, pod, restartContext);
             if (restartContext.forceRestart || restartContext.needsRestart || restartContext.needsReconfig) {
                 if (!restartContext.forceRestart && deferController(podRef, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Verify non-controller pods first will be prioritized.", podRef);
-                    throw new ForceableProblem("Pod " + podRef.getPodName() + " is currently the controller and there are other pods still to verify");
+                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Non-controller pods will be verified first.", podRef);
+                    throw new ForceableProblem("Pod " + podRef.getPodName() + " is controller and there are other pods to verify. Non-controller pods will be verified first");
                 } else {
                     if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
@@ -575,21 +575,21 @@ public class KafkaRoller {
         updatedConfig.put(Util.getBrokersConfig(podId), configurationDiff.getConfigDiff());
         updatedConfig.put(Util.getBrokersLogging(podId), logDiff.getLoggingDiff());
 
-        LOGGER.debugCr(reconciliation, "Altering broker configuration {}", podRef);
-        LOGGER.traceCr(reconciliation, "Altering broker configuration {} with {}", podRef, updatedConfig);
+        LOGGER.debugCr(reconciliation, "Updating broker configuration {}", podRef);
+        LOGGER.traceCr(reconciliation, "Updating broker configuration {} with {}", podRef, updatedConfig);
 
         AlterConfigsResult alterConfigResult = ac.incrementalAlterConfigs(updatedConfig);
         KafkaFuture<Void> brokerConfigFuture = alterConfigResult.values().get(Util.getBrokersConfig(podId));
         KafkaFuture<Void> brokerLoggingConfigFuture = alterConfigResult.values().get(Util.getBrokersLogging(podId));
         await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.errorCr(reconciliation, "Error doing dynamic config update", error);
-                return new ForceableProblem("Error doing dynamic update", error);
+                LOGGER.errorCr(reconciliation, "Error updating broker configuration for pod {}", podRef, error);
+                return new ForceableProblem("Error updating broker configuration for pod " + podRef, error);
             });
         await(Util.kafkaFutureToVertxFuture(reconciliation, vertx, brokerLoggingConfigFuture), 30, TimeUnit.SECONDS,
             error -> {
-                LOGGER.errorCr(reconciliation, "Error performing dynamic logging update for pod {}", podRef, error);
-                return new ForceableProblem("Error performing dynamic logging update for pod " + podRef, error);
+                LOGGER.errorCr(reconciliation, "Error updating broker logging configuration pod {}", podRef, error);
+                return new ForceableProblem("Error updating broker logging configuration pod " + podRef, error);
             });
 
         LOGGER.infoCr(reconciliation, "Dynamic update of pod {} was successful.", podRef);
