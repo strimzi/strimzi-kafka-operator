@@ -383,7 +383,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             .build();
 
         assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
-            "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
+            "opa.authorizer.url=https://opa:8181/v1/data/kafka/allow\n" +
             "opa.authorizer.allow.on.error=true\n" +
             "opa.authorizer.metrics.enabled=false\n" +
             "opa.authorizer.cache.initial.capacity=1000\n" +
