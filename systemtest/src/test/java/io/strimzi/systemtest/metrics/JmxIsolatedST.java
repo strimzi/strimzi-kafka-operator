@@ -15,7 +15,6 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -51,7 +50,6 @@ public class JmxIsolatedST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    @KRaftNotSupported("Debug needed - https://github.com/strimzi/strimzi-kafka-operator/issues/6863")
     void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
