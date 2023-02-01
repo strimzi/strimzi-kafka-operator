@@ -106,7 +106,7 @@ public class ZookeeperClusterPodSetTest {
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
-            assertThat(pod.getSpec().getSubdomain(), is(zc.getHeadlessServiceName()));
+            assertThat(pod.getSpec().getSubdomain(), is(KafkaResources.zookeeperHeadlessServiceName(CLUSTER)));
             assertThat(pod.getSpec().getRestartPolicy(), is("Always"));
             assertThat(pod.getSpec().getTerminationGracePeriodSeconds(), is(30L));
             assertThat(pod.getSpec().getVolumes().stream()

@@ -312,7 +312,7 @@ public class JmxTrans extends AbstractModel {
         Map<String, String> data = new HashMap<>(1);
         data.put(JMXTRANS_CONFIGMAP_KEY, generateJMXConfig());
 
-        return createConfigMap(JmxTransResources.configMapName(cluster), data);
+        return ConfigMapUtils.createConfigMap(JmxTransResources.configMapName(cluster), namespace, labels, ownerReference, data);
     }
 
     private List<Volume> getVolumes() {

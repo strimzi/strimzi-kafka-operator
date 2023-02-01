@@ -53,6 +53,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
+import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -136,6 +137,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
     private Rack rack;
     private String initImage;
+    protected String serviceName;
 
     protected String bootstrapServers;
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
@@ -158,6 +160,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected DeploymentTemplate templateDeployment;
     protected PodTemplate templatePod;
     protected ResourceTemplate templateJmxSecret;
+    protected InternalServiceTemplate templateService;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -298,8 +301,6 @@ public class KafkaConnectCluster extends AbstractModel {
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
 
-            ModelUtils.parseInternalServiceTemplate(kafkaConnect, template.getApiService());
-
             if (template.getConnectContainer() != null && template.getConnectContainer().getEnv() != null) {
                 kafkaConnect.templateContainerEnvVars = template.getConnectContainer().getEnv();
             }
@@ -326,6 +327,7 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.templateDeployment = template.getDeployment();
             kafkaConnect.templatePod = template.getPod();
             kafkaConnect.templateJmxSecret = template.getJmxSecret();
+            kafkaConnect.templateService = template.getApiService();
         }
 
         if (spec.getExternalConfiguration() != null)    {
@@ -344,17 +346,31 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
+     * @return The Kubernetes service name.
+     */
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    /**
      * @return  Generates the Kafka Connect service
      */
     public Service generateService() {
         List<ServicePort> ports = new ArrayList<>(1);
-        ports.add(createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+        ports.add(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
 
         if (isJmxEnabled()) {
-            ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+            ports.add(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
-        return createService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceAnnotations));
+        return ServiceUtils.createClusterIpService(
+                serviceName,
+                namespace,
+                labels,
+                ownerReference,
+                templateService,
+                ports
+        );
     }
 
     protected List<ContainerPort> getContainerPortList() {

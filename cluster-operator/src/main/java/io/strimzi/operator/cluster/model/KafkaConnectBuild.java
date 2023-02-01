@@ -216,8 +216,11 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  ConfigMap with the Dockerfile
      */
     public ConfigMap generateDockerfileConfigMap(KafkaConnectDockerfile dockerfile)   {
-        return createConfigMap(
+        return ConfigMapUtils.createConfigMap(
                 KafkaConnectResources.dockerFileConfigMapName(cluster),
+                namespace,
+                labels,
+                ownerReference,
                 Collections.singletonMap("Dockerfile", dockerfile.getDockerfile())
         );
     }

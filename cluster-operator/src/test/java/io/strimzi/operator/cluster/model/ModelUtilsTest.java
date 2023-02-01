@@ -4,10 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -26,19 +24,13 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
-import io.strimzi.api.kafka.model.template.InternalServiceTemplateBuilder;
-import io.strimzi.api.kafka.model.template.IpFamily;
-import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,7 +42,6 @@ import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
@@ -88,112 +79,6 @@ public class ModelUtilsTest {
         assertThat(m.get("discovery.3scale.net/port"), is("8080"));
         assertThat(m.get("discovery.3scale.net/path"), is("path/"));
         assertThat(m.get("discovery.3scale.net/description-path"), is("oapi/"));
-    }
-
-    @Test
-    public void testParseInternalServiceTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        InternalServiceTemplate template = new InternalServiceTemplateBuilder()
-                .withNewMetadata()
-                    .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
-                    .withLabels(Collections.singletonMap("labelKey", "labelValue"))
-                .endMetadata()
-                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
-                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parseInternalServiceTemplate(model, template);
-        assertThat(model.templateServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
-        assertThat(model.templateServiceAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
-        assertThat(model.templateServiceIpFamilies, contains(IpFamily.IPV6, IpFamily.IPV4));
-        assertThat(model.templateServiceIpFamilyPolicy, is(IpFamilyPolicy.REQUIRE_DUAL_STACK));
-    }
-
-    @Test
-    public void testParseNullInternalServiceTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parseInternalServiceTemplate(model, null);
-        assertThat(model.templateServiceLabels, is(nullValue()));
-        assertThat(model.templateServiceAnnotations, is(nullValue()));
-        assertThat(model.templateServiceIpFamilies, is(nullValue()));
-        assertThat(model.templateServiceIpFamilyPolicy, is(nullValue()));
-    }
-
-    @Test
-    public void testParseInternalHeadlessServiceTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName("my-cluster")
-                .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        InternalServiceTemplate template = new InternalServiceTemplateBuilder()
-                .withNewMetadata()
-                    .withAnnotations(Collections.singletonMap("annoKey", "annoValue"))
-                    .withLabels(Collections.singletonMap("labelKey", "labelValue"))
-                .endMetadata()
-                .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
-                .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parseInternalHeadlessServiceTemplate(model, template);
-        assertThat(model.templateHeadlessServiceLabels, is(Collections.singletonMap("labelKey", "labelValue")));
-        assertThat(model.templateHeadlessServiceAnnotations, is(Collections.singletonMap("annoKey", "annoValue")));
-        assertThat(model.templateHeadlessServiceIpFamilies, contains(IpFamily.IPV6, IpFamily.IPV4));
-        assertThat(model.templateHeadlessServiceIpFamilyPolicy, is(IpFamilyPolicy.REQUIRE_DUAL_STACK));
-    }
-
-    @Test
-    public void testParseNullInternalHeadlessServiceTemplate()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                .withName("my-cluster")
-                .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        Model model = new Model(Reconciliation.DUMMY_RECONCILIATION, kafka);
-
-        ModelUtils.parseInternalHeadlessServiceTemplate(model, null);
-        assertThat(model.templateHeadlessServiceLabels, is(nullValue()));
-        assertThat(model.templateHeadlessServiceAnnotations, is(nullValue()));
-        assertThat(model.templateHeadlessServiceIpFamilies, is(nullValue()));
-        assertThat(model.templateHeadlessServiceIpFamilyPolicy, is(nullValue()));
-    }
-
-    private static class Model extends AbstractModel   {
-        public Model(Reconciliation reconciliation, HasMetadata resource) {
-            super(reconciliation, resource, resource + "-model-app", "model-app");
-        }
-
-        @Override
-        protected String getDefaultLogConfigFileName() {
-            return null;
-        }
-
-        @Override
-        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-            return null;
-        }
     }
 
     @ParallelTest

@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
@@ -71,6 +72,7 @@ import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.CompositeFuture;
@@ -285,7 +287,16 @@ public class KafkaReconciler {
      * @return              Completes when the warnings are added to the status object
      */
     protected Future<Void> modelWarnings(KafkaStatus kafkaStatus) {
-        kafkaStatus.addConditions(kafka.getWarningConditions());
+        List<Condition> conditions = kafka.getWarningConditions();
+
+        if (!featureGates.useStrimziPodSetsEnabled())   {
+            conditions.add(StatusUtils.buildWarningCondition("StatefulSetRemoval",
+                    "Support for StatefulSets will be removed in Strimzi 0.35. You should consider migrating to StrimziPodSets."));
+            LOGGER.warnCr(reconciliation, "Support for StatefulSets will be removed in Strimzi 0.35. You should consider migrating to StrimziPodSets.");
+        }
+
+        kafkaStatus.addConditions(conditions);
+
         return Future.succeededFuture();
     }
 
@@ -1163,7 +1174,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the endpoints are ready
      */
     protected Future<Void> serviceEndpointsReady() {
-        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), kafka.getServiceName(), 1_000, operationTimeoutMs);
+        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.bootstrapServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
     /**
@@ -1172,7 +1183,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the endpoints are ready
      */
     protected Future<Void> headlessServiceEndpointsReady() {
-        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), kafka.getHeadlessServiceName(), 1_000, operationTimeoutMs);
+        return serviceOperator.endpointReadiness(reconciliation, reconciliation.namespace(), KafkaResources.brokersServiceName(reconciliation.name()), 1_000, operationTimeoutMs);
     }
 
     /**

@@ -140,7 +140,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.serviceName = KafkaMirrorMakerResources.serviceName(cluster);
         this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
