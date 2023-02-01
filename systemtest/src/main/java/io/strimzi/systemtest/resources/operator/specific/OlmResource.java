@@ -88,7 +88,7 @@ public class OlmResource implements SpecificResourceType {
     }
 
     /**
-     * Creates OperatorGroup from `olm/operator-group.yaml` and modify "${OPERATOR_NAMESPACE}" attribute in YAML
+     * Creates OperatorGroup in specific namespace
      */
     private void createOperatorGroup() {
         OperatorGroup operatorGroup = new OperatorGroupBuilder()
@@ -106,8 +106,7 @@ public class OlmResource implements SpecificResourceType {
     }
 
     /**
-     * Creates Subscription from "olm/subscription.yaml" and modify "${OPERATOR_NAMESPACE}", "${OLM_OPERATOR_NAME}...
-     * attributes.
+     * Creates Subscription with spec from OlmConfiguration
      */
     private void createAndModifySubscription() {
         Subscription subscription = new SubscriptionBuilder()
@@ -132,8 +131,8 @@ public class OlmResource implements SpecificResourceType {
     }
 
     /**
-     * Patches specific non used install plan, which will approve installation. Only for manual installation strategy.
-     * Also updates closedMapInstallPlan map and set specific install plan to true.
+     * Approves non-approved InstallPlan.
+     * Used for manual installation type.
      */
     private void approveNotApprovedInstallPlan() {
         String notApprovedIPName = kubeClient().getInstallPlanNameUsingCsvPrefix(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
@@ -141,8 +140,7 @@ public class OlmResource implements SpecificResourceType {
     }
 
     /**
-     * Upgrade cluster operator by obtaining new install plan, which was not used and also approves installation by
-     * changing the install plan YAML
+     * Upgrade cluster operator by obtaining new install plan, which was not used and also approves the installation
      */
     public void upgradeClusterOperator() {
         if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
