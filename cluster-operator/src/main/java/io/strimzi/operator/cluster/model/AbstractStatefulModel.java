@@ -13,7 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
+ * AbstractStatefulModel an abstract model class for components which use Storage. It is currently used by Kafka and
+ * ZooKeeper clusters.
  */
 public abstract class AbstractStatefulModel extends AbstractModel {
     /**

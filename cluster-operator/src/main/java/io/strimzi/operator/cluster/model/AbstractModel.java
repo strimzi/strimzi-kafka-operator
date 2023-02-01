@@ -182,8 +182,7 @@ public abstract class AbstractModel {
     protected PodSecurityProvider securityProvider = PodSecurityProviderFactory.getProvider();
 
     /**
-     * Shared template configuration
-     * Used to allow all components to have configurable labels, annotations, security context etc
+     * Template configurations shared between all AbstractModel subclasses.
      */
     protected ResourceTemplate templateServiceAccount;
 
