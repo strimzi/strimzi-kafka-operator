@@ -13,10 +13,19 @@ When applied, the configuration creates a dedicated ingress and service for an e
 Clients connect to the bootstrap ingress, which routes them through the bootstrap service to connect to a broker. 
 Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific ingresses and services.
 
-To connect to a broker, you specify a hostname for the ingress bootstrap address, as well as the TLS certificate.
-Authentication is optional.
+IMPORTANT: The Ingress NGINX Controller for Kubernetes is not supported on OpenShift. 
+For Strimzi on OpenShift, use route listeners instead.
 
+To connect to a broker, you specify a hostname for the ingress bootstrap address, as well as the TLS certificate used for authentication.
 For access using an ingress, the port used in the Kafka client is typically 443.
+
+The procedure shows basic `ingress` listener configuration.
+TLS encryption (`tls`) must be enabled.
+You can also specify a client authentication mechanism (`authentication`).
+Add additional configuration using `configuration` properties.
+For example, you can use the `class` configuration property with `ingress` listeners to specify the ingress controller used.   
+
+For more information on listener configuration, see the link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference^].
 
 .TLS passthrough
 
@@ -37,6 +46,7 @@ For more information about enabling TLS passthrough, see the {NginxIngressContro
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
+The name of the listener is `external`.
 
 .Procedure
 
@@ -150,7 +160,7 @@ kubectl get secret my-cluster-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | ba
 
 .. Add the extracted certificate to the truststore of your Kafka client to configure a TLS connection.
 +
-If you enabled any authentication, you will also need to configure it in your client.
+If you enabled a client authentication mechanism, you will also need to configure it in your client.
 
 NOTE: If you are using your own listener certificates, check whether you need to add the CA certificate to the client's truststore configuration. 
 If it is a public (external) CA, you usually won't need to add it.

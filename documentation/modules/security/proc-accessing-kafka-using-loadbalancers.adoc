@@ -5,15 +5,28 @@
 [id='proc-accessing-kafka-using-loadbalancers-{context}']
 = Accessing Kafka using loadbalancers
 
-This procedure describes how to access a Strimzi Kafka cluster from an external client using loadbalancers.
+[role="_abstract"]
+Use loadbalancers to access a Strimzi Kafka cluster from an external client outside the Kubernetes cluster.
 
-To connect to a broker, you need the address of the _bootstrap loadbalancer_,
-as well as the certificate used for TLS encryption.
+To connect to a broker, you specify a hostname and port number for the Kafka bootstrap address, as well as the TLS certificate used for authentication.
+
+The procedure shows basic `loadbalancer` listener configuration.
+You can use listener properties to enable TLS encryption (`tls`) and specify a client authentication mechanism (`authentication`).
+Add additional configuration using `configuration` properties.
+For example, you can use the following configuration properties with `loadbalancer` listeners:
+
+`loadBalancerSourceRanges`:: Restricts traffic to a specified list of CIDR (Classless Inter-Domain Routing) ranges.  
+`externalTrafficPolicy`:: Specifies whether the service routes external traffic to node-local or cluster-wide endpoints.
+`loadBalancerIP`:: Requests a specific IP address when creating a loadbalancer.
+
+For more information on listener configuration, see the link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference^].
 
 .Prerequisites
 
-* A Kubernetes cluster
 * A running Cluster Operator
+
+In this procedure, the Kafka cluster name is `my-cluster`.
+The name of the listener is `external2`.
 
 .Procedure
 
@@ -25,14 +38,21 @@ For example:
 ----
 apiVersion: {KafkaApiVersion}
 kind: Kafka
+metadata:
+  labels:
+    app: my-cluster
+  name: my-cluster
+  namespace: myproject
 spec:
   kafka:
     # ...
     listeners:
-      - name: external
-        port: 9094
+      - name: external2
+        port: 9095
         type: loadbalancer
         tls: true
+        authentication:
+          type: tls
         # ...
     # ...
   zookeeper:
@@ -44,26 +64,92 @@ spec:
 [source,shell,subs=+quotes]
 kubectl apply -f _<kafka_configuration_file>_
 +
-`loadbalancer` type services and loadbalancers are created for each Kafka broker, as well as an external _bootstrap service_.
-The bootstrap service routes external traffic to all Kafka brokers.
-DNS names and IP addresses used for connection are propagated to the `status` of each service.
+A cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `my-cluster-cluster-ca-cert`.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `_<cluster_name>_-cluster-ca-cert`.
+`loadbalancer` type services and loadbalancers are created for each Kafka broker, as well as an external bootstrap service.
++
+.Loadbalancer services and loadbalancers created for the bootstraps and brokers
+[source,shell]
+----
+NAME                                  TYPE              CLUSTER-IP     PORT(S)
+my-cluster-kafka-external2-0          LoadBalancer     172.30.204.234  9095:30011/TCP
+my-cluster-kafka-external2-1          LoadBalancer     172.30.164.89   9095:32544/TCP 
+my-cluster-kafka-external2-2          LoadBalancer     172.30.73.151   9095:32504/TCP
+my-cluster-kafka-external2-bootstrap  LoadBalancer     172.30.30.228   9095:30371/TCP
 
-. Retrieve the address of the bootstrap service you can use to access the Kafka cluster from the status of the `Kafka` resource.
+NAME                                  EXTERNAL-IP (loadbalancer)
+my-cluster-kafka-external2-0          a8a519e464b924000b6c0f0a05e19f0d-1132975133.us-west-2.elb.amazonaws.com
+my-cluster-kafka-external2-1          ab6adc22b556343afb0db5ea05d07347-611832211.us-west-2.elb.amazonaws.com 
+my-cluster-kafka-external2-2          a9173e8ccb1914778aeb17eca98713c0-777597560.us-west-2.elb.amazonaws.com
+my-cluster-kafka-external2-bootstrap  ab6adc22b556343afb0db5ea05d07347-611832211.us-west-2.elb.amazonaws.com
+----
 +
-[source,shell,subs=+quotes]
-kubectl get kafka _<kafka_cluster_name>_ -o=jsonpath='{.status.listeners[?(@.name=="_<listener_name>_")].bootstrapServers}{"\n"}'
+The bootstrap address used for client connection is propagated to the `status` of the `Kafka` resource.
 +
-For example:
+.Example status for the bootstrap address
+[source,yaml]
+----
+status:
+  clusterId: Y_RJQDGKRXmNF7fEcWldJQ
+  conditions:
+    - lastTransitionTime: '2023-01-31T14:59:37.113630Z'
+      status: 'True'
+      type: Ready
+  listeners:
+    # ...
+    - addresses:
+        - host: >-
+            a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com
+          port: 9095
+      bootstrapServers: >-
+        a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9095
+      certificates:
+        - |
+          -----BEGIN CERTIFICATE-----
+          
+          -----END CERTIFICATE-----
+      name: external1
+      type: external1
+  observedGeneration: 2
+ # ...
+----
 +
-[source,shell,subs=+quotes]
-kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external")].bootstrapServers}{"\n"}'
+The DNS addresses used for client connection are propagated to the `status` of each loadbalancer service.
++
+.Example status for the bootstrap loadbalancer
+[source,yaml]
+----
+status:
+  loadBalancer:
+    ingress:
+      - hostname: >-
+          a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com
+ # ...
+----
 
-. If TLS encryption is enabled, extract the public certificate of the broker certification authority.
+. Retrieve the bootstrap address you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +
 [source,shell,subs=+quotes]
-kubectl get secret _KAFKA-CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+----
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external2")].bootstrapServers}{"\n"}'
+
+a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9095
+----
+
+. Extract the cluster CA certificate.
 +
-Use the extracted certificate in your Kafka client to configure the TLS connection.
-If you enabled any authentication, you will also need to configure it in your client.
+[source,shell]
+----
+kubectl get secret my-cluster-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+----
+
+. Configure your client to connect to the brokers.
+
+.. Specify the bootstrap host and port in your Kafka client as the bootstrap address to connect to the Kafka cluster. For example, `a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9095`.
+
+.. Add the extracted certificate to the truststore of your Kafka client to configure a TLS connection.
++
+If you enabled a client authentication mechanism, you will also need to configure it in your client.
+
+NOTE: If you are using your own listener certificates, check whether you need to add the CA certificate to the client's truststore configuration. 
+If it is a public (external) CA, you usually won't need to add it.

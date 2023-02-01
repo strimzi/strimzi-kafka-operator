@@ -23,7 +23,7 @@ External listeners::
 +
 * `nodeport` to use ports on Kubernetes nodes
 * `loadbalancer` to use loadbalancer services
-* `ingress` to use Kubernetes Ingress and the {NginxIngressController} (Kubernetes only)
+* `ingress` to use Kubernetes `Ingress` and the {NginxIngressController} (Kubernetes only)
 * `route` to use OpenShift `Route` and the default HAProxy router (OpenShift only)
 
 IMPORTANT: Do not use `ingress` on OpenShift, use the `route` type instead. The Ingress NGINX Controller is only intended for use on Kubernetes. The `route` type is only supported on OpenShift.

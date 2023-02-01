@@ -13,12 +13,19 @@ When applied, the configuration creates a dedicated route and service for an ext
 Clients connect to the bootstrap route, which routes them through the bootstrap service to connect to a broker. 
 Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific routes and services.
 
-To connect to a broker, you specify a hostname for the route bootstrap address, as well as the certificate used for authentication.
-
+To connect to a broker, you specify a hostname for the route bootstrap address, as well as the TLS certificate used for authentication.
 For access using routes, the port is always 443.
 
 WARNING: An OpenShift route address comprises the name of the Kafka cluster, the name of the listener, and the name of the project it is created in.
 For example, `my-cluster-kafka-listener1-bootstrap-myproject` (<cluster_name>-kafka-<listener_name>-bootstrap-<namespace>). Be careful that the whole length of the address does not exceed a maximum limit of 63 characters.
+
+The procedure shows basic listener configuration.
+TLS encryption (`tls`) must be enabled.
+You can also specify a client authentication mechanism (`authentication`).
+Add additional configuration using `configuration` properties.
+For example, you can use the `host` configuration property with `route` listeners to specify the hostnames used by the bootstrap and per-broker services.   
+
+For more information on listener configuration, see the link:{BookURLConfiguring}#type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference^].
 
 .TLS passthrough
 
@@ -36,6 +43,7 @@ To configure listeners to use your own listener certificates, xref:proc-installi
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
+The name of the listener is `listener1`.
 
 .Procedure
 
@@ -60,6 +68,8 @@ spec:
         port: 9094
         type: route
         tls: true # <1>
+        authentication:
+          type: tls
         # ...
     # ...
   zookeeper:
@@ -147,9 +157,7 @@ kubectl get secret my-cluster-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | ba
 
 .. Add the extracted certificate to the truststore of your Kafka client to configure a TLS connection.
 +
-If you enabled any authentication, you will also need to configure it in your client.
+If you enabled a client authentication mechanism, you will also need to configure it in your client.
 
 NOTE: If you are using your own listener certificates, check whether you need to add the CA certificate to the client's truststore configuration. 
 If it is a public (external) CA, you usually won't need to add it.
-
-
