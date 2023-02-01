@@ -16,8 +16,6 @@ include::assemblies/configuring/assembly-external-config.adoc[leveloffset=+1]
 //security context for all pods
 include::assemblies/configuring/assembly-security-providers.adoc[leveloffset=+1]
 
-
-
 include::assemblies/operators/assembly-operators.adoc[leveloffset=+1]
 
 include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
@@ -25,8 +23,6 @@ include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[levelof
 include::assemblies/security/assembly-security.adoc[leveloffset=+1]
 
 include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]
-
-include::assemblies/managing/assembly-tuning-config.adoc[leveloffset=+1]
 
 [id='api_reference-{context}']
 :parent-context: {context}
