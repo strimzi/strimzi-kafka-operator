@@ -75,6 +75,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1369,8 +1370,8 @@ class LoggingChangeST extends AbstractST {
         assertFalse(log4jFile.contains(defaultProps));
 
         LOGGER.info("Checking if Kafka:{} contains error about non-existing CM", clusterName);
-        Condition condition = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions().get(0);
-        assertThat(condition.getType(), is(CustomResourceStatus.NotReady.toString()));
+        Condition condition = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> CustomResourceStatus.NotReady.toString().equals(con.getType())).findFirst().orElse(null);
+        assertThat(condition, is(notNullValue()));
         assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
     }
 
