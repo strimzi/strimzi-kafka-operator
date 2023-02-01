@@ -52,7 +52,7 @@ NOTE: The example connectors are not intended for use in a production environmen
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect <1>
+kind: KafkaConnect
 metadata:
   name: my-connect-cluster
   annotations:
