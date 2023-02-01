@@ -1120,9 +1120,7 @@ class SecurityST extends AbstractST {
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
-        InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
-        String clusterCaCert = TestUtils.readResource(secretInputStream);
-        SecretUtils.createSecret(testStorage.getNamespaceName(), clusterCaCertificateSecretName(testStorage.getClusterName()), "ca.crt", clusterCaCert);
+        final String clusterCaCert = kubeClient().getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
