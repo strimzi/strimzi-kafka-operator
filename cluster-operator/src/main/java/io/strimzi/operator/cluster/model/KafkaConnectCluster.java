@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -24,22 +25,18 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
-import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -70,13 +67,12 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
 import java.nio.charset.StandardCharsets;
-
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Base64;
 
 import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 
@@ -829,74 +825,33 @@ public class KafkaConnectCluster extends AbstractModel {
     public NetworkPolicy generateNetworkPolicy(boolean connectorOperatorEnabled,
                                                String operatorNamespace, Labels operatorNamespaceLabels) {
         if (connectorOperatorEnabled) {
-            List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
+            NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+            NetworkPolicyPeer connectPeer = NetworkPolicyUtils.createPeer(labels.strimziSelectorLabels().toMap());
 
-            // Give CO access to the REST API
-            NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort()
-                        .withNewPort(REST_API_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                    .build();
+            // List of network policy rules for all ports
+            List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
-            // OCP 3.11 doesn't support network policies with the `from` section containing a namespace.
-            // Since the CO can run in a different namespace, we have to leave it wide open on OCP 3.11
-            // Therefore these rules are set only when using something else than OCP 3.11 and leaving
-            // the `from` section empty on 3.11
-            List<NetworkPolicyPeer> peers = new ArrayList<>(2);
+            // Give CO and Connect itself access to the REST API
+            rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(connectPeer, clusterOperatorPeer)));
 
-            // Other connect pods in the same cluster need to talk with each other over the REST API
-            NetworkPolicyPeer connectPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector()
-                    .addToMatchLabels(getSelectorLabels().toMap())
-                    .endPodSelector()
-                    .build();
-            peers.add(connectPeer);
-
-            // CO needs to talk with the Connect pods to manage connectors
-            NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                    .withNewPodSelector()
-                    .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                    .endPodSelector()
-                    .build();
-            ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
-
-            peers.add(clusterOperatorPeer);
-
-            restApiRule.setFrom(peers);
-
-            rules.add(restApiRule);
-
-            // If metrics are enabled, we have to open them as well. Otherwise they will be blocked.
+            // The Metrics port (if enabled) is opened to all by default
             if (isMetricsEnabled) {
-                NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                        .addNewPort()
-                            .withNewPort(METRICS_PORT)
-                            .withProtocol("TCP")
-                        .endPort()
-                        .withFrom()
-                        .build();
-
-                rules.add(metricsRule);
+                rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
             }
 
-            NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-                    .withNewMetadata()
-                        .withName(componentName)
-                        .withNamespace(namespace)
-                        .withLabels(labels.toMap())
-                        .withOwnerReferences(ownerReference)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewPodSelector()
-                            .addToMatchLabels(getSelectorLabels().toMap())
-                        .endPodSelector()
-                        .withIngress(rules)
-                    .endSpec()
-                    .build();
+            // The JMX port (if enabled) is opened to all by default
+            if (isJmxEnabled) {
+                rules.add(NetworkPolicyUtils.createIngressRule(JMX_PORT, List.of()));
+            }
 
-            LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
-            return networkPolicy;
+            // Build the final network policy with all rules covering all the ports
+            return NetworkPolicyUtils.createNetworkPolicy(
+                    componentName,
+                    namespace,
+                    labels,
+                    ownerReference,
+                    rules
+            );
         } else {
             return null;
         }

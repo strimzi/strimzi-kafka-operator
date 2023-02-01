@@ -17,11 +17,8 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
@@ -59,12 +56,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
-import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 
 /**
  * Cruise Control model
@@ -540,56 +537,27 @@ public class CruiseControl extends AbstractModel {
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
-        List<NetworkPolicyIngressRule> rules = new ArrayList<>(1);
+        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+
+        // List of network policy rules for all ports
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // CO can access the REST API
-        NetworkPolicyIngressRule restApiRule = new NetworkPolicyIngressRuleBuilder()
-                .addNewPort()
-                    .withNewPort(REST_API_PORT)
-                    .withProtocol("TCP")
-                .endPort()
-                .build();
+        rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(clusterOperatorPeer)));
 
-        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // cluster operator
-                .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                .endPodSelector()
-                .build();
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
-
-        restApiRule.setFrom(Collections.singletonList(clusterOperatorPeer));
-
-        rules.add(restApiRule);
-
+        // Everyone can access metrics
         if (isMetricsEnabled) {
-            NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort()
-                        .withNewPort(METRICS_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                    .withFrom()
-                    .build();
-
-            rules.add(metricsRule);
+            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
         }
 
-        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-                .withNewMetadata()
-                    .withName(CruiseControlResources.networkPolicyName(cluster))
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewPodSelector()
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster))
-                    .endPodSelector()
-                .withIngress(rules)
-                .endSpec()
-                .build();
-
-        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
-        return networkPolicy;
+        // Build the final network policy with all rules covering all the ports
+        return NetworkPolicyUtils.createNetworkPolicy(
+                CruiseControlResources.networkPolicyName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                rules
+        );
     }
 
     @Override

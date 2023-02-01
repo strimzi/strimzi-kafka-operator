@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -22,22 +20,19 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -334,112 +329,40 @@ public class ZookeeperCluster extends AbstractStatefulModel {
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
-        List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
+        // Internal peers => Strimzi components which need access
+        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+        NetworkPolicyPeer zookeeperClusterPeer = NetworkPolicyUtils.createPeer(labels.strimziSelectorLabels().toMap());
+        NetworkPolicyPeer kafkaClusterPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster)));
+        NetworkPolicyPeer entityOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster)));
 
-        NetworkPolicyPort clientsPort = new NetworkPolicyPort();
-        clientsPort.setPort(new IntOrString(CLIENT_TLS_PORT));
-        clientsPort.setProtocol("TCP");
-
-        NetworkPolicyPort clusteringPort = new NetworkPolicyPort();
-        clusteringPort.setPort(new IntOrString(CLUSTERING_PORT));
-        clusteringPort.setProtocol("TCP");
-
-        NetworkPolicyPort leaderElectionPort = new NetworkPolicyPort();
-        leaderElectionPort.setPort(new IntOrString(LEADER_ELECTION_PORT));
-        leaderElectionPort.setProtocol("TCP");
-
-        NetworkPolicyPeer zookeeperClusterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector2 = new LabelSelector();
-        Map<String, String> expressions2 = new HashMap<>(1);
-        expressions2.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(cluster));
-        labelSelector2.setMatchLabels(expressions2);
-        zookeeperClusterPeer.setPodSelector(labelSelector2);
+        // List of network policy rules for all ports
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Zookeeper only ports - 2888 & 3888 which need to be accessed by the Zookeeper cluster members only
-        NetworkPolicyIngressRule zookeeperClusteringIngressRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(clusteringPort, leaderElectionPort)
-                .withFrom(zookeeperClusterPeer)
-                .build();
-
-        rules.add(zookeeperClusteringIngressRule);
+        rules.add(NetworkPolicyUtils.createIngressRule(CLUSTERING_PORT, List.of(zookeeperClusterPeer)));
+        rules.add(NetworkPolicyUtils.createIngressRule(LEADER_ELECTION_PORT, List.of(zookeeperClusterPeer)));
 
         // Clients port - needs to be access from outside the Zookeeper cluster as well
-        NetworkPolicyIngressRule clientsIngressRule = new NetworkPolicyIngressRuleBuilder()
-                .withPorts(clientsPort)
-                .withFrom()
-                .build();
+        rules.add(NetworkPolicyUtils.createIngressRule(CLIENT_TLS_PORT, List.of(kafkaClusterPeer, zookeeperClusterPeer, entityOperatorPeer, clusterOperatorPeer)));
 
-        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector = new LabelSelector();
-        Map<String, String> expressions = new HashMap<>(1);
-        expressions.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster));
-        labelSelector.setMatchLabels(expressions);
-        kafkaClusterPeer.setPodSelector(labelSelector);
-
-        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector3 = new LabelSelector();
-        Map<String, String> expressions3 = new HashMap<>(1);
-        expressions3.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster));
-        labelSelector3.setMatchLabels(expressions3);
-        entityOperatorPeer.setPodSelector(labelSelector3);
-
-        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector4 = new LabelSelector();
-        Map<String, String> expressions4 = new HashMap<>(1);
-        expressions4.put(Labels.STRIMZI_KIND_LABEL, "cluster-operator");
-        labelSelector4.setMatchLabels(expressions4);
-        clusterOperatorPeer.setPodSelector(labelSelector4);
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
-
-        // This is a hack because we have no guarantee that the CO namespace has some particular labels
-        List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
-        clientsPortPeers.add(kafkaClusterPeer);
-        clientsPortPeers.add(zookeeperClusterPeer);
-        clientsPortPeers.add(entityOperatorPeer);
-        clientsPortPeers.add(clusterOperatorPeer);
-        clientsIngressRule.setFrom(clientsPortPeers);
-
-        rules.add(clientsIngressRule);
-
+        // The Metrics port (if enabled) is opened to all by default
         if (isMetricsEnabled) {
-            NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort()
-                        .withNewPort(METRICS_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                    .withFrom()
-                    .build();
-
-            rules.add(metricsRule);
+            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
         }
 
+        // The JMX port (if enabled) is opened to all by default
         if (isJmxEnabled) {
-            NetworkPolicyPort jmxPort = new NetworkPolicyPort();
-            jmxPort.setPort(new IntOrString(JMX_PORT));
-
-            NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
-                    .withPorts(jmxPort)
-                    .withFrom()
-                    .build();
-
-            rules.add(jmxRule);
+            rules.add(NetworkPolicyUtils.createIngressRule(JMX_PORT, List.of()));
         }
 
-        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-                .withNewMetadata()
-                    .withName(KafkaResources.zookeeperNetworkPolicyName(cluster))
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withPodSelector(labelSelector2)
-                    .withIngress(rules)
-                .endSpec()
-                .build();
-
-        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
-        return networkPolicy;
+        // Build the final network policy with all rules covering all the ports
+        return NetworkPolicyUtils.createNetworkPolicy(
+                KafkaResources.zookeeperNetworkPolicyName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                rules
+        );
     }
 
     /**

@@ -30,11 +30,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.IngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressTLS;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
@@ -1671,122 +1668,46 @@ public class KafkaCluster extends AbstractStatefulModel {
      */
     public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
         // Internal peers => Strimzi components which need access
-        NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // Cluster Operator
-                     .addToMatchLabels(Labels.STRIMZI_KIND_LABEL, "cluster-operator")
-                .endPodSelector()
-                    .build();
-        ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
-
-        NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // Kafka cluster
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster))
-                .endPodSelector()
-                .build();
-
-        NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // Entity Operator
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster))
-                .endPodSelector()
-                .build();
-
-        NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // Kafka Exporter
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.deploymentName(cluster))
-                .endPodSelector()
-                .build();
-
-        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeerBuilder()
-                .withNewPodSelector() // Cruise Control
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster))
-                .endPodSelector()
-                .build();
+        NetworkPolicyPeer clusterOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_KIND_LABEL, "cluster-operator"), NetworkPolicyUtils.clusterOperatorNamespaceSelector(namespace, operatorNamespace, operatorNamespaceLabels));
+        NetworkPolicyPeer kafkaClusterPeer = NetworkPolicyUtils.createPeer(labels.strimziSelectorLabels().toMap());
+        NetworkPolicyPeer entityOperatorPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster)));
+        NetworkPolicyPeer kafkaExporterPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.deploymentName(cluster)));
+        NetworkPolicyPeer cruiseControlPeer = NetworkPolicyUtils.createPeer(Map.of(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster)));
 
         // List of network policy rules for all ports
-        // Default size is number of listeners configured by the user + 4 (Control Plane listener, replication listener, metrics and JMX)
-        List<NetworkPolicyIngressRule> rules = new ArrayList<>(listeners.size() + 4);
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Control Plane rule covers the control plane listener.
         // Control plane listener is used by Kafka for internal coordination only
-        NetworkPolicyIngressRule controlPlaneRule = new NetworkPolicyIngressRuleBuilder()
-                .addNewPort()
-                .withNewPort(CONTROLPLANE_PORT)
-                .withProtocol("TCP")
-                .endPort()
-                .build();
-
-        controlPlaneRule.setFrom(List.of(kafkaClusterPeer));
-        rules.add(controlPlaneRule);
+        rules.add(NetworkPolicyUtils.createIngressRule(CONTROLPLANE_PORT, List.of(kafkaClusterPeer)));
 
         // Replication rule covers the replication listener.
         // Replication listener is used by Kafka but also by our own tools => Operators, Cruise Control, and Kafka Exporter
-        NetworkPolicyIngressRule replicationRule = new NetworkPolicyIngressRuleBuilder()
-                .addNewPort()
-                .withNewPort(REPLICATION_PORT)
-                .withProtocol("TCP")
-                .endPort()
-                .build();
-
-        replicationRule.setFrom(List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, cruiseControlPeer));
-        rules.add(replicationRule);
+        rules.add(NetworkPolicyUtils.createIngressRule(REPLICATION_PORT, List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, cruiseControlPeer)));
 
         // User-configured listeners are by default open for all. Users can pass peers in the Kafka CR.
         for (GenericKafkaListener listener : listeners) {
-            NetworkPolicyIngressRule plainRule = new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort()
-                        .withNewPort(listener.getPort())
-                        .withProtocol("TCP")
-                    .endPort()
-                    .withFrom(listener.getNetworkPolicyPeers())
-                    .build();
-
-            rules.add(plainRule);
+            rules.add(NetworkPolicyUtils.createIngressRule(listener.getPort(), listener.getNetworkPolicyPeers()));
         }
 
         // The Metrics port (if enabled) is opened to all by default
         if (isMetricsEnabled) {
-            NetworkPolicyIngressRule metricsRule = new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort()
-                        .withNewPort(METRICS_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                    .withFrom()
-                    .build();
-
-            rules.add(metricsRule);
+            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
         }
 
         // The JMX port (if enabled) is opened to all by default
         if (isJmxEnabled) {
-            NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
-                    .addNewPort()
-                        .withNewPort(JMX_PORT)
-                        .withProtocol("TCP")
-                    .endPort()
-                    .withFrom()
-                    .build();
-
-            rules.add(jmxRule);
+            rules.add(NetworkPolicyUtils.createIngressRule(JMX_PORT, List.of()));
         }
 
         // Build the final network policy with all rules covering all the ports
-        NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
-                .withNewMetadata()
-                    .withName(KafkaResources.kafkaNetworkPolicyName(cluster))
-                    .withNamespace(namespace)
-                    .withLabels(labels.toMap())
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withNewPodSelector()
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster))
-                    .endPodSelector()
-                    .withIngress(rules)
-                .endSpec()
-                .build();
-
-        LOGGER.traceCr(reconciliation, "Created network policy {}", networkPolicy);
-        return networkPolicy;
+        return NetworkPolicyUtils.createNetworkPolicy(
+                KafkaResources.kafkaNetworkPolicyName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                rules
+        );
     }
 
     /**
