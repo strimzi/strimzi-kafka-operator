@@ -88,7 +88,6 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * SCRAM-SHA-512 authentication is not supported.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
-* Liveness and readiness probes are disabled.
 * All Kafka nodes have both the `controller` and `broker` KRaft roles.
   Kafka clusters with separate `controller` and `broker` nodes are not supported.
 
