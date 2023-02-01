@@ -61,6 +61,9 @@ public class KafkaVersionsST extends AbstractST {
         LOGGER.info("Deploying Kafka with version: {}", testKafkaVersion.version());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withVersion(testKafkaVersion.version())
@@ -143,7 +146,7 @@ public class KafkaVersionsST extends AbstractST {
                 .build();
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
             readUser,
             writeUser,
             tlsReadWriteUser
