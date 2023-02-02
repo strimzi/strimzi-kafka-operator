@@ -18,17 +18,29 @@ spec:
       serviceAccountName: strimzi-drain-cleaner
       containers:
         - name: strimzi-drain-cleaner
-          image: quay.io/strimzi/drain-cleaner:0.3.1
+          image: quay.io/strimzi/drain-cleaner:0.4.0
           ports:
             - containerPort: 8080
               name: http
             - containerPort: 8443
               name: https
-          command:
-            - "/application"
-            - "-Dquarkus.http.host=0.0.0.0"
-            - "--kafka"
-            - "--zookeeper"
+          env:
+            - name: STRIMZI_DRAIN_KAFKA
+              value: "true"
+            - name: STRIMZI_DRAIN_ZOOKEEPER
+              value: "true"
+            - name: STRIMZI_CERTIFICATE_WATCH_ENABLED
+              value: "true"
+            - name: STRIMZI_CERTIFICATE_WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_CERTIFICATE_WATCH_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          args:
+            - /opt/strimzi/bin/drain_cleaner_run.sh
           volumeMounts:
             - name: webhook-certificates
               mountPath: "/etc/webhook-certificates"

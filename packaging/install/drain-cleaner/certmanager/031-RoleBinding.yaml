@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: strimzi-drain-cleaner
+  labels:
+    app: strimzi-drain-cleaner
+  namespace: strimzi-drain-cleaner
+subjects:
+  - kind: ServiceAccount
+    name: strimzi-drain-cleaner
+    namespace: strimzi-drain-cleaner
+roleRef:
+  kind: Role
+  name: strimzi-drain-cleaner
+  apiGroup: rbac.authorization.k8s.io
