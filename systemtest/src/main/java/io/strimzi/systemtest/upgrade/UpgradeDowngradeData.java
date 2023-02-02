@@ -21,6 +21,7 @@ public class UpgradeDowngradeData {
     private String fromVersion;
     private String fromExamples;
     private String urlFrom;
+    private String kafkaVersionsUrlFrom;
     private String oldestKafka;
     private String defaultKafka;
     private String deployKafkaVersion;
@@ -36,7 +37,6 @@ public class UpgradeDowngradeData {
     private String toVersion;
     private String toExamples;
     private String urlTo;
-
     public Integer getAdditionalTopics() {
         return additionalTopics;
     }
@@ -51,6 +51,10 @@ public class UpgradeDowngradeData {
 
     public String getUrlFrom() {
         return urlFrom;
+    }
+
+    public String getKafkaVersionsUrlFrom() {
+        return kafkaVersionsUrlFrom;
     }
 
     public String getOldestKafka() {
@@ -158,6 +162,10 @@ public class UpgradeDowngradeData {
         this.urlFrom = urlFrom;
     }
 
+    public void setKafkaVersionsUrlFrom(String kafkaVersionsUrlFrom) {
+        this.kafkaVersionsUrlFrom = kafkaVersionsUrlFrom;
+    }
+
     public void setOldestKafka(String oldestKafka) {
         this.oldestKafka = oldestKafka;
     }
@@ -208,7 +216,7 @@ public class UpgradeDowngradeData {
 
     public String getDefaultKafkaVersionPerStrimzi() {
         try {
-            List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + getFromVersion() + "/kafka-versions.yaml");
+            List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(getKafkaVersionsUrlFrom());
             return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).collect(Collectors.toList()).get(0).version();
         } catch (Exception e) {
             LOGGER.error("Cannot parse Kafka versions from URL");
@@ -257,6 +265,7 @@ public class UpgradeDowngradeData {
                 ", fromVersion='" + fromVersion + '\'' +
                 ", fromExamples='" + fromExamples + '\'' +
                 ", urlFrom='" + urlFrom + '\'' +
+                ", kafkaVersionsUrlFrom='" + kafkaVersionsUrlFrom + '\'' +
                 ", oldestKafka='" + oldestKafka + '\'' +
                 ", defaultKafka='" + defaultKafka + '\'' +
                 ", deployKafkaVersion='" + deployKafkaVersion + '\'' +

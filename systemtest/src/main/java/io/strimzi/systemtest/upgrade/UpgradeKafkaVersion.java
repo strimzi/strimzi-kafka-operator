@@ -63,14 +63,18 @@ public class UpgradeKafkaVersion {
         return this.interBrokerVersion;
     }
 
-    public static UpgradeKafkaVersion getKafkaWithVersionFromUrl(String strimziVersion, String kafkaVersion) {
-        try {
-            TestKafkaVersion testKafkaVersion = TestKafkaVersion.getSpecificVersionFromList(
-                TestKafkaVersion.parseKafkaVersionsFromUrl("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + strimziVersion + "/kafka-versions.yaml"), kafkaVersion
-            );
-            return new UpgradeKafkaVersion(testKafkaVersion);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+    public static UpgradeKafkaVersion getKafkaWithVersionFromUrl(String kafkaVersionsUrl, String kafkaVersion) {
+        if (kafkaVersionsUrl.equals("HEAD")) {
+            return new UpgradeKafkaVersion(TestKafkaVersion.getSpecificVersion(kafkaVersion));
+        } else {
+            try {
+                TestKafkaVersion testKafkaVersion = TestKafkaVersion.getSpecificVersionFromList(
+                    TestKafkaVersion.parseKafkaVersionsFromUrl(kafkaVersionsUrl), kafkaVersion
+                );
+                return new UpgradeKafkaVersion(testKafkaVersion);
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
         }
     }
 }
