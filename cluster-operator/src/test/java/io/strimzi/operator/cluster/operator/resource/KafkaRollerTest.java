@@ -496,7 +496,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
             asList(0, 1, 2, 3, 4),
-            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is currently the controller and there are other pods still to verify",
+            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is controller and there are other pods to verify. Non-controller pods will be verified first",
             // We expect all non-controller pods to be rolled
             asList(0, 1, 4));
     }
