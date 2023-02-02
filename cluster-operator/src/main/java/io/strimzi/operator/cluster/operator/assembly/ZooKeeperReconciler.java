@@ -66,6 +66,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 import static java.util.Collections.singletonList;
 
 /**
@@ -769,7 +770,15 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> rollingUpdate() {
         if (featureGates.useStrimziPodSetsEnabled())   {
-            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, podSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());
+            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(
+                    reconciliation,
+                    podSetDiff.resource(),
+                    pod,
+                    fsResizingRestartRequest,
+                    Annotations.hasAnnotationWithValue(
+                            pod, ANNO_STRIMZI_SERVER_CERT_HASH,
+                            zkCertificateHash.get(ANNO_STRIMZI_SERVER_CERT_HASH)),
+                    clusterCa).getAllReasonNotes());
         } else {
             return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, statefulSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());
         }
