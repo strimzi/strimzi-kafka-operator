@@ -29,7 +29,7 @@ helm repo add strimzi {ChartRepositoryUrl}
 . Deploy the Cluster Operator using the Helm command line tool:
 +
 [source,shell,subs=attributes+]
-helm install {ChartReleaseCoordinate}
+helm install strimzi-operator {ChartReleaseCoordinate}
 
 . Verify that the Cluster Operator has been deployed successfully using the Helm command line tool:
 +
