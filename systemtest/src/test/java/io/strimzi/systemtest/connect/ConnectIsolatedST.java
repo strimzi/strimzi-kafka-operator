@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.AutoRestartBuilder;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -23,6 +24,9 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSourceBuilder;
+import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.Plugin;
+import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -31,6 +35,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -72,6 +77,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
@@ -102,6 +108,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @Tag(CONNECT)
 @Tag(CONNECT_COMPONENTS)
 @IsolatedSuite
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 class ConnectIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectIsolatedST.class);
@@ -590,6 +597,87 @@ class ConnectIsolatedST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+    }
+
+    @ParallelNamespaceTest
+    void testConnectorTaskAutoRestart(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
+
+        String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+
+        final Plugin echoSinkPlugin = new PluginBuilder()
+            .withName(Constants.ECHO_SINK_CONNECTOR_NAME)
+            .withArtifacts(
+                new JarArtifactBuilder()
+                    .withUrl(Constants.ECHO_SINK_JAR_URL)
+                    .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
+                    .build())
+            .build();
+
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editOrNewSpec()
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withNewBuild()
+                    .withPlugins(echoSinkPlugin)
+                    .withNewDockerOutput()
+                        .withImage(imageName)
+                    .endDockerOutput()
+                .endBuild()
+            .endSpec()
+            .build();
+
+        resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
+        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+
+        // How many messages should be sent and at what count should the test connector fail
+        final int failMessageCount = 5;
+
+        Map<String, Object> echoSinkConfig = new HashMap<>();
+        echoSinkConfig.put("topics", testStorage.getTopicName());
+        echoSinkConfig.put("level", "INFO");
+        echoSinkConfig.put("fail.task.after.records", failMessageCount);
+
+        LOGGER.info("Creating EchoSink connector");
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
+            .editOrNewSpec()
+                .withTasksMax(1)
+                .withClassName(Constants.ECHO_SINK_CLASS_NAME)
+                .withConfig(echoSinkConfig)
+                .withAutoRestart(new AutoRestartBuilder().withEnabled().build())
+            .endSpec()
+            .build());
+
+        // Send messages to topic
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(failMessageCount)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+
+        // After connector picks up messages from topic it fails task
+        // If it's the first time echo-sink task failed - it's immediately restarted and connector adds count to autoRestartCount.
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 1);
+        // Give some time to connector task to get back to running state after recovery
+        KafkaConnectorUtils.waitForConnectorTaskState(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0, "RUNNING");
+        // If task is in running state for about 2 minutes, it resets the auto-restart count back to 0
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0);
+
     }
 
     @ParallelNamespaceTest
