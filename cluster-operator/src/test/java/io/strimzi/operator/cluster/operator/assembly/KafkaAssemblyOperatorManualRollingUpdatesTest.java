@@ -140,7 +140,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         if (useStrimziPodSets) {
             StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-            when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
+            when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null)));
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null)));
 
             StatefulSetOperator mockStsOps = supplier.stsOperations;
@@ -260,7 +260,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         if (useStrimziPodSets) {
             StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenAnswer(i -> {
-                StrimziPodSet zkPodSet = zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+                StrimziPodSet zkPodSet = zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
                 zkPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
                 return Future.succeededFuture(zkPodSet);
             });
@@ -401,7 +401,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         if (useStrimziPodSets) {
             StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
-            when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
+            when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null)));
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null)));
 
             StatefulSetOperator mockStsOps = supplier.stsOperations;

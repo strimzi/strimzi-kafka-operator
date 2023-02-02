@@ -95,6 +95,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
 /**
  * Class used for reconciliation of Kafka. This class contains both the steps of the Kafka
@@ -808,7 +809,7 @@ public class KafkaReconciler {
         Map<String, String> podAnnotations = commonKafkaPodAnnotations(brokerId);
 
         // Annotation of broker certificate hash
-        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(brokerId));
+        podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(brokerId));
 
         return podAnnotations;
     }
@@ -1086,8 +1087,17 @@ public class KafkaReconciler {
         if (featureGates.useStrimziPodSetsEnabled())   {
             return maybeRollKafka(
                     podSetDiff.resource().getSpec().getPods().size(),
-                    pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, podSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa, clientsCa),
-                    listenerReconciliationResults.advertisedHostnames,
+                    pod -> ReconcilerUtils.reasonsToRestartPod(
+                            reconciliation,
+                            podSetDiff.resource(),
+                            pod,
+                            fsResizingRestartRequest,
+                            Annotations.hasAnnotationWithValue(
+                                    pod, ANNO_STRIMZI_SERVER_CERT_HASH,
+                                    kafkaServerCertificateHash.get(ANNO_STRIMZI_SERVER_CERT_HASH)),
+                            clusterCa,
+                            clientsCa
+                    ), listenerReconciliationResults.advertisedHostnames,
                     listenerReconciliationResults.advertisedPorts,
                     true
             );

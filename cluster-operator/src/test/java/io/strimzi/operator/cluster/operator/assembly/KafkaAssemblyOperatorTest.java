@@ -1151,7 +1151,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StrimziPodSets
         AtomicReference<StrimziPodSet> zooPodSetRef = new AtomicReference<>();
-        zooPodSetRef.set(originalZookeeperCluster.generatePodSet(originalZookeeperCluster.getReplicas(), openShift, null, null, Map.of()));
+        zooPodSetRef.set(originalZookeeperCluster.generatePodSet(originalZookeeperCluster.getReplicas(), openShift, null, null, podNum -> Map.of()));
         when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)), any())).thenAnswer(invocation -> {
             StrimziPodSet sps = invocation.getArgument(3, StrimziPodSet.class);
             zooPodSetRef.set(sps);

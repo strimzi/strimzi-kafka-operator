@@ -28,6 +28,11 @@ public class Annotations {
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
 
     /**
+     * Annotation for keeping Kafka and ZooKeeper servers' certificate thumbprints.
+     */
+    public static final String ANNO_STRIMZI_SERVER_CERT_HASH = STRIMZI_DOMAIN + "server-cert-hash";
+
+    /**
      * Strimzi logging annotation
      */
     public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
@@ -264,7 +269,7 @@ public class Annotations {
     }
 
     /**
-     * Gets a string value of an annotation from a Por template
+     * Gets a string value of an annotation from a Pod template
      *
      * @param podSpec                   Por template from which the annotation should be extracted
      * @param annotation                Annotation key for which we want the value
@@ -291,6 +296,22 @@ public class Annotations {
         ObjectMeta metadata = resource.getMetadata();
         String str = annotation(annotation, null, metadata, null);
         return str != null;
+    }
+
+    /**
+     * Check if Kubernetes resource has an annotation with given key and value.
+     * @param resource      Kubernetes resource which should be checked for the annotations presence
+     * @param annotation    Annotation key
+     * @param value         Annotation value
+     * @return True if the annotation exists and has the given value. False otherwise.
+     */
+    public static boolean hasAnnotationWithValue(HasMetadata resource, String annotation, String value) {
+        if (resource == null || value == null) {
+            return false;
+        }
+        ObjectMeta metadata = resource.getMetadata();
+        String str = annotation(annotation, null, metadata, null);
+        return str != null && str.equals(value);
     }
 
     private static String annotation(String annotation, String defaultValue, ObjectMeta metadata, String... deprecatedAnnotations) {

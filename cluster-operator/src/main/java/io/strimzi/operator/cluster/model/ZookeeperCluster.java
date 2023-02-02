@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
 
@@ -390,12 +391,15 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
      * Generates the StrimziPodSet for the ZooKeeper cluster. This is used when the UseStrimziPodSets feature gate is
      * enabled.
      *
-     * @param replicas          Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
-     *                          sets with different numbers of pods are generated.
-     * @param isOpenShift       Flags whether we are on OpenShift or not
-     * @param imagePullPolicy   Image pull policy which will be used by the pods
-     * @param imagePullSecrets  List of image pull secrets
-     * @param podAnnotations    List of custom pod annotations
+     * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs,
+     *                                  node sets with different numbers of pods are generated.
+     * @param isOpenShift               Flags whether we are on OpenShift or not
+     * @param imagePullPolicy           Image pull policy which will be used by the pods
+     * @param imagePullSecrets          List of image pull secrets
+     * @param podAnnotationsProvider    Function which provides the annotations for the given pod based on its index.
+     *                                  The annotations for each pod are different due to different certificates. So they
+     *                                  need to be dynamically generated though this function instead of just
+     *                                  passed as Map.
      *
      * @return                  Generated StrimziPodSet with ZooKeeper pods
      */
@@ -403,7 +407,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
                                         boolean isOpenShift,
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
-                                        Map<String, String> podAnnotations) {
+                                        Function<Integer, Map<String, String>> podAnnotationsProvider) {
         return WorkloadUtils.createPodSet(
                 componentName,
                 namespace,
@@ -413,21 +417,21 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
                 replicas,
                 Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 labels.strimziSelectorLabels(),
-                brokerId -> WorkloadUtils.createStatefulPod(
+                podNum -> WorkloadUtils.createStatefulPod(
                         reconciliation,
-                        getPodName(brokerId),
+                        getPodName(podNum),
                         namespace,
                         labels,
                         componentName,
                         componentName,
                         templatePod,
                         DEFAULT_POD_LABELS,
-                        podAnnotations,
+                        podAnnotationsProvider.apply(podNum),
                         KafkaResources.zookeeperHeadlessServiceName(cluster),
                         templatePod != null ? templatePod.getAffinity() : null,
                         null,
                         List.of(createContainer(imagePullPolicy)),
-                        getPodSetVolumes(getPodName(brokerId), isOpenShift),
+                        getPodSetVolumes(getPodName(podNum), isOpenShift),
                         imagePullSecrets,
                         securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
                 )

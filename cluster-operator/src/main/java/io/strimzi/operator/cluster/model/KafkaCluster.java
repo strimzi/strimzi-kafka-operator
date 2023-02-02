@@ -171,11 +171,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     public static final String ANNO_STRIMZI_BROKER_CONFIGURATION_HASH = Annotations.STRIMZI_DOMAIN + "broker-configuration-hash";
 
     /**
-     * Annotation for keeping Kafka servers' certificate thumbprints.
-     */
-    public static final String ANNO_STRIMZI_SERVER_CERT_HASH = Annotations.STRIMZI_DOMAIN + "server-cert-hash";
-
-    /**
      * Annotation for keeping certificate thumprints
      */
     public static final String ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS = Annotations.STRIMZI_DOMAIN + "custom-listener-cert-thumbprints";
