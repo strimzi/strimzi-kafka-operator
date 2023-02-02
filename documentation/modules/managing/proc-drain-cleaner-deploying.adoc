@@ -3,9 +3,9 @@
 // assembly-drain-cleaner.adoc
 
 [id='proc-drain-cleaner-deploying-{context}']
-= Deploying the Strimzi Drain Cleaner
+= Deploying the Strimzi Drain Cleaner using installation files
 
-[role="_abstract"]
+[role="_abstract"] 
 Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster are running.
 
 .Prerequisites
@@ -34,10 +34,14 @@ spec:
     # ...
 ----
 
-.Excluding ZooKeeper
+.Excluding Kafka or ZooKeeper
 
-If you don't want to include ZooKeeper, you can remove the `--zookeeper` command option from the Strimzi Drain Cleaner `Deployment` configuration file.
+If you don't want to include Kafka or ZooKeeper pods in Drain Cleaner operations, change the default environment variables in the Drain Cleaner `Deployment` configuration file.
 
+* Set `STRIMZI_DRAIN_KAFKA` to `false` to exclude Kafka pods
+* Set `STRIMZI_DRAIN_ZOOKEEPER` to `false` to exclude ZooKeeper pods
+
+.Example configuration to exclude ZooKeeper pods
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: apps/v1
@@ -50,14 +54,13 @@ spec:
       containers:
         - name: strimzi-drain-cleaner
           # ...
-          command:
-            - "/application"
-            - "-Dquarkus.http.host=0.0.0.0"
-            - "--kafka"
-            - "--zookeeper" <1>
+          env:
+            - name: STRIMZI_DRAIN_KAFKA
+              value: "true"
+            - name: STRIMZI_DRAIN_ZOOKEEPER
+              value: "false"
           # ...
 ----
-<1> Remove this option to exclude ZooKeeper from Strimzi Drain Cleaner operations.
 
 .Procedure
 
@@ -93,14 +96,12 @@ Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleane
 . Update the `Kafka` resource:
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _<kafka-configuration-file>_
+kubectl apply -f <kafka_configuration_file>
 
 . Deploy the Strimzi Drain Cleaner.
 +
-ifdef::Section[]
 --
-You can use link:https://cert-manager.io/docs/[`cert-manager`^] in the deployment process.
-
+ifdef::Section[]
 * If you are using `cert-manager` with Kubernetes, apply the resources in the `/install/drain-cleaner/certmanager` directory.
 +
 [source,shell,subs="attributes+"]
@@ -109,24 +110,22 @@ kubectl apply -f ./install/drain-cleaner/certmanager
 ----
 +
 The TLS certificates for the webhook are generated automatically and injected into the webhook configuration.
-
-* If you are not using `cert-manager` with Kubernetes, apply the resources in the `/install/drain-cleaner/kubernetes` directory.
++
+* If you are not using `cert-manager` with Kubernetes, do the following:
++
+.. xref:proc-drain-cleaner-certs-{context}[Add TLS certificates to use in the deployment].
++
+Any certificates you add must be renewed before they expire. 
++
+.. Apply the resources in the `/install/drain-cleaner/kubernetes` directory.
 +
 [source,shell,subs="attributes+"]
 ----
 kubectl apply -f ./install/drain-cleaner/kubernetes
 ----
-+
-The resources are configured with TLS certificates that have already been generated.
-Use these certificates if you are not changing any configuration for the Strimzi Drain Cleaner, such as namespaces, service names, or pod names.
-Otherwise, you can generate and use your own certificates. 
-+
-NOTE: You can use the build script and files provided in link:https://github.com/strimzi/drain-cleaner/tree/main/install/kubernetes/webhook-certificates[`webhook-certificates`^]
-to generate your own certificates. The script uses the link:https://github.com/cloudflare/cfssl[`CFSSL`^] and link:https://www.openssl.org/[openSSL] tools to generate the certificates.
-After you have generated the certificates, you need to add them to the `040-Secret.yaml` and `070-ValidatingWebhookConfiguration.yaml` files.
---
 endif::Section[]
-
+--
++
 * To run the Drain Cleaner on OpenShift, apply the resources in the `/install/drain-cleaner/openshift` directory.
 +
 [source,shell,subs="attributes+"]

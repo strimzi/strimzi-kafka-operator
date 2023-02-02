@@ -1,0 +1,154 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-drain-cleaner.adoc
+
+[id='proc-drain-cleaner-certs-{context}']
+= Adding or renewing the TLS certificates used by the Strimzi Drain Cleaner
+
+[role="_abstract"]
+The Drain Cleaner uses a webhook to receive eviction notifications from the Kubernetes API.
+The webhook uses a secure TLS connection and authenticates using TLS certificates.
+If you are not deploying the Drain Cleaner using the `cert-manager` or on Openshift, you must create and renew the TLS certificates.  
+You must then add them to the files used to deploy the Drain Cleaner.   
+The certificates must also be renewed before they expire. 
+To renew the certificates, you repeat the steps used to generate and add the certificates to the initial deployment of the Drain Cleaner. 
+
+Generate and add certificates to the standard installation files or your Helm configuration when deploying the Drain Cleaner on Kubernetes without `cert-manager`.
+
+NOTE: If you are using `cert-manager` to deploy the Drain Cleaner, you don't need to add or renew TLS certificates. The same applies when deploying the Drain Cleaner on OpenShift, as OpenShift injects the certificates. In both cases, TLS certificates are added and renewed automatically.   
+
+.Prerequisites
+
+* The link:https://www.openssl.org/[OpenSSL] TLS management tool for generating certificates.
++
+Use `openssl help` for command-line descriptions of the options used.  
+
+.Generating and renewing TLS certificates
+
+. From the command line, create a directory called `tls-certificate`:
++
+[source,shell]
+----
+mkdir tls-certificate
+cd tls-certificate
+----
++
+Now use OpenSSL to create the certificates in the `tls-certificate` directory.
+
+. Generate a CA (Certificate Authority) public certificate and private key:
++
+[source,shell]
+----
+openssl req -nodes -new -x509 -keyout ca.key -out ca.crt -subj "/CN=Strimzi Drain Cleaner CA"
+----
++
+A `ca.crt` and `ca.key` file are created.
+
+. Generate a private key for the Drain Cleaner:
++
+[source,shell]
+----
+openssl genrsa -out tls.key 2048
+----
++
+A `tls.key` file is created.
+
+. Generate a CSR (Certificate Signing Request) and sign it by adding the CA public certificate (`ca.crt`) you generated:
++
+[source,shell]
+----
+openssl req -new -key tls.key -subj "/CN=strimzi-drain-cleaner.strimzi-drain-cleaner.svc" \
+  | openssl x509 -req -CA ca.crt -CAkey ca.key -CAcreateserial -extfile <(printf "subjectAltName=DNS:strimzi-drain-cleaner.strimzi-drain-cleaner.svc") -out tls.crt
+----
++
+A `tls.crt` file is created.
++
+NOTE: If you change the name of the Strimzi Drain Cleaner service or install it into a different namespace, you must change the SAN (Subject Alternative Name) of the certificate, following the format `<service_name>.<namespace_name>.svc`.
+
+. Encode the CA public certificate into base64.
++
+[source,shell]
+----
+base64 tls-certificate/ca.crt
+----
++
+With the certificates generated, add them to the installation files or to your Helm configuration depending on your deployment method. 
+ 
+.Adding the TLS certificates to the Drain Cleaner installation files
+
+. Copy the base64-encoded CA public certificate as the value for the `caBundle` property of the `070-ValidatingWebhookConfiguration.yaml` installation file:
++
+[source,yaml]
+----
+# ...
+clientConfig:
+  service:
+    namespace: "strimzi-drain-cleaner"
+    name: "strimzi-drain-cleaner"
+    path: /drainer
+    port: 443
+  caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0...
+# ...
+----
+
+. Create a namespace called `strimzi-drain-cleaner` in your Kubernetes cluster:
++
+[source,shell]
+----
+kubectl create ns strimzi-drain-cleaner
+----
+
+. Create a secret named `strimzi-drain-cleaner` with the `tls.crt` and `tls.key` files you generated:
++
+[source,shell]
+----
+kubectl create secret tls strimzi-drain-cleaner \
+  -n strimzi-drain-cleaner  \
+  --cert=tls-certificate/tls.crt \
+  --key=tls-certificate/tls.key
+----
++
+The secret is used in the Drain Cleaner deployment. 
++
+.Example secret for the Drain Cleaner deployment
+[source,yaml]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  # ...
+  name: strimzi-drain-cleaner
+  namespace: strimzi-drain-cleaner
+# ...
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS...
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLR...
+----
++
+You can now use the certificates and updated installation files xref:proc-drain-cleaner-deploying-{context}[to deploy the Drain Cleaner using installation files].
+
+.Adding the TLS certificates to a Helm deployment
+
+. Edit the `values.yaml` configuration file used in the Helm deployment.
+. Set the `certManager.create` parameter to `false`.
+. Set the `secret.create` parameter to `true`.
+. Copy the certificates as `secret` parameters.
++
+.Example secret configuration for the Drain Cleaner deployment
+[source,yaml]
+----
+# ...
+certManager:
+  create: false
+
+secret:
+  create: true
+  tls_crt: "Cg==" # <1>
+  tls_key: "Cg==" # <2>
+  ca_bundle: "Cg==" # <3>
+----
+<1> The public key (`tls.crt`) signed by the CA public certificate.
+<2> The private key (`tls.key`).
+<3> The base-64 encoded CA public certificate (`ca.crt`).
+
+You can now use the certificates and updated configuration file xref:deploying-cluster-operator-helm-chart-{context}[to deploy the Drain Cleaner using Helm].

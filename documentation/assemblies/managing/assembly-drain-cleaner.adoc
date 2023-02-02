@@ -3,12 +3,13 @@
 // using/assembly-management-tasks.adoc
 
 [id='assembly-drain-cleaner-{context}']
-= Evicting pods with Strimzi Drain Cleaner
+= Evicting pods with the Strimzi Drain Cleaner
 
 [role="_abstract"]
-Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenance or pod rescheduling.
+Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenance, or pod rescheduling.
 If your Kafka broker and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
-Since the Strimzi Drain Cleaner will handle the eviction instead of Kubernetes, you need to set the `podDisruptionBudget` for your Kafka deployment to `0` (zero).
+The Strimzi Drain Cleaner handles the eviction instead of Kubernetes.
+You must set the `podDisruptionBudget` for your Kafka deployment to `0` (zero).
 Kubernetes will then no longer be allowed to evict the pod automatically.
 
 By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
@@ -60,7 +61,7 @@ webhooks:
 ----
 
 [id='drain-cleaner-prereqs-{context}']
-== Prerequisites
+== Downloading the Strimzi Drain Cleaner deployment files
 
 To deploy and use the Strimzi Drain Cleaner, you need to download the deployment files.
 
@@ -68,5 +69,15 @@ The Strimzi Drain Cleaner deployment files are available from the link:{ReleaseD
 
 //steps for deploying drain cleaner
 include::../../modules/managing/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
+ifdef::Section[]
+//deploy using Helm
+include::../../modules/managing/proc-drain-cleaner-deploying-helm-chart.adoc[leveloffset=+1]
+endif::Section[]
 //steps for using drain cleaner
 include::../../modules/managing/proc-drain-cleaner-using.adoc[leveloffset=+1]
+ifdef::Section[]
+//generate tls certificates when deploying on Kubernetes
+include::../../modules/managing/proc-drain-cleaner-certs.adoc[leveloffset=+1]
+endif::Section[]
+//watching TLS certs renewals
+include::../../modules/managing/proc-drain-cleaner-certs-renewals.adoc[leveloffset=+1]
