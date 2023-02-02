@@ -1,0 +1,29 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: strimzi-drain-cleaner
+  labels:
+    app: strimzi-drain-cleaner
+  namespace: strimzi-drain-cleaner
+rules:
+  # When certificate reloading is enabled, Drain Cleaner will delete itself to reload the certificates. Therefore it
+  # needs the right to delete the pods in its own namespace.
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - delete
+  # When certificate reloading is enabled, Strimzi needs to be able to get, list and watch the Secret with the
+  # certificate to detect any changes to it. The RBAC allows it to watch only one Secret with given name. If your
+  # certificate Secret has a custom name, you need to modify this Role accordingly.
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - watch
+      - list
+    resourceNames:
+      - strimzi-drain-cleaner
