@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -38,6 +37,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -118,15 +118,11 @@ public class LeaderElectionIsolatedST extends AbstractST {
             .runInstallation();
 
         String coPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), Constants.STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
-        Lease defaultLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
+        Lease notExistingLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
         String logFromCoPod = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), coPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
 
-        // Assert that the Lease is not used and still uses the defaults
-        assertThat(defaultLease.getSpec().getHolderIdentity(), is(""));
-        assertThat(defaultLease.getSpec().getLeaseTransitions(), is(0));
-        assertThat(defaultLease.getSpec().getLeaseDurationSeconds(), is(15));
-        assertThat(defaultLease.getSpec().getAcquireTime().format(DateTimeFormatter.ISO_INSTANT), is("1970-01-01T00:00:01Z"));
-        assertThat(defaultLease.getSpec().getRenewTime().format(DateTimeFormatter.ISO_INSTANT), is("1970-01-01T00:00:01Z"));
+        // Assert that the Lease does not exist
+        assertThat("Lease for CO exists", notExistingLease, is(nullValue()));
 
         assertThat("Log contains message about leader election", logFromCoPod, not(containsString(LEADER_MESSAGE)));
     }
