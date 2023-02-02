@@ -22,4 +22,4 @@ Broker IDs start from 0 (zero) and correspond to the number of broker replicas.
 Log directories are mounted to `/var/lib/kafka/data/kafka-log__IDX__` based on the `spec.kafka.storage` configuration in the `Kafka` custom resource.
 _IDX_ is the Kafka broker pod index.
 
-For a list of exclusions, see the xref:type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference].
+For a list of exclusions, see the link:{BookURLConfiguring}#type-KafkaClusterSpec-reference[`KafkaClusterSpec` schema reference].

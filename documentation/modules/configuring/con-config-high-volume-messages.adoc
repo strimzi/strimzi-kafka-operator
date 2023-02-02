@@ -74,7 +74,7 @@ New messages are not added to the buffer until these messages are acknowledged a
 You can try the following configuration changes to keep the underlying source message queue of outstanding messages at a manageable size:
 
 * Increasing the default value in milliseconds of the `offset.flush.timeout.ms`
-* Ensuring that there are enough xref:con-common-configuration-resources-reference[CPU and memory resources]
+* Ensuring that there are enough CPU and memory resources
 * Increasing the number of tasks that run in parallel by doing the following:
 ** Increasing the number of tasks that run in parallel using the `tasksMax` property
 ** Increasing the number of worker nodes that run tasks using the `replicas` property
