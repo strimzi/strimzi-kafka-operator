@@ -86,6 +86,9 @@ public class SetupDrainCleaner {
                             .editMetadata()
                                 .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
+                            .editFirstSubject()
+                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                            .endSubject()
                             .build());
                         break;
                     case Constants.CLUSTER_ROLE:
