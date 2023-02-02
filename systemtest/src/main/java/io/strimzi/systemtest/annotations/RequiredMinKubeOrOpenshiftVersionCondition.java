@@ -28,7 +28,7 @@ public class RequiredMinKubeOrOpenshiftVersionCondition implements ExecutionCond
         final boolean isOcp = cluster.isOpenShift();
 
         if ((isOcp && Double.parseDouble(cluster.client().clusterKubernetesVersion()) >= ocpBasedKubeVersion) ||
-            Double.parseDouble(cluster.client().clusterKubernetesVersion()) >= kubeVersion) {
+            !isOcp && Double.parseDouble(cluster.client().clusterKubernetesVersion()) >= kubeVersion) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.info("@RequiredMinKubeOrOpenshiftVersion with type of cluster: {} and version {}, but the running on cluster with {}: Ignoring {}",
