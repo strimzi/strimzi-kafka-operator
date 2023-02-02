@@ -7,8 +7,8 @@ If the first attempt fails, the operator makes up to six more attempts.
 The duration between each restart attempt increases from 2 to 30 minutes.
 After each restart, failed connectors and tasks transit from `FAILED` to `RESTARTING`.
 If the restart fails after the final attempt, there is likely to be a problem with the connector configuration. 
-The connector and tasks remain in a `FAILED` state.
-It means that you have to restart the connector and tasks manually, for example, by annotating KafKaConnector CR with `strimzi.io/restart: "true"`.
+The connector and tasks remain in a `FAILED` state and you have to restart them manually.
+You can do this by annotating the `KafKaConnector` custom resource with `strimzi.io/restart: "true"`.
 
 For Kafka Connect connectors, use the `autoRestart` property of the `KafkaConnector` resource to enable automatic restarts of failed connectors and tasks.
 
