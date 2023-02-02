@@ -13,9 +13,6 @@ When applied, the configuration creates a dedicated ingress and service for an e
 Clients connect to the bootstrap ingress, which routes them through the bootstrap service to connect to a broker. 
 Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific ingresses and services.
 
-IMPORTANT: The Ingress NGINX Controller for Kubernetes is not supported on OpenShift. 
-For Strimzi on OpenShift, use route listeners instead.
-
 To connect to a broker, you specify a hostname for the ingress bootstrap address, as well as the TLS certificate used for authentication.
 For access using an ingress, the port used in the Kafka client is typically 443.
 
