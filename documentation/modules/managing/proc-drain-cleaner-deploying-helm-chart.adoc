@@ -105,7 +105,7 @@ Specify any changes to the default configuration as parameter values.
 .Example configuration that changes the number of webhook replicas
 [source,shell]
 ----
-helm install --name drain-cleaner --set replicas=2 strimzi/strimzi-drain-cleaner
+helm install drain-cleaner --set replicaCount=2 strimzi/strimzi-drain-cleaner
 ----
 
 . Verify that the Cluster Operator has been deployed successfully:
