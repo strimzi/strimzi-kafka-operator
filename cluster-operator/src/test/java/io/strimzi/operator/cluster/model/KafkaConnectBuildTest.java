@@ -32,6 +32,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -202,7 +203,7 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
         assertThat(pod.getSpec().getContainers().get(0).getName(), is(KafkaConnectResources.buildPodName(this.cluster)));
         assertThat(pod.getSpec().getContainers().get(0).getImage(), is(build.image));
-        assertThat(pod.getSpec().getContainers().get(0).getPorts().size(), is(0));
+        assertThat(pod.getSpec().getContainers().get(0).getPorts(), is(nullValue()));
         assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(limit));
         assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(request));
         assertThat(pod.getSpec().getVolumes().size(), is(2));

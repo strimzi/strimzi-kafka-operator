@@ -7,18 +7,15 @@ package io.strimzi.operator.cluster.model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -82,8 +79,6 @@ public class EntityOperator extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
 
-    private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
-    private SecurityContext templateTlsSidecarContainerSecurityContext;
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
@@ -143,34 +138,19 @@ public class EntityOperator extends AbstractModel {
             if (entityOperatorSpec.getTemplate() != null) {
                 EntityOperatorTemplate template = entityOperatorSpec.getTemplate();
 
-                if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getEnv() != null) {
-                    topicOperator.templateContainerEnvVars = template.getTopicOperatorContainer().getEnv();
-                }
-
-                if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getSecurityContext() != null) {
-                    topicOperator.templateContainerSecurityContext = template.getTopicOperatorContainer().getSecurityContext();
-                }
-
-                if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getEnv() != null) {
-                    userOperator.setContainerEnvVars(template.getUserOperatorContainer().getEnv());
-                }
-
-                if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getSecurityContext() != null) {
-                    userOperator.setContainerSecurityContext(template.getUserOperatorContainer().getSecurityContext());
-                }
-
-                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
-                    result.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
-                }
-
-                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
-                    result.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
-                }
-
                 result.templateRole = template.getEntityOperatorRole();
                 result.templateDeployment = template.getDeployment();
                 result.templatePod = template.getPod();
                 result.templateServiceAccount = template.getServiceAccount();
+                result.templateContainer = template.getTlsSidecarContainer();
+
+                if (topicOperator != null) {
+                    topicOperator.templateContainer = template.getTopicOperatorContainer();
+                }
+
+                if (userOperator != null) {
+                    userOperator.templateContainer = template.getUserOperatorContainer();
+                }
             }
 
             return result;
@@ -223,8 +203,8 @@ public class EntityOperator extends AbstractModel {
                         DEFAULT_POD_LABELS,
                         Map.of(),
                         templatePod != null ? templatePod.getAffinity() : null,
-                        getInitContainers(imagePullPolicy),
-                        getContainers(imagePullPolicy),
+                        null,
+                        createContainers(imagePullPolicy),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
                         securityProvider.entityOperatorPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
@@ -232,15 +212,14 @@ public class EntityOperator extends AbstractModel {
         );
     }
 
-    @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
+    /* test */ List<Container> createContainers(ImagePullPolicy imagePullPolicy) {
         List<Container> containers = new ArrayList<>(3);
 
         if (topicOperator != null) {
-            containers.addAll(topicOperator.getContainers(imagePullPolicy));
+            containers.add(topicOperator.createContainer(imagePullPolicy));
         }
         if (userOperator != null) {
-            containers.addAll(userOperator.getContainers(imagePullPolicy));
+            containers.add(userOperator.createContainer(imagePullPolicy));
         }
 
         // The TLS Sidecar is only used by the Topic Operator. Therefore, when the Topic Operator is disabled, the TLS side should also be disabled.
@@ -250,38 +229,39 @@ public class EntityOperator extends AbstractModel {
                 tlsSidecarImage = tlsSidecar.getImage();
             }
 
-            Container tlsSidecarContainer = new ContainerBuilder()
-                    .withName(TLS_SIDECAR_NAME)
-                    .withImage(tlsSidecarImage)
-                    .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
-                    .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
-                    .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
-                    .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                    .withEnv(getTlsSidecarEnvVars())
-                    .withVolumeMounts(VolumeUtils.createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+            Container tlsSidecarContainer = ContainerUtils.createContainer(
+                    TLS_SIDECAR_NAME,
+                    tlsSidecarImage,
+                    List.of("/opt/stunnel/entity_operator_stunnel_run.sh"),
+                    securityProvider.entityOperatorTlsSidecarContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
+                    tlsSidecar != null ? tlsSidecar.getResources() : null,
+                    getTlsSidecarEnvVars(),
+                    null,
+                    List.of(VolumeUtils.createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                             VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT),
-                            VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
-                    .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
-                            .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
-                            .endExec().endPreStop().build())
-                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
-                    .withSecurityContext(securityProvider.entityOperatorTlsSidecarContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateTlsSidecarContainerSecurityContext)))
-                    .build();
+                            VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT)),
+                    ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar),
+                    ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar),
+                    null,
+                    imagePullPolicy,
+                    new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh").endExec().endPreStop().build()
+            );
 
             containers.add(tlsSidecarContainer);
         }
+
         return containers;
     }
 
     protected List<EnvVar> getTlsSidecarEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());
 
-        addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
+        ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
     }

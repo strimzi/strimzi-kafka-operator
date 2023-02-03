@@ -7,8 +7,13 @@ package io.strimzi.operator.cluster;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 
@@ -34,4 +39,19 @@ public class TestUtils {
                 .build();
     }
 
+    /**
+     * Gets the given container's environment as a Map. This makes it easier to verify the environment variables in
+     * unit tests.
+     *
+     * @param container The container to retrieve the EnvVars from
+     *
+     * @return A map of the environment variables of the given container. The Environmental variable values indexed by
+     * their names
+     */
+    public static Map<String, String> containerEnvVars(Container container) {
+        return container.getEnv().stream().collect(
+                Collectors.toMap(EnvVar::getName, EnvVar::getValue,
+                        // On duplicates, last-in wins
+                        (u, v) -> v));
+    }
 }

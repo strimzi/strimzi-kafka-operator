@@ -262,44 +262,44 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             }
         }
 
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS, clusterAliases.toString()));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS, clusterAliases.toString()));
 
         if (hasClusterWithTls) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_CLUSTERS, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_CLUSTERS, "true"));
         }
 
         if (clustersTrustedCerts.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS, clustersTrustedCerts.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS, clustersTrustedCerts.toString()));
         }
 
         if (clustersTlsAuthCerts.length() > 0 || clustersTlsAuthKeys.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CLUSTERS, "true"));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS, clustersTlsAuthCerts.toString()));
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_KEYS_CLUSTERS, clustersTlsAuthKeys.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CLUSTERS, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS, clustersTlsAuthCerts.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_AUTH_KEYS_CLUSTERS, clustersTlsAuthKeys.toString()));
         }
 
         if (clustersSaslPasswordFiles.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS, clustersSaslPasswordFiles.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_SASL_PASSWORD_FILES_CLUSTERS, clustersSaslPasswordFiles.toString()));
         }
 
         if (hasClusterOauthTrustedCerts) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_TRUSTED_CERTS, "true"));
         }
 
         if (clustersOauthClientSecrets.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS, clustersOauthClientSecrets.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_CLIENT_SECRETS_CLUSTERS, clustersOauthClientSecrets.toString()));
         }
 
         if (clustersOauthAccessTokens.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS, clustersOauthAccessTokens.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS, clustersOauthAccessTokens.toString()));
         }
 
         if (clustersOauthRefreshTokens.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS, clustersOauthRefreshTokens.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS, clustersOauthRefreshTokens.toString()));
         }
 
         if (clustersOauthPasswords.length() > 0) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_PASSWORDS_CLUSTERS, clustersOauthPasswords.toString()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_PASSWORDS_CLUSTERS, clustersOauthPasswords.toString()));
         }
 
         ModelUtils.jvmSystemProperties(varList, jvmOptions);
@@ -363,8 +363,25 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         this.clusters = clusters;
     }
 
+    /**
+     * The command for running Connect has to be passed through a method so that we can handle different run commands
+     * for Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole container creation.
+     *
+     * @return  Command for starting Kafka Mirror Maker 2 container
+     */
     @Override
     protected String getCommand() {
         return "/opt/kafka/kafka_mirror_maker_2_run.sh";
+    }
+
+    /**
+     * The default labels Connect pod has to be passed through a method so that we can handle different labels for
+     * Connect and Mirror Maker 2 (which inherits from this class) without duplicating the whole pod creation.
+     *
+     * @return Default Pod Labels for Kafka Mirror Maker 2
+     */
+    @Override
+    protected Map<String, String> defaultPodLabels() {
+        return DEFAULT_POD_LABELS;
     }
 }

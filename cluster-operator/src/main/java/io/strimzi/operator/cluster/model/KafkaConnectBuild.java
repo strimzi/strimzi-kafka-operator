@@ -6,13 +6,11 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
@@ -23,7 +21,6 @@ import io.fabric8.openshift.api.model.BuildOutputBuilder;
 import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.api.model.BuildRequestBuilder;
 import io.fabric8.openshift.api.model.DockerBuildStrategyBuilder;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
@@ -58,8 +55,6 @@ public class KafkaConnectBuild extends AbstractModel {
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_BUILD_LABELS";
 
     private Build build;
-    private List<ContainerEnvVar> templateBuildContainerEnvVars;
-    private SecurityContext templateBuildContainerSecurityContext;
     private Map<String, String> templateBuildConfigLabels;
     private Map<String, String> templateBuildConfigAnnotations;
     private PodTemplate templatePod;
@@ -116,20 +111,14 @@ public class KafkaConnectBuild extends AbstractModel {
                     build.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
                 }
             }
+
+            build.resources = spec.getBuild().getResources();
         }
 
         build.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
 
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
-
-            if (template.getBuildContainer() != null && template.getBuildContainer().getEnv() != null) {
-                build.templateBuildContainerEnvVars = template.getBuildContainer().getEnv();
-            }
-
-            if (template.getBuildContainer() != null && template.getBuildContainer().getSecurityContext() != null) {
-                build.templateBuildContainerSecurityContext = template.getBuildContainer().getSecurityContext();
-            }
 
             if (template.getBuildConfig() != null) {
                 build.pullSecret = template.getBuildConfig().getPullSecret();
@@ -147,6 +136,7 @@ public class KafkaConnectBuild extends AbstractModel {
 
             build.templatePod = template.getBuildPod();
             build.templateServiceAccount = template.getBuildServiceAccount();
+            build.templateContainer = template.getBuildContainer();
         }
 
         build.build = spec.getBuild();
@@ -250,8 +240,8 @@ public class KafkaConnectBuild extends AbstractModel {
                 DEFAULT_POD_LABELS,
                 Map.of(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, newBuildRevision),
                 templatePod != null ? templatePod.getAffinity() : null,
-                getInitContainers(imagePullPolicy),
-                getContainers(imagePullPolicy),
+                null,
+                List.of(createContainer(imagePullPolicy)),
                 getVolumes(isOpenShift),
                 imagePullSecrets,
                 securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
@@ -314,7 +304,7 @@ public class KafkaConnectBuild extends AbstractModel {
         // Add shared environment variables used for all containers
         List<EnvVar> varList = new ArrayList<>(getRequiredEnvVars());
 
-        addContainerEnvsToExistingEnvs(varList, templateBuildContainerEnvVars);
+        ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
     }
@@ -326,10 +316,7 @@ public class KafkaConnectBuild extends AbstractModel {
      *
      * @return  Builder container definition which will be used in the Pod
      */
-    @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>(1);
-
+    /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {
         List<String> args = additionalKanikoOptions != null ? new ArrayList<>(4 + additionalKanikoOptions.size()) : new ArrayList<>(4);
         args.add("--dockerfile=/dockerfile/Dockerfile");
         args.add("--image-name-with-digest-file=/dev/termination-log");
@@ -339,20 +326,19 @@ public class KafkaConnectBuild extends AbstractModel {
             args.addAll(additionalKanikoOptions);
         }
 
-        Container container = new ContainerBuilder()
-                .withName(componentName)
-                .withImage(getImage())
-                .withArgs(args)
-                .withVolumeMounts(getVolumeMounts())
-                .withResources(build.getResources())
-                .withSecurityContext(securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateBuildContainerSecurityContext)))
-                .withEnv(getBuildContainerEnvVars())
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .build();
-
-        containers.add(container);
-
-        return containers;
+        return ContainerUtils.createContainer(
+                componentName,
+                image,
+                args,
+                securityProvider.kafkaConnectBuildContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
+                resources,
+                getBuildContainerEnvVars(),
+                null,
+                getVolumeMounts(),
+                null,
+                null,
+                imagePullPolicy
+        );
     }
 
     /**

@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.securityprofiles;
 
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.plugin.security.profiles.ContainerSecurityProviderContext;
 
 /**
@@ -19,21 +20,21 @@ public class ContainerSecurityProviderContextImpl implements ContainerSecurityPr
      * Constructor which can be used when only the user-supplied security context is set, but no storage is used.
      * Storage will be automatically set to null.
      *
-     * @param userSuppliedSecurityContext   User-supplied security context
+     * @param containerTemplate   Container template with user-supplied security context
      */
-    public ContainerSecurityProviderContextImpl(SecurityContext userSuppliedSecurityContext)   {
-        this(null, userSuppliedSecurityContext);
+    public ContainerSecurityProviderContextImpl(ContainerTemplate containerTemplate)   {
+        this(null, containerTemplate);
     }
 
     /**
      * Constructor for setting both user-supplied security context as well as the storage configuration.
      *
-     * @param storage                          Storage configuration
-     * @param userSuppliedSecurityContext      User-supplied security context
+     * @param storage               Storage configuration
+     * @param containerTemplate     Container template with user-supplied security context
      */
-    public ContainerSecurityProviderContextImpl(Storage storage, SecurityContext userSuppliedSecurityContext) {
+    public ContainerSecurityProviderContextImpl(Storage storage, ContainerTemplate containerTemplate) {
         this.storage = storage;
-        this.userSuppliedSecurityContext = userSuppliedSecurityContext;
+        this.userSuppliedSecurityContext = containerTemplate != null ? containerTemplate.getSecurityContext() : null;
     }
 
     @Override

@@ -99,7 +99,7 @@ public class ModelUtils {
     }
 
     static EnvVar tlsSidecarLogEnvVar(TlsSidecar tlsSidecar) {
-        return AbstractModel.buildEnvVar(TLS_SIDECAR_LOG_LEVEL,
+        return ContainerUtils.createEnvVar(TLS_SIDECAR_LOG_LEVEL,
                 (tlsSidecar != null && tlsSidecar.getLogLevel() != null ?
                         tlsSidecar.getLogLevel() : TlsSidecarLogLevel.NOTICE).toValue());
     }
@@ -383,14 +383,14 @@ public class ModelUtils {
 
         String optsTrim = strimziJavaOpts.toString().trim();
         if (!optsTrim.isEmpty()) {
-            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
+            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
         }
 
         List<SystemProperty> javaSystemProperties = jvmOptions != null ? jvmOptions.getJavaSystemProperties() : null;
         if (javaSystemProperties != null) {
             String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
             if (!propsTrim.isEmpty()) {
-                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
+                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
             }
         }
     }
@@ -406,7 +406,7 @@ public class ModelUtils {
         if (jvmOptions != null) {
             String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
             if (jvmSystemPropertiesString != null && !jvmSystemPropertiesString.isEmpty()) {
-                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
+                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
             }
         }
     }
@@ -438,7 +438,7 @@ public class ModelUtils {
 
         String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
         if (!jvmPerformanceOptsString.isEmpty()) {
-            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
+            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
         }
     }
 
@@ -484,10 +484,10 @@ public class ModelUtils {
                 // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
                 // too much memory on the kubelet.
 
-                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
+                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
 
                 if (dynamicHeapMaxBytes > 0) {
-                    envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+                    envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
                 }
             } else if (xms == null) {
                 // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
@@ -498,7 +498,7 @@ public class ModelUtils {
 
         String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
         if (!kafkaHeapOptsString.isEmpty()) {
-            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
+            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
         }
     }
 
