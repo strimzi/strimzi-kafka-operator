@@ -84,8 +84,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         int messageCount = 600;
         List<EnvVar> testEnvVars = new ArrayList<>();
-        int zooReplicas = 1;
-        int kafkaReplicas = 1;
+        int zooReplicas = 3;
+        int kafkaReplicas = 3;
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-UseStrimziPodSets", null));
 
