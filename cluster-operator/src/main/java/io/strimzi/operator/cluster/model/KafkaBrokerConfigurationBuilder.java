@@ -59,7 +59,7 @@ public class KafkaBrokerConfigurationBuilder {
     private final static String PLACEHOLDER_ADVERTISED_HOSTNAME = "${STRIMZI_%s_ADVERTISED_HOSTNAME}";
     private final static String PLACEHOLDER_ADVERTISED_PORT = "${STRIMZI_%s_ADVERTISED_PORT}";
 
-    // Additional replaceables are used in the configuration file for node port addresses. These are used for both
+    // Additional placeholders are used in the configuration file for node port addresses. These are used for both
     // per-broker and shared configurations. Listed here for reference only, they are constructed in the
     // KafkaAssemblyOperator class on the fly based on the user configuration.
     // * ${STRIMZI_NODEPORT_DEFAULT_ADDRESS}
@@ -123,8 +123,8 @@ public class KafkaBrokerConfigurationBuilder {
      * @param cruiseControl The Cruise Control configuration from the Kafka CR
      * @param numPartitions The number of partitions specified in the Kafka config
      * @param replicationFactor The replication factor specified in the Kafka config
-     * @param minInSyncReplicas The miniumum number of insync replicas that are needed in order for messages to be
-     *                          acknowleged.
+     * @param minInSyncReplicas The minimum number of in-sync replicas that are needed in order for messages to be
+     *                          acknowledged.
      *
      * @return Returns the builder instance
      */
@@ -416,7 +416,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures TLS for a specific listener. This method is used only internally.
      *
-     * @param listenerName  The name of the listener under which it is used in the KAfka broker configuration file
+     * @param listenerName  The name of the listener under which it is used in the Kafka broker configuration file
      * @param serverCertificate The custom certificate configuration (null if not specified by the user in the Kafka CR)
      */
     private void configureTls(String listenerName, CertAndKeySecretSource serverCertificate) {
@@ -438,21 +438,19 @@ public class KafkaBrokerConfigurationBuilder {
      * Configures authentication for a Kafka listener. This method is used only internally.
      *
      * @param listenerName  Name of the listener as used in the Kafka broker configuration file.
-     * @param securityProtocol  List of security protocols enabled int he broker. The method will add the security
+     * @param securityProtocol  List of security protocols enabled in the broker. The method will add the security
      *                          protocol configuration for this listener to this list (e.g. SASL_PLAINTEXT).
      * @param tls   Flag whether this protocol is using TLS or not
-     * @param auth  The authentication confgiuration from the Kafka CR
+     * @param auth  The authentication configuration from the Kafka CR
      */
     private void configureAuthentication(String listenerName, List<String> securityProtocol, boolean tls, KafkaListenerAuthentication auth)    {
         String listenerNameInProperty = listenerName.toLowerCase(Locale.ENGLISH);
         String listenerNameInEnvVar = listenerName.replace("-", "_");
 
-        if (auth instanceof KafkaListenerAuthenticationOAuth) {
+        if (auth instanceof KafkaListenerAuthenticationOAuth oauth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
 
-            KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) auth;
-            List<String> options = new ArrayList<>();
-            options.addAll(getOAuthOptions(oauth));
+            List<String> options = new ArrayList<>(getOAuthOptions(oauth));
             options.add("oauth.config.id=\"" + listenerName + "\"");
 
             if (oauth.getClientSecret() != null)    {
@@ -502,8 +500,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(String.format("listener.name.%s.ssl.truststore.password=%s", listenerNameInProperty, PLACEHOLDER_CERT_STORE_PASSWORD));
             writer.println(String.format("listener.name.%s.ssl.truststore.type=PKCS12", listenerNameInProperty));
             writer.println();
-        } else if (auth instanceof KafkaListenerAuthenticationCustom) {
-            KafkaListenerAuthenticationCustom customAuth = (KafkaListenerAuthenticationCustom) auth;
+        } else if (auth instanceof KafkaListenerAuthenticationCustom customAuth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, customAuth.isSasl())));
             KafkaListenerCustomAuthConfiguration config = new KafkaListenerCustomAuthConfiguration(reconciliation, customAuth.getListenerConfig().entrySet());
             config.asOrderedProperties().asMap().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
@@ -586,11 +583,11 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     static void addBooleanOptionIfTrue(List<String> options, String option, boolean value) {
-        if (value) options.add(String.format("%s=\"%s\"", option, value));
+        if (value) options.add(String.format("%s=\"%s\"", option, true));
     }
 
     static void addBooleanOptionIfFalse(List<String> options, String option, boolean value) {
-        if (!value) options.add(String.format("%s=\"%s\"", option, value));
+        if (!value) options.add(String.format("%s=\"%s\"", option, false));
     }
 
     static void addOption(PrintWriter writer, String name, Object value) {
@@ -600,7 +597,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures authorization for the Kafka cluster.
      *
-     * @param clusterName   The name of the cluster (used to configure the replication super users)
+     * @param clusterName   The name of the cluster (used to configure the replication super-users)
      * @param authorization The authorization configuration from the Kafka CR
      * @param useKRaft      Use KRaft mode in the configuration
      *
@@ -632,82 +629,120 @@ public class KafkaBrokerConfigurationBuilder {
      * Configures authorization for the Kafka brokers. This method is used only internally.
      *
      * @param clusterName Name of the cluster
-     * @param superUsers Super users list who have all the rights on the cluster
+     * @param superUsers Super-users list who have all the rights on the cluster
      * @param authorization The authorization configuration from the Kafka CR
      * @param useKRaft      Use KRaft mode in the configuration
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization, boolean useKRaft) {
-        if (KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
-            KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
+        if (authorization instanceof KafkaAuthorizationSimple simpleAuthz) {
+            configureSimpleAuthorization(simpleAuthz, superUsers, useKRaft);
+        } else if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
+            configureOpaAuthorization(opaAuthz, superUsers);
+        } else if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
+            configureKeycloakAuthorization(clusterName, keycloakAuthz, superUsers);
+        } else if (authorization instanceof KafkaAuthorizationCustom customAuthz) {
+            configureCustomAuthorization(customAuthz, superUsers);
+        }
+    }
 
-            if (useKRaft) {
-                writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
-                writer.println("early.start.listeners=" + String.join(",", List.of(CONTROL_PLANE_LISTENER_NAME, REPLICATION_LISTENER_NAME)));
-            } else {
-                writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
-            }
+    /**
+     * Configures Simple authorization
+     *
+     * @param authorization     Simple authorization configuration
+     * @param superUsers        Super-users list who have all the rights on the cluster
+     * @param useKRaft          Use KRaft mode in the configuration
+     */
+    private void configureSimpleAuthorization(KafkaAuthorizationSimple authorization, List<String> superUsers, boolean useKRaft) {
+        if (useKRaft) {
+            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.KRAFT_AUTHORIZER_CLASS_NAME);
+            writer.println("early.start.listeners=" + String.join(",", List.of(CONTROL_PLANE_LISTENER_NAME, REPLICATION_LISTENER_NAME)));
+        } else {
+            writer.println("authorizer.class.name=" + KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME);
+        }
 
-            // User configured super users
-            if (simpleAuthz.getSuperUsers() != null && simpleAuthz.getSuperUsers().size() > 0) {
-                superUsers.addAll(simpleAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
-            }
-        } else if (KafkaAuthorizationOpa.TYPE_OPA.equals(authorization.getType())) {
-            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
-            writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
+        // User configured super-users
+        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+            superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
+        }
+    }
 
-            writer.println(String.format("%s=%s", "opa.authorizer.url", opaAuthz.getUrl()));
-            writer.println(String.format("%s=%b", "opa.authorizer.allow.on.error", opaAuthz.isAllowOnError()));
-            writer.println(String.format("%s=%b", "opa.authorizer.metrics.enabled", opaAuthz.isEnableMetrics()));
-            writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", opaAuthz.getInitialCacheCapacity()));
-            writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", opaAuthz.getMaximumCacheSize()));
-            writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(opaAuthz.getExpireAfterMs()).getSeconds()));
+    /**
+     * Configures Open Policy Agent (OPA) authorization
+     *
+     * @param authorization     OPA authorization configuration
+     * @param superUsers        Super-users list who have all the rights on the cluster
+     */
+    private void configureOpaAuthorization(KafkaAuthorizationOpa authorization, List<String> superUsers) {
+        writer.println("authorizer.class.name=" + KafkaAuthorizationOpa.AUTHORIZER_CLASS_NAME);
 
-            if (opaAuthz.getTlsTrustedCertificates() != null && opaAuthz.getTlsTrustedCertificates().size() > 0)    {
-                writer.println("opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12");
-                writer.println("opa.authorizer.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-                writer.println("opa.authorizer.truststore.type=PKCS12");
-            }
+        writer.println(String.format("%s=%s", "opa.authorizer.url", authorization.getUrl()));
+        writer.println(String.format("%s=%b", "opa.authorizer.allow.on.error", authorization.isAllowOnError()));
+        writer.println(String.format("%s=%b", "opa.authorizer.metrics.enabled", authorization.isEnableMetrics()));
+        writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", authorization.getInitialCacheCapacity()));
+        writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", authorization.getMaximumCacheSize()));
+        writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(authorization.getExpireAfterMs()).getSeconds()));
 
-            // User configured super users
-            if (opaAuthz.getSuperUsers() != null && opaAuthz.getSuperUsers().size() > 0) {
-                superUsers.addAll(opaAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
-            }
-        } else if (KafkaAuthorizationKeycloak.TYPE_KEYCLOAK.equals(authorization.getType())) {
-            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
-            writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
-            writer.println("strimzi.authorization.token.endpoint.uri=" + keycloakAuthz.getTokenEndpointUri());
-            writer.println("strimzi.authorization.client.id=" + keycloakAuthz.getClientId());
-            writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
-            addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", keycloakAuthz.getGrantsRefreshPeriodSeconds());
-            addOption(writer, "strimzi.authorization.grants.refresh.pool.size", keycloakAuthz.getGrantsRefreshPoolSize());
-            addOption(writer, "strimzi.authorization.connect.timeout.seconds", keycloakAuthz.getConnectTimeoutSeconds());
-            addOption(writer, "strimzi.authorization.read.timeout.seconds", keycloakAuthz.getReadTimeoutSeconds());
-            if (keycloakAuthz.isEnableMetrics()) {
-                writer.println("strimzi.authorization.enable.metrics=true");
-            }
-            writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
+        if (authorization.getTlsTrustedCertificates() != null && authorization.getTlsTrustedCertificates().size() > 0)    {
+            writer.println("opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12");
+            writer.println("opa.authorizer.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+            writer.println("opa.authorizer.truststore.type=PKCS12");
+        }
 
-            if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {
-                writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
-                writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-                writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
-                String endpointIdentificationAlgorithm = keycloakAuthz.isDisableTlsHostnameVerification() ? "" : "HTTPS";
-                writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
-            }
+        // User configured super-users
+        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+            superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
+        }
+    }
 
-            // User configured super users
-            if (keycloakAuthz.getSuperUsers() != null && keycloakAuthz.getSuperUsers().size() > 0) {
-                superUsers.addAll(keycloakAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
-            }
-        } else if (KafkaAuthorizationCustom.TYPE_CUSTOM.equals(authorization.getType())) {
-            KafkaAuthorizationCustom customAuthz = (KafkaAuthorizationCustom) authorization;
-            writer.println("authorizer.class.name=" + customAuthz.getAuthorizerClass());
+    /**
+     * Configures Keycloak authorization
+     *
+     * @param clusterName       Name of the cluster
+     * @param authorization     Custom authorization configuration
+     * @param superUsers        Super-users list who have all the rights on the cluster
+     */
+    private void configureKeycloakAuthorization(String clusterName, KafkaAuthorizationKeycloak authorization, List<String> superUsers) {
+        writer.println("authorizer.class.name=" + KafkaAuthorizationKeycloak.AUTHORIZER_CLASS_NAME);
+        writer.println("strimzi.authorization.token.endpoint.uri=" + authorization.getTokenEndpointUri());
+        writer.println("strimzi.authorization.client.id=" + authorization.getClientId());
+        writer.println("strimzi.authorization.delegate.to.kafka.acl=" + authorization.isDelegateToKafkaAcls());
+        addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", authorization.getGrantsRefreshPeriodSeconds());
+        addOption(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
+        addOption(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
+        addOption(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
 
-            // User configured super users
-            if (customAuthz.getSuperUsers() != null && customAuthz.getSuperUsers().size() > 0) {
-                superUsers.addAll(customAuthz.getSuperUsers().stream().map(e -> String.format("User:%s", e)).collect(Collectors.toList()));
-            }
+        if (authorization.isEnableMetrics()) {
+            writer.println("strimzi.authorization.enable.metrics=true");
+        }
+
+        writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
+
+        if (authorization.getTlsTrustedCertificates() != null && authorization.getTlsTrustedCertificates().size() > 0)    {
+            writer.println("strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12");
+            writer.println("strimzi.authorization.ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+            writer.println("strimzi.authorization.ssl.truststore.type=PKCS12");
+            String endpointIdentificationAlgorithm = authorization.isDisableTlsHostnameVerification() ? "" : "HTTPS";
+            writer.println("strimzi.authorization.ssl.endpoint.identification.algorithm=" + endpointIdentificationAlgorithm);
+        }
+
+        // User configured super-users
+        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+            superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
+        }
+    }
+
+    /**
+     * Configures custom authorization
+     *
+     * @param authorization     Custom authorization configuration
+     * @param superUsers        Super-users list who have all the rights on the cluster
+     */
+    private void configureCustomAuthorization(KafkaAuthorizationCustom authorization, List<String> superUsers) {
+        writer.println("authorizer.class.name=" + authorization.getAuthorizerClass());
+
+        // User configured super-users
+        if (authorization.getSuperUsers() != null && authorization.getSuperUsers().size() > 0) {
+            superUsers.addAll(authorization.getSuperUsers().stream().map(e -> String.format("User:%s", e)).toList());
         }
     }
 
@@ -749,8 +784,8 @@ public class KafkaBrokerConfigurationBuilder {
     }
 
     /**
-     * Internal method which prints the section header into the configuration file. This makes it more human readable
-     * when looking for issues in runnign pods etc.
+     * Internal method which prints the section header into the configuration file. This makes it more human-readable
+     * when looking for issues in running pods etc.
      *
      * @param sectionName   Name of the section for which is this header printed
      */
