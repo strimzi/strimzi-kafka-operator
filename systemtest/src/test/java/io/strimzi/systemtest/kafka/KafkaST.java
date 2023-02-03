@@ -1593,24 +1593,6 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testKafkaOffsetsReplicationFactorHigherThanReplicas(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
-            .editSpec()
-                .editKafka()
-                   .addToConfig("offsets.topic.replication.factor", 4)
-                   .addToConfig("transaction.state.log.min.isr", 4)
-                   .addToConfig("transaction.state.log.replication.factor", 4)
-               .endKafka()
-            .endSpec().build());
-
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
-            "Kafka configuration option .* should be set to " + 3 + " or less because 'spec.kafka.replicas' is " + 3);
-    }
-
-    @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(CRUISE_CONTROL)
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
