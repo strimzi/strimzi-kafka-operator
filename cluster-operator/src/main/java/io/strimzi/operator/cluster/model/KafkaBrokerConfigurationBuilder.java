@@ -636,6 +636,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @param authorization The authorization configuration from the Kafka CR
      * @param useKRaft      Use KRaft mode in the configuration
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void configureAuthorization(String clusterName, List<String> superUsers, KafkaAuthorization authorization, boolean useKRaft) {
         if (KafkaAuthorizationSimple.TYPE_SIMPLE.equals(authorization.getType())) {
             KafkaAuthorizationSimple simpleAuthz = (KafkaAuthorizationSimple) authorization;
@@ -661,6 +662,12 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", opaAuthz.getInitialCacheCapacity()));
             writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", opaAuthz.getMaximumCacheSize()));
             writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(opaAuthz.getExpireAfterMs()).getSeconds()));
+
+            if (opaAuthz.getTlsTrustedCertificates() != null && opaAuthz.getTlsTrustedCertificates().size() > 0)    {
+                writer.println("opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12");
+                writer.println("opa.authorizer.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+                writer.println("opa.authorizer.truststore.type=PKCS12");
+            }
 
             // User configured super users
             if (opaAuthz.getSuperUsers() != null && opaAuthz.getSuperUsers().size() > 0) {

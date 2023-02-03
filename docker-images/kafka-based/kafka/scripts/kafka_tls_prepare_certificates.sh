@@ -70,6 +70,23 @@ for CRT in /opt/kafka/client-ca-certs/*.crt; do
 done
 echo "Preparing truststore for client authentication is complete"
 
+AUTHZ_OPA_DIR="/opt/kafka/certificates/authz-opa-certs"
+AUTHZ_OPA_STORE="/tmp/kafka/authz-opa.truststore.p12"
+rm -f "$AUTHZ_OPA_STORE"
+if [ -d "$AUTHZ_OPA_DIR" ]; then
+  echo "Preparing truststore for Authorization with OPA"
+
+  # Add each certificate to the trust store
+  declare -i INDEX=0
+  for CRT in "$AUTHZ_OPA_DIR"/**/*; do
+    ALIAS="authz-opa-${INDEX}"
+    echo "Adding $CRT to truststore $AUTHZ_OPA_STORE with alias $ALIAS"
+    create_truststore "$AUTHZ_OPA_STORE" "$CERTS_STORE_PASSWORD" "$CRT" "$ALIAS"
+    INDEX+=1
+  done
+  echo "Preparing truststore for Authorization with OPA is complete"
+fi
+
 AUTHZ_KEYCLOAK_DIR="/opt/kafka/certificates/authz-keycloak-certs"
 AUTHZ_KEYCLOAK_STORE="/tmp/kafka/authz-keycloak.truststore.p12"
 rm -f "$AUTHZ_KEYCLOAK_STORE"

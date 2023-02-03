@@ -3,6 +3,7 @@
 ## 0.34.0
 
 * Use JDK HTTP client in the Kubernetes client instead of the OkHttp client
+* Add truststore configuration for HTTPS connections to OPA server
 
 ## 0.33.0
 
