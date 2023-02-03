@@ -8,10 +8,14 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
-import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
+import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
@@ -68,6 +72,25 @@ public class SetupDrainCleaner {
                 final String resourceType = file.getName().split("-")[1].split(".yaml")[0];
 
                 switch (resourceType) {
+                    case Constants.ROLE:
+                        Role role = TestUtils.configFromYaml(file, Role.class);
+                        ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+                            .editMetadata()
+                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                            .endMetadata()
+                            .build());
+                        break;
+                    case Constants.ROLE_BINDING:
+                        RoleBinding roleBinding = TestUtils.configFromYaml(file, RoleBinding.class);
+                        ResourceManager.getInstance().createResource(extensionContext, new RoleBindingBuilder(roleBinding)
+                            .editMetadata()
+                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                            .endMetadata()
+                            .editFirstSubject()
+                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                            .endSubject()
+                            .build());
+                        break;
                     case Constants.CLUSTER_ROLE:
                         ClusterRole clusterRole = TestUtils.configFromYaml(file, ClusterRole.class);
                         ResourceManager.getInstance().createResource(extensionContext, clusterRole);
