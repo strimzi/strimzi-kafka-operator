@@ -364,7 +364,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.bridgePodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.bridgePodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
                 )
         );
     }
@@ -405,7 +405,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         );
     }
 
-    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
@@ -461,7 +460,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
@@ -607,7 +606,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY, INIT_VOLUME_MOUNT));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 

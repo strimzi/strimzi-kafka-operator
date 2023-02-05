@@ -1141,7 +1141,7 @@ public class KafkaCluster extends AbstractStatefulModel {
                         List.of(createContainer(imagePullPolicy)),
                         getStatefulSetVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
                 )
         );
     }
@@ -1191,7 +1191,7 @@ public class KafkaCluster extends AbstractStatefulModel {
                         List.of(createContainer(imagePullPolicy)),
                         getPodSetVolumes(getPodName(brokerId), isOpenShift),
                         imagePullSecrets,
-                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
                 )
         );
     }
@@ -1518,7 +1518,7 @@ public class KafkaCluster extends AbstractStatefulModel {
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 
@@ -1561,7 +1561,6 @@ public class KafkaCluster extends AbstractStatefulModel {
         );
     }
 
-    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
@@ -1595,7 +1594,7 @@ public class KafkaCluster extends AbstractStatefulModel {
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         // Add user defined environment variables to the Kafka broker containers
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);

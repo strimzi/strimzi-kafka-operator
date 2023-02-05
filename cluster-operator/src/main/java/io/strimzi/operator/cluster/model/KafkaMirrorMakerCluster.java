@@ -301,7 +301,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.kafkaMirrorMakerPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.kafkaMirrorMakerPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
                 )
         );
     }
@@ -353,7 +353,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return config;
     }
 
-    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER,
@@ -396,7 +395,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 String.valueOf(readinessProbeOptions.getPeriodSeconds() != null ? readinessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

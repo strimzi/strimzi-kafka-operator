@@ -188,7 +188,7 @@ public class JmxTrans extends AbstractModel {
                         List.of(createContainer(imagePullPolicy)),
                         getVolumes(),
                         imagePullSecrets,
-                        securityProvider.jmxTransPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.jmxTransPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
                 )
         );
     }
@@ -332,7 +332,6 @@ public class JmxTrans extends AbstractModel {
         );
     }
 
-    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
@@ -344,7 +343,7 @@ public class JmxTrans extends AbstractModel {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_JMXTRANS_LOGGING_LEVEL, loggingLevel));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
