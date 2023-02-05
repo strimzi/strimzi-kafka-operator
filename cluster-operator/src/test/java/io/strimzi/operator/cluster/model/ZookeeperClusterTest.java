@@ -31,7 +31,6 @@ import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
@@ -70,7 +69,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -269,10 +267,9 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        List<Container> containers = zc.getContainers(ImagePullPolicy.IFNOTPRESENT);
 
-        ContainerPort jmxContainerPort = zc.createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP");
-        assertThat(containers.get(0).getPorts().contains(jmxContainerPort), is(true));
+        ContainerPort jmxContainerPort = ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT);
+        assertThat(zc.createContainer(ImagePullPolicy.IFNOTPRESENT).getPorts().contains(jmxContainerPort), is(true));
     }
 
     @ParallelTest
@@ -541,19 +538,6 @@ public class ZookeeperClusterTest {
 
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget(false);
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
-    }
-
-    @ParallelTest
-    public void testImagePullPolicy() {
-        Kafka kafkaAssembly = KAFKA;
-        kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        Container cont = zc.getContainers(ImagePullPolicy.ALWAYS).get(0);
-        assertThat(cont.getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
-
-        cont = zc.getContainers(ImagePullPolicy.IFNOTPRESENT).get(0);
-        assertThat(cont.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
     @ParallelTest
@@ -961,11 +945,11 @@ public class ZookeeperClusterTest {
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(zc.getContainers(null),
-                hasItem(allOf(
+        assertThat(zc.createContainer(null),
+                allOf(
                         hasProperty("name", equalTo(ZookeeperCluster.ZOOKEEPER_NAME)),
                         hasProperty("securityContext", equalTo(securityContext))
-                )));
+                ));
     }
 
     @ParallelTest
@@ -1008,7 +992,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check container
-        Container cont = zc.getContainers(null).get(0);
+        Container cont = zc.createContainer(null);
         assertThat(cont.getImage(), is("my-image:my-tag"));
     }
 
@@ -1037,7 +1021,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check container
-        Container cont = zc.getContainers(null).get(0);
+        Container cont = zc.createContainer(null);
         assertThat(cont.getLivenessProbe().getInitialDelaySeconds(), is(1));
         assertThat(cont.getLivenessProbe().getPeriodSeconds(), is(2));
         assertThat(cont.getLivenessProbe().getTimeoutSeconds(), is(3));

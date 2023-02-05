@@ -137,8 +137,8 @@ public class EntityOperatorTest {
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(2);
         assertThat(tlsSidecarContainer.getImage(), is(image));
-        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
-        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
+        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
+        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
         assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
                         EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                         EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
@@ -538,7 +538,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is("foo1"));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).createContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is("foo1"));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -552,7 +552,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is("foo2"));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).createContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is("foo2"));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -567,7 +567,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
             .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).createContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -582,7 +582,7 @@ public class EntityOperatorTest {
                     .endKafka()
                 .endSpec()
             .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS, true).createContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
     }
 
     @ParallelTest

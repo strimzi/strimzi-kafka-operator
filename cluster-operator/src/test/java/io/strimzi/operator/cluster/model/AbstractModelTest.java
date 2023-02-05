@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -43,11 +42,6 @@ public class AbstractModelTest {
 
         @Override
         protected String getDefaultLogConfigFileName() {
-            return null;
-        }
-
-        @Override
-        protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
             return null;
         }
     }
@@ -104,27 +98,6 @@ public class AbstractModelTest {
         assertThat(ref.getKind(), is(kafka.getKind()));
         assertThat(ref.getName(), is(kafka.getMetadata().getName()));
         assertThat(ref.getUid(), is(kafka.getMetadata().getUid()));
-    }
-
-    @ParallelTest
-    public void testDetermineImagePullPolicy()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                .endMetadata()
-                .build();
-
-        AbstractModel am = new Model(kafka);
-
-        assertThat(am.determineImagePullPolicy(ImagePullPolicy.ALWAYS, "docker.io/repo/image:tag"), is(ImagePullPolicy.ALWAYS.toString()));
-        assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:tag"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
-        assertThat(am.determineImagePullPolicy(ImagePullPolicy.IFNOTPRESENT, "docker.io/repo/image:latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
-        assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:tag"), is(ImagePullPolicy.NEVER.toString()));
-        assertThat(am.determineImagePullPolicy(ImagePullPolicy.NEVER, "docker.io/repo/image:latest-kafka-2.7.0"), is(ImagePullPolicy.NEVER.toString()));
-        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest"), is(ImagePullPolicy.ALWAYS.toString()));
-        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:not-so-latest"), is(ImagePullPolicy.IFNOTPRESENT.toString()));
-        assertThat(am.determineImagePullPolicy(null, "docker.io/repo/image:latest-kafka-2.7.0"), is(ImagePullPolicy.ALWAYS.toString()));
     }
 
     @ParallelTest

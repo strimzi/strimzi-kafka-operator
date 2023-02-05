@@ -231,10 +231,7 @@ public class EntityUserOperatorTest {
 
     @ParallelTest
     public void testGetContainers() {
-        List<Container> containers = entityUserOperator.getContainers(null);
-        assertThat(containers.size(), is(1));
-
-        Container container = containers.get(0);
+        Container container = entityUserOperator.createContainer(null);
         assertThat(container.getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityUserOperator.getImage()));
         checkEnvVars(getExpectedEnvVars(), container.getEnv());

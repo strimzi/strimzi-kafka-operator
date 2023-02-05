@@ -8,14 +8,12 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -41,7 +39,6 @@ import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -64,6 +61,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
@@ -104,7 +102,6 @@ import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCus
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -245,6 +242,7 @@ public class KafkaCluster extends AbstractStatefulModel {
     private InternalServiceTemplate templateService;
     private ResourceTemplate templateExternalBootstrapService;
     private ResourceTemplate templatePerBrokerService;
+    private ContainerTemplate templateInitContainer;
     protected Map<String, String> templateExternalBootstrapRouteLabels;
     protected Map<String, String> templateExternalBootstrapRouteAnnotations;
     protected Map<String, String> templatePerPodRouteLabels;
@@ -253,10 +251,6 @@ public class KafkaCluster extends AbstractStatefulModel {
     protected Map<String, String> templateExternalBootstrapIngressAnnotations;
     protected Map<String, String> templatePerPodIngressLabels;
     protected Map<String, String> templatePerPodIngressAnnotations;
-    protected List<ContainerEnvVar> templateKafkaContainerEnvVars;
-    protected List<ContainerEnvVar> templateInitContainerEnvVars;
-    protected SecurityContext templateKafkaContainerSecurityContext;
-    protected SecurityContext templateInitContainerSecurityContext;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -460,22 +454,6 @@ public class KafkaCluster extends AbstractStatefulModel {
                 result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
             }
 
-            if (template.getKafkaContainer() != null && template.getKafkaContainer().getEnv() != null) {
-                result.templateKafkaContainerEnvVars = template.getKafkaContainer().getEnv();
-            }
-
-            if (template.getInitContainer() != null && template.getInitContainer().getEnv() != null) {
-                result.templateInitContainerEnvVars = template.getInitContainer().getEnv();
-            }
-
-            if (template.getKafkaContainer() != null && template.getKafkaContainer().getSecurityContext() != null) {
-                result.templateKafkaContainerSecurityContext = template.getKafkaContainer().getSecurityContext();
-            }
-
-            if (template.getInitContainer() != null && template.getInitContainer().getSecurityContext() != null) {
-                result.templateInitContainerSecurityContext = template.getInitContainer().getSecurityContext();
-            }
-
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
@@ -488,6 +466,8 @@ public class KafkaCluster extends AbstractStatefulModel {
             result.templateExternalBootstrapService = template.getExternalBootstrapService();
             result.templatePerBrokerService = template.getPerPodService();
             result.templateServiceAccount = template.getServiceAccount();
+            result.templateContainer = template.getKafkaContainer();
+            result.templateInitContainer = template.getInitContainer();
         }
 
         // Should run at the end when everything is set
@@ -1157,8 +1137,8 @@ public class KafkaCluster extends AbstractStatefulModel {
                         DEFAULT_POD_LABELS,
                         podAnnotations,
                         getMergedAffinity(),
-                        getInitContainers(imagePullPolicy),
-                        getContainers(imagePullPolicy),
+                        ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
+                        List.of(createContainer(imagePullPolicy)),
                         getStatefulSetVolumes(isOpenShift),
                         imagePullSecrets,
                         securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
@@ -1207,8 +1187,8 @@ public class KafkaCluster extends AbstractStatefulModel {
                         podAnnotationsProvider.apply(brokerId),
                         KafkaResources.brokersServiceName(cluster),
                         getMergedAffinity(),
-                        getInitContainers(imagePullPolicy),
-                        getContainers(imagePullPolicy),
+                        ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
+                        List.of(createContainer(imagePullPolicy)),
                         getPodSetVolumes(getPodName(brokerId), isOpenShift),
                         imagePullSecrets,
                         securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
@@ -1296,19 +1276,19 @@ public class KafkaCluster extends AbstractStatefulModel {
 
     /* test */ List<ContainerPort> getContainerPortList() {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
-        ports.add(createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, "TCP"));
-        ports.add(createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT, "TCP"));
+        ports.add(ContainerUtils.createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT));
+        ports.add(ContainerUtils.createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT));
 
         for (GenericKafkaListener listener : listeners) {
-            ports.add(createContainerPort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), "TCP"));
+            ports.add(ContainerUtils.createContainerPort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort()));
         }
 
         if (isMetricsEnabled) {
-            ports.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            ports.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
         }
 
         if (isJmxEnabled) {
-            ports.add(createContainerPort(JMX_PORT_NAME, JMX_PORT, "TCP"));
+            ports.add(ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT));
         }
 
         return ports;
@@ -1527,78 +1507,65 @@ public class KafkaCluster extends AbstractStatefulModel {
 
     protected List<EnvVar> getInitContainerEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
+        varList.add(ContainerUtils.createEnvVarFromFieldRef(ENV_VAR_KAFKA_INIT_NODE_NAME, "spec.nodeName"));
 
         if (rack != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
         }
 
         if (!ListenersUtils.nodePortListeners(listeners).isEmpty()) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
         }
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());
 
-        addContainerEnvsToExistingEnvs(varList, templateInitContainerEnvVars);
+        ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 
         return varList;
     }
 
-    @Override
-    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> initContainers = new ArrayList<>(1);
-
+    /* test */ Container createInitContainer(ImagePullPolicy imagePullPolicy) {
         if (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
-            Container initContainer = new ContainerBuilder()
-                    .withName(INIT_NAME)
-                    .withImage(initImage)
-                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                    .withEnv(getInitContainerEnvVars())
-                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
-                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                    .withSecurityContext(securityProvider.kafkaInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainerSecurityContext)))
-                    .build();
-
-            if (resources != null) {
-                initContainer.setResources(resources);
-            }
-            initContainers.add(initContainer);
+            return ContainerUtils.createContainer(
+                    INIT_NAME,
+                    initImage,
+                    List.of("/opt/strimzi/bin/kafka_init_run.sh"),
+                    securityProvider.kafkaInitContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateInitContainer)),
+                    resources,
+                    getInitContainerEnvVars(),
+                    null,
+                    List.of(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT)),
+                    null,
+                    null,
+                    imagePullPolicy
+            );
+        } else {
+            return null;
         }
-
-        return initContainers;
     }
 
-    @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        Container container = new ContainerBuilder()
-                .withName(KAFKA_NAME)
-                .withImage(getImage())
-                .withEnv(getEnvVars())
-                .withVolumeMounts(getVolumeMounts())
-                .withPorts(getContainerPortList())
-                .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
-                        .withNewExec()
-                            .withCommand("/opt/kafka/kafka_liveness.sh")
-                        .endExec().build())
-                .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
-                        .withNewExec()
-                            .withCommand("/opt/kafka/kafka_readiness.sh")
-                        .endExec().build())
-                .withResources(resources)
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withCommand("/opt/kafka/kafka_run.sh")
-                .withSecurityContext(securityProvider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(storage, templateKafkaContainerSecurityContext)))
-                .build();
-
-        return singletonList(container);
+    /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {
+        return ContainerUtils.createContainer(
+                KAFKA_NAME,
+                image,
+                List.of("/opt/kafka/kafka_run.sh"),
+                securityProvider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(storage, templateContainer)),
+                resources,
+                getEnvVars(),
+                getContainerPortList(),
+                getVolumeMounts(),
+                ProbeGenerator.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
+                ProbeGenerator.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
+                imagePullPolicy
+        );
     }
 
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         ModelUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, jvmOptions, resources);
         ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
@@ -1609,21 +1576,21 @@ public class KafkaCluster extends AbstractStatefulModel {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
 
                 if (oauth.getClientSecret() != null)    {
-                    varList.add(buildEnvVarFromSecret("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_CLIENT_SECRET", oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
+                    varList.add(ContainerUtils.createEnvVarFromSecret("STRIMZI_" + ListenersUtils.envVarIdentifier(listener) + "_OAUTH_CLIENT_SECRET", oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                 }
             }
         }
 
         if (useKRaft)   {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_CLUSTER_ID, clusterId));
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_KRAFT_ENABLED, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_CLUSTER_ID, clusterId));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KRAFT_ENABLED, "true"));
         }
 
         if (isJmxEnabled) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
             if (isJmxAuthenticated) {
-                varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, KafkaResources.kafkaJmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
-                varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, KafkaResources.kafkaJmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
+                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, KafkaResources.kafkaJmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
+                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, KafkaResources.kafkaJmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
             }
         }
 
@@ -1631,7 +1598,7 @@ public class KafkaCluster extends AbstractStatefulModel {
         varList.addAll(getRequiredEnvVars());
 
         // Add user defined environment variables to the Kafka broker containers
-        addContainerEnvsToExistingEnvs(varList, templateKafkaContainerEnvVars);
+        ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
     }

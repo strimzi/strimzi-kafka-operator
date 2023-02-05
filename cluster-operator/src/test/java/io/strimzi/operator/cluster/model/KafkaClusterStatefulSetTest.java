@@ -5,12 +5,10 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
@@ -99,11 +97,6 @@ public class KafkaClusterStatefulSetTest {
     // Utility methods
     //////////
 
-    private void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
-        assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
-        assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
     private Map<String, String> expectedLabels()    {
         return TestUtils.map(
             Labels.STRIMZI_CLUSTER_LABEL, CLUSTER,
@@ -139,7 +132,7 @@ public class KafkaClusterStatefulSetTest {
         assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(15));
         assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(5));
         assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(15));
-        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
+        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(containers.get(0)).get(KafkaCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)));
         assertThat(containers.get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         assertThat(containers.get(0).getVolumeMounts().get(1).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
         assertThat(containers.get(0).getVolumeMounts().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
@@ -624,7 +617,7 @@ public class KafkaClusterStatefulSetTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        assertThat(kc.templateKafkaContainerSecurityContext, is(securityContext));
+        assertThat(kc.createContainer(null).getSecurityContext(), is(securityContext));
 
         StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
 

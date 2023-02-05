@@ -249,10 +249,7 @@ public class EntityTopicOperatorTest {
 
     @ParallelTest
     public void testGetContainers() {
-        List<Container> containers = entityTopicOperator.getContainers(null);
-        assertThat(containers.size(), is(1));
-
-        Container container = containers.get(0);
+        Container container = entityTopicOperator.createContainer(null);
         assertThat(container.getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityTopicOperator.getImage()));
         assertThat(container.getEnv(), is(getExpectedEnvVars()));

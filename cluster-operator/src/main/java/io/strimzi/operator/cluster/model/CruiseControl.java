@@ -5,13 +5,11 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -19,7 +17,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -143,8 +140,6 @@ public class CruiseControl extends AbstractModel {
     protected static final String CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS = "STRIMZI_CUSTOM_CRUISE_CONTROL_LABELS";
 
     // Templates
-    protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
-    protected SecurityContext templateCruiseControlContainerSecurityContext;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
     private InternalServiceTemplate templateService;
@@ -239,18 +234,11 @@ public class CruiseControl extends AbstractModel {
             if (ccSpec.getTemplate() != null) {
                 CruiseControlTemplate template = ccSpec.getTemplate();
 
-                if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getEnv() != null) {
-                    cruiseControl.templateCruiseControlContainerEnvVars = template.getCruiseControlContainer().getEnv();
-                }
-
-                if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getSecurityContext() != null) {
-                    cruiseControl.templateCruiseControlContainerSecurityContext = template.getCruiseControlContainer().getSecurityContext();
-                }
-
                 cruiseControl.templateDeployment = template.getDeployment();
                 cruiseControl.templatePod = template.getPod();
                 cruiseControl.templateService = template.getApiService();
                 cruiseControl.templateServiceAccount = template.getServiceAccount();
+                cruiseControl.templateContainer = template.getCruiseControlContainer();
             }
 
             return cruiseControl;
@@ -326,10 +314,10 @@ public class CruiseControl extends AbstractModel {
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
 
-        portList.add(createContainerPort(REST_API_PORT_NAME, REST_API_PORT, "TCP"));
+        portList.add(ContainerUtils.createContainerPort(REST_API_PORT_NAME, REST_API_PORT));
 
         if (isMetricsEnabled) {
-            portList.add(createContainerPort(METRICS_PORT_NAME, METRICS_PORT, "TCP"));
+            portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
         }
 
         return portList;
@@ -376,8 +364,8 @@ public class CruiseControl extends AbstractModel {
                         DEFAULT_POD_LABELS,
                         Map.of(),
                         templatePod != null ? templatePod.getAffinity() : null,
-                        getInitContainers(imagePullPolicy),
-                        getContainers(imagePullPolicy),
+                        null,
+                        List.of(createContainer(imagePullPolicy)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
                         securityProvider.cruiseControlPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
@@ -385,62 +373,51 @@ public class CruiseControl extends AbstractModel {
         );
     }
 
-    @Override
-    protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        Container container = new ContainerBuilder()
-                .withName(CRUISE_CONTROL_CONTAINER_NAME)
-                .withImage(getImage())
-                .withCommand("/opt/cruise-control/cruise_control_run.sh")
-                .withEnv(getEnvVars())
-                .withPorts(getContainerPortList())
-                .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
-                        .withNewExec()
-                            .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
-                        .endExec()
-                        .build())
-                .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
-                        .withNewExec()
-                            .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
-                        .endExec()
-                        .build())
-                .withResources(resources)
-                .withVolumeMounts(getVolumeMounts())
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
-                .withSecurityContext(securityProvider.cruiseControlContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateCruiseControlContainerSecurityContext)))
-                .build();
-
-        return Collections.singletonList(container);
+    /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {
+        return ContainerUtils.createContainer(
+                CRUISE_CONTROL_CONTAINER_NAME,
+                image,
+                List.of("/opt/cruise-control/cruise_control_run.sh"),
+                securityProvider.cruiseControlContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
+                resources,
+                getEnvVars(),
+                getContainerPortList(),
+                getVolumeMounts(),
+                ProbeGenerator.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/cruise-control/cruise_control_healthcheck.sh").endExec().build(),
+                ProbeGenerator.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/cruise-control/cruise_control_healthcheck.sh").endExec().build(),
+                imagePullPolicy
+        );
     }
 
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
-        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
-        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
 
-        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.toString()));
 
-        varList.add(buildEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(buildEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
-        varList.add(buildEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
-        varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
         ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
         ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
         ModelUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
-            varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
         }
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());
 
-        addContainerEnvsToExistingEnvs(varList, templateCruiseControlContainerEnvVars);
+        ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
         return varList;
     }

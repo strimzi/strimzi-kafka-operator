@@ -46,6 +46,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import io.vertx.core.json.JsonObject;
+import org.hamcrest.Matchers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -193,7 +194,7 @@ public class JmxTransTest {
         // checks on the main Exporter container
         assertThat(containers.get(0).getImage(), is(image));
         assertThat(containers.get(0).getEnv(), is(getExpectedEnvVars()));
-        assertThat(containers.get(0).getPorts().size(), is(0));
+        assertThat(containers.get(0).getPorts(), is(Matchers.nullValue()));
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
         assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge(), is(new IntOrString(1)));
         assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable(), is(new IntOrString(0)));
@@ -463,7 +464,7 @@ public class JmxTransTest {
                 .build();
 
         JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource);
-        assertThat(jmxTrans.templateContainerSecurityContext, is(securityContext));
+        assertThat(jmxTrans.createContainer(null).getSecurityContext(), is(securityContext));
 
         Deployment deployment = jmxTrans.generateDeployment(null, null);
 

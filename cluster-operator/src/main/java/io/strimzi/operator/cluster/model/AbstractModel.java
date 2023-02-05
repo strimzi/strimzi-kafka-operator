@@ -8,18 +8,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.EnvVarSource;
-import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
@@ -27,6 +20,7 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
+import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
@@ -42,13 +36,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
@@ -102,19 +92,19 @@ public abstract class AbstractModel {
         List<EnvVar> envVars = new ArrayList<>(3);
 
         if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null)    {
-            envVars.add(buildEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
+            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
         }
 
         if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null)    {
-            envVars.add(buildEnvVar(ClusterOperatorConfig.HTTPS_PROXY, System.getenv(ClusterOperatorConfig.HTTPS_PROXY)));
+            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.HTTPS_PROXY, System.getenv(ClusterOperatorConfig.HTTPS_PROXY)));
         }
 
         if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null)    {
-            envVars.add(buildEnvVar(ClusterOperatorConfig.NO_PROXY, System.getenv(ClusterOperatorConfig.NO_PROXY)));
+            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.NO_PROXY, System.getenv(ClusterOperatorConfig.NO_PROXY)));
         }
 
         if (System.getenv(ClusterOperatorConfig.FIPS_MODE) != null)    {
-            envVars.add(buildEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
+            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
         }
 
         if (envVars.size() > 0) {
@@ -185,6 +175,7 @@ public abstract class AbstractModel {
      * Template configurations shared between all AbstractModel subclasses.
      */
     protected ResourceTemplate templateServiceAccount;
+    protected ContainerTemplate templateContainer;
 
     /**
      * Constructor
@@ -544,129 +535,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Default null, to be overridden by implementing classes
-     *
-     * @return a list of init containers to add to the StatefulSet/Deployment
-     */
-    protected List<Container> getInitContainers(ImagePullPolicy imagePullPolicy) {
-        return null;
-    }
-
-    /**
-     * To be overridden by implementing classes
-     *
-     * @return a list of containers to add to the StatefulSet/Deployment
-     */
-    protected abstract List<Container> getContainers(ImagePullPolicy imagePullPolicy);
-
-    protected ContainerPort createContainerPort(String name, int port, String protocol) {
-        ContainerPort containerPort = new ContainerPortBuilder()
-                .withName(name)
-                .withProtocol(protocol)
-                .withContainerPort(port)
-                .build();
-        LOGGER.traceCr(reconciliation, "Created container port {}", containerPort);
-        return containerPort;
-    }
-
-    /**
-     * Build an environment variable with the provided name and value
-     *
-     * @param name The name of the environment variable
-     * @param value The value of the environment variable
-     * @return The environment variable object
-     */
-    protected static EnvVar buildEnvVar(String name, String value) {
-        return new EnvVarBuilder().withName(name).withValue(value).build();
-    }
-
-    /**
-     * Build an environment variable which will use a value from a secret
-     *
-     * @param name The name of the environment variable
-     * @param secret The name of the secret where the value is stored
-     * @param key The key under which the value is stored in the secret
-     *
-     * @return The environment variable object
-     */
-    protected static EnvVar buildEnvVarFromSecret(String name, String secret, String key) {
-        return new EnvVarBuilder()
-                .withName(name)
-                .withNewValueFrom()
-                    .withNewSecretKeyRef()
-                        .withName(secret)
-                        .withKey(key)
-                    .endSecretKeyRef()
-                .endValueFrom()
-                .build();
-    }
-
-    /**
-     * Build an environment variable instance with the provided name from a field reference
-     * using the Downward API
-     *
-     * @param name The name of the environment variable
-     * @param field The field path from which the value is set
-     *
-     * @return The environment variable object
-     */
-    protected static EnvVar buildEnvVarFromFieldRef(String name, String field) {
-
-        EnvVarSource envVarSource = new EnvVarSourceBuilder()
-                .withNewFieldRef()
-                    .withFieldPath(field)
-                .endFieldRef()
-                .build();
-
-        return new EnvVarBuilder()
-                .withName(name)
-                .withValueFrom(envVarSource)
-                .build();
-    }
-
-    /**
-     * Gets the given container's environment as a Map
-     *
-     * @param container The container to retrieve the EnvVars from
-     *
-     * @return A map of the environment variables of the given container
-     *         The Environmental variable values indexed by their names
-     */
-    public static Map<String, String> containerEnvVars(Container container) {
-        return container.getEnv().stream().collect(
-            Collectors.toMap(EnvVar::getName, EnvVar::getValue,
-                // On duplicates, last-in wins
-                (u, v) -> v));
-    }
-
-    /**
-     * When ImagePullPolicy is not specified by the user, Kubernetes will automatically set it based on the image
-     *    :latest results in        Always
-     *    anything else results in  IfNotPresent
-     * This causes issues in diffing. To work around this we emulate here the Kubernetes defaults and set the policy accordingly on our side.
-     *
-     * This is applied to the Strimzi Kafka images which use the tag format :latest-kafka-x.y.z but have the same function
-     * as if they were :latest
-     * Therefore they should behave the same with an ImagePullPolicy of Always.
-     *
-     * @param requestedImagePullPolicy  The imagePullPolicy requested by the user (is always preferred when set, ignored when null)
-     * @param image The image used for the container, from its tag we determine the default policy if requestedImagePullPolicy is null
-     *
-     * @return  The Image Pull Policy: Always, Never or IfNotPresent
-     */
-    protected String determineImagePullPolicy(ImagePullPolicy requestedImagePullPolicy, String image)  {
-        if (requestedImagePullPolicy != null)   {
-            return requestedImagePullPolicy.toString();
-        }
-
-        if (image.toLowerCase(Locale.ENGLISH).contains(":latest"))  {
-            return ImagePullPolicy.ALWAYS.toString();
-        } else {
-            return ImagePullPolicy.IFNOTPRESENT.toString();
-        }
-    }
-
-    /**
      * @return  The key under which tge logging configuration is stored in the Logging Config Map
      */
     public String getAncillaryConfigMapKeyLogConfig() {
@@ -700,36 +568,5 @@ public abstract class AbstractModel {
                 ownerReference,
                 templateServiceAccount
         );
-    }
-
-    /**
-     * Adds the supplied list of user configured container environment variables {@see io.strimzi.api.kafka.model.ContainerEnvVar} to the
-     * supplied list of fabric8 environment variables {@see io.fabric8.kubernetes.api.model.EnvVar},
-     * checking first if the environment variable key has already been set in the existing list and then converts them.
-     *
-     * If a key is already in use then the container environment variable will not be added to the environment variable
-     * list and a warning will be logged.
-     *
-     * @param existingEnvs  The list of fabric8 environment variable object that will be added to.
-     * @param containerEnvs The list of container environment variable objects to be converted and added to the existing
-     *                      environment variable list
-     **/
-    protected void addContainerEnvsToExistingEnvs(List<EnvVar> existingEnvs, List<ContainerEnvVar> containerEnvs) {
-        if (containerEnvs != null) {
-            // Create set of env var names to test if any user defined template env vars will conflict with those set above
-            Set<String> predefinedEnvs = new HashSet<>();
-            for (EnvVar envVar : existingEnvs) {
-                predefinedEnvs.add(envVar.getName());
-            }
-
-            // Set custom env vars from the user defined template
-            for (ContainerEnvVar containerEnvVar : containerEnvs) {
-                if (predefinedEnvs.contains(containerEnvVar.getName())) {
-                    LOGGER.warnCr(reconciliation, "User defined container template environment variable {} is already in use and will be ignored",  containerEnvVar.getName());
-                } else {
-                    existingEnvs.add(buildEnvVar(containerEnvVar.getName(), containerEnvVar.getValue()));
-                }
-            }
-        }
     }
 }
