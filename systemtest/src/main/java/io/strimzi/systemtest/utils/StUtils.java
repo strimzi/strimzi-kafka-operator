@@ -47,6 +47,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -621,5 +622,9 @@ public class StUtils {
         }
 
         return cmNames;
+    }
+    public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
+        TestUtils.waitFor(sup.get() + " is matching with" + anotherSup.get(), Constants.GLOBAL_POLL_INTERVAL,
+                Constants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));
     }
 }

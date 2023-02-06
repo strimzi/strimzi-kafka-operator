@@ -1584,16 +1584,17 @@ public class ListenersST extends AbstractST {
         KafkaUser aliceUser = KafkaUserTemplates.tlsUser(testStorage).build();
         resourceManager.createResource(extensionContext, aliceUser);
 
-        String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        String externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
+        StUtils.waitUntilSuppliersAreMatching(
+            // external certs
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            // external secret certs
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt"));
+        StUtils.waitUntilSuppliersAreMatching(
+            // external secret certs
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt"),
+            // internal certs
+            () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()));
 
-        String internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-
-        LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        //External secret cert is same as internal in this case
-        assertThat(externalSecretCerts, is(internalCerts));
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1647,16 +1648,16 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
-
-        internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        String internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
-
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+        StUtils.waitUntilSuppliersAreMatching(
+            // external certs
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            // external secret certs
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt"));
+        StUtils.waitUntilSuppliersAreMatching(
+            // internal certs
+            () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            // internal secret certs
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
@@ -1698,16 +1699,17 @@ public class ListenersST extends AbstractST {
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaSnapshot);
 
-        externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
+        StUtils.waitUntilSuppliersAreMatching(
+                // external certs
+                () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                // external secret certs
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt"));
+        StUtils.waitUntilSuppliersAreMatching(
+                // internal certs
+                () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                // internal secret certs
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
 
-        internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
-
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
             expectedMessageCountForExternalClient,
@@ -1759,16 +1761,16 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
-
-        internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
-
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+        StUtils.waitUntilSuppliersAreMatching(
+                // external certs
+                () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                // external secret certs
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt"));
+        StUtils.waitUntilSuppliersAreMatching(
+                // internal certs
+                () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+                // internal secret certs
+                () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt"));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
