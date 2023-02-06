@@ -398,7 +398,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
                         List.of(createContainer(imagePullPolicy)),
                         getStatefulSetVolumes(isOpenShift),
                         imagePullSecrets,
-                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
                 )
         );
     }
@@ -445,7 +445,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
                         List.of(createContainer(imagePullPolicy)),
                         getPodSetVolumes(getPodName(brokerId), isOpenShift),
                         imagePullSecrets,
-                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod != null ? templatePod.getSecurityContext() : null))
+                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
                 )
         );
     }
@@ -505,7 +505,6 @@ public class ZookeeperCluster extends AbstractStatefulModel {
         );
     }
 
-    @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
@@ -526,7 +525,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
+        varList.addAll(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

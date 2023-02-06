@@ -8,7 +8,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -22,7 +21,6 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
@@ -33,10 +31,7 @@ import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -82,37 +77,6 @@ public abstract class AbstractModel {
     protected static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     protected static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
     protected static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
-
-    /**
-     * Configure statically defined environment variables which are passed to all operands.
-     * This includes HTTP/HTTPS Proxy env vars or the FIPS_MODE.
-     */
-    protected static final List<EnvVar> STATIC_ENV_VARS;
-    static {
-        List<EnvVar> envVars = new ArrayList<>(3);
-
-        if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null)    {
-            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
-        }
-
-        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null)    {
-            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.HTTPS_PROXY, System.getenv(ClusterOperatorConfig.HTTPS_PROXY)));
-        }
-
-        if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null)    {
-            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.NO_PROXY, System.getenv(ClusterOperatorConfig.NO_PROXY)));
-        }
-
-        if (System.getenv(ClusterOperatorConfig.FIPS_MODE) != null)    {
-            envVars.add(ContainerUtils.createEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
-        }
-
-        if (envVars.size() > 0) {
-            STATIC_ENV_VARS = Collections.unmodifiableList(envVars);
-        } else {
-            STATIC_ENV_VARS = Collections.emptyList();
-        }
-    }
 
     protected final Reconciliation reconciliation;
     protected final String cluster;
@@ -470,28 +434,6 @@ public abstract class AbstractModel {
      */
     public String getAncillaryConfigMapName() {
         return ancillaryConfigMapName;
-    }
-
-    /**
-     * Returns a lit of environment variables which are required by all containers.
-     *
-     * Contains:
-     * The mirrored HTTP Proxy environment variables
-     *
-     * @return  List of required environment variables for all containers
-     */
-    protected List<EnvVar> getRequiredEnvVars() {
-        // HTTP Proxy configuration should be passed to all images
-        return STATIC_ENV_VARS;
-    }
-
-    /**
-     * To be overridden by implementing classes
-     *
-     * @return null
-     */
-    protected List<EnvVar> getEnvVars() {
-        return null;
     }
 
     /**
