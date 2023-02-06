@@ -24,7 +24,6 @@ spec:
         replication.factor: 1
         offset-syncs.topic.replication.factor: 1
         sync.topic.acls.enabled: "false"
-        replication.policy.separator: ""
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     heartbeatConnector:
       config:
@@ -32,7 +31,6 @@ spec:
     checkpointConnector:
       config:
         checkpoints.topic.replication.factor: 1
-        replication.policy.separator: ""
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     topicsPattern: ".*"
     groupsPattern: ".*"

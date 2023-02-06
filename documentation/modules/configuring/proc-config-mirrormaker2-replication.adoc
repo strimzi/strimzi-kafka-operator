@@ -125,7 +125,7 @@ spec:
         offset-syncs.topic.replication.factor: 1 # <23>
         sync.topic.acls.enabled: "false" # <24>
         refresh.topics.interval.seconds: 60 # <25>
-        replication.policy.separator: "" # <26>
+        replication.policy.separator: "." # <26>
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" # <27>
     heartbeatConnector: # <28>
       autoRestart:
