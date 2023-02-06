@@ -41,9 +41,9 @@ If you want to make the Kafka Connect API accessible to applications running out
 
 * `LoadBalancer` or `NodePort` type services
 
-* `Ingress` resources
+* `Ingress` resources (Kubernetes only)
 
-* OpenShift routes
+* OpenShift routes (OpenShift only)
 
 NOTE: The connection is insecure, so allow external access advisedly.
 

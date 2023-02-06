@@ -96,7 +96,7 @@ In this example, we assume the name of the secret is `credential-keycloak`.
 
 . Log in to the Admin Console with the username `admin` and the password you obtained.
 +
-Use `https://__HOSTNAME__` to access the Kubernetes ingress.
+Use `https://__HOSTNAME__` to access the Kubernetes `Ingress`.
 +
 You can now upload the example realm to Keycloak using the Admin Console.
 
@@ -175,7 +175,7 @@ STOREPASS=storepass
 echo "Q" | openssl s_client -showcerts -connect $SSO_HOST_PORT 2>/dev/null | awk ' /BEGIN CERTIFICATE/,/END CERTIFICATE/ { print $0 } ' > /tmp/sso.pem
 ----
 +
-The certificate is required as Kubernetes ingress is used to make a secure (HTTPS) connection.
+The certificate is required as Kubernetes `Ingress` is used to make a secure (HTTPS) connection.
 +
 Usually there is not one single certificate, but a certificate chain. You only have to provide the top-most issuer CA, which is listed last in the `/tmp/sso.pem` file.
 You can extract it manually or using the following commands:

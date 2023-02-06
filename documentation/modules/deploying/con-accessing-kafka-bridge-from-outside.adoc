@@ -13,9 +13,9 @@ If you want to make the Kafka Bridge accessible to applications running outside 
 
 * `LoadBalancer` or `NodePort` type services
 
-* `Ingress` resources
+* `Ingress` resources (Kubernetes only)
 
-* OpenShift routes
+* OpenShift routes (OpenShift only)
 
 If you decide to create Services, use the labels from the `selector` of the `_<kafka_bridge_name>_-bridge-service` service to configure the pods to which the service will route the traffic:
 

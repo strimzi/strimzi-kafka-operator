@@ -19,5 +19,8 @@ include::../../modules/deploying/proc-deploy-setup-external-clients.adoc[levelof
 //access through external listeners
 include::../../modules/security/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 include::../../modules/security/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]
+//Kubernetes only
+ifdef::Section[]
 include::../../modules/security/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
+endif::Section[]
 include::../../modules/security/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
