@@ -219,7 +219,7 @@ get_pod_logs() {
     local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
     local count && count=$(echo "$names" | wc -w)
     local logs
-    mkdir -p "$OUT_DIR"/reports/podlogs "$OUT_DIR"/reports/configs
+    mkdir -p "$OUT_DIR"/reports/podlogs
     if [[ "$count" -eq 1 ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
       if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log; fi
@@ -295,6 +295,7 @@ if [[ -n $EVENTS ]]; then
 fi
 
 echo "podlogs"
+mkdir -p "$OUT_DIR"/reports/configs
 PODS=$($KUBE_CLIENT get po -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
 PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
 PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
