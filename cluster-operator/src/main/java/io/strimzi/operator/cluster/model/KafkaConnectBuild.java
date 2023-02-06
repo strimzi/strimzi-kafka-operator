@@ -244,7 +244,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 List.of(createContainer(imagePullPolicy)),
                 getVolumes(isOpenShift),
                 imagePullSecrets,
-                securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod != null ? templatePod.getSecurityContext() : null))
+                securityProvider.kafkaConnectBuildPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
         );
     }
 
@@ -302,7 +302,7 @@ public class KafkaConnectBuild extends AbstractModel {
      */
     private List<EnvVar> getBuildContainerEnvVars() {
         // Add shared environment variables used for all containers
-        List<EnvVar> varList = new ArrayList<>(getRequiredEnvVars());
+        List<EnvVar> varList = new ArrayList<>(ContainerUtils.requiredEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
