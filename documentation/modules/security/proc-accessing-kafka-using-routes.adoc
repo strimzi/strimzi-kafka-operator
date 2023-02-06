@@ -13,7 +13,7 @@ When applied, the configuration creates a dedicated route and service for an ext
 Clients connect to the bootstrap route, which routes them through the bootstrap service to connect to a broker. 
 Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific routes and services.
 
-To connect to a broker, you specify a hostname for the route bootstrap address, as well as the TLS certificate used for authentication.
+To connect to a broker, you specify a hostname for the route bootstrap address, as well as the certificate used for TLS encryption.
 For access using routes, the port is always 443.
 
 WARNING: An OpenShift route address comprises the name of the Kafka cluster, the name of the listener, and the name of the project it is created in.

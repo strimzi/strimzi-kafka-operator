@@ -13,7 +13,7 @@ When applied, the configuration creates a dedicated ingress and service for an e
 Clients connect to the bootstrap ingress, which routes them through the bootstrap service to connect to a broker. 
 Per-broker connections are then established using DNS names, which route traffic from the client to the broker through the broker-specific ingresses and services.
 
-To connect to a broker, you specify a hostname for the ingress bootstrap address, as well as the TLS certificate used for authentication.
+To connect to a broker, you specify a hostname for the ingress bootstrap address, as well as the certificate used for TLS encryption.
 For access using an ingress, the port used in the Kafka client is typically 443.
 
 The procedure shows basic `ingress` listener configuration.

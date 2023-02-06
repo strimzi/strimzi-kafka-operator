@@ -8,7 +8,7 @@
 [role="_abstract"]
 Use loadbalancers to access a Strimzi Kafka cluster from an external client outside the Kubernetes cluster.
 
-To connect to a broker, you specify a hostname and port number for the Kafka bootstrap address, as well as the TLS certificate used for authentication.
+To connect to a broker, you specify a hostname and port number for the Kafka bootstrap address, as well as the certificate used for TLS encryption.
 
 The procedure shows basic `loadbalancer` listener configuration.
 You can use listener properties to enable TLS encryption (`tls`) and specify a client authentication mechanism (`authentication`).
