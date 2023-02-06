@@ -21,7 +21,7 @@ public class UpgradeDowngradeData {
     private String fromVersion;
     private String fromExamples;
     private String urlFrom;
-    private String kafkaVersionsUrlFrom;
+    private String fromKafkaVersionsUrl;
     private String oldestKafka;
     private String defaultKafka;
     private String deployKafkaVersion;
@@ -53,8 +53,8 @@ public class UpgradeDowngradeData {
         return urlFrom;
     }
 
-    public String getKafkaVersionsUrlFrom() {
-        return kafkaVersionsUrlFrom;
+    public String getFromKafkaVersionsUrl() {
+        return fromKafkaVersionsUrl;
     }
 
     public String getOldestKafka() {
@@ -162,8 +162,8 @@ public class UpgradeDowngradeData {
         this.urlFrom = urlFrom;
     }
 
-    public void setKafkaVersionsUrlFrom(String kafkaVersionsUrlFrom) {
-        this.kafkaVersionsUrlFrom = kafkaVersionsUrlFrom;
+    public void setFromKafkaVersionsUrlm(String fromKafkaVersionsUrl) {
+        this.fromKafkaVersionsUrl = fromKafkaVersionsUrl;
     }
 
     public void setOldestKafka(String oldestKafka) {
@@ -216,7 +216,7 @@ public class UpgradeDowngradeData {
 
     public String getDefaultKafkaVersionPerStrimzi() {
         try {
-            List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(getKafkaVersionsUrlFrom());
+            List<TestKafkaVersion> testKafkaVersions = TestKafkaVersion.parseKafkaVersionsFromUrl(getFromKafkaVersionsUrl());
             return testKafkaVersions.stream().filter(TestKafkaVersion::isDefault).collect(Collectors.toList()).get(0).version();
         } catch (Exception e) {
             LOGGER.error("Cannot parse Kafka versions from URL");
@@ -265,7 +265,7 @@ public class UpgradeDowngradeData {
                 ", fromVersion='" + fromVersion + '\'' +
                 ", fromExamples='" + fromExamples + '\'' +
                 ", urlFrom='" + urlFrom + '\'' +
-                ", kafkaVersionsUrlFrom='" + kafkaVersionsUrlFrom + '\'' +
+                ", kafkaVersionsUrlFrom='" + fromKafkaVersionsUrl + '\'' +
                 ", oldestKafka='" + oldestKafka + '\'' +
                 ", defaultKafka='" + defaultKafka + '\'' +
                 ", deployKafkaVersion='" + deployKafkaVersion + '\'' +
