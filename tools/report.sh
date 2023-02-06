@@ -8,12 +8,14 @@ fi
 { # this ensures the entire script is downloaded #
 NAMESPACE=""
 CLUSTER=""
+BRIDGE=""
+CONNECT=""
+MM2=""
 KUBECTL_INSTALLED=false
 OC_INSTALLED=false
 KUBE_CLIENT="kubectl"
-SECRETS_OPT="hidden"
-COMP_NAME=""
 OUT_DIR=""
+SECRETS_OPT="hidden"
 
 # sed non-printable text delimiter
 SD=$(echo -en "\001") && readonly SD
@@ -62,18 +64,24 @@ while getopts "$OPTSPEC" optchar; do
         namespace=*)
           NAMESPACE=${OPTARG#*=} && readonly NAMESPACE
           ;;
-        cluster=*)
-          CLUSTER=${OPTARG#*=} && readonly CLUSTER
-          ;;
-        secrets=*)
-          SECRETS_OPT=${OPTARG#*=} && readonly SECRETS_OPT
-          ;;
-        bridge=*|connect=*|mm2=*)
-          COMP_NAME=${OPTARG#*=} && readonly COMP_NAME
-          ;;
         out-dir=*)
           OUT_DIR=${OPTARG#*=}
           OUT_DIR=${OUT_DIR//\~/$HOME} && readonly OUT_DIR
+          ;;
+        cluster=*)
+          CLUSTER=${OPTARG#*=} && readonly CLUSTER
+          ;;
+        bridge=*)
+          BRIDGE=${OPTARG#*=} && readonly BRIDGE
+          ;;
+        connect=*)
+          CONNECT=${OPTARG#*=} && readonly CONNECT
+          ;;
+        mm2=*)
+          MM2=${OPTARG#*=} && readonly MM2
+          ;;
+        secrets=*)
+          SECRETS_OPT=${OPTARG#*=} && readonly SECRETS_OPT
           ;;
         *)
           error "$USAGE"
@@ -164,7 +172,9 @@ get_namespaced_yamls() {
   mkdir -p "$OUT_DIR"/reports/"$type"
   local resources
   resources=$($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" 2>/dev/null ||true)
-  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$COMP_NAME" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
   echo "$type"
   if [[ -n $resources ]]; then
     for res in $resources; do
@@ -286,7 +296,9 @@ fi
 
 echo "podlogs"
 PODS=$($KUBE_CLIENT get po -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$COMP_NAME" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
 readonly PODS
 for POD in $PODS; do
   echo "    $POD"
