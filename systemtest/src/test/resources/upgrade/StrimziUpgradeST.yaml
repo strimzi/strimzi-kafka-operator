@@ -3,7 +3,7 @@
 #  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "urlFrom"
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
 #  urlFrom: String - url, from which examples are downloaded
-#  kafkaVersionsUrlFrom: String - url, from which is kafka-versions.yaml file downloaded
+#  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
 #  conversionTool:
 #    urlToConversionTool:  String - url, from which conversion tool is downloaded
 #    toConversionTool: String - name of folder, which contains conversion tool
