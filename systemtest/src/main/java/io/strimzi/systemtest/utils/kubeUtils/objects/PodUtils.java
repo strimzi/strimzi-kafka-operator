@@ -62,9 +62,6 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
-        final int stableCount = 10;
-        int[] counter = {0};
-
         TestUtils.waitFor("All pods matching " + selector + "to be ready",
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, ResourceOperation.timeoutForPodsOperation(expectPods),
             () -> {
@@ -84,7 +81,6 @@ public class PodUtils {
                 for (Pod pod : pods) {
                     if (!Readiness.isPodReady(pod)) {
                         LOGGER.debug("Not ready (at least 1 pod not ready: {}/{})", namespaceName, pod.getMetadata().getName());
-                        counter[0] = 0;
                         return false;
                     } else {
                         if (containers) {
@@ -97,17 +93,7 @@ public class PodUtils {
                         }
                     }
                 }
-                // When pod is up, it will check that are rolled pods are stable for next 10 polls and then it return true
-                if (++counter[0] > stableCount) {
-                    LOGGER.debug("Pods {} are ready",
-                            pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")));
-                    return true;
-                } else {
-                    LOGGER.debug("Pods {} are ready, waiting for stabilization ({}/{})",
-                            pods.stream().map(p -> p.getMetadata().getName()).collect(Collectors.joining(", ")),
-                            counter[0], stableCount);
-                    return false;
-                }
+                return true;
             }, onTimeout);
     }
 

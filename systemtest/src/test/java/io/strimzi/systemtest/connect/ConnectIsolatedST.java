@@ -1096,10 +1096,12 @@ class ConnectIsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaConnectResources.deploymentName(clusterName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
+
+        StUtils.waitUntilSupplierIsSatisfied(() -> kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName)).size() == scaleTo &&
+                KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getReplicas() == scaleTo &&
+                KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getReplicas() == scaleTo);
+
         List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
-        assertThat(connectPods.size(), is(4));
-        assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getReplicas(), is(4));
-        assertThat(KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getReplicas(), is(4));
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
@@ -1327,10 +1329,14 @@ class ConnectIsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, connectDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
-        assertThat(kafkaConnect.getStatus().getObservedGeneration(), is(2L));
-        assertThat(kafkaConnect.getMetadata().getLabels().toString(), containsString("another=label"));
-        assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
+
+        StUtils.waitUntilSupplierIsSatisfied(() -> {
+            final KafkaConnect kC = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
+
+            return kC.getStatus().getObservedGeneration() == 2L &&
+                    kC.getMetadata().getLabels().toString().contains("another=label") &&
+                    kC.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+        });
     }
 
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")

@@ -482,9 +482,10 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> mm2Pods = kubeClient(testStorage.getNamespaceName()).listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
 
-        assertThat(mm2Pods.size(), is(scaleTo));
-        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas(), is(scaleTo));
-        assertThat(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas(), is(scaleTo));
+        StUtils.waitUntilSupplierIsSatisfied(() -> kubeClient(testStorage.getNamespaceName()).listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).size() == scaleTo &&
+                KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getReplicas() == scaleTo &&
+                KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getReplicas() == scaleTo);
+
         /*
         observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
         the observed generation is increased
@@ -760,10 +761,15 @@ class MirrorMaker2IsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mm2DepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-        assertThat(kmm2.getStatus().getObservedGeneration(), is(2L));
-        assertThat(kmm2.getMetadata().getLabels().toString(), containsString("another=label"));
-        assertThat(kmm2.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
+        StUtils.waitUntilSupplierIsSatisfied(
+            () -> {
+                final KafkaMirrorMaker2 kMM2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
+
+                return kMM2.getStatus().getObservedGeneration() == 2L &&
+                        kMM2.getMetadata().getLabels().toString().contains("another=label") &&
+                        kMM2.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+            }
+        );
     }
 
     @ParallelNamespaceTest

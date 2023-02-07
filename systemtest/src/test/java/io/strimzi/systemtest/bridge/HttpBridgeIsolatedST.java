@@ -369,10 +369,14 @@ class HttpBridgeIsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), bridgeDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        kafkaBridge = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get();
-        assertThat(kafkaBridge.getStatus().getObservedGeneration(), is(2L));
-        assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("another=label"));
-        assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
+
+        StUtils.waitUntilSupplierIsSatisfied(() -> {
+            final KafkaBridge kB = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get();
+
+            return kB.getStatus().getObservedGeneration() == 2L &&
+                kB.getMetadata().getLabels().toString().contains("another=label") &&
+                kB.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+        });
     }
 
     @ParallelTest
