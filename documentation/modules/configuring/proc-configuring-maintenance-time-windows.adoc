@@ -41,7 +41,5 @@ kubectl apply -f _<kafka_configuration_file>_
 [role="_additional-resources"]
 .Additional resources
 
-Performing rolling updates:
-
-* xref:proc-manual-rolling-update-statefulset-{context}[]
-* xref:proc-manual-rolling-update-pods-{context}[]
+* link:{BookURLDeploying}#proc-manual-rolling-update-statefulset-{context}[Performing a rolling update using a pod management annotation^]
+* link:{BookURLDeploying}#proc-manual-rolling-update-pods-{context}[Performing a rolling update using a pod annotation^]

@@ -16,11 +16,7 @@ You can also create _super users_ that have unconstrained access to Kafka broker
 
 The authentication and authorization mechanisms must match the xref:proc-securing-kafka-{context}[specification for the listener used to access the Kafka brokers].
 
-.Configuring users for secure access to Kafka brokers
-For more information on configuring a `KafkaUser` resource to access Kafka brokers securely, see the following sections:
-
-* link:{BookURLConfiguring}#proc-configuring-kafka-user-str[Securing user access to Kafka^]
-* xref:setup-external-clients-str[Setting up client access to a Kafka cluster using listeners]
+For more information on configuring a `KafkaUser` resource to access Kafka brokers securely, see xref:setup-external-clients-str[].
 
 include::../../modules/security/con-securing-client-labels.adoc[leveloffset=+1]
 include::../../modules/security/con-securing-client-authentication.adoc[leveloffset=+1]

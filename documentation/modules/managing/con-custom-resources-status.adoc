@@ -10,6 +10,8 @@ Status properties provide status information for certain custom resources.
 
 The following table lists the custom resources that provide status information (when deployed) and the schemas that define the status properties.
 
+For more information on the schemas, see the link:{BookURLConfiguring}[Custom resource API reference^].
+
 .Custom resources that provide status information
 [cols="3*",options="header",stripes="none",separator=¦]
 |===
@@ -19,39 +21,39 @@ m¦Strimzi resource
 ¦Publishes status information on...
 
 m¦Kafka
-¦xref:type-KafkaStatus-reference[]
+¦`KafkaStatus` schema reference
 ¦The Kafka cluster
 
 m¦KafkaTopic
-¦xref:type-KafkaTopicStatus-reference[]
+¦`KafkaTopicStatus` schema reference
 ¦Kafka topics in the Kafka cluster
 
 m¦KafkaUser
-¦xref:type-KafkaUserStatus-reference[]
+¦`KafkaUserStatus` schema reference
 ¦Kafka users in the Kafka cluster
 
 m¦KafkaConnect
-¦xref:type-KafkaConnectStatus-reference[]
+¦`KafkaConnectStatus` schema reference
 ¦The Kafka Connect cluster
 
 m¦KafkaConnector
-¦xref:type-KafkaConnectorStatus-reference[]
+¦`KafkaConnectorStatus` schema reference
 ¦`KafkaConnector` resources
 
 m¦KafkaMirrorMaker2
-¦xref:type-KafkaMirrorMaker2Status-reference[]
+¦`KafkaMirrorMaker2Status` schema reference
 ¦The Kafka MirrorMaker 2.0 cluster
 
 m¦KafkaMirrorMaker
-¦xref:type-KafkaMirrorMakerStatus-reference[]
+¦`KafkaMirrorMakerStatus` schema reference
 ¦The Kafka MirrorMaker cluster
 
 m¦KafkaBridge
-¦xref:type-KafkaBridgeStatus-reference[]
+¦`KafkaBridgeStatus` schema reference
 ¦The Strimzi Kafka Bridge
 
 m¦KafkaRebalance
-¦xref:type-KafkaRebalance-reference[]
+¦`KafkaRebalance` schema reference
 ¦The status and results of a rebalance
 
 |===

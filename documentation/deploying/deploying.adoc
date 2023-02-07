@@ -36,5 +36,5 @@ include::assemblies/upgrading/assembly-downgrade.adoc[leveloffset=+1]
 include::assemblies/deploying/assembly-deploy-restart-events.adoc[leveloffset=+1]
 //tuning configuration
 include::assemblies/managing/assembly-tuning-config.adoc[leveloffset=+1]
-//Uninstall the product
-include::assemblies/deploying/assembly-uninstalling.adoc[leveloffset=+1]
+//admin -- managing an installation
+include::assemblies/managing/assembly-management-tasks.adoc[leveloffset=+1]

@@ -12,7 +12,7 @@ The deployment procedures use the example installation files provided with Strim
 The procedures highlight any important configuration considerations, but they do not describe all the configuration options available.
 
 You might want to review the configuration options available for Kafka components before you deploy Strimzi.
-For more information on the configuration options, see link:{BookURLConfiguring}[_Configuring Strimzi_^].
+For more information on the configuration options, see the link:{BookURLConfiguring}[Custom resource API reference^].
 
 == Securing Kafka
 

@@ -42,7 +42,7 @@ spec:
     *topicOperator: {}*
     userOperator: {}
 ----
-. Configure the Topic Operator `spec` using the properties described in link:{BookURLConfiguring}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
+. Configure the Topic Operator `spec` using the properties described in the link:{BookURLConfiguring}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
 +
 Use an empty object (`{}`) if you want all properties to use their default values.
 

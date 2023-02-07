@@ -9,7 +9,11 @@
 This procedure describes how to trigger a rolling update of a Kafka cluster or ZooKeeper cluster.
 
 To trigger the update, you add an annotation to the resource you are using to manage the pods running on the cluster.
-You annotate the `StatefulSet` or `StrimziPodSet` resource (if you enabled the xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[UseStrimziPodSets feature gate]).
+You annotate the `StatefulSet` or `StrimziPodSet` resource (if you enabled the `UseStrimziPodSets` feature gate).
+
+.Prerequisites
+
+To perform a manual rolling update, you need a running Cluster Operator and Kafka cluster.
 
 .Procedure
 

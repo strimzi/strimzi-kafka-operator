@@ -3,12 +3,14 @@
 // managing/assembly-rolling-updates.adoc
 
 [id='proc-manual-rolling-update-pods-{context}']
-= Performing a rolling update using a Pod annotation
+= Performing a rolling update using a pod annotation
 
 This procedure describes how to manually trigger a rolling update of an existing Kafka cluster or ZooKeeper cluster using a Kubernetes `Pod` annotation.
 When multiple pods are annotated, consecutive rolling updates are performed within the same reconciliation run.
 
 .Prerequisites
+
+To perform a manual rolling update, you need a running Cluster Operator and Kafka cluster.
 
 You can perform a rolling update on a Kafka cluster regardless of the topic replication factor used.
 But for Kafka to stay operational during the update, you'll need the following:
