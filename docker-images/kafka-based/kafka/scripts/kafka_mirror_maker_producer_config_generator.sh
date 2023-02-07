@@ -9,6 +9,7 @@ if [ "$KAFKA_MIRRORMAKER_TLS_PRODUCER" = "true" ]; then
     if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_PRODUCER" ]; then
         TLS_CONFIGURATION=$(cat <<EOF
 # TLS / SSL
+security.protocol=${SECURITY_PROTOCOL}
 ssl.truststore.location=/tmp/kafka/producer.truststore.p12
 ssl.truststore.password=${CERTS_STORE_PASSWORD}
 ssl.truststore.type=PKCS12
@@ -18,6 +19,7 @@ EOF
 
     if [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_PRODUCER" ] && [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_PRODUCER" ]; then
         TLS_AUTH_CONFIGURATION=$(cat <<EOF
+security.protocol=${SECURITY_PROTOCOL}
 ssl.keystore.location=/tmp/kafka/producer.keystore.p12
 ssl.keystore.password=${CERTS_STORE_PASSWORD}
 ssl.keystore.type=PKCS12
@@ -72,6 +74,7 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" ]; then
     fi
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
+security.protocol=${SECURITY_PROTOCOL}
 sasl.mechanism=${SASL_MECHANISM}
 sasl.jaas.config=${JAAS_CONFIG}
 ${OAUTH_CALLBACK_CLASS}
@@ -86,8 +89,8 @@ bootstrap.servers=${KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER}
 # Provided configuration
 ${KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER}
 
-security.protocol=${SECURITY_PROTOCOL}
 ${TLS_CONFIGURATION}
 ${TLS_AUTH_CONFIGURATION}
 ${SASL_AUTH_CONFIGURATION}
+${KAFKA_MIRRORMAKER_ADDITIONAL_CONFIGURATION_PRODUCER}
 EOF
