@@ -149,7 +149,7 @@ public class JbodStorageMockTest {
 
         this.operator = new KafkaAssemblyOperator(JbodStorageMockTest.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
     }
 
     @AfterEach

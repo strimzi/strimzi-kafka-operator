@@ -91,7 +91,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
         podSetController.start();
 
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
     }
 
     @AfterEach

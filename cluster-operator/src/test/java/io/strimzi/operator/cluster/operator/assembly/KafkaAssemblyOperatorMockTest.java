@@ -173,7 +173,7 @@ public class KafkaAssemblyOperatorMockTest {
         podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, supplier.kafkaOperator, supplier.strimziPodSetOperator, supplier.podOperations, supplier.metricsProvider, ClusterOperatorConfig.DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         podSetController.start();
 
-        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+        ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), supplier, config);
     }

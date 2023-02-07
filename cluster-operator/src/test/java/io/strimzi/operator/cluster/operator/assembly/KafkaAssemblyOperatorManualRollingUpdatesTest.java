@@ -167,7 +167,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
@@ -300,7 +300,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
@@ -440,7 +440,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
 
         ClusterOperatorConfig config;
         if (useStrimziPodSets) {
-            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+            config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         } else {
             config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "-UseStrimziPodSets");
         }
