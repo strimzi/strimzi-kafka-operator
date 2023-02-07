@@ -9,6 +9,7 @@ if [ "$KAFKA_MIRRORMAKER_TLS_CONSUMER" = "true" ]; then
     if [ -n "$KAFKA_MIRRORMAKER_TRUSTED_CERTS_CONSUMER" ]; then
         TLS_CONFIGURATION=$(cat <<EOF
 # TLS / SSL
+security.protocol=${SECURITY_PROTOCOL}
 ssl.truststore.location=/tmp/kafka/consumer.truststore.p12
 ssl.truststore.password=${CERTS_STORE_PASSWORD}
 ssl.truststore.type=PKCS12
@@ -18,6 +19,7 @@ EOF
 
     if [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_CERT_CONSUMER" ] && [ -n "$KAFKA_MIRRORMAKER_TLS_AUTH_KEY_CONSUMER" ]; then
         TLS_AUTH_CONFIGURATION=$(cat <<EOF
+security.protocol=${SECURITY_PROTOCOL}
 ssl.keystore.location=/tmp/kafka/consumer.keystore.p12
 ssl.keystore.password=${CERTS_STORE_PASSWORD}
 ssl.keystore.type=PKCS12
@@ -72,6 +74,7 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER" ]; then
     fi
 
     SASL_AUTH_CONFIGURATION=$(cat <<EOF
+security.protocol=${SECURITY_PROTOCOL}
 sasl.mechanism=${SASL_MECHANISM}
 sasl.jaas.config=${JAAS_CONFIG}
 ${OAUTH_CALLBACK_CLASS}
@@ -88,8 +91,8 @@ group.id=${KAFKA_MIRRORMAKER_GROUPID_CONSUMER}
 # Provided configuration
 ${KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER}
 
-security.protocol=${SECURITY_PROTOCOL}
 ${TLS_CONFIGURATION}
 ${TLS_AUTH_CONFIGURATION}
 ${SASL_AUTH_CONFIGURATION}
+${KAFKA_MIRRORMAKER_ADDITIONAL_CONFIGURATION_CONSUMER}
 EOF
