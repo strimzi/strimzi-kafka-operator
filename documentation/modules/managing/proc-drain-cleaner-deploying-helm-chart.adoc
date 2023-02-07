@@ -2,7 +2,7 @@
 //
 // deploying/assembly_deploy-cluster-operator.adoc
 
-[id='deploying-cluster-operator-helm-chart-{context}']
+[id='deploying-drain-cleaner-helm-chart-{context}']
 = Deploying the Strimzi Drain Cleaner using Helm
 
 [role="_abstract"]

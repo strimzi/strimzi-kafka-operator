@@ -52,6 +52,6 @@ kubectl apply -f _your-file_
 
 [role="_additional-resources"]
 .Additional resources
-ink:{BookURLConfiguring}#
+
 * link:{BookURLConfiguring}#configuration-listener-network-policy-reference[`networkPolicyPeers` configuration^]
 * {K8sNetworkPolicyPeerAPI}

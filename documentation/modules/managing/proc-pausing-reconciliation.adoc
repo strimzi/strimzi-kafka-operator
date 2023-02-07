@@ -73,5 +73,4 @@ status:
 [role="_additional-resources"]
 .Additional resources
 
-* xref:assembly-customizing-kubernetes-resources-str[Customizing Kubernetes resources]
 * xref:con-custom-resources-status-str[Finding the status of a custom resource]

@@ -27,10 +27,7 @@ NOTE: If the Topic Operator is not deployed, you only need to recover the `Persi
 In this procedure, it is essential that PVs are mounted into the correct PVC to avoid data corruption.
 A `volumeName` is specified for the PVC and this must match the name of the PV.
 
-For more information, see:
-
-* xref:ref-persistent-storage-pvc-{context}[Persistent Volume Claim naming]
-* xref:ref-jbod-storage-pvc-{context}[JBOD and Persistent Volume Claims]
+For more information, see link:{BookURLConfiguring}#ref-persistent-storage-{context}[Persistent storage^].
 
 NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
 If passwords and certificates need to be retained, secrets must be recreated before creating the `KafkaUser` resources.
@@ -221,7 +218,7 @@ spec:
 ----
 --
 <1> Here we show the default configuration, which has no additional properties.
-You specify the required configuration using the properties described in xref:type-EntityTopicOperatorSpec-reference[].
+You specify the required configuration using the properties described in the link:{BookURLConfiguring}#type-EntityTopicOperatorSpec-reference[`EntityTopicOperatorSpec` schema reference^].
 
 . Verify the recovery by listing the `KafkaTopic` resources:
 +

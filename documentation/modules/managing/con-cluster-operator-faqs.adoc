@@ -50,7 +50,7 @@ A `Node` is a cluster-scoped resource, so access to it can only be granted throu
 By default, standard Kubernetes users will not have the privileges necessary to manage the custom resources handled by the Cluster Operator.
 The cluster administrator can grant a user the necessary privileges using Kubernetes RBAC resources.
 
-For more information, see link:{BookURLDeploying}#adding-users-the-strimzi-admin-role-str[Designating Strimzi administrators^] in the _Deploying and Upgrading Strimzi_ guide.
+For more information, see xref:adding-users-the-strimzi-admin-role-str[].
 
 === What do the _failed to acquire lock_ warnings in the log mean?
 

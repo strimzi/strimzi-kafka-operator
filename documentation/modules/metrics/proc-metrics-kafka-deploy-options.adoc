@@ -151,20 +151,19 @@ spec:
       timeoutSeconds: 5
 # ...
 ----
-<1> ADVANCED OPTION: Container image configuration, which is link:{BookURLConfiguring}#con-common-configuration-images-reference[recommended only in special situations].
+<1> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
 <2> A regular expression to specify the consumer groups to include in the metrics.
 <3> A regular expression to specify the topics to include in the metrics.
-<4> link:{BookURLConfiguring}#con-common-configuration-resources-reference[CPU and memory resources to reserve].
+<4> CPU and memory resources to reserve.
 <5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
 <6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
-<7> link:{BookURLConfiguring}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
-<8> link:{BookURLConfiguring}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
-<9> link:{BookURLConfiguring}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
+<7> Customization of deployment templates and pods.
+<8> Healthcheck readiness probes.
+<9> Healthcheck liveness probes.
 
 NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLConfiguring}#type-KafkaExporterTemplate-reference[`KafkaExporterTemplate` schema reference]
-* link:{BookURLConfiguring}#con-common-configuration-prometheus-reference[`metricsConfig` schema reference]
+link:{BookURLConfiguring}[Custom resource API reference^].
