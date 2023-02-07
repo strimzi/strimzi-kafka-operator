@@ -148,7 +148,7 @@ public class LoggingUtils {
      *
      * @return  Log4j properties as a String.
      */
-    private static String createLog4jProperties(OrderedProperties properties, boolean isLog4j2) {
+    /* test */ static String createLog4jProperties(OrderedProperties properties, boolean isLog4j2) {
         return maybeAddMonitorIntervalToExternalLogging(
                 properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource."),
                 isLog4j2

@@ -885,7 +885,7 @@ public class KafkaConnectCluster extends AbstractModel {
      *          is based on Kafka Connect)
      */
     public OrderedProperties defaultLogConfig()   {
-        return LoggingUtils.defaultLogConfig(reconciliation, componentType);
+        return LoggingUtils.defaultLogConfig(reconciliation, this.getClass().getSimpleName());
     }
 
     /**

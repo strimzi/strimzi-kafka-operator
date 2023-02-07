@@ -74,7 +74,6 @@ public abstract class AbstractModel {
     protected final String cluster;
     protected final String namespace;
     protected final String componentName;
-    protected final String componentType;
     protected final OwnerReference ownerReference;
     protected final Labels labels;
 
@@ -147,7 +146,6 @@ public abstract class AbstractModel {
         this.cluster = resource.getMetadata().getName();
         this.namespace = resource.getMetadata().getNamespace();
         this.componentName = componentName;
-        this.componentType = componentType;
         this.labels = Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
         this.ownerReference = ModelUtils.createOwnerReference(resource, false);
     }
@@ -214,7 +212,7 @@ public abstract class AbstractModel {
         return LoggingUtils
                 .loggingConfiguration(
                         reconciliation,
-                        componentType,
+                        this.getClass().getSimpleName(),
                         shouldPatchLoggerAppender,
                         !ANCILLARY_CM_KEY_LOG_CONFIG.equals(getAncillaryConfigMapKeyLogConfig()), // If the file name for the Config Map is not log4j.properties, we assume it is Log4j2
                         logging,

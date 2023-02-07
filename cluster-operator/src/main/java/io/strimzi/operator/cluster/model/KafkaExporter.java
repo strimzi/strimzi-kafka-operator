@@ -65,7 +65,7 @@ public class KafkaExporter extends AbstractModel {
     protected String groupRegex = ".*";
     protected String topicRegex = ".*";
     protected boolean saramaLoggingEnabled;
-    protected String logging;
+    /* test */ String exporterLogging;
     protected String version;
 
     private DeploymentTemplate templateDeployment;
@@ -137,7 +137,7 @@ public class KafkaExporter extends AbstractModel {
             }
             kafkaExporter.image = image;
 
-            kafkaExporter.logging = spec.getLogging();
+            kafkaExporter.exporterLogging = spec.getLogging();
             kafkaExporter.saramaLoggingEnabled = spec.getEnableSaramaLogging();
 
             if (spec.getTemplate() != null) {
@@ -218,7 +218,7 @@ public class KafkaExporter extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, Integer.toString(loggingMapping(logging))));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, Integer.toString(loggingMapping(exporterLogging))));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, version));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
