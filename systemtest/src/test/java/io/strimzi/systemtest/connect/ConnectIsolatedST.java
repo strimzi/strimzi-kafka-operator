@@ -1009,8 +1009,7 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
 
-        TestUtils.waitFor("desired scaled KafkaConnect resource", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName)).size() == scaleTo &&
+        StUtils.waitUntilSupplierIsSatisfied(() -> kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName)).size() == scaleTo &&
                 KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getReplicas() == scaleTo &&
                 KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getReplicas() == scaleTo);
 
@@ -1243,15 +1242,13 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
 
-        TestUtils.waitFor("wait for desired state of Kafka Connect", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                final KafkaConnect kC = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
+        StUtils.waitUntilSupplierIsSatisfied(() -> {
+            final KafkaConnect kC = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
 
-                return kC.getStatus().getObservedGeneration() == 2L &&
-                        kC.getMetadata().getLabels().toString().contains("another=label") &&
-                        kC.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
-            }
-        );
+            return kC.getStatus().getObservedGeneration() == 2L &&
+                    kC.getMetadata().getLabels().toString().contains("another=label") &&
+                    kC.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+        });
     }
 
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")

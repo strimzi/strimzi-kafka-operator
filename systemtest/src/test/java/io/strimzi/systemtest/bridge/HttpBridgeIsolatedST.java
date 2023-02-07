@@ -32,7 +32,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
@@ -371,15 +370,13 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
 
-        TestUtils.waitFor("wait for desired state of Kafka Bridge", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                final KafkaBridge kB = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get();
+        StUtils.waitUntilSupplierIsSatisfied(() -> {
+            final KafkaBridge kB = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get();
 
-                return kB.getStatus().getObservedGeneration() == 2L &&
-                        kB.getMetadata().getLabels().toString().contains("another=label") &&
-                        kB.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
-            }
-        );
+            return kB.getStatus().getObservedGeneration() == 2L &&
+                kB.getMetadata().getLabels().toString().contains("another=label") &&
+                kB.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+        });
     }
 
     @ParallelTest
