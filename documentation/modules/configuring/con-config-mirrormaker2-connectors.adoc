@@ -30,7 +30,7 @@ The following table describes connector properties and the connectors you config
 |✓
 |✓
 
-|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot). It is only used when the `replication.policy.class` is the `DefaultReplicationPolicy`.
+|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot).
 |✓
 |✓
 |✓
