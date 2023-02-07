@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -200,7 +201,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
 
-            kafkaMirrorMakerCluster.setLogging(spec.getLogging());
+            kafkaMirrorMakerCluster.logging = spec.getLogging();
             kafkaMirrorMakerCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
             kafkaMirrorMakerCluster.jvmOptions = spec.getJvmOptions();
 
@@ -472,17 +473,21 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "mirrorMakerDefaultLoggingProperties";
-    }
-
     protected String getInclude() {
         return include;
     }
 
+    /**
+     * Generates the logging configuration as a String. The configuration is generated based on the default logging
+     * configuration files from resources, the (optional) inline logging configuration from the custom resource
+     * and the (optional) external logging configuration in a user-provided ConfigMap.
+     *
+     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
+     *
+     * @return String with the Log4j / Log4j2 properties used for configuration
+     */
     @Override
-    protected boolean shouldPatchLoggerAppender() {
-        return true;
+    public String loggingConfiguration(ConfigMap externalCm) {
+        return loggingConfiguration(externalCm, true);
     }
 }

@@ -995,7 +995,7 @@ public class KafkaAssemblyOperatorTest {
                 .withNamespace(clusterNamespace)
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedKafkaCluster.loggingConfiguration(LOG_KAFKA_CONFIG, null)))
+                        updatedKafkaCluster.loggingConfiguration(null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName))).thenReturn(logCm);
 
@@ -1004,7 +1004,7 @@ public class KafkaAssemblyOperatorTest {
                 .withNamespace(clusterNamespace)
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedZookeeperCluster.loggingConfiguration(LOG_ZOOKEEPER_CONFIG, null)))
+                        updatedZookeeperCluster.loggingConfiguration(null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))).thenReturn(zklogsCm);
         when(mockCmOps.getAsync(clusterNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));

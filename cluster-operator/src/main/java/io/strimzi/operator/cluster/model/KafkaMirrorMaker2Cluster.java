@@ -153,11 +153,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "kafkaMirrorMaker2DefaultLoggingProperties";
-    }
-
     public String getInitContainerClusterRoleBindingName() {
         return KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(cluster, namespace);
     }

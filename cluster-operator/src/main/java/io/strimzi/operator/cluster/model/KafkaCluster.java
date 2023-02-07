@@ -41,7 +41,6 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
@@ -50,7 +49,6 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -356,8 +354,7 @@ public class KafkaCluster extends AbstractStatefulModel {
         }
         result.initImage = initImage;
 
-        Logging logging = kafkaClusterSpec.getLogging();
-        result.setLogging(logging == null ? new InlineLogging() : logging);
+        result.logging = kafkaClusterSpec.getLogging();
         result.gcLoggingEnabled = kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled();
         result.jvmOptions = kafkaClusterSpec.getJvmOptions();
 
@@ -1602,11 +1599,6 @@ public class KafkaCluster extends AbstractStatefulModel {
         return varList;
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "kafkaDefaultLoggingProperties";
-    }
-
     /**
      * Creates the ClusterRoleBinding which is used to bind the Kafka SA to the ClusterRole
      * which permissions the Kafka init container to access K8S nodes (necessary for rack-awareness).
@@ -1847,7 +1839,7 @@ public class KafkaCluster extends AbstractStatefulModel {
         }
 
         // Logging configuration
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm()));
+        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, loggingConfiguration(metricsAndLogging.getLoggingCm()));
         // Broker configuration
         data.put(BROKER_CONFIGURATION_FILENAME, generateSharedBrokerConfiguration());
         // Array with advertised hostnames used for replacement inside the pod
@@ -1949,7 +1941,7 @@ public class KafkaCluster extends AbstractStatefulModel {
      */
     public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
-        String parsedLogging = loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm());
+        String parsedLogging = loggingConfiguration(metricsAndLogging.getLoggingCm());
         List<ConfigMap> configMaps = new ArrayList<>(replicas);
 
         for (int brokerId = 0; brokerId < replicas; brokerId++) {
@@ -1978,9 +1970,18 @@ public class KafkaCluster extends AbstractStatefulModel {
         return this.kafkaVersion;
     }
 
+    /**
+     * Generates the logging configuration as a String. The configuration is generated based on the default logging
+     * configuration files from resources, the (optional) inline logging configuration from the custom resource
+     * and the (optional) external logging configuration in a user-provided ConfigMap.
+     *
+     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
+     *
+     * @return String with the Log4j / Log4j2 properties used for configuration
+     */
     @Override
-    protected boolean shouldPatchLoggerAppender() {
-        return true;
+    public String loggingConfiguration(ConfigMap externalCm) {
+        return loggingConfiguration(externalCm, true);
     }
 
     /**

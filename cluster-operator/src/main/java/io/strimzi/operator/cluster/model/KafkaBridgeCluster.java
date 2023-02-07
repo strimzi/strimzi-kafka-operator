@@ -49,7 +49,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -188,7 +187,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         kafkaBridgeCluster.tracing = spec.getTracing();
         kafkaBridgeCluster.resources = spec.getResources();
-        kafkaBridgeCluster.setLogging(spec.getLogging());
+        kafkaBridgeCluster.logging = spec.getLogging();
         kafkaBridgeCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
         kafkaBridgeCluster.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
@@ -468,11 +467,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     }
 
     @Override
-    protected String getDefaultLogConfigFileName() {
-        return "kafkaBridgeDefaultLoggingProperties";
-    }
-
-    @Override
     public String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
     }
@@ -611,19 +605,5 @@ public class KafkaBridgeCluster extends AbstractModel {
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 
         return varList;
-    }
-
-
-    /**
-     * Transforms properties to log4j2 properties file format and adds property for reloading the config
-     * @param properties map with properties
-     * @return modified string with monitorInterval
-     */
-    @Override
-    public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().containsKey("monitorInterval")) {
-            properties.addPair("monitorInterval", "30");
-        }
-        return super.createLog4jProperties(properties);
     }
 }

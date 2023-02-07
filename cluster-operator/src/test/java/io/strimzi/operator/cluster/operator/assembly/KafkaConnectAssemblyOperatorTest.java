@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
+import io.strimzi.operator.cluster.model.LoggingUtils;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -106,7 +107,7 @@ public class KafkaConnectAssemblyOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties(Reconciliation.DUMMY_RECONCILIATION, "kafkaConnectDefaultLoggingProperties")
+    private static final String LOGGING_CONFIG = LoggingUtils.defaultLogConfig(Reconciliation.DUMMY_RECONCILIATION, "kafka-connect")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;

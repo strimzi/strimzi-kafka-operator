@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
+import io.strimzi.operator.cluster.model.LoggingUtils;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -75,7 +76,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
-    private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties(Reconciliation.DUMMY_RECONCILIATION, "mirrorMakerDefaultLoggingProperties")
+    private static final String LOGGING_CONFIG = LoggingUtils.defaultLogConfig(Reconciliation.DUMMY_RECONCILIATION, "kafka-mirror-maker")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
     private final String producerBootstrapServers = "foo-kafka:9092";

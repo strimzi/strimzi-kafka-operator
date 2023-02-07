@@ -350,11 +350,6 @@ public class JmxTrans extends AbstractModel {
         return varList;
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return null;
-    }
-
     protected static io.fabric8.kubernetes.api.model.Probe jmxTransReadinessProbe(io.strimzi.api.kafka.model.Probe  kafkaJmxMetricsReadinessProbe, String clusterName) {
         String internalBootstrapServiceName = KafkaResources.brokersServiceName(clusterName);
         String metricsPortValue = String.valueOf(KafkaCluster.JMX_PORT);

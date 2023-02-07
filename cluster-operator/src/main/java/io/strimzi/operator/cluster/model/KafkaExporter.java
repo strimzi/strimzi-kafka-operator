@@ -255,11 +255,6 @@ public class KafkaExporter extends AbstractModel {
         return volumeList;
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return null;
-    }
-
     /**
      * Generate the Secret containing the Kafka Exporter certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka and Zookeeper.

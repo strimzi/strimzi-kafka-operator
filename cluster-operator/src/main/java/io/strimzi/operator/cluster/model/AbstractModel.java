@@ -12,8 +12,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.strimzi.api.kafka.model.ExternalLogging;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -26,19 +24,14 @@ import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public abstract class AbstractModel {
     /**
      * Name of the Strimzi Cluster operator a used in various labels
@@ -46,7 +39,6 @@ public abstract class AbstractModel {
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractModel.class.getName());
-    protected static final String LOG4J2_MONITOR_INTERVAL = "30";
 
     protected static final String DEFAULT_JVM_XMS = "128M";
     protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
@@ -82,6 +74,7 @@ public abstract class AbstractModel {
     protected final String cluster;
     protected final String namespace;
     protected final String componentName;
+    protected final String componentType;
     protected final OwnerReference ownerReference;
     protected final Labels labels;
 
@@ -94,7 +87,7 @@ public abstract class AbstractModel {
      * Application configuration
      */
     protected AbstractConfiguration configuration;
-    private Logging logging;
+    protected Logging logging;
     protected boolean gcLoggingEnabled = true;
     protected JvmOptions jvmOptions;
 
@@ -154,6 +147,7 @@ public abstract class AbstractModel {
         this.cluster = resource.getMetadata().getName();
         this.namespace = resource.getMetadata().getNamespace();
         this.componentName = componentName;
+        this.componentType = componentType;
         this.labels = Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
         this.ownerReference = ModelUtils.createOwnerReference(resource, false);
     }
@@ -186,79 +180,11 @@ public abstract class AbstractModel {
         return isMetricsEnabled;
     }
 
-    protected abstract String getDefaultLogConfigFileName();
-
     /**
-     * @return OrderedProperties map with all available loggers for current pod and default values.
-     */
-    public OrderedProperties getDefaultLogConfig() {
-        String logConfigFileName = getDefaultLogConfigFileName();
-        if (logConfigFileName == null || logConfigFileName.isEmpty()) {
-            return new OrderedProperties();
-        }
-        return getOrderedProperties(reconciliation, getDefaultLogConfigFileName());
-    }
-
-    /**
-     * Read a config file and returns the properties in a deterministic order.
-     *
-     * @param reconciliation The reconciliation
-     * @param configFileName The filename.
-     * @return The OrderedProperties of the inputted file.
-     */
-    public static OrderedProperties getOrderedProperties(Reconciliation reconciliation, String configFileName) {
-        if (configFileName == null || configFileName.isEmpty()) {
-            throw new IllegalArgumentException("configFileName must be non-empty string");
-        }
-        OrderedProperties properties = new OrderedProperties();
-        InputStream is = AbstractModel.class.getResourceAsStream("/" + configFileName);
-        if (is == null) {
-            LOGGER.warnCr(reconciliation, "Cannot find resource '{}'", configFileName);
-        } else {
-            try {
-                properties.addStringPairs(is);
-            } catch (IOException e) {
-                LOGGER.warnCr(reconciliation, "Unable to read default log config from '{}'", configFileName);
-            } finally {
-                try {
-                    is.close();
-                } catch (IOException e) {
-                    LOGGER.errorCr(reconciliation, "Failed to close stream. Reason: " + e.getMessage());
-                }
-            }
-        }
-        return properties;
-    }
-
-    /**
-     * Transforms map to log4j properties file format.
-     *
-     * @param properties map of log4j properties.
-     * @return log4j properties as a String.
-     */
-    public String createLog4jProperties(OrderedProperties properties) {
-        return properties.asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
-    }
-
-    /**
-     * @return The logging.
+     * @return The logging configuration
      */
     public Logging getLogging() {
         return logging;
-    }
-
-    protected void setLogging(Logging logging) {
-        this.logging = logging;
-    }
-
-
-    /**
-     * Regarding to used implementation we may need to patch an appender.
-     * If the user does not provide the appender in tuple logger: level, it should be added and warn message printed.
-     * @return true if patching needs to be done due to dynamic configuration, otherwise false
-     */
-    protected boolean shouldPatchLoggerAppender() {
-        return false;
     }
 
     /**
@@ -266,90 +192,34 @@ public abstract class AbstractModel {
      * configuration files from resources, the (optional) inline logging configuration from the custom resource
      * and the (optional) external logging configuration in a user-provided ConfigMap.
      *
-     * @param logging       The logging configuration from the custom resource
-     * @param externalCm    The user-provided ConfigMap with custom Log4j / Log4j2 file
+     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
      *
-     * @return              String with the Log4j / Log4j2 properties used for configuration
+     * @return String with the Log4j / Log4j2 properties used for configuration
      */
-    public String loggingConfiguration(Logging logging, ConfigMap externalCm) {
-        if (logging instanceof InlineLogging) {
-            InlineLogging inlineLogging = (InlineLogging) logging;
-            OrderedProperties newSettings = getDefaultLogConfig();
-
-            if (inlineLogging.getLoggers() != null) {
-                // Inline logging as specified and some loggers are configured
-                if (shouldPatchLoggerAppender()) {
-                    String rootAppenderName = getRootAppenderNamesFromDefaultLoggingConfig(newSettings);
-                    String newRootLogger = inlineLogging.getLoggers().get("log4j.rootLogger");
-                    newSettings.addMapPairs(inlineLogging.getLoggers());
-
-                    if (newRootLogger != null && !rootAppenderName.isEmpty() && !newRootLogger.contains(",")) {
-                        // this should never happen as appender name is added in default configuration
-                        LOGGER.debugCr(reconciliation, "Newly set rootLogger does not contain appender. Setting appender to {}.", rootAppenderName);
-                        String level = newSettings.asMap().get("log4j.rootLogger");
-                        newSettings.addPair("log4j.rootLogger", level + ", " + rootAppenderName);
-                    }
-                } else {
-                    newSettings.addMapPairs(inlineLogging.getLoggers());
-                }
-            }
-
-            return createLog4jProperties(newSettings);
-        } else if (logging instanceof ExternalLogging) {
-            ExternalLogging externalLogging = (ExternalLogging) logging;
-            if (externalLogging.getValueFrom() != null && externalLogging.getValueFrom().getConfigMapKeyRef() != null && externalLogging.getValueFrom().getConfigMapKeyRef().getKey() != null) {
-                if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(externalLogging.getValueFrom().getConfigMapKeyRef().getKey())) {
-                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()));
-                } else {
-                    throw new InvalidResourceException(
-                        String.format("ConfigMap %s with external logging configuration does not exist or doesn't contain the configuration under the %s key.",
-                            externalLogging.getValueFrom().getConfigMapKeyRef().getName(),
-                            externalLogging.getValueFrom().getConfigMapKeyRef().getKey())
-                    );
-                }
-            } else {
-                throw new InvalidResourceException("Property logging.valueFrom has to be specified when using external logging.");
-            }
-        } else {
-            LOGGER.debugCr(reconciliation, "logging is not set, using default loggers");
-            return createLog4jProperties(getDefaultLogConfig());
-        }
-    }
-
-    private String getRootAppenderNamesFromDefaultLoggingConfig(OrderedProperties newSettings) {
-        String logger = newSettings.asMap().get("log4j.rootLogger");
-        String appenderName = "";
-        if (logger != null) {
-            String[] tmp = logger.trim().split(",", 2);
-            if (tmp.length == 2) {
-                appenderName = tmp[1].trim();
-            } else {
-                LOGGER.warnCr(reconciliation, "Logging configuration for root logger does not contain appender.");
-            }
-        } else {
-            LOGGER.warnCr(reconciliation, "Logger log4j.rootLogger not set.");
-        }
-        return appenderName;
+    public String loggingConfiguration(ConfigMap externalCm) {
+        return loggingConfiguration(externalCm, false);
     }
 
     /**
-     * Adds 'monitorInterval=30' to external logging ConfigMap. If ConfigMap already has this value, it is persisted.
+     * Generates the logging configuration as a String. The configuration is generated based on the default logging
+     * configuration files from resources, the (optional) inline logging configuration from the custom resource
+     * and the (optional) external logging configuration in a user-provided ConfigMap.
      *
-     * @param data String with log4j2 properties in format key=value separated by new lines
-     * @return log4j2 configuration with monitorInterval property
+     * @param externalCm                    The user-provided ConfigMap with custom Log4j / Log4j2 file
+     * @param shouldPatchLoggerAppender     Indicator if logger appender should be patched
+     *
+     * @return String with the Log4j / Log4j2 properties used for configuration
      */
-    protected String maybeAddMonitorIntervalToExternalLogging(String data) {
-        OrderedProperties orderedProperties = new OrderedProperties();
-        orderedProperties.addStringPairs(data);
-
-        Optional<String> mi = orderedProperties.asMap().keySet().stream()
-                .filter(key -> key.matches("^monitorInterval$")).findFirst();
-        if (mi.isPresent()) {
-            return data;
-        } else {
-            // do not override custom value
-            return data + "\nmonitorInterval=" + LOG4J2_MONITOR_INTERVAL + "\n";
-        }
+    String loggingConfiguration(ConfigMap externalCm, boolean shouldPatchLoggerAppender) {
+        return LoggingUtils
+                .loggingConfiguration(
+                        reconciliation,
+                        componentType,
+                        shouldPatchLoggerAppender,
+                        !ANCILLARY_CM_KEY_LOG_CONFIG.equals(getAncillaryConfigMapKeyLogConfig()), // If the file name for the Config Map is not log4j.properties, we assume it is Log4j2
+                        logging,
+                        externalCm
+                );
     }
 
     /**
@@ -362,7 +232,7 @@ public abstract class AbstractModel {
      */
     public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm()));
+        data.put(getAncillaryConfigMapKeyLogConfig(), loggingConfiguration(metricsAndLogging.getLoggingCm()));
         if (getMetricsConfigInCm() != null) {
             String parseResult = metricsConfiguration(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {

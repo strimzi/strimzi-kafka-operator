@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -63,6 +64,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -253,7 +255,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         kafkaConnect.resources = spec.getResources();
-        kafkaConnect.setLogging(spec.getLogging());
+        kafkaConnect.logging = spec.getLogging();
         kafkaConnect.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
 
         kafkaConnect.jvmOptions = spec.getJvmOptions();
@@ -673,11 +675,6 @@ public class KafkaConnectCluster extends AbstractModel {
         this.initImage = initImage;
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "kafkaConnectDefaultLoggingProperties";
-    }
-
     /**
      * Set the bootstrap servers to connect to
      *
@@ -869,9 +866,26 @@ public class KafkaConnectCluster extends AbstractModel {
         }
     }
 
+    /**
+     * Generates the logging configuration as a String. The configuration is generated based on the default logging
+     * configuration files from resources, the (optional) inline logging configuration from the custom resource
+     * and the (optional) external logging configuration in a user-provided ConfigMap.
+     *
+     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
+     *
+     * @return String with the Log4j / Log4j2 properties used for configuration
+     */
     @Override
-    protected boolean shouldPatchLoggerAppender() {
-        return true;
+    public String loggingConfiguration(ConfigMap externalCm) {
+        return loggingConfiguration(externalCm, true);
+    }
+
+    /**
+     * @return  Default logging configuration needed to update loggers in Kafka Connect (and Kafka Mirror Maker 2 which
+     *          is based on Kafka Connect)
+     */
+    public OrderedProperties defaultLogConfig()   {
+        return LoggingUtils.defaultLogConfig(reconciliation, componentType);
     }
 
     /**

@@ -40,10 +40,6 @@ public class AbstractModelTest {
             super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, resource.getMetadata().getName() + "-model-app", "model-app");
         }
 
-        @Override
-        protected String getDefaultLogConfigFileName() {
-            return null;
-        }
     }
 
     @ParallelTest

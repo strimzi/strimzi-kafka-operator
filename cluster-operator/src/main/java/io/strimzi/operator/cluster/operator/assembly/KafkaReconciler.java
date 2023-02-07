@@ -642,7 +642,7 @@ public class KafkaReconciler {
         return configMapOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
                 .compose(existingConfigMaps -> {
                     // This is used during Kafka rolling updates -> we have to store it for later
-                    this.logging = kafka.loggingConfiguration(kafka.getLogging(), metricsAndLogging.getLoggingCm());
+                    this.logging = kafka.loggingConfiguration(metricsAndLogging.getLoggingCm());
                     this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
 
                     List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
