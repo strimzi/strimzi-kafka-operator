@@ -337,8 +337,8 @@ public class KafkaUserOperator {
                 caCert,
                 caKey,
                 userSecret,
-                config.getClientCaValidityDays(),
-                config.getClientCaRenewalDays(),
+                config.getClientsCaValidityDays(),
+                config.getClientsCaRenewalDays(),
                 config.getMaintenanceWindows(),
                 Clock.systemUTC()
         );

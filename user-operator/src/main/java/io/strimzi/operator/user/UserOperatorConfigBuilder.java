@@ -31,8 +31,8 @@ public class UserOperatorConfigBuilder {
         map.put(UserOperatorConfig.STRIMZI_EO_KEY_SECRET_NAME, config.getEuoKeySecretName());
         map.put(UserOperatorConfig.STRIMZI_CA_NAMESPACE, config.getCaNamespace());
         map.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, config.getSecretPrefix());
-        map.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, String.valueOf(config.getClientCaRenewalDays()));
-        map.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, String.valueOf(config.getClientCaValidityDays()));
+        map.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, String.valueOf(config.getClientsCaRenewalDays()));
+        map.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, String.valueOf(config.getClientsCaValidityDays()));
         map.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, String.valueOf(config.isAclsAdminApiSupported()));
         map.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, String.valueOf(config.isKraftEnabled()));
         map.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, String.valueOf(config.getScramPasswordLength()));

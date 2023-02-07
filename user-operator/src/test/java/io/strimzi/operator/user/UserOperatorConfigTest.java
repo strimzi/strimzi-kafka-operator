@@ -52,8 +52,8 @@ public class UserOperatorConfigTest {
         assertThat(config.getLabels(), is(EXPECTED_LABELS));
         assertThat(config.getCaCertSecretName(), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME)));
         assertThat(config.getCaNamespace(), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE)));
-        assertThat(config.getClientCaValidityDays(), is(1000));
-        assertThat(config.getClientCaRenewalDays(), is(10));
+        assertThat(config.getClientsCaValidityDays(), is(1000));
+        assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
         assertThat(config.isKraftEnabled(), is(true));
         assertThat(config.getScramPasswordLength(), is(20));

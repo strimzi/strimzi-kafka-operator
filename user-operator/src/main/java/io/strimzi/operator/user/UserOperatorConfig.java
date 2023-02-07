@@ -484,14 +484,14 @@ public class UserOperatorConfig {
     /**
      * @return The number of certificates validity days.
      */
-    public int getClientCaValidityDays() {
+    public int getClientsCaValidityDays() {
         return get(CERTS_VALIDITY_DAYS);
     }
 
     /**
      * @return The number of certificates renewal days.
      */
-    public int getClientCaRenewalDays() {
+    public int getClientsCaRenewalDays() {
         return get(CERTS_RENEWAL_DAYS);
     }
 
@@ -509,8 +509,8 @@ public class UserOperatorConfig {
                 ", euoKeySecretName='" + getEuoKeySecretName() + '\'' +
                 ", caNamespace='" + getCaNamespace() + '\'' +
                 ", secretPrefix='" + getSecretPrefix() + '\'' +
-                ", clientsCaValidityDays=" + getClientCaValidityDays() +
-                ", clientsCaRenewalDays=" + getClientCaRenewalDays() +
+                ", clientsCaValidityDays=" + getClientsCaValidityDays() +
+                ", clientsCaRenewalDays=" + getClientsCaRenewalDays() +
                 ", aclsAdminApiSupported=" + isAclsAdminApiSupported() +
                 ", kraftEnabled=" + isKraftEnabled() +
                 ", scramPasswordLength=" + getScramPasswordLength() +
