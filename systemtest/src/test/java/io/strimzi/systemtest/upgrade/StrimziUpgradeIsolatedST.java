@@ -66,7 +66,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist();
         UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
 
-        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromVersion(), acrossUpgradeData.getStartingKafkaVersion());
+        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
         upgradeKafkaVersion.setVersion(null);
 
         TestStorage testStorage = new TestStorage(extensionContext);
@@ -108,7 +108,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
 
         TestStorage testStorage = new TestStorage(extensionContext);
-        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromVersion(), acrossUpgradeData.getStartingKafkaVersion());
+        UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, clusterOperator.getDeploymentNamespace());
