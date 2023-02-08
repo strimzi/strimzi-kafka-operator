@@ -318,6 +318,7 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @KRaftNotSupported
     void testCustomClusterCaAndClientsCaCertificates(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
