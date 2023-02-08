@@ -6,11 +6,11 @@ There is no _definitive_ guide as every version might bring surprises.
 But these are some of the tasks you usually have to do.
 
 * If you add a new minor version, add new 3rd party libs directory to `docker-images/artifacts/kafka-thirdparty-libs`
-  * This directory is typically shared by all patch releases which are part of the same minor release. So it is named `X.Y.x` - e.g. `1.1.x`
+  * This directory is typically shared by all patch releases which are part of the same minor release. So it is named `<MAJOR>.<MINOR>.x`- e.g. `1.1.x`
   * Add a `pom.xml` file with dependencies and make sure they are aligned with the dependencies inside Kafka (e.g. use similar version of Jackson libraries)
-  * (Typically, you would do this by copying the directory for the previous minor version)
+  * Typically, you would do this by copying the directory for the previous minor version
 * Add the new version to `kafka-versions.yaml` file
-  * If the version you are adding is the latest, mark it as default and unmark the previous one to not be default anymore
+  * If the version you are adding is the latest, mark it as `default: true` and mark the previous one as `default: false`
 * If the version you are adding is the latest
   * Update the Kafka versions and protocol versions in the documentation `attributes.adoc`
   * If needed, update the examples (only in the `packaging/examples` directory):
@@ -25,7 +25,7 @@ But these are some of the tasks you usually have to do.
   You will need to commit also all the files it updates before opening a PR.
 * Add a `CHANGELOG.md` record
 * Run unit tests
-* Run system tests
+* Run system tests (typically as part of the PR on Azure Pipelines)
 
 ## Removing Kafka version
 
