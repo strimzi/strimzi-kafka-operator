@@ -314,16 +314,21 @@ class HttpBridgeIsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
-        List<String> bridgePods = kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
-        assertThat(bridgePods.size(), is(4));
-        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getSpec().getReplicas(), is(4));
-        assertThat(KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getReplicas(), is(4));
-        /*
-        observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
-        the observed generation is increased
-        */
-        assertThat(bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getObservedGeneration(), is(true));
-        for (String pod : bridgePods) {
+        StUtils.waitUntilSupplierIsSatisfied(
+            () -> {
+                List<String> bridgePods = kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+
+                return bridgePods.size() == 4 &&
+                    KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getSpec().getReplicas() == 4 &&
+                    KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getReplicas() == 4 &&
+                    /*
+                    observed generation should be higher than before scaling -> after change of spec and successful reconciliation,
+                    the observed generation is increased
+                    */
+                    bridgeObsGen < KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(bridgeName).get().getStatus().getObservedGeneration();
+            });
+
+        for (final String pod : kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName)) {
             assertThat(pod.contains(bridgeGenName), is(true));
         }
     }
