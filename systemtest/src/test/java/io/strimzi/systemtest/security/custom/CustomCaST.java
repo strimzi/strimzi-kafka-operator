@@ -69,7 +69,6 @@ public class CustomCaST extends AbstractST {
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Using ZK secrets and waiting for the ZK pods are impossible in KRaft mode.")
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         final TestStorage testStorage = new TestStorage(extensionContext);
         // 0. Generate root and intermediate certificate authority with cluster CA
@@ -157,7 +156,6 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Using ZK secrets and waiting for the ZK pods are impossible in KRaft mode.")
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         final TestStorage testStorage = new TestStorage(extensionContext);
         // 0. Generate root and intermediate certificate authority with clients CA
@@ -320,7 +318,6 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Using ZK secrets and waiting for the ZK pods are impossible in KRaft mode.")
     void testCustomClusterCaAndClientsCaCertificates(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
@@ -414,7 +411,6 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Using ZK secrets and waiting for the ZK pods are impossible in KRaft mode.")
     void testCustomClusterCACertificateRenew(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
