@@ -69,7 +69,7 @@ public class ResourceUtils {
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {
-        return createUserOperatorConfig(Map.of(), true, false, "32", null);
+        return createUserOperatorConfig(Map.of(), true, false, "32", "");
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {
