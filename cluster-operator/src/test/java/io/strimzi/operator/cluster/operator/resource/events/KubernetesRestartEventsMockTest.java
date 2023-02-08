@@ -466,7 +466,7 @@ public class KubernetesRestartEventsMockTest {
             Optional<Event> maybeEvent = events.stream().filter(e -> e.getReason().equals(expectedReasonPascal)).findFirst();
 
             if (maybeEvent.isEmpty()) {
-                List<String> foundEvents = listRestartEvents().stream().map(Event::getReason).collect(Collectors.toList());
+                List<String> foundEvents = listRestartEvents().stream().map(Event::getReason).toList();
                 throw new AssertionError("Expected restart event " + expectedReasonPascal + " not found. Found these events: " + foundEvents);
             }
 

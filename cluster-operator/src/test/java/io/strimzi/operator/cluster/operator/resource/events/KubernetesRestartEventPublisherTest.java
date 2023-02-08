@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.V1EventingAPIGroupDSL;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
-import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -99,7 +98,6 @@ class KubernetesRestartEventPublisherTest {
     @Test
     void testOneEventPublishedPerReason() {
         Pod mockPod = Mockito.mock(Pod.class);
-        Reconciliation mockReconciliation = Mockito.mock(Reconciliation.class);
         ObjectMeta mockPodMeta = new ObjectMetaBuilder().withName("pod").withNamespace("ns").build();
         when(mockPod.getMetadata()).thenReturn(mockPodMeta);
 
@@ -129,12 +127,15 @@ class KubernetesRestartEventPublisherTest {
 
     @Test
     void testPopulatesExpectedFields() {
+        @SuppressWarnings("unchecked")
         Resource<Event> mockEventResource = mock(Resource.class);
 
+        @SuppressWarnings("unchecked")
         NonNamespaceOperation<Event, EventList, Resource<Event>> nonNamespaceOp = mock(NonNamespaceOperation.class);
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         when(nonNamespaceOp.resource(eventCaptor.capture())).thenReturn(mockEventResource);
 
+        @SuppressWarnings("unchecked")
         MixedOperation<Event, EventList, Resource<Event>> mixedOp = mock(MixedOperation.class);
         when(mixedOp.inNamespace(eq(NAMESPACE))).thenReturn(nonNamespaceOp);
 

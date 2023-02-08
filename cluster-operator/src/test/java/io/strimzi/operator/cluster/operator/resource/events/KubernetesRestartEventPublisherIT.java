@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.events.v1.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -28,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
 
 import static java.util.stream.Collectors.toSet;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -42,7 +40,6 @@ public class KubernetesRestartEventPublisherIT {
     private static KubeCmdClient<?> cmdClient;
     private static final String TEST_NAMESPACE = "v1-test-ns";
     private Pod pod;
-
 
     @BeforeAll
     static void beforeAll() {
@@ -61,8 +58,8 @@ public class KubernetesRestartEventPublisherIT {
     @BeforeEach
     void setup() {
         String podName = "test-pod-" + new Random().nextInt();
-        pod = buildPod(TEST_NAMESPACE, podName);
-        kubeClient.pods().inNamespace(TEST_NAMESPACE).create(pod);
+        pod = buildPod(podName);
+        kubeClient.pods().inNamespace(TEST_NAMESPACE).resource(pod).create();
         cmdClient.namespace(TEST_NAMESPACE).waitForResourceCreation("pod", podName);
     }
 
@@ -74,7 +71,7 @@ public class KubernetesRestartEventPublisherIT {
 
     @AfterEach
     void teardown() {
-        kubeClient.pods().inNamespace(TEST_NAMESPACE).delete(pod);
+        kubeClient.pods().inNamespace(TEST_NAMESPACE).resource(pod).delete();
         cmdClient.namespace(TEST_NAMESPACE).waitForResourceDeletion("pod", pod.getMetadata().getName());
         kubeClient.events().v1().events().inNamespace(TEST_NAMESPACE).delete();
     }
@@ -106,11 +103,11 @@ public class KubernetesRestartEventPublisherIT {
                 .build();
     }
 
-    private static Pod buildPod(String namespace, String podName) {
+    private static Pod buildPod(String podName) {
         return new PodBuilder()
                 .withNewMetadata()
                 .withName(podName)
-                .withNamespace(namespace)
+                .withNamespace(TEST_NAMESPACE)
                 .withAnnotations(new HashMap<>())
                 .endMetadata()
                 .withNewSpec()
@@ -124,10 +121,5 @@ public class KubernetesRestartEventPublisherIT {
                 .withTerminationGracePeriodSeconds(0L)
                 .endSpec()
                 .build();
-    }
-
-    static boolean checkClusterVersionMatches(BiFunction<Integer, Integer, Boolean> majorMinorPred) {
-        VersionInfo version = KubeClusterResource.getInstance().client().getClient().getKubernetesVersion();
-        return majorMinorPred.apply(Integer.parseInt(version.getMajor()), Integer.parseInt(version.getMinor()));
     }
 }
