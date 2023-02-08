@@ -173,11 +173,6 @@ public class EntityOperator extends AbstractModel {
         return userOperator;
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return null;
-    }
-
     /**
      * Generates the Entity Operator deployment
      *

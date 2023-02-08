@@ -21,12 +21,10 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -222,8 +220,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
             zk.livenessProbeOptions = zookeeperClusterSpec.getLivenessProbe();
         }
 
-        Logging logging = zookeeperClusterSpec.getLogging();
-        zk.setLogging(logging == null ? new InlineLogging() : logging);
+        zk.logging = zookeeperClusterSpec.getLogging();
         zk.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
 
         // Parse different types of metrics configurations
@@ -678,11 +675,6 @@ public class ZookeeperCluster extends AbstractStatefulModel {
         } else {
             return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
         }
-    }
-
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "zookeeperDefaultLoggingProperties";
     }
 
     /**

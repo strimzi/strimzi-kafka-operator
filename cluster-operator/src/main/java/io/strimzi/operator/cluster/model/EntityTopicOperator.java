@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,7 +131,7 @@ public class EntityTopicOperator extends AbstractModel {
             result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
             result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
-            result.setLogging(topicOperatorSpec.getLogging());
+            result.logging = topicOperatorSpec.getLogging();
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
             result.resources = topicOperatorSpec.getResources();
@@ -240,19 +239,6 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     /**
-     * Transforms properties to log4j2 properties file format and adds property for reloading the config
-     * @param properties map with properties
-     * @return modified string with monitorInterval
-     */
-    @Override
-    public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().containsKey("monitorInterval")) {
-            properties.addPair("monitorInterval", "30");
-        }
-        return super.createLog4jProperties(properties);
-    }
-
-    /**
      * Generate the Secret containing the Entity Topic Operator certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Entity Topic Operator private key.
@@ -275,11 +261,6 @@ public class EntityTopicOperator extends AbstractModel {
      */
     public String watchedNamespace() {
         return watchedNamespace;
-    }
-
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "entityTopicOperatorDefaultLoggingProperties";
     }
 
     @Override

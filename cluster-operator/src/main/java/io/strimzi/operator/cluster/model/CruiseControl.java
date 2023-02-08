@@ -19,11 +19,9 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -41,7 +39,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -224,8 +221,7 @@ public class CruiseControl extends AbstractModel {
                 cruiseControl.livenessProbeOptions = ccSpec.getLivenessProbe();
             }
 
-            Logging logging = ccSpec.getLogging();
-            cruiseControl.setLogging(logging == null ? new InlineLogging() : logging);
+            cruiseControl.logging = ccSpec.getLogging();
 
             cruiseControl.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
             cruiseControl.jvmOptions = ccSpec.getJvmOptions();
@@ -421,11 +417,6 @@ public class CruiseControl extends AbstractModel {
         return varList;
     }
 
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "cruiseControlDefaultLoggingProperties";
-    }
-
     /**
      * Creates Cruise Control API auth usernames, passwords, and credentials file
      *
@@ -539,20 +530,5 @@ public class CruiseControl extends AbstractModel {
     @Override
     public String getAncillaryConfigMapKeyLogConfig() {
         return "log4j2.properties";
-    }
-
-    /**
-     * Transforms properties to log4j2 properties file format and adds property for reloading the config
-     *
-     * @param properties map with properties
-     *
-     * @return modified string with monitorInterval
-     */
-    @Override
-    public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().containsKey("monitorInterval")) {
-            properties.addPair("monitorInterval", "30");
-        }
-        return super.createLog4jProperties(properties);
     }
 }

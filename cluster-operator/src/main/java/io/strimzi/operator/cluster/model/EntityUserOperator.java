@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,7 +131,7 @@ public class EntityUserOperator extends AbstractModel {
             result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
-            result.setLogging(userOperatorSpec.getLogging());
+            result.logging = userOperatorSpec.getLogging();
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = userOperatorSpec.getJvmOptions();
             result.resources = userOperatorSpec.getResources();
@@ -268,19 +267,6 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     /**
-     * Transforms properties to log4j2 properties file format and adds property for reloading the config
-     * @param properties map with properties
-     * @return modified string with monitorInterval
-     */
-    @Override
-    public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().containsKey("monitorInterval")) {
-            properties.addPair("monitorInterval", "30");
-        }
-        return super.createLog4jProperties(properties);
-    }
-
-    /**
      * Generate the Secret containing the Entity User Operator certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Entity User Operator private key.
@@ -301,11 +287,6 @@ public class EntityUserOperator extends AbstractModel {
      */
     public String watchedNamespace() {
         return watchedNamespace;
-    }
-
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "entityUserOperatorDefaultLoggingProperties";
     }
 
     @Override

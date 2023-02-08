@@ -342,18 +342,6 @@ public class KafkaConnectBuild extends AbstractModel {
     }
 
     /**
-     * This method should return the name of the logging configuration file. But the Kaniko builder is not using any
-     * logging configuration, so this currently just returns an unsupported exception (but it has to exist due to the
-     * inheritance).
-     *
-     * @return  Name of the default logging configuration file
-     */
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        throw new UnsupportedOperationException("Kafka Connect Build does not have any logging properties");
-    }
-
-    /**
      * Generates a BuildConfig which will be used to build new container images with additional connector plugins on OCP.
      *
      * @param dockerfile    Dockerfile which should be built by the BuildConfig

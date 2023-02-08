@@ -133,7 +133,7 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, new KafkaExporterSpec(), null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
         assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
-        assertThat(ke.logging, is("info"));
+        assertThat(ke.exporterLogging, is("info"));
         assertThat(ke.groupRegex, is(".*"));
         assertThat(ke.topicRegex, is(".*"));
         assertThat(ke.saramaLoggingEnabled, is(false));
@@ -144,7 +144,7 @@ public class KafkaExporterTest {
         assertThat(ke.namespace, is(namespace));
         assertThat(ke.cluster, is(cluster));
         assertThat(ke.getImage(), is(keImage));
-        assertThat(ke.logging, is("debug"));
+        assertThat(ke.exporterLogging, is("debug"));
         assertThat(ke.groupRegex, is("my-group-.*"));
         assertThat(ke.topicRegex, is("my-topic-.*"));
         assertThat(ke.saramaLoggingEnabled, is(true));
