@@ -2,6 +2,20 @@ apiVersion: v1
 entries:
   strimzi-drain-cleaner:
   - apiVersion: v2
+    appVersion: 0.4.1
+    created: "2023-02-07T21:19:38.627334+01:00"
+    description: Utility which helps with moving the Apache Kafka pods deployed by
+      Strimzi from Kubernetes nodes which are being drained.
+    digest: c1cb46f37aba278587a15ad7fd98c3a553d1f3463daa339876ec8debb4e6a89b
+    home: https://strimzi.io/
+    name: strimzi-drain-cleaner
+    sources:
+    - https://github.com/strimzi/drain-cleaner
+    type: application
+    urls:
+    - https://github.com/strimzi/drain-cleaner/releases/download/0.4.1/strimzi-drain-cleaner-helm-3-chart-0.4.1.tgz
+    version: 0.4.1
+  - apiVersion: v2
     appVersion: 0.4.0
     created: "2023-02-02T01:07:44.095478+01:00"
     description: Utility which helps with moving the Apache Kafka pods deployed by
@@ -16,6 +30,34 @@ entries:
     - https://github.com/strimzi/drain-cleaner/releases/download/0.4.0/strimzi-drain-cleaner-helm-3-chart-0.4.0.tgz
     version: 0.4.0
   strimzi-kafka-operator:
+  - apiVersion: v2
+    appVersion: 0.33.1
+    created: "2023-02-05T23:04:09.446241+01:00"
+    description: 'Strimzi: Apache Kafka running on Kubernetes'
+    digest: c3dc1b9ab0f1659627149e963f24ae76bf8bb389ed081c193314d7dd0601c72f
+    home: https://strimzi.io/
+    icon: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/main/documentation/logo/strimzi_logo.png
+    keywords:
+    - kafka
+    - queue
+    - stream
+    - event
+    - messaging
+    - datastore
+    - topic
+    maintainers:
+    - name: Frawless
+    - name: ppatierno
+    - name: samuel-hawker
+    - name: scholzj
+    - name: tombentley
+    - name: sknot-rh
+    name: strimzi-kafka-operator
+    sources:
+    - https://github.com/strimzi/strimzi-kafka-operator
+    urls:
+    - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.1/strimzi-kafka-operator-helm-3-chart-0.33.1.tgz
+    version: 0.33.1
   - apiVersion: v2
     appVersion: 0.33.0
     created: "2023-01-19T20:54:08.226001+01:00"
@@ -1176,4 +1218,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: "2023-02-02T01:07:44.095048+01:00"
+generated: "2023-02-07T21:19:38.626755+01:00"
