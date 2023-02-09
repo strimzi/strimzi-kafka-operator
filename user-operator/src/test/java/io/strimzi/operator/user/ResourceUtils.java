@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
+import io.strimzi.operator.user.UserOperatorConfig.UserOperatorConfigBuilder;
 
 import java.util.Base64;
 import java.util.Collections;

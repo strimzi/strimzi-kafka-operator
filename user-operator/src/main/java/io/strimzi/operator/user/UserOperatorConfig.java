@@ -252,10 +252,6 @@ public class UserOperatorConfig {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
 
-    public static Collection<ConfigParameter<?>> values() {
-        return CONFIG_VALUES.values();
-    }
-
     /**
      * Checks if the configuration values are known or not.
      *
@@ -316,6 +312,40 @@ public class UserOperatorConfig {
     public int hashCode() {
         return Objects.hash(map);
     }
+
+    /**
+     * User Operator Configuration Builder class
+     */
+    protected static class UserOperatorConfigBuilder {
+
+        private final Map<String, String> map;
+
+        protected UserOperatorConfigBuilder() {
+            this.map = new HashMap<>();
+        }
+
+        protected  UserOperatorConfigBuilder(UserOperatorConfig config) {
+            this.map = new HashMap<>();
+
+            for (ConfigParameter<?> configParameter: CONFIG_VALUES.values()) {
+                if (configParameter.key().equals(STRIMZI_LABELS)) {
+                    map.put(configParameter.key(), config.get(LABELS).toSelectorString());
+                } else {
+                    map.put(configParameter.key(), String.valueOf(config.get(configParameter)));
+                }
+            }
+        }
+
+        protected UserOperatorConfigBuilder with(String key, String value) {
+            map.put(key, value);
+            return this;
+        }
+
+        protected UserOperatorConfig build() {
+            return new UserOperatorConfig(this.map);
+        }
+    }
+
 
     /**
      * @return  namespace in which the operator runs and creates resources
