@@ -10,14 +10,7 @@ import io.strimzi.operator.common.operator.resource.AbstractConfig;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Set;
-import java.util.Collections;
+import java.util.*;
 
 import static io.strimzi.operator.common.operator.resource.AbstractConfig.BOOLEAN;
 import static io.strimzi.operator.common.operator.resource.AbstractConfig.LABEL_PREDICATE;
@@ -257,6 +250,10 @@ public class UserOperatorConfig {
      */
     public static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
+    }
+
+    public static Collection<ConfigParameter<?>> values() {
+        return CONFIG_VALUES.values();
     }
 
     /**

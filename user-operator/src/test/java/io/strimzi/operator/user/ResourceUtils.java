@@ -40,21 +40,19 @@ public class ResourceUtils {
     public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength, String secretPrefix) {
 
         UserOperatorConfigBuilder config = new UserOperatorConfigBuilder()
-                                                   .withNamespace(NAMESPACE)
-                                                   .withLabels(labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
-                                                   .withCaCertSecretName(CA_CERT_NAME)
-                                                   .withCaKeySecretName(CA_KEY_NAME)
-                                                   .withAclsAdminApiSupported(aclsAdminApiSupported)
-                                                   .withKraftEnabled(useKRaft)
-                                                   .withScramPasswordLength(Integer.parseInt(scramShaPasswordLength))
-                                                   .withSecretPrefix(secretPrefix);
+                                                   .with(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE)
+                                                   .with(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
+                                                   .with(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME)
+                                                   .with(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME)
+                                                   .with(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported))
+                                                   .with(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, String.valueOf(useKRaft));
 
         if (!scramShaPasswordLength.equals("32")) {
-            config.withScramPasswordLength(Integer.parseInt(scramShaPasswordLength));
+            config.with(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
         }
 
         if (secretPrefix != null) {
-            config.withSecretPrefix(secretPrefix);
+            config.with(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
         }
 
         return config.build();
@@ -62,9 +60,9 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
         return new UserOperatorConfigBuilder(createUserOperatorConfig(labels, false, false, "32", secretPrefix))
-                      .withReconciliationIntervalMs(fullReconciliationInterval)
-                      .withWorkQueueSize(queueSize)
-                      .withControllerThreadPoolSize(poolSize)
+                      .with(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, String.valueOf(fullReconciliationInterval))
+                      .with(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, String.valueOf(queueSize))
+                      .with(UserOperatorConfig.STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE, String.valueOf(poolSize))
                       .build();
     }
 
@@ -74,7 +72,7 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {
         return new UserOperatorConfigBuilder(createUserOperatorConfig())
-                       .withScramPasswordLength(Integer.parseInt(scramShaPasswordLength))
+                       .with(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength)
                        .build();
     }
 
