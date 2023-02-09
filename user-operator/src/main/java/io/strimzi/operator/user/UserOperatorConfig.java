@@ -8,7 +8,6 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractConfig;
 
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
@@ -83,8 +82,6 @@ public class UserOperatorConfig {
     static final String STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE = "STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE";
     static final String STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS = "STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS";
     static final String STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE";
-
-    // Default values
 
     /**
      * Namespace in which the operator will run and create resources
@@ -187,7 +184,7 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<String> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<>(STRIMZI_MAINTENANCE_TIME_WINDOWS, STRING, null, false);
 
-    protected Map<String, Object> map;
+    private final Map<String, Object> map;
 
     /**
      * Constructor
@@ -201,14 +198,14 @@ public class UserOperatorConfig {
             if (configValue == null) {
                 throw new IllegalArgumentException("Unknown config key " + entry.getKey());
             }
-            this.map.put(configValue.key, get(map, configValue));
+            this.map.put(configValue.key(), get(map, configValue));
         }
 
         // now add all those config (with default value) that weren't in the given map
         Map<String, ConfigParameter<?>> x = new HashMap<>(CONFIG_VALUES);
         x.keySet().removeAll(map.keySet());
         for (ConfigParameter<?> value : x.values()) {
-            this.map.put(value.key, get(map, value));
+            this.map.put(value.key(), get(map, value));
         }
 
         if (this.map.get(STRIMZI_CA_NAMESPACE) == null || this.map.get(STRIMZI_CA_NAMESPACE).equals("")) {
@@ -223,7 +220,7 @@ public class UserOperatorConfig {
      * @return The properties object with the configuration
      */
     /* test */
-    public static Properties parseKafkaAdminClientConfiguration(String configuration) {
+    protected static Properties parseKafkaAdminClientConfiguration(String configuration) {
         Properties kafkaAdminClientConfiguration = new Properties();
 
         if (configuration != null) {
@@ -245,7 +242,7 @@ public class UserOperatorConfig {
      * @return List of maintenance windows or null if there are no windows configured.
      */
     /* test */
-    public static List<String> parseMaintenanceTimeWindows(String maintenanceTimeWindows) {
+    protected static List<String> parseMaintenanceTimeWindows(String maintenanceTimeWindows) {
         List<String> windows = null;
 
         if (maintenanceTimeWindows != null && !maintenanceTimeWindows.isEmpty()) {
@@ -270,20 +267,20 @@ public class UserOperatorConfig {
      * @return The configuration value
      */
     private <T> T get(Map<String, String> map, ConfigParameter<T> value) {
-        if (!CONFIG_VALUES.containsKey(value.key)) {
-            throw new InvalidConfigurationException("Unknown config value: " + value.key + " probably needs to be added to Config.CONFIG_VALUES");
+        if (!CONFIG_VALUES.containsKey(value.key())) {
+            throw new InvalidConfigurationException("Unknown config value: " + value.key() + " probably needs to be added to Config.CONFIG_VALUES");
         }
 
-        final String s = map.getOrDefault(value.key, value.defaultValue);
+        final String s = map.getOrDefault(value.key(), value.defaultValue());
         if (s != null) {
-            if ((value.key.equals(STRIMZI_NAMESPACE) || value.key.equals(STRIMZI_CA_CERT_SECRET_NAME) || value.key.equals(STRIMZI_CA_KEY_SECRET_NAME)) && s.equals("")) {
+            if ((value.key().equals(STRIMZI_NAMESPACE) || value.key().equals(STRIMZI_CA_CERT_SECRET_NAME) || value.key().equals(STRIMZI_CA_KEY_SECRET_NAME)) && s.equals("")) {
                 System.out.println(s);
-                throw new InvalidConfigurationException("Config value: " + value.key + " is mandatory");
+                throw new InvalidConfigurationException("Config value: " + value.key() + " is mandatory");
             }
-            return value.type.parse(s);
+            return value.type().parse(s);
         } else {
-            if (value.required) {
-                throw new InvalidConfigurationException("Config value: " + value.key + " is mandatory");
+            if (value.required()) {
+                throw new InvalidConfigurationException("Config value: " + value.key() + " is mandatory");
             }
             return null;
         }
@@ -291,7 +288,12 @@ public class UserOperatorConfig {
 
     @SuppressWarnings("unchecked")
     protected <T> T get(ConfigParameter<T> value, T defaultValue) {
-        return (T) this.map.getOrDefault(value.key, defaultValue);
+        return (T) this.map.getOrDefault(value.key(), defaultValue);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T> T get(String key) {
+        return (T) this.map.get(key);
     }
 
     /**
@@ -302,7 +304,7 @@ public class UserOperatorConfig {
      */
     @SuppressWarnings("unchecked")
     public  <T> T get(ConfigParameter<T> value) {
-        return (T) this.map.get(value.key);
+        return (T) this.map.get(value.key());
     }
 
     @Override
