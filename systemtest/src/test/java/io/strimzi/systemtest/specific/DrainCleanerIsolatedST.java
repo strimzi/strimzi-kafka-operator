@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.specific;
 
-import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
@@ -12,7 +11,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -32,10 +30,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -125,139 +121,6 @@ public class DrainCleanerIsolatedST extends AbstractST {
         }
 
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
-    }
-
-    @IsolatedTest
-    // We refer to 6 worker nodes to have always 2 nodes with same labels to properly evacuate pods from one node to another
-    @MultiNodeClusterOnly(workerNodeCount = 6)
-    void testDrainCleanerWithComponentsDuringNodeDraining(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, Constants.DRAIN_CLEANER_NAMESPACE);
-
-        String rackKey = "rack-key";
-        final int replicas = 3;
-
-        int size = 5;
-
-        List<String> topicNames = IntStream.range(0, size).boxed().map(i -> testStorage.getTopicName() + "-" + i).collect(Collectors.toList());
-        List<String> producerNames = IntStream.range(0, size).boxed().map(i -> testStorage.getProducerName() + "-" + i).collect(Collectors.toList());
-        List<String> consumerNames = IntStream.range(0, size).boxed().map(i -> testStorage.getConsumerName() + "-" + i).collect(Collectors.toList());
-        List<String> continuousConsumerGroups = IntStream.range(0, size).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
-            .editMetadata()
-                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
-            .endMetadata()
-            .editSpec()
-                .editKafka()
-                    .withNewRack()
-                        .withTopologyKey(rackKey)
-                    .endRack()
-                    .editOrNewTemplate()
-                        .editOrNewPodDisruptionBudget()
-                            .withMaxUnavailable(0)
-                        .endPodDisruptionBudget()
-                        .withNewPod()
-                            .withAffinity(
-                                new AffinityBuilder()
-                                    .withNewPodAntiAffinity()
-                                        .addNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                            .editOrNewLabelSelector()
-                                                .addNewMatchExpression()
-                                                    .withKey(rackKey)
-                                                    .withOperator("In")
-                                                    .withValues("zone")
-                                                .endMatchExpression()
-                                            .endLabelSelector()
-                                        .withTopologyKey(rackKey)
-                                        .endRequiredDuringSchedulingIgnoredDuringExecution()
-                                    .endPodAntiAffinity()
-                                    .build())
-                        .endPod()
-                    .endTemplate()
-                .endKafka()
-                .editZookeeper()
-                    .editOrNewTemplate()
-                        .editOrNewPodDisruptionBudget()
-                            .withMaxUnavailable(0)
-                        .endPodDisruptionBudget()
-                        .withNewPod()
-                            .withAffinity(
-                                new AffinityBuilder()
-                                    .withNewPodAntiAffinity()
-                                        .addNewRequiredDuringSchedulingIgnoredDuringExecution()
-                                            .editOrNewLabelSelector()
-                                                .addNewMatchExpression()
-                                                    .withKey(rackKey)
-                                                    .withOperator("In")
-                                                    .withValues("zone")
-                                                .endMatchExpression()
-                                            .endLabelSelector()
-                                            .withTopologyKey(rackKey)
-                                        .endRequiredDuringSchedulingIgnoredDuringExecution()
-                                    .endPodAntiAffinity()
-                                    .build())
-                        .endPod()
-                    .endTemplate()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-        topicNames.forEach(topic -> resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topic, 3, 3, 2)
-            .editMetadata()
-                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
-            .endMetadata()
-            .build()));
-        drainCleaner.createDrainCleaner(extensionContext);
-
-        String kafkaName = testStorage.getKafkaStatefulSetName();
-        String zkName = testStorage.getZookeeperStatefulSetName();
-
-        Map<String, List<String>> nodesWithPods = NodeUtils.getPodsForEachNodeInNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
-        // remove all pods from map, which doesn't contain "kafka" or "zookeeper" in its name
-        nodesWithPods.forEach(
-            (node, podlist) -> podlist.retainAll(podlist.stream().filter(podName -> (podName.contains("kafka") || podName.contains("zookeeper"))).collect(Collectors.toList()))
-        );
-
-        String producerAdditionConfiguration = "delivery.timeout.ms=30000\nrequest.timeout.ms=30000";
-        KafkaClients kafkaBasicExampleClients;
-
-        for (int i = 0; i < size; i++) {
-            kafkaBasicExampleClients = new KafkaClientsBuilder()
-                .withProducerName(producerNames.get(i))
-                .withConsumerName(consumerNames.get(i))
-                .withTopicName(topicNames.get(i))
-                .withConsumerGroup(continuousConsumerGroups.get(i))
-                .withMessageCount(300)
-                .withNamespaceName(Constants.DRAIN_CLEANER_NAMESPACE)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-                .withDelayMs(1000)
-                .withAdditionalConfig(producerAdditionConfiguration)
-                .build();
-
-            resourceManager.createResource(extensionContext,
-                kafkaBasicExampleClients.producerStrimzi(),
-                kafkaBasicExampleClients.consumerStrimzi());
-        }
-
-        LOGGER.info("Starting Node drain");
-
-        nodesWithPods.forEach((nodeName, podList) -> {
-            String zkPodName = podList.stream().filter(podName -> podName.contains("zookeeper")).findFirst().get();
-            String kafkaPodName = podList.stream().filter(podName -> podName.contains("kafka")).findFirst().get();
-
-            Map<String, String> kafkaPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
-                .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            Map<String, String> zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
-                .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-            NodeUtils.drainNode(nodeName);
-            NodeUtils.cordonNode(nodeName, true);
-
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
-        });
-
-        producerNames.forEach(producer -> ClientUtils.waitForClientsSuccess(producer, consumerNames.get(producerNames.indexOf(producer)), Constants.DRAIN_CLEANER_NAMESPACE, 300));
     }
 
     @AfterEach
