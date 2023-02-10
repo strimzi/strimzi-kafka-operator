@@ -496,11 +496,13 @@ public class KubeClient {
     }
 
     public boolean checkSucceededJobStatus(String namespaceName, String jobName, int expectedSucceededPods) {
-        return getJobStatus(namespaceName, jobName).getSucceeded().equals(expectedSucceededPods);
+        JobStatus jobStatus = getJobStatus(namespaceName, jobName);
+        return jobStatus != null && jobStatus.getSucceeded() != null && jobStatus.equals(expectedSucceededPods);
     }
 
     public boolean checkFailedJobStatus(String namespaceName, String jobName, int expectedFailedPods) {
-        return getJobStatus(namespaceName, jobName).getFailed().equals(expectedFailedPods);
+        JobStatus jobStatus = getJobStatus(namespaceName, jobName);
+        return jobStatus != null && jobStatus.getFailed() != null && jobStatus.equals(expectedFailedPods);
     }
 
     // Pods Statuses:  0 Running / 0 Succeeded / 1 Failed
