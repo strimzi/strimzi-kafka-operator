@@ -10,7 +10,14 @@ import io.strimzi.operator.common.operator.resource.AbstractConfig;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.List;
+import java.util.Objects;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.Collections;
 
 import static io.strimzi.operator.common.operator.resource.AbstractConfig.BOOLEAN;
 import static io.strimzi.operator.common.operator.resource.AbstractConfig.LABEL_PREDICATE;
