@@ -507,7 +507,8 @@ public class KubeClient {
 
     // Pods Statuses:  0 Running / 0 Succeeded / 1 Failed
     public JobStatus getJobStatus(String namespaceName, String jobName) {
-        return client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get().getStatus();
+        Job job = client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get();
+        return job == null ? null : job.getStatus();
     }
 
     public JobStatus getJobStatus(String jobName) {
