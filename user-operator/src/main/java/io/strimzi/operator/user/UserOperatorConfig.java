@@ -195,9 +195,6 @@ public class UserOperatorConfig {
         this.map = new HashMap<>(map.size());
         for (Map.Entry<String, String> entry : map.entrySet()) {
             final ConfigParameter<?> configValue = CONFIG_VALUES.get(entry.getKey());
-            if (configValue == null) {
-                throw new IllegalArgumentException("Unknown config key " + entry.getKey());
-            }
             this.map.put(configValue.key(), get(map, configValue));
         }
 
@@ -211,6 +208,16 @@ public class UserOperatorConfig {
         if (this.map.get(STRIMZI_CA_NAMESPACE) == null || this.map.get(STRIMZI_CA_NAMESPACE).equals("")) {
             this.map.put(STRIMZI_CA_NAMESPACE, this.map.get(STRIMZI_NAMESPACE));
         }
+    }
+
+    /**
+     * Creates the `UserOperatorConfig` object by calling the constructor.
+     *
+     * @param map Map containing config parameters entered by user
+     * @return UserOperatorConfig object
+     */
+    public static UserOperatorConfig buildFromMap(Map<String, String> map) {
+        return new UserOperatorConfig(map);
     }
 
     /**
@@ -274,7 +281,6 @@ public class UserOperatorConfig {
         final String s = map.getOrDefault(value.key(), value.defaultValue());
         if (s != null) {
             if ((value.key().equals(STRIMZI_NAMESPACE) || value.key().equals(STRIMZI_CA_CERT_SECRET_NAME) || value.key().equals(STRIMZI_CA_KEY_SECRET_NAME)) && s.equals("")) {
-                System.out.println(s);
                 throw new InvalidConfigurationException("Config value: " + value.key() + " is mandatory");
             }
             return value.type().parse(s);

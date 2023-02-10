@@ -75,7 +75,7 @@ public class Main {
         // Create and log UserOperatorConfig
         Map<String, String> m = new HashMap<>(System.getenv());
         m.keySet().retainAll(UserOperatorConfig.keyNames());
-        UserOperatorConfig config = new UserOperatorConfig(m);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(m);
         LOGGER.info("Cluster Operator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
