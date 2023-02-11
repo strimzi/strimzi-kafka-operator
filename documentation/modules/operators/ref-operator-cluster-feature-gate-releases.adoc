@@ -22,6 +22,8 @@ Alpha and beta stage features are removed if they do not prove to be useful.
 * The `UseStrimziPodSets` feature gate moved to beta stage in Strimzi 0.30.
   It moves to GA in Strimzi 0.35 when the support for StatefulSets is completely removed.
 * The `UseKRaft` feature gate is available for development only and does not currently have a planned release for moving to the beta phase.
+* The `StableConnectIdentities` feature gate is in alpha stage and is disabled by default.
+  It is expected to move to beta phase and be enabled by default from Strimzi 0.36.
 
 NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
 
@@ -54,6 +56,11 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 ¦ -
 ¦ -
 
+¦`StableConnectIdentities`
+¦0.34
+¦0.36 (planned)
+¦ -
+
 |===
 
 If a feature gate is enabled, you may need to disable it before upgrading or downgrading from a specific Strimzi version.
@@ -74,5 +81,9 @@ The following table shows which feature gates you need to disable when upgrading
 ¦`UseStrimziPodSets`
 ¦-
 ¦0.27 and earlier
+
+¦`StableConnectIdentities`
+¦-
+¦0.33 and earlier
 
 |===

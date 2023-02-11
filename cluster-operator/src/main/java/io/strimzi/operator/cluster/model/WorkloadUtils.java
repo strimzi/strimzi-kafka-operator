@@ -49,16 +49,16 @@ public class WorkloadUtils {
     /**
      * Create a Kubernetes Deployment with the Pod template passed as a parameter
      *
-     * @param name              Name of the Deployment
-     * @param namespace         Namespace of the Deployment
-     * @param labels            Labels of the Deployment
-     * @param ownerReference    OwnerReference of the Deployment
-     * @param template          Deployment template with user's custom configuration
-     * @param replicas          Number of replicas
-     * @param updateStrategy    Deployment update strategy (Recreate or Rolling Update)
-     * @param podTemplateSpec   The PodTemplateSpec which defines how the pods created by this Deployment look like
-     *
-     * @return  Created Deployment
+     * @param name            Name of the Deployment
+     * @param namespace       Namespace of the Deployment
+     * @param labels          Labels of the Deployment
+     * @param ownerReference  OwnerReference of the Deployment
+     * @param template        Deployment template with user's custom configuration
+     * @param replicas        Number of replicas
+     * @param annotations     Map with Deployment annotations
+     * @param updateStrategy  Deployment update strategy (Recreate or Rolling Update)
+     * @param podTemplateSpec The PodTemplateSpec which defines how the pods created by this Deployment look like
+     * @return Created Deployment
      */
     public static Deployment createDeployment(
             String name,
@@ -67,6 +67,7 @@ public class WorkloadUtils {
             OwnerReference ownerReference,
             DeploymentTemplate template,
             int replicas,
+            Map<String, String> annotations,
             DeploymentStrategy updateStrategy,
             PodTemplateSpec podTemplateSpec
     ) {
@@ -75,7 +76,7 @@ public class WorkloadUtils {
                     .withName(name)
                     .withLabels(labels.withAdditionalLabels(TemplateUtils.labels(template)).toMap())
                     .withNamespace(namespace)
-                    .withAnnotations(TemplateUtils.annotations(template))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, TemplateUtils.annotations(template)))
                     .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
@@ -153,6 +154,7 @@ public class WorkloadUtils {
      * @param replicas       Number of replicas
      * @param annotations    Additional annotations which should be set on the PodSet. This might contain annotations
      *                       for tracking storage configuration, Kafka versions and similar.
+     * @param selectorLabels Labels used for the Pod selector in the StrimziPodSetSpec
      * @param podCreator     Function for generating the Pods which should be included in this PodSet based on their
      *                       index number.
      * @return Created PodSet
@@ -165,6 +167,7 @@ public class WorkloadUtils {
             ResourceTemplate template,
             int replicas,
             Map<String, String> annotations,
+            Labels selectorLabels,
             Function<Integer, Pod> podCreator
     )  {
         List<Map<String, Object>> pods = new ArrayList<>(replicas);
@@ -183,8 +186,8 @@ public class WorkloadUtils {
                     .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
-                    .withSelector(new LabelSelectorBuilder().withMatchLabels(labels.strimziSelectorLabels().toMap()).build())
-                    .addAllToPods(pods)
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(selectorLabels.toMap()).build())
+                    .withPods(pods)
                 .endSpec()
                 .build();
     }

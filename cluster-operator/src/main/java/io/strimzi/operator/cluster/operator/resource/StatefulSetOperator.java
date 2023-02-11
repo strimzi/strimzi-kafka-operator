@@ -194,7 +194,7 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
      * {@inheritDoc}
      */
     @Override
-    protected Future<ReconcileResult<StatefulSet>> internalPatch(Reconciliation reconciliation, String namespace, String name, StatefulSet current, StatefulSet desired) {
+    protected Future<ReconcileResult<StatefulSet>> internalUpdate(Reconciliation reconciliation, String namespace, String name, StatefulSet current, StatefulSet desired) {
         StatefulSetDiff diff = new StatefulSetDiff(reconciliation, current, desired);
 
         if (shouldIncrementGeneration(reconciliation, diff)) {
@@ -212,7 +212,7 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
             // When volume claim templates change, we need to delete the STS and re-create it
             return internalReplace(reconciliation, namespace, name, current, desired, false);
         } else {
-            return super.internalPatch(reconciliation, namespace, name, current, desired);
+            return super.internalUpdate(reconciliation, namespace, name, current, desired);
         }
 
     }

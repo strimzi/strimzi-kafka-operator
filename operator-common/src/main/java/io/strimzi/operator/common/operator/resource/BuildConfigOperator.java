@@ -35,10 +35,10 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
     }
 
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalPatch(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
+    protected Future<ReconcileResult<BuildConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
         desired.getSpec().setTriggers(current.getSpec().getTriggers());
         // Cascading needs to be set to false to make sure the Builds are not deleted during reconciliation
-        return super.internalPatch(reconciliation, namespace, name, current, desired);
+        return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 
     /**

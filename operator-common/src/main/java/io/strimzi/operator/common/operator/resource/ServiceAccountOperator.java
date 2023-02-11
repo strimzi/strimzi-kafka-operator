@@ -32,7 +32,7 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
     }
 
     @Override
-    protected Future<ReconcileResult<ServiceAccount>> internalPatch(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
+    protected Future<ReconcileResult<ServiceAccount>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
         if (desired.getSecrets() == null || desired.getSecrets().isEmpty())    {
             desired.setSecrets(current.getSecrets());
         }
@@ -41,6 +41,6 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
             desired.setImagePullSecrets(current.getImagePullSecrets());
         }
 
-        return super.internalPatch(reconciliation, namespace, name, current, desired);
+        return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 }

@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -131,6 +132,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -162,6 +164,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -294,6 +299,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -324,6 +330,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -436,6 +445,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -461,9 +471,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub());
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
+            Deployment dep = oldConnect.generateDeployment(3, null, emptyMap(), false, null, null, null);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub());
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -471,6 +481,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -607,6 +620,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -632,9 +646,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()));
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build-2@sha256:olddigest");
+            Deployment dep = oldConnect.generateDeployment(3, null, emptyMap(), false, null, null, null);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()));
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build-2@sha256:olddigest");
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -642,6 +656,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -779,6 +796,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -804,9 +822,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
+            Deployment dep = oldConnect.generateDeployment(3, null, emptyMap(), false, null, null, null);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -814,6 +832,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -959,6 +980,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -984,9 +1006,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
+            Deployment dep = oldConnect.generateDeployment(3, null, emptyMap(), false, null, null, null);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -994,6 +1016,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -1143,6 +1168,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1168,9 +1194,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:olddigest");
+            Deployment dep = oldConnect.generateDeployment(3, null, emptyMap(), false, null, null, null);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, "oldhashstub");
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:olddigest");
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -1178,6 +1204,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -1313,6 +1342,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1338,9 +1368,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB);
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");
+            Deployment dep = connect.generateDeployment(3, null, emptyMap(), false, null, null, null);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB);
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:blablabla");
             return Future.succeededFuture(dep);
         });
         when(mockDepOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
@@ -1348,6 +1378,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
@@ -1442,6 +1475,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1467,7 +1501,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
-            Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
+            Deployment dep = connect.generateDeployment(3, null, emptyMap(), false, null, null, null);
 
             if (dep.getMetadata().getAnnotations() != null) {
                 dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true");
@@ -1475,8 +1509,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 dep.getMetadata().setAnnotations(Map.of(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true"));
             }
 
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub());
-            dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub());
+            dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, "my-connect-build@sha256:blablabla");
 
             return Future.succeededFuture(dep);
         });
@@ -1485,6 +1519,9 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        // Mock StrimziPodSet ops
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture CM ops
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));

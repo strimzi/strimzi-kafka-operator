@@ -18,10 +18,12 @@ public class FeatureGates {
 
     private static final String USE_STRIMZI_POD_SETS = "UseStrimziPodSets";
     private static final String USE_KRAFT = "UseKRaft";
+    private static final String STABLE_CONNECT_IDENTITIES = "StableConnectIdentities";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, true);
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
+    private final FeatureGate stableConnectIdentities = new FeatureGate(STABLE_CONNECT_IDENTITIES, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -48,6 +50,9 @@ public class FeatureGates {
                         break;
                     case USE_KRAFT:
                         setValueOnlyOnce(useKRaft, value);
+                        break;
+                    case STABLE_CONNECT_IDENTITIES:
+                        setValueOnlyOnce(stableConnectIdentities, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -99,6 +104,13 @@ public class FeatureGates {
     }
 
     /**
+     * @return  Returns true when the StableConnectIdentities feature gate is enabled
+     */
+    public boolean stableConnectIdentitiesEnabled() {
+        return stableConnectIdentities.isEnabled();
+    }
+
+    /**
      * Returns a list of all Feature gates. Used for testing.
      *
      * @return  List of all Feature Gates
@@ -106,7 +118,8 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
                 useStrimziPodSets,
-                useKRaft
+                useKRaft,
+                stableConnectIdentities
         );
     }
 
@@ -114,7 +127,8 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
                 "UseStrimziPodSets=" + useStrimziPodSets.isEnabled() + "," +
-                "UseKRaft=" + useKRaft.isEnabled() +
+                "UseKRaft=" + useKRaft.isEnabled() + "," +
+                "StableConnectIdentities=" + stableConnectIdentities.isEnabled() +
                 ")";
     }
 

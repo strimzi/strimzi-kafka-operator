@@ -69,13 +69,13 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<PersistentVolumeClaim>> internalPatch(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
+    protected Future<ReconcileResult<PersistentVolumeClaim>> internalUpdate(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null)   {
                 revertImmutableChanges(current, desired);
             }
 
-            return super.internalPatch(reconciliation, namespace, name, current, desired);
+            return super.internalUpdate(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);

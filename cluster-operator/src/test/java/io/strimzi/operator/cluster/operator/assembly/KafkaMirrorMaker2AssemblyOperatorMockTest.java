@@ -97,6 +97,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaMirrorMaker2Crd()
+                .withStrimziPodSetCrd()
                 .withInitialKafkaMirrorMaker2s(mirrorMaker2Resource)
                 .withDeploymentController()
                 .build();
@@ -163,10 +164,11 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, false)
-            .onComplete(context.succeeding(v -> {
+            .onComplete(context.succeedingThenComplete())
+            .compose(i -> {
                 LOGGER.info("Reconciling again -> update");
-                kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
-            }))
+                return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+            })
             .onComplete(context.succeeding(v -> async.flag()));
     }
 

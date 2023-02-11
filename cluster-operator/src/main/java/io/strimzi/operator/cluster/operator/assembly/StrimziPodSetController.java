@@ -5,7 +5,10 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
@@ -18,8 +21,12 @@ import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.micrometer.core.instrument.Timer;
+import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.status.StrimziPodSetStatus;
@@ -55,6 +62,9 @@ public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
 
     private static final long DEFAULT_RESYNC_PERIOD = 5 * 60 * 1_000L; // 5 minutes by default
+    private static final LabelSelector POD_LABEL_SELECTOR = new LabelSelectorBuilder()
+            .withMatchExpressions(new LabelSelectorRequirement(Labels.STRIMZI_KIND_LABEL, "Exists", null))
+            .build();
 
     private final Thread controllerThread;
 
@@ -70,9 +80,13 @@ public class StrimziPodSetController implements Runnable {
     private final SharedIndexInformer<Pod> podInformer;
     private final SharedIndexInformer<StrimziPodSet> strimziPodSetInformer;
     private final SharedIndexInformer<Kafka> kafkaInformer;
+    private final SharedIndexInformer<KafkaConnect> kafkaConnectInformer;
+    private final SharedIndexInformer<KafkaMirrorMaker2> kafkaMirrorMaker2Informer;
     private final Lister<Pod> podLister;
     private final Lister<StrimziPodSet> strimziPodSetLister;
     private final Lister<Kafka> kafkaLister;
+    private final Lister<KafkaConnect> kafkaConnectLister;
+    private final Lister<KafkaMirrorMaker2> kafkaMirrorMaker2Lister;
 
     /**
      * Creates the StrimziPodSet controller. The controller should normally exist once per operator for cluster-wide mode
@@ -82,13 +96,25 @@ public class StrimziPodSetController implements Runnable {
      * @param crSelectorLabels              Selector labels for custom resource managed by this operator instance. This is used
      *                                      to check that the pods belong to a Kafka cluster matching these labels.
      * @param kafkaOperator                 Kafka Operator for getting the Kafka custom resources
+     * @param kafkaConnectOperator          KafkaConnect Operator for getting the KafkaConnect custom resources
+     * @param kafkaMirrorMaker2Operator     KafkaMirrorMaker2 Operator for getting the KafkaMirrorMaker2 custom resources
      * @param strimziPodSetOperator         StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
      *                                      their status etc.
      * @param podOperator                   Pod operator for managing pods
      * @param metricsProvider               Metrics provider
      * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
-    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, StrimziPodSetOperator strimziPodSetOperator, PodOperator podOperator, MetricsProvider metricsProvider, int podSetControllerWorkQueueSize) {
+    public StrimziPodSetController(
+            String watchedNamespace,
+            Labels crSelectorLabels,
+            CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator,
+            CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> kafkaConnectOperator,
+            CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> kafkaMirrorMaker2Operator,
+            StrimziPodSetOperator strimziPodSetOperator,
+            PodOperator podOperator,
+            MetricsProvider metricsProvider,
+            int podSetControllerWorkQueueSize
+    ) {
         this.podOperator = podOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
@@ -98,16 +124,21 @@ public class StrimziPodSetController implements Runnable {
         // Set up the metrics holder
         this.metrics = new ControllerMetricsHolder("StrimziPodSet", crSelectorLabels != null ? crSelectorLabels : Labels.EMPTY, metricsProvider);
 
-        // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
+        // Kafka, KafkaConnect and KafkaMirrorMaker2 informers and listers are used to get the CRs quickly.
+        // This is needed for verification of the CR selector labels.
         this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
         this.kafkaLister = new Lister<>(kafkaInformer.getIndexer());
+        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
+        this.kafkaConnectLister = new Lister<>(kafkaConnectInformer.getIndexer());
+        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
+        this.kafkaMirrorMaker2Lister = new Lister<>(kafkaMirrorMaker2Informer.getIndexer());
 
         // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
         this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace);
         this.strimziPodSetLister = new Lister<>(strimziPodSetInformer.getIndexer());
 
         // Pod informer and lister is used to get events about pods and get pods quickly
-        this.podInformer = podOperator.informer(watchedNamespace, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka"));
+        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR);
         this.podLister = new Lister<>(podInformer.getIndexer());
 
         this.controllerThread = new Thread(this, "StrimziPodSetController");
@@ -118,7 +149,11 @@ public class StrimziPodSetController implements Runnable {
     }
 
     protected boolean isSynced() {
-        return podInformer.hasSynced() && strimziPodSetInformer.hasSynced() && kafkaInformer.hasSynced();
+        return podInformer.hasSynced()
+                && strimziPodSetInformer.hasSynced()
+                && kafkaInformer.hasSynced()
+                && kafkaConnectInformer.hasSynced()
+                && kafkaMirrorMaker2Informer.hasSynced();
     }
 
     protected void startController() {
@@ -170,6 +205,8 @@ public class StrimziPodSetController implements Runnable {
         podInformer.stop();
         strimziPodSetInformer.stop();
         kafkaInformer.stop();
+        kafkaConnectInformer.stop();
+        kafkaMirrorMaker2Informer.stop();
     }
 
     /**
@@ -214,7 +251,7 @@ public class StrimziPodSetController implements Runnable {
             if (matchesCrSelector(parentPodSet)) {
                 enqueue(new SimplifiedReconciliation(parentPodSet.getMetadata().getNamespace(), parentPodSet.getMetadata().getName()));
             } else {
-                LOGGER.debugOp("Pod {} in namespace {} was {} but does not belong to a Kafka cluster managed by this operator", pod.getMetadata().getName(), pod.getMetadata().getNamespace(), action);
+                LOGGER.debugOp("Pod {} in namespace {} was {} but does not belong to a cluster managed by this operator", pod.getMetadata().getName(), pod.getMetadata().getNamespace(), action);
             }
         } else {
             LOGGER.debugOp("Pod {} in namespace {} which was {} does not seem to be controlled by any StrimziPodSet and will be ignored", pod.getMetadata().getName(), pod.getMetadata().getNamespace(), action);
@@ -232,22 +269,36 @@ public class StrimziPodSetController implements Runnable {
      */
     private boolean matchesCrSelector(StrimziPodSet podSet)    {
         if (podSet.getMetadata().getLabels() != null
+                && podSet.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL) != null
                 && podSet.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL) != null) {
-            // We find the matching Kafka cluster and check the CR selector
-            String kafkaClusterName = podSet.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-            Kafka kafka = kafkaLister.namespace(podSet.getMetadata().getNamespace()).get(kafkaClusterName);
+            // We find the matching custom resource and check the CR selector
+            HasMetadata cr = findCustomResource(podSet);
 
-            if (kafka != null
-                    && Util.matchesSelector(crSelector, kafka)) {
+            if (cr != null
+                    && Util.matchesSelector(crSelector, cr)) {
                 return true;
             } else {
-                LOGGER.debugOp("StrimziPodSet {} in namespace {} does not belong to a Kafka cluster matching the selector", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace());
+                LOGGER.debugOp("StrimziPodSet {} in namespace {} does not belong to a custom resource matching the selector", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace());
                 return false;
             }
         } else {
-            LOGGER.warnOp("Invalid event received: StrimziPodSet was without the required {} label", Labels.STRIMZI_CLUSTER_LABEL);
+            LOGGER.warnOp("Invalid event received: StrimziPodSet was without the required {} and {} labels", Labels.STRIMZI_KIND_LABEL, Labels.STRIMZI_CLUSTER_LABEL);
             return false;
         }
+    }
+
+    private HasMetadata findCustomResource(StrimziPodSet podSet)    {
+        String customResourceName = podSet.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        HasMetadata cr = null;
+
+        switch (podSet.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL)) {
+            case Kafka.RESOURCE_KIND -> cr = kafkaLister.namespace(podSet.getMetadata().getNamespace()).get(customResourceName);
+            case KafkaConnect.RESOURCE_KIND -> cr = kafkaConnectLister.namespace(podSet.getMetadata().getNamespace()).get(customResourceName);
+            case KafkaMirrorMaker2.RESOURCE_KIND -> cr = kafkaMirrorMaker2Lister.namespace(podSet.getMetadata().getNamespace()).get(customResourceName);
+            default -> LOGGER.warnOp("StrimziPodSet {} belongs to unsupported custom resource kind {}", podSet.getMetadata().getName(), podSet.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL));
+        }
+
+        return cr;
     }
 
     /**

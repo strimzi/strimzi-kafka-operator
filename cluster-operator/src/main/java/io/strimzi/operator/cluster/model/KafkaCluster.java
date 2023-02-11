@@ -1161,6 +1161,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
                 templatePodSet,
                 replicas,
                 prepareControllerAnnotations(),
+                labels.strimziSelectorLabels(),
                 brokerId -> WorkloadUtils.createStatefulPod(
                         reconciliation,
                         getPodName(brokerId),

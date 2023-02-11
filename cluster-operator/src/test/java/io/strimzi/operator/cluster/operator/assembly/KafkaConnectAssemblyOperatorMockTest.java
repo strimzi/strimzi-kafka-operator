@@ -97,6 +97,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
                 .withKafkaConnectCrd()
+                .withStrimziPodSetCrd()
                 .withInitialKafkaConnects(connectResource)
                 .withDeploymentController()
                 .build();

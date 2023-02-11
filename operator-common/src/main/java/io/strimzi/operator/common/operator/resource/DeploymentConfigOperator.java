@@ -44,9 +44,9 @@ public class DeploymentConfigOperator extends AbstractScalableNamespacedResource
     }
 
     @Override
-    protected Future<ReconcileResult<DeploymentConfig>> internalPatch(Reconciliation reconciliation, String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
+    protected Future<ReconcileResult<DeploymentConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
         desired.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(current.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
-        return super.internalPatch(reconciliation, namespace, name, current, desired);
+        return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 
     /**

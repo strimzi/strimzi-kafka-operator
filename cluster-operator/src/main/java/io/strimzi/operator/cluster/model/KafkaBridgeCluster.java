@@ -351,6 +351,7 @@ public class KafkaBridgeCluster extends AbstractModel {
                 ownerReference,
                 templateDeployment,
                 replicas,
+                null,
                 WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, DeploymentStrategy.ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,

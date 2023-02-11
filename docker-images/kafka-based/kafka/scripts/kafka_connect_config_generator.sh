@@ -119,7 +119,7 @@ cat <<EOF
 bootstrap.servers=${KAFKA_CONNECT_BOOTSTRAP_SERVERS}
 # REST Listeners
 rest.port=8083
-rest.advertised.host.name=$(hostname -I | awk '{ print $1 }')
+rest.advertised.host.name=${ADVERTISED_HOSTNAME}
 rest.advertised.port=8083
 # Plugins
 plugin.path=${KAFKA_CONNECT_PLUGIN_PATH}

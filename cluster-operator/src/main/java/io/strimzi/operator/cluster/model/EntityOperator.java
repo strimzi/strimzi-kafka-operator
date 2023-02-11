@@ -190,6 +190,7 @@ public class EntityOperator extends AbstractModel {
                 ownerReference,
                 templateDeployment,
                 replicas,
+                null,
                 WorkloadUtils.deploymentStrategy(RECREATE), // we intentionally ignore the template here as EO doesn't support RU strategy
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,

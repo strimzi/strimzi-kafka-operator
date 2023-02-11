@@ -132,6 +132,7 @@ public class WorkloadUtilsTest {
                 OWNER_REFERENCE,
                 null,
                 REPLICAS,
+                Map.of("extra", "annotations"),
                 WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy.RECREATE),
                 DUMMY_POD_TEMPLATE_SPEC
         );
@@ -140,7 +141,7 @@ public class WorkloadUtilsTest {
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
         assertThat(dep.getMetadata().getLabels(), is(LABELS.toMap()));
-        assertThat(dep.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(dep.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
 
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
         assertThat(dep.getSpec().getReplicas(), is(REPLICAS));
@@ -165,6 +166,7 @@ public class WorkloadUtilsTest {
                         .endMetadata()
                         .build(),
                 REPLICAS,
+                Map.of("extra", "annotations"),
                 WorkloadUtils.deploymentStrategy(io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE),
                 DUMMY_POD_TEMPLATE_SPEC
         );
@@ -173,7 +175,7 @@ public class WorkloadUtilsTest {
         assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         assertThat(dep.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
         assertThat(dep.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
-        assertThat(dep.getMetadata().getAnnotations(), is(Map.of("anno-1", "value-1", "anno-2", "value-2")));
+        assertThat(dep.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
 
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
         assertThat(dep.getSpec().getReplicas(), is(REPLICAS));
@@ -309,6 +311,7 @@ public class WorkloadUtilsTest {
                 null,
                 REPLICAS,
                 Map.of("extra", "annotations"),
+                LABELS.strimziSelectorLabels(),
                 i -> {
                     podIds.add(i);
                     return new PodBuilder()
@@ -354,6 +357,7 @@ public class WorkloadUtilsTest {
                         .build(),
                 REPLICAS,
                 Map.of("extra", "annotations"),
+                Labels.fromMap(Map.of("custom", "selector")),
                 i -> {
                     podIds.add(i);
                     return new PodBuilder()
@@ -370,10 +374,8 @@ public class WorkloadUtilsTest {
         assertThat(sps.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
         assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
 
-        assertThat(sps.getSpec().getSelector().getMatchLabels().size(), is(3));
-        assertThat(sps.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is("my-cluster"));
-        assertThat(sps.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_NAME_LABEL), is("my-workload"));
-        assertThat(sps.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
+        assertThat(sps.getSpec().getSelector().getMatchLabels().size(), is(1));
+        assertThat(sps.getSpec().getSelector().getMatchLabels(), is(Map.of("custom", "selector")));
 
         // Test generating pods from the PodCreator method
         assertThat(podIds.size(), is(5));

@@ -112,9 +112,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
-        KafkaMirrorMaker2Cluster mm2 = fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
 
-        return mm2;
+        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
@@ -200,8 +199,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
-    protected List<EnvVar> getEnvVars() {
-        List<EnvVar> varList = super.getEnvVars();
+    protected List<EnvVar> getEnvVars(boolean stableIdentities) {
+        List<EnvVar> varList = super.getEnvVars(stableIdentities);
 
         final StringBuilder clusterAliases = new StringBuilder();
         final StringBuilder clustersTrustedCerts = new StringBuilder();

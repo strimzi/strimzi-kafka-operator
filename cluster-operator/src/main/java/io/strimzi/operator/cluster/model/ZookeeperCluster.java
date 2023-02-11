@@ -412,6 +412,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
                 templatePodSet,
                 replicas,
                 Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+                labels.strimziSelectorLabels(),
                 brokerId -> WorkloadUtils.createStatefulPod(
                         reconciliation,
                         getPodName(brokerId),

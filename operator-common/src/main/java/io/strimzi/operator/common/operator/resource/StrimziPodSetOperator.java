@@ -54,6 +54,34 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
     }
 
     /**
+     * StrimziPodSetOperator overrides this method in order to use replace instead of patch.
+     *
+     * @param name          Name of the resource
+     * @param desired       Desired resource
+     *
+     * @return  The patched or replaced resource
+     */
+    @Override
+    protected StrimziPodSet patchOrReplace(String namespace, String name, StrimziPodSet desired)   {
+        return operation().inNamespace(namespace).resource(desired).replace();
+    }
+
+    /**
+     * Waits for StrimziPodSet to get ready
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param namespace         Namespace of the StrimziPodSet
+     * @param name              Name of the StrimziPodSet
+     * @param pollIntervalMs    How often should it poll for readiness
+     * @param timeoutMs         How long should it wait for the resource to get ready
+     *
+     * @return  A future which completes when the resource is ready or times out
+     */
+    public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isReady);
+    }
+
+    /**
      * Check if the PodSet is in the Ready state. The PodSet is ready when all the following conditions are fulfilled:
      *     - All pods are created
      *     - All pods are up-to-date

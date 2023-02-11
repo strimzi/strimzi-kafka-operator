@@ -150,9 +150,18 @@ public class ClusterOperator extends AbstractVerticle {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
-                if (config.featureGates().useStrimziPodSetsEnabled()) {
-                    strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator,
-                            resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations, resourceOperatorSupplier.metricsProvider, config.getPodSetControllerWorkQueueSize());
+                if (config.featureGates().useStrimziPodSetsEnabled() || config.featureGates().stableConnectIdentitiesEnabled()) {
+                    strimziPodSetController = new StrimziPodSetController(
+                            namespace,
+                            config.getCustomResourceSelector(),
+                            resourceOperatorSupplier.kafkaOperator,
+                            resourceOperatorSupplier.connectOperator,
+                            resourceOperatorSupplier.mirrorMaker2Operator,
+                            resourceOperatorSupplier.strimziPodSetOperator,
+                            resourceOperatorSupplier.podOperations,
+                            resourceOperatorSupplier.metricsProvider,
+                            config.getPodSetControllerWorkQueueSize()
+                    );
                     strimziPodSetController.start();
                 }
                 future.complete();

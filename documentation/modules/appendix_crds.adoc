@@ -1962,9 +1962,13 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 |Property                    |Description
 |deployment           1.2+<.<a|Template for Kafka Connect `Deployment`.
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
+|podSet               1.2+<.<a|Template for Kafka Connect `StrimziPodSet` resource.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |pod                  1.2+<.<a|Template for Kafka Connect `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
 |apiService           1.2+<.<a|Template for Kafka Connect API `Service`.
+|xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
+|headlessService      1.2+<.<a|Template for Kafka Connect headless `Service`.
 |xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |connectContainer     1.2+<.<a|Template for the Kafka Connect container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]

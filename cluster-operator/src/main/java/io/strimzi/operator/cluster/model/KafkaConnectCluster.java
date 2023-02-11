@@ -41,12 +41,14 @@ import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
@@ -116,6 +118,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD = "KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
+    protected static final String ENV_VAR_STRIMZI_STABLE_IDENTITIES_ENABLED = "STRIMZI_STABLE_IDENTITIES_ENABLED";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
 
@@ -136,8 +139,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
     protected DeploymentTemplate templateDeployment;
+    protected ResourceTemplate templatePodSet;
     protected PodTemplate templatePod;
     protected InternalServiceTemplate templateService;
+    protected InternalServiceTemplate templateHeadlessService;
     protected ContainerTemplate templateInitContainer;
 
 
@@ -283,8 +288,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
             kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
             kafkaConnect.templateDeployment = template.getDeployment();
+            kafkaConnect.templatePodSet = template.getPodSet();
             kafkaConnect.templatePod = template.getPod();
             kafkaConnect.templateService = template.getApiService();
+            kafkaConnect.templateHeadlessService = template.getHeadlessService();
             kafkaConnect.templateServiceAccount = template.getServiceAccount();
             kafkaConnect.templateContainer = template.getConnectContainer();
             kafkaConnect.templateInitContainer = template.getInitContainer();
@@ -327,6 +334,24 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
                 labels,
                 ownerReference,
                 templateService,
+                ports
+        );
+    }
+
+    /**
+     * Generates a headless Service according to configured defaults
+     *
+     * @return The generated Service
+     */
+    public Service generateHeadlessService() {
+        List<ServicePort> ports = List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
+
+        return ServiceUtils.createHeadlessService(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templateHeadlessService,
                 ports
         );
     }
@@ -460,14 +485,23 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     /**
      * Generates the Kafka Connect deployment
      *
-     * @param annotations       Map with annotations
-     * @param isOpenShift       Flag indicating if we are on OpenShift or not
-     * @param imagePullPolicy   Image pull policy
-     * @param imagePullSecrets  List of image pull Secrets
-     *
-     * @return  Generated deployment
+     * @param replicas              Number of replicas the deployment should have
+     * @param deploymentAnnotations Map with Deployment annotations
+     * @param podAnnotations        Map with Pod annotations
+     * @param isOpenShift           Flag indicating if we are on OpenShift or not
+     * @param imagePullPolicy       Image pull policy
+     * @param imagePullSecrets      List of image pull Secrets
+     * @param customContainerImage  Custom container image produced by Kafka Connect Build. If null, the default
+     *                              image will be used.
+     * @return Generated deployment
      */
-    public Deployment generateDeployment(Map<String, String> annotations, boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
+    public Deployment generateDeployment(int replicas,
+                                         Map<String, String> deploymentAnnotations,
+                                         Map<String, String> podAnnotations,
+                                         boolean isOpenShift,
+                                         ImagePullPolicy imagePullPolicy,
+                                         List<LocalObjectReference> imagePullSecrets,
+                                         String customContainerImage) {
         return WorkloadUtils.createDeployment(
                 componentName,
                 namespace,
@@ -475,16 +509,75 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
                 ownerReference,
                 templateDeployment,
                 replicas,
+                deploymentAnnotations,
                 WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,
                         labels,
                         templatePod,
                         defaultPodLabels(),
-                        annotations,
+                        podAnnotations,
                         getMergedAffinity(),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
-                        List.of(createContainer(imagePullPolicy)),
+                        List.of(createContainer(imagePullPolicy, customContainerImage, false)),
+                        getVolumes(isOpenShift),
+                        imagePullSecrets,
+                        securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
+                )
+        );
+    }
+
+    /**
+     * Generates the StrimziPodSet for the Kafka cluster. This is used when the UseStrimziPodSets feature gate is
+     * enabled.
+     *
+     * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
+     *                                  sets with different numbers of pods are generated.
+     * @param podSetAnnotations         Map with StrimziPodSet annotations
+     * @param podAnnotations            Map with Pod annotations
+     * @param isOpenShift               Flags whether we are on OpenShift or not
+     * @param imagePullPolicy           Image pull policy which will be used by the pods
+     * @param imagePullSecrets          List of image pull secrets
+     * @param customContainerImage      Custom container image produced by Kafka Connect Build. If null, the default
+     *                                  image will be used.
+     *
+     * @return                          Generated StrimziPodSet with Kafka Connect pods
+     */
+    public StrimziPodSet generatePodSet(int replicas,
+                                        Map<String, String> podSetAnnotations,
+                                        Map<String, String> podAnnotations,
+                                        boolean isOpenShift,
+                                        ImagePullPolicy imagePullPolicy,
+                                        List<LocalObjectReference> imagePullSecrets,
+                                        String customContainerImage) {
+        return WorkloadUtils.createPodSet(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                templatePodSet,
+                replicas,
+                podSetAnnotations,
+                // The Kafka Connect / Mirror Maker 2 requires to use a selector with the PodSetController. This is
+                // required because of how it migrates from Deployment to PodSets and the other way around, where the
+                // old pods are deleted and new pods are created as part of the migration. This differs form Kafka and
+                // ZooKeeper, because when migrating from StatefulSet to PodSet or the other way around, the pods are
+                // re-used as they share the pod names.
+                labels.strimziSelectorLabels().withStrimziPodSetController(componentName),
+                podId -> WorkloadUtils.createStatefulPod(
+                        reconciliation,
+                        getPodName(podId),
+                        namespace,
+                        labels,
+                        componentName,
+                        componentName,
+                        templatePod,
+                        DEFAULT_POD_LABELS,
+                        podAnnotations,
+                        componentName,
+                        getMergedAffinity(),
+                        ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
+                        List.of(createContainer(imagePullPolicy, customContainerImage, true)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
                         securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
@@ -512,14 +605,14 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
         }
     }
 
-    /* test */ Container createContainer(ImagePullPolicy imagePullPolicy) {
+    private Container createContainer(ImagePullPolicy imagePullPolicy, String customContainerImage, boolean stableIdentities) {
         return ContainerUtils.createContainer(
                 componentName,
-                image,
+                customContainerImage != null ? customContainerImage : image,
                 List.of(getCommand()),
                 securityProvider.kafkaConnectContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
                 resources,
-                getEnvVars(),
+                getEnvVars(stableIdentities),
                 getContainerPortList(),
                 getVolumeMounts(),
                 ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME),
@@ -553,7 +646,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
         return "/opt/kafka/kafka_connect_run.sh";
     }
 
-    protected List<EnvVar> getEnvVars() {
+    protected List<EnvVar> getEnvVars(boolean stableIdentities) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
@@ -582,6 +675,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
         varList.addAll(getExternalConfigurationEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
+
+        if (stableIdentities)   {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_STABLE_IDENTITIES_ENABLED, "true"));
+        }
 
         return varList;
     }
@@ -670,28 +767,40 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     /**
      * Sets the configured authentication
      *
-     * @param authetication Authentication configuration
+     * @param authentication Authentication configuration
      */
-    protected void setAuthentication(KafkaClientAuthentication authetication) {
-        this.authentication = authetication;
+    protected void setAuthentication(KafkaClientAuthentication authentication) {
+        this.authentication = authentication;
     }
 
     /**
      * Generates the PodDisruptionBudget
      *
+     * @param stableIdentities  Indicates whether the StableConnectIdentities (use of StrimziPodSets) feature gate is enabled or not
+     *
      * @return The pod disruption budget.
      */
-    public PodDisruptionBudget generatePodDisruptionBudget() {
-        return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+    public PodDisruptionBudget generatePodDisruptionBudget(boolean stableIdentities) {
+        if (stableIdentities) {
+            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
+        } else {
+            return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+        }
     }
 
     /**
      * Generates the PodDisruptionBudgetV1Beta1
      *
+     * @param stableIdentities  Indicates whether the StableConnectIdentities (use of StrimziPodSets) feature gate is enabled or not
+     *
      * @return The pod disruption budget V1Beta1.
      */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean stableIdentities) {
+        if (stableIdentities) {
+            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
+        } else {
+            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
+        }
     }
 
     /**
@@ -815,7 +924,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     /**
      * @return  JMX Model instance for configuring JMX access
      */
-    public JmxModel jmx()   {
+    public JmxModel jmx() {
         return jmx;
+    }
+
+     /**
+     * @return  Returns the preferred Deployment Strategy. This is used for the migration form Deployment to
+     * StrimziPodSet or the other way around
+     */
+    public DeploymentStrategy deploymentStrategy()  {
+        return TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE);
     }
 }

@@ -24,16 +24,19 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"deployment", "pod", "apiService", "connectContainer", "initContainer", "podDisruptionBudget",
-    "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig", "buildServiceAccount", "jmxSecret"})
+@JsonPropertyOrder({"deployment", "podSet", "pod", "apiService", "headlessService", "connectContainer", "initContainer",
+    "podDisruptionBudget", "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig",
+    "buildServiceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaConnectTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private DeploymentTemplate deployment;
+    private ResourceTemplate podSet;
     private PodTemplate pod;
     private PodTemplate buildPod;
     private InternalServiceTemplate apiService;
+    private InternalServiceTemplate headlessService;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate connectContainer;
     private ContainerTemplate initContainer;
@@ -53,6 +56,16 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, Serializable,
 
     public void setDeployment(DeploymentTemplate deployment) {
         this.deployment = deployment;
+    }
+
+    @Description("Template for Kafka Connect `StrimziPodSet` resource.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPodSet() {
+        return podSet;
+    }
+
+    public void setPodSet(ResourceTemplate podSetTemplate) {
+        this.podSet = podSetTemplate;
     }
 
     @Description("Template for Kafka Connect `Pods`.")
@@ -84,6 +97,16 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, Serializable,
 
     public void setApiService(InternalServiceTemplate apiService) {
         this.apiService = apiService;
+    }
+
+    @Description("Template for Kafka Connect headless `Service`.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public InternalServiceTemplate getHeadlessService() {
+        return headlessService;
+    }
+
+    public void setHeadlessService(InternalServiceTemplate headlessService) {
+        this.headlessService = headlessService;
     }
 
     @Description("Template for Kafka Connect `PodDisruptionBudget`.")
