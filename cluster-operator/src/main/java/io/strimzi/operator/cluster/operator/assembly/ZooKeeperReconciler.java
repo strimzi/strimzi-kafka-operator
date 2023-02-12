@@ -231,24 +231,7 @@ public class ZooKeeperReconciler {
      * @return  Completes when the JMX secret is successfully created or updated
      */
     protected Future<Void> jmxSecret() {
-        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperJmxSecretName(reconciliation.name()))
-                .compose(currentJmxSecret -> {
-                    Secret desiredJmxSecret = zk.generateJmxSecret(currentJmxSecret);
-
-                    if (desiredJmxSecret != null)  {
-                        // Desired secret is not null => should be updated
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperJmxSecretName(reconciliation.name()), desiredJmxSecret)
-                                .map((Void) null);
-                    } else if (currentJmxSecret != null)    {
-                        // Desired secret is null but current is not => we should delete the secret
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperJmxSecretName(reconciliation.name()), null)
-                                .map((Void) null);
-                    } else {
-                        // Both current and desired secret are null => nothing to do
-                        return Future.succeededFuture();
-                    }
-
-                });
+        return ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperator, zk);
     }
 
     /**

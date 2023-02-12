@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -60,15 +59,12 @@ import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +76,7 @@ import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPD
  * Kafka Connect model class
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class KafkaConnectCluster extends AbstractModel {
+public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     /**
      * Port of the Kafka Connect REST API
      */
@@ -101,11 +97,6 @@ public class KafkaConnectCluster extends AbstractModel {
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
     private static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
 
-    private static final String NAME_SUFFIX = "-" + COMPONENT_TYPE;
-    private static final String KAFKA_CONNECT_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
-    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
-    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
@@ -125,9 +116,6 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD = "KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
-    protected static final String ENV_VAR_KAFKA_CONNECT_JMX_ENABLED = "KAFKA_CONNECT_JMX_ENABLED";
-    protected static final String ENV_VAR_KAFKA_CONNECT_JMX_USERNAME = "KAFKA_CONNECT_JMX_USERNAME";
-    protected static final String ENV_VAR_KAFKA_CONNECT_JMX_PASSWORD = "KAFKA_CONNECT_JMX_PASSWORD";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
 
@@ -139,19 +127,16 @@ public class KafkaConnectCluster extends AbstractModel {
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
     protected Tracing tracing;
+    protected JmxModel jmx;
 
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
-
-    private boolean isJmxEnabled;
-    private boolean isJmxAuthenticated;
 
     // Templates
     protected PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     protected ResourceTemplate templateInitClusterRoleBinding;
     protected DeploymentTemplate templateDeployment;
     protected PodTemplate templatePod;
-    protected ResourceTemplate templateJmxSecret;
     protected InternalServiceTemplate templateService;
     protected ContainerTemplate templateInitContainer;
 
@@ -209,10 +194,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * @return  Instance of the Kafka Connect model class
      */
     public static KafkaConnectCluster fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
-        KafkaConnectCluster cluster = fromSpec(reconciliation, kafkaConnect.getSpec(), versions,
-                new KafkaConnectCluster(reconciliation, kafkaConnect));
-
-        return cluster;
+        return fromSpec(reconciliation, kafkaConnect.getSpec(), versions, new KafkaConnectCluster(reconciliation, kafkaConnect));
     }
 
     /**
@@ -260,10 +242,13 @@ public class KafkaConnectCluster extends AbstractModel {
 
         kafkaConnect.jvmOptions = spec.getJvmOptions();
 
-        if (spec.getJmxOptions() != null) {
-            kafkaConnect.setJmxEnabled(Boolean.TRUE);
-            AuthenticationUtils.configureKafkaConnectJmxOptions(spec.getJmxOptions().getAuthentication(), kafkaConnect);
-        }
+        kafkaConnect.jmx = new JmxModel(
+                reconciliation.namespace(),
+                KafkaConnectResources.jmxSecretName(kafkaConnect.cluster),
+                kafkaConnect.labels,
+                kafkaConnect.ownerReference,
+                spec
+        );
 
         if (spec.getReadinessProbe() != null) {
             kafkaConnect.readinessProbeOptions = spec.getReadinessProbe();
@@ -299,7 +284,6 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
             kafkaConnect.templateDeployment = template.getDeployment();
             kafkaConnect.templatePod = template.getPod();
-            kafkaConnect.templateJmxSecret = template.getJmxSecret();
             kafkaConnect.templateService = template.getApiService();
             kafkaConnect.templateServiceAccount = template.getServiceAccount();
             kafkaConnect.templateContainer = template.getConnectContainer();
@@ -335,9 +319,7 @@ public class KafkaConnectCluster extends AbstractModel {
         List<ServicePort> ports = new ArrayList<>(1);
         ports.add(ServiceUtils.createServicePort(REST_API_PORT_NAME, REST_API_PORT, REST_API_PORT, "TCP"));
 
-        if (isJmxEnabled()) {
-            ports.add(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
-        }
+        ports.addAll(jmx.servicePorts());
 
         return ServiceUtils.createClusterIpService(
                 serviceName,
@@ -356,9 +338,7 @@ public class KafkaConnectCluster extends AbstractModel {
             portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
         }
 
-        if (isJmxEnabled()) {
-            portList.add(ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT));
-        }
+        portList.addAll(jmx.containerPorts());
 
         return portList;
     }
@@ -594,13 +574,7 @@ public class KafkaConnectCluster extends AbstractModel {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
-        if (isJmxEnabled()) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_JMX_ENABLED, "true"));
-            if (isJmxAuthenticated) {
-                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_KAFKA_CONNECT_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
-                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_KAFKA_CONNECT_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
-            }
-        }
+        varList.addAll(jmx.envVars());
 
         // Add shared environment variables used for all containers
         varList.addAll(ContainerUtils.requiredEnvVars());
@@ -728,65 +702,6 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     /**
-     * @return Return if the jmx has been enabled
-     */
-    public boolean isJmxEnabled() {
-        return isJmxEnabled;
-    }
-
-    /**
-     * Sets the object with jmx options enabled
-     *
-     * @param jmxEnabled if jmx is enabled
-     */
-    public void setJmxEnabled(boolean jmxEnabled) {
-        isJmxEnabled = jmxEnabled;
-    }
-
-    /**
-     * @return  True if the JMX authentication is enabled. False otherwise.
-     */
-    public boolean isJmxAuthenticated() {
-        return isJmxAuthenticated;
-    }
-
-    protected void setJmxAuthenticated(boolean jmxAuthenticated) {
-        isJmxAuthenticated = jmxAuthenticated;
-    }
-
-    /**
-     * @param cluster The name of the cluster.
-     * @return The name of the jmx Secret.
-     */
-    public static String jmxSecretName(String cluster) {
-        return cluster + KafkaConnectCluster.KAFKA_CONNECT_JMX_SECRET_SUFFIX;
-    }
-
-    /**
-     * Generate the Secret containing the username and password to secure the jmx port on the kafka connect workers
-     *
-     * @return The generated Secret
-     */
-    public Secret generateJmxSecret() {
-        Map<String, String> data = new HashMap<>(2);
-        String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
-        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-        for (String key : keys) {
-            data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
-        }
-
-        return ModelUtils.createSecret(
-                KafkaConnectCluster.jmxSecretName(cluster),
-                namespace,
-                labels,
-                ownerReference,
-                data,
-                TemplateUtils.annotations(templateJmxSecret),
-                TemplateUtils.labels(templateJmxSecret)
-        );
-    }
-
-    /**
      * Generates the NetworkPolicies relevant for Kafka Connect nodes
      *
      * @param connectorOperatorEnabled Whether the ConnectorOperator is enabled or not
@@ -813,9 +728,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
 
             // The JMX port (if enabled) is opened to all by default
-            if (isJmxEnabled) {
-                rules.add(NetworkPolicyUtils.createIngressRule(JMX_PORT, List.of()));
-            }
+            rules.addAll(jmx.networkPolicyIngresRules());
 
             // Build the final network policy with all rules covering all the ports
             return NetworkPolicyUtils.createNetworkPolicy(
@@ -897,5 +810,12 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     protected Map<String, String> defaultPodLabels() {
         return DEFAULT_POD_LABELS;
+    }
+
+    /**
+     * @return  JMX Model instance for configuring JMX access
+     */
+    public JmxModel jmx()   {
+        return jmx;
     }
 }

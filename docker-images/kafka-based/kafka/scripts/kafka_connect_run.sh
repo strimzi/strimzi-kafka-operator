@@ -45,7 +45,7 @@ if [ "$KAFKA_CONNECT_METRICS_ENABLED" = "true" ]; then
     export KAFKA_OPTS
 fi
 
-. ./set_kafka_jmx_options.sh "${KAFKA_CONNECT_JMX_ENABLED}" "${KAFKA_CONNECT_JMX_USERNAME}" "${KAFKA_CONNECT_JMX_PASSWORD}"
+. ./set_kafka_jmx_options.sh "${STRIMZI_JMX_ENABLED}" "${STRIMZI_JMX_USERNAME}" "${STRIMZI_JMX_PASSWORD}"
 
 # enabling Tracing agent (initializes tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ] || [ "$STRIMZI_TRACING" = "opentelemetry" ]; then

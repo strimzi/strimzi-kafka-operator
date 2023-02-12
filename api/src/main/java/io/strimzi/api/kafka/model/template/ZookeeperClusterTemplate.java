@@ -28,7 +28,7 @@ import java.util.Map;
     "statefulset", "pod", "clientService", "nodesService", "persistentVolumeClaim",
     "podDisruptionBudget", "zookeeperContainer", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
-public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPreserving {
+public class ZookeeperClusterTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;

@@ -29,7 +29,7 @@ import java.util.Map;
     "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
     "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
-public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
+public class KafkaClusterTemplate implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;

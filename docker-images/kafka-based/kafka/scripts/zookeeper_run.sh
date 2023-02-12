@@ -55,7 +55,7 @@ if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS
 fi
 
-. ./set_kafka_jmx_options.sh "${ZOOKEEPER_JMX_ENABLED}" "${ZOOKEEPER_JMX_USERNAME}" "${ZOOKEEPER_JMX_PASSWORD}"
+. ./set_kafka_jmx_options.sh "${STRIMZI_JMX_ENABLED}" "${STRIMZI_JMX_USERNAME}" "${STRIMZI_JMX_PASSWORD}"
 
 # Configure heap based on the available resources if needed
 . ./dynamic_resources.sh

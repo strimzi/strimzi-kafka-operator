@@ -75,7 +75,6 @@ import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -106,7 +105,7 @@ import static java.util.Collections.singletonMap;
  * Kafka cluster model
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class KafkaCluster extends AbstractStatefulModel {
+public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     protected static final String COMPONENT_TYPE = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
@@ -149,11 +148,6 @@ public class KafkaCluster extends AbstractStatefulModel {
     private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
     private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
 
-    protected static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
-    protected static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-    protected static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
-    protected static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
-
     protected static final String CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_LABELS";
 
     /**
@@ -185,9 +179,6 @@ public class KafkaCluster extends AbstractStatefulModel {
      * Annotation for keeping certificate thumprints
      */
     public static final String ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS = Annotations.STRIMZI_DOMAIN + "custom-listener-cert-thumbprints";
-
-    // Env vars for JMX service
-    protected static final String ENV_VAR_KAFKA_JMX_ENABLED = "KAFKA_JMX_ENABLED";
 
     /**
      * Key under which the broker configuration is stored in Config Map
@@ -223,10 +214,9 @@ public class KafkaCluster extends AbstractStatefulModel {
     private String ccNumPartitions = null;
     private String ccReplicationFactor = null;
     private String ccMinInSyncReplicas = null;
-    private boolean isJmxEnabled;
-    private boolean isJmxAuthenticated;
     private boolean useKRaft = false;
     private String clusterId;
+    private JmxModel jmx;
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
@@ -235,7 +225,6 @@ public class KafkaCluster extends AbstractStatefulModel {
     private StatefulSetTemplate templateStatefulSet;
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
-    private ResourceTemplate templateJmxSecret;
     private InternalServiceTemplate templateHeadlessService;
     private InternalServiceTemplate templateService;
     private ResourceTemplate templateExternalBootstrapService;
@@ -358,10 +347,13 @@ public class KafkaCluster extends AbstractStatefulModel {
         result.gcLoggingEnabled = kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled();
         result.jvmOptions = kafkaClusterSpec.getJvmOptions();
 
-        if (kafkaClusterSpec.getJmxOptions() != null) {
-            result.isJmxEnabled = true;
-            AuthenticationUtils.configureKafkaJmxOptions(kafkaClusterSpec.getJmxOptions().getAuthentication(), result);
-        }
+        result.jmx = new JmxModel(
+                reconciliation.namespace(),
+                KafkaResources.kafkaJmxSecretName(result.cluster),
+                result.labels,
+                result.ownerReference,
+                kafkaClusterSpec
+        );
 
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
@@ -457,7 +449,6 @@ public class KafkaCluster extends AbstractStatefulModel {
             result.templateStatefulSet = template.getStatefulset();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
-            result.templateJmxSecret = template.getJmxSecret();
             result.templateService = template.getBootstrapService();
             result.templateHeadlessService = template.getBrokersService();
             result.templateExternalBootstrapService = template.getExternalBootstrapService();
@@ -641,9 +632,7 @@ public class KafkaCluster extends AbstractStatefulModel {
             ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
         }
 
-        if (isJmxEnabled) {
-            ports.add(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
-        }
+        ports.addAll(jmx.servicePorts());
 
         return ports;
     }
@@ -1237,40 +1226,6 @@ public class KafkaCluster extends AbstractStatefulModel {
                 emptyMap());
     }
 
-    /**
-     * Generate the Secret containing the username and password to secure the jmx port on the Kafka brokers.
-     *
-     * @param currentSecret The existing Secret with the current JMX credentials. Null if no secret exists yet.
-     *
-     * @return The generated Secret
-     */
-    public Secret generateJmxSecret(Secret currentSecret) {
-        if (isJmxAuthenticated) {
-            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-            Map<String, String> data = new HashMap<>(2);
-
-            if (currentSecret != null && currentSecret.getData() != null)  {
-                data.put(SECRET_JMX_USERNAME_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_USERNAME_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
-                data.put(SECRET_JMX_PASSWORD_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_PASSWORD_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
-            } else {
-                data.put(SECRET_JMX_USERNAME_KEY, Util.encodeToBase64(passwordGenerator.generate()));
-                data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
-            }
-
-            return ModelUtils.createSecret(
-                    KafkaResources.kafkaJmxSecretName(cluster),
-                    namespace,
-                    labels,
-                    ownerReference,
-                    data,
-                    TemplateUtils.annotations(templateJmxSecret),
-                    TemplateUtils.labels(templateJmxSecret)
-            );
-        } else {
-            return null;
-        }
-    }
-
     /* test */ List<ContainerPort> getContainerPortList() {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
         ports.add(ContainerUtils.createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT));
@@ -1284,9 +1239,7 @@ public class KafkaCluster extends AbstractStatefulModel {
             ports.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
         }
 
-        if (isJmxEnabled) {
-            ports.add(ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT));
-        }
+        ports.addAll(jmx.containerPorts());
 
         return ports;
     }
@@ -1582,13 +1535,7 @@ public class KafkaCluster extends AbstractStatefulModel {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KRAFT_ENABLED, "true"));
         }
 
-        if (isJmxEnabled) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
-            if (isJmxAuthenticated) {
-                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, KafkaResources.kafkaJmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
-                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_KAFKA_JMX_PASSWORD, KafkaResources.kafkaJmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
-            }
-        }
+        varList.addAll(jmx.envVars());
 
         // Add shared environment variables used for all containers
         varList.addAll(ContainerUtils.requiredEnvVars());
@@ -1665,9 +1612,7 @@ public class KafkaCluster extends AbstractStatefulModel {
         }
 
         // The JMX port (if enabled) is opened to all by default
-        if (isJmxEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(JMX_PORT, List.of()));
-        }
+        rules.addAll(jmx.networkPolicyIngresRules());
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
@@ -1793,10 +1738,6 @@ public class KafkaCluster extends AbstractStatefulModel {
     @Override
     public KafkaConfiguration getConfiguration() {
         return (KafkaConfiguration) configuration;
-    }
-
-    protected void setJmxAuthenticated(boolean jmxAuthenticated) {
-        isJmxAuthenticated = jmxAuthenticated;
     }
 
     /**
@@ -2014,5 +1955,12 @@ public class KafkaCluster extends AbstractStatefulModel {
      */
     public void setInterBrokerProtocolVersion(String interBrokerProtocolVersion) {
         configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
+    }
+
+    /**
+     * @return  JMX Model instance for configuring JMX access
+     */
+    public JmxModel jmx()   {
+        return jmx;
     }
 }

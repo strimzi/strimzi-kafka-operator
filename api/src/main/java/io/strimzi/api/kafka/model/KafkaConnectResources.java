@@ -42,6 +42,17 @@ public class KafkaConnectResources {
     }
 
     /**
+     * Returns the name of the Kafka Secret with JMX credentials.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Kafka JMX Secret.
+     */
+    public static String jmxSecretName(String clusterName) {
+        return clusterName + "-kafka-connect-jmx";
+    }
+
+    /**
      * Returns the name of the Kafka Connect metrics and log {@code ConfigMap} for a {@code KafkaConnect} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding KafkaConnect metrics and log {@code ConfigMap}.

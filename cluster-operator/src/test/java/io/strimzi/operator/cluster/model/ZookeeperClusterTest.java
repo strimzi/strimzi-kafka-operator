@@ -62,8 +62,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT;
-import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT_NAME;
+import static io.strimzi.operator.cluster.model.JmxModel.JMX_PORT;
+import static io.strimzi.operator.cluster.model.JmxModel.JMX_PORT_NAME;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
@@ -247,8 +247,8 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getPorts().get(1).getPort(), is(ZookeeperCluster.CLUSTERING_PORT));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(2).getPort(), is(ZookeeperCluster.LEADER_ELECTION_PORT));
-        assertThat(headless.getSpec().getPorts().get(3).getName(), is(ZookeeperCluster.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(ZookeeperCluster.JMX_PORT));
+        assertThat(headless.getSpec().getPorts().get(3).getName(), is(JmxModel.JMX_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(JmxModel.JMX_PORT));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headless.getSpec().getIpFamilies(), is(nullValue()));
@@ -298,12 +298,12 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        Secret jmxSecret = zookeeperCluster.generateJmxSecret(null);
+        Secret jmxSecret = zookeeperCluster.jmx().jmxSecret(null);
 
         assertThat(jmxSecret.getData(), hasKey("jmx-username"));
         assertThat(jmxSecret.getData(), hasKey("jmx-password"));
 
-        Secret newJmxSecret = zookeeperCluster.generateJmxSecret(jmxSecret);
+        Secret newJmxSecret = zookeeperCluster.jmx().jmxSecret(jmxSecret);
 
         assertThat(newJmxSecret.getData(), hasKey("jmx-username"));
         assertThat(newJmxSecret.getData(), hasKey("jmx-password"));
@@ -341,7 +341,7 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = zookeeperCluster.generateJmxSecret(null);
+        Secret jmxSecret = zookeeperCluster.jmx().jmxSecret(null);
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));

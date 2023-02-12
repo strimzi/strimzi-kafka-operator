@@ -5,8 +5,8 @@ set +x
 EXEC="-jar $JAR_FILE -e -j $JSON_DIR -s $SECONDS_BETWEEN_RUNS -c $CONTINUE_ON_ERROR $ADDITIONAL_JARS_OPTS"
 JMXTRANS_OPTS="$JMXTRANS_OPTS -Dlogback.configurationFile=file:///${JMXTRANS_HOME}/conf/logback.xml"
 
-if [ -n "${KAFKA_JMX_USERNAME}" ]; then
-  JMXTRANS_OPTS="$JMXTRANS_OPTS -Dkafka.username=${KAFKA_JMX_USERNAME} -Dkafka.password=${KAFKA_JMX_PASSWORD}"
+if [ -n "${STRIMZI_JMX_USERNAME}" ]; then
+  JMXTRANS_OPTS="$JMXTRANS_OPTS -Dkafka.username=${STRIMZI_JMX_USERNAME} -Dkafka.password=${STRIMZI_JMX_PASSWORD}"
 fi
 
 # Disable FIPS if needed

@@ -276,7 +276,7 @@ public class JmxTrans extends AbstractModel {
         JmxTransServer server = new JmxTransServer();
 
         server.setHost(brokerServiceName);
-        server.setPort(AbstractModel.JMX_PORT);
+        server.setPort(JmxModel.JMX_PORT);
         server.setQueries(queries);
 
         if (isJmxAuthenticated) {
@@ -336,8 +336,8 @@ public class JmxTrans extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
 
         if (isJmxAuthenticated) {
-            varList.add(ContainerUtils.createEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME, KafkaResources.kafkaJmxSecretName(cluster), KafkaCluster.SECRET_JMX_USERNAME_KEY));
-            varList.add(ContainerUtils.createEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD, KafkaResources.kafkaJmxSecretName(cluster), KafkaCluster.SECRET_JMX_PASSWORD_KEY));
+            varList.add(ContainerUtils.createEnvVarFromSecret(JmxModel.ENV_VAR_STRIMZI_JMX_USERNAME, KafkaResources.kafkaJmxSecretName(cluster), JmxModel.JMX_USERNAME_KEY));
+            varList.add(ContainerUtils.createEnvVarFromSecret(JmxModel.ENV_VAR_STRIMZI_JMX_PASSWORD, KafkaResources.kafkaJmxSecretName(cluster), JmxModel.JMX_PASSWORD_KEY));
         }
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_JMXTRANS_LOGGING_LEVEL, loggingLevel));
@@ -352,7 +352,7 @@ public class JmxTrans extends AbstractModel {
 
     protected static io.fabric8.kubernetes.api.model.Probe jmxTransReadinessProbe(io.strimzi.api.kafka.model.Probe  kafkaJmxMetricsReadinessProbe, String clusterName) {
         String internalBootstrapServiceName = KafkaResources.brokersServiceName(clusterName);
-        String metricsPortValue = String.valueOf(KafkaCluster.JMX_PORT);
+        String metricsPortValue = String.valueOf(JmxModel.JMX_PORT);
         kafkaJmxMetricsReadinessProbe = kafkaJmxMetricsReadinessProbe == null ? DEFAULT_JMX_TRANS_PROBE : kafkaJmxMetricsReadinessProbe;
         return ProbeGenerator.execProbe(kafkaJmxMetricsReadinessProbe, Arrays.asList("/opt/jmx/jmxtrans_readiness_check.sh", internalBootstrapServiceName, metricsPortValue));
     }
