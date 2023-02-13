@@ -15,25 +15,25 @@ get_default_kafka_version
 get_kafka_does_not_support
 
 # Set the default images
-entity_operator_tls_sidecar_version="{{ default .Values.defaultImageRegistry .Values.tlsSidecarEntityOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarEntityOperator.image.repository }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarEntityOperator.image.tagPrefix }}-kafka-${default_kafka_version}"
-kafka_exporter_version="{{ default .Values.defaultImageRegistry .Values.kafkaExporter.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaExporter.image.repository }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaExporter.image.tagPrefix }}-kafka-${default_kafka_version}"
+entity_operator_tls_sidecar_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"tlsSidecarEntityOperator\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
+kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${default_kafka_version}\")) }}"
 
 for version in "${versions[@]}"
 do
-    entity_operator_tls_sidecar_version="{{ default .Values.defaultImageRegistry .Values.tlsSidecarEntityOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarEntityOperator.image.repository }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarEntityOperator.image.tagPrefix }}-kafka-${version}"
-    kafka_exporter_version="{{ default .Values.defaultImageRegistry .Values.kafkaExporter.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaExporter.image.repository }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaExporter.image.tagPrefix }}-kafka-${version}"
-    cruise_control_version="{{ default .Values.defaultImageRegistry .Values.cruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.cruiseControl.image.repository }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.cruiseControl.image.tagPrefix }}-kafka-${version}"
+    entity_operator_tls_sidecar_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"tlsSidecarEntityOperator\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+    kafka_exporter_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
+    cruise_control_version="{{ template \"strimzi.image\" (merge . (dict \"key\" \"cruiseControl\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_versions="${kafka_versions}
-${version}={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-${version}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafka\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_connect_versions="${kafka_connect_versions}
-${version}={{ default .Values.defaultImageRegistry .Values.kafkaConnect.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaConnect.image.repository }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaConnect.image.tagPrefix }}-kafka-${version}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaConnect\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_mirror_maker_versions="${kafka_mirror_maker_versions}
-${version}={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-${version}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaMirrorMaker\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     kafka_exporter_versions="${kafka_exporter_versions}
-${version}={{ default .Values.defaultImageRegistry .Values.kafkaExporter.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaExporter.image.repository }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaExporter.image.tagPrefix }}-kafka-${version}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaExporter\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     if [[ ${version_does_not_support[${version}]} != *"kafkaMirrorMaker2"* ]] ; then
       kafka_mirror_maker_2_versions="${kafka_mirror_maker_2_versions}
-${version}={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker2.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker2.image.repository }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker2.image.tagPrefix }}-kafka-${version}"
+${version}={{ template \"strimzi.image\" (merge . (dict \"key\" \"kafkaMirrorMaker2\" \"tagSuffix\" \"-kafka-${version}\")) }}"
     fi
 done
 
