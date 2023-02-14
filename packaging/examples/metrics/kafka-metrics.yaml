@@ -214,6 +214,10 @@ data:
     #- pattern: "kafka.server<type=raft-channel-metrics><>(.+):"
     #  name: kafka_server_raftchannelmetrics_$1
     #  type: GAUGE
+    # Broker metrics related to fetching metadata topic records in KRaft mode
+    #- pattern: "kafka.server<type=broker-metadata-metrics><>(.+):"
+    #  name: kafka_server_brokermetadatametrics_$1
+    #  type: GAUGE
   zookeeper-metrics-config.yml: |
     # See https://github.com/prometheus/jmx_exporter for more info about JMX Prometheus Exporter metrics
     lowercaseOutputName: true
