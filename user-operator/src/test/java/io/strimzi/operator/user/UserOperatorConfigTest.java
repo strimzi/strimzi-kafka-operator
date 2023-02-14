@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -45,7 +44,7 @@ public class UserOperatorConfigTest {
 
     @Test
     public void testFromMap()    {
-        UserOperatorConfig config = new UserOperatorConfig(ENV_VARS);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(ENV_VARS);
 
         assertThat(config.getNamespace(), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
         assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(ENV_VARS.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS))));
@@ -73,7 +72,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_NAMESPACE);
 
-        assertThrows(InvalidConfigurationException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -81,7 +80,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME);
 
-        assertThrows(InvalidConfigurationException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -89,7 +88,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.defaultValue())));
     }
 
@@ -98,7 +97,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH);
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH), is(Integer.parseInt(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.defaultValue())));
     }
 
@@ -107,7 +106,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_LABELS);
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.LABELS), is(Labels.EMPTY));
     }
 
@@ -116,7 +115,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.CA_NAMESPACE), is(envVars.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
     }
 
@@ -125,7 +124,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_a_long");
 
-        assertThrows(NumberFormatException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -133,7 +132,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, "not_an_integer");
 
-        assertThrows(NumberFormatException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -141,7 +140,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
 
-        assertThrows(IllegalArgumentException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(IllegalArgumentException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -150,7 +149,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY);
         envVars.remove(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL);
 
-        UserOperatorConfig config =  new UserOperatorConfig(envVars);
+        UserOperatorConfig config =  UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.CERTS_VALIDITY_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_VALIDITY_DAYS.defaultValue())));
         assertThat(config.get(UserOperatorConfig.CERTS_RENEWAL_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_RENEWAL_DAYS.defaultValue())));
     }
@@ -160,7 +159,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED);
 
-        UserOperatorConfig config =  new UserOperatorConfig(envVars);
+        UserOperatorConfig config =  UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED), is(Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue())));
     }
 
@@ -169,7 +168,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.remove(UserOperatorConfig.STRIMZI_KRAFT_ENABLED);
 
-        UserOperatorConfig config =  new UserOperatorConfig(envVars);
+        UserOperatorConfig config =  UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.KRAFT_ENABLED), is(Boolean.parseBoolean(UserOperatorConfig.KRAFT_ENABLED.defaultValue())));
     }
 
@@ -179,30 +178,32 @@ public class UserOperatorConfigTest {
 
         envVars.put(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS, "* * 8-10 * * ?;* * 14-15 * * ?");
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
-        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(config.get(UserOperatorConfig.MAINTENANCE_TIME_WINDOWS)), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+        assertThat(config.getMaintenanceWindows(), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
     }
 
     @Test
-    public void testParseMaintenanceTimeWindows()    {
-        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?;* * 14-15 * * ?"), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
-        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?"), is(List.of("* * 8-10 * * ?")));
-        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(null), is(nullValue()));
-        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(""), is(nullValue()));
-    }
+    public void testKafkaAdminClientConfiguration() {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
 
-    @Test
-    public void testParseKafkaAdminClientConfiguration()    {
-        Properties config = UserOperatorConfig.parseKafkaAdminClientConfiguration("default.api.timeout.ms=13000\n" +
+        envVars.put(UserOperatorConfig.STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION, "default.api.timeout.ms=13000\n" +
                 "request.timeout.ms=130000");
-        assertThat(config.get("default.api.timeout.ms"), is("13000"));
-        assertThat(config.get("request.timeout.ms"), is("130000"));
+
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+
+        assertThat(config.getKafkaAdminClientConfiguration().get("default.api.timeout.ms"), is("13000"));
+        assertThat(config.getKafkaAdminClientConfiguration().get("request.timeout.ms"), is("130000"));
     }
 
     @Test
-    public void testParseNullKafkaAdminClientConfiguration()    {
-        Properties config = UserOperatorConfig.parseKafkaAdminClientConfiguration(null);
-        assertThat(config.isEmpty(), is(true));
+    public void testParseNullKafkaAdminClientConfiguration() {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
+
+        envVars.put(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS, null);
+
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
+
+        assertThat(config.getKafkaAdminClientConfiguration().isEmpty(), is(true));
     }
 
     @Test
@@ -210,7 +211,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, "2048");
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.WORK_QUEUE_SIZE), is(2048));
     }
 
@@ -219,7 +220,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, "abcdefg");
 
-        assertThrows(NumberFormatException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -227,7 +228,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "120000");
 
-        UserOperatorConfig config = new UserOperatorConfig(envVars);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.OPERATION_TIMEOUT_MS), is(120000L));
     }
 
@@ -236,6 +237,6 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "abcdefg");
 
-        assertThrows(NumberFormatException.class, () -> new UserOperatorConfig(envVars));
+        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 }

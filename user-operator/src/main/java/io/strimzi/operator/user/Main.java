@@ -73,9 +73,7 @@ public class Main {
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
         // Create and log UserOperatorConfig
-        Map<String, String> m = new HashMap<>(System.getenv());
-        m.keySet().retainAll(UserOperatorConfig.keyNames());
-        UserOperatorConfig config = UserOperatorConfig.buildFromMap(m);
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes

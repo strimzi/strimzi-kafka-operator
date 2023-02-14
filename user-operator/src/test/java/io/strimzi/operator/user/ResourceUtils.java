@@ -21,12 +21,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.UserOperatorConfig.UserOperatorConfigBuilder;
+import org.jose4j.jwk.Use;
 
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ResourceUtils {
@@ -40,23 +37,24 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength, String secretPrefix) {
 
-        UserOperatorConfigBuilder config = new UserOperatorConfigBuilder()
-                                                   .with(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE)
-                                                   .with(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
-                                                   .with(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME)
-                                                   .with(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME)
-                                                   .with(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported))
-                                                   .with(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, String.valueOf(useKRaft));
+        Map<String, String> envVars = new HashMap<>(4);
+        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
+        envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
+        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
+        envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, Boolean.toString(useKRaft));
+
 
         if (!scramShaPasswordLength.equals("32")) {
-            config.with(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
+            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
         }
 
         if (secretPrefix != null) {
-            config.with(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
+            envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
         }
 
-        return config.build();
+        return UserOperatorConfig.buildFromMap(envVars);
     }
 
     public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
