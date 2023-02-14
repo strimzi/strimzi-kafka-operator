@@ -1857,7 +1857,7 @@ public class KafkaConnectClusterTest {
 
         KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
 
-        Secret jmxSecret = kafkaConnectCluster.generateJmxSecret();
+        Secret jmxSecret = kafkaConnectCluster.jmx().jmxSecret(null);
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));

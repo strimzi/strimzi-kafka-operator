@@ -108,12 +108,6 @@ public abstract class AbstractModel {
     protected String logAndMetricsConfigVolumeName;
 
     /**
-     * JMX configuration used for components such as Kafka and JMX Trans
-     */
-    protected static final String JMX_PORT_NAME = "jmx";
-    protected static final int JMX_PORT = 9999;
-
-    /**
      * Container configuration
      */
     protected ResourceRequirements resources;

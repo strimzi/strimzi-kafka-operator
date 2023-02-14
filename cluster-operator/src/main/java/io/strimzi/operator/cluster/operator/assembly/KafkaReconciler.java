@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.Kafka;
@@ -765,24 +764,7 @@ public class KafkaReconciler {
      * @return  Completes when the JMX secret is successfully created or updated
      */
     protected Future<Void> jmxSecret() {
-        return secretOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaJmxSecretName(reconciliation.name()))
-                .compose(currentJmxSecret -> {
-                    Secret desiredJmxSecret = kafka.generateJmxSecret(currentJmxSecret);
-
-                    if (desiredJmxSecret != null)  {
-                        // Desired secret is not null => should be updated
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaJmxSecretName(reconciliation.name()), desiredJmxSecret)
-                                .map((Void) null);
-                    } else if (currentJmxSecret != null)    {
-                        // Desired secret is null but current is not => we should delete the secret
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaJmxSecretName(reconciliation.name()), null)
-                                .map((Void) null);
-                    } else {
-                        // Both current and desired secret are null => nothing to do
-                        return Future.succeededFuture();
-                    }
-
-                });
+        return ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperator, kafka);
     }
 
     /**

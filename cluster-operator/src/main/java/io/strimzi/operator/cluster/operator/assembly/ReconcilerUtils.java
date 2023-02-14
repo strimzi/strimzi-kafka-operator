@@ -18,6 +18,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.cluster.model.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -266,5 +267,34 @@ public class ReconcilerUtils {
         );
 
         return podThumbprint.equals(stsThumbprint);
+    }
+
+    /**
+     * Reconciles JMX Secret based on a JMX model
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param secretOperator    Operator for managing Secrets
+     * @param cluster           Cluster which implements JMX support
+     *
+     * @return  Future which completes when the JMX Secret is reconciled
+     */
+    public static Future<Void> reconcileJmxSecret(Reconciliation reconciliation, SecretOperator secretOperator, SupportsJmx cluster)  {
+        return secretOperator.getAsync(reconciliation.namespace(), cluster.jmx().secretName())
+                .compose(currentJmxSecret -> {
+                    Secret desiredJmxSecret = cluster.jmx().jmxSecret(currentJmxSecret);
+
+                    if (desiredJmxSecret != null)  {
+                        // Desired secret is not null => should be updated
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), desiredJmxSecret)
+                                .map((Void) null);
+                    } else if (currentJmxSecret != null)    {
+                        // Desired secret is null but current is not => we should delete the secret
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), cluster.jmx().secretName(), null)
+                                .map((Void) null);
+                    } else {
+                        // Both current and desired secret are null => nothing to do
+                        return Future.succeededFuture();
+                    }
+                });
     }
 }

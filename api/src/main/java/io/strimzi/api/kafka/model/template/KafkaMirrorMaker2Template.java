@@ -26,7 +26,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
-public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyPreserving {
+public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
     private DeploymentTemplate deployment;

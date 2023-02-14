@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -1113,19 +1112,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
 
         return updateStatusPromise.future();
-    }
-
-    Future<ReconcileResult<Secret>> kafkaConnectJmxSecret(Reconciliation reconciliation, String namespace, String name, KafkaConnectCluster connectCluster) {
-        if (connectCluster.isJmxAuthenticated()) {
-            Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaConnectCluster.jmxSecretName(name));
-            return secretFuture.compose(res -> {
-                if (res == null) {
-                    return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), connectCluster.generateJmxSecret());
-                }
-                return Future.succeededFuture(ReconcileResult.noop(res));
-            });
-        }
-        return secretOperations.reconcile(reconciliation, namespace, KafkaConnectCluster.jmxSecretName(name), null);
     }
 
     /**

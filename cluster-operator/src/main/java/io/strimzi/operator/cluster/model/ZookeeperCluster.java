@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
-import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -42,7 +41,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -61,7 +59,7 @@ import static java.util.Collections.emptyMap;
  * ZooKeeper cluster model
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class ZookeeperCluster extends AbstractStatefulModel {
+public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJmx {
     /**
      * Port for plaintext access for ZooKeeper clients (available inside the pod only)
      */
@@ -93,17 +91,9 @@ public class ZookeeperCluster extends AbstractStatefulModel {
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_NAME = "cluster-ca-certs";
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs/";
 
-    // Env vars for JMX service
-    protected static final String ENV_VAR_ZOOKEEPER_JMX_ENABLED = "ZOOKEEPER_JMX_ENABLED";
-    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
-    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
-    private static final String ENV_VAR_ZOOKEEPER_JMX_USERNAME = "ZOOKEEPER_JMX_USERNAME";
-    private static final String ENV_VAR_ZOOKEEPER_JMX_PASSWORD = "ZOOKEEPER_JMX_PASSWORD";
-
     // Zookeeper configuration
     private final boolean isSnapshotCheckEnabled;
-    private boolean isJmxEnabled = false;
-    private boolean isJmxAuthenticated = false;
+    private JmxModel jmx;
 
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
@@ -128,7 +118,6 @@ public class ZookeeperCluster extends AbstractStatefulModel {
     private StatefulSetTemplate templateStatefulSet;
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
-    private ResourceTemplate templateJmxSecret;
     private InternalServiceTemplate templateHeadlessService;
     private InternalServiceTemplate templateService;
 
@@ -261,13 +250,13 @@ public class ZookeeperCluster extends AbstractStatefulModel {
 
         zk.jvmOptions = zookeeperClusterSpec.getJvmOptions();
 
-        if (zookeeperClusterSpec.getJmxOptions() != null) {
-            zk.isJmxEnabled = true;
-
-            if (zookeeperClusterSpec.getJmxOptions().getAuthentication() != null)   {
-                zk.isJmxAuthenticated = zookeeperClusterSpec.getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword;
-            }
-        }
+        zk.jmx = new JmxModel(
+                reconciliation.namespace(),
+                KafkaResources.zookeeperJmxSecretName(zk.cluster),
+                zk.labels,
+                zk.ownerReference,
+                zookeeperClusterSpec
+        );
 
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
@@ -277,7 +266,6 @@ public class ZookeeperCluster extends AbstractStatefulModel {
             zk.templateStatefulSet = template.getStatefulset();
             zk.templatePodSet = template.getPodSet();
             zk.templatePod = template.getPod();
-            zk.templateJmxSecret = template.getJmxSecret();
             zk.templateService = template.getClientService();
             zk.templateHeadlessService = template.getNodesService();
             zk.templateServiceAccount = template.getServiceAccount();
@@ -336,9 +324,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
         }
 
         // The JMX port (if enabled) is opened to all by default
-        if (isJmxEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(JMX_PORT, List.of()));
-        }
+        rules.addAll(jmx.networkPolicyIngresRules());
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
@@ -508,13 +494,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        if (isJmxEnabled) {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_JMX_ENABLED, "true"));
-            if (isJmxAuthenticated) {
-                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_USERNAME, KafkaResources.zookeeperJmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
-                varList.add(ContainerUtils.createEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_PASSWORD, KafkaResources.zookeeperJmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
-            }
-        }
+        varList.addAll(jmx.envVars());
 
         ModelUtils.heapOptions(varList, 75, 2L * 1024L * 1024L * 1024L, jvmOptions, resources);
         ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
@@ -535,9 +515,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
         portList.add(ServiceUtils.createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
         portList.add(ServiceUtils.createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
 
-        if (isJmxEnabled) {
-            portList.add(ServiceUtils.createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
-        }
+        portList.addAll(jmx.servicePorts());
 
         return portList;
     }
@@ -553,9 +531,7 @@ public class ZookeeperCluster extends AbstractStatefulModel {
             portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
         }
 
-        if (isJmxEnabled) {
-            portList.add(ContainerUtils.createContainerPort(JMX_PORT_NAME, JMX_PORT));
-        }
+        portList.addAll(jmx.containerPorts());
 
         return portList;
     }
@@ -691,36 +667,9 @@ public class ZookeeperCluster extends AbstractStatefulModel {
     }
 
     /**
-     * Generate the Secret containing the username and password to secure the jmx port on the zookeeper nodes
-     *
-     * @param currentSecret The existing Secret with the current JMX credentials. Null if no secret exists yet.
-     *
-     * @return The generated Secret
+     * @return  JMX Model instance for configuring JMX access
      */
-    public Secret generateJmxSecret(Secret currentSecret) {
-        if (isJmxAuthenticated) {
-            PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-            Map<String, String> data = new HashMap<>(2);
-
-            if (currentSecret != null && currentSecret.getData() != null)  {
-                data.put(SECRET_JMX_USERNAME_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_USERNAME_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
-                data.put(SECRET_JMX_PASSWORD_KEY, currentSecret.getData().computeIfAbsent(SECRET_JMX_PASSWORD_KEY, (key) -> Util.encodeToBase64(passwordGenerator.generate())));
-            } else {
-                data.put(SECRET_JMX_USERNAME_KEY, Util.encodeToBase64(passwordGenerator.generate()));
-                data.put(SECRET_JMX_PASSWORD_KEY, Util.encodeToBase64(passwordGenerator.generate()));
-            }
-
-            return ModelUtils.createSecret(
-                    KafkaResources.zookeeperJmxSecretName(cluster),
-                    namespace,
-                    labels,
-                    ownerReference,
-                    data,
-                    TemplateUtils.annotations(templateJmxSecret),
-                    TemplateUtils.labels(templateJmxSecret)
-            );
-        } else {
-            return null;
-        }
+    public JmxModel jmx()   {
+        return jmx;
     }
 }

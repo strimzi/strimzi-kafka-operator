@@ -93,8 +93,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT;
-import static io.strimzi.operator.cluster.model.AbstractModel.JMX_PORT_NAME;
+import static io.strimzi.operator.cluster.model.JmxModel.JMX_PORT;
+import static io.strimzi.operator.cluster.model.JmxModel.JMX_PORT_NAME;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -426,8 +426,8 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getPorts().get(3).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9093));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getPorts().get(4).getName(), is(KafkaCluster.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(KafkaCluster.JMX_PORT));
+        assertThat(headless.getSpec().getPorts().get(4).getName(), is(JmxModel.JMX_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(JmxModel.JMX_PORT));
         assertThat(headless.getSpec().getPorts().get(4).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
@@ -646,7 +646,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = kc.generateJmxSecret(null);
+        Secret jmxSecret = kc.jmx().jmxSecret(null);
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
@@ -670,12 +670,12 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = kc.generateJmxSecret(null);
+        Secret jmxSecret = kc.jmx().jmxSecret(null);
 
         assertThat(jmxSecret.getData(), hasKey("jmx-username"));
         assertThat(jmxSecret.getData(), hasKey("jmx-password"));
 
-        Secret newJmxSecret = kc.generateJmxSecret(jmxSecret);
+        Secret newJmxSecret = kc.jmx().jmxSecret(jmxSecret);
 
         assertThat(newJmxSecret.getData(), hasKey("jmx-username"));
         assertThat(newJmxSecret.getData(), hasKey("jmx-password"));
@@ -3411,7 +3411,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testKafkaContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = KafkaCluster.ENV_VAR_KAFKA_JMX_ENABLED;
+        String testEnvOneKey = JmxModel.ENV_VAR_STRIMZI_JMX_ENABLED;
         String testEnvOneValue = "test.env.one";
         envVar1.setName(testEnvOneKey);
         envVar1.setValue(testEnvOneValue);
