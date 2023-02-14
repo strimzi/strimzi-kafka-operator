@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a mode for components with enabled JMX access
+ * Represents a model for components with enabled JMX access
  */
 public class JmxModel {
     protected static final String JMX_PORT_NAME = "jmx";
