@@ -49,7 +49,7 @@ spec:
             name: {{ .Values.logConfigMap }}
       containers:
         - name: strimzi-cluster-operator
-          image: {{ default .Values.defaultImageRegistry .Values.image.registry }}/{{ default .Values.defaultImageRepository .Values.image.repository}}/{{ .Values.image.name }}:{{ default .Values.defaultImageTag .Values.image.tag }}
+          image: {{ template "strimzi.image" (set . "key" "") }}
           ports:
             - containerPort: 8080
               name: http
@@ -84,19 +84,19 @@ spec:
               value: {{ .Values.operationTimeoutMs | quote }}
             {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: {{ default .Values.defaultImageRegistry  .Values.topicOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.topicOperator.image.repository }}/{{ .Values.topicOperator.image.name }}:{{ default  .Values.defaultImageTag .Values.topicOperator.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "topicOperator") }}
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: {{ default .Values.defaultImageRegistry  .Values.userOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.userOperator.image.repository }}/{{ .Values.userOperator.image.name }}:{{ default .Values.defaultImageTag .Values.userOperator.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "userOperator") }}
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: {{ default .Values.defaultImageRegistry  .Values.kafkaInit.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaInit.image.repository }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaInit.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "kafkaInit") }}
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: {{ default .Values.defaultImageRegistry  .Values.kafkaBridge.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaBridge.image.repository }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaBridge.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "kafkaBridge") }}
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
-              value: {{ default .Values.defaultImageRegistry  .Values.jmxTrans.image.registry }}/{{ default .Values.defaultImageRepository .Values.jmxTrans.image.repository }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.defaultImageTag .Values.jmxTrans.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "jmxTrans") }}
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: {{ default .Values.defaultImageRegistry  .Values.kanikoExecutor.image.registry }}/{{ default .Values.defaultImageRepository .Values.kanikoExecutor.image.repository }}/{{ .Values.kanikoExecutor.image.name }}:{{ default .Values.defaultImageTag .Values.kanikoExecutor.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "kanikoExecutor") }}
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
-              value: {{ default .Values.defaultImageRegistry  .Values.mavenBuilder.image.registry }}/{{ default .Values.defaultImageRepository .Values.mavenBuilder.image.repository }}/{{ .Values.mavenBuilder.image.name }}:{{ default .Values.defaultImageTag .Values.mavenBuilder.image.tag }}
+              value: {{ template "strimzi.image" (set . "key" "mavenBuilder") }}
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
