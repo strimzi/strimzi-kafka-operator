@@ -1,0 +1,63 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deploy-kafka-connect-with-plugins.adoc
+
+[id='con-securing-kafka-connect-api-{context}']
+= Using the Kafka Connect API securely
+
+[role="_abstract"]
+To grant a user access to the Kafka Connect API, a Kafka cluster admin must provide them with the API URL. 
+This includes the hostname or IP address of the Kafka Connect cluster and the port number on which the API is running (by default, port 8083). 
+Additionally, the user must have authenticated access to the Kubernetes cluster and the Kafka Connect REST API endpoint in order to make a request.
+
+It is crucial to restrict access to the Kafka Connect API only to trusted users to prevent unauthorized actions and potential security issues. 
+The Kafka Connect API provides extensive capabilities for altering connector configurations, which makes it all the more important to take security precautions.
+
+For improved security, we recommend configuring the following properties for the Kafka Connect API:
+
+`org.apache.kafka.disallowed.login.modules`:: Set the `org.apache.kafka.disallowed.login.modules` Java system property to prevent the use of insecure login modules. 
+For example, specifying `org.apache.kafka.common.security.plain.PlainLoginModule` prevents the use of the Kafka `PlainLoginModule`.
++
+.Example configuration for disallowing login modules
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true" 
+spec:
+  # ...
+  jvmOptions:
+    javaSystemProperties:
+      - name: org.apache.kafka.disallowed.login.modules
+        value: org.apache.kafka.common.security.plain.PlainLoginModule
+# ...      
+----
++
+System properties are passed to the JVM using the standard `-D` option.
++
+Only allow trusted login modules and follow the latest advice from Kafka for the version you are using.
+For example, later versions of Kafka disable several insecure JNDI login modules by default. 
+As a best practice, you should explicitly disallow insecure login modules in your Kafka Connect configuration by using the `org.apache.kafka.disallowed.login.modules` system property.
+
+`connector.client.config.override.policy`:: Set the `connector.client.config.override.policy` property to `none` (default) to prevent connector configurations from being overridden by unauthenticated requests. 
++
+.Example configuration for prevent configurations being overridden
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true" 
+spec:
+  # ...
+  config:
+    connector.client.config.override.policy: None
+# ...      
+----
++
+NOTE: You can also configure `connector.client.config.override.policy` at the connector level. 

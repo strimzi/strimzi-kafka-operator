@@ -38,5 +38,7 @@ include::../../modules/deploying/proc-manual-restart-connector.adoc[leveloffset=
 include::../../modules/deploying/proc-manual-restart-connector-task.adoc[leveloffset=+1]
 //Exposing the Kafka Connect API
 include::../../modules/deploying/con-exposing-kafka-connect-api.adoc[leveloffset=+1]
+//Securing the Kafka Connect API
+include::../../modules/deploying/con-securing-kafka-connect-api.adoc[leveloffset=+1]
 //Switching from the Kafka Connect API to KafkaConnector
 include::../../modules/deploying/con-switching-api-to-kafka-connector.adoc[leveloffset=+1]
