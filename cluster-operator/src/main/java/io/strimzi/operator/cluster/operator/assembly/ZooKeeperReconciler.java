@@ -590,10 +590,10 @@ public class ZooKeeperReconciler {
      * @return Map with Pod annotations
      */
     public Map<String, String> zkPodSetPodAnnotations(int podNum) {
-        Map<String, String> podAnnotations = new LinkedHashMap<>(2);
+        Map<String, String> podAnnotations = new LinkedHashMap<>((int) Math.ceil(podNum / 0.75));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
         podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
-        podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, zkCertificateHash.get(podNum));
+        podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, zkCertificateHash.get(podNum));
         return podAnnotations;
     }
 
@@ -775,9 +775,9 @@ public class ZooKeeperReconciler {
                     podSetDiff.resource(),
                     pod,
                     fsResizingRestartRequest,
-                    Annotations.hasAnnotationWithValue(
+                    !Annotations.hasAnnotationWithValue(
                             pod, ANNO_STRIMZI_SERVER_CERT_HASH,
-                            zkCertificateHash.get(ANNO_STRIMZI_SERVER_CERT_HASH)),
+                            zkCertificateHash.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()))),
                     clusterCa).getAllReasonNotes());
         } else {
             return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, statefulSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());

@@ -619,17 +619,6 @@ public class KafkaReconciler {
     }
 
     /**
-     * Utility method to extract pod index number from pod name
-     *
-     * @param podName   Name of the pod
-     *
-     * @return          Index of the pod
-     */
-    private static int getPodIndexFromPodName(String podName)  {
-        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
-    }
-
-    /**
      * Generates and creates the ConfigMaps with per-broker configuration for Kafka brokers used in PodSets. It will
      * also delete the ConfigMaps for any scaled-down brokers (scale down is done before this is called in the
      * reconciliation)
@@ -664,7 +653,7 @@ public class KafkaReconciler {
                     // Create / update the desired config maps
                     for (ConfigMap cm : desiredConfigMaps) {
                         String cmName = cm.getMetadata().getName();
-                        int brokerId = getPodIndexFromPodName(cmName);
+                        int brokerId = ReconcilerUtils.getPodIndexFromPodName(cmName);
 
                         // The advertised hostname and port might change. If they change, we need to roll the pods.
                         // Here we collect their hash to trigger the rolling update. For per-broker configuration,
@@ -809,7 +798,7 @@ public class KafkaReconciler {
         Map<String, String> podAnnotations = commonKafkaPodAnnotations(brokerId);
 
         // Annotation of broker certificate hash
-        podAnnotations.put(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(brokerId));
+        podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(brokerId));
 
         return podAnnotations;
     }
@@ -1092,9 +1081,9 @@ public class KafkaReconciler {
                             podSetDiff.resource(),
                             pod,
                             fsResizingRestartRequest,
-                            Annotations.hasAnnotationWithValue(
+                            !Annotations.hasAnnotationWithValue(
                                     pod, ANNO_STRIMZI_SERVER_CERT_HASH,
-                                    kafkaServerCertificateHash.get(ANNO_STRIMZI_SERVER_CERT_HASH)),
+                                    kafkaServerCertificateHash.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()))),
                             clusterCa,
                             clientsCa
                     ), listenerReconciliationResults.advertisedHostnames,
@@ -1311,7 +1300,7 @@ public class KafkaReconciler {
 
                         for (Pod broker : pods) {
                             String podName = broker.getMetadata().getName();
-                            Integer podIndex = getPodIndexFromPodName(podName);
+                            Integer podIndex = ReconcilerUtils.getPodIndexFromPodName(podName);
 
                             if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
                                 String hostIP = broker.getStatus().getHostIP();

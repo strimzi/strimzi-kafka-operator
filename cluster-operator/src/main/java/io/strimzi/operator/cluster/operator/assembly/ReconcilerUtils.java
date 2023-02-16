@@ -297,4 +297,15 @@ public class ReconcilerUtils {
                     }
                 });
     }
+
+    /**
+     * Utility method to extract pod index number from pod name
+     *
+     * @param podName   Name of the pod
+     *
+     * @return          Index of the pod
+     */
+    public static int getPodIndexFromPodName(String podName)  {
+        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
+    }
 }

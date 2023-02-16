@@ -673,6 +673,10 @@ public class ResourceUtils {
                 ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
     }
 
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
+        return dummyClusterOperatorConfig(versions, operationTimeoutMs, "");
+    }
+
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
         return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
     }
