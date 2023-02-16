@@ -25,6 +25,7 @@ rules:
   verbs:
   - get
   - list
+  - watch
   - create
   - patch
   - update
