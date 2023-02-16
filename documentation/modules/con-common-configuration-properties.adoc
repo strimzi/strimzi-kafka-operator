@@ -44,12 +44,11 @@ A cipher suite is a set of algorithms for secure connection and data transfer.
 For example, a cipher suite specification might use a combination of the following algorithms:
 
 * TLS authentication
-* ECDHE (Elliptic Curve Diffie-Hellman Ephemeral) key exchange
-* RSA authentication
-* AES (Advanced Encryption Standard) encryption
+* AES (Advanced Encryption Standard) encryption (256-bit key)
+* GCM (Galois/Counter Mode) authenticated encryption
 * SHA384 (Secure Hash Algorithm) data integrity protection
 
-The combination is encapsulated in the `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384` cipher suite specification.
+The combination is encapsulated in the `TLS_AES_256_GCM_SHA384` cipher suite specification.
 
 The `ssl.enabled.protocols` property specifies the available TLS versions that can be used for secure communication between the cluster and its clients. 
 The `ssl.protocol` property sets the default TLS version for all connections, and it must be chosen from the enabled protocols.
@@ -61,7 +60,7 @@ Use the `ssl.endpoint.identification.algorithm` property to enable or disable ho
 # ...
 spec:
   config:
-    ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" # <1>
+    ssl.cipher.suites: "TLS_AES_256_GCM_SHA384" # <1>
     ssl.enabled.protocols: "TLSv1.3", "TLSv1.2" # <2>
     ssl.protocol: "TLSv1.3" # <3>
     ssl.endpoint.identification.algorithm: HTTPS # <4>
