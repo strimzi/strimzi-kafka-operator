@@ -77,11 +77,13 @@ public class ConnectBuildOperator {
     /**
      * Asynchronously runs the KafkaConnectBuild (if present) and reconciles the related resources
      *
-     * @param reconciliation    The reconciliation
-     * @param namespace         Namespace of the Connect cluster
-     * @param controllerResource       Name of the Connect cluster
-     * @param connectBuild      KafkaConnectBuild object
-     * @return                  Future for tracking the asynchronous result of the reconciliation steps
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param controllerResource    The controller resource (Deployment or StrimziPodSet) with annotations describing
+     *                              the current state. Or null if it does not exist yet.
+     * @param connectBuild          KafkaConnectBuild object from the Kafka Connect custom resource
+     *
+     * @return  Future for tracking the asynchronous result of the reconciliation steps
      */
     public Future<BuildInfo> reconcile(Reconciliation reconciliation, String namespace, HasMetadata controllerResource, KafkaConnectBuild connectBuild) {
         if (connectBuild.getBuild() == null) {
