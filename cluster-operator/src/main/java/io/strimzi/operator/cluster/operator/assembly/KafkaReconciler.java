@@ -1081,9 +1081,7 @@ public class KafkaReconciler {
                             podSetDiff.resource(),
                             pod,
                             fsResizingRestartRequest,
-                            !Annotations.hasAnnotationWithValue(
-                                    pod, ANNO_STRIMZI_SERVER_CERT_HASH,
-                                    kafkaServerCertificateHash.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()))),
+                            ReconcilerUtils.trackedServerCertChanged(pod, kafkaServerCertificateHash),
                             clusterCa,
                             clientsCa
                     ), listenerReconciliationResults.advertisedHostnames,

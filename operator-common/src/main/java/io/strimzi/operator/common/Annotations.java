@@ -298,22 +298,6 @@ public class Annotations {
         return str != null;
     }
 
-    /**
-     * Check if Kubernetes resource has an annotation with given key and value.
-     * @param resource      Kubernetes resource which should be checked for the annotations presence
-     * @param annotation    Annotation key
-     * @param value         Annotation value
-     * @return True if the annotation exists and has the given value. False otherwise.
-     */
-    public static boolean hasAnnotationWithValue(HasMetadata resource, String annotation, String value) {
-        if (resource == null || value == null) {
-            return false;
-        }
-        ObjectMeta metadata = resource.getMetadata();
-        String str = annotation(annotation, null, metadata, null);
-        return str != null && str.equals(value);
-    }
-
     private static String annotation(String annotation, String defaultValue, ObjectMeta metadata, String... deprecatedAnnotations) {
         Map<String, String> annotations = annotations(metadata);
         return annotation(annotation, defaultValue, annotations, deprecatedAnnotations);

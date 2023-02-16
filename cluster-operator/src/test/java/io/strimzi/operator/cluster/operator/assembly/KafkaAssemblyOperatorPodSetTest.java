@@ -184,17 +184,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
+
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
@@ -297,17 +287,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
@@ -538,17 +517,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        newKafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
@@ -659,17 +627,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
+
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
@@ -801,17 +759,6 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        oldKafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));

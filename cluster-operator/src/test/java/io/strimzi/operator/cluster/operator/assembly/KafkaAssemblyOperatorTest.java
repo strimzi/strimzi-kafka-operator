@@ -1114,17 +1114,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(clusterNamespace,
-                        clusterName,
-                        updatedKafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(clusterName),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
+
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.entityTopicOperatorSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
