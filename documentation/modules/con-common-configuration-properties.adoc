@@ -39,6 +39,8 @@ When using Kafka with a Kafka cluster not managed by Strimzi, you can specify th
 
 You can incorporate SSL configuration and cipher suite specifications to further secure TLS-based communication between your client application and a Kafka cluster.
 In addition to the standard TLS configuration, you can specify a supported TLS version and enable cipher suites in the configuration for the Kafka broker.
+You can also add the configuration to your clients if you wish to limit the TLS versions and cipher suites they use. 
+The configuration on the client must only use protocols and cipher suites that are enabled on the broker. 
 
 A cipher suite is a set of algorithms for secure connection and data transfer.
 For example, a cipher suite specification might use a combination of the following algorithms:
@@ -58,7 +60,7 @@ Use the `ssl.endpoint.identification.algorithm` property to enable or disable ho
 [source,yaml,subs="attributes+"]
 ----
 # ...
-spec:
+
   config:
     ssl.cipher.suites: "TLS_AES_256_GCM_SHA384" # <1>
     ssl.enabled.protocols: "TLSv1.3", "TLSv1.2" # <2>
@@ -68,7 +70,7 @@ spec:
 ----
 <1> Cipher suite specification enabled.
 <2> TLS versions supported.
-<3> Default TLS version is `TLSv1.3`. If a client only supports `TLSv1.2`, it can still connect and communicate with the broker using that version instead.
+<3> Default TLS version is `TLSv1.3`. If a client only supports TLSv1.2, it can still connect to the broker and communicate using that supported version, and vice versa if the configuration is on the client and the broker only supports TLSv1.2.
 <4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.
 
 [id='con-common-configuration-trusted-certificates-{context}']
