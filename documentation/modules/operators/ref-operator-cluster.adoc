@@ -9,8 +9,8 @@
 You can configure the Cluster Operator using environment variables.
 The supported environment variables are listed here. 
 
-NOTE: The environment variables relate to the container configuration for the deployment of the Cluster Operator image.
-For more information on `image` configuration, see, xref:con-common-configuration-images-reference[].
+NOTE: The environment variables are specified for the container image of the Cluster Operator in its `Deployment` configuration file. 
+(`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`)
 
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator operates in.
 When not set, set to empty string, or set to `*`, the Cluster Operator operates in all namespaces.
@@ -44,7 +44,7 @@ If you require a higher timeout, change the `maxSessionTimeout` ZooKeeper server
 The worker thread pool size, which is used for various asynchronous and blocking operations that are run by the Cluster Operator.
 
 `STRIMZI_OPERATOR_NAME`:: Optional, defaults to the pod's hostname.
-The operator name identifies the Strimzi instance when link:{BookURLDeploying}#proc-operator-restart-events-str[emitting Kubernetes events^].
+The operator name identifies the Strimzi instance when xref:proc-operator-restart-events-str[emitting Kubernetes events].
 
 `STRIMZI_OPERATOR_NAMESPACE`:: The name of the namespace where the Cluster Operator is running.
 Do not configure this variable manually. Use the downward API.

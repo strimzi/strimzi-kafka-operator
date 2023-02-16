@@ -2,7 +2,9 @@
 <productnumber>{ProductVersion}</productnumber>
 <subtitle>For Use with Strimzi</subtitle>
 <abstract>
-    <para>Instructions for deploying and upgrading Strimzi</para>
+    <para>This guide provides a comprehensive overview of how to deploy and manage Strimzi. 
+    The guide describes how to install and upgrade Strimzi, configure security features, optimize performance, and monitor operations. 
+ </para>
 </abstract>
 <authorgroup>
 </authorgroup>

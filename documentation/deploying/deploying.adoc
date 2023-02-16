@@ -4,7 +4,7 @@ include::shared/attributes.adoc[]
 :context: str
 
 [id="deploying-book_{context}"]
-= Deploying and Upgrading Strimzi
+= Deploying and Managing Strimzi
 
 //Introduction to the install process
 include::assemblies/deploying/assembly-deploy-intro.adoc[leveloffset=+1]
@@ -24,6 +24,8 @@ include::modules/deploying/proc-deploy-cluster-operator-helm-chart.adoc[leveloff
 include::assemblies/deploying/assembly-deploy-client-access.adoc[leveloffset=+1]
 //Securing the deployment
 include::assemblies/security/assembly-securing-access.adoc[leveloffset=+1]
+//Using operators
+include::assemblies/operators/assembly-operators.adoc[leveloffset=+1]
 //Introduce metrics and monitoring to your deployment
 include::assemblies/metrics/assembly-metrics.adoc[leveloffset=+1]
 //Introduce tracing to your deployment

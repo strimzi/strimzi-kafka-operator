@@ -71,7 +71,7 @@ It configures the pods managed by Strimzi with a baseline security profile.
 The baseline profile is compatible with previous versions of Strimzi.
 
 The Baseline Provider is enabled by default if you don't specify a provider.
-Though you can enable it explicitly by setting the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable to `baseline` when xref:ref-operator-cluster-str[configuring the Cluster Operator]. 
+Though you can enable it explicitly by setting the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable to `baseline` when configuring the Cluster Operator. 
 
 .Configuration for the Baseline Provider
 [source,yaml,options="nowrap"]
@@ -91,7 +91,7 @@ Instead of specifying `baseline` as the value, you can specify the `io.strimzi.p
 The Restricted Provider provides a higher level of security than the Baseline Provider.
 It configures the pods managed by Strimzi with a restricted security profile.
 
-You enable the Restricted Provider by setting the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable to `restricted` when xref:ref-operator-cluster-str[configuring the Cluster Operator].
+You enable the Restricted Provider by setting the `STRIMZI_POD_SECURITY_PROVIDER_CLASS` environment variable to `restricted` when configuring the Cluster Operator.
 
 .Configuration for the Restricted Provider
 [source,yaml,options="nowrap"]

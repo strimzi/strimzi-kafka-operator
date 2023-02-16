@@ -7,7 +7,7 @@
 
 The `KafkaTopic` resource is used to configure topics, including the number of partitions and replicas.
 
-The full schema for `KafkaTopic` is described in xref:type-KafkaTopic-reference[`KafkaTopic` schema reference].
+The full schema for `KafkaTopic` is described in link:{BookURLConfiguring}#type-KafkaTopic-reference[`KafkaTopic` schema reference^].
 
 == Identifying a Kafka cluster for topic handling
 

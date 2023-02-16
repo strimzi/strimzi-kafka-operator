@@ -132,7 +132,7 @@ spec:
 ----
 
 NOTE: `FileStreamSourceConnector` and `FileStreamSinkConnector` are provided as example connectors. 
-For information on deploying them as `KafkaConnector` resources, see link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying example KafkaConnector resources^]. 
+For information on deploying them as `KafkaConnector` resources, see xref:proc-deploying-kafkaconnector-str[]. 
 
 Consumer configuration is added for the sink connector. 
 
@@ -236,5 +236,5 @@ You can use these metrics to gauge whether or not you need to tune your configur
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards^]
-* link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-{context}[Adding connectors^]
+* xref:assembly-metrics-setup-{context}[]
+* xref:using-kafka-connect-with-plug-ins-{context}[]

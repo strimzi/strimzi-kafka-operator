@@ -23,8 +23,3 @@ In practice, maintenance windows should be set in conjunction with the `Kafka.sp
 NOTE: Strimzi does not schedule maintenance operations exactly according to the given windows. Instead, for each reconciliation, it checks whether a maintenance window is currently "open".
 This means that the start of maintenance operations within a given time window can be delayed by up to the Cluster Operator reconciliation interval.
 Maintenance time windows must therefore be at least this long.
-
-[role="_additional-resources"]
-.Additional resources
-
-* For more information about the Cluster Operator configuration, see xref:ref-operator-cluster-str[].
