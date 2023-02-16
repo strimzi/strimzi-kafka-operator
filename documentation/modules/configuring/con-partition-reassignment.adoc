@@ -4,14 +4,18 @@
 
 [id='con-partition-reassignment-{context}']
 
-= Partition reassignment tool
+= Using the partition reassignment tool
 
 [role="_abstract"]
-The Topic Operator does not currently support reassigning replicas to different brokers, so it is necessary to connect directly to broker pods to reassign replicas to brokers.
+The partition reassignment tool (`kafka-reassign-partitions.sh`) works by generating a partition assignment plan that specifies which partitions should be moved from their current broker to a new broker.
+If you are satisfied with the plan, you can execute it.
+The tool then does the following:
 
-Within a broker pod, the `kafka-reassign-partitions.sh` tool allows you to reassign partitions to different brokers.
+* Migrates the partition data to the new broker
+* Updates the metadata on the Kafka brokers to reflect the new partition assignments
+* Triggers a rolling restart of the Kafka brokers to ensure that the new assignments take effect
 
-It has three different modes:
+The partition reassignment tool has three different modes:
 
 `--generate`::
 Takes a set of topics and brokers and generates a _reassignment JSON file_ which will result in the partitions of those topics being assigned to those brokers.
