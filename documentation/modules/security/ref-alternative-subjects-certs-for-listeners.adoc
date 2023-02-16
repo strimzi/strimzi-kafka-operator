@@ -15,11 +15,11 @@ In order to use TLS hostname verification with your own xref:proc-installing-cer
 
 You can use wildcard certificates if they are supported by your CA.
 
-== TLS listener SAN examples
+== Internal listener SAN examples
 
-Use the following examples to help you specify hostnames of the SANs in your certificates for TLS listeners.
+Use the following examples to help you specify hostnames of the SANs in your certificates for your internal listeners.
 
-.Wildcards example
+.Wildcards example for a `type: internal` listener
 
 [source,shell,subs="+quotes,attributes+"]
 ----
@@ -32,7 +32,7 @@ _<cluster-name>_-kafka-bootstrap
 _<cluster-name>_-kafka-bootstrap._<namespace>_.svc
 ----
 
-.Non-wildcards example
+.Non-wildcards example for a `type: internal` listener
 
 [source,shell,subs="+quotes,attributes+"]
 ----
@@ -48,6 +48,22 @@ _<cluster-name>_-kafka-bootstrap
 _<cluster-name>_-kafka-bootstrap._<namespace>_.svc
 ----
 
+.Non-wildcards example for a `type: cluster-ip` listener
+
+[source,shell,subs="+quotes,attributes+"]
+----
+// Kafka brokers
+_<cluster-name>_-kafka-_<listener-name>_-0
+_<cluster-name>_-kafka-_<listener-name>_-0._<namespace>_.svc
+_<cluster-name>_-kafka-_<listener-name>_-1
+_<cluster-name>_-kafka-_<listener-name>_-1._<namespace>_.svc
+# ...
+
+// Bootstrap service
+_<cluster-name>_-kafka-_<listener-name>_-bootstrap
+_<cluster-name>_-kafka-_<listener-name>_-bootstrap._<namespace>_.svc
+----
+
 == External listener SAN examples
 
 For external listeners which have TLS encryption enabled, the hostnames you need to specify in certificates depends on the external listener `type`.
@@ -59,17 +75,22 @@ For external listeners which have TLS encryption enabled, the hostnames you need
 ¦External listener type
 ¦In the SANs, specify...
 
-m¦Route
+m¦`ingress`
+¦Addresses of all Kafka broker `Ingress` resources and the address of the bootstrap `Ingress`.
+
+You can use a matching wildcard name.
+
+m¦`route`
 ¦Addresses of all Kafka broker `Routes` and the address of the bootstrap `Route`.
 
 You can use a matching wildcard name.
 
-m¦loadbalancer
+m¦`loadbalancer`
 ¦Addresses of all Kafka broker `loadbalancers` and the bootstrap `loadbalancer` address.
 
 You can use a matching wildcard name.
 
-m¦NodePort
+m¦`nodeport`
 ¦Addresses of all Kubernetes worker nodes that the Kafka broker pods might be scheduled to.
 
 You can use a matching wildcard name.
