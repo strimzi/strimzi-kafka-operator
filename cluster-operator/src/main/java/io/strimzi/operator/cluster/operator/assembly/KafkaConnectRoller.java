@@ -88,7 +88,7 @@ public class KafkaConnectRoller {
     }
 
     /**
-     * Goes through the pods in given order and considers them for rolling. It checks if the first pof in the queue
+     * Goes through the pods in given order and considers them for rolling. It checks if the first pod in the queue
      * needs rolling and checks its readiness. And then calls itself to move to the next pod.
      *
      * @param podSet        The current StrimziPodSet resource which the Pods are compared against when checking if they
@@ -113,7 +113,7 @@ public class KafkaConnectRoller {
 
     /**
      * Checks given pod if it needs rolling and rolls it if needed. It checks the pod readiness afterwards and waits
-     * for it if needed. The Pod is rolled when its revision doesn't match the desired revision form the StrimziPodSet.
+     * for it if needed. The Pod is rolled when its revision doesn't match the desired revision from the StrimziPodSet.
      *
      * @param podSet    The current StrimziPodSet resource which the Pods are compared against when checking if they
      *                  are up-to-date
