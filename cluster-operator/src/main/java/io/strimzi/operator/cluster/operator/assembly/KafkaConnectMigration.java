@@ -105,11 +105,23 @@ public class KafkaConnectMigration {
             int depReplicas = deployment.getSpec().getReplicas();
             int podSetReplicas = podSet != null ? podSet.getSpec().getPods().size() : 0;
 
-            if (DeploymentStrategy.ROLLING_UPDATE.equals(connect.deploymentStrategy())) {
-                return moveOnePodFromDeploymentToStrimziPodSetWithRollingUpdateStrategy(depReplicas - 1, Math.min(podSetReplicas + 1, connect.getReplicas()));
-            } else {
-                return moveOnePodFromDeploymentToStrimziPodSetWithRecreateStrategy(depReplicas - 1, Math.min(podSetReplicas + 1, connect.getReplicas()));
-            }
+            return moveOnePodFromDeploymentToStrimziPodSet(depReplicas - 1, Math.min(podSetReplicas + 1, connect.getReplicas()));
+        }
+    }
+
+    /**
+     * Moves one Pod from Deployment to StrimziPodSet in the order defined by the deploymentStrategy
+     *
+     * @param desiredDeploymentReplicas     Number of desired Deployment replicas in this step
+     * @param desiredPodSetReplicas         Number of desired PodSets in this step
+     *
+     * @return Future which completes when the Pod is moved
+     */
+    private Future<Void> moveOnePodFromDeploymentToStrimziPodSet(int desiredDeploymentReplicas, int desiredPodSetReplicas)  {
+        if (DeploymentStrategy.ROLLING_UPDATE.equals(connect.deploymentStrategy())) {
+            return moveOnePodFromDeploymentToStrimziPodSetWithRollingUpdateStrategy(desiredDeploymentReplicas, desiredPodSetReplicas);
+        } else {
+            return moveOnePodFromDeploymentToStrimziPodSetWithRecreateStrategy(desiredDeploymentReplicas, desiredPodSetReplicas);
         }
     }
 
@@ -169,7 +181,7 @@ public class KafkaConnectMigration {
      *
      * @param replicas  New number of replicas
      *
-     * @return  Future which completes when the scale-down is done
+     * @return  Future which completes when the scale-down is done and the Deployment is ready
      */
     private Future<Void> scaleDownDeployment(int replicas)    {
         LOGGER.infoCr(reconciliation, "Scaling down Deployment {}", connect.getComponentName());
@@ -183,7 +195,7 @@ public class KafkaConnectMigration {
      *
      * @param replicas  New number of replicas
      *
-     * @return  Future which completes when the scale-up is done
+     * @return  Future which completes when the scale-up is done and the new Pod is ready
      */
     private Future<Void> scaleUpStrimziPodSet(int replicas)    {
         LOGGER.infoCr(reconciliation, "Scaling up StrimziPodSet {}", connect.getComponentName());
@@ -274,7 +286,7 @@ public class KafkaConnectMigration {
      *
      * @param replicas  New number of replicas
      *
-     * @return  Future which completes when the scale-up is done
+     * @return  Future which completes when the scale-up is done and the Deployment is ready
      */
     private Future<Void> scaleUpDeployment(int replicas)    {
         LOGGER.infoCr(reconciliation, "Scaling up Deployment {}", connect.getComponentName());
