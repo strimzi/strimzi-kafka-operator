@@ -90,10 +90,10 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
     }
 
     @Override
-    protected Future<ReconcileResult<Deployment>> internalPatch(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired) {
+    protected Future<ReconcileResult<Deployment>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired) {
         String k8sRev = Annotations.annotations(current).get(Annotations.ANNO_DEP_KUBE_IO_REVISION);
         Annotations.annotations(desired).put(Annotations.ANNO_DEP_KUBE_IO_REVISION, k8sRev);
-        return super.internalPatch(reconciliation, namespace, name, current, desired);
+        return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 
     /**

@@ -40,7 +40,7 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
     }
 
     @Override
-    protected Future<ReconcileResult<ConfigMap>> internalPatch(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
+    protected Future<ReconcileResult<ConfigMap>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
         try {
             if (compareObjects(current.getData(), desired.getData())
                     && compareObjects(current.getMetadata().getName(), desired.getMetadata().getName())
@@ -52,7 +52,7 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
                 return Future.succeededFuture(ReconcileResult.noop(current));
             } else {
-                return super.internalPatch(reconciliation, namespace, name, current, desired);
+                return super.internalUpdate(reconciliation, namespace, name, current, desired);
             }
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);

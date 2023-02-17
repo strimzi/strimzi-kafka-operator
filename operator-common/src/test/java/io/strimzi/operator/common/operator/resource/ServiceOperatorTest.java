@@ -158,7 +158,7 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .build();
 
         ServiceOperator op = new ServiceOperator(vertx, client);
-        op.internalPatch(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
+        op.internalUpdate(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, current, desired);
 
         assertThat(desired.getMetadata().getAnnotations().get("field.cattle.io~1publicEndpoints"), equalTo("foo"));
         assertThat(desired.getMetadata().getAnnotations().get("cattle.io/test"), equalTo("bar"));

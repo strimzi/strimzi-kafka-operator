@@ -118,7 +118,7 @@ public class PodDisruptionBudgetUtils {
                     .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
-                    .withMinAvailable(new IntOrString(replicas - (template != null ? template.getMaxUnavailable() : DEFAULT_MAX_UNAVAILABLE)))
+                    .withMinAvailable(new IntOrString(Math.max(0, replicas - (template != null ? template.getMaxUnavailable() : DEFAULT_MAX_UNAVAILABLE))))
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(labels.strimziSelectorLabels().toMap()).build())
                 .endSpec()
                 .build();
@@ -158,7 +158,7 @@ public class PodDisruptionBudgetUtils {
                     .withOwnerReferences(ownerReference)
                 .endMetadata()
                 .withNewSpec()
-                    .withMinAvailable(new IntOrString(replicas - (template != null ? template.getMaxUnavailable() : DEFAULT_MAX_UNAVAILABLE)))
+                    .withMinAvailable(new IntOrString(Math.max(0, replicas - (template != null ? template.getMaxUnavailable() : DEFAULT_MAX_UNAVAILABLE))))
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(labels.strimziSelectorLabels().toMap()).build())
                 .endSpec()
                 .build();

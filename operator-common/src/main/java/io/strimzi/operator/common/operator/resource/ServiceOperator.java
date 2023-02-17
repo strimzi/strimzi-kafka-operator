@@ -83,7 +83,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Service>> internalPatch(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
+    protected Future<ReconcileResult<Service>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null) {
                 if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
@@ -96,7 +96,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
                 patchDualStackNetworking(current, desired);
             }
 
-            return super.internalPatch(reconciliation, namespace, name, current, desired);
+            return super.internalUpdate(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
             return Future.failedFuture(e);

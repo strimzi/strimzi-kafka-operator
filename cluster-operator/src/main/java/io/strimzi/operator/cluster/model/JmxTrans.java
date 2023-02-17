@@ -176,6 +176,7 @@ public class JmxTrans extends AbstractModel {
                 ownerReference,
                 templateDeployment,
                 replicas,
+                null,
                 WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(
                         componentName,

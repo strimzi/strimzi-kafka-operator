@@ -88,8 +88,8 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                         LOGGER.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
                         internalCreate(reconciliation, name, desired).onComplete(future);
                     } else {
-                        LOGGER.debugCr(reconciliation, "{} {} already exists, patching it", resourceKind, name);
-                        internalPatch(reconciliation, name, current, desired).onComplete(future);
+                        LOGGER.debugCr(reconciliation, "{} {} already exists, updating it", resourceKind, name);
+                        internalUpdate(reconciliation, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
@@ -153,10 +153,10 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * Patches the resource with the given name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String name, T current, T desired) {
+    protected Future<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String name, T current, T desired) {
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
-                T result = operation().withName(name).patch(PatchContext.of(PatchType.JSON), desired);
+                T result = patchOrReplace(name, desired);
                 LOGGER.debugCr(reconciliation, "{} {} has been patched", resourceKind, name);
 
                 return Future.succeededFuture(wasChanged(current, result) ?
@@ -169,6 +169,19 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
             LOGGER.debugCr(reconciliation, "{} {} did not changed and doesn't need patching", resourceKind, name);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
+    }
+
+    /**
+     * Method for patching or replacing a resource. By default is using JSON-type patch. Overriding this method can be
+     * used to use replace instead of patch or different patch strategies.
+     *
+     * @param name          Name of the resource
+     * @param desired       Desired resource
+     *
+     * @return  The patched or replaced resource
+     */
+    protected T patchOrReplace(String name, T desired)   {
+        return operation().withName(name).patch(PatchContext.of(PatchType.JSON), desired);
     }
 
     /**

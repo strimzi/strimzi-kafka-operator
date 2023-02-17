@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -204,6 +205,7 @@ public class ClusterOperatorTest {
                 return mockPodInformer;
             });
             when(mockNamespacedPods.withLabels(any())).thenReturn(mockNamespacedPods);
+            when(mockNamespacedPods.withLabelSelector(any(LabelSelector.class))).thenReturn(mockNamespacedPods);
             when(mockPods.inNamespace(namespace)).thenReturn(mockNamespacedPods);
         }
 
@@ -229,7 +231,7 @@ public class ClusterOperatorTest {
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
-                int expectedNumberOfInformers = strimziPodSets ? 3 * namespaceList.size() : 0;
+                int expectedNumberOfInformers = strimziPodSets ? 5 * namespaceList.size() : 0;
                 assertThat("Looks like there were more informers than namespaces",
                         numInformers.get(), is(expectedNumberOfInformers));
 
@@ -298,6 +300,7 @@ public class ClusterOperatorTest {
         SharedIndexInformer mockPodInformer = mock(SharedIndexInformer.class);
         when(client.pods()).thenReturn(mockPods);
         when(mockFilteredPods.withLabels(any())).thenReturn(mockFilteredPods);
+        when(mockFilteredPods.withLabelSelector(any(LabelSelector.class))).thenReturn(mockFilteredPods);
         when(mockPods.inAnyNamespace()).thenReturn(mockFilteredPods);
         when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
         when(mockFilteredPods.inform()).thenAnswer(i -> {
@@ -326,7 +329,7 @@ public class ClusterOperatorTest {
                 int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 7;
                 assertThat("Looks like there were more watchers than custom resources", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
-                int numberOfInformers = strimziPodSets ? 3 : 0;
+                int numberOfInformers = strimziPodSets ? 5 : 0;
                 assertThat("Looks like there were more informers than we should", numInformers.get(), is(numberOfInformers));
 
                 latch.countDown();

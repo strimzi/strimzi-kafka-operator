@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerStateTerminated;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.openshift.api.model.Build;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.Output;
@@ -27,7 +27,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
@@ -42,7 +41,6 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ConnectBuildOperator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConnectBuildOperator.class.getName());
 
-    private final DeploymentOperator deploymentOperations;
     private final ImageStreamOperator imageStreamOperations;
     private final PodOperator podOperator;
     private final ConfigMapOperator configMapOperations;
@@ -63,7 +61,6 @@ public class ConnectBuildOperator {
      * @param config    Cluster OPerator configuration
      */
     public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-        this.deploymentOperations = supplier.deploymentOperations;
         this.imageStreamOperations = supplier.imageStreamOperations;
         this.podOperator = supplier.podOperations;
         this.configMapOperations = supplier.configMapOperations;
@@ -80,13 +77,15 @@ public class ConnectBuildOperator {
     /**
      * Asynchronously runs the KafkaConnectBuild (if present) and reconciles the related resources
      *
-     * @param reconciliation    The reconciliation
-     * @param namespace         Namespace of the Connect cluster
-     * @param connectName       Name of the Connect cluster
-     * @param connectBuild      KafkaConnectBuild object
-     * @return                  Future for tracking the asynchronous result of the reconciliation steps
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param controllerResource    The controller resource (Deployment or StrimziPodSet) with annotations describing
+     *                              the current state. Or null if it does not exist yet.
+     * @param connectBuild          KafkaConnectBuild object from the Kafka Connect custom resource
+     *
+     * @return  Future for tracking the asynchronous result of the reconciliation steps
      */
-    public Future<BuildInfo> reconcile(Reconciliation reconciliation, String namespace, String connectName, KafkaConnectBuild connectBuild) {
+    public Future<BuildInfo> reconcile(Reconciliation reconciliation, String namespace, HasMetadata controllerResource, KafkaConnectBuild connectBuild) {
         if (connectBuild.getBuild() == null) {
             // Build is not configured => we should delete resources
             return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
@@ -96,8 +95,7 @@ public class ConnectBuildOperator {
                     .map(i -> null);
         } else {
             // Build exists => let's build
-            return deploymentOperations.getAsync(namespace, connectName)
-                    .compose(deployment -> build(reconciliation, namespace, connectBuild, deployment));
+            return build(reconciliation, namespace, connectBuild, controllerResource);
 
         }
     }
@@ -105,22 +103,22 @@ public class ConnectBuildOperator {
     /**
      * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
      *
-     * @param reconciliation    The reconciliation
-     * @param namespace         Namespace of the Connect cluster
-     * @param connectBuild      KafkaConnectBuild object
-     * @param deployment    The existing Connect deployment
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param connectBuild          KafkaConnectBuild object
+     * @param controllerResource    The existing Connect controllerResource
      *
      * @return              Future for tracking the asynchronous result of the Kubernetes image build
      */
-    private Future<BuildInfo> build(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, Deployment deployment) {
+    private Future<BuildInfo> build(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, HasMetadata controllerResource) {
         String currentBuildRevision = "";
         String currentImage = "";
         boolean forceRebuild = false;
-        if (deployment != null) {
-            // Extract information from the current deployment. This is used to figure out if new build needs to be run or not.
-            currentBuildRevision = Annotations.stringAnnotation(deployment.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
-            currentImage = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
-            forceRebuild = Annotations.hasAnnotation(deployment, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
+        if (controllerResource != null) {
+            // Extract information from the current controllerResource. This is used to figure out if new build needs to be run or not.
+            currentBuildRevision = Annotations.stringAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
+            currentImage = Annotations.stringAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE, null);
+            forceRebuild = Annotations.hasAnnotation(controllerResource, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
         }
 
         KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
@@ -128,6 +126,7 @@ public class ConnectBuildOperator {
         ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
 
         if (newBuildRevision.equals(currentBuildRevision)
+                && currentImage != null
                 && !forceRebuild) {
             // The revision is the same and rebuild was not forced => nothing to do
             LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", currentImage);

@@ -57,10 +57,10 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Ingress>> internalPatch(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
+    protected Future<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
         patchIngressClassName(current, desired);
 
-        return super.internalPatch(reconciliation, namespace, name, current, desired);
+        return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 
     /**

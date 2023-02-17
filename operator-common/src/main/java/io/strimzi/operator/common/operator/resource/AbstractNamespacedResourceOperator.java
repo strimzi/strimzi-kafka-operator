@@ -106,8 +106,8 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                         LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
                         internalCreate(reconciliation, namespace, name, desired).onComplete(future);
                     } else {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} already exists, patching it", resourceKind, namespace, name);
-                        internalPatch(reconciliation, namespace, name, current, desired).onComplete(future);
+                        LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
+                        internalUpdate(reconciliation, namespace, name, current, desired).onComplete(future);
                     }
                 } else {
                     if (current != null) {
@@ -233,10 +233,10 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
+    protected Future<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
-                T result = operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), desired);
+                T result = patchOrReplace(namespace, name, desired);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
@@ -247,6 +247,20 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.noop(current));
         }
+    }
+
+    /**
+     * Method for patching or replacing a resource. By default is using JSON-type patch. Overriding this method can be
+     * used to use replace instead of patch or different patch strategies.
+     *
+     * @param namespace     Namespace of the resource
+     * @param name          Name of the resource
+     * @param desired       Desired resource
+     *
+     * @return  The patched or replaced resource
+     */
+    protected T patchOrReplace(String namespace, String name, T desired)   {
+        return operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), desired);
     }
 
     /**
@@ -422,6 +436,23 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             return operation().inAnyNamespace().withLabels(selectorLabels).inform();
         } else {
             return operation().inNamespace(namespace).withLabels(selectorLabels).inform();
+        }
+    }
+
+    /**
+     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
+     * matching the selector.
+     *
+     * @param namespace         Namespace on which to inform
+     * @param labelSelector     Labels Selector which should be matched by the resources
+     *
+     * @return                  Informer instance
+     */
+    public SharedIndexInformer<T> informer(String namespace, LabelSelector labelSelector)   {
+        if (ANY_NAMESPACE.equals(namespace))    {
+            return operation().inAnyNamespace().withLabelSelector(labelSelector).inform();
+        } else {
+            return operation().inNamespace(namespace).withLabelSelector(labelSelector).inform();
         }
     }
 

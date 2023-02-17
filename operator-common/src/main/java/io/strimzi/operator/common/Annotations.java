@@ -59,6 +59,12 @@ public class Annotations {
     public static final String STRIMZI_IO_CONNECT_BUILD_REVISION = STRIMZI_DOMAIN + "connect-build-revision";
 
     /**
+     * Annotation used to store the container image created by Kafka Connect build (This is used to track what was the
+     * result of previous build when it does not change)
+     */
+    public static final String STRIMZI_IO_CONNECT_BUILD_IMAGE = STRIMZI_DOMAIN + "connect-build-image";
+
+    /**
      * Annotation used to force rebuild of the container image even if the dockerfile did not changed
      */
     public static final String STRIMZI_IO_CONNECT_FORCE_REBUILD = STRIMZI_DOMAIN + "force-rebuild";

@@ -4,12 +4,21 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.strimzi.api.kafka.Crds;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -33,6 +42,28 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
             () -> createDeleteCustomResource("StrimziPodSet-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "pods", "selector");
+    }
+
+    @Test
+    void testZeroReplicas() {
+        StrimziPodSet podSet = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName("my-pod-set")
+                .endMetadata()
+                .withNewSpec()
+                    .withPods(List.of())
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(Map.of("label", "value")).build())
+                .endSpec()
+                .build();
+
+        KubernetesClient client = new KubernetesClientBuilder().build();
+        Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).resource(podSet).create();
+
+        StrimziPodSet createdPodSet = Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName("my-pod-set").get();
+
+        assertThat(createdPodSet.getSpec().getPods(), is(List.of()));
+
+        Crds.strimziPodSetOperation(client).inNamespace(NAMESPACE).withName("my-pod-set").delete();
     }
 
     @BeforeAll
