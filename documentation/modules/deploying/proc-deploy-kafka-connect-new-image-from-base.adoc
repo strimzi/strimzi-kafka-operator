@@ -107,4 +107,4 @@ spec: <1>
 .Additional resources
 
 * link:{BookURLConfiguring}#con-common-configuration-images-reference[Container image configuration and the `KafkaConnect.spec.image property`^]
-* link:{BookURLConfiguring}#ref-operator-cluster-str[Cluster Operator configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable^]
+* xref:ref-operator-cluster-str[Cluster Operator configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable]

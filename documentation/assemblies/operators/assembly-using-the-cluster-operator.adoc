@@ -6,9 +6,7 @@
 = Using the Cluster Operator
 
 [role="_abstract"]
-The Cluster Operator is used to deploy a Kafka cluster and other Kafka components.
-
-For information on deploying the Cluster Operator, see link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^].
+Use the Cluster Operator to deploy a Kafka cluster and other Kafka components.
 
 //rbac resources
 include::../../modules/operators/ref-operator-cluster-rbac-resources.adoc[leveloffset=+1]

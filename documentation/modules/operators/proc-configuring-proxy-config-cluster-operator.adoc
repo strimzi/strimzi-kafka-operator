@@ -70,5 +70,5 @@ kubectl create -f install/cluster-operator/060-Deployment-strimzi-cluster-operat
 [role="_additional-resources"]
 .Additional resources
 
-* xref:property-hostaliases-config-reference[Host aliases]
-* link:{BookURLDeploying}#adding-users-the-strimzi-admin-role-str[Designating Strimzi administrators^]
+* link:{BookURLConfiguring}#property-hostaliases-config-reference[Host aliases^]
+* xref:adding-users-the-strimzi-admin-role-str[Designating Strimzi administrators]

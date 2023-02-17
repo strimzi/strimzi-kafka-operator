@@ -9,7 +9,7 @@
 When you create, modify or delete a user using the `KafkaUser` resource,
 the User Operator ensures those changes are reflected in the Kafka cluster.
 
-For more information on the `KafkaUser` resource, see the xref:type-KafkaUser-reference[`KafkaUser` schema reference].
+For more information on the `KafkaUser` resource, see the link:{BookURLConfiguring}#type-KafkaUser-reference[`KafkaUser` schema reference^].
 
 .Deploying the User Operator
 
@@ -18,8 +18,8 @@ You would use a standalone User Operator with a Kafka cluster that is not manage
 
 For deployment instructions, see the following:
 
-* link:{BookURLDeploying}#deploying-the-user-operator-using-the-cluster-operator-{context}[Deploying the User Operator using the Cluster Operator (recommended)^]
-* link:{BookURLDeploying}#deploying-the-user-operator-standalone-{context}[Deploying the standalone User Operator^]
+* xref:deploying-the-user-operator-using-the-cluster-operator-{context}[Deploying the User Operator using the Cluster Operator (recommended)]
+* xref:deploying-the-user-operator-standalone-{context}[Deploying the standalone User Operator]
 
 [IMPORTANT]
 ====

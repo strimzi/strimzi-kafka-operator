@@ -134,4 +134,3 @@ listeners:
 ----
 
 If your Kubernetes cluster uses a different service suffix than `.cluster.local`, you can configure the suffix using the `KUBERNETES_SERVICE_DNS_DOMAIN` environment variable in the Cluster Operator configuration.
-See xref:ref-operator-cluster-str[] for more details.
