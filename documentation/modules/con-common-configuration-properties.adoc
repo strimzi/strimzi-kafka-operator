@@ -42,10 +42,9 @@ In addition to the standard TLS configuration, you can specify a supported TLS v
 You can also add the configuration to your clients if you wish to limit the TLS versions and cipher suites they use. 
 The configuration on the client must only use protocols and cipher suites that are enabled on the broker. 
 
-A cipher suite is a set of algorithms for secure connection and data transfer.
-For example, a cipher suite specification might use a combination of the following algorithms:
+A cipher suite is a set of security mechanisms for secure connection and data transfer.
+For example, the cipher suite `TLS_AES_256_GCM_SHA384` is composed of the following mechanisms, which are used in conjunction with the TLS protocol:
 
-* TLS authentication
 * AES (Advanced Encryption Standard) encryption (256-bit key)
 * GCM (Galois/Counter Mode) authenticated encryption
 * SHA384 (Secure Hash Algorithm) data integrity protection
