@@ -324,6 +324,6 @@ public class ReconcilerUtils {
     public static boolean trackedServerCertChanged(Pod pod, Map<Integer, String> certHashCache) {
         var currentCertHash = Annotations.stringAnnotation(pod, ANNO_STRIMZI_SERVER_CERT_HASH, null);
         var desiredCertHash = certHashCache.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()));
-        return certHashCache != null && desiredCertHash != null && !currentCertHash.equals(desiredCertHash);
+        return currentCertHash != null && desiredCertHash != null && !currentCertHash.equals(desiredCertHash);
     }
 }
