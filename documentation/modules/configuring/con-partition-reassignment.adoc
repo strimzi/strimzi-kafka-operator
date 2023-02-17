@@ -8,6 +8,7 @@
 
 [role="_abstract"]
 The partition reassignment tool (`kafka-reassign-partitions.sh`) works by generating a partition assignment plan that specifies which partitions should be moved from their current broker to a new broker.
+
 If you are satisfied with the plan, you can execute it.
 The tool then does the following:
 
@@ -38,7 +39,10 @@ Very large reassignments should be broken down into a number of smaller reassign
 
 == Partition reassignment JSON file
 
-The _reassignment JSON file_ has a specific structure:
+The tool uses a reassignment JSON file that specifies the topics to reassign.
+You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.
+
+The _reassignment JSON file_ has the following structure:
 
 [source,subs=+quotes]
 ----
