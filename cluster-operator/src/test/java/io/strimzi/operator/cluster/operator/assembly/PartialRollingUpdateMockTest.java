@@ -141,7 +141,7 @@ public class PartialRollingUpdateMockTest {
         podSetController.start();
 
         kco = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(), new PasswordGenerator(10, "a", "a"),
-                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
         LOGGER.info("Initial reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
