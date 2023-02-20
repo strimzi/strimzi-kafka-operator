@@ -1118,7 +1118,7 @@ class ConnectIsolatedST extends AbstractST {
         the observed generation is increased
         */
         assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration(), is(true));
-        if (Environment.isStableConnectIdentitiesEnabled()) {
+        if (!Environment.isStableConnectIdentitiesEnabled()) {
             for (Pod pod : connectPods) {
                 assertThat(pod.getMetadata().getName().contains(connectGenName), is(true));
             }
