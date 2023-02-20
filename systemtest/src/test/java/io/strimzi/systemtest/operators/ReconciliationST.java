@@ -37,7 +37,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -97,7 +96,8 @@ public class ReconciliationST extends AbstractST {
             .endMetadata()
             .build());
 
-        String connectDepName = KafkaConnectResources.deploymentName(clusterName);
+        final String connectDepName = KafkaConnectResources.deploymentName(clusterName);
+        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         KafkaConnectUtils.waitForConnectStatus(namespaceName, clusterName, CustomResourceStatus.ReconciliationPaused);
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, connectDepName, 0);
@@ -105,7 +105,7 @@ public class ReconciliationST extends AbstractST {
         LOGGER.info("Setting annotation to \"false\" and creating KafkaConnector");
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName,
             kc -> kc.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), namespaceName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, connectDepName, 1);
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -22,8 +23,10 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.DecodeException;
@@ -46,6 +49,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -600,6 +604,26 @@ public class StUtils {
             return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
         }
         return kubeClient(namespaceName).getStatefulSetUid(resourceName);
+    }
+
+    public static Affinity getDeploymentOrStrimziPodSetAffinity(String namespaceName, String resourceName) {
+        if (Environment.isStableConnectIdentitiesEnabled()) {
+            Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
+            return firstPod.getSpec().getAffinity();
+        } else {
+            return kubeClient().getDeployment(namespaceName, resourceName).getSpec().getTemplate().getSpec().getAffinity();
+        }
+    }
+
+    public static void waitTillStrimziPodSetOrDeploymentRolled(final String namespaceName, final String depName,
+                                                               final int expectPods, final Map<String, String> snapShot,
+                                                               final LabelSelector labelSelector) {
+        if (Environment.isStableConnectIdentitiesEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, labelSelector, snapShot);
+            RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, expectPods);
+        } else {
+            DeploymentUtils.waitTillDepHasRolled(namespaceName, depName, expectPods, snapShot);
+        }
     }
 
     /**

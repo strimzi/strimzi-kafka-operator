@@ -675,6 +675,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetConnectLoggingLevels(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -703,7 +704,7 @@ class LoggingChangeST extends AbstractST {
 
         String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         final String connectPodName = connectSnapshot.keySet().iterator().next();
 
         LOGGER.info("Asserting if log is without records");
@@ -780,7 +781,7 @@ class LoggingChangeST extends AbstractST {
                 return kcLog != null && kcLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
             });
 
-        assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName())), equalTo(connectSnapshot));
+        assertThat("Connect pod should not roll", PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector), equalTo(connectSnapshot));
     }
 
     @ParallelNamespaceTest
@@ -1097,6 +1098,7 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetMM2LoggingLevels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
 
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
@@ -1119,7 +1121,7 @@ class LoggingChangeST extends AbstractST {
         String kafkaMM2PodName = kubeClient().namespace(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
         String mm2LogCheckCmd = "http://localhost:8083/admin/loggers/root";
 
-        Map<String, String> mm2Snapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        Map<String, String> mm2Snapshot = PodUtils.podSnapshot(namespaceName, labelSelector);
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
@@ -1196,7 +1198,7 @@ class LoggingChangeST extends AbstractST {
                 return mmLog != null && !mmLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
             });
 
-        assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName)), equalTo(mm2Snapshot));
+        assertThat("MirrorMaker2 pod should not roll", PodUtils.podSnapshot(namespaceName, labelSelector), equalTo(mm2Snapshot));
     }
 
     @ParallelNamespaceTest
@@ -1205,6 +1207,7 @@ class LoggingChangeST extends AbstractST {
     void testMM2LoggingLevelsHierarchy(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
@@ -1254,7 +1257,7 @@ class LoggingChangeST extends AbstractST {
 
         String kafkaMM2PodName = kubeClient().namespace(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        Map<String, String> mm2Snapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        Map<String, String> mm2Snapshot = PodUtils.podSnapshot(namespaceName, labelSelector);
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger init levels", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1291,7 +1294,7 @@ class LoggingChangeST extends AbstractST {
                     && cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/org.apache.kafka.connect.runtime.WorkerTask").out().contains("INFO")
         );
 
-        assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName)), equalTo(mm2Snapshot));
+        assertThat("MirrorMaker2 pod should not roll", PodUtils.podSnapshot(namespaceName, labelSelector), equalTo(mm2Snapshot));
     }
 
     @ParallelNamespaceTest

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
@@ -112,8 +113,16 @@ public class RollingUpdateUtils {
         PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true,
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get()));
 
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-        LOGGER.info("Kafka: {}/{} is ready", namespaceName, clusterName);
+        if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get() != null) {
+            KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
+            LOGGER.info("Kafka: {}/{} is ready", namespaceName, clusterName);
+        } else {
+            KafkaList kafkaList = KafkaResource.kafkaClient().inNamespace(namespaceName).list();
+            kafkaList.getItems().forEach(kafka -> {
+                KafkaUtils.waitForKafkaReady(kafka.getMetadata().getNamespace(), kafka.getMetadata().getName());
+                LOGGER.info("Kafka: {}/{} is ready", namespaceName, clusterName);
+            });
+        }
     }
 
     public static void waitForNoRollingUpdate(String namespaceName, LabelSelector selector, Map<String, String> pods) {

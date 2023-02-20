@@ -456,10 +456,10 @@ class MirrorMaker2IsolatedST extends AbstractST {
     void testScaleMirrorMaker2UpAndDownToZero(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
+        String kafkaClusterSourceName = testStorage.getClusterName();
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
 
-        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
 
         // Deploy source kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
@@ -477,7 +477,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
 
         cmdKubeClient(testStorage.getNamespaceName()).scaleByName(KafkaMirrorMaker2.RESOURCE_KIND, testStorage.getClusterName(), scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()), scaleTo);
+        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), mmSelector, scaleTo);
 
         LOGGER.info("Check if replicas is set to {}, naming prefix should be same and observed generation higher", scaleTo);
         List<String> mm2Pods = kubeClient(testStorage.getNamespaceName()).listPodNames(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
@@ -493,8 +493,11 @@ class MirrorMaker2IsolatedST extends AbstractST {
         long actualObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getMetadata().getGeneration();
 
         assertTrue(mm2ObsGen < actualObsGen);
-        for (String pod : mm2Pods) {
-            assertTrue(pod.contains(mm2GenName));
+        // StrimziPodSet does not have .metadata.generateName attribute and thus we ignoring such assert here
+        if (!Environment.isStableConnectIdentitiesEnabled()) {
+            for (String pod : mm2Pods) {
+                assertTrue(pod.contains(mm2GenName));
+            }
         }
 
         mm2ObsGen = actualObsGen;
@@ -504,7 +507,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Scaling MirrorMaker2 to zero");
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getSpec().setReplicas(0), testStorage.getNamespaceName());
 
-        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), kubeClient(testStorage.getNamespaceName()).getDeploymentSelectors(mm2DepName), 0, true, () -> { });
+        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), mmSelector, 0, true, () -> { });
 
         mm2Pods = kubeClient().listPodNames(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND);
         KafkaMirrorMaker2Status mm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
@@ -737,12 +740,12 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
 
         LOGGER.info("Adding label to MirrorMaker2 resource, the CR should be recreated");
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(),
             mm2 -> mm2.getMetadata().setLabels(Collections.singletonMap("some", "label")), testStorage.getNamespaceName());
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mm2DepName, 1);
+        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1);
 
         KafkaMirrorMaker2 kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
@@ -756,20 +759,21 @@ class MirrorMaker2IsolatedST extends AbstractST {
             mm2 -> mm2.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), testStorage.getNamespaceName());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        LOGGER.info("Adding another label to MirrorMaker2 resource, pods should be rolled");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getMetadata().getLabels().put("another", "label"), testStorage.getNamespaceName());
-        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mm2DepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getMetadata().getLabels().put("another", "label"), testStorage.getNamespaceName());
         StUtils.waitUntilSupplierIsSatisfied(
-            () -> {
-                final KafkaMirrorMaker2 kMM2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
+                () -> {
+                    final KafkaMirrorMaker2 kMM2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
-                return kMM2.getStatus().getObservedGeneration() == 2L &&
-                        kMM2.getMetadata().getLabels().toString().contains("another=label") &&
-                        kMM2.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
-            }
+                    return kMM2.getStatus().getObservedGeneration() == 2L &&
+                            kMM2.getMetadata().getLabels().toString().contains("another=label") &&
+                            kMM2.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
+                }
         );
+
+        LOGGER.info("Adding another label to MirrorMaker2 resource, pods should be rolled");
+        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1);
     }
 
     @ParallelNamespaceTest
@@ -1084,8 +1088,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Messages successfully mirrored");
 
-        String kmm2DeploymentName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
-        Map<String, String> mmSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), kmm2DeploymentName);
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
         LOGGER.info("Changing KafkaUser sha-password on KMM2 Source and make sure it rolled");
 
@@ -1097,7 +1101,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         kubeClient().patchSecret(testStorage.getNamespaceName(), kafkaUserSourceName, passwordSource);
-        mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), kmm2DeploymentName, 1, mmSnapshot);
+        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         LOGGER.info("Changing KafkaUser sha-password on KMM2 Target");
         Secret passwordTarget = new SecretBuilder()
@@ -1108,7 +1112,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
 
         kubeClient().patchSecret(testStorage.getNamespaceName(), kafkaUserTargetName, passwordTarget);
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), kmm2DeploymentName, 1, mmSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(testStorage.getTopicName())
@@ -1228,8 +1232,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String mm2DeploymentName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
-        Map<String, String> mmSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), mm2DeploymentName);
+        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -1274,13 +1278,13 @@ class MirrorMaker2IsolatedST extends AbstractST {
         String sourceClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterSourceName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
-        mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
+        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         LOGGER.info("Renew Clients CA secret for Target cluster via annotation");
         String targetClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterTargetName);
         SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
-        mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
+        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         LOGGER.info("Send and receive messages after clients certs were removed");
         clients = new KafkaClientsBuilder(clients)
@@ -1314,7 +1318,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterSourceName), 1, eoSourcePods);
-        mmSnapshot = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
+        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         LOGGER.info("Renew Cluster CA secret for Target clusters via annotation");
         String targetClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName);
@@ -1325,7 +1329,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         }
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(kafkaClusterTargetName), 1, eoTargetPods);
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), mm2DeploymentName, 1, mmSnapshot);
+        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         LOGGER.info("Send and receive messages after clients certs were removed");
         clients = new KafkaClientsBuilder(clients)
