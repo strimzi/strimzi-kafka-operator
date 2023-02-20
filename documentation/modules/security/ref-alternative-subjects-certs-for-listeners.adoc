@@ -15,9 +15,11 @@ In order to use TLS hostname verification with your own xref:proc-installing-cer
 
 You can use wildcard certificates if they are supported by your CA.
 
-== Internal listener SAN examples
+== Examples of SANs for internal listeners
 
 Use the following examples to help you specify hostnames of the SANs in your certificates for your internal listeners.
+
+Replace `<cluster-name>` with the name of the Kafka cluster and `<namespace>` with the Kubernetes namespace where the cluster is running.
 
 .Wildcards example for a `type: internal` listener
 
@@ -64,7 +66,7 @@ _<cluster-name>_-kafka-_<listener-name>_-bootstrap
 _<cluster-name>_-kafka-_<listener-name>_-bootstrap._<namespace>_.svc
 ----
 
-== External listener SAN examples
+== Examples of SANs for external listeners
 
 For external listeners which have TLS encryption enabled, the hostnames you need to specify in certificates depends on the external listener `type`.
 
