@@ -359,6 +359,11 @@ public interface Constants {
      */
     String OLM = "olm";
 
+    /**
+     * Tag for tests using Openshift Route
+     */
+    String ROUTE = "route";
+
     String ISOLATED_TEST = "isolatedtest";
     String PARALLEL_TEST = "paralleltest";
     /**
