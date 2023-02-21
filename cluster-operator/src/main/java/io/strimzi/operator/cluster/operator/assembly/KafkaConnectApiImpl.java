@@ -167,6 +167,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Void> delete(Reconciliation reconciliation, String host, int port, String connectorName) {
         String path = "/connectors/" + connectorName;
+        LOGGER.debugCr(reconciliation, "Making DELETE request to {}", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.request(HttpMethod.DELETE, port, host, path, request -> {
                 if (request.succeeded()) {
@@ -285,6 +286,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     private Future<Void> pauseResume(String host, int port, String path) {
+
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.PUT, port, host, path, request -> {
                     if (request.succeeded()) {
@@ -350,6 +352,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<List<ConnectorPlugin>> listConnectorPlugins(Reconciliation reconciliation, String host, int port) {
         String path = "/connector-plugins";
+        LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.GET, port, host, path, request -> {
                     if (request.succeeded()) {
@@ -360,6 +363,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 if (response.result().statusCode() == 200) {
                                     response.result().bodyHandler(buffer -> {
                                         try {
+                                            LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", response.result().statusCode());
                                             result.complete(asList(mapper.readValue(buffer.getBytes(), ConnectorPlugin[].class)));
                                         } catch (IOException e) {
                                             LOGGER.warnCr(reconciliation, "Failed to parse list of connector plugins", e);
@@ -418,6 +422,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<Map<String, String>> listConnectLoggers(Reconciliation reconciliation, String host, int port) {
         String path = "/admin/loggers/";
+        LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.GET, port, host, path, request -> {
                     if (request.succeeded()) {
@@ -428,6 +433,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 if (response.result().statusCode() == 200) {
                                     response.result().bodyHandler(buffer -> {
                                         try {
+                                            LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}", response.result().statusCode(), path);
                                             Map<String, Map<String, String>> fetchedLoggers = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_STRINGS);
                                             Map<String, String> loggerMap = new HashMap<>(fetchedLoggers.size());
                                             for (var e : fetchedLoggers.entrySet()) {
@@ -598,6 +604,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     @Override
     public Future<List<String>> getConnectorTopics(Reconciliation reconciliation, String host, int port, String connectorName) {
         String path = String.format("/connectors/%s/topics", connectorName);
+        LOGGER.debugCr(reconciliation, "Making GET request to {}", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
             httpClient.request(HttpMethod.GET, port, host, path, request -> {
                 if (request.succeeded()) {
@@ -613,6 +620,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 response.result().bodyHandler(buffer -> {
                                     try {
                                         Map<String, Map<String, List<String>>> t = mapper.readValue(buffer.getBytes(), MAP_OF_MAP_OF_LIST_OF_STRING);
+                                        LOGGER.debugCr(reconciliation, "Got {} response to GET request to {}: {}", response.result().statusCode(), path, t);
                                         result.complete(t.get(connectorName).get("topics"));
                                     } catch (IOException e) {
                                         LOGGER.warnCr(reconciliation, "Failed to parse list of connector topics", e);
