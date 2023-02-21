@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -23,9 +24,11 @@ import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -343,5 +346,76 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages.");
         ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+    }
+    @IsolatedTest
+    void testSwitchingConnectStabilityIdentifiesFeatureGateOnAndOff(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final int connectReplicas = 1;
+        final int messageCount = 500;
+        List<EnvVar> coEnvVars = new ArrayList<>();
+
+        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "", null));
+
+        LOGGER.info("Deploying CO without CSI");
+
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withNamespace(testStorage.getNamespaceName())
+                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+                .withExtraEnvVars(coEnvVars)
+                .createInstallation()
+                .runInstallation();
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicas).build());
+
+        Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
+
+        final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), connectLabelSelector);
+
+        KafkaClients clients = new KafkaClientsBuilder()
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+                .withTopicName(testStorage.getTopicName())
+                .withMessageCount(messageCount)
+                .withDelayMs(1000)
+                .withNamespaceName(clusterOperator.getDeploymentNamespace())
+                .build();
+
+        resourceManager.createResource(extensionContext,
+                clients.producerStrimzi(),
+                clients.consumerStrimzi()
+        );
+
+        LOGGER.info("Changing FG env variable to enable SCI");
+        coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("+StableConnectIdentities");
+
+        Deployment coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME);
+        coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).replace();
+
+        coPod = DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+
+        connectPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
+
+        LOGGER.info("Changing FG env variable to disable again SCI");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("");
+
+        coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME);
+        coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).replace();
+
+        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+
+        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
+
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace(), messageCount);
     }
 }
