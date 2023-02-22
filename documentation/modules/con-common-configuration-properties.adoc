@@ -59,15 +59,14 @@ Use the `ssl.endpoint.identification.algorithm` property to enable or disable ho
 [source,yaml,subs="attributes+"]
 ----
 # ...
-
-  config:
-    ssl.cipher.suites: "TLS_AES_256_GCM_SHA384" # <1>
-    ssl.enabled.protocols: "TLSv1.3", "TLSv1.2" # <2>
-    ssl.protocol: "TLSv1.3" # <3>
-    ssl.endpoint.identification.algorithm: HTTPS # <4>
+config:
+  ssl.cipher.suites: "TLS_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" # <1>
+  ssl.enabled.protocols: "TLSv1.3", "TLSv1.2" # <2>
+  ssl.protocol: "TLSv1.3" # <3>
+  ssl.endpoint.identification.algorithm: HTTPS # <4>
 # ...
 ----
-<1> Cipher suite specification enabled.
+<1> Cipher suite specifications enabled.
 <2> TLS versions supported.
 <3> Default TLS version is `TLSv1.3`. If a client only supports TLSv1.2, it can still connect to the broker and communicate using that supported version, and vice versa if the configuration is on the client and the broker only supports TLSv1.2.
 <4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.
