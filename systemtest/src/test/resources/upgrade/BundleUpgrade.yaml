@@ -63,4 +63,4 @@
     flakyEnvVariable: none
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: "-UseStrimziPodSets"
-  featureGatesAfter: "+UseStrimziPodSets"
+  featureGatesAfter: "+UseStrimziPodSets,+StableConnectIdentities"

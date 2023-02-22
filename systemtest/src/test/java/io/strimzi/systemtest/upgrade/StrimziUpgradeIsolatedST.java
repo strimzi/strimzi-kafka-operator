@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 @Tag(UPGRADE)
 @IsolatedSuite
-@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
+@KRaftNotSupported("Strimzi and Kafka upgrade is not supported with KRaft mode")
 public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeIsolatedST.class);
