@@ -6,13 +6,16 @@
 = Scaling clusters
 
 [role="_abstract"]
-Scale Kafka clusters by adding or removing brokers.
-If a cluster already has topics defined, you also have to reassign partitions.
+Scaling Kafka clusters by adding can increase the performance and reliability of the cluster. 
+Adding more brokers increases available resources, allowing the cluster to handle larger workloads and process more messages. 
+It can also improve fault tolerance by providing more replicas and backups. 
+Conversely, removing underutilized brokers can reduce resource consumption and improve efficiency. 
+Scaling must be done carefully to avoid disruption or data loss.
 
-Use the `kafka-reassign-partitions.sh` tool to reassign partitions.
-The tool uses a reassignment JSON file that specifies the topics to reassign.
-
-You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.
+When scaling brokers in a Kafka cluster, it's necessary to reassign partitions for any existing topics. 
+The `kafka-reassign-partitions.sh` tool can be used to reassign partitions and improve performance by balancing the distribution of partitions across brokers, though its primary purpose is to change the replication factor of a topic, as this cannot be done any other way.
+The most efficient way to reassign partitions is using xref:cruise-control-concepts-str[Cruise Control for cluster rebalancing]. 
+Cruise Control automates partition reassignments and can be used to move topics from one broker to another without any downtime.
 
 include::../../modules/configuring/con-scaling-kafka-clusters.adoc[leveloffset=+1]
 

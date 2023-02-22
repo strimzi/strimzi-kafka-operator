@@ -3,10 +3,10 @@
 // assembly-scaling-clusters.adoc
 
 [id='con-scaling-kafka-clusters-{context}']
-= Broker scaling configuration
+= Adding or reducing brokers
 
 [role="_abstract"]
-You configure the `Kafka.spec.kafka.replicas` configuration to add or reduce the number of brokers.
+Configure the `Kafka.spec.kafka.replicas` configuration to add or reduce the number of brokers.
 
 [discrete]
 == Broker addition
