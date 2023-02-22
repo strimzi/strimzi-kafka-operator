@@ -6,7 +6,7 @@
 = Scaling clusters
 
 [role="_abstract"]
-Scaling Kafka clusters by adding or removing brokers can increase the performance and reliability of the cluster. 
+Scaling Kafka clusters by adding can increase the performance and reliability of the cluster. 
 Adding more brokers increases available resources, allowing the cluster to handle larger workloads and process more messages. 
 It can also improve fault tolerance by providing more replicas and backups. 
 Conversely, removing underutilized brokers can reduce resource consumption and improve efficiency. 
