@@ -518,7 +518,6 @@ class LogSettingST extends AbstractST {
             this.checkGcLoggingDeployments(namespaceName, deploymentName, exceptedValue);
         }
     }
-
     private synchronized void checkGcLoggingDeployments(String namespaceName, String deploymentName, boolean expectedValue) {
         LOGGER.info("Checking deployment: {}", deploymentName);
         Container container = kubeClient(namespaceName).getDeployment(namespaceName, deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
