@@ -1848,16 +1848,19 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
 
-        String externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        String externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
+        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
 
-        String internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt")
+        );
 
-        LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        //External secret cert is same as internal in this case
-        assertThat(externalSecretCerts, is(internalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName())
+        );
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(testStorage.getTopicName())
@@ -1912,16 +1915,19 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
-
-        internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        String internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
-
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt")
+        );
+
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt")
+        );
 
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
@@ -1959,18 +1965,22 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaSnapshot);
+
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt");
-
-        internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
-
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer1, "ca.crt")
+        );
+
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt")
+        );
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
             externalKafkaClient.sendMessagesTls() + testStorage.getMessageCount(),
@@ -2020,16 +2030,19 @@ public class ListenersST extends AbstractST {
 
         KafkaUtils.waitForKafkaStatusUpdate(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        externalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt");
-
-        internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
-        internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(),  clusterCustomCertServer2, "ca.crt");
-
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
-        assertThat(externalSecretCerts, is(externalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(), testStorage.getClusterName() + "-cluster-ca-cert", "ca.crt")
+        );
+
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
-        assertThat(internalSecretCerts, is(internalCerts));
+
+        KafkaUtils.waitForKafkaSecretAndStatusCertsMatches(
+            () -> getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName()),
+            () -> getKafkaSecretCertificates(testStorage.getNamespaceName(),  clusterCustomCertServer2, "ca.crt")
+        );
 
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
