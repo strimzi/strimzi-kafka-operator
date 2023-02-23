@@ -107,7 +107,7 @@ public class KafkaConnectApiIT {
                 assertThat(fileSource.getVersion(), is(not(emptyString())));
             })))
 
-            .compose(connectorPlugins -> client.list("localhost", port))
+            .compose(connectorPlugins -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
             .onComplete(context.succeeding(connectorNames -> context.verify(() -> assertThat(connectorNames, is(empty())))))
 
             .compose(connectorNames -> {
@@ -213,12 +213,12 @@ public class KafkaConnectApiIT {
                         containsString("Invalid value dog for configuration tasks.max: Not a number of type INT"));
             })))
             .recover(e -> Future.succeededFuture())
-            .compose(createResponse -> client.list("localhost", port))
+            .compose(createResponse -> client.list(Reconciliation.DUMMY_RECONCILIATION,"localhost", port))
             .onComplete(context.succeeding(connectorNames -> context.verify(() ->
                     assertThat(connectorNames, is(singletonList("test"))))))
             .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
             .onComplete(context.succeedingThenComplete())
-            .compose(deletedConnector -> client.list("localhost", port))
+            .compose(deletedConnector -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
             .onComplete(context.succeeding(connectorNames -> assertThat(connectorNames, is(empty()))))
             .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "never-existed"))
             .onComplete(context.failing(error -> {

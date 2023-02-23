@@ -133,12 +133,13 @@ public interface KafkaConnectApi {
 
     /**
      * Make a {@code GET} request to {@code /connectors}
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @return A Future which completes with the result of the request. If the request was successful,
      * this returns the list of connectors.
      */
-    Future<List<String>> list(String host, int port);
+    Future<List<String>> list(Reconciliation reconciliation, String host, int port);
 
     /**
      * Make a {@code GET} request to {@code /connector-plugins}.

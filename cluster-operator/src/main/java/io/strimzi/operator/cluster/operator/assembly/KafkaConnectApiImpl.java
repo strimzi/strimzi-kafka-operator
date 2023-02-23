@@ -313,8 +313,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     @Override
-    public Future<List<String>> list(String host, int port) {
+    public Future<List<String>> list(Reconciliation reconciliation, String host, int port) {
         String path = "/connectors";
+        LOGGER.debugCr(reconciliation, "Making GET request to {} ", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.GET, port, host, path, request -> {
 
