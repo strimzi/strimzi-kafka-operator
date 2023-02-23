@@ -57,7 +57,7 @@ a|StatefulSet
 
 |ManualRollingUpdate
 |ManualRollingUpdate
-|A user annotated the pod, or the `StatefulSet`` or `StrimziPodSet` set it belongs to, to trigger a restart.
+|A user annotated the pod, or the `StatefulSet` or `StrimziPodSet` set it belongs to, to trigger a restart.
 
 |PodForceRestartOnError
 |PodForceRestartOnError

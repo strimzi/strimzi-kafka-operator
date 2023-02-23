@@ -16,6 +16,8 @@ If brokers are running on nodes with heterogeneous network resources, you can us
 
 If an empty object (`{}`) is used for the `cruiseControl` configuration, all properties use their default values.
 
+For more information on the configuration options for Cruise Control, see the link:{BookURLConfiguring}[Custom resource API reference^].
+
 .Prerequisites
 
 * A Kubernetes cluster
@@ -98,16 +100,16 @@ spec:
           key: metrics-config.yml
 # ...
 ----
-<1> xref:property-cruise-control-broker-capacity-reference[Capacity limits for broker resources].
-<2> xref:property-cruise-control-capacity-overrides-reference[Overrides set network capacity limits] for specific brokers when running on nodes with heterogeneous network resources.
-<3> Cruise Control configuration. xref:property-cruise-control-config-reference[Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi].
-<4> xref:con-optimization-goals-{context}[Optimization goals configuration], which can include configuration for default optimization goals (`default.goals`), main optimization goals (`goals`), and hard goals (`hard.goals`).
-<5> xref:property-cruise-control-config-cors-reference[CORS enabled and configured] for read-only access to the Cruise Control API.
-<6> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<7> xref:property-cruise-control-logging-reference[Cruise Control loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. Cruise Control has a single logger named `rootLogger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
-<8> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with additional security attributes.
-<9> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<10> xref:con-common-configuration-prometheus-reference[Prometheus metrics] enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
+<1> Capacity limits for broker resources.
+<2> Overrides set network capacity limits for specific brokers when running on nodes with heterogeneous network resources.
+<3> Cruise Control configuration. Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi.
+<4> Optimization goals configuration, which can include configuration for default optimization goals (`default.goals`), main optimization goals (`goals`), and hard goals (`hard.goals`).
+<5> CORS enabled and configured for read-only access to the Cruise Control API.
+<6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<7> Cruise Control loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. Cruise Control has a single logger named `rootLogger.level`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<8> Template customization. Here a pod is scheduled with additional security attributes.
+<9> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<10> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
 
 . Create or update the resource:
 +
@@ -176,4 +178,3 @@ After configuring and deploying Cruise Control, you can xref:proc-generating-opt
 [role="_additional-resources"]
 .Additional resources
 * xref:con-optimization-goals-{context}[Optimization goals overview]
-* xref:type-CruiseControlSpec-reference[`CruiseControlSpec` schema reference]

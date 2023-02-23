@@ -23,7 +23,9 @@ For more information, see xref:con-optimization-proposals-modes-{context}[Rebala
 .Prerequisites
 
 * You have xref:proc-configuring-deploying-cruise-control-{context}[deployed Cruise Control] to your Strimzi cluster.
-* You have configured xref:con-optimization-goals-{context}[optimization goals] and, optionally, xref:property-cruise-control-broker-capacity-reference[capacity limits on broker resources].
+* You have configured optimization goals and, optionally, capacity limits on broker resources.
+
+For more information on configuring Cruise Control, see xref:proc-configuring-deploying-cruise-control-{context}[].
 
 .Procedure
 

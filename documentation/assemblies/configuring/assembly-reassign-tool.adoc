@@ -1,0 +1,25 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-config-kafka.adoc
+
+[id='assembly-reassign-tool-{context}']
+= Using the partition reassignment tool
+
+[role="_abstract"]
+When scaling a Kafka cluster, you may need to add or remove brokers and update the distribution of partitions or the replication factor of topics. 
+To update partitions and topics, you can use the `kafka-reassign-partitions.sh` tool.
+
+Changing the replication factor of a topic cannot be done using any other Kafka tools. 
+You must use `kafka-reassign-partitions.sh` to do this. 
+
+The tool can also be used to reassign partitions and balance the distribution of partitions across brokers to improve performance.
+However, it is recommended to use xref:cruise-control-concepts-str[Cruise Control for automated partition reassignments and cluster rebalancing]. 
+Cruise Control can move topics from one broker to another without any downtime, and it is the most efficient way to reassign partitions.
+
+include::../../modules/configuring/con-partition-reassignment.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-generating-reassignment-json-files.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-scaling-up-a-kafka-cluster.adoc[leveloffset=+1]
+
+include::../../modules/configuring/proc-scaling-down-a-kafka-cluster.adoc[leveloffset=+1]

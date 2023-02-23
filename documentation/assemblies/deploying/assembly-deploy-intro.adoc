@@ -33,5 +33,5 @@ include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 == Additional resources
 
 * link:{BookURLOverview}[Strimzi Overview^]
-* link:{BookURLConfiguring}[Configuring Strimzi^]
+* link:{BookURLConfiguring}[Custom resource API reference^]
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
