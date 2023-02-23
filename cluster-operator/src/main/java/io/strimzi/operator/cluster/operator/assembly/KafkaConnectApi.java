@@ -113,21 +113,23 @@ public interface KafkaConnectApi {
 
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/pause}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to pause.
      * @return A Future which completes with the result of the request.
      */
-    Future<Void> pause(String host, int port, String connectorName);
+    Future<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName);
 
     /**
      * Make a {@code PUT} request to {@code /connectors/${connectorName}/resume}.
+     * @param reconciliation The reconciliation
      * @param host The host to make the request to.
      * @param port The port to make the request to.
      * @param connectorName The name of the connector to resume.
      * @return A Future which completes with the result of the request.
      */
-    Future<Void> resume(String host, int port, String connectorName);
+    Future<Void> resume(Reconciliation reconciliation,  String host, int port, String connectorName);
 
     /**
      * Make a {@code GET} request to {@code /connectors}

@@ -277,7 +277,7 @@ public class ConnectorMockTest {
             String connectorName = invocation.getArgument(3);
             return kafkaConnectApiStatusMock(host, connectorName);
         });
-        when(api.pause(any(), anyInt(), anyString())).thenAnswer(invocation -> {
+        when(api.pause(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
             String connectorName = invocation.getArgument(2);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
@@ -289,7 +289,7 @@ public class ConnectorMockTest {
             }
             return Future.succeededFuture();
         });
-        when(api.resume(any(), anyInt(), anyString())).thenAnswer(invocation -> {
+        when(api.resume(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
             String host = invocation.getArgument(0);
             String connectorName = invocation.getArgument(2);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
@@ -1072,10 +1072,10 @@ public class ConnectorMockTest {
                 eq(connectorName), any());
         assertThat(runningConnectors.keySet(), is(Collections.singleton(key("cluster-connect-api.ns.svc", connectorName))));
 
-        verify(api, never()).pause(
+        verify(api, never()).pause(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
-        verify(api, never()).resume(
+        verify(api, never()).resume(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
 
@@ -1087,10 +1087,10 @@ public class ConnectorMockTest {
 
         waitForConnectorState(connectorName, "PAUSED");
 
-        verify(api, times(1)).pause(
+        verify(api, times(1)).pause(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
-        verify(api, never()).resume(
+        verify(api, never()).resume(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
 
@@ -1102,10 +1102,10 @@ public class ConnectorMockTest {
 
         waitForConnectorState(connectorName, "RUNNING");
 
-        verify(api, times(1)).pause(
+        verify(api, times(1)).pause(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
-        verify(api, times(1)).resume(
+        verify(api, times(1)).resume(any(),
                 eq(KafkaConnectResources.qualifiedServiceName(connectName, NAMESPACE)), eq(KafkaConnectCluster.REST_API_PORT),
                 eq(connectorName));
     }

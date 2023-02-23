@@ -172,10 +172,10 @@ public class KafkaConnectApiIT {
             })))
             .recover(error -> Future.succeededFuture())
 
-            .compose(ignored -> client.pause("localhost", port, "test"))
+            .compose(ignored -> client.pause(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
             .onComplete(context.succeedingThenComplete())
 
-            .compose(ignored -> client.resume("localhost", port, "test"))
+            .compose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
             .onComplete(context.succeedingThenComplete())
 
             .compose(ignored -> client.restart("localhost", port, "test", true, true))

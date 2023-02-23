@@ -603,10 +603,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
             if ("RUNNING".equals(state) && shouldPause) {
                 LOGGER.debugCr(reconciliation, "Pausing connector {}", connectorName);
-                return apiClient.pause(host, port, connectorName);
+                return apiClient.pause(reconciliation, host, port, connectorName);
             } else if ("PAUSED".equals(state) && !shouldPause) {
                 LOGGER.debugCr(reconciliation, "Resuming connector {}", connectorName);
-                return apiClient.resume(host, port, connectorName);
+                return apiClient.resume(reconciliation, host, port, connectorName);
             } else {
                 return Future.succeededFuture();
             }
