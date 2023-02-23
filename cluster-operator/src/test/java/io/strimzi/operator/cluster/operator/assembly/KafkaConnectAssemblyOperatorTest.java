@@ -171,7 +171,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
@@ -321,7 +321,7 @@ public class KafkaConnectAssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());        
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
@@ -446,7 +446,7 @@ public class KafkaConnectAssemblyOperatorTest {
         }).when(mockCmOps).reconcile(any(), eq(kcNamespace), anyString(), any());
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
@@ -622,7 +622,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")
@@ -698,7 +698,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
-        when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
                 .withConnectorClass("io.strimzi.MyClass")

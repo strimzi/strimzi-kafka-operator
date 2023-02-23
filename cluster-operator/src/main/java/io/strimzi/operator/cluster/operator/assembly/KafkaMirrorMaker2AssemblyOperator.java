@@ -336,7 +336,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         List<KafkaMirrorMaker2MirrorSpec> mirrors = ModelUtils.asListOrEmptyList(kafkaMirrorMaker2.getSpec().getMirrors());
         String host = KafkaMirrorMaker2Resources.qualifiedServiceName(mirrorMaker2Name, reconciliation.namespace());
         KafkaConnectApi apiClient = getKafkaConnectApi();
-        return apiClient.list(host, KafkaConnectCluster.REST_API_PORT).compose(deleteMirrorMaker2ConnectorNames -> {
+        return apiClient.list(reconciliation, host, KafkaConnectCluster.REST_API_PORT).compose(deleteMirrorMaker2ConnectorNames -> {
 
             for (Map.Entry<String, Function<KafkaMirrorMaker2MirrorSpec, KafkaMirrorMaker2ConnectorSpec>> connectorEntry : MIRRORMAKER2_CONNECTORS.entrySet()) {
                 deleteMirrorMaker2ConnectorNames.removeAll(mirrors.stream()

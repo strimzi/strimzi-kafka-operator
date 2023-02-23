@@ -1487,7 +1487,7 @@ public class ConnectorMockTest {
                 eq(connectorName), any());
         assertThat(runningConnectors.keySet(), is(Collections.singleton(key("cluster-connect-api.ns.svc", connectorName))));
 
-        when(api.list(any(),any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
+        when(api.list(any(), any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
         when(api.listConnectorPlugins(any(), any(), anyInt())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
         when(api.createOrUpdatePutRequest(any(), any(), anyInt(), anyString(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));
         when(api.getConnectorConfig(any(), any(), anyInt(), any())).thenReturn(Future.failedFuture(new ConnectTimeoutException("connection timed out")));

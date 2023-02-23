@@ -386,7 +386,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
         return CompositeFuture.join(
-                apiClient.list(reconciliation,host, port),
+                apiClient.list(reconciliation, host, port),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
                 apiClient.listConnectorPlugins(reconciliation, host, port),
                 apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)

@@ -213,7 +213,7 @@ public class KafkaConnectApiIT {
                         containsString("Invalid value dog for configuration tasks.max: Not a number of type INT"));
             })))
             .recover(e -> Future.succeededFuture())
-            .compose(createResponse -> client.list(Reconciliation.DUMMY_RECONCILIATION,"localhost", port))
+            .compose(createResponse -> client.list(Reconciliation.DUMMY_RECONCILIATION, "localhost", port))
             .onComplete(context.succeeding(connectorNames -> context.verify(() ->
                     assertThat(connectorNames, is(singletonList("test"))))))
             .compose(connectorNames -> client.delete(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
