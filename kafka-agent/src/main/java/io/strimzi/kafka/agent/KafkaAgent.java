@@ -56,7 +56,7 @@ public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
     private static final int HTTPS_PORT = 8443;
-    private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 60 * 1000;
+    private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
 
     // KafkaYammerMetrics class in Kafka 3.3+
     private static final String YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER = "org.apache.kafka.server.metrics.KafkaYammerMetrics";
@@ -64,12 +64,14 @@ public class KafkaAgent {
     private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
     private static final byte BROKER_RUNNING_STATE = 3;
+    private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
     private final File sessionConnectedFile;
     private final File brokerReadyFile;
     private final String sslKeyStorePath;
-    private final String certStorePassword;
+    private final String sslKeyStorePassword;
     private final String sslTruststorePath;
+    private final String sslTruststorePassword;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private Gauge remainingLogsToRecover;
@@ -84,15 +86,17 @@ public class KafkaAgent {
      * @param brokerReadyFile       File which is touched (created) when the broker is ready
      * @param sessionConnectedFile  File which is touched (created) when the Kafka broker connects successfully to ZooKeeper
      * @param sslKeyStorePath       Keystore containing the broker certificate
-     * @param certStorePassword     Password for certificate stores
+     * @param sslKeyStorePass       Password for keystore
      * @param sslTruststorePath     Truststore containing CA certs for authenticating clients
+     * @param sslTruststorePass     Password for truststore
      */
-    public KafkaAgent(File brokerReadyFile, File sessionConnectedFile, String sslKeyStorePath, String certStorePassword, String sslTruststorePath) {
+    public KafkaAgent(File brokerReadyFile, File sessionConnectedFile, String sslKeyStorePath, String sslKeyStorePass, String sslTruststorePath, String sslTruststorePass) {
         this.brokerReadyFile = brokerReadyFile;
         this.sessionConnectedFile = sessionConnectedFile;
         this.sslKeyStorePath = sslKeyStorePath;
-        this.certStorePassword = certStorePassword;
+        this.sslKeyStorePassword = sslKeyStorePass;
         this.sslTruststorePath = sslTruststorePath;
+        this.sslTruststorePassword = sslTruststorePass;
     }
 
     private void run() {
@@ -224,7 +228,7 @@ public class KafkaAgent {
 
                 Map<String, Object> brokerStateResponse = new HashMap<>();
                 if (brokerState != null) {
-                    if ((byte) brokerState.value() == 2 && remainingLogsToRecover != null && remainingSegmentsToRecover != null) {
+                    if ((byte) brokerState.value() == BROKER_RECOVERY_STATE && remainingLogsToRecover != null && remainingSegmentsToRecover != null) {
                         Map<String, Object> recoveryState = new HashMap<>();
                         recoveryState.put("remainingLogsToRecover", remainingLogsToRecover.value());
                         recoveryState.put("remainingSegmentsToRecover", remainingSegmentsToRecover.value());
@@ -256,11 +260,11 @@ public class KafkaAgent {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
         sslContextFactory.setKeyStorePath(sslKeyStorePath);
-        sslContextFactory.setKeyStorePassword(certStorePassword);
-        sslContextFactory.setKeyManagerPassword(certStorePassword);
+        sslContextFactory.setKeyStorePassword(sslKeyStorePassword);
+        sslContextFactory.setKeyManagerPassword(sslKeyStorePassword);
 
         sslContextFactory.setTrustStorePath(sslTruststorePath);
-        sslContextFactory.setTrustStorePassword(certStorePassword);
+        sslContextFactory.setTrustStorePassword(sslTruststorePassword);
         sslContextFactory.setNeedClientAuth(true);
 
         return  sslContextFactory;
@@ -353,8 +357,9 @@ public class KafkaAgent {
             File brokerReadyFile = new File(args[0]);
             File sessionConnectedFile = new File(args[1]);
             String sslKeyStorePath = args[2];
-            String certStorePass = args[3];
+            String sslKeyStorePass = args[3];
             String sslTrustStorePath = args[4];
+            String sslTrustStorePass = args[5];
             if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
                 LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
                 System.exit(1);
@@ -364,13 +369,16 @@ public class KafkaAgent {
             } else if (sslKeyStorePath.equals("") || sslTrustStorePath.equals("")) {
                 LOGGER.error("SSLKeyStorePath or SSLTrustStorePath is empty: sslKeyStorePath={} sslTrustStore={} ", sslKeyStorePath, sslTrustStorePath);
                 System.exit(1);
-            } else if (certStorePass.equals("")) {
+            } else if (sslKeyStorePass.equals("")) {
                 LOGGER.error("Keystore password is empty");
+                System.exit(1);
+            } else if (sslTrustStorePass.equals("")) {
+                LOGGER.error("Truststore password is empty");
                 System.exit(1);
             } else {
                 LOGGER.info("Starting KafkaAgent with brokerReadyFile={}, sessionConnectedFile={}, sslKeyStorePath={}, sslTrustStore={}",
                         brokerReadyFile, sessionConnectedFile, sslKeyStorePath, sslTrustStorePath);
-                new KafkaAgent(brokerReadyFile, sessionConnectedFile, sslKeyStorePath, certStorePass, sslTrustStorePath).run();
+                new KafkaAgent(brokerReadyFile, sessionConnectedFile, sslKeyStorePath, sslKeyStorePass, sslTrustStorePath, sslTrustStorePass).run();
             }
         }
     }

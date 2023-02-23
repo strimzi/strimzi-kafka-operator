@@ -67,7 +67,7 @@ else
   rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
   KEY_STORE=/tmp/kafka/cluster.keystore.p12
   TRUST_STORE=/tmp/kafka/cluster.truststore.p12
-  KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected:$KEY_STORE:$CERTS_STORE_PASSWORD:$TRUST_STORE"
+  KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected:$KEY_STORE:$CERTS_STORE_PASSWORD:$TRUST_STORE:$CERTS_STORE_PASSWORD"
   export KAFKA_OPTS
 fi
 
