@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -158,6 +159,11 @@ public class KafkaUtils {
         secretCerts = new String(decodedBytes, Charset.defaultCharset());
 
         return secretCerts;
+    }
+
+    public static void waitForKafkaSecretAndStatusCertsMatches(Supplier<String> kafkaStatusCertificate, Supplier<String> kafkaSecretCertificate) {
+        TestUtils.waitFor("Kafka Secret and KafkaStatus certificates matches", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> kafkaStatusCertificate.get().equals(kafkaSecretCertificate.get()));
     }
 
     @SuppressWarnings("unchecked")
