@@ -204,7 +204,7 @@ public class ConnectorMockTest {
         runningConnectors = new HashMap<>();
 
         when(api.list(any(), any(), anyInt())).thenAnswer(i -> {
-            String host = i.getArgument(0);
+            String host = i.getArgument(1);
             String matchingKeyPrefix = host + "##";
             return Future.succeededFuture(runningConnectors.keySet().stream()
                     .filter(s -> s.startsWith(matchingKeyPrefix))
@@ -278,8 +278,8 @@ public class ConnectorMockTest {
             return kafkaConnectApiStatusMock(host, connectorName);
         });
         when(api.pause(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
-            String connectorName = invocation.getArgument(2);
+            String host = invocation.getArgument(1);
+            String connectorName = invocation.getArgument(3);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
             if (connectorState == null) {
                 return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
@@ -290,8 +290,8 @@ public class ConnectorMockTest {
             return Future.succeededFuture();
         });
         when(api.resume(any(), any(), anyInt(), anyString())).thenAnswer(invocation -> {
-            String host = invocation.getArgument(0);
-            String connectorName = invocation.getArgument(2);
+            String host = invocation.getArgument(1);
+            String connectorName = invocation.getArgument(3);
             ConnectorState connectorState = runningConnectors.get(key(host, connectorName));
             if (connectorState == null) {
                 return Future.failedFuture(new ConnectRestException("PUT", "", 404, "Not found", "Connector name " + connectorName));
