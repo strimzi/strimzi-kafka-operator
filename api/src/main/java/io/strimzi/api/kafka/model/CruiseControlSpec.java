@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.strimzi.api.annotations.DeprecatedProperty;
+import io.strimzi.api.kafka.model.balancing.ApiUser;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -16,6 +17,7 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 
@@ -28,7 +30,7 @@ import lombok.EqualsAndHashCode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
-    "brokerCapacity", "config", "metricsConfig"})
+    "brokerCapacity", "apiUsers", "config", "metricsConfig"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
@@ -49,6 +51,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
     private Logging logging;
     private CruiseControlTemplate template;
     private BrokerCapacity brokerCapacity;
+    private List<ApiUser> apiUsers;
     private Map<String, Object> config = new HashMap<>(0);
     private MetricsConfig metricsConfig;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -83,6 +86,16 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
 
     public void setBrokerCapacity(BrokerCapacity brokerCapacity) {
         this.brokerCapacity = brokerCapacity;
+    }
+
+    @Description("List of Cruise Control REST API users")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public List<ApiUser> getApiUsers() {
+        return apiUsers;
+    }
+
+    public void setApiUsers(List<ApiUser> apiUsers) {
+        this.apiUsers = apiUsers;
     }
 
     @Description("The Cruise Control configuration. For a full list of configuration options refer to" +

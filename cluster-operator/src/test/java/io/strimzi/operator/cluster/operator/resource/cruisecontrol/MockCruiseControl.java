@@ -76,11 +76,10 @@ public class MockCruiseControl {
             .endMetadata()
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
             .build();
-    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
-            CruiseControl.generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null, CruiseControl.generateCruiseControlApiCredentials(Collections.emptyList(), Collections.emptyList()), Collections.emptyMap(), Collections.emptyMap());
 
     private static final Header ADMIN_AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
-    private static final Header USER_AUTH_HEADER = convertToHeader(CruiseControlApiImpl.generateAuthHttpHeader(CruiseControl.API_USER_NAME, CruiseControl.API_USER_PASSWORD));
+    private static final Header USER_AUTH_HEADER = convertToHeader(CruiseControlApiImpl.generateAuthHttpHeader("test", "test"));
 
     /**
      * Sets up and returns the Cruise Control MockSever.

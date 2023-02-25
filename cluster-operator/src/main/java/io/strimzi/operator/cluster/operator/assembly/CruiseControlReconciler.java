@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.balancing.ApiUser;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.Ca;
@@ -31,9 +32,11 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -221,7 +224,19 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> apiSecret() {
         if (cruiseControl != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
+            List<Future> futures = new ArrayList<Future>();
+            for (ApiUser user : cruiseControl.getApiUsers()) {
+                String secretName = CruiseControl.getPasswordSecretName(user.getPassword());
+                Future secret = secretOperator.getAsync(reconciliation.namespace(), secretName)
+                        .compose(oldSecret -> {
+                            cruiseControl.addSecret(oldSecret);
+                            return Future.succeededFuture();
+                        });
+                futures.add(secret);
+            }
+            return CompositeFuture.all(futures)
+                .compose(test -> {
+                    return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
                         Secret newSecret = cruiseControl.generateApiSecret();
 
@@ -235,6 +250,7 @@ public class CruiseControlReconciler {
                         return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
                                 .map((Void) null);
                     });
+                });
         } else {
             return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null)
                     .map((Void) null);

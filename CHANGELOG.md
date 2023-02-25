@@ -11,7 +11,7 @@
 * Moved from using the Jaeger exporter to OTLP exporter by default
 * Kafka Exporter support for `Recreate` deployment strategy
 * `ImageStream` validation for Kafka Connect builds on OpenShift
-* Add read-only REST API user for Cruise Control
+* Add ability to create REST API users for Cruise Control
 
 ### Changes, deprecations and removals
 
