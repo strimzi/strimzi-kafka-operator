@@ -154,7 +154,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .endSpec()
             .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
-        when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();
@@ -182,7 +182,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                 .endSpec()
                 .build());
         KafkaConnectApi mock = mock(KafkaConnectApi.class);
-        when(mock.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mock.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
         when(mock.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
         Checkpoint async = context.checkpoint();

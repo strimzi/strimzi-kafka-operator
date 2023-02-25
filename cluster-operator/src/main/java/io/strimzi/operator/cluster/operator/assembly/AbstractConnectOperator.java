@@ -386,7 +386,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
         return CompositeFuture.join(
-                apiClient.list(host, port),
+                apiClient.list(reconciliation, host, port),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
                 apiClient.listConnectorPlugins(reconciliation, host, port),
                 apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)
@@ -603,10 +603,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
             if ("RUNNING".equals(state) && shouldPause) {
                 LOGGER.debugCr(reconciliation, "Pausing connector {}", connectorName);
-                return apiClient.pause(host, port, connectorName);
+                return apiClient.pause(reconciliation, host, port, connectorName);
             } else if ("PAUSED".equals(state) && !shouldPause) {
                 LOGGER.debugCr(reconciliation, "Resuming connector {}", connectorName);
-                return apiClient.resume(host, port, connectorName);
+                return apiClient.resume(reconciliation, host, port, connectorName);
             } else {
                 return Future.succeededFuture();
             }
