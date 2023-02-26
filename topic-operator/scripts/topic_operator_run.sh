@@ -46,6 +46,6 @@ if [ "$STRIMZI_TLS_ENABLED" = "true" ] || [ "$STRIMZI_SECURITY_PROTOCOL" = "SSL"
     fi
 fi
 
-export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
+export JAVA_CLASSPATH=$JAVA_CLASSPATH:lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.topic.Main
 exec "${STRIMZI_HOME}/bin/launch_java.sh"

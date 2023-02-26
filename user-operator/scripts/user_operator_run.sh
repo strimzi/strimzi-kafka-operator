@@ -21,6 +21,6 @@ if [ -n "$STRIMZI_JAVA_OPTS" ]; then
     export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JAVA_OPTS}"
 fi
 
-export JAVA_CLASSPATH=lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
+export JAVA_CLASSPATH=$JAVA_CLASSPATH:lib/io.strimzi.@project.build.finalName@.@project.packaging@:@project.dist.classpath@
 export JAVA_MAIN=io.strimzi.operator.user.Main
 exec "${STRIMZI_HOME}/bin/launch_java.sh"
