@@ -497,6 +497,9 @@ public class KafkaConnectorIT {
             JsonObject connectorStatus = new JsonObject(kafkaConnector.getStatus().getConnectorStatus());
             assertThat(connectorStatus.getJsonObject("connector"), notNullValue());
             assertThat(connectorStatus.getJsonObject("connector").getString("state"), is("RESTARTING"));
+            MetricsProvider metrics = new MicrometerMetricsProvider();
+            MeterRegistry registry = metrics.meterRegistry();
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "auto.restarts").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
         });
     }
 
@@ -515,6 +518,9 @@ public class KafkaConnectorIT {
             assertThat(connectorStatus.getJsonArray("tasks"), notNullValue());
             assertThat(connectorStatus.getJsonArray("tasks").size(), is(1));
             assertThat(connectorStatus.getJsonArray("tasks").getJsonObject(0).getString("state"), is("RESTARTING"));
+            MetricsProvider metrics = new MicrometerMetricsProvider();
+            MeterRegistry registry = metrics.meterRegistry();
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "auto.restarts").tag("kind", KafkaConnector.RESOURCE_KIND).counter().count(), CoreMatchers.is(1.0));
         });
     }
 }

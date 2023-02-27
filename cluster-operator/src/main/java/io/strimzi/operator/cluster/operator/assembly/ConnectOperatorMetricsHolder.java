@@ -22,6 +22,7 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
     private final Map<String, Counter> connectorsReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> connectorsFailedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> connectorsSuccessfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
+    private final Map<String, Counter> connectorsAutoRestartsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Timer> connectorsReconciliationsTimerMap = new ConcurrentHashMap<>(1);
     private final Map<String, AtomicInteger> connectorsResourceCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, AtomicInteger> pausedConnectorsResourceCounterMap = new ConcurrentHashMap<>(1);
@@ -72,6 +73,18 @@ public class ConnectOperatorMetricsHolder extends OperatorMetricsHolder {
     public Counter connectorsSuccessfulReconciliationsCounter(String namespace) {
         return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "reconciliations.successful", metricsProvider, null, connectorsSuccessfulReconciliationsCounterMap,
                 "Number of reconciliations done by the operator for individual resources which were successful");
+    }
+
+    /**
+     * Counter metric for number of auto restarts.
+     *
+     * @param namespace     Namespace of the resources being reconciled
+     *
+     * @return  Metrics counter
+     */
+    public Counter connectorsAutoRestartsCounter(String namespace) {
+        return getCounter(namespace, KafkaConnector.RESOURCE_KIND, METRICS_PREFIX + "auto.restarts", metricsProvider, null, connectorsAutoRestartsCounterMap,
+                "Number of auto restarts of the connector");
     }
 
     /**

@@ -645,6 +645,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                          // Connector or task failed and we should check it for auto-restart
                          if (shouldAutoRestart(previousAutoRestartStatus))    {
                              // There are failures, and it is a time to restart the connector now
+                             metrics().connectorsAutoRestartsCounter(reconciliation.namespace()).increment();
                              return autoRestartConnector(reconciliation, host, apiClient, connectorName, status, previousAutoRestartStatus);
                          } else {
                              // There are failures, but the next restart should happen only later => keep the original status
