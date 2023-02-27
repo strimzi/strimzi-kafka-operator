@@ -1,14 +1,26 @@
-apiVersion: keycloak.org/v1alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
-  name: example-keycloak
+  name: keycloak
   labels:
     app: sso
 spec:
   instances: 1
-  extensions:
-    - https://github.com/aerogear/keycloak-metrics-spi/releases/download/1.0.4/keycloak-metrics-spi-1.0.4.jar
-  externalAccess:
-    enabled: True
-  podDisruptionBudget:
-    enabled: True
+  db:
+    vendor: postgres
+    host: postgres
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  ingress:
+    enabled: false
+  http:
+    tlsSecret: example-tls-secret
+    httpEnabled: true
+    httpPort: 9595
+    httpsPort: 8443
+  hostname:
+    strict: false

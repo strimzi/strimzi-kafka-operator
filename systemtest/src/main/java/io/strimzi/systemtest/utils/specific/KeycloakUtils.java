@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -13,9 +12,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KeycloakUtils {
 
-    public final static String LATEST_KEYCLOAK_VERSION = "15.0.2";
-    public final static String OLD_KEYCLOAK_VERSION = "11.0.1";
-
+    public final static String LATEST_KEYCLOAK_VERSION = "21.0.0";
 
     private KeycloakUtils() {}
 
@@ -38,7 +35,7 @@ public class KeycloakUtils {
                 "-X",
                 "POST",
                 "-d", "client_id=admin-cli&client_secret=aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0&grant_type=password&username=" + userName + "&password=" + password,
-                baseURI + "/auth/realms/master/protocol/openid-connect/token"
+                baseURI + "/realms/master/protocol/openid-connect/token"
             ).out()).getString("access_token");
     }
 
@@ -59,7 +56,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "GET",
-            baseURI + "/auth/admin/realms/" + desiredRealm,
+            baseURI + "/admin/realms/" + desiredRealm,
             "-H", "Authorization: Bearer " + token
         ).out());
     }
@@ -81,7 +78,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "GET",
-            baseURI + "/auth/admin/realms/" + desiredRealm + "/clients",
+            baseURI + "/admin/realms/" + desiredRealm + "/clients",
             "-H", "Authorization: Bearer " + token
         ).out());
     }
@@ -118,7 +115,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "GET",
-            baseURI + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/" + endpoint,
+            baseURI + "/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/" + endpoint,
             "-H", "Authorization: Bearer " + token
         ).out());
     }
@@ -141,7 +138,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "PUT",
-            baseURI + "/auth/admin/realms/" + desiredRealm,
+            baseURI + "/admin/realms/" + desiredRealm,
             "-H", "Authorization: Bearer " + token,
             "-d", config.toString(),
             "-H", "Content-Type: application/json"
@@ -167,7 +164,7 @@ public class KeycloakUtils {
             "--insecure",
             "-X",
             "PUT",
-            baseURI + "/auth/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/policy/" + policy.getValue("id"),
+            baseURI + "/admin/realms/" + desiredRealm + "/clients/" + clientId + "/authz/resource-server/policy/" + policy.getValue("id"),
             "-H", "Authorization: Bearer " + token,
             "-d", policy.toString(),
             "-H", "Content-Type: application/json"
@@ -193,16 +190,8 @@ public class KeycloakUtils {
                 "POST",
                 "-H", "Content-Type: application/json",
                 "-d", realmData,
-                baseURI + "/auth/admin/realms",
+                baseURI + "/admin/realms",
                 "-H", "Authorization: Bearer " + token
                 ).out().trim();
-    }
-
-    public static String getValidKeycloakVersion() {
-        if (Double.parseDouble(KubeClusterResource.getInstance().client().clusterKubernetesVersion()) >= 1.22) {
-            return LATEST_KEYCLOAK_VERSION;
-        } else {
-            return OLD_KEYCLOAK_VERSION;
-        }
     }
 }

@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class KeycloakInstance {
 
     private static final Logger LOGGER = LogManager.getLogger(KeycloakInstance.class);
-    public static final String KEYCLOAK_SECRET_NAME = "sso-x509-https-secret";
+    public static final String KEYCLOAK_SECRET_NAME = "example-tls-secret";
     public static final String KEYCLOAK_SECRET_CERT = "tls.crt";
 
     private final int jwksExpireSeconds = 500;
@@ -37,12 +37,12 @@ public class KeycloakInstance {
         this.username = username;
         this.password = password;
         this.namespace = namespace;
-        this.httpsUri = "keycloak." + namespace + ".svc.cluster.local:8443";
-        this.httpUri = "keycloak-discovery." + namespace + ".svc.cluster.local:8080";
-        this.validIssuerUri = "https://" + httpsUri + "/auth/realms/internal";
-        this.jwksEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/certs";
-        this.oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/token";
-        this.introspectionEndpointUri = "https://" + httpsUri + "/auth/realms/internal/protocol/openid-connect/token/introspect";
+        this.httpsUri = "keycloak-service." + namespace + ".svc.cluster.local:8443";
+        this.httpUri = "keycloak-discovery." + namespace + ".svc.cluster.local:9595";
+        this.validIssuerUri = "https://" + httpsUri + "/realms/internal";
+        this.jwksEndpointUri = "https://" + httpsUri + "/realms/internal/protocol/openid-connect/certs";
+        this.oauthTokenEndpointUri = "https://" + httpsUri + "/realms/internal/protocol/openid-connect/token";
+        this.introspectionEndpointUri = "https://" + httpsUri + "/realms/internal/protocol/openid-connect/token/introspect";
         this.userNameClaim = "preferred_username";
     }
 
@@ -53,14 +53,14 @@ public class KeycloakInstance {
 
         if (tlsEnabled) {
             LOGGER.info("Using HTTPS endpoints");
-            validIssuerUri = "https://" + httpsUri + "/auth/realms/" + realmName;
-            jwksEndpointUri = "https://" + httpsUri + "/auth/realms/" + realmName + "/protocol/openid-connect/certs";
-            oauthTokenEndpointUri = "https://" + httpsUri + "/auth/realms/" + realmName + "/protocol/openid-connect/token";
+            validIssuerUri = "https://" + httpsUri + "/realms/" + realmName;
+            jwksEndpointUri = "https://" + httpsUri + "/realms/" + realmName + "/protocol/openid-connect/certs";
+            oauthTokenEndpointUri = "https://" + httpsUri + "/realms/" + realmName + "/protocol/openid-connect/token";
         } else {
             LOGGER.info("Using HTTP endpoints");
-            validIssuerUri = "http://" + httpUri + "/auth/realms/" + realmName;
-            jwksEndpointUri = "http://" + httpUri + "/auth/realms/" + realmName + "/protocol/openid-connect/certs";
-            oauthTokenEndpointUri = "http://" + httpUri + "/auth/realms/" + realmName + "/protocol/openid-connect/token";
+            validIssuerUri = "http://" + httpUri + "/realms/" + realmName;
+            jwksEndpointUri = "http://" + httpUri + "/realms/" + realmName + "/protocol/openid-connect/certs";
+            oauthTokenEndpointUri = "http://" + httpUri + "/realms/" + realmName + "/protocol/openid-connect/token";
         }
     }
 
