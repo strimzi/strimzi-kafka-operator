@@ -157,7 +157,7 @@ public class UserOperatorConfig {
     /**
      * Lit of maintenance windows
      */
-    public static final ConfigParameter<List<String>> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<List<String>>(STRIMZI_MAINTENANCE_TIME_WINDOWS, LIST, null, false, CONFIG_VALUES);
+    public static final ConfigParameter<List<String>> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<>(STRIMZI_MAINTENANCE_TIME_WINDOWS, LIST, null, false, CONFIG_VALUES);
 
     private final Map<String, Object> map;
 

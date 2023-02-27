@@ -31,12 +31,12 @@ public interface AbstractConfig<T> {
      * A java string
      */
 
-    AbstractConfig<String> STRING = (AbstractConfig<String>) s -> s;
+    AbstractConfig<String> STRING = s -> s;
 
     /**
      * A non empty java string
      */
-    AbstractConfig<String> NON_EMPTY = (AbstractConfig<String>) s -> {
+    AbstractConfig<String> NON_EMPTY = s -> {
         if (s == null || s.isEmpty()) {
             throw new InvalidConfigurationException("Failed to parse. Value cannot be empty or null");
         } else {
@@ -48,18 +48,17 @@ public interface AbstractConfig<T> {
      * Returns List based on the String
      */
     AbstractConfig<List<String>> LIST = s -> {
-
-            List<String> windows = null;
-            if (s != null && !s.isEmpty()) {
-                windows = Arrays.asList(s.split(";"));
-            }
-            return windows;
-        };
+        List<String> windows = null;
+        if (s != null && !s.isEmpty()) {
+            windows = Arrays.asList(s.split(";"));
+        }
+        return windows;
+    };
 
     /**
      * Returns Kafka admin client configuration properties
      */
-    AbstractConfig<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION_PROPERTIES = (AbstractConfig<Properties>) s -> {
+    AbstractConfig<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION_PROPERTIES = s -> {
 
         Properties kafkaAdminClientConfiguration = new Properties();
 
@@ -77,21 +76,21 @@ public interface AbstractConfig<T> {
     /**
      * A java Long
      */
-    AbstractConfig<Long> LONG = (AbstractConfig<Long>) Long::parseLong;
+    AbstractConfig<Long> LONG = Long::parseLong;
 
     /**
      * A Java Integer
      */
-    AbstractConfig<Integer> INTEGER = (AbstractConfig<Integer>) Integer::parseInt;
+    AbstractConfig<Integer> INTEGER = Integer::parseInt;
 
     /**
      * A Java Boolean
      */
-    AbstractConfig<Boolean> BOOLEAN = (AbstractConfig<Boolean>) Boolean::parseBoolean;
+    AbstractConfig<Boolean> BOOLEAN = Boolean::parseBoolean;
 
     /**
      * A kubernetes selector.
      */
-    AbstractConfig<Labels> LABEL_PREDICATE = (AbstractConfig<Labels>) Labels::fromString;
+    AbstractConfig<Labels> LABEL_PREDICATE = Labels::fromString;
 }
 
