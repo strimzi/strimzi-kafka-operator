@@ -4,22 +4,24 @@
  */
 package io.strimzi.operator.user;
 
-import io.fabric8.openshift.api.model.User;
 import io.strimzi.operator.common.operator.resource.ConfigParameter;
-import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.List;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.Collections;
 
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.*;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.LONG;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.INTEGER;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.NON_EMPTY;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.LIST;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.KAFKA_ADMIN_CLIENT_CONFIGURATION_PROPERTIES;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.STRING;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.LABEL_PREDICATE;
+import static io.strimzi.operator.common.operator.resource.AbstractConfig.BOOLEAN;
 
 /**
  * Cluster Operator configuration
@@ -155,7 +157,7 @@ public class UserOperatorConfig {
     /**
      * Lit of maintenance windows
      */
-    public static final ConfigParameter<List> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<>(STRIMZI_MAINTENANCE_TIME_WINDOWS, LIST, null, false, CONFIG_VALUES);
+    public static final ConfigParameter<List<String>> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<List<String>>(STRIMZI_MAINTENANCE_TIME_WINDOWS, LIST, null, false, CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -323,7 +325,7 @@ public class UserOperatorConfig {
     /**
      * @return List of maintenance windows. Null if no maintenance windows were specified.
      */
-    public List getMaintenanceWindows() {
+    public List<String> getMaintenanceWindows() {
         return get(MAINTENANCE_TIME_WINDOWS);
     }
 

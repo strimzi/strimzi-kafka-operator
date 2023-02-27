@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.common.operator.resource;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
@@ -16,40 +20,44 @@ import java.util.Map;
  * @param defaultValue default value of the configuration parameter
  * @param required  If the value is required or not
  */
-public record ConfigParameter<T>(String key, AbstractConfig<? extends T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
+public record ConfigParameter<T>(String key, AbstractConfig<T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
     /**
      * Contructor
      * @param key Configuration parameter name/key
      * @param type type of the default value
      * @param defaultValue default value of the configuration parameter
      * @param required  If the value is required or not
+     * @param map Configuration map
      */
     public ConfigParameter {
         map.put(key, this);
     }
 
-
-    public static Map<String,Object> define(Map<String, String> envVarMap, Map<String, ConfigParameter<?>> CONFIG_VALUES) {
+    /**
+     * Generates the configuration map
+     * @param envVarMap    Map containing values entered by user.
+     * @param configValues Map containing all the configuration keys with default values
+     * @return             Generated configuration map
+     */
+    public static Map<String, Object> define(Map<String, String> envVarMap, Map<String, ConfigParameter<?>> configValues) {
 
         Map<String, Object> generatedMap = new HashMap<>(envVarMap.size());
         for (Map.Entry<String, String> entry : envVarMap.entrySet()) {
-            final ConfigParameter<?> configValue = CONFIG_VALUES.get(entry.getKey());
-            generatedMap.put(configValue.key(), get(envVarMap, CONFIG_VALUES, configValue));
+            final ConfigParameter<?> configValue = configValues.get(entry.getKey());
+            generatedMap.put(configValue.key(), get(envVarMap, configValues, configValue));
         }
 
         // now add all those config (with default value) that weren't in the given map
-        Map<String, ConfigParameter<?>> x = new HashMap<>(CONFIG_VALUES);
+        Map<String, ConfigParameter<?>> x = new HashMap<>(configValues);
         x.keySet().removeAll(envVarMap.keySet());
         for (ConfigParameter<?> value : x.values()) {
-           generatedMap.put(value.key(), get(envVarMap, CONFIG_VALUES, value));
+            generatedMap.put(value.key(), get(envVarMap, configValues, value));
         }
-
         return generatedMap;
     }
-
-    public static <T> T get(Map<String, String> map, Map<String, ConfigParameter<?>> CONFIG_VALUES, ConfigParameter<T> value) {
-        if (!CONFIG_VALUES.containsKey(value.key())) {
-            throw new InvalidConfigurationException("Unknown config value: " + value.key() + " probably needs to be added to Config.CONFIG_VALUES");
+    private static <T> T get(Map<String, String> map, Map<String, ConfigParameter<?>> configValues, ConfigParameter<T> value) {
+        if (!configValues.containsKey(value.key())) {
+            throw new InvalidConfigurationException("Unknown config value: " + value.key() + " probably needs to be added to Config.configValues");
         }
 
         final String s = map.getOrDefault(value.key(), value.defaultValue());
@@ -61,25 +69,5 @@ public record ConfigParameter<T>(String key, AbstractConfig<? extends T> type, S
             }
             return null;
         }
-    }
-    @SuppressWarnings("unchecked")
-    public static <T> T get(Map<String, Object> generatedMap, ConfigParameter<T> value, T defaultValue) {
-        return (T) generatedMap.getOrDefault(value.key(), defaultValue);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T get(Map<String, Object> generatedMap, String key) {
-        return (T) generatedMap.get(key);
-    }
-
-    /**
-     * Gets the configuration value corresponding to the key
-     * @param <T> type of value
-     * @param value instance of Value class
-     * @return configuration value w.r.t to the key
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T get(Map<String, Object> generatedMap, ConfigParameter<T> value) {
-        return (T) generatedMap.get(value.key());
     }
 }

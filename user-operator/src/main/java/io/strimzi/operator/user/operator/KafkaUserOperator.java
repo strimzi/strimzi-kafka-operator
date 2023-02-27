@@ -323,7 +323,6 @@ public class KafkaUserOperator {
         System.out.println(config.getCaNamespace());
 
         Secret caCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getCaCertSecretName()).get();
-        System.out.println(config.getCaNamespace());
         if (caCert == null) {
             throw new InvalidConfigurationException("CA certificate secret " + config.getCaCertSecretName() + " in namespace " + config.getCaNamespace() + " not found");
         }

@@ -21,9 +21,13 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.UserOperatorConfig.UserOperatorConfigBuilder;
-import org.jose4j.jwk.Use;
 
-import java.util.*;
+import java.util.Map;
+import java.util.Collections;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 public class ResourceUtils {
