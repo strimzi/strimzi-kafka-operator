@@ -9,8 +9,8 @@
 When scaling a Kafka cluster, you may need to add or remove brokers and update the distribution of partitions or the replication factor of topics. 
 To update partitions and topics, you can use the `kafka-reassign-partitions.sh` tool.
 
-Changing the replication factor of a topic cannot be done using any other Kafka tools. 
-You must use `kafka-reassign-partitions.sh` to do this. 
+Neither the Strimzi Cruise Control integration nor the Topic Operator support changing the replication factor of a topic. 
+However, you can change the replication factor of a topic using the `kafka-reassign-partitions.sh` tool.
 
 The tool can also be used to reassign partitions and balance the distribution of partitions across brokers to improve performance.
 However, it is recommended to use xref:cruise-control-concepts-str[Cruise Control for automated partition reassignments and cluster rebalancing]. 

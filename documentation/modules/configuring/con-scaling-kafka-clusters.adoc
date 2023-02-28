@@ -18,10 +18,9 @@ This allows the load of the topic to be shared between different brokers in the 
 However, if every broker is constrained by a specific resource (such as I/O), adding more partitions will not increase the throughput. 
 In this case, you need to add more brokers to the cluster.
 
-Change the `Kafka.spec.kafka.replicas` configuration to add or reduce the number of brokers.
-In the following example, the number of brokers is set at 3.
-A replica factor of 3 in Kafka means that each partition of a topic is replicated across three brokers. 
-This provides fault tolerance and ensures that if one of the brokers fails, other brokers are still available.
+Adjusting the `Kafka.spec.kafka.replicas` configuration affects the number of brokers in the cluster that act as replicas. 
+The actual replication factor for topics is determined by settings for the `default.replication.factor` and `min.insync.replicas`, and the number of available brokers. 
+For example, a replication factor of 3 means that each partition of a topic is replicated across three brokers, ensuring fault tolerance in the event of a broker failure.
 
 .Example replica configuration
 [source,yaml,subs="+attributes"]
@@ -33,6 +32,11 @@ metadata:
 spec:
   kafka:
     replicas: 3
+    # ...
+  config: <18>
+      # ...
+      default.replication.factor: 3
+      min.insync.replicas: 2  
  # ...
 ----
 
