@@ -56,7 +56,7 @@ public interface AbstractConfig<T> {
     };
 
     /**
-     * Returns Kafka admin client configuration properties
+     * Returns Kafka properties
      */
     AbstractConfig<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION_PROPERTIES = s -> {
 
