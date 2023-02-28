@@ -1,0 +1,71 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deploy-kafka-connect-with-plugins.adoc
+
+[id='con-securing-kafka-connect-api-{context}']
+= Limiting access to the Kafka Connect API
+
+[role="_abstract"]
+It is crucial to restrict access to the Kafka Connect API only to trusted users to prevent unauthorized actions and potential security issues. 
+The Kafka Connect API provides extensive capabilities for altering connector configurations, which makes it all the more important to take security precautions.
+Someone with access to the Kafka Connect API could potentially obtain sensitive information that an administrator may assume is secure.
+
+The Kafka Connect REST API can be accessed by anyone who has authenticated access to the Kubernetes cluster and knows the endpoint URL, which includes the hostname/IP address and port number.
+
+For example, suppose an organization uses a Kafka Connect cluster and connectors to stream sensitive data from a customer database to a central database. 
+The administrator uses a configuration provider plugin to store store sensitive information related to connecting to the customer database and the central database, such as database connection details and authentication credentials.  
+The configuration provider protects this sensitive information from being exposed to unauthorized users. 
+However, someone who has access to the Kafka Connect API can still obtain access to the customer database without the consent of the administrator.
+They can do this by setting up a fake database and configuring a connector to connect to it. 
+They then modify the connector configuration to point to the customer database, but instead of sending the data to the central database, they send it to the fake database.
+By configuring the connector to connect to the fake database, the login details and credentials for connecting to the customer database are intercepted, even though they are stored securely in the configuration provider.
+
+If you are using the `KafkaConnector` custom resources, then by default the Kubernetes RBAC rules permit only Kubernetes cluster administrators to make changes to connectors.
+You can also xref:adding-users-the-strimzi-admin-role-str[designate non-cluster administrators to manage Strimzi resources].  
+With `KafkaConnector` resources enabled in your Kafka Connect configuration, changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.
+If you are not using the `KafkaConnector` resource, the default RBAC rules do not limit access to the Kafka Connect API.
+If you want to limit direct access to the Kafka Connect REST API using Kubernetes RBAC, you need to enable and use the `KafkaConnector` resources. 
+
+For improved security, we recommend configuring the following properties for the Kafka Connect API:
+
+`org.apache.kafka.disallowed.login.modules`:: (Kafka 3.4 or later) Set the `org.apache.kafka.disallowed.login.modules` Java system property to prevent the use of insecure login modules. 
+For example, specifying `com.sun.security.auth.module.JndiLoginModule` prevents the use of the Kafka `JndiLoginModule`.
++
+.Example configuration for disallowing login modules
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true" 
+spec:
+  # ...
+  jvmOptions:
+    javaSystemProperties:
+      - name: org.apache.kafka.disallowed.login.modules
+        value: com.sun.security.auth.module.JndiLoginModule, org.apache.kafka.common.security.kerberos.KerberosLoginModule
+# ...      
+----
++
+Only allow trusted login modules and follow the latest advice from Kafka for the version you are using.
+As a best practice, you should explicitly disallow insecure login modules in your Kafka Connect configuration by using the `org.apache.kafka.disallowed.login.modules` system property.
+
+`connector.client.config.override.policy`:: Set the `connector.client.config.override.policy` property to `None` (default) to prevent connector configurations from overriding the Kafka Connect configuration and the consumers and producers it uses. 
++
+.Example configuration to specify connector override policy
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true" 
+spec:
+  # ...
+  config:
+    connector.client.config.override.policy: None
+# ...      
+----
