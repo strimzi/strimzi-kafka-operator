@@ -10,15 +10,6 @@ import com.yammer.metrics.core.Metric;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.MetricsRegistry;
 import com.yammer.metrics.core.MetricsRegistryListener;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -33,6 +24,15 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
@@ -44,10 +44,10 @@ import org.slf4j.LoggerFactory;
  *     <dt>{@code GET /v1/broker-state}</dt>
  *     <dd>Reflects the BrokerState metric, returning a JSON response e.g. {"brokerState": 3}.
  *      If broker state is RECOVERY(2), it includes remainingLogsToRecover and remainingLogsToRecover in the response e.g.
- *      {"brokerState": 2
+ *      {"brokerState": 2,
  *       "recovery": {
- *          "remainingLogsToRecover": 123
- *          "remainingLogsToRecover": 456
+ *          "remainingLogsToRecover": 123,
+ *          "remainingSegmentsToRecover": 456
  *        }
  *      }</dd>
  * </dl>
@@ -266,7 +266,6 @@ public class KafkaAgent {
         sslContextFactory.setTrustStorePath(sslTruststorePath);
         sslContextFactory.setTrustStorePassword(sslTruststorePassword);
         sslContextFactory.setNeedClientAuth(true);
-
         return  sslContextFactory;
     }
 
@@ -348,10 +347,9 @@ public class KafkaAgent {
      * @param agentArgs The agent arguments
      */
     public static void premain(String agentArgs) {
-        int index = agentArgs.indexOf(':');
         String[] args = agentArgs.split(":");
-        if (index == -1) {
-            LOGGER.error("Unable to parse arguments {}", agentArgs);
+        if (args.length < 6) {
+            LOGGER.error("Not enough arguments to parse {}", agentArgs);
             System.exit(1);
         } else {
             File brokerReadyFile = new File(args[0]);
@@ -366,13 +364,13 @@ public class KafkaAgent {
             } else if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
                 LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
                 System.exit(1);
-            } else if (sslKeyStorePath.equals("") || sslTrustStorePath.equals("")) {
+            } else if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
                 LOGGER.error("SSLKeyStorePath or SSLTrustStorePath is empty: sslKeyStorePath={} sslTrustStore={} ", sslKeyStorePath, sslTrustStorePath);
                 System.exit(1);
-            } else if (sslKeyStorePass.equals("")) {
+            } else if (sslKeyStorePass.isEmpty()) {
                 LOGGER.error("Keystore password is empty");
                 System.exit(1);
-            } else if (sslTrustStorePass.equals("")) {
+            } else if (sslTrustStorePass.isEmpty()) {
                 LOGGER.error("Truststore password is empty");
                 System.exit(1);
             } else {
