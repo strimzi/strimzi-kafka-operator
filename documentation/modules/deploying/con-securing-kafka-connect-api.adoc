@@ -6,13 +6,11 @@
 = Limiting access to the Kafka Connect API
 
 [role="_abstract"]
-To grant a user access to the Kafka Connect API, a Kafka cluster admin must provide them with the API URL. 
-This includes the hostname or IP address of the Kafka Connect cluster and the port number on which the API is running (by default, port 8083). 
-Additionally, the user must have authenticated access to the Kubernetes cluster and the Kafka Connect REST API endpoint in order to make a request.
-
 It is crucial to restrict access to the Kafka Connect API only to trusted users to prevent unauthorized actions and potential security issues. 
 The Kafka Connect API provides extensive capabilities for altering connector configurations, which makes it all the more important to take security precautions.
 Someone with access to the Kafka Connect API could potentially obtain sensitive information that an administrator may assume is secure.
+
+The Kafka Connect REST API can be accessed by anyone who has authenticated access to the Kubernetes cluster and knows the endpoint URL, which includes the hostname/IP address and port number.
 
 For example, suppose an organization uses a Kafka Connect cluster and connectors to stream sensitive data from a customer database to a central database. 
 The administrator uses a configuration provider plugin to store store sensitive information related to connecting to the customer database and the central database, such as database connection details and authentication credentials.  
