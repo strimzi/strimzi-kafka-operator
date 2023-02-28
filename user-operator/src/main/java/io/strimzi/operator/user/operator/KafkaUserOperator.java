@@ -320,7 +320,6 @@ public class KafkaUserOperator {
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
      */
     private void maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret) {
-        System.out.println(config.getCaNamespace());
 
         Secret caCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getCaCertSecretName()).get();
         if (caCert == null) {
