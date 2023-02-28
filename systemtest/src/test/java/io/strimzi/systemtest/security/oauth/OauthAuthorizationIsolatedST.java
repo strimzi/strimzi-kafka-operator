@@ -45,7 +45,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -492,9 +491,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         LOGGER.info("Setting the master realm token's lifespan to 3600s");
 
         // get admin token for all operation on realms
-        String userName =  new String(Base64.getDecoder().decode(kubeClient().getSecret(clusterOperator.getDeploymentNamespace(), "credential-example-keycloak").getData().get("ADMIN_USERNAME").getBytes()));
-        String password = new String(Base64.getDecoder().decode(kubeClient().getSecret(clusterOperator.getDeploymentNamespace(), "credential-example-keycloak").getData().get("ADMIN_PASSWORD").getBytes()));
-        String token = KeycloakUtils.getToken(clusterOperator.getDeploymentNamespace(), baseUri, userName, password);
+        String token = KeycloakUtils.getToken(clusterOperator.getDeploymentNamespace(), baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
 
         // firstly we will increase token lifespan
         JsonObject masterRealm = KeycloakUtils.getKeycloakRealm(clusterOperator.getDeploymentNamespace(), baseUri, token, "master");
@@ -502,7 +499,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         KeycloakUtils.putConfigurationToRealm(clusterOperator.getDeploymentNamespace(), baseUri, token, masterRealm, "master");
 
         // now we need to get the token with new lifespan
-        token = KeycloakUtils.getToken(clusterOperator.getDeploymentNamespace(), baseUri, userName, password);
+        token = KeycloakUtils.getToken(clusterOperator.getDeploymentNamespace(), baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
 
         LOGGER.info("Getting the {} kafka client for obtaining the Dev A Team policy for the x topics", TEST_REALM);
         // we need to get clients for kafka-authz realm to access auth policies in kafka client
