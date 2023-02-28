@@ -112,5 +112,5 @@ To be able to do this, `delete.topic.enable` must be set to `true` (default) in 
 [role="_additional-resources"]
 .Additional resources
 * xref:assembly-downgrade-{context}[Downgrading Strimzi]
-* link:{BookURLConfiguring}#con-partition-reassignment-str[Scaling clusters and partition reassignment^]
-* link:{BookURLConfiguring}#cruise-control-concepts-str[Cruise Control for cluster rebalancing^]
+* xref:con-partition-reassignment-str[]
+* xref:cruise-control-concepts-str[]

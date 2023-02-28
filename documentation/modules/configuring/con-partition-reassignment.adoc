@@ -4,7 +4,7 @@
 
 [id='con-partition-reassignment-{context}']
 
-= Using the partition reassignment tool
+= Partition reassignment tool overview
 
 [role="_abstract"]
 The partition reassignment tool (`kafka-reassign-partitions.sh`) works by generating a partition assignment plan that specifies which partitions should be moved from their current broker to a new broker.
@@ -37,7 +37,7 @@ If you need to cancel a reassignment, wait for it to complete and then perform a
 The `kafka-reassign-partitions.sh` will print the reassignment JSON for this reversion as part of its output.
 Very large reassignments should be broken down into a number of smaller reassignments in case there is a need to stop in-progress reassignment.
 
-== Partition reassignment JSON file
+== Specifying topics in a partition reassignment JSON file
 
 The tool uses a reassignment JSON file that specifies the topics to reassign.
 You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.
@@ -91,7 +91,7 @@ The following is an example reassignment JSON file that assigns partition `4` of
 
 Partitions not included in the JSON are not changed.
 
-== Partition reassignment between JBOD volumes
+== Reassigning partitions between JBOD volumes
 
 When using JBOD storage in your Kafka cluster, you can choose to reassign the partitions between specific volumes and their log directories (each volume has a single log directory).
 To reassign a partition to a specific volume, add the `log_dirs` option to _<PartitionObjects>_ in the reassignment JSON file.
@@ -120,8 +120,7 @@ The value should be either an absolute path to the log directory, or the `any` k
 }
 ----
 
-[discrete]
-= Partition reassignment throttles
+== Throttling partition reassignment
 
 Partition reassignment can be a slow process because it involves transferring large amounts of data between brokers.
 To avoid a detrimental impact on clients, you can throttle the reassignment process.

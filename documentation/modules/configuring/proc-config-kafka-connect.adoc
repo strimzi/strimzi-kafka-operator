@@ -27,7 +27,7 @@ This method applies especially to confidential data, such as usernames, password
 
 .Handling high volumes of messages
 You can tune the configuration to handle high volumes of messages.
-For more information, see link:{BookURLConfiguring}#con-high-volume-config-properties-{context}[Handling high volumes of messages^].
+For more information, see link:{BookURLDeploying}#con-high-volume-config-properties-{context}[Handling high volumes of messages^].
 
 .Prerequisites
 

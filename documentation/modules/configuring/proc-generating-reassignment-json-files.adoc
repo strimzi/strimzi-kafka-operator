@@ -3,15 +3,16 @@
 // configuring/assembly-scaling-clusters.adoc
 
 [id='proc-generating-reassignment-json-files-{context}']
-= Generating reassignment JSON files
+= Generating a reassignment JSON file to reassign partitions
 
 [role="_abstract"]
-This procedure describes how to generate a reassignment JSON file.
-Use the reassignment file with the `kafka-reassign-partitions.sh` tool to reassign partitions after scaling a Kafka cluster.
+Generate a reassignment JSON file with the `kafka-reassign-partitions.sh` tool to reassign partitions after scaling a Kafka cluster.
+Adding or removing brokers does not automatically redistribute the existing partitions. 
+To balance the partition distribution and take full advantage of the new brokers, you can reassign the partitions using the `kafka-reassign-partitions.sh` tool.
 
 You run the tool from an interactive pod container connected to the Kafka cluster.
 
-The steps describe a secure reassignment process that uses mTLS.
+The following procedure describes a secure reassignment process that uses mTLS.
 You'll need a Kafka cluster that uses TLS encryption and mTLS authentication.
 
 You'll need the following to establish a connection:
@@ -229,6 +230,6 @@ bin/kafka-reassign-partitions.sh --bootstrap-server my-cluster-kafka-bootstrap:9
 [role="_additional-resources"]
 .Additional resources
 
-* xref:proc-config-kafka-{context}[]
+* link:{BookURLConfiguring}#proc-config-kafka-{context}[Configuring Kafka^]
 * link:{BookURLConfiguring}#proc-configuring-kafka-topic-{context}[Configuring Kafka topics^]
 * link:{BookURLConfiguring}#proc-configuring-kafka-user-{context}[Configuring Kafka users^]

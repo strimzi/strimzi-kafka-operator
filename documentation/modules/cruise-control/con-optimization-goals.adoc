@@ -54,7 +54,7 @@ You can specify optimization goals in the following configuration:
 
 [NOTE]
 ====
-Resource distribution goals are subject to xref:property-cruise-control-broker-capacity-reference[capacity limits] on broker resources.
+Resource distribution goals are subject to link:{BookURLConfiguring}#property-cruise-control-broker-capacity-reference[capacity limits^] on broker resources.
 ====
 
 [[hard-soft-goals]]

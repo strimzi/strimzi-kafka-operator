@@ -21,6 +21,8 @@ IMPORTANT: To avoid data loss, you have to move all partitions before removing t
 
 . Reassign all partitions from the disks which are you going to remove.
 Any data in partitions still assigned to the disks which are going to be removed might be lost.
++
+TIP: You can use the `kafka-reassign-partitions.sh` tool to reassign the partitions.
 
 . Edit the `spec.kafka.storage.volumes` property in the `Kafka` resource.
 Remove one or more volumes from the `volumes` array.
@@ -51,8 +53,3 @@ spec:
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _<kafka_configuration_file>_
-
-[role="_additional-resources"]
-.Additional resources
-
-For more information about reassigning topics, see xref:con-partition-reassignment-{context}[].
