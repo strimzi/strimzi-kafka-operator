@@ -443,15 +443,14 @@ public class ZooKeeperReconciler {
                                         // The secret is patched and some changes to the existing certificates actually occurred
                                         existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
                                     }
-                                    IntStream.range(0, zk.getReplicas())
-                                            .forEach(podNum -> {
-                                                var podName = KafkaResources.zookeeperPodName(reconciliation.name(), podNum);
-                                                zkCertificateHash.put(
-                                                        podNum,
-                                                        CertUtils.getCertificateThumbprint(patchResult.resource(),
-                                                                Ca.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
-                                                        ));
-                                            });
+                                    for (int podNum = 0; podNum < zk.getReplicas(); podNum++) {
+                                        var podName = KafkaResources.zookeeperPodName(reconciliation.name(), podNum);
+                                        zkCertificateHash.put(
+                                                podNum,
+                                                CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                                        Ca.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
+                                                ));
+                                    }
                                 }
 
                                 return Future.succeededFuture();
