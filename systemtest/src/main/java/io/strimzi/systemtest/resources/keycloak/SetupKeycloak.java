@@ -39,9 +39,13 @@ public class SetupKeycloak {
     private static final String KEYCLOAK_DEPLOYMENT_NAME = "example-keycloak";
     private static final String KEYCLOAK_OPERATOR_DEPLOYMENT_NAME = "keycloak-operator";
     private static final String KEYCLOAK_SECRET_NAME = "keycloak-initial-admin";
+    private static final String POSTGRES_SECRET_NAME = "keycloak-db-secret";
+    private static final String POSTGRES_USER_NAME = "arnost";
+    private static final String POSTGRES_PASSWORD = "changeme";
 
     public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
     public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
+
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
     public static void deployKeycloakOperator(ExtensionContext extensionContext, final String deploymentNamespace, final String watchNamespace) {
@@ -93,12 +97,12 @@ public class SetupKeycloak {
 
         Secret postgresSecret = new SecretBuilder()
             .withNewMetadata()
-                .withName("keycloak-db-secret")
+                .withName(POSTGRES_SECRET_NAME)
                 .withNamespace(namespaceName)
             .endMetadata()
                 .withType("Opaque")
-                .addToData("username", Base64.getEncoder().encodeToString("arnost".getBytes(StandardCharsets.UTF_8)))
-                .addToData("password", Base64.getEncoder().encodeToString("changeme".getBytes(StandardCharsets.UTF_8)))
+                .addToData("username", Base64.getEncoder().encodeToString(POSTGRES_USER_NAME.getBytes(StandardCharsets.UTF_8)))
+                .addToData("password", Base64.getEncoder().encodeToString(POSTGRES_PASSWORD.getBytes(StandardCharsets.UTF_8)))
             .build();
 
 
