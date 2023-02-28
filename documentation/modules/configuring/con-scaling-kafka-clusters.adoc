@@ -43,4 +43,4 @@ You can use Cruise Control's `add-brokers` and `remove-brokers` modes when scali
 * Use the `add-brokers` mode after scaling up a Kafka cluster to move partition replicas from existing brokers to the newly added brokers.
 * Use the `remove-brokers` mode before scaling down a Kafka cluster to move partition replicas off the brokers that are going to be removed.
 
-NOTE: When using a `StatefulSet` to manage Kafka brokers in a Kubernetes cluster, you cannot specify which specific pod to remove from the cluster. Instead, the broker removal process starts from the highest numbered pod in the `StatefulSet`.
+NOTE: When scaling down brokers, you cannot specify which specific pod to remove from the cluster. Instead, the broker removal process starts from the highest numbered pod.
