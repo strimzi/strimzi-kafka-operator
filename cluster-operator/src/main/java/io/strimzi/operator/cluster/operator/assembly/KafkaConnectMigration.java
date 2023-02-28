@@ -105,11 +105,7 @@ public class KafkaConnectMigration {
             int depReplicas = deployment.getSpec().getReplicas();
             int podSetReplicas = podSet != null ? podSet.getSpec().getPods().size() : 0;
 
-            if (DeploymentStrategy.ROLLING_UPDATE.equals(connect.deploymentStrategy())) {
-                return moveOnePodFromDeploymentToStrimziPodSetWithRollingUpdateStrategy(depReplicas - 1, Math.min(podSetReplicas + 1, connect.getReplicas()));
-            } else {
-                return moveOnePodFromDeploymentToStrimziPodSetWithRecreateStrategy(depReplicas - 1, Math.min(podSetReplicas + 1, connect.getReplicas()));
-            }
+            return moveOnePodFromDeploymentToStrimziPodSet(depReplicas - 1, Math.min(podSetReplicas + 1, connect.getReplicas()));
         }
     }
 
