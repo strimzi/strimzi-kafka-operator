@@ -176,7 +176,7 @@ public class KafkaAssemblyOperatorPodSetTest {
     @Test
     public void testRegularReconciliation(VertxTestContext context)  {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
@@ -184,17 +184,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
+
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
@@ -289,7 +279,7 @@ public class KafkaAssemblyOperatorPodSetTest {
     @Test
     public void testFirstReconciliation(VertxTestContext context)  {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
@@ -297,17 +287,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
@@ -408,7 +387,7 @@ public class KafkaAssemblyOperatorPodSetTest {
     @Test
     public void testFirstReconciliationWithSts(VertxTestContext context)  {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+        StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
@@ -527,7 +506,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 .build();
 
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
@@ -538,17 +517,6 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        newKafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
@@ -647,7 +615,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 .build();
 
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
@@ -659,17 +627,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
+
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
@@ -789,7 +747,7 @@ public class KafkaAssemblyOperatorPodSetTest {
                 .build();
 
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, null);
+        StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
@@ -801,17 +759,6 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
-        when(secretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        oldKafkaCluster.getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));

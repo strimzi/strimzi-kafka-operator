@@ -28,6 +28,11 @@ public class Annotations {
     public static final String STRIMZI_DOMAIN = "strimzi.io/";
 
     /**
+     * Annotation for keeping Kafka and ZooKeeper servers' certificate thumbprints.
+     */
+    public static final String ANNO_STRIMZI_SERVER_CERT_HASH = STRIMZI_DOMAIN + "server-cert-hash";
+
+    /**
      * Strimzi logging annotation
      */
     public static final String STRIMZI_LOGGING_ANNOTATION = STRIMZI_DOMAIN + "logging";
@@ -264,7 +269,7 @@ public class Annotations {
     }
 
     /**
-     * Gets a string value of an annotation from a Por template
+     * Gets a string value of an annotation from a Pod template
      *
      * @param podSpec                   Por template from which the annotation should be extracted
      * @param annotation                Annotation key for which we want the value

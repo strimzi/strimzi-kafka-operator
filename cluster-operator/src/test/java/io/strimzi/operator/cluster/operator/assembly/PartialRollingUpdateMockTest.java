@@ -15,20 +15,22 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.test.mockkube2.MockKube2;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
@@ -64,6 +66,7 @@ public class PartialRollingUpdateMockTest {
     private static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
     private KafkaAssemblyOperator kco;
+    private Kafka cluster;
 
     // Injected by Fabric8 Mock Kubernetes Server
     @SuppressWarnings("unused")
@@ -86,7 +89,7 @@ public class PartialRollingUpdateMockTest {
 
     @BeforeEach
     public void beforeEach(VertxTestContext context) throws InterruptedException {
-        Kafka cluster = new KafkaBuilder()
+        cluster = new KafkaBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
                 .build())
@@ -218,6 +221,38 @@ public class PartialRollingUpdateMockTest {
     }
 
     @Test
+    public void testReconcileOfPartiallyRolledKafkaClusterForServerCertificates(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+        var brokersSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
+
+        for (int brokerId = 0; brokerId < cluster.getSpec().getKafka().getReplicas(); brokerId++) {
+            var pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId)).get();
+            var podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
+            var expectedCertHash = CertUtils.getCertificateThumbprint(brokersSecret, Ca.secretEntryNameForPod(pod.getMetadata().getName(), Ca.SecretEntry.CRT));
+
+            assertThat("Pod " + brokerId + " had unexpected revision", podCertHash, is(expectedCertHash));
+        }
+
+        LOGGER.info("Recovery reconciliation");
+        updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 1), Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, "oldhash");
+        updatePodAnnotation(KafkaResources.kafkaPodName(CLUSTER_NAME, 4), Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, "oldhash");
+
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+
+            for (int brokerId = 0; brokerId < cluster.getSpec().getKafka().getReplicas(); brokerId++) {
+                final var finalBrokerId = brokerId;
+                var pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, brokerId)).get();
+                var podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
+                var expectedCertHash = CertUtils.getCertificateThumbprint(brokersSecret, Ca.secretEntryNameForPod(pod.getMetadata().getName(), Ca.SecretEntry.CRT));
+
+                context.verify(() -> assertThat("Pod " + finalBrokerId + " had unexpected revision", podCertHash, is(expectedCertHash)));
+            }
+            async.flag();
+        });
+    }
+
+    @Test
     public void testReconcileOfPartiallyRolledZookeeperCluster(VertxTestContext context) {
         updatePodAnnotation(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
         updatePodAnnotation(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2), PodRevision.STRIMZI_REVISION_ANNOTATION, "notmatchingrevision");
@@ -246,6 +281,37 @@ public class PartialRollingUpdateMockTest {
                         .get(PodRevision.STRIMZI_REVISION_ANNOTATION);
 
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected revision", podRrevision, is(spsRevision)));
+            }
+            async.flag();
+        });
+    }
+
+    @Test
+    public void testReconcileOfPartiallyRolledZookeeperClusterForServerCertificates(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+        var zkSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get();
+        for (int zkIndex = 0; zkIndex < cluster.getSpec().getZookeeper().getReplicas(); zkIndex++) {
+            var pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, zkIndex)).get();
+            var podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
+            var expectedCertHash = CertUtils.getCertificateThumbprint(zkSecret, Ca.secretEntryNameForPod(pod.getMetadata().getName(), Ca.SecretEntry.CRT));
+
+            assertThat("Pod " + zkIndex + " had unexpected revision", podCertHash, is(expectedCertHash));
+        }
+
+        LOGGER.info("Recovery reconciliation");
+        updatePodAnnotation(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1), Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, "oldhash");
+        updatePodAnnotation(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2), Annotations.ANNO_STRIMZI_SERVER_CERT_HASH, "oldhash");
+
+        kco.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME)).onComplete(ar -> {
+            context.verify(() -> assertThat(ar.succeeded(), is(true)));
+
+            for (int zkIndex = 0; zkIndex < cluster.getSpec().getZookeeper().getReplicas(); zkIndex++) {
+                final var finalZkIndex = zkIndex;
+                var pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, zkIndex)).get();
+                var podCertHash = pod.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH);
+                var expectedCertHash = CertUtils.getCertificateThumbprint(zkSecret, Ca.secretEntryNameForPod(pod.getMetadata().getName(), Ca.SecretEntry.CRT));
+
+                context.verify(() -> assertThat("Pod " + finalZkIndex + " had unexpected revision", podCertHash, is(expectedCertHash)));
             }
             async.flag();
         });

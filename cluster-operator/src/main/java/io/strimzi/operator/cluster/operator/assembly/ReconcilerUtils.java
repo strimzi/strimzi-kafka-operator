@@ -33,7 +33,10 @@ import io.vertx.core.Future;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 
 /**
  * Utilities used during reconciliation of different operands - mainly Kafka and ZooKeeper
@@ -296,5 +299,31 @@ public class ReconcilerUtils {
                         return Future.succeededFuture();
                     }
                 });
+    }
+
+    /**
+     * Utility method to extract pod index number from pod name
+     *
+     * @param podName   Name of the pod
+     *
+     * @return          Index of the pod
+     */
+    public static int getPodIndexFromPodName(String podName)  {
+        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
+    }
+
+    /**
+     * Check weather the pod is tracking an outdated server certificate.
+     *
+     * Returns false if the pod isn't tracking a server certificate (i.e. isn't annotated with ANNO_STRIMZI_SERVER_CERT_HASH)
+     *
+     * @param pod Pod resource that's possibly tracking a server certificate.
+     * @param certHashCache An up-to-date server cache which maps pod index to the certificate hash
+     * @return True if pod tracks a server certificate, the certificate hash is cached, and the tracked hash differs from the cached one
+     */
+    public static boolean trackedServerCertChanged(Pod pod, Map<Integer, String> certHashCache) {
+        var currentCertHash = Annotations.stringAnnotation(pod, ANNO_STRIMZI_SERVER_CERT_HASH, null);
+        var desiredCertHash = certHashCache.get(ReconcilerUtils.getPodIndexFromPodName(pod.getMetadata().getName()));
+        return currentCertHash != null && desiredCertHash != null && !currentCertHash.equals(desiredCertHash);
     }
 }

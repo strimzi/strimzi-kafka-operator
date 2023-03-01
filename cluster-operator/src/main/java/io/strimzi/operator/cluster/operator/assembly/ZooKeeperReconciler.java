@@ -20,6 +20,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
@@ -55,6 +56,7 @@ import io.vertx.core.Vertx;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -64,6 +66,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_SERVER_CERT_HASH;
 import static java.util.Collections.singletonList;
 
 /**
@@ -112,6 +115,8 @@ public class ZooKeeperReconciler {
     private ReconcileResult<StatefulSet> statefulSetDiff;
     private ReconcileResult<StrimziPodSet> podSetDiff;
     private boolean existingCertsChanged = false;
+    private final Map<Integer, String> zkCertificateHash = new HashMap<>();
+
     private String loggingHash = "";
 
     /**
@@ -432,11 +437,20 @@ public class ZooKeeperReconciler {
                             .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperSecretName(reconciliation.name()),
                                     zk.generateCertificatesSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())))
                             .compose(patchResult -> {
-                                if (patchResult instanceof ReconcileResult.Patched) {
-                                    // The secret is patched and some changes to the existing certificates actually occurred
-                                    existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
-                                } else {
+                                if (patchResult != null) {
                                     existingCertsChanged = false;
+                                    if (patchResult instanceof ReconcileResult.Patched) {
+                                        // The secret is patched and some changes to the existing certificates actually occurred
+                                        existingCertsChanged = ModelUtils.doExistingCertificatesDiffer(oldSecret, patchResult.resource());
+                                    }
+                                    for (int podNum = 0; podNum < zk.getReplicas(); podNum++) {
+                                        var podName = KafkaResources.zookeeperPodName(reconciliation.name(), podNum);
+                                        zkCertificateHash.put(
+                                                podNum,
+                                                CertUtils.getCertificateThumbprint(patchResult.resource(),
+                                                        Ca.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
+                                                ));
+                                    }
                                 }
 
                                 return Future.succeededFuture();
@@ -557,11 +571,7 @@ public class ZooKeeperReconciler {
     private Future<Void> podSet(int replicas) {
         if (featureGates.useStrimziPodSetsEnabled())   {
             // StrimziPodSets are enabled => make sure the StrimziPodSet exists
-            Map<String, String> podAnnotations = new LinkedHashMap<>(2);
-            podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
-            podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
-
-            StrimziPodSet zkPodSet = zk.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, podAnnotations);
+            StrimziPodSet zkPodSet = zk.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::zkPodSetPodAnnotations);
             return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zkPodSet)
                     .compose(rr -> {
                         podSetDiff = rr;
@@ -570,6 +580,20 @@ public class ZooKeeperReconciler {
         } else {
             return Future.succeededFuture();
         }
+    }
+
+    /**
+     * Prepares annotations for ZooKeeper pods within a StrimziPodSet.
+     *
+     * @param podNum Number of the ZooKeeper pod, the annotations of which are being prepared.
+     * @return Map with Pod annotations
+     */
+    public Map<String, String> zkPodSetPodAnnotations(int podNum) {
+        Map<String, String> podAnnotations = new LinkedHashMap<>((int) Math.ceil(podNum / 0.75));
+        podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
+        podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
+        podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, zkCertificateHash.get(podNum));
+        return podAnnotations;
     }
 
     /**
@@ -745,7 +769,13 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> rollingUpdate() {
         if (featureGates.useStrimziPodSetsEnabled())   {
-            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, podSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());
+            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(
+                    reconciliation,
+                    podSetDiff.resource(),
+                    pod,
+                    fsResizingRestartRequest,
+                    ReconcilerUtils.trackedServerCertChanged(pod, zkCertificateHash),
+                    clusterCa).getAllReasonNotes());
         } else {
             return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, statefulSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());
         }

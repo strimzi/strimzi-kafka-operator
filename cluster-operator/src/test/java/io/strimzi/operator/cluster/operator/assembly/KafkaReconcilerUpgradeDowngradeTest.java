@@ -141,17 +141,6 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafka.getSpec().getKafka().getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -195,17 +184,6 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        KAFKA.getSpec().getKafka().getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -259,17 +237,6 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
-        when(mockSecretOps.getAsync(NAMESPACE, KafkaResources.kafkaSecretName(CLUSTER_NAME))).thenReturn(
-                Future.succeededFuture(ResourceUtils.createMockBrokersCertsSecret(NAMESPACE,
-                        CLUSTER_NAME,
-                        kafka.getSpec().getKafka().getReplicas(),
-                        KafkaResources.kafkaSecretName(CLUSTER_NAME),
-                        MockCertManager.serverCert(),
-                        MockCertManager.serverKey(),
-                        MockCertManager.serverKeyStore(),
-                        MockCertManager.certStorePassword()
-                ))
-        );
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
