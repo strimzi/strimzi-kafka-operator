@@ -197,9 +197,9 @@ public class UserOperatorConfig {
 
     /**
      * Gets the configuration value corresponding to the key
-     * @param <T> type of value
-     * @param value instance of Value class
-     * @return configuration value w.r.t to the key
+     * @param <T>      Type of value
+     * @param value    Instance of Config Parameter class
+     * @return         Configuration value w.r.t to the key
      */
     @SuppressWarnings("unchecked")
     public  <T> T get(ConfigParameter<T> value) {

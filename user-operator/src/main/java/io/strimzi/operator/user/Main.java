@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * The main class of the Strimzi User Operator
  */
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class Main {
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
 

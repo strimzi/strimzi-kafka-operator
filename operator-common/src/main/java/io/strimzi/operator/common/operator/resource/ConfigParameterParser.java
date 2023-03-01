@@ -31,7 +31,6 @@ public interface ConfigParameterParser<T> {
     /**
      * A java string
      */
-
     ConfigParameterParser<String> STRING = configValue -> configValue;
 
     /**

@@ -14,21 +14,22 @@ import java.util.Map;
  * Optional parameters without a default value implicitly have a null default.
  * The key is also the name of the environment variable from which the value may be read, when it is read from the environment.
  *
- * @param key Configuration parameter name/key
- * @param <T> Type of object
- * @param type type of the default value
- * @param defaultValue default value of the configuration parameter
- * @param required  If the value is required or not
+ * @param key           Configuration parameter name/key
+ * @param <T>           Type of object
+ * @param type          type of the default value
+ * @param defaultValue  Default value of the configuration parameter
+ * @param required      If the value is required or not
+ * @param map           Map that will contain all the configuration values
  */
 public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
 
     /**
      * Contructor
-     * @param key Configuration parameter name/key
-     * @param type type of the default value
-     * @param defaultValue default value of the configuration parameter
-     * @param required  If the value is required or not
-     * @param map Configuration map
+     * @param key           Configuration parameter name/key
+     * @param type          Type of the default value
+     * @param defaultValue  Default value of the configuration parameter
+     * @param required      If the value is required or not
+     * @param map           Configuration map
      */
     public ConfigParameter {
         map.put(key, this);
@@ -36,9 +37,9 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
 
     /**
      * Generates the configuration map
-     * @param envVarMap    Map containing values entered by user.
+     * @param envVarMap          Map containing values entered by user.
      * @param configParameterMap Map containing all the configuration keys with default values
-     * @return             Generated configuration map
+     * @return                   Generated configuration map
      */
     public static Map<String, Object> define(Map<String, String> envVarMap, Map<String, ConfigParameter<?>> configParameterMap) {
 
@@ -59,6 +60,7 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
         }
         return generatedMap;
     }
+
     private static <T> T get(Map<String, String> map, ConfigParameter<T> value) {
 
         final String s = map.getOrDefault(value.key(), value.defaultValue());
