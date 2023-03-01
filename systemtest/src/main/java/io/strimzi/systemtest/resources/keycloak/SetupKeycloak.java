@@ -100,14 +100,14 @@ public class SetupKeycloak {
                 .withName(POSTGRES_SECRET_NAME)
                 .withNamespace(namespaceName)
             .endMetadata()
-                .withType("Opaque")
-                .addToData("username", Base64.getEncoder().encodeToString(POSTGRES_USER_NAME.getBytes(StandardCharsets.UTF_8)))
-                .addToData("password", Base64.getEncoder().encodeToString(POSTGRES_PASSWORD.getBytes(StandardCharsets.UTF_8)))
+            .withType("Opaque")
+            .addToData("username", Base64.getEncoder().encodeToString(POSTGRES_USER_NAME.getBytes(StandardCharsets.UTF_8)))
+            .addToData("password", Base64.getEncoder().encodeToString(POSTGRES_PASSWORD.getBytes(StandardCharsets.UTF_8)))
             .build();
 
 
         kubeClient().createSecret(postgresSecret);
-        SecretUtils.waitForSecretReady(namespaceName, "keycloak-db-secret", () -> { });
+        SecretUtils.waitForSecretReady(namespaceName, POSTGRES_SECRET_NAME, () -> { });
     }
 
     private static KeycloakInstance createKeycloakInstance(String namespaceName) {
