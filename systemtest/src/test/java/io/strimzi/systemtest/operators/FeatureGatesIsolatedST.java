@@ -35,6 +35,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -377,8 +378,23 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
+                .editSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .endSpec()
                 .build());
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName()).build());
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+                .editMetadata()
+                    .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+                .editSpec()
+                    .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                    .addToConfig("topics", testStorage.getTopicName())
+                    .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .endSpec()
+                .build());
 
         Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
@@ -391,14 +407,11 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                 .withTopicName(testStorage.getTopicName())
                 .withMessageCount(messageCount)
-                .withDelayMs(1000)
+                .withDelayMs(500)
                 .withNamespaceName(clusterOperator.getDeploymentNamespace())
                 .build();
 
-        resourceManager.createResource(extensionContext,
-                clients.producerStrimzi(),
-                clients.consumerStrimzi()
-        );
+        resourceManager.createResource(extensionContext, clients.producerStrimzi());
 
         LOGGER.info("Changing FG env variable to enable Stable Connect Identities");
         coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
@@ -423,6 +436,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace(), messageCount);
+        final String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect").get(0).getMetadata().getName();
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
     }
 }
