@@ -257,6 +257,10 @@ public class Environment {
         return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS);
     }
 
+    public static boolean isStableConnectIdentitiesEnabled() {
+        return STRIMZI_FEATURE_GATES.contains(Constants.USE_STABLE_CONNECT_IDENTITIES);
+    }
+
     /**
      * Determine wheter KRaft mode of Kafka cluster is enabled in ClusterOperator or not.
      * @return true if KRaft mode is enabled, otherwise false

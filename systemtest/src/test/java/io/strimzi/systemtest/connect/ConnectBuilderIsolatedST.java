@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.connect;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -40,9 +41,9 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -370,8 +371,8 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String deploymentName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
-        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), deploymentName);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that KafkaConnect API contains EchoSink connector and not Camel-Telegram Connector class name");
@@ -385,7 +386,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             kafkaConnect.getSpec().getBuild().getPlugins().add(secondPlugin);
         }, testStorage.getNamespaceName());
 
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), deploymentName, 1, connectSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), labelSelector, 1, connectSnapshot);
 
         Map<String, Object> camelHttpConfig = new HashMap<>();
         camelHttpConfig.put("camel.sink.path.httpUri", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083");
@@ -436,8 +437,8 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String deploymentName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
-        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), deploymentName);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         String connectPodName = kubeClient().listPods(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that plugin has correct file name: {}", Constants.ECHO_SINK_FILE_NAME);
@@ -458,7 +459,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             connect.getSpec().getBuild().setPlugins(Collections.singletonList(pluginWithoutFileName));
         }, testStorage.getNamespaceName());
 
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), deploymentName, 1, connectSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), labelSelector, 1, connectSnapshot);
 
         LOGGER.info("Checking that plugin has different name than before");
         connectPodName = kubeClient().listPods(testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();

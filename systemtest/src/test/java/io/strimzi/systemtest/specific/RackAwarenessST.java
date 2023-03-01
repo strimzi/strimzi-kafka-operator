@@ -126,7 +126,7 @@ class RackAwarenessST extends AbstractST {
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = kubeClient().getDeployment(testStorage.getNamespaceName(), deployName).getSpec().getTemplate().getSpec().getAffinity();
+        Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespaceName(), deployName);
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
@@ -169,7 +169,7 @@ class RackAwarenessST extends AbstractST {
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = kubeClient().getDeployment(testStorage.getNamespaceName(), deployName).getSpec().getTemplate().getSpec().getAffinity();
+        Affinity specAffinity = StUtils.getDeploymentOrStrimziPodSetAffinity(testStorage.getNamespaceName(), deployName);
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);

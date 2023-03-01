@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -42,8 +43,8 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -57,10 +58,10 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -415,7 +416,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1).build());
 
-        String deploymentName = KafkaConnectResources.deploymentName(clusterName);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         // kafka cluster Connect already deployed
         List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
@@ -426,14 +427,14 @@ class ConnectIsolatedST extends AbstractST {
         LOGGER.info("Scaling up to {}", scaleTo);
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, c -> c.getSpec().setReplicas(scaleTo), namespaceName);
 
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, deploymentName, scaleTo);
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, scaleTo, true);
         connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         assertThat(connectPods.size(), is(scaleTo));
 
         LOGGER.info("Scaling down to {}", initialReplicas);
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, c -> c.getSpec().setReplicas(initialReplicas), namespaceName);
 
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, deploymentName, initialReplicas);
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, initialReplicas, true);
         connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         assertThat(connectPods.size(), is(initialReplicas));
     }
@@ -684,6 +685,7 @@ class ConnectIsolatedST extends AbstractST {
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
         final String usedVariable = "KAFKA_CONNECT_CONFIGURATION";
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
@@ -735,7 +737,7 @@ class ConnectIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        Map<String, String> connectSnapshot = PodUtils.podSnapshot(namespaceName, labelSelector);
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
@@ -765,7 +767,7 @@ class ConnectIsolatedST extends AbstractST {
             kc.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
         }, namespaceName);
 
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaConnectResources.deploymentName(clusterName), 1, connectSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, labelSelector, 1, connectSnapshot);
 
         LOGGER.info("Verify values after update");
         checkReadinessLivenessProbe(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
@@ -822,9 +824,16 @@ class ConnectIsolatedST extends AbstractST {
                 execConnectPod,
                 "curl", "-X", "GET", "http://localhost:8083/connectors/" + testStorage.getClusterName() + "/status").out()
         );
-        String podIP = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
-        String connectorPodName = kubeClient(testStorage.getNamespaceName()).listPods().stream().filter(pod ->
-                pod.getStatus().getPodIP().equals(podIP)).findFirst().orElseThrow().getMetadata().getName();
+
+        String workerNode = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
+        String connectorPodName;
+
+        if (Environment.isStableConnectIdentitiesEnabled()) {
+            connectorPodName = workerNode.substring(0, workerNode.indexOf("."));
+        } else {
+            connectorPodName = kubeClient(testStorage.getNamespaceName()).listPods().stream().filter(pod ->
+                    pod.getStatus().getPodIP().equals(workerNode)).findFirst().orElseThrow().getMetadata().getName();
+        }
 
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
@@ -997,7 +1006,7 @@ class ConnectIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 2).build());
 
-        final String connectDeploymentName = KafkaConnectResources.deploymentName(clusterName);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
         List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
 
         assertThat(connectPods.size(), is(2));
@@ -1006,7 +1015,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setReplicas(0), namespaceName);
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, connectDeploymentName), 0, true);
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, 0, true);
 
         connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
@@ -1040,7 +1049,7 @@ class ConnectIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String connectDeploymentName = KafkaConnectResources.deploymentName(clusterName);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
         List<Pod> connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
 
         assertThat(connectPods.size(), is(2));
@@ -1049,7 +1058,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setReplicas(0), namespaceName);
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-        PodUtils.waitForPodsReady(namespaceName, kubeClient(namespaceName).getDeploymentSelectors(namespaceName, connectDeploymentName), 0, true);
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, 0, true);
 
         connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
@@ -1068,6 +1077,7 @@ class ConnectIsolatedST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1)
@@ -1093,7 +1103,8 @@ class ConnectIsolatedST extends AbstractST {
         LOGGER.info("-------> Scaling KafkaConnect subresource <-------");
         LOGGER.info("Scaling subresource replicas to {}", scaleTo);
         cmdKubeClient(namespaceName).scaleByName(KafkaConnect.RESOURCE_KIND, clusterName, scaleTo);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaConnectResources.deploymentName(clusterName), scaleTo);
+
+        PodUtils.waitForPodsReady(namespaceName, labelSelector, scaleTo, true);
 
         LOGGER.info("Check if replicas is set to {}, observed generation is higher - for spec and status - naming prefix should be same", scaleTo);
 
@@ -1107,8 +1118,10 @@ class ConnectIsolatedST extends AbstractST {
         the observed generation is increased
         */
         assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration(), is(true));
-        for (Pod pod : connectPods) {
-            assertThat(pod.getMetadata().getName().contains(connectGenName), is(true));
+        if (!Environment.isStableConnectIdentitiesEnabled()) {
+            for (Pod pod : connectPods) {
+                assertThat(pod.getMetadata().getName().contains(connectGenName), is(true));
+            }
         }
 
         LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
@@ -1305,12 +1318,13 @@ class ConnectIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String connectDepName = KafkaConnectResources.deploymentName(clusterName);
+        //String connectDepName = KafkaConnectResources.deploymentName(clusterName);
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         LOGGER.info("Adding label to Connect resource, the CR should be recreated");
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName,
             kc -> kc.getMetadata().setLabels(Collections.singletonMap("some", "label")), namespaceName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, connectDepName, 1);
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
 
         KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
 
@@ -1324,12 +1338,8 @@ class ConnectIsolatedST extends AbstractST {
             kc -> kc.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), namespaceName);
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
 
-        LOGGER.info("Adding another label to Connect resource, pods should be rolled");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> kc.getMetadata().getLabels().put("another", "label"), namespaceName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, connectDepName, 1);
-
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> kc.getMetadata().getLabels().put("another", "label"), namespaceName);
         StUtils.waitUntilSupplierIsSatisfied(() -> {
             final KafkaConnect kC = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
 
@@ -1337,6 +1347,9 @@ class ConnectIsolatedST extends AbstractST {
                     kC.getMetadata().getLabels().toString().contains("another=label") &&
                     kC.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
         });
+
+        LOGGER.info("Adding another label to Connect resource, pods should be rolled");
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
     }
 
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
@@ -1348,6 +1361,7 @@ class ConnectIsolatedST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editSpec()
@@ -1412,7 +1426,7 @@ class ConnectIsolatedST extends AbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
 
-        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        Map<String, String> connectSnapshot = PodUtils.podSnapshot(namespaceName, labelSelector);
         Secret newPasswordSecret = new SecretBuilder()
                 .withNewMetadata()
                     .withName("new-custom-pwd-secret")
@@ -1437,7 +1451,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaUser);
 
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaConnectResources.deploymentName(clusterName), 1, connectSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, labelSelector, 1, connectSnapshot);
 
         final String kafkaConnectPodNameAfterRU = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodNameAfterRU);

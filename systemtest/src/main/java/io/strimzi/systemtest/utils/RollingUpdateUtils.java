@@ -5,13 +5,20 @@
 package io.strimzi.systemtest.utils;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -20,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.BooleanSupplier;
 
 public class RollingUpdateUtils {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateUtils.class);
@@ -105,15 +113,36 @@ public class RollingUpdateUtils {
     }
 
     public static void waitForComponentAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods) {
-        String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+        final String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        final String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
 
         LOGGER.info("Waiting for {} Pod(s) of {}/{} to be ready", expectedPods, namespaceName, componentName);
-        PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true,
-            () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get()));
 
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-        LOGGER.info("Kafka: {}/{} is ready", namespaceName, clusterName);
+        final Runnable componentLogAfterTimeout;
+        final BooleanSupplier componentReadinessStatus;
+
+        if (selector.getMatchLabels() != null && selector.getMatchLabels().containsKey(Labels.STRIMZI_KIND_LABEL)) {
+            if (selector.getMatchLabels().get(Labels.STRIMZI_KIND_LABEL).equals(KafkaConnect.RESOURCE_KIND)) {
+                componentLogAfterTimeout = () -> ResourceManager.logCurrentResourceStatus(KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get());
+                componentReadinessStatus = () -> KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
+            } else if (selector.getMatchLabels().get(Labels.STRIMZI_KIND_LABEL).equals(KafkaMirrorMaker2.RESOURCE_KIND)) {
+                componentLogAfterTimeout = () -> ResourceManager.logCurrentResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get());
+                componentReadinessStatus = () -> KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(namespaceName, clusterName);
+            } else if (selector.getMatchLabels().get(Labels.STRIMZI_KIND_LABEL).equals(Kafka.RESOURCE_KIND)) {
+                componentLogAfterTimeout = () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get());
+                componentReadinessStatus = () -> KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
+            } else {
+                throw new RuntimeException("Waiting for such component (" + selector.getMatchLabels().get(Labels.STRIMZI_KIND_LABEL) + ")  is not supported.");
+            }
+        } else {
+            throw new RuntimeException("Selector does not contain " + Labels.STRIMZI_KIND_LABEL + " label.");
+        }
+
+        // 1. wait for readiness pods
+        PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true, componentLogAfterTimeout);
+
+        // 2. wait for readiness of the status
+        StUtils.waitUntilSupplierIsSatisfied(componentReadinessStatus);
     }
 
     public static void waitForNoRollingUpdate(String namespaceName, LabelSelector selector, Map<String, String> pods) {

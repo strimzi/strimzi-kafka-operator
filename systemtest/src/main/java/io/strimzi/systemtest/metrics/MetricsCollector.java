@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -167,11 +169,11 @@ public class MetricsCollector {
             case Zookeeper:
                 return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperStatefulSetName(componentName));
             case KafkaConnect:
-                return kubeClient(namespaceName).getDeploymentSelectors(KafkaConnectResources.deploymentName(componentName));
+                return KafkaConnectResource.getLabelSelector(componentName, KafkaConnectResources.deploymentName(componentName));
             case KafkaExporter:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaExporterResources.deploymentName(componentName));
             case KafkaMirrorMaker2:
-                return kubeClient(namespaceName).getDeploymentSelectors(KafkaMirrorMaker2Resources.deploymentName(componentName));
+                return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.deploymentName(componentName));
             case UserOperator:
             case TopicOperator:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(componentName));

@@ -287,17 +287,18 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        String connectDepName = KafkaConnectResources.deploymentName(connectClusterName);
-        Map<String, String> connectPods = DeploymentUtils.depSnapshot(namespace, connectDepName);
-        String connectMap = KafkaConnectResources.metricsAndLogConfigMapName(connectClusterName);
+        final String connectDepName = KafkaConnectResources.deploymentName(connectClusterName);
+        final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(connectClusterName, KafkaConnectResources.deploymentName(connectClusterName));
+        final String connectMap = KafkaConnectResources.metricsAndLogConfigMapName(connectClusterName);
+        final Map<String, String> connectPods = PodUtils.podSnapshot(namespace, labelSelector);
 
         LOGGER.info("Checking if Connect has log level set properly");
         assertThat("KafkaConnect's log level is set properly", checkLoggersLevel(namespace, CONNECT_LOGGERS, connectMap), is(true));
-        assertThat("Connect GC logging is enabled", checkGcLoggingDeployments(namespace, connectDepName), is(true));
+        this.checkGcLogging(namespace, labelSelector, connectDepName, true);
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(connectClusterName, kc -> kc.getSpec().setJvmOptions(JVM_OPTIONS), namespace);
-        DeploymentUtils.waitTillDepHasRolled(namespace, connectDepName, 1, connectPods);
-        assertThat("Connect GC logging is disabled", checkGcLoggingDeployments(namespace, connectDepName), is(false));
+        StUtils.waitTillStrimziPodSetOrDeploymentRolled(namespace, connectDepName, 1, connectPods, labelSelector);
+        this.checkGcLogging(namespace, labelSelector, connectDepName, false);
 
         kubectlGetStrimziUntilOperationIsSuccessful(namespace, connectClusterName);
         checkContainersHaveProcessOneAsTini(namespace, connectClusterName);
@@ -329,11 +330,11 @@ class LogSettingST extends AbstractST {
 
         LOGGER.info("Checking if MirrorMaker has log level set properly");
         assertThat("KafkaMirrorMaker's log level is set properly", checkLoggersLevel(namespace, MIRROR_MAKER_LOGGERS, mirrorMakerMap), is(true));
-        assertThat("Mirror-maker GC logging is enabled", checkGcLoggingDeployments(namespace, mmDepName), is(true));
+        checkGcLoggingDeployments(namespace, mmDepName, true);
 
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().setJvmOptions(JVM_OPTIONS), namespace);
         DeploymentUtils.waitTillDepHasRolled(namespace, mmDepName, 1, mmPods);
-        assertThat("Mirror-maker GC logging is disabled", checkGcLoggingDeployments(namespace, mmDepName), is(false));
+        checkGcLoggingDeployments(namespace, mmDepName, false);
 
         kubectlGetStrimziUntilOperationIsSuccessful(namespace, mirrorMakerName);
         checkContainersHaveProcessOneAsTini(namespace, mirrorMakerName);
@@ -342,10 +343,9 @@ class LogSettingST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testMirrorMaker2LogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String mirrorMaker2Name = clusterName + "-mirror-maker-2";
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
@@ -359,27 +359,30 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name);
-        Map<String, String> mm2Pods = DeploymentUtils.depSnapshot(namespace, mm2DepName);
-        String mirrorMakerMap = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(mirrorMaker2Name);
+        final String mm2DepName = KafkaMirrorMaker2Resources.deploymentName(clusterName);
+        final String mirrorMakerMap = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(clusterName);
+        final LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+        final Map<String, String> mm2Pods = PodUtils.podSnapshot(namespace, labelSelector);
 
         LOGGER.info("Checking if MirrorMaker2 has log level set properly");
         assertThat("KafkaMirrorMaker2's log level is set properly", checkLoggersLevel(namespace, MIRROR_MAKER_LOGGERS, mirrorMakerMap), is(true));
-        assertThat("Mirror-maker-2 GC logging is enabled", checkGcLoggingDeployments(namespace, mm2DepName), is(true));
+        this.checkGcLoggingPods(namespace, labelSelector, true);
+        this.checkGcLogging(namespace, labelSelector, mm2DepName, true);
 
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(mirrorMaker2Name, mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS), namespace);
-        DeploymentUtils.waitTillDepHasRolled(namespace, mm2DepName, 1, mm2Pods);
-        assertThat("Mirror-maker2 GC logging is disabled", checkGcLoggingDeployments(namespace, mm2DepName), is(false));
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS), namespace);
+        StUtils.waitTillStrimziPodSetOrDeploymentRolled(namespace, mm2DepName, 1, mm2Pods, labelSelector);
 
-        kubectlGetStrimziUntilOperationIsSuccessful(namespace, mirrorMaker2Name);
-        checkContainersHaveProcessOneAsTini(namespace, mirrorMaker2Name);
+        this.checkGcLogging(namespace, labelSelector, mm2DepName,  false);
+
+        kubectlGetStrimziUntilOperationIsSuccessful(namespace, clusterName);
+        checkContainersHaveProcessOneAsTini(namespace, clusterName);
     }
 
     @ParallelTest
     @Tag(BRIDGE)
     void testBridgeLogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String bridgeName = clusterName + "-bridge";
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String bridgeName = clusterName + "-bridge";
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editMetadata()
@@ -395,17 +398,20 @@ class LogSettingST extends AbstractST {
             .endSpec()
             .build());
 
-        String bridgeDepName = KafkaBridgeResources.deploymentName(bridgeName);
-        Map<String, String> bridgePods = DeploymentUtils.depSnapshot(namespace, bridgeDepName);
-        String bridgeMap = KafkaBridgeResources.metricsAndLogConfigMapName(bridgeName);
+        final String bridgeDepName = KafkaBridgeResources.deploymentName(bridgeName);
+        final Map<String, String> bridgePods = DeploymentUtils.depSnapshot(namespace, bridgeDepName);
+        final String bridgeMap = KafkaBridgeResources.metricsAndLogConfigMapName(bridgeName);
+        final LabelSelector labelSelector = KafkaBridgeResource.getLabelSelector(bridgeDepName, KafkaMirrorMaker2Resources.deploymentName(bridgeDepName));
 
         LOGGER.info("Checking if Bridge has log level set properly");
         assertThat("Bridge's log level is set properly", checkLoggersLevel(namespace, BRIDGE_LOGGERS, bridgeMap), is(true));
-        assertThat("Bridge's GC logging is enabled", checkGcLoggingDeployments(namespace, bridgeDepName), is(true));
+
+        this.checkGcLogging(namespace, labelSelector, bridgeDepName, true);
 
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, bridge -> bridge.getSpec().setJvmOptions(JVM_OPTIONS), namespace);
         DeploymentUtils.waitTillDepHasRolled(namespace, bridgeDepName, 1, bridgePods);
-        assertThat("Bridge GC logging is disabled", checkGcLoggingDeployments(namespace, bridgeDepName), is(false));
+
+        this.checkGcLogging(namespace, labelSelector, bridgeDepName, false);
 
         kubectlGetStrimziUntilOperationIsSuccessful(namespace, bridgeName);
         checkContainersHaveProcessOneAsTini(namespace, bridgeName);
@@ -504,12 +510,20 @@ class LogSettingST extends AbstractST {
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
-
-    private synchronized Boolean checkGcLoggingDeployments(String namespaceName, String deploymentName) {
+    private synchronized void checkGcLogging(final String namespaceName, final LabelSelector selector,
+                                                final String deploymentName, boolean exceptedValue) {
+        if (Environment.isStableConnectIdentitiesEnabled()) {
+            this.checkGcLoggingPods(namespaceName, selector, exceptedValue);
+        } else {
+            this.checkGcLoggingDeployments(namespaceName, deploymentName, exceptedValue);
+        }
+    }
+    private synchronized void checkGcLoggingDeployments(String namespaceName, String deploymentName, boolean expectedValue) {
         LOGGER.info("Checking deployment: {}", deploymentName);
         Container container = kubeClient(namespaceName).getDeployment(namespaceName, deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
         LOGGER.info("Checking container with name: {}", container.getName());
-        return checkEnvVarValue(container);
+
+        assertThat(checkEnvVarValue(container), is(expectedValue));
     }
 
     private synchronized void checkGcLoggingPods(String namespaceName, LabelSelector selector, boolean expectedValue) {
