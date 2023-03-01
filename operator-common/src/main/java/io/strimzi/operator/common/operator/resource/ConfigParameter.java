@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,7 +46,7 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
         for (Map.Entry<String, String> entry : envVarMap.entrySet()) {
             final ConfigParameter<?> configValue = configParameterMap.get(entry.getKey());
             if (configValue == null || !configParameterMap.containsKey(configValue.key())){
-                throw new InvalidConfigurationException("Unknown or null config value." );
+                throw new InvalidConfigurationException("Unknown or null config value.");
             }
             generatedMap.put(configValue.key(), get(envVarMap, configValue));
         }
