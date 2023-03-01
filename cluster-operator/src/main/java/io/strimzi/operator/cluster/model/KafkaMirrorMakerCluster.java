@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
@@ -202,7 +203,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             kafkaMirrorMakerCluster.image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
 
             kafkaMirrorMakerCluster.logging = spec.getLogging();
-            kafkaMirrorMakerCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+            kafkaMirrorMakerCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
             kafkaMirrorMakerCluster.jvmOptions = spec.getJvmOptions();
 
             // Parse different types of metrics configurations

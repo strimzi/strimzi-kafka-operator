@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -223,7 +224,7 @@ public class CruiseControl extends AbstractModel {
 
             cruiseControl.logging = ccSpec.getLogging();
 
-            cruiseControl.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
+            cruiseControl.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
             cruiseControl.jvmOptions = ccSpec.getJvmOptions();
             cruiseControl.resources = ccSpec.getResources();
 
