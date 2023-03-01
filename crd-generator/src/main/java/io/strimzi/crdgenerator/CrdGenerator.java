@@ -433,12 +433,11 @@ class CrdGenerator {
         if (conversionStrategy instanceof NoneConversionStrategy) {
             conversion.put("strategy", "None");
         } else if (conversionStrategy instanceof WebhookConversionStrategy) {
-            boolean v1Beta1CrdApi = crdApiVersion.compareTo(V1) < 0;
             conversion.put("strategy", "Webhook");
             WebhookConversionStrategy webhookStrategy = (WebhookConversionStrategy) conversionStrategy;
-            ObjectNode webhook = conversion.putObject(v1Beta1CrdApi ? "webhookClientConfig" : "webhook");
-            (v1Beta1CrdApi ? conversion : webhook).putArray("conversionReviewVersions").add("v1").add("v1beta1");
-            ObjectNode webhookClientConfig = (v1Beta1CrdApi ? conversion : webhook).putObject(v1Beta1CrdApi ? "webhookClientConfig" : "clientConfig");
+            ObjectNode webhook = conversion.putObject("webhook");
+            webhook.putArray("conversionReviewVersions").add("v1");
+            ObjectNode webhookClientConfig = (webhook).putObject("clientConfig");
             webhookClientConfig.put("caBundle", webhookStrategy.caBundle);
             if (webhookStrategy.isUrl()) {
                 webhookClientConfig.put("url", webhookStrategy.url);
@@ -1240,7 +1239,7 @@ class CrdGenerator {
                 targetKubeVersions = KubeVersion.parseRange("1.11+");
             }
             if (crdApiVersion == null) {
-                crdApiVersion = ApiVersion.V1BETA1;
+                crdApiVersion = ApiVersion.V1;
             }
             if (conversionServiceName != null) {
                 conversionStrategy = new WebhookConversionStrategy(conversionServiceName, conversionServiceNamespace, conversionServicePath, conversionServicePort, conversionServiceCaBundle);
