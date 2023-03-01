@@ -124,7 +124,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_a_long");
 
-        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -132,7 +132,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, "not_an_integer");
 
-        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -140,7 +140,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, ",label1=");
 
-        assertThrows(IllegalArgumentException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -220,7 +220,7 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, "abcdefg");
 
-        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 
     @Test
@@ -237,6 +237,6 @@ public class UserOperatorConfigTest {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
         envVars.put(UserOperatorConfig.STRIMZI_OPERATION_TIMEOUT_MS, "abcdefg");
 
-        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.buildFromMap(envVars));
+        assertThrows(InvalidConfigurationException.class, () -> UserOperatorConfig.buildFromMap(envVars));
     }
 }

@@ -7,6 +7,7 @@ package io.strimzi.operator.user;
 import io.strimzi.operator.common.operator.resource.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -14,14 +15,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.Collections;
 
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.LONG;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.INTEGER;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.NON_EMPTY;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.LIST;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.KAFKA_ADMIN_CLIENT_CONFIGURATION_PROPERTIES;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.STRING;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.LABEL_PREDICATE;
-import static io.strimzi.operator.common.operator.resource.AbstractConfig.BOOLEAN;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LIST;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.PROPERTIES;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.BOOLEAN;
 
 /**
  * Cluster Operator configuration
@@ -61,27 +62,27 @@ public class UserOperatorConfig {
     /**
      * Namespace in which the operator will run and create resources
      */
-    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>(STRIMZI_NAMESPACE, NON_EMPTY, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>(STRIMZI_NAMESPACE, NON_EMPTY_STRING, "", true, CONFIG_VALUES);
     /**
      * Name of the secret containing the clients Certification Authority certificate.
      */
-    public static final ConfigParameter<String> CA_CERT_SECRET_NAME = new ConfigParameter<>(STRIMZI_CA_CERT_SECRET_NAME, NON_EMPTY, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_CERT_SECRET_NAME = new ConfigParameter<>(STRIMZI_CA_CERT_SECRET_NAME, NON_EMPTY_STRING, "", true, CONFIG_VALUES);
     /**
      * Name of the secret containing the cluster Certification Authority certificate.
      */
-    public static final ConfigParameter<String> CLUSTER_CA_CERT_SECRET_NAME = new ConfigParameter<>(STRIMZI_CLUSTER_CA_CERT_SECRET_NAME, STRING, "", false, CONFIG_VALUES);
+    public static final ConfigParameter<String> CLUSTER_CA_CERT_SECRET_NAME = new ConfigParameter<>(STRIMZI_CLUSTER_CA_CERT_SECRET_NAME, STRING, null, false, CONFIG_VALUES);
     /**
      * Namespace with the CA secret.
      */
-    public static final ConfigParameter<String> CA_NAMESPACE = new ConfigParameter<>(STRIMZI_CA_NAMESPACE, STRING, "", false, CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_NAMESPACE = new ConfigParameter<>(STRIMZI_CA_NAMESPACE, NON_EMPTY_STRING, null, false, CONFIG_VALUES);
     /**
      * The name of the secret containing the Entity User Operator key and certificate
      */
-    public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>(STRIMZI_EO_KEY_SECRET_NAME, STRING, "", false, CONFIG_VALUES);
+    public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>(STRIMZI_EO_KEY_SECRET_NAME, STRING, null, false, CONFIG_VALUES);
     /**
      * The name of the secret containing the clients Certification Authority key.
      */
-    public static final ConfigParameter<String> CA_KEY_SECRET_NAME = new ConfigParameter<>(STRIMZI_CA_KEY_SECRET_NAME, NON_EMPTY, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_KEY_SECRET_NAME = new ConfigParameter<>(STRIMZI_CA_KEY_SECRET_NAME, NON_EMPTY_STRING, "", true, CONFIG_VALUES);
     /**
      * Map with labels which should be used to find the KafkaUser resources.
      */
@@ -153,7 +154,7 @@ public class UserOperatorConfig {
     /**
      * Additional configuration for the Kafka Admin Client
      */
-    public static final ConfigParameter<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION = new ConfigParameter<>(STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION, KAFKA_ADMIN_CLIENT_CONFIGURATION_PROPERTIES, "", false, CONFIG_VALUES);
+    public static final ConfigParameter<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION = new ConfigParameter<>(STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION, PROPERTIES, "", false, CONFIG_VALUES);
     /**
      * Lit of maintenance windows
      */
@@ -225,9 +226,7 @@ public class UserOperatorConfig {
         protected UserOperatorConfig build() {
             return new UserOperatorConfig(this.map);
         }
-
     }
-
 
     /**
      * @return  namespace in which the operator runs and creates resources

@@ -6,6 +6,7 @@ package io.strimzi.operator.common.operator.resource;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +21,8 @@ import java.util.Map;
  * @param defaultValue default value of the configuration parameter
  * @param required  If the value is required or not
  */
-public record ConfigParameter<T>(String key, AbstractConfig<T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
+public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
+
     /**
      * Contructor
      * @param key Configuration parameter name/key
@@ -36,29 +38,29 @@ public record ConfigParameter<T>(String key, AbstractConfig<T> type, String defa
     /**
      * Generates the configuration map
      * @param envVarMap    Map containing values entered by user.
-     * @param configValues Map containing all the configuration keys with default values
+     * @param configParameterMap Map containing all the configuration keys with default values
      * @return             Generated configuration map
      */
-    public static Map<String, Object> define(Map<String, String> envVarMap, Map<String, ConfigParameter<?>> configValues) {
+    public static Map<String, Object> define(Map<String, String> envVarMap, Map<String, ConfigParameter<?>> configParameterMap) {
 
         Map<String, Object> generatedMap = new HashMap<>(envVarMap.size());
         for (Map.Entry<String, String> entry : envVarMap.entrySet()) {
-            final ConfigParameter<?> configValue = configValues.get(entry.getKey());
-            generatedMap.put(configValue.key(), get(envVarMap, configValues, configValue));
+            final ConfigParameter<?> configValue = configParameterMap.get(entry.getKey());
+            if (configValue == null || !configParameterMap.containsKey(configValue.key())){
+                throw new InvalidConfigurationException("Unknown or null config value." );
+            }
+            generatedMap.put(configValue.key(), get(envVarMap, configValue));
         }
 
         // now add all those config (with default value) that weren't in the given map
-        Map<String, ConfigParameter<?>> x = new HashMap<>(configValues);
+        Map<String, ConfigParameter<?>> x = new HashMap<>(configParameterMap);
         x.keySet().removeAll(envVarMap.keySet());
         for (ConfigParameter<?> value : x.values()) {
-            generatedMap.put(value.key(), get(envVarMap, configValues, value));
+            generatedMap.put(value.key(), get(envVarMap, value));
         }
         return generatedMap;
     }
-    private static <T> T get(Map<String, String> map, Map<String, ConfigParameter<?>> configValues, ConfigParameter<T> value) {
-        if (!configValues.containsKey(value.key())) {
-            throw new InvalidConfigurationException("Unknown config value: " + value.key() + " probably needs to be added to Config.configValues");
-        }
+    private static <T> T get(Map<String, String> map, ConfigParameter<T> value) {
 
         final String s = map.getOrDefault(value.key(), value.defaultValue());
         if (s != null) {
