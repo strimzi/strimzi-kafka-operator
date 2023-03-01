@@ -7,7 +7,6 @@ package io.strimzi.operator.user;
 import io.strimzi.operator.common.operator.resource.ConfigParameter;
 import io.strimzi.operator.common.model.Labels;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
