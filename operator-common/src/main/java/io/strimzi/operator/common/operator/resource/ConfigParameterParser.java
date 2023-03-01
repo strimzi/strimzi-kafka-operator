@@ -47,7 +47,7 @@ public interface ConfigParameterParser<T> {
     /**
      * A semicolon-delimited list of strings.
      */
-    ConfigParameterParser<List<String>> LIST = configValue -> {
+    ConfigParameterParser<List<String>> SEMICOLON_SEPARATED_LIST = configValue -> {
         List<String> windows = null;
         if (configValue != null && !configValue.isEmpty()) {
             windows = Arrays.asList(configValue.split(";"));

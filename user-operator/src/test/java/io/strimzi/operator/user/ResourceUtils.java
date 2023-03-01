@@ -40,20 +40,20 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength, String secretPrefix) {
         Map<String, String> envVars = new HashMap<>(4);
-        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
-        envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
-        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
-        envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, Boolean.toString(useKRaft));
+        envVars.put(UserOperatorConfig.NAMESPACE.key(), NAMESPACE);
+        envVars.put(UserOperatorConfig.LABELS.key(), labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
+        envVars.put(UserOperatorConfig.CA_CERT_SECRET_NAME.key(), CA_CERT_NAME);
+        envVars.put(UserOperatorConfig.CA_KEY_SECRET_NAME.key(), CA_KEY_NAME);
+        envVars.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), Boolean.toString(aclsAdminApiSupported));
+        envVars.put(UserOperatorConfig.KRAFT_ENABLED.key(), Boolean.toString(useKRaft));
 
 
         if (!scramShaPasswordLength.equals("32")) {
-            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
+            envVars.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), scramShaPasswordLength);
         }
 
         if (secretPrefix != null) {
-            envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
+            envVars.put(UserOperatorConfig.SECRET_PREFIX.key(), secretPrefix);
         }
 
         return UserOperatorConfig.buildFromMap(envVars);
@@ -61,9 +61,9 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
         return new UserOperatorConfigBuilder(createUserOperatorConfig(labels, false, false, "32", secretPrefix))
-                      .with(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, String.valueOf(fullReconciliationInterval))
-                      .with(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, String.valueOf(queueSize))
-                      .with(UserOperatorConfig.STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE, String.valueOf(poolSize))
+                      .with(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key(), String.valueOf(fullReconciliationInterval))
+                      .with(UserOperatorConfig.WORK_QUEUE_SIZE.key(), String.valueOf(queueSize))
+                      .with(UserOperatorConfig.USER_OPERATIONS_THREAD_POOL_SIZE.key(), String.valueOf(poolSize))
                       .build();
     }
 
@@ -73,7 +73,7 @@ public class ResourceUtils {
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {
         return new UserOperatorConfigBuilder(createUserOperatorConfig())
-                       .with(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength)
+                       .with(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), scramShaPasswordLength)
                        .build();
     }
 

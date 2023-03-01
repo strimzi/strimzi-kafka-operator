@@ -17,7 +17,7 @@ import java.util.Collections;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LONG;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.INTEGER;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LIST;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.SEMICOLON_SEPARATED_LIST;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.PROPERTIES;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.LABEL_PREDICATE;
@@ -30,134 +30,106 @@ public class UserOperatorConfig {
 
     private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
 
-
-    // Environment variable names
-    static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
-    static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    static final String STRIMZI_LABELS = "STRIMZI_LABELS";
-    static final String STRIMZI_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
-    static final String STRIMZI_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
-    static final String STRIMZI_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
-    static final String STRIMZI_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
-    static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
-    static final String STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
-    static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
-    static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
-    static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
-    static final String STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
-    static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
-    static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
-    static final String STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION = "STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION";
-    static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
-    static final String STRIMZI_WORK_QUEUE_SIZE = "STRIMZI_WORK_QUEUE_SIZE";
-    static final String STRIMZI_CONTROLLER_THREAD_POOL_SIZE = "STRIMZI_CONTROLLER_THREAD_POOL_SIZE";
-    static final String STRIMZI_CACHE_REFRESH_INTERVAL_MS = "STRIMZI_CACHE_REFRESH_INTERVAL_MS";
-    static final String STRIMZI_BATCH_QUEUE_SIZE = "STRIMZI_BATCH_QUEUE_SIZE";
-    static final String STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE = "STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE";
-    static final String STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS = "STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS";
-    static final String STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE";
-
     /**
      * Namespace in which the operator will run and create resources
      */
-    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>(STRIMZI_NAMESPACE, NON_EMPTY_STRING, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NON_EMPTY_STRING, "", true, CONFIG_VALUES);
     /**
      * Name of the secret containing the clients Certification Authority certificate.
      */
-    public static final ConfigParameter<String> CA_CERT_SECRET_NAME = new ConfigParameter<>(STRIMZI_CA_CERT_SECRET_NAME, NON_EMPTY_STRING, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_CERT_SECRET_NAME = new ConfigParameter<>("STRIMZI_CA_CERT_SECRET_NAME", NON_EMPTY_STRING, "", true, CONFIG_VALUES);
     /**
      * Name of the secret containing the cluster Certification Authority certificate.
      */
-    public static final ConfigParameter<String> CLUSTER_CA_CERT_SECRET_NAME = new ConfigParameter<>(STRIMZI_CLUSTER_CA_CERT_SECRET_NAME, STRING, null, false, CONFIG_VALUES);
+    public static final ConfigParameter<String> CLUSTER_CA_CERT_SECRET_NAME = new ConfigParameter<>("STRIMZI_CLUSTER_CA_CERT_SECRET_NAME", STRING, null, false, CONFIG_VALUES);
     /**
      * Namespace with the CA secret.
      */
-    public static final ConfigParameter<String> CA_NAMESPACE = new ConfigParameter<>(STRIMZI_CA_NAMESPACE, NON_EMPTY_STRING, null, false, CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_NAMESPACE = new ConfigParameter<>("STRIMZI_CA_NAMESPACE", NON_EMPTY_STRING, null, false, CONFIG_VALUES);
     /**
      * The name of the secret containing the Entity User Operator key and certificate
      */
-    public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>(STRIMZI_EO_KEY_SECRET_NAME, STRING, null, false, CONFIG_VALUES);
+    public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>("STRIMZI_EO_KEY_SECRET_NAME", STRING, null, false, CONFIG_VALUES);
     /**
      * The name of the secret containing the clients Certification Authority key.
      */
-    public static final ConfigParameter<String> CA_KEY_SECRET_NAME = new ConfigParameter<>(STRIMZI_CA_KEY_SECRET_NAME, NON_EMPTY_STRING, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_KEY_SECRET_NAME = new ConfigParameter<>("STRIMZI_CA_KEY_SECRET_NAME", NON_EMPTY_STRING, "", true, CONFIG_VALUES);
     /**
      * Map with labels which should be used to find the KafkaUser resources.
      */
-    public static final ConfigParameter<Labels> LABELS = new ConfigParameter<>(STRIMZI_LABELS, LABEL_PREDICATE, "", true, CONFIG_VALUES);
+    public static final ConfigParameter<Labels> LABELS = new ConfigParameter<>("STRIMZI_LABELS", LABEL_PREDICATE, "", true, CONFIG_VALUES);
     /**
      * How many milliseconds between reconciliation runs.
      */
-    public static final ConfigParameter<Long> RECONCILIATION_INTERVAL_MS = new ConfigParameter<>(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, LONG, "120000", true, CONFIG_VALUES);
+    public static final ConfigParameter<Long> RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", LONG, "120000", true, CONFIG_VALUES);
     /**
      * Kafka bootstrap servers list
      */
-    public static final ConfigParameter<String> KAFKA_BOOTSTRAP_SERVERS = new ConfigParameter<>(STRIMZI_KAFKA_BOOTSTRAP_SERVERS, STRING, "localhost:9091", true, CONFIG_VALUES);
+    public static final ConfigParameter<String> KAFKA_BOOTSTRAP_SERVERS = new ConfigParameter<>("STRIMZI_KAFKA_BOOTSTRAP_SERVERS", STRING, "localhost:9091", true, CONFIG_VALUES);
     /**
      * Configures the default prefix of user secrets created by the operator
      */
-    public static final ConfigParameter<String> SECRET_PREFIX = new ConfigParameter<>(STRIMZI_SECRET_PREFIX, STRING, "", false, CONFIG_VALUES);
+    public static final ConfigParameter<String> SECRET_PREFIX = new ConfigParameter<>("STRIMZI_SECRET_PREFIX", STRING, "", false, CONFIG_VALUES);
     /**
      * Number of days for which the certificate should be valid
      */
-    public static final ConfigParameter<Integer> CERTS_VALIDITY_DAYS = new ConfigParameter<>(STRIMZI_CLIENTS_CA_VALIDITY, INTEGER, "30", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> CERTS_VALIDITY_DAYS = new ConfigParameter<>("STRIMZI_CLIENTS_CA_VALIDITY", INTEGER, "30", true, CONFIG_VALUES);
     /**
      * How long before the certificate expiration should the user certificate be renewed
      */
-    public static final ConfigParameter<Integer> CERTS_RENEWAL_DAYS = new ConfigParameter<>(STRIMZI_CLIENTS_CA_RENEWAL, INTEGER, "365", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> CERTS_RENEWAL_DAYS = new ConfigParameter<>("STRIMZI_CLIENTS_CA_RENEWAL", INTEGER, "365", true, CONFIG_VALUES);
     /**
      * Length used for the Scram-Sha Password
      */
-    public static final ConfigParameter<Integer> SCRAM_SHA_PASSWORD_LENGTH = new ConfigParameter<>(STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, INTEGER, "32", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> SCRAM_SHA_PASSWORD_LENGTH = new ConfigParameter<>("STRIMZI_SCRAM_SHA_PASSWORD_LENGTH", INTEGER, "32", true, CONFIG_VALUES);
     /**
      * Indicates whether the Admin APi can be used to manage ACLs. Defaults to true for backwards compatibility reasons.
      */
-    public static final ConfigParameter<Boolean> ACLS_ADMIN_API_SUPPORTED = new ConfigParameter<>(STRIMZI_ACLS_ADMIN_API_SUPPORTED, BOOLEAN, "true", true, CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> ACLS_ADMIN_API_SUPPORTED = new ConfigParameter<>("STRIMZI_ACLS_ADMIN_API_SUPPORTED", BOOLEAN, "true", true, CONFIG_VALUES);
     /**
      * Indicates whether KRaft is used in the Kafka cluster
      */
-    public static final ConfigParameter<Boolean> KRAFT_ENABLED = new ConfigParameter<>(STRIMZI_KRAFT_ENABLED, BOOLEAN, "false", true, CONFIG_VALUES);
+    public static final ConfigParameter<Boolean> KRAFT_ENABLED = new ConfigParameter<>("STRIMZI_KRAFT_ENABLED", BOOLEAN, "false", true, CONFIG_VALUES);
     /**
      * Timeout for internal operations specified in milliseconds
      */
-    public static final ConfigParameter<Long> OPERATION_TIMEOUT_MS = new ConfigParameter<>(STRIMZI_OPERATION_TIMEOUT_MS, LONG, "300000", true, CONFIG_VALUES);
+    public static final ConfigParameter<Long> OPERATION_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_OPERATION_TIMEOUT_MS", LONG, "300000", true, CONFIG_VALUES);
     /**
      * Indicates the size of the StrimziPodSetController work queue
      */
-    public static final ConfigParameter<Integer> WORK_QUEUE_SIZE = new ConfigParameter<>(STRIMZI_WORK_QUEUE_SIZE, INTEGER, "1024", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> WORK_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_WORK_QUEUE_SIZE", INTEGER, "1024", true, CONFIG_VALUES);
     /**
      * Size of the pool of the controller threads used to reconcile the users
      */
-    public static final ConfigParameter<Integer> CONTROLLER_THREAD_POOL_SIZE = new ConfigParameter<>(STRIMZI_CONTROLLER_THREAD_POOL_SIZE, INTEGER, "50", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> CONTROLLER_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_CONTROLLER_THREAD_POOL_SIZE", INTEGER, "50", true, CONFIG_VALUES);
     /**
      * Refresh interval for the cache storing the resources from the Kafka Admin API
      */
-    public static final ConfigParameter<Long> CACHE_REFRESH_INTERVAL_MS = new ConfigParameter<>(STRIMZI_CACHE_REFRESH_INTERVAL_MS, LONG, "15000", true, CONFIG_VALUES);
+    public static final ConfigParameter<Long> CACHE_REFRESH_INTERVAL_MS = new ConfigParameter<>("STRIMZI_CACHE_REFRESH_INTERVAL_MS", LONG, "15000", true, CONFIG_VALUES);
     /**
      * Maximal queue for requests when micro-batching the Kafka Admin API requests
      */
-    public static final ConfigParameter<Integer> BATCH_QUEUE_SIZE = new ConfigParameter<>(STRIMZI_BATCH_QUEUE_SIZE, INTEGER, "1024", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> BATCH_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_BATCH_QUEUE_SIZE", INTEGER, "1024", true, CONFIG_VALUES);
     /**
      * Maximal batch size for micro-batching the Kafka Admin API requests
      */
-    public static final ConfigParameter<Integer> BATCH_MAXIMUM_BLOCK_SIZE = new ConfigParameter<>(STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE, INTEGER, "100", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> BATCH_MAXIMUM_BLOCK_SIZE = new ConfigParameter<>("STRIMZI_BATCH_MAXIMUM_BLOCK_SIZE", INTEGER, "100", true, CONFIG_VALUES);
     /**
      * Maximal batch time for micro-batching the Kafka Admin API requests
      */
-    public static final ConfigParameter<Integer> BATCH_MAXIMUM_BLOCK_TIME_MS = new ConfigParameter<>(STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS, INTEGER, "100", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> BATCH_MAXIMUM_BLOCK_TIME_MS = new ConfigParameter<>("STRIMZI_BATCH_MAXIMUM_BLOCK_TIME_MS", INTEGER, "100", true, CONFIG_VALUES);
     /**
      * Size of the thread pool for user operations done by KafkaUserOperator and the classes used by it
      */
-    public static final ConfigParameter<Integer> USER_OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>(STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE, INTEGER, "4", true, CONFIG_VALUES);
+    public static final ConfigParameter<Integer> USER_OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_USER_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "4", true, CONFIG_VALUES);
     /**
      * Additional configuration for the Kafka Admin Client
      */
-    public static final ConfigParameter<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION = new ConfigParameter<>(STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION, PROPERTIES, "", false, CONFIG_VALUES);
+    public static final ConfigParameter<Properties> KAFKA_ADMIN_CLIENT_CONFIGURATION = new ConfigParameter<>("STRIMZI_KAFKA_ADMIN_CLIENT_CONFIGURATION", PROPERTIES, "", false, CONFIG_VALUES);
     /**
      * Lit of maintenance windows
      */
-    public static final ConfigParameter<List<String>> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<>(STRIMZI_MAINTENANCE_TIME_WINDOWS, LIST, null, false, CONFIG_VALUES);
+    public static final ConfigParameter<List<String>> MAINTENANCE_TIME_WINDOWS = new ConfigParameter<>("STRIMZI_MAINTENANCE_TIME_WINDOWS", SEMICOLON_SEPARATED_LIST, null, false, CONFIG_VALUES);
 
     private final Map<String, Object> map;
 
@@ -181,8 +153,8 @@ public class UserOperatorConfig {
 
         Map<String, Object> generatedMap = ConfigParameter.define(map, CONFIG_VALUES);
 
-        if (generatedMap.get(STRIMZI_CA_NAMESPACE) == null || String.valueOf(generatedMap.get(STRIMZI_CA_NAMESPACE)).isEmpty()) {
-            generatedMap.put(STRIMZI_CA_NAMESPACE, generatedMap.get(NAMESPACE.key()));
+        if (generatedMap.get(CA_NAMESPACE.key()) == null || String.valueOf(generatedMap.get(CA_NAMESPACE.key())).isEmpty()) {
+            generatedMap.put(CA_NAMESPACE.key(), generatedMap.get(NAMESPACE.key()));
         }
 
         return new UserOperatorConfig(generatedMap);
