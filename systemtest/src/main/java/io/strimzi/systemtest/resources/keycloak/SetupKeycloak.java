@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources.keycloak;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -34,18 +35,23 @@ public class SetupKeycloak {
     private static final List<String> KEYCLOAK_REALMS_FILE_NAMES = List.of("internal_realm.json", "authorization_realm.json", "scope_audience_realm.json");
     private static final String KEYCLOAK_INSTALL_FILES_BASE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/oauth2";
     private static final String KEYCLOAK_INSTANCE_FILE_PATH = KEYCLOAK_INSTALL_FILES_BASE_PATH + "/keycloak-instance.yaml";
+    private static final String POSTGRES_FILE_PATH = KEYCLOAK_INSTALL_FILES_BASE_PATH + "/postgres.yaml";
     private static final String KEYCLOAK_DEPLOYMENT_NAME = "example-keycloak";
     private static final String KEYCLOAK_OPERATOR_DEPLOYMENT_NAME = "keycloak-operator";
-    private static final String KEYCLOAK_SECRET_NAME = "credential-example-keycloak";
+    private static final String KEYCLOAK_SECRET_NAME = "keycloak-initial-admin";
+    private static final String POSTGRES_SECRET_NAME = "keycloak-db-secret";
+    private static final String POSTGRES_USER_NAME = "arnost";
+    private static final String POSTGRES_PASSWORD = "changeme";
 
     public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
     public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
+
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
     public static void deployKeycloakOperator(ExtensionContext extensionContext, final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Prepare Keycloak Operator in namespace {} with watching namespace {}", deploymentNamespace, watchNamespace);
 
-        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.getValidKeycloakVersion(), watchNamespace);
+        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
@@ -55,11 +61,12 @@ public class SetupKeycloak {
 
     public static void deleteKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
         LOGGER.info("Teardown Keycloak Operator in namespace {} with watching namespace {}", deploymentNamespace, watchNamespace);
-        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, KeycloakUtils.getValidKeycloakVersion(), watchNamespace);
+        Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentDeletion(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME);
     }
 
     public static KeycloakInstance deployKeycloakAndImportRealms(ExtensionContext extensionContext, String namespaceName) {
+        deployPostgres(extensionContext, namespaceName);
         deployKeycloak(extensionContext, namespaceName);
         KeycloakInstance keycloakInstance = createKeycloakInstance(namespaceName);
         importRealms(namespaceName, keycloakInstance);
@@ -80,13 +87,36 @@ public class SetupKeycloak {
         LOGGER.info("Keycloak instance and Keycloak secret are ready");
     }
 
+    private static void deployPostgres(ExtensionContext extensionContext, String namespaceName) {
+        LOGGER.info("Deploying Postgres into namespace: {}", namespaceName);
+        cmdKubeClient(namespaceName).apply(POSTGRES_FILE_PATH);
+
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
+
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deletePostgres(namespaceName)));
+
+        Secret postgresSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName(POSTGRES_SECRET_NAME)
+                .withNamespace(namespaceName)
+            .endMetadata()
+            .withType("Opaque")
+            .addToData("username", Base64.getEncoder().encodeToString(POSTGRES_USER_NAME.getBytes(StandardCharsets.UTF_8)))
+            .addToData("password", Base64.getEncoder().encodeToString(POSTGRES_PASSWORD.getBytes(StandardCharsets.UTF_8)))
+            .build();
+
+
+        kubeClient().createSecret(postgresSecret);
+        SecretUtils.waitForSecretReady(namespaceName, POSTGRES_SECRET_NAME, () -> { });
+    }
+
     private static KeycloakInstance createKeycloakInstance(String namespaceName) {
         Secret keycloakSecret = kubeClient().getSecret(namespaceName, KEYCLOAK_SECRET_NAME);
 
-        String usernameEncoded = keycloakSecret.getData().get("ADMIN_USERNAME");
+        String usernameEncoded = keycloakSecret.getData().get("username");
         String username = new String(Base64.getDecoder().decode(usernameEncoded.getBytes()));
 
-        String passwordEncoded = keycloakSecret.getData().get("ADMIN_PASSWORD");
+        String passwordEncoded = keycloakSecret.getData().get("password");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
 
         return new KeycloakInstance(username, password, namespaceName);
@@ -119,5 +149,11 @@ public class SetupKeycloak {
         LOGGER.info("Deleting Keycloak in namespace {}", namespaceName);
         cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
+    }
+
+    private static void deletePostgres(String namespaceName) {
+        LOGGER.info("Deleting Postgres in namespace {}", namespaceName);
+        cmdKubeClient(namespaceName).delete(POSTGRES_FILE_PATH);
+        DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");
     }
 }
