@@ -83,7 +83,7 @@ public class UserController {
         // Selector for the secrets contains the original KafkaUSer selector adn the Strimzi Kind label
         Map<String, String> secretSelector = new HashMap<>(userSelector.size() + 1);
         secretSelector.putAll(userSelector);
-        secretSelector.put("strimzi.io/kind", RESOURCE_KIND);
+        secretSelector.put(Labels.STRIMZI_KIND_LABEL, RESOURCE_KIND);
 
         // Set up the metrics holder
         this.metrics = new ControllerMetricsHolder(RESOURCE_KIND, Labels.fromMap(userSelector), metricsProvider);
