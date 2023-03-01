@@ -45,7 +45,7 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
         Map<String, Object> generatedMap = new HashMap<>(envVarMap.size());
         for (Map.Entry<String, String> entry : envVarMap.entrySet()) {
             final ConfigParameter<?> configValue = configParameterMap.get(entry.getKey());
-            if (configValue == null || !configParameterMap.containsKey(configValue.key())){
+            if (configValue == null || !configParameterMap.containsKey(configValue.key())) {
                 throw new InvalidConfigurationException("Unknown or null config value.");
             }
             generatedMap.put(configValue.key(), get(envVarMap, configValue));
