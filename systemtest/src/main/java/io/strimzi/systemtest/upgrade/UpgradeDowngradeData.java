@@ -22,6 +22,7 @@ public class UpgradeDowngradeData {
     private String fromExamples;
     private String urlFrom;
     private String fromKafkaVersionsUrl;
+    private String fromOlmChannelName;
     private String oldestKafka;
     private String defaultKafka;
     private String deployKafkaVersion;
@@ -55,6 +56,10 @@ public class UpgradeDowngradeData {
 
     public String getFromKafkaVersionsUrl() {
         return fromKafkaVersionsUrl;
+    }
+
+    public String getFromOlmChannelName() {
+        return fromOlmChannelName;
     }
 
     public String getOldestKafka() {
@@ -162,8 +167,12 @@ public class UpgradeDowngradeData {
         this.urlFrom = urlFrom;
     }
 
-    public void setFromKafkaVersionsUrlm(String fromKafkaVersionsUrl) {
+    public void setFromKafkaVersionsUrl(String fromKafkaVersionsUrl) {
         this.fromKafkaVersionsUrl = fromKafkaVersionsUrl;
+    }
+
+    public void fromOlmChannelName(String fromOlmChannelName) {
+        this.fromOlmChannelName = fromOlmChannelName;
     }
 
     public void setOldestKafka(String oldestKafka) {
@@ -266,6 +275,7 @@ public class UpgradeDowngradeData {
                 ", fromExamples='" + fromExamples + '\'' +
                 ", urlFrom='" + urlFrom + '\'' +
                 ", kafkaVersionsUrlFrom='" + fromKafkaVersionsUrl + '\'' +
+                ", fromOlmChannelName='" + fromOlmChannelName + '\'' +
                 ", oldestKafka='" + oldestKafka + '\'' +
                 ", defaultKafka='" + defaultKafka + '\'' +
                 ", deployKafkaVersion='" + deployKafkaVersion + '\'' +

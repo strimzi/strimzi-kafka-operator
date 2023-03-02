@@ -4,6 +4,7 @@
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
 #  urlFrom: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
+#  fromOlmChannelName: String - name of the olm channel we want to start upgrade from
 #  conversionTool:
 #    urlToConversionTool:  String - url, from which conversion tool is downloaded
 #    toConversionTool: String - name of folder, which contains conversion tool
@@ -24,11 +25,12 @@
 #  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  --- Structure ---
 
-- fromVersion: 0.33.2
-  fromExamples: strimzi-0.33.2
+- fromVersion: 0.32.0
+  fromExamples: strimzi-0.32.0
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.33.2/kafka-versions.yaml
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.32.0/strimzi-0.32.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.32.0/kafka-versions.yaml
+  fromOlmChannelName: strimzi-0.32.x
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.4.0
@@ -44,11 +46,12 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: ""
   featureGatesAfter: ""
-- fromVersion: 0.33.2
-  fromExamples: strimzi-0.33.2
+- fromVersion: 0.32.0
+  fromExamples: strimzi-0.32.0
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.33.2/kafka-versions.yaml
+  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.32.0/strimzi-0.32.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.32.0/kafka-versions.yaml
+  fromOlmChannelName: strimzi-0.32.x
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.4.0

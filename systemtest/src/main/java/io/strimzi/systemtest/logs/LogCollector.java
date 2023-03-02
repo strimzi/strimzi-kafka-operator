@@ -12,6 +12,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClient;
@@ -193,6 +194,7 @@ public class LogCollector {
             this.collectAllResourcesFromNamespace(namespace);
             this.collectStrimzi(namespace);
             this.collectClusterInfo(namespace);
+            this.collectOlm(namespace);
         });
     }
 
@@ -288,6 +290,14 @@ public class LogCollector {
         resources.forEach(resource -> collectResource(resource, namespace));
     }
 
+    private void collectOlm(String namespace) {
+        if (Environment.CLUSTER_OPERATOR_INSTALL_TYPE == ClusterOperatorInstallType.OLM) {
+            this.collectOperatorGroups(namespace);
+            this.collectSubscriptions(namespace);
+            this.collectClusterServiceVersions(namespace);
+        }
+    }
+
     private void collectResource(String kind, String namespace) {
         LOGGER.info("Collecting {} in Namespace {}", kind, namespace);
         writeFile(String.format("%s/%ss.log", namespaceFile, kind.toLowerCase(Locale.ROOT)), cmdKubeClient(namespace).getResourcesAsYaml(kind.toLowerCase(Locale.ROOT)));
@@ -303,6 +313,24 @@ public class LogCollector {
         LOGGER.info("Collecting cluster status");
         String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "nodes").out();
         writeFile(this.testSuite + "/cluster-status.log", nodes);
+    }
+
+    private void collectOperatorGroups(String namespace) {
+        LOGGER.info("Collecting operatorGroups");
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "operatorGroups").out();
+        writeFile(namespaceFile + "/operator-groups.log", nodes);
+    }
+
+    private void collectSubscriptions(String namespace) {
+        LOGGER.info("Collecting subscriptions");
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "subscriptions").out();
+        writeFile(namespaceFile + "/subscriptions.log", nodes);
+    }
+
+    private void collectClusterServiceVersions(String namespace) {
+        LOGGER.info("Collecting clusterServiceVersions");
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "clusterServiceVersions").out();
+        writeFile(namespaceFile + "/cluster-service-versions.log", nodes);
     }
 
     private void scrapeAndCreateLogs(File path, String podName, ContainerStatus containerStatus, String namespace) {

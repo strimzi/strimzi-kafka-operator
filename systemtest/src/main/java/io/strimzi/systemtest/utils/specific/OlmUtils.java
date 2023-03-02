@@ -13,8 +13,8 @@ public class OlmUtils {
 
     private OlmUtils() {}
 
-    public static void waitUntilNonUsedInstallPlanIsPresent(String namespaceName, String currentVersion) {
-        TestUtils.waitFor("install plan is present in version:" + currentVersion + ".", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
+    public static void waitUntilNonUsedInstallPlanIsPresent(String namespaceName) {
+        TestUtils.waitFor("Wait for non used install plan to be present", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
             () -> kubeClient().getNonApprovedInstallPlan(namespaceName) != null);
     }
 }

@@ -245,19 +245,24 @@ public class SetupClusterOperator {
         return this;
     }
 
-    public SetupClusterOperator runManualOlmInstallation(final String fromVersion, final String channelName) {
+    public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName) {
         if (isClusterOperatorNamespaceNotCreated()) {
             cluster.setNamespace(namespaceInstallTo);
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         }
 
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(Arrays.asList("get", "packagemanifests", Environment.OLM_OPERATOR_NAME, "-o", "jsonpath='{.status.channels[?(@.name==\"" + fromOlmChannelName + "\")].currentCSV}'"));
+
+        String latestVersion = KubeClusterResource.cmdKubeClient(Environment.OLM_SOURCE_NAMESPACE).exec(cmd).out().replace("'\n", "").split("v")[1];
+
         OlmConfiguration olmConfiguration = new OlmConfigurationBuilder()
             .withNamespaceName(this.namespaceInstallTo)
             .withExtensionContext(extensionContext)
             .withOlmInstallationStrategy(OlmInstallationStrategy.Manual)
-            .withOperatorVersion(fromVersion)
-            .withChannelName(channelName)
+            .withChannelName(fromOlmChannelName)
+            .withOperatorVersion(latestVersion)
             .withEnvVars(extraEnvVars)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval)

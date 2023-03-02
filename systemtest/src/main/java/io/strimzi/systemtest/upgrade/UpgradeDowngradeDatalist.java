@@ -50,6 +50,10 @@ public class UpgradeDowngradeDatalist {
         return upgradeData.get(index);
     }
 
+    public UpgradeDowngradeData getLatestUpgradeData() {
+        return upgradeData.get(upgradeData.size() - 1);
+    }
+
     public int getUpgradeDataSize() {
         return upgradeData.size();
     }
