@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
@@ -132,7 +133,7 @@ public class EntityTopicOperator extends AbstractModel {
             result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
             result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
             result.logging = topicOperatorSpec.getLogging();
-            result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
+            result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
             result.resources = topicOperatorSpec.getResources();
             if (topicOperatorSpec.getStartupProbe() != null) {

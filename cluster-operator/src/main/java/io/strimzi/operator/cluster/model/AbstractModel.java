@@ -41,7 +41,6 @@ public abstract class AbstractModel {
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractModel.class.getName());
 
     protected static final String DEFAULT_JVM_XMS = "128M";
-    protected static final boolean DEFAULT_JVM_GC_LOGGING_ENABLED = false;
 
     /**
      * Init container related configuration

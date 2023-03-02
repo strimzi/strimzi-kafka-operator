@@ -26,12 +26,18 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode
 public class JvmOptions implements UnknownPropertyPreserving, Serializable {
-
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Configures the default value for the GC logging configuration. This is used in the model classes when the
+     * jvmOptions section is not set at all. Storing it here ensures that the default value is the same when jvmOptions
+     * is null as well as when jvmOptions are set but without specific gcLoggingEnabled value being set.
+     */
+    public static final boolean DEFAULT_GC_LOGGING_ENABLED = false;
 
     private String xmx;
     private String xms;
-    private boolean gcLoggingEnabled = false;
+    private boolean gcLoggingEnabled = DEFAULT_GC_LOGGING_ENABLED;
     private List<SystemProperty> javaSystemProperties;
     private Map<String, String> xx;
     private Map<String, Object> additionalProperties = new HashMap<>(0);

@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -211,7 +212,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
         }
 
         zk.logging = zookeeperClusterSpec.getLogging();
-        zk.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
+        zk.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
 
         // Parse different types of metrics configurations
         ModelUtils.parseMetrics(zk, zookeeperClusterSpec);

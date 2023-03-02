@@ -41,6 +41,7 @@ import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
@@ -339,7 +340,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         result.initImage = initImage;
 
         result.logging = kafkaClusterSpec.getLogging();
-        result.gcLoggingEnabled = kafkaClusterSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled();
+        result.gcLoggingEnabled = kafkaClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled();
         result.jvmOptions = kafkaClusterSpec.getJvmOptions();
 
         result.jmx = new JmxModel(

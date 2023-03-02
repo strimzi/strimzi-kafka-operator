@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ClientTls;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeAdminClientSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeConsumerSpec;
@@ -188,7 +189,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         kafkaBridgeCluster.tracing = spec.getTracing();
         kafkaBridgeCluster.resources = spec.getResources();
         kafkaBridgeCluster.logging = spec.getLogging();
-        kafkaBridgeCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+        kafkaBridgeCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
         kafkaBridgeCluster.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
         if (image == null) {
