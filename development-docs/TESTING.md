@@ -417,7 +417,7 @@ Pass additional parameters to `mvn` by populating the `EXTRA_ARGS` env var.
 
 Use the `verify` build goal and provide `-Dit.test=TestClassName[#testMethodName]` system property.
 
-    mvn verify -pl systemtest -Dit.test=KafkaST#testCustomAndUpdatedValues
+    mvn verify -pl systemtest -DskipTests=false -Dit.test=KafkaST#testCustomAndUpdatedValues
 
 ## Skip Teardown
 
