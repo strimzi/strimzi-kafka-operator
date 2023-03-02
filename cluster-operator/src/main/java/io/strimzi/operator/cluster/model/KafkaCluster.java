@@ -118,7 +118,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     // This helps Istio to avoid using a wildcard listener and instead present IP:PORT pairs which effects
     // proper listener, routing and metrics configuration sent to Envoy
     /**
-     * Port number used for replicastion
+     * Port number used for replication
      */
     public static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "tcp-replication";
@@ -225,15 +225,11 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     private InternalServiceTemplate templateService;
     private ResourceTemplate templateExternalBootstrapService;
     private ResourceTemplate templatePerBrokerService;
+    private ResourceTemplate templatePerBrokerRoute;
+    private ResourceTemplate templateBootstrapRoute;
+    private ResourceTemplate templateBootstrapIngress;
+    private ResourceTemplate templatePerBrokerIngress;
     private ContainerTemplate templateInitContainer;
-    protected Map<String, String> templateExternalBootstrapRouteLabels;
-    protected Map<String, String> templateExternalBootstrapRouteAnnotations;
-    protected Map<String, String> templatePerPodRouteLabels;
-    protected Map<String, String> templatePerPodRouteAnnotations;
-    protected Map<String, String> templateExternalBootstrapIngressLabels;
-    protected Map<String, String> templateExternalBootstrapIngressAnnotations;
-    protected Map<String, String> templatePerPodIngressLabels;
-    protected Map<String, String> templatePerPodIngressAnnotations;
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
@@ -419,26 +415,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         if (kafkaClusterSpec.getTemplate() != null) {
             KafkaClusterTemplate template = kafkaClusterSpec.getTemplate();
 
-            if (template.getExternalBootstrapRoute() != null && template.getExternalBootstrapRoute().getMetadata() != null) {
-                result.templateExternalBootstrapRouteLabels = template.getExternalBootstrapRoute().getMetadata().getLabels();
-                result.templateExternalBootstrapRouteAnnotations = template.getExternalBootstrapRoute().getMetadata().getAnnotations();
-            }
-
-            if (template.getPerPodRoute() != null && template.getPerPodRoute().getMetadata() != null) {
-                result.templatePerPodRouteLabels = template.getPerPodRoute().getMetadata().getLabels();
-                result.templatePerPodRouteAnnotations = template.getPerPodRoute().getMetadata().getAnnotations();
-            }
-
-            if (template.getExternalBootstrapIngress() != null && template.getExternalBootstrapIngress().getMetadata() != null) {
-                result.templateExternalBootstrapIngressLabels = template.getExternalBootstrapIngress().getMetadata().getLabels();
-                result.templateExternalBootstrapIngressAnnotations = template.getExternalBootstrapIngress().getMetadata().getAnnotations();
-            }
-
-            if (template.getPerPodIngress() != null && template.getPerPodIngress().getMetadata() != null) {
-                result.templatePerPodIngressLabels = template.getPerPodIngress().getMetadata().getLabels();
-                result.templatePerPodIngressAnnotations = template.getPerPodIngress().getMetadata().getAnnotations();
-            }
-
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
@@ -449,6 +425,10 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             result.templateHeadlessService = template.getBrokersService();
             result.templateExternalBootstrapService = template.getExternalBootstrapService();
             result.templatePerBrokerService = template.getPerPodService();
+            result.templateBootstrapRoute = template.getExternalBootstrapRoute();
+            result.templatePerBrokerRoute = template.getPerPodRoute();
+            result.templateBootstrapIngress = template.getExternalBootstrapIngress();
+            result.templatePerBrokerIngress = template.getPerPodIngress();
             result.templateServiceAccount = template.getServiceAccount();
             result.templateContainer = template.getKafkaContainer();
             result.templateInitContainer = template.getInitContainer();
@@ -848,8 +828,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(routeName)
-                        .withLabels(Util.mergeLabelsOrAnnotations(labels.withAdditionalLabels(templateExternalBootstrapRouteLabels).toMap(), ListenersUtils.bootstrapLabels(listener)))
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(templateExternalBootstrapRouteAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
+                        .withLabels(Util.mergeLabelsOrAnnotations(labels.withAdditionalLabels(TemplateUtils.labels(templateBootstrapRoute)).toMap(), ListenersUtils.bootstrapLabels(listener)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(templateBootstrapRoute), ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(ownerReference)
                     .endMetadata()
@@ -893,8 +873,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             Route route = new RouteBuilder()
                     .withNewMetadata()
                         .withName(routeName)
-                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodRouteLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(templatePerPodRouteAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(ownerReference)
                     .endMetadata()
@@ -966,8 +946,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templateBootstrapIngress), ListenersUtils.bootstrapLabels(listener))).toMap())
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(templateBootstrapIngress), ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(ownerReference)
                     .endMetadata()
@@ -1026,8 +1006,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             Ingress ingress = new IngressBuilder()
                     .withNewMetadata()
                         .withName(ingressName)
-                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
+                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, pod))).toMap())
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(ownerReference)
                     .endMetadata()
@@ -1319,13 +1299,11 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             }
         }
 
-        if (authorization instanceof KafkaAuthorizationOpa) {
-            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
+        if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
             volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-opa", opaAuthz.getTlsTrustedCertificates(), isOpenShift));
         }
 
-        if (authorization instanceof KafkaAuthorizationKeycloak) {
-            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+        if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
             volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), isOpenShift));
         }
 
@@ -1377,9 +1355,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>();
-
-        volumeMountList.addAll(VolumeUtils.createVolumeMounts(storage, mountPath, false));
+        List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, mountPath, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
@@ -1411,13 +1387,11 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             }
         }
 
-        if (authorization instanceof KafkaAuthorizationOpa) {
-            KafkaAuthorizationOpa opaAuthz = (KafkaAuthorizationOpa) authorization;
+        if (authorization instanceof KafkaAuthorizationOpa opaAuthz) {
             volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-opa", opaAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-opa-certs"));
         }
 
-        if (authorization instanceof KafkaAuthorizationKeycloak) {
-            KafkaAuthorizationKeycloak keycloakAuthz = (KafkaAuthorizationKeycloak) authorization;
+        if (authorization instanceof KafkaAuthorizationKeycloak keycloakAuthz) {
             volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("authz-keycloak", keycloakAuthz.getTlsTrustedCertificates(), TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/authz-keycloak-certs"));
         }
 
@@ -1658,15 +1632,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
      */
     public List<GenericKafkaListener> getListeners() {
         return listeners;
-    }
-
-    /**
-     * Returns true when the Kafka cluster is exposed to the outside of OpenShift / Kubernetes.
-     *
-     * @return true when the Kafka cluster is exposed.
-     */
-    public boolean isExposed() {
-        return ListenersUtils.hasExternalListener(listeners);
     }
 
     /**
