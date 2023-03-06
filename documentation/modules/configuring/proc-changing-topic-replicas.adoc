@@ -113,8 +113,16 @@ bin/kafka-reassign-partitions.sh --bootstrap-server
 +
 The reassignment has finished when the `--verify` command reports that each of the partitions being moved has completed successfully.
 This final `--verify` will also have the effect of removing any reassignment throttles.
+
+. Run the `bin/kafka-topics.sh` command with the `--describe` option to see the results of the change to the topics.
 +
-The topics should now show the reduced number of replicas. 
+[source,shell,subs=+quotes]
+----
+bin/kafka-topics.sh --bootstrap-server
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
+  --describe
+----
 +
 .Results of reducing the number of replicas for a topic
 [source,shell]

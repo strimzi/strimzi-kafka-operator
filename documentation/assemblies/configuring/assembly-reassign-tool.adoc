@@ -19,6 +19,7 @@ Cruise Control can move topics from one broker to another without any downtime, 
 NOTE: It is recommended to run the `kafka-reassign-partitions.sh` tool as a separate interactive pod rather than within the broker container.
 Running the Kafka `bin/` scripts within the broker container may cause a JVM to start with the same settings as the Kafka broker, which can potentially cause disruptions.
 By running the `kafka-reassign-partitions.sh` tool in a separate pod, you can avoid this issue.
+Running a pod with the `-ti` option creates an interactive pod with a terminal for running shell commands inside the pod.
 
 include::../../modules/configuring/con-partition-reassignment.adoc[leveloffset=+1]
 
