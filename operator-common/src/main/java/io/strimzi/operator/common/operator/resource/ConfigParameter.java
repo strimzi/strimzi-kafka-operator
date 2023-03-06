@@ -27,12 +27,23 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
      * Contructor
      * @param key           Configuration parameter name/key
      * @param type          Type of the default value
-     * @param defaultValue  Default value of the configuration parameter
-     * @param required      If the value is required or not
      * @param map           Configuration map
      */
-    public ConfigParameter {
-        map.put(key, this);
+    public ConfigParameter(String key, ConfigParameterParser<T> type, Map<String, ConfigParameter<?>> map) {
+        this(key, type, null, true, map);
+        map.put(key(), this);
+    }
+
+    /**
+     * Contructor
+     * @param key           Configuration parameter name/key
+     * @param type          Type of the default value
+     * @param defaultValue  Default value of the configuration parameter
+     * @param map           Configuration map
+     */
+    public ConfigParameter(String key, ConfigParameterParser<T> type, String defaultValue, Map<String, ConfigParameter<?>> map) {
+        this(key, type, defaultValue, false, map);
+        map.put(key(), this);
     }
 
     /**
@@ -46,7 +57,7 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
         Map<String, Object> generatedMap = new HashMap<>(envVarMap.size());
         for (Map.Entry<String, String> entry : envVarMap.entrySet()) {
             final ConfigParameter<?> configValue = configParameterMap.get(entry.getKey());
-            if (configValue == null || !configParameterMap.containsKey(configValue.key())) {
+            if (configValue == null) {
                 throw new InvalidConfigurationException("Unknown or null config value.");
             }
             generatedMap.put(configValue.key(), get(envVarMap, configValue));

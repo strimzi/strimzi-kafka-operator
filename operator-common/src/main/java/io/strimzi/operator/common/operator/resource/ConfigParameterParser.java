@@ -96,13 +96,29 @@ public interface ConfigParameterParser<T> {
     };
 
     /**
+     * Strictly Positive Number
+     * @param parser ConfigParameterParser object
+     * @param <T>    Type of parameter
+     * @return Positive number
+     */
+    static <T extends Number> ConfigParameterParser<T> strictlyPositive(ConfigParameterParser<T> parser) {
+        return s -> {
+            var value = parser.parse(s);
+            if (value.longValue() <= 0) {
+                throw new InvalidConfigurationException("Failed to parse. Negative value is not supported for this configuration");
+            }
+            return value;
+        };
+    }
+
+    /**
      * A Java Boolean
      */
     ConfigParameterParser<Boolean> BOOLEAN = s -> {
-        try {
+        if (s.equals("true") || s.equals("false")) {
             return Boolean.parseBoolean(s);
-        } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+        } else {
+            throw new InvalidConfigurationException("Failed to parse. Value is not valid");
         }
     };
 

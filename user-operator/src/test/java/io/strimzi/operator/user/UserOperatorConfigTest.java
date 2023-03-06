@@ -44,7 +44,9 @@ public class UserOperatorConfigTest {
 
     @Test
     public void testFromMap()    {
-        UserOperatorConfig config = UserOperatorConfig.buildFromMap(ENV_VARS);
+        Map<String, String> m = new HashMap<>(ENV_VARS);
+        m.keySet().retainAll(UserOperatorConfig.keyNames());
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(m);
 
         assertThat(config.getNamespace(), is(ENV_VARS.get(UserOperatorConfig.NAMESPACE.key())));
         assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(ENV_VARS.get(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key()))));
