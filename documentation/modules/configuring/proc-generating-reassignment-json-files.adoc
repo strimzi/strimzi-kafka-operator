@@ -64,7 +64,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   partitions: 10
-  replicas: 4
+  replicas: 3
   config:
     retention.ms: 7200000
     segment.bytes: 1073741824
@@ -218,7 +218,7 @@ Replace _<namespace>_ with the Kubernetes namespace where the pod is running.
 
 . Use the `kafka-reassign-partitions.sh` command to generate the reassignment JSON.
 +
-.Example command to move all the partitions of `my-topic` to brokers `0`, `1` and `2`
+.Example command to move the partitions of `my-topic` to specified brokers
 [source,shell,subs=+quotes]
 ----
 bin/kafka-reassign-partitions.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 \
