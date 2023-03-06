@@ -38,6 +38,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private String tokenEndpointUri;
     private Integer connectTimeoutSeconds;
     private Integer readTimeoutSeconds;
+    private Integer httpRetries;
+    private Integer httpRetryPauseMillis;
     private GenericSecretSource clientSecret;
     private PasswordSecretSource passwordSecret;
     private GenericSecretSource accessToken;
@@ -115,6 +117,26 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
         this.readTimeoutSeconds = readTimeoutSeconds;
+    }
+
+    @Description("The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getHttpRetries() {
+        return httpRetries;
+    }
+
+    public void setHttpRetries(Integer httpRetries) {
+        this.httpRetries = httpRetries;
+    }
+
+    @Description("The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getHttpRetryPauseMillis() {
+        return httpRetryPauseMillis;
+    }
+
+    public void setHttpRetryPauseMillis(Integer httpRetryPauseMillis) {
+        this.httpRetryPauseMillis = httpRetryPauseMillis;
     }
 
     @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate "

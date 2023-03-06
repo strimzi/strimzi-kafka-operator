@@ -163,6 +163,12 @@ spec:
                               groupsClaimDelimiter:
                                 type: string
                                 description: "A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma)."
+                              httpRetries:
+                                type: integer
+                                description: "The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries."
+                              httpRetryPauseMillis:
+                                type: integer
+                                description: "The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request."
                               introspectionEndpointUri:
                                 type: string
                                 description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.

@@ -1819,6 +1819,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withCustomClaimCheck("@.aud && @.aud == 'something'")
                 .withConnectTimeoutSeconds(30)
                 .withReadTimeoutSeconds(60)
+                .withHttpRetries(2)
+                .withHttpRetryPauseMillis(500)
                 .withClientAudience("kafka")
                 .withClientScope("messaging")
                 .withEnableMetrics(true)
@@ -1849,6 +1851,8 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, 30));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, 60));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_HTTP_RETRIES, 2));
+        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, 500));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
         expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FAIL_FAST, false));
 

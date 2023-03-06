@@ -571,6 +571,12 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
         }
+        if (oauth.getHttpRetries() != null && oauth.getHttpRetries() > 0) {
+            addOption(options, ServerConfig.OAUTH_HTTP_RETRIES, String.valueOf(oauth.getHttpRetries()));
+        }
+        if (oauth.getHttpRetryPauseMillis() != null && oauth.getHttpRetryPauseMillis() > 0) {
+            addOption(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMillis()));
+        }
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
