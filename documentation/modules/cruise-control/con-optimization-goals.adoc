@@ -134,7 +134,7 @@ You configure main optimization goals, if necessary, in the Cruise Control deplo
 
 * If you need to modify the inherited main optimization goals, specify a list of goals, in descending priority order, in the `goals` configuration option.
 
-NOTE: If you change the inherited main optimization goals, you must ensure that the hard goals, if configured in the `hard.goals` property in `Kafka.spec.cruiseControl.config`, are a subset of the main optimization goals that you configured. Otherwise, errors will occur when generating optimization proposals.
+NOTE: If you change the inherited main optimization goals or default goals, you must ensure that the hard goals, if configured in the `hard.goals` property in `Kafka.spec.cruiseControl.config`, are a subset of the main optimization goals and default goals that you configured. Otherwise, errors will occur when generating optimization proposals.
 
 [[default-goals]]
 == Default optimization goals
