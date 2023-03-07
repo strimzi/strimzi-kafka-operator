@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// configuring/assembly-scaling-clusters.adoc
+// configuring/assembly-reassign-tool.adoc
 
 [id='proc-generating-reassignment-json-files-{context}']
 = Generating a reassignment JSON file to reassign partitions
@@ -190,17 +190,18 @@ kubectl cp config.properties _<interactive_pod_name>_:/tmp/config.properties
 --
 Specify topic names as a comma-separated list.
 
-.Example JSON file to reassign all the partitions of `topic-a` and `topic-b`
+.Example JSON file to reassign all the partitions of `my-topic`
 [source,json]
 ----
 {
   "version": 1,
   "topics": [
-    { "topic": "topic-a"},
-    { "topic": "topic-b"}
+    { "topic": "my-topic"}
   ]
 }
 ----
+
+You can also use this file to xref:proc-changing-topic-replicas-{context}[change the replication factor of a topic]. 
 --
 
 . Copy the `_topics.json_` file to the interactive pod container.
@@ -217,13 +218,13 @@ Replace _<namespace>_ with the Kubernetes namespace where the pod is running.
 
 . Use the `kafka-reassign-partitions.sh` command to generate the reassignment JSON.
 +
-.Example command to move all the partitions of `topic-a` and `topic-b` to brokers `0`, `1` and `2`
+.Example command to move the partitions of `my-topic` to specified brokers
 [source,shell,subs=+quotes]
 ----
 bin/kafka-reassign-partitions.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 \
   --command-config /tmp/config.properties \
   --topics-to-move-json-file /tmp/topics.json \
-  --broker-list 0,1,2 \
+  --broker-list 0,1,2,3,4 \
   --generate
 ----
 

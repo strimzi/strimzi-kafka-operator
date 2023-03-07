@@ -1,0 +1,133 @@
+// Module included in the following assemblies:
+//
+// configuring/assembly-reassign-tool.adoc
+
+[id='proc-changing-topic-replicas-{context}']
+
+= Changing the replication factor of topics
+
+[role="_abstract"]
+To change the replication factor of topics in a Kafka cluster, use the `kafka-reassign-partitions.sh` tool. 
+This can be done by running the tool from an interactive pod container that is connected to the Kafka cluster, 
+and using a reassignment file to describe how the topic replicas should be changed.
+
+This procedure describes a secure process that uses TLS.
+You'll need a Kafka cluster that uses TLS encryption and mTLS authentication.
+
+.Prerequisites
+
+* You have a running Kafka cluster based on a `Kafka` resource configured with internal TLS encryption and mTLS authentication.
+* You are running an interactive pod container that is connected to the running Kafka broker.
+* You have generated a reassignment JSON file named `reassignment.json`.
+* You are connected as a `KafkaUser` configured with ACL rules that specify permission to manage the Kafka cluster and its topics.
+
+See xref:proc-generating-reassignment-json-files-{context}[Generating reassignment JSON files].
+
+In this procedure, a topic called `my-topic` has 4 replicas and we want to reduce it to 3. 
+A JSON file named `topics.json` specifies the topic, and was used to generate the `reassignment.json` file.
+
+.Example JSON file specifies `my-topic` 
+[source,json]
+----
+{
+  "version": 1,
+  "topics": [
+    { "topic": "my-topic"}
+  ]
+}
+----
+
+.Procedure
+
+. If you haven't done so, xref:proc-generating-reassignment-json-files-{context}[run an interactive pod container to generate a reassignment JSON file] named `reassignment.json`.
++
+.Example reassignment JSON file showing the current and proposed replica assignment
+[source,shell,subs=+quotes]
+----
+Current partition replica assignment
+{"version":1,"partitions":[{"topic":"my-topic","partition":0,"replicas":[3,4,2,0],"log_dirs":["any","any","any","any"]},{"topic":"my-topic","partition":1,"replicas":[0,2,3,1],"log_dirs":["any","any","any","any"]},{"topic":"my-topic","partition":2,"replicas":[1,3,0,4],"log_dirs":["any","any","any","any"]}]}
+
+Proposed partition reassignment configuration
+{"version":1,"partitions":[{"topic":"my-topic","partition":0,"replicas":[0,1,2,3],"log_dirs":["any","any","any","any"]},{"topic":"my-topic","partition":1,"replicas":[1,2,3,4],"log_dirs":["any","any","any","any"]},{"topic":"my-topic","partition":2,"replicas":[2,3,4,0],"log_dirs":["any","any","any","any"]}]}
+----
++
+Save a copy of this file locally in case you need to revert the changes later on.
+
+. Edit the `reassignment.json` to remove a replica from each partition.
++
+For example use `jq` to remove the last replica in the list for each partition of the topic:
++
+.Removing the last topic replica for each partition
+[source,shell,subs=+quotes]
+----
+jq '.partitions[].replicas |= del(.[-1])' reassignment.json > reassignment.json
+----
++
+.Example reassignment file showing the updated replicas
+[source,shell,subs=+quotes]
+----
+{"version":1,"partitions":[{"topic":"my-topic","partition":0,"replicas":[0,1,2],"log_dirs":["any","any","any","any"]},{"topic":"my-topic","partition":1,"replicas":[1,2,3],"log_dirs":["any","any","any","any"]},{"topic":"my-topic","partition":2,"replicas":[2,3,4],"log_dirs":["any","any","any","any"]}]}
+----
+
+. Copy the `reassignment.json` file to the interactive pod container.
++
+[source,shell,subs=+quotes]
+----
+kubectl cp reassignment.json _<interactive_pod_name>_:/tmp/reassignment.json
+----
++
+Replace _<interactive_pod_name>_ with the name of the pod.
+
+. Start a shell process in the interactive pod container.
++
+[source,shell,subs=+quotes]
+kubectl exec -n _<namespace>_ -ti _<interactive_pod_name>_ /bin/bash
++
+Replace _<namespace>_ with the Kubernetes namespace where the pod is running.
+
+. Make the topic replica change using the `kafka-reassign-partitions.sh` script from the interactive pod container.
++
+[source,shell,subs=+quotes]
+----
+bin/kafka-reassign-partitions.sh --bootstrap-server
+ _<cluster_name>_-kafka-bootstrap:9093 \
+ --command-config /tmp/config.properties \
+ --reassignment-json-file /tmp/reassignment.json \
+ --execute
+----
++
+NOTE: Removing replicas from a broker does not require any inter-broker data movement, so there is no need to throttle replication.
+If you are adding replicas, then you may want to change the throttle rate. 
+
+. Verify that the change to the topic replicas has completed using the `kafka-reassign-partitions.sh` command line tool from any of the broker pods.
+This is the same command as the previous step, but with the `--verify` option instead of the `--execute` option.
++
+[source,shell,subs=+quotes]
+----
+bin/kafka-reassign-partitions.sh --bootstrap-server
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
+  --reassignment-json-file /tmp/reassignment.json \
+  --verify
+----
++
+The reassignment has finished when the `--verify` command reports that each of the partitions being moved has completed successfully.
+This final `--verify` will also have the effect of removing any reassignment throttles.
+
+. Run the `bin/kafka-topics.sh` command with the `--describe` option to see the results of the change to the topics.
++
+[source,shell,subs=+quotes]
+----
+bin/kafka-topics.sh --bootstrap-server
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
+  --describe
+----
++
+.Results of reducing the number of replicas for a topic
+[source,shell]
+----
+my-topic  Partition: 0  Leader: 0  Replicas: 0,1,2 Isr: 0,1,2
+my-topic  Partition: 1  Leader: 2  Replicas: 1,2,3 Isr: 1,2,3
+my-topic  Partition: 2  Leader: 3  Replicas: 2,3,4 Isr: 2,3,4
+----
