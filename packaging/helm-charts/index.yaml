@@ -2,6 +2,20 @@ apiVersion: v1
 entries:
   strimzi-drain-cleaner:
   - apiVersion: v2
+    appVersion: 0.4.2
+    created: "2023-03-07T22:29:25.58052+01:00"
+    description: Utility which helps with moving the Apache Kafka pods deployed by
+      Strimzi from Kubernetes nodes which are being drained.
+    digest: 5a908d4eb78e359a7eff48568f7ae45ef93302270b9fcef6ff999b5cd5d42619
+    home: https://strimzi.io/
+    name: strimzi-drain-cleaner
+    sources:
+    - https://github.com/strimzi/drain-cleaner
+    type: application
+    urls:
+    - https://github.com/strimzi/drain-cleaner/releases/download/0.4.2/strimzi-drain-cleaner-helm-3-chart-0.4.2.tgz
+    version: 0.4.2
+  - apiVersion: v2
     appVersion: 0.4.1
     created: "2023-02-07T21:19:38.627334+01:00"
     description: Utility which helps with moving the Apache Kafka pods deployed by
@@ -1246,4 +1260,4 @@ entries:
     urls:
     - https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.6.0/strimzi-kafka-operator-0.6.0.tgz
     version: 0.6.0
-generated: "2023-02-15T22:21:41.576029+01:00"
+generated: "2023-03-07T22:29:25.580043+01:00"
