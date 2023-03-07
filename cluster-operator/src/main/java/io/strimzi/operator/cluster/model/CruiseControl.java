@@ -187,58 +187,58 @@ public class CruiseControl extends AbstractModel {
         KafkaClusterSpec kafkaClusterSpec = kafkaCr.getSpec().getKafka();
 
         if (ccSpec != null) {
-            CruiseControl cruiseControl = new CruiseControl(reconciliation, kafkaCr);
+            CruiseControl result = new CruiseControl(reconciliation, kafkaCr);
 
-            cruiseControl.replicas = DEFAULT_REPLICAS;
+            result.replicas = DEFAULT_REPLICAS;
 
             String image = ccSpec.getImage();
             if (image == null) {
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
-            cruiseControl.image = image;
+            result.image = image;
 
-            cruiseControl.updateConfiguration(ccSpec);
-            CruiseControlConfiguration ccConfiguration = (CruiseControlConfiguration) cruiseControl.getConfiguration();
-            cruiseControl.sslEnabled = ccConfiguration.isApiSslEnabled();
-            cruiseControl.authEnabled = ccConfiguration.isApiAuthEnabled();
+            result.updateConfiguration(ccSpec);
+            CruiseControlConfiguration ccConfiguration = (CruiseControlConfiguration) result.getConfiguration();
+            result.sslEnabled = ccConfiguration.isApiSslEnabled();
+            result.authEnabled = ccConfiguration.isApiAuthEnabled();
 
             KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
-                cruiseControl.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
+                result.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
             }
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
-            cruiseControl.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), storage);
+            result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), storage);
 
             // Parse different types of metrics configurations
-            ModelUtils.parseMetrics(cruiseControl, ccSpec);
+            ModelUtils.parseMetrics(result, ccSpec);
 
             if (ccSpec.getReadinessProbe() != null) {
-                cruiseControl.readinessProbeOptions = ccSpec.getReadinessProbe();
+                result.readinessProbeOptions = ccSpec.getReadinessProbe();
             }
 
             if (ccSpec.getLivenessProbe() != null) {
-                cruiseControl.livenessProbeOptions = ccSpec.getLivenessProbe();
+                result.livenessProbeOptions = ccSpec.getLivenessProbe();
             }
 
-            cruiseControl.logging = ccSpec.getLogging();
+            result.logging = ccSpec.getLogging();
 
-            cruiseControl.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
-            cruiseControl.jvmOptions = ccSpec.getJvmOptions();
-            cruiseControl.resources = ccSpec.getResources();
+            result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
+            result.jvmOptions = ccSpec.getJvmOptions();
+            result.resources = ccSpec.getResources();
 
             if (ccSpec.getTemplate() != null) {
                 CruiseControlTemplate template = ccSpec.getTemplate();
 
-                cruiseControl.templateDeployment = template.getDeployment();
-                cruiseControl.templatePod = template.getPod();
-                cruiseControl.templateService = template.getApiService();
-                cruiseControl.templateServiceAccount = template.getServiceAccount();
-                cruiseControl.templateContainer = template.getCruiseControlContainer();
+                result.templateDeployment = template.getDeployment();
+                result.templatePod = template.getPod();
+                result.templateService = template.getApiService();
+                result.templateServiceAccount = template.getServiceAccount();
+                result.templateContainer = template.getCruiseControlContainer();
             }
 
-            return cruiseControl;
+            return result;
         } else {
             return null;
         }

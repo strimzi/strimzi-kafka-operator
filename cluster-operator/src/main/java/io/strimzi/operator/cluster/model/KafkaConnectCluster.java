@@ -211,7 +211,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
      * @param reconciliation    Reconciliation marker
      * @param spec              Spec section of the Kafka Connect resource
      * @param versions          Supported Kafka versions
-     * @param kafkaConnect      Kafka Connect resource
+     * @param result            Kafka Connect resource which will be returned as the result
      *
      * @param <C>   Type of the Kafka Connect cluster
      */
@@ -219,98 +219,98 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
-                                                                C kafkaConnect) {
-        kafkaConnect.replicas = spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS;
-        kafkaConnect.tracing = spec.getTracing();
+                                                                C result) {
+        result.replicas = spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS;
+        result.tracing = spec.getTracing();
 
-        AbstractConfiguration config = kafkaConnect.getConfiguration();
+        AbstractConfiguration config = result.getConfiguration();
         if (config == null) {
             config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
-            kafkaConnect.setConfiguration(config);
+            result.setConfiguration(config);
         }
-        if (kafkaConnect.tracing != null)   {
-            if (JaegerTracing.TYPE_JAEGER.equals(kafkaConnect.tracing.getType())) {
+        if (result.tracing != null)   {
+            if (JaegerTracing.TYPE_JAEGER.equals(result.tracing.getType())) {
                 config.setConfigOption("consumer.interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
                 config.setConfigOption("producer.interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(kafkaConnect.tracing.getType())) {
+            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(result.tracing.getType())) {
                 config.setConfigOption("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
                 config.setConfigOption("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
             }
         }
 
-        if (kafkaConnect.getImage() == null) {
-            kafkaConnect.image = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
+        if (result.getImage() == null) {
+            result.image = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
         }
 
-        kafkaConnect.resources = spec.getResources();
-        kafkaConnect.logging = spec.getLogging();
-        kafkaConnect.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+        result.resources = spec.getResources();
+        result.logging = spec.getLogging();
+        result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
 
-        kafkaConnect.jvmOptions = spec.getJvmOptions();
+        result.jvmOptions = spec.getJvmOptions();
 
-        kafkaConnect.jmx = new JmxModel(
+        result.jmx = new JmxModel(
                 reconciliation.namespace(),
-                KafkaConnectResources.jmxSecretName(kafkaConnect.cluster),
-                kafkaConnect.labels,
-                kafkaConnect.ownerReference,
+                KafkaConnectResources.jmxSecretName(result.cluster),
+                result.labels,
+                result.ownerReference,
                 spec
         );
 
         if (spec.getReadinessProbe() != null) {
-            kafkaConnect.readinessProbeOptions = spec.getReadinessProbe();
+            result.readinessProbeOptions = spec.getReadinessProbe();
         }
         if (spec.getLivenessProbe() != null) {
-            kafkaConnect.livenessProbeOptions = spec.getLivenessProbe();
+            result.livenessProbeOptions = spec.getLivenessProbe();
         }
 
-        kafkaConnect.setRack(spec.getRack());
+        result.setRack(spec.getRack());
 
         String initImage = spec.getClientRackInitImage();
         if (initImage == null) {
             initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
-        kafkaConnect.setInitImage(initImage);
+        result.setInitImage(initImage);
 
         // Parse different types of metrics configurations
-        ModelUtils.parseMetrics(kafkaConnect, spec);
+        ModelUtils.parseMetrics(result, spec);
 
-        kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
+        result.setBootstrapServers(spec.getBootstrapServers());
 
-        kafkaConnect.setTls(spec.getTls());
+        result.setTls(spec.getTls());
         String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
         if (!warnMsg.isEmpty()) {
             LOGGER.warnCr(reconciliation, warnMsg);
         }
-        kafkaConnect.setAuthentication(spec.getAuthentication());
+        result.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
 
-            kafkaConnect.templatePodDisruptionBudget = template.getPodDisruptionBudget();
-            kafkaConnect.templateInitClusterRoleBinding = template.getClusterRoleBinding();
-            kafkaConnect.templateDeployment = template.getDeployment();
-            kafkaConnect.templatePodSet = template.getPodSet();
-            kafkaConnect.templatePod = template.getPod();
-            kafkaConnect.templateService = template.getApiService();
-            kafkaConnect.templateHeadlessService = template.getHeadlessService();
-            kafkaConnect.templateServiceAccount = template.getServiceAccount();
-            kafkaConnect.templateContainer = template.getConnectContainer();
-            kafkaConnect.templateInitContainer = template.getInitContainer();
+            result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+            result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
+            result.templateDeployment = template.getDeployment();
+            result.templatePodSet = template.getPodSet();
+            result.templatePod = template.getPod();
+            result.templateService = template.getApiService();
+            result.templateHeadlessService = template.getHeadlessService();
+            result.templateServiceAccount = template.getServiceAccount();
+            result.templateContainer = template.getConnectContainer();
+            result.templateInitContainer = template.getInitContainer();
         }
 
         if (spec.getExternalConfiguration() != null)    {
             ExternalConfiguration externalConfiguration = spec.getExternalConfiguration();
 
             if (externalConfiguration.getEnv() != null && !externalConfiguration.getEnv().isEmpty())    {
-                kafkaConnect.externalEnvs = externalConfiguration.getEnv();
+                result.externalEnvs = externalConfiguration.getEnv();
             }
 
             if (externalConfiguration.getVolumes() != null && !externalConfiguration.getVolumes().isEmpty())    {
-                kafkaConnect.externalVolumes = externalConfiguration.getVolumes();
+                result.externalVolumes = externalConfiguration.getVolumes();
             }
         }
 
-        return kafkaConnect;
+        return result;
     }
 
     /**

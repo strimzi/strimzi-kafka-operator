@@ -182,7 +182,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
      */
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
+        ZookeeperCluster result = new ZookeeperCluster(reconciliation, kafkaAssembly);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
         int replicas = zookeeperClusterSpec.getReplicas();
@@ -192,7 +192,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
             LOGGER.warnCr(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
-        zk.replicas = replicas;
+        result.replicas = replicas;
 
         ModelUtils.validateComputeResources(zookeeperClusterSpec.getResources(), ".spec.zookeeper.resources");
 
@@ -202,20 +202,20 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
             image = versions.kafkaImage(kafkaClusterSpec != null ? kafkaClusterSpec.getImage() : null,
                     kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null);
         }
-        zk.image = image;
+        result.image = image;
 
         if (zookeeperClusterSpec.getReadinessProbe() != null) {
-            zk.readinessProbeOptions = zookeeperClusterSpec.getReadinessProbe();
+            result.readinessProbeOptions = zookeeperClusterSpec.getReadinessProbe();
         }
         if (zookeeperClusterSpec.getLivenessProbe() != null) {
-            zk.livenessProbeOptions = zookeeperClusterSpec.getLivenessProbe();
+            result.livenessProbeOptions = zookeeperClusterSpec.getLivenessProbe();
         }
 
-        zk.logging = zookeeperClusterSpec.getLogging();
-        zk.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
+        result.logging = zookeeperClusterSpec.getLogging();
+        result.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
 
         // Parse different types of metrics configurations
-        ModelUtils.parseMetrics(zk, zookeeperClusterSpec);
+        ModelUtils.parseMetrics(result, zookeeperClusterSpec);
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();
@@ -236,49 +236,49 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
                         "The desired ZooKeeper storage configuration contains changes which are not allowed. As a " +
                                 "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                                 "about the detected changes.");
-                zk.warningConditions.add(warning);
+                result.warningConditions.add(warning);
 
-                zk.setStorage(oldStorage);
+                result.setStorage(oldStorage);
             } else {
-                zk.setStorage(newStorage);
+                result.setStorage(newStorage);
             }
         } else {
-            zk.setStorage(zookeeperClusterSpec.getStorage());
+            result.setStorage(zookeeperClusterSpec.getStorage());
         }
 
-        zk.setConfiguration(new ZookeeperConfiguration(reconciliation, zookeeperClusterSpec.getConfig().entrySet()));
+        result.setConfiguration(new ZookeeperConfiguration(reconciliation, zookeeperClusterSpec.getConfig().entrySet()));
 
-        zk.resources = zookeeperClusterSpec.getResources();
+        result.resources = zookeeperClusterSpec.getResources();
 
-        zk.jvmOptions = zookeeperClusterSpec.getJvmOptions();
+        result.jvmOptions = zookeeperClusterSpec.getJvmOptions();
 
-        zk.jmx = new JmxModel(
+        result.jmx = new JmxModel(
                 reconciliation.namespace(),
-                KafkaResources.zookeeperJmxSecretName(zk.cluster),
-                zk.labels,
-                zk.ownerReference,
+                KafkaResources.zookeeperJmxSecretName(result.cluster),
+                result.labels,
+                result.ownerReference,
                 zookeeperClusterSpec
         );
 
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
-            zk.templatePodDisruptionBudget = template.getPodDisruptionBudget();
-            zk.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
-            zk.templateStatefulSet = template.getStatefulset();
-            zk.templatePodSet = template.getPodSet();
-            zk.templatePod = template.getPod();
-            zk.templateService = template.getClientService();
-            zk.templateHeadlessService = template.getNodesService();
-            zk.templateServiceAccount = template.getServiceAccount();
-            zk.templateContainer = template.getZookeeperContainer();
+            result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+            result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
+            result.templateStatefulSet = template.getStatefulset();
+            result.templatePodSet = template.getPodSet();
+            result.templatePod = template.getPod();
+            result.templateService = template.getClientService();
+            result.templateHeadlessService = template.getNodesService();
+            result.templateServiceAccount = template.getServiceAccount();
+            result.templateContainer = template.getZookeeperContainer();
         }
 
         // Should run at the end when everything is set
-        ZooKeeperSpecChecker specChecker = new ZooKeeperSpecChecker(zk);
-        zk.warningConditions.addAll(specChecker.run());
+        ZooKeeperSpecChecker specChecker = new ZooKeeperSpecChecker(result);
+        result.warningConditions.addAll(specChecker.run());
 
-        return zk;
+        return result;
     }
 
     /**
