@@ -26,7 +26,7 @@ import io.strimzi.test.container.StrimziKafkaCluster;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.errors.InvalidRequestException;
+import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -153,13 +153,13 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
                 .editOrNewSpec().addToConfig("min.insync.replicas", "x").endSpec().build();
         KafkaTopic replaced = operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
-        assertStatusNotReady(topicName, InvalidRequestException.class,
+        assertStatusNotReady(topicName, InvalidConfigurationException.class,
                 expectedMessage);
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
         Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
-        assertStatusNotReady(topicName, InvalidRequestException.class,
+        assertStatusNotReady(topicName, InvalidConfigurationException.class,
                 expectedMessage);
     }
 
@@ -203,7 +203,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     public void testKafkaTopicAddedWithInvalidConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-invalid-config",
                 singletonMap("message.format.version", "zebra"), 1,
-               "org.apache.kafka.common.errors.InvalidConfigurationException: Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
+               "org.apache.kafka.common.errors.InvalidConfigurationException: Invalid value zebra for configuration message.format.version: Version zebra is not a valid version");
     }
 
     @Test
