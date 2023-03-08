@@ -160,19 +160,19 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      */
     @SuppressWarnings("deprecation")
     public static KafkaMirrorMakerCluster fromCrd(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
-        KafkaMirrorMakerCluster kafkaMirrorMakerCluster = new KafkaMirrorMakerCluster(reconciliation, kafkaMirrorMaker);
+        KafkaMirrorMakerCluster result = new KafkaMirrorMakerCluster(reconciliation, kafkaMirrorMaker);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         if (spec != null) {
-            kafkaMirrorMakerCluster.replicas = spec.getReplicas();
-            kafkaMirrorMakerCluster.resources = spec.getResources();
+            result.replicas = spec.getReplicas();
+            result.resources = spec.getResources();
 
             if (spec.getReadinessProbe() != null) {
-                kafkaMirrorMakerCluster.readinessProbeOptions = spec.getReadinessProbe();
+                result.readinessProbeOptions = spec.getReadinessProbe();
             }
 
             if (spec.getLivenessProbe() != null) {
-                kafkaMirrorMakerCluster.livenessProbeOptions = spec.getLivenessProbe();
+                result.livenessProbeOptions = spec.getLivenessProbe();
             }
 
             String whitelist = spec.getWhitelist();
@@ -184,45 +184,45 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 LOGGER.warnCr(reconciliation, "Both include and whitelist fields are present. Whitelist is deprecated and will be ignored.");
             }
 
-            kafkaMirrorMakerCluster.include = include != null ? include : whitelist;
+            result.include = include != null ? include : whitelist;
 
             String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
             if (!warnMsg.isEmpty()) {
                 LOGGER.warnCr(reconciliation, warnMsg);
             }
 
-            kafkaMirrorMakerCluster.producer = spec.getProducer();
+            result.producer = spec.getProducer();
 
             warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
             if (!warnMsg.isEmpty()) {
                 LOGGER.warnCr(reconciliation, warnMsg);
             }
 
-            kafkaMirrorMakerCluster.consumer = spec.getConsumer();
+            result.consumer = spec.getConsumer();
 
-            kafkaMirrorMakerCluster.image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
+            result.image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
 
-            kafkaMirrorMakerCluster.logging = spec.getLogging();
-            kafkaMirrorMakerCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
-            kafkaMirrorMakerCluster.jvmOptions = spec.getJvmOptions();
+            result.logging = spec.getLogging();
+            result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+            result.jvmOptions = spec.getJvmOptions();
 
             // Parse different types of metrics configurations
-            ModelUtils.parseMetrics(kafkaMirrorMakerCluster, spec);
+            ModelUtils.parseMetrics(result, spec);
 
             if (spec.getTemplate() != null) {
                 KafkaMirrorMakerTemplate template = spec.getTemplate();
 
-                kafkaMirrorMakerCluster.templatePodDisruptionBudget = template.getPodDisruptionBudget();
-                kafkaMirrorMakerCluster.templateDeployment = template.getDeployment();
-                kafkaMirrorMakerCluster.templatePod = template.getPod();
-                kafkaMirrorMakerCluster.templateServiceAccount = template.getServiceAccount();
-                kafkaMirrorMakerCluster.templateContainer = template.getMirrorMakerContainer();
+                result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
+                result.templateDeployment = template.getDeployment();
+                result.templatePod = template.getPod();
+                result.templateServiceAccount = template.getServiceAccount();
+                result.templateContainer = template.getMirrorMakerContainer();
             }
 
-            kafkaMirrorMakerCluster.tracing = spec.getTracing();
+            result.tracing = spec.getTracing();
         }
 
-        return kafkaMirrorMakerCluster;
+        return result;
     }
 
     protected List<ContainerPort> getContainerPortList() {

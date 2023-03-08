@@ -115,43 +115,43 @@ public class KafkaExporter extends AbstractModel {
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
 
         if (spec != null) {
-            KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
+            KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly);
 
-            kafkaExporter.resources = spec.getResources();
+            result.resources = spec.getResources();
 
             if (spec.getReadinessProbe() != null) {
-                kafkaExporter.readinessProbeOptions = spec.getReadinessProbe();
+                result.readinessProbeOptions = spec.getReadinessProbe();
             }
 
             if (spec.getLivenessProbe() != null) {
-                kafkaExporter.livenessProbeOptions = spec.getLivenessProbe();
+                result.livenessProbeOptions = spec.getLivenessProbe();
             }
 
-            kafkaExporter.groupRegex = spec.getGroupRegex();
-            kafkaExporter.topicRegex = spec.getTopicRegex();
+            result.groupRegex = spec.getGroupRegex();
+            result.topicRegex = spec.getTopicRegex();
 
             String image = spec.getImage();
             if (image == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
-            kafkaExporter.image = image;
+            result.image = image;
 
-            kafkaExporter.exporterLogging = spec.getLogging();
-            kafkaExporter.saramaLoggingEnabled = spec.getEnableSaramaLogging();
+            result.exporterLogging = spec.getLogging();
+            result.saramaLoggingEnabled = spec.getEnableSaramaLogging();
 
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
 
-                kafkaExporter.templateDeployment = template.getDeployment();
-                kafkaExporter.templatePod = template.getPod();
-                kafkaExporter.templateServiceAccount = template.getServiceAccount();
-                kafkaExporter.templateContainer = template.getContainer();
+                result.templateDeployment = template.getDeployment();
+                result.templatePod = template.getPod();
+                result.templateServiceAccount = template.getServiceAccount();
+                result.templateContainer = template.getContainer();
             }
 
-            kafkaExporter.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
+            result.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
 
-            return kafkaExporter;
+            return result;
         } else {
             return null;
         }

@@ -92,7 +92,7 @@ public class KafkaConnectBuild extends AbstractModel {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static KafkaConnectBuild fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
-        KafkaConnectBuild build = new KafkaConnectBuild(reconciliation, kafkaConnect);
+        KafkaConnectBuild result = new KafkaConnectBuild(reconciliation, kafkaConnect);
         KafkaConnectSpec spec = kafkaConnect.getSpec();
 
         if (spec == null) {
@@ -108,40 +108,40 @@ public class KafkaConnectBuild extends AbstractModel {
                 if (dockerOutput.getAdditionalKanikoOptions() != null
                         && !dockerOutput.getAdditionalKanikoOptions().isEmpty())  {
                     validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
-                    build.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
+                    result.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
                 }
             }
 
-            build.resources = spec.getBuild().getResources();
+            result.resources = spec.getBuild().getResources();
         }
 
-        build.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
+        result.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
 
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
 
             if (template.getBuildConfig() != null) {
-                build.pullSecret = template.getBuildConfig().getPullSecret();
+                result.pullSecret = template.getBuildConfig().getPullSecret();
 
                 if (template.getBuildConfig().getMetadata() != null) {
                     if (template.getBuildConfig().getMetadata().getLabels() != null) {
-                        build.templateBuildConfigLabels = template.getBuildConfig().getMetadata().getLabels();
+                        result.templateBuildConfigLabels = template.getBuildConfig().getMetadata().getLabels();
                     }
 
                     if (template.getBuildConfig().getMetadata().getAnnotations() != null) {
-                        build.templateBuildConfigAnnotations = template.getBuildConfig().getMetadata().getAnnotations();
+                        result.templateBuildConfigAnnotations = template.getBuildConfig().getMetadata().getAnnotations();
                     }
                 }
             }
 
-            build.templatePod = template.getBuildPod();
-            build.templateServiceAccount = template.getBuildServiceAccount();
-            build.templateContainer = template.getBuildContainer();
+            result.templatePod = template.getBuildPod();
+            result.templateServiceAccount = template.getBuildServiceAccount();
+            result.templateContainer = template.getBuildContainer();
         }
 
-        build.build = spec.getBuild();
+        result.build = spec.getBuild();
 
-        return build;
+        return result;
     }
 
     /**

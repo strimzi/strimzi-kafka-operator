@@ -183,60 +183,60 @@ public class KafkaBridgeCluster extends AbstractModel {
     @SuppressWarnings({"checkstyle:NPathComplexity"})
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge) {
 
-        KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(reconciliation, kafkaBridge);
+        KafkaBridgeCluster result = new KafkaBridgeCluster(reconciliation, kafkaBridge);
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
-        kafkaBridgeCluster.tracing = spec.getTracing();
-        kafkaBridgeCluster.resources = spec.getResources();
-        kafkaBridgeCluster.logging = spec.getLogging();
-        kafkaBridgeCluster.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
-        kafkaBridgeCluster.jvmOptions = spec.getJvmOptions();
+        result.tracing = spec.getTracing();
+        result.resources = spec.getResources();
+        result.logging = spec.getLogging();
+        result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
+        result.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
         if (image == null) {
             image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "quay.io/strimzi/kafka-bridge:latest");
         }
-        kafkaBridgeCluster.image = image;
-        kafkaBridgeCluster.replicas = spec.getReplicas();
-        kafkaBridgeCluster.setBootstrapServers(spec.getBootstrapServers());
-        kafkaBridgeCluster.setKafkaAdminClientConfiguration(spec.getAdminClient());
-        kafkaBridgeCluster.setKafkaConsumerConfiguration(spec.getConsumer());
-        kafkaBridgeCluster.setKafkaProducerConfiguration(spec.getProducer());
-        kafkaBridgeCluster.rack = spec.getRack();
+        result.image = image;
+        result.replicas = spec.getReplicas();
+        result.setBootstrapServers(spec.getBootstrapServers());
+        result.setKafkaAdminClientConfiguration(spec.getAdminClient());
+        result.setKafkaConsumerConfiguration(spec.getConsumer());
+        result.setKafkaProducerConfiguration(spec.getProducer());
+        result.rack = spec.getRack();
         String initImage = spec.getClientRackInitImage();
         if (initImage == null) {
             initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
-        kafkaBridgeCluster.initImage = initImage;
+        result.initImage = initImage;
         if (kafkaBridge.getSpec().getLivenessProbe() != null) {
-            kafkaBridgeCluster.livenessProbeOptions = kafkaBridge.getSpec().getLivenessProbe();
+            result.livenessProbeOptions = kafkaBridge.getSpec().getLivenessProbe();
         }
 
         if (kafkaBridge.getSpec().getReadinessProbe() != null) {
-            kafkaBridgeCluster.readinessProbeOptions = kafkaBridge.getSpec().getReadinessProbe();
+            result.readinessProbeOptions = kafkaBridge.getSpec().getReadinessProbe();
         }
 
-        kafkaBridgeCluster.isMetricsEnabled = spec.getEnableMetrics();
+        result.isMetricsEnabled = spec.getEnableMetrics();
 
-        kafkaBridgeCluster.setTls(spec.getTls() != null ? spec.getTls() : null);
+        result.setTls(spec.getTls() != null ? spec.getTls() : null);
 
         String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
         if (!warnMsg.isEmpty()) {
             LOGGER.warnCr(reconciliation, warnMsg);
         }
-        kafkaBridgeCluster.setAuthentication(spec.getAuthentication());
+        result.setAuthentication(spec.getAuthentication());
 
         if (spec.getTemplate() != null) {
-            fromCrdTemplate(kafkaBridgeCluster, spec);
+            fromCrdTemplate(result, spec);
         }
 
         if (spec.getHttp() != null) {
-            kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
+            result.setKafkaBridgeHttpConfig(spec.getHttp());
         } else {
             LOGGER.warnCr(reconciliation, "The spec.http property is missing.");
             throw new InvalidResourceException("The HTTP configuration for the bridge is not specified.");
         }
 
-        return kafkaBridgeCluster;
+        return result;
     }
 
     private static void fromCrdTemplate(final KafkaBridgeCluster kafkaBridgeCluster, final KafkaBridgeSpec spec) {

@@ -95,13 +95,13 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     public static KafkaMirrorMaker2Cluster fromCrd(Reconciliation reconciliation,
                                                    KafkaMirrorMaker2 kafkaMirrorMaker2,
                                                    KafkaVersion.Lookup versions) {
-        KafkaMirrorMaker2Cluster cluster = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
+        KafkaMirrorMaker2Cluster result = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
 
-        cluster.image = versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion());
+        result.image = versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion());
 
         List<KafkaMirrorMaker2ClusterSpec> clustersList = ModelUtils.asListOrEmptyList(spec.getClusters());
-        cluster.setClusters(clustersList);
+        result.setClusters(clustersList);
 
         KafkaMirrorMaker2ClusterSpec connectCluster = new KafkaMirrorMaker2ClusterSpecBuilder().build();
         String connectClusterAlias = spec.getConnectCluster();        
@@ -111,9 +111,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .findFirst()
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
-        cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
+        result.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
 
-        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, result);
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
