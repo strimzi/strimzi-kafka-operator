@@ -74,11 +74,11 @@ public class UserOperatorConfig {
     /**
      * Number of days for which the certificate should be valid
      */
-    public static final ConfigParameter<Integer> CERTS_VALIDITY_DAYS = new ConfigParameter<>("STRIMZI_CA_VALIDITY", strictlyPositive(INTEGER), "30", CONFIG_VALUES);
+    public static final ConfigParameter<Integer> CERTS_VALIDITY_DAYS = new ConfigParameter<>("STRIMZI_CA_VALIDITY", strictlyPositive(INTEGER), "365", CONFIG_VALUES);
     /**
      * How long before the certificate expiration should the user certificate be renewed
      */
-    public static final ConfigParameter<Integer> CERTS_RENEWAL_DAYS = new ConfigParameter<>("STRIMZI_CA_RENEWAL", strictlyPositive(INTEGER), "365", CONFIG_VALUES);
+    public static final ConfigParameter<Integer> CERTS_RENEWAL_DAYS = new ConfigParameter<>("STRIMZI_CA_RENEWAL", strictlyPositive(INTEGER), "30", CONFIG_VALUES);
     /**
      * Length used for the Scram-Sha Password
      */
@@ -150,7 +150,10 @@ public class UserOperatorConfig {
      * @return UserOperatorConfig object
      */
     public static UserOperatorConfig buildFromMap(Map<String, String> map) {
-        Map<String, Object> generatedMap = ConfigParameter.define(map, CONFIG_VALUES);
+        Map<String, String> envMap = new HashMap<>(map);
+        envMap.keySet().retainAll(UserOperatorConfig.keyNames());
+
+        Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
         if (generatedMap.get(CA_NAMESPACE.key()) == null || String.valueOf(generatedMap.get(CA_NAMESPACE.key())).isEmpty()) {
             generatedMap.put(CA_NAMESPACE.key(), generatedMap.get(NAMESPACE.key()));
