@@ -1,0 +1,87 @@
+---
+name: Bug report
+description: Create a report to help us improve
+title: '[Bug]: '
+labels: ['bug', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: _Please use this to only for bug reports. For questions or when you need help, you can use the [GitHub Discussions](https://github.com/strimzi/strimzi-kafka-operator/discussions), our [#strimzi Slack channel](https://slack.cncf.io/) or out [user mailing list](https://lists.cncf.io/g/cncf-strimzi-users/topics)._
+  - type: textarea
+    attributes:
+      label: Bug Description
+      description: Describe the bug
+      placeholder: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Create Custom Resource '....'
+        3. Run command '....'
+        4. See error
+        5. ...
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: What is the behavior you expected to see? Please describe.
+      placeholder: A clear and concise description of what you expected to happen.
+    validations:
+      required: false
+  - type: input
+    id: strimzi-version
+    attributes:
+      label: Strimzi version
+      description: Strimzi version where the bug occurred
+      placeholder: e.g. main, 0.33.2
+    validations:
+      required: true
+  - type: input
+    id: kubernetes-version
+    attributes:
+      label: Kubernetes version
+      description: Kubernetes version where the bug occurred
+      placeholder: e.g. Kubernetes 1.25, OpenShift 4.11
+    validations:
+      required: true
+  - type: input
+    id: installation-method
+    attributes:
+      label: Installation method
+      description: Installation method used to install Strimzi
+      placeholder: e.g. YAML files, Helm chart, OperatorHub.io
+    validations:
+      required: false
+  - type: input
+    id: infrastructure-type
+    attributes:
+      label: Infrastructure
+      description: Infrastructure where the bug occurred
+      placeholder: e.g. Amazon EKS, Minikube, Bare-metal
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Configuration files and logs
+      description: All relevant configuration and log files
+      placeholder: |
+        Attach or copy paste the custom resources you used to deploy the Kafka cluster and the relevant YAMLs created by the Cluster Operator.
+        Attach or copy and paste also the relevant logs.
+
+        To easily collect all YAMLs and logs, you can use our [report script](https://github.com/strimzi/strimzi-kafka-operator/blob/main/tools/report.sh) which will automatically collect all files and prepare a ZIP archive which can be easily attached to this issue.
+        The usage of this script is:
+        `./report.sh --namespace <string> --cluster <string> [--bridge <string>] [--connect <string>] [--mm2 <string>]`
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Any additional context related to the problem
+      placeholder: Add any other context about the problem here.
+    validations:
+      required: false
