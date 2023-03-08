@@ -82,6 +82,6 @@ body:
     attributes:
       label: Additional context
       description: Any additional context related to the problem
-      placeholder: A clear and concise description of what the problem is. Ex. I'm always frustrated when ...
+      placeholder: Add any other context about the problem here.
     validations:
       required: false
