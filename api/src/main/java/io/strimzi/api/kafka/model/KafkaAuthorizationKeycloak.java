@@ -26,7 +26,7 @@ import java.util.List;
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
     "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers",
-    "connectTimeoutSeconds", "readTimeoutSeconds", "enableMetrics"})
+    "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics"})
 @EqualsAndHashCode
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -44,6 +44,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private Integer grantsRefreshPoolSize;
     private Integer connectTimeoutSeconds;
     private Integer readTimeoutSeconds;
+    private Integer httpRetries;
     private List<String> superUsers;
     private boolean enableMetrics = false;
 
@@ -169,6 +170,17 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
         this.readTimeoutSeconds = readTimeoutSeconds;
+    }
+
+    @Description("The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries.")
+    @Minimum(0)
+    @JsonProperty(defaultValue = "0")
+    public Integer getHttpRetries() {
+        return httpRetries;
+    }
+
+    public void setHttpRetries(Integer httpRetries) {
+        this.httpRetries = httpRetries;
     }
 
     @Description("Enable or disable OAuth metrics. Default value is `false`.")

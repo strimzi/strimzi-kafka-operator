@@ -716,6 +716,7 @@ public class KafkaBrokerConfigurationBuilder {
         addOption(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
         addOption(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
         addOption(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
+        addOption(writer, "strimzi.authorization.http.retries", authorization.getHttpRetries());
 
         if (authorization.isEnableMetrics()) {
             writer.println("strimzi.authorization.enable.metrics=true");

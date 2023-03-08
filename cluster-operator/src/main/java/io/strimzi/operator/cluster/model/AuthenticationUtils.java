@@ -93,16 +93,25 @@ public class AuthenticationUtils {
 
         // Additional validation
         ArrayList<String> errors = new ArrayList<>();
-
-        if (auth.getConnectTimeoutSeconds() != null && auth.getConnectTimeoutSeconds() <= 0) {
-            errors.add("If specified, 'connectTimeoutSeconds' has to be greater than 0");
-        }
-        if (auth.getReadTimeoutSeconds() != null && auth.getReadTimeoutSeconds() <= 0) {
-            errors.add("If specified, 'readTimeoutSeconds' has to be greater than 0");
-        }
+        checkValueGreaterThanZero(errors, "connectTimeoutSeconds", auth.getConnectTimeoutSeconds());
+        checkValueGreaterThanZero(errors, "readTimeoutSeconds", auth.getReadTimeoutSeconds());
+        checkValueGreaterOrEqualZero(errors, "httpRetries", auth.getHttpRetries());
+        checkValueGreaterOrEqualZero(errors, "httpRetryPauseMillis", auth.getHttpRetryPauseMillis());
 
         if (errors.size() > 0) {
             throw new InvalidResourceException("OAUTH authentication selected, but some options are invalid. " + errors);
+        }
+    }
+
+    private static void checkValueGreaterThanZero(ArrayList<String> errors, String name, Integer value) {
+        if (value != null && value <= 0) {
+            errors.add("If specified, '" + name + "' has to be greater than 0");
+        }
+    }
+
+    private static void checkValueGreaterOrEqualZero(ArrayList<String> errors, String name, Integer value) {
+        if (value != null && value < 0) {
+            errors.add("If specified, '" + name + "' has to be greater or equal 0");
         }
     }
 

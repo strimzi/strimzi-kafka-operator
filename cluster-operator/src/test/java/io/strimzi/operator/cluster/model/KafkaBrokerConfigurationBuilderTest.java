@@ -262,6 +262,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withDisableTlsHostnameVerification(true)
                 .addToSuperUsers("giada", "CN=paccu")
                 .withConnectTimeoutSeconds(30)
+                .withReadTimeoutSeconds(10)
+                .withHttpRetries(2)
                 .withEnableMetrics(true)
                 .build();
 
@@ -281,6 +283,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.grants.refresh.period.seconds=120\n" +
                 "strimzi.authorization.grants.refresh.pool.size=10\n" +
                 "strimzi.authorization.connect.timeout.seconds=30\n" +
+                "strimzi.authorization.read.timeout.seconds=10\n" +
+                "strimzi.authorization.http.retries=2\n" +
                 "strimzi.authorization.enable.metrics=true\n" +
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
     }

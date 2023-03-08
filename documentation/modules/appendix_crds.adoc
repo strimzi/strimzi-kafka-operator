@@ -622,6 +622,8 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |integer
 |readTimeoutSeconds              1.2+<.<a|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
 |integer
+|httpRetries                     1.2+<.<a|The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries.
+|integer
 |enableMetrics                   1.2+<.<a|Enable or disable OAuth metrics. Default value is `false`.
 |boolean
 |====
