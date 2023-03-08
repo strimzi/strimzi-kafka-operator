@@ -1,0 +1,20 @@
+---
+name: Documentation
+description: Report a bug or suggest an idea for our documentation
+title: '[Docs]: '
+labels: ['documentation', 'needs-triage']
+body:
+  - type: textarea
+    attributes:
+      label: Suggestion / Problem
+      description: Suggestion / Problem
+      placeholder: Describe your problem or suggestion
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Documentation Link
+      description: Link(s) to the relevant documentation
+      placeholder: Provide link(s) to the documentation where the bug / suggestion should be applied
+    validations:
+      required: false
