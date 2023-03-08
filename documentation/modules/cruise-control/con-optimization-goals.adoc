@@ -102,6 +102,7 @@ spec:
       inboundNetwork: 10000KB/s
       outboundNetwork: 10000KB/s
     config:
+      # Note that `hard.goals` must be a subset of `goals` and `default.goals`
       hard.goals: >
         com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal
@@ -173,10 +174,13 @@ spec:
       inboundNetwork: 10000KB/s
       outboundNetwork: 10000KB/s
     config:
+      # Note that `default.goals` must be a superset of `hard.goals`
       default.goals: >
         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
+      hard.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal
       # ...
 ----
 

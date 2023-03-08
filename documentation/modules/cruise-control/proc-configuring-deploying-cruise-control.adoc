@@ -50,14 +50,14 @@ spec:
         outboundNetwork: 30000KiB/s
       # ...
     config: # <3>
+      # Note that `default.goals` must be a superset of `hard.goals`
       default.goals: > # <4>
         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.DiskCapacityGoal
         # ...
       hard.goals: >
-        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,
-        com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal
         # ...
       cpu.balance.threshold: 1.1
       metadata.max.age.ms: 300000

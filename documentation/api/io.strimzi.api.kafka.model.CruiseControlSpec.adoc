@@ -49,9 +49,12 @@ spec:
   cruiseControl:
     # ...
     config:
+      # Note that `default.goals` must be a superset of `hard.goals`
       default.goals: >
         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal
+      hard.goals: >
+        com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal
       cpu.balance.threshold: 1.1
       metadata.max.age.ms: 300000
       send.buffer.bytes: 131072
