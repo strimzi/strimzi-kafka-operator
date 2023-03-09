@@ -17,7 +17,7 @@ But these are some of the tasks you usually have to do.
     * The `version` and the `inter.broker.protocol.version` fields
     * The Docker image tag in the Kafka connect Build example
   * Update the main `pom.xml` to use the latest Kafka version in the operator
-  * Update `systemtest/src/test/resources/upgrade/StrimziUpgradeST.yaml` with the new version
+  * Update `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` with the new version
   * Update protocol versions in `cluster-operator/src/test/java/io/strimzi/operator/cluster/model/KafkaConfigurationTests.java` if needed
 * Make sure the `cluster-operator/src/test/java/io/strimzi/operator/cluster/KafkaVersionTestUtils.java` is up-to-date
 * If you are adding a release candidate which is not yet published to Maven central, make sure to update the `ST_FILE_PLUGIN_URL_DEFAULT` field in `systemtest/src/main/java/io/strimzi/systemtest/Environment.java` to get the system tests to pass.

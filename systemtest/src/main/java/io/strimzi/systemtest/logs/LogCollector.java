@@ -317,19 +317,19 @@ public class LogCollector {
 
     private void collectOperatorGroups(String namespace) {
         LOGGER.info("Collecting operatorGroups");
-        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "operatorGroups").out();
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "operatorGroups", "-o", "yaml").out();
         writeFile(namespaceFile + "/operator-groups.log", nodes);
     }
 
     private void collectSubscriptions(String namespace) {
         LOGGER.info("Collecting subscriptions");
-        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "subscriptions").out();
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "subscriptions", "-o", "yaml").out();
         writeFile(namespaceFile + "/subscriptions.log", nodes);
     }
 
     private void collectClusterServiceVersions(String namespace) {
         LOGGER.info("Collecting clusterServiceVersions");
-        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "clusterServiceVersions").out();
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "clusterServiceVersions", "-o", "yaml").out();
         writeFile(namespaceFile + "/cluster-service-versions.log", nodes);
     }
 

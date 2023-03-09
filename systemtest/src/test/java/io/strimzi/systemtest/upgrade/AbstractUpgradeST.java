@@ -87,25 +87,25 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndLogFormatVersion(UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws IOException {
+    protected void changeKafkaAndLogFormatVersion(CommonVersionModificationData upgradeDowngradeData, ExtensionContext extensionContext) throws IOException {
         // Get Kafka configurations
-        String operatorVersion = upgradeData.getToVersion();
+        String operatorVersion = upgradeDowngradeData.getToVersion();
         String currentLogMessageFormat = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
         String currentInterBrokerProtocol = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
         // Get Kafka version
         String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
         kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
-        String kafkaVersionFromProcedure = upgradeData.getProcedures().getVersion();
+        String kafkaVersionFromProcedure = upgradeDowngradeData.getProcedures().getVersion();
 
         // #######################################################################
         // #################    Update CRs to latest version   ###################
         // #######################################################################
         String examplesPath = "";
-        if (upgradeData.getUrlTo().equals("HEAD")) {
+        if (upgradeDowngradeData.getToUrl().equals("HEAD")) {
             examplesPath = PATH_TO_PACKAGING_EXAMPLES + "";
         } else {
-            File dir = FileUtils.downloadAndUnzip(upgradeData.getUrlTo());
-            examplesPath = dir.getAbsolutePath() + "/" + upgradeData.getToExamples() + "/examples";
+            File dir = FileUtils.downloadAndUnzip(upgradeDowngradeData.getToUrl());
+            examplesPath = dir.getAbsolutePath() + "/" + upgradeDowngradeData.getToExamples() + "/examples";
         }
 
         kafkaYaml = new File(examplesPath + "/kafka/kafka-persistent.yaml");
@@ -124,7 +124,7 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
 
 
-        if (upgradeData.getProcedures() != null && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
+        if (upgradeDowngradeData.getProcedures() != null && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
             if (kafkaVersionFromProcedure != null && !kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure) && extensionContext.getTestClass().get().getSimpleName().toLowerCase(Locale.ROOT).contains("upgrade")) {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
@@ -132,8 +132,8 @@ public class AbstractUpgradeST extends AbstractST {
                 kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
             }
 
-            String logMessageVersion = upgradeData.getProcedures().getLogMessageVersion();
-            String interBrokerProtocolVersion = upgradeData.getProcedures().getInterBrokerVersion();
+            String logMessageVersion = upgradeDowngradeData.getProcedures().getLogMessageVersion();
+            String interBrokerProtocolVersion = upgradeDowngradeData.getProcedures().getInterBrokerVersion();
 
             if (logMessageVersion != null && !logMessageVersion.isEmpty() || interBrokerProtocolVersion != null && !interBrokerProtocolVersion.isEmpty()) {
                 if (!logMessageVersion.isEmpty()) {
@@ -199,19 +199,19 @@ public class AbstractUpgradeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeClusterOperator(UpgradeDowngradeData upgradeData, String namespace, ExtensionContext extensionContext) throws IOException {
+    protected void changeClusterOperator(BundleVersionModificationData upgradeDowngradeData, String namespace, ExtensionContext extensionContext) throws IOException {
         File coDir;
         // Modify + apply installation files
-        LOGGER.info("Update CO from {} to {}", upgradeData.getFromVersion(), upgradeData.getToVersion());
-        if (upgradeData.getToVersion().equals("HEAD")) {
+        LOGGER.info("Update CO from {} to {}", upgradeDowngradeData.getFromVersion(), upgradeDowngradeData.getToVersion());
+        if (upgradeDowngradeData.getToVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
-            String url = upgradeData.getUrlTo();
+            String url = upgradeDowngradeData.getToUrl();
             File dir = FileUtils.downloadAndUnzip(url);
-            coDir = new File(dir, upgradeData.getToExamples() + "/install/cluster-operator/");
+            coDir = new File(dir, upgradeDowngradeData.getToExamples() + "/install/cluster-operator/");
         }
 
-        copyModifyApply(coDir, namespace, extensionContext, upgradeData.getFeatureGatesAfter());
+        copyModifyApply(coDir, namespace, extensionContext, upgradeDowngradeData.getFeatureGatesAfter());
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(namespace, ResourceManager.getCoDeploymentName(), 1, coPods);
@@ -259,7 +259,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void checkAllImages(UpgradeDowngradeData upgradeDowngradeData, String namespaceName) {
+    protected void checkAllImages(BundleVersionModificationData upgradeDowngradeData, String namespaceName) {
         if (upgradeDowngradeData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
@@ -296,7 +296,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, UpgradeDowngradeData upgradeData, TestStorage testStorage, UpgradeKafkaVersion upgradeKafkaVersion, String namespace) throws IOException {
+    protected void setupEnvAndUpgradeClusterOperator(ExtensionContext extensionContext, BundleVersionModificationData upgradeData, TestStorage testStorage, UpgradeKafkaVersion upgradeKafkaVersion, String namespace) throws IOException {
         LOGGER.info("Test upgrade of ClusterOperator from version {} to version {}", upgradeData.getFromVersion(), upgradeData.getToVersion());
         cluster.setNamespace(namespace);
 
@@ -307,7 +307,7 @@ public class AbstractUpgradeST extends AbstractST {
         if (upgradeData.getFromVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
-            url = upgradeData.getUrlFrom();
+            url = upgradeData.getFromUrl();
             dir = FileUtils.downloadAndUnzip(url);
             coDir = new File(dir, upgradeData.getFromExamples() + "/install/cluster-operator/");
         }
@@ -415,7 +415,7 @@ public class AbstractUpgradeST extends AbstractST {
         logPodImages(clusterName);
     }
 
-    protected void verifyProcedure(UpgradeDowngradeData upgradeData, String producerName, String consumerName, String namespace) {
+    protected void verifyProcedure(BundleVersionModificationData upgradeData, String producerName, String consumerName, String namespace) {
 
         if (upgradeData.getAdditionalTopics() != null) {
             // Check that topics weren't deleted/duplicated during upgrade procedures

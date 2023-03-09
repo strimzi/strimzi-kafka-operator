@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationType;
 
 import java.io.IOException;
 import java.util.Map;
@@ -50,9 +51,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeIsolatedST.class);
 
     @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>) ")
-    @MethodSource("io.strimzi.systemtest.upgrade.UpgradeDowngradeData#loadYamlUpgradeData")
+    @MethodSource("io.strimzi.systemtest.upgrade.UpgradeDowngradeDataLoader#loadYamlUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws Exception {
+    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(upgradeData.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(upgradeData.getEnvMaxK8sVersion()));
 
@@ -63,8 +64,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeKafkaWithoutVersion(ExtensionContext extensionContext) throws IOException {
-        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist();
-        UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
+        BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersions();
 
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
         upgradeKafkaVersion.setVersion(null);
@@ -104,8 +104,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeAcrossVersionsWithUnsupportedKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist();
-        UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
+        BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersions();
 
         TestStorage testStorage = new TestStorage(extensionContext);
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
@@ -133,8 +132,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
-        UpgradeDowngradeDatalist upgradeDatalist = new UpgradeDowngradeDatalist();
-        UpgradeDowngradeData acrossUpgradeData = upgradeDatalist.buildDataForUpgradeAcrossVersions();
+        BundleVersionModificationData acrossUpgradeData = new VersionModificationDataLoader(ModificationType.BUNDLE_UPGRADE).buildDataForUpgradeAcrossVersions();
         TestStorage testStorage = new TestStorage(extensionContext);
 
         // Setup env
@@ -162,7 +160,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
-    private void performUpgrade(UpgradeDowngradeData upgradeData, ExtensionContext extensionContext) throws IOException {
+    private void performUpgrade(BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws IOException {
         TestStorage testStorage = new TestStorage(extensionContext);
         // leave empty, so the original Kafka version from appropriate Strimzi's yaml will be used
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();

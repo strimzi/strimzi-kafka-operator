@@ -21,11 +21,13 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -62,6 +64,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils.waitForDeploymentReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -245,24 +248,19 @@ public class SetupClusterOperator {
         return this;
     }
 
-    public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName) {
+    public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName, final String fromVersion) {
         if (isClusterOperatorNamespaceNotCreated()) {
             cluster.setNamespace(namespaceInstallTo);
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         }
 
-        List<String> cmd = new ArrayList<>();
-        cmd.addAll(Arrays.asList("get", "packagemanifests", Environment.OLM_OPERATOR_NAME, "-o", "jsonpath='{.status.channels[?(@.name==\"" + fromOlmChannelName + "\")].currentCSV}'"));
-
-        String latestVersion = KubeClusterResource.cmdKubeClient(Environment.OLM_SOURCE_NAMESPACE).exec(cmd).out().replace("'\n", "").split("v")[1];
-
         OlmConfiguration olmConfiguration = new OlmConfigurationBuilder()
             .withNamespaceName(this.namespaceInstallTo)
             .withExtensionContext(extensionContext)
             .withOlmInstallationStrategy(OlmInstallationStrategy.Manual)
             .withChannelName(fromOlmChannelName)
-            .withOperatorVersion(latestVersion)
+            .withOperatorVersion(fromVersion)
             .withEnvVars(extraEnvVars)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval)
@@ -353,6 +351,39 @@ public class SetupClusterOperator {
             olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
             olmResource.create();
         }
+    }
+
+    /**
+     * Upgrade cluster operator by obtaining new install plan, which was not used and also approves the installation
+     */
+    public void upgradeClusterOperator(OlmConfiguration olmConfiguration) {
+        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
+            throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
+        }
+
+        TestUtils.waitFor("Wait for non used install plan to be present", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
+            () -> {
+                if  (kubeClient().getNonApprovedInstallPlan(namespaceInstallTo) != null) {
+                    InstallPlan installPlan = kubeClient().getNonApprovedInstallPlan(namespaceInstallTo);
+                    kubeClient().approveInstallPlan(namespaceInstallTo, installPlan.getMetadata().getName());
+                    String currentCsv = installPlan.getSpec().getClusterServiceVersionNames().get(0).toString();
+
+                    LOGGER.info("Waiting for CSV: {} to be present, current CSV: {}", olmConfiguration.getCsvName(), currentCsv);
+                    if (currentCsv.contains(olmConfiguration.getCsvName())) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+        waitForDeploymentReady(namespaceInstallTo, ResourceManager.kubeClient().getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName()));
+    }
+
+    public void updateSubscription(OlmConfiguration olmConfiguration) {
+        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
+        ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName())
+            .add(ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).size(), new ResourceItem(olmResource::deleteCSV));
+        olmResource.createAndModifySubscription(olmConfiguration);
     }
 
     public void createCONamespaceIfNeeded() {

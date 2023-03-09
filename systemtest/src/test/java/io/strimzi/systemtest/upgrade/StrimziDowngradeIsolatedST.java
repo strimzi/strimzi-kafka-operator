@@ -38,9 +38,9 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeIsolatedST.class);
 
     @ParameterizedTest(name = "testDowngradeStrimziVersion-{0}-{1}")
-    @MethodSource("io.strimzi.systemtest.upgrade.UpgradeDowngradeData#loadYamlDowngradeData")
+    @MethodSource("io.strimzi.systemtest.upgrade.UpgradeDowngradeDataLoader#loadYamlDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testDowngradeStrimziVersion(String from, String to, UpgradeDowngradeData parameters, ExtensionContext extensionContext) throws Exception {
+    void testDowngradeStrimziVersion(String from, String to, BundleVersionModificationData parameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getEnvFlakyVariable()));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getEnvMaxK8sVersion()));
 
@@ -49,7 +49,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     }
 
     @SuppressWarnings("MethodLength")
-    private void performDowngrade(UpgradeDowngradeData downgradeData, ExtensionContext extensionContext) throws IOException {
+    private void performDowngrade(BundleVersionModificationData downgradeData, ExtensionContext extensionContext) throws IOException {
         TestStorage testStorage = new TestStorage(extensionContext);
         UpgradeKafkaVersion testUpgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(downgradeData.getFromKafkaVersionsUrl(), downgradeData.getDeployKafkaVersion());
 
