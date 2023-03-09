@@ -50,7 +50,7 @@ spec:
         outboundNetwork: 30000KiB/s
       # ...
     config: # <3>
-      # Note that `default.goals` must be a superset of `hard.goals`
+      # Note that `default.goals` (superset) must also include all `hard.goals` (subset)
       default.goals: > # <4>
         com.linkedin.kafka.cruisecontrol.analyzer.goals.RackAwareGoal,
         com.linkedin.kafka.cruisecontrol.analyzer.goals.ReplicaCapacityGoal,
