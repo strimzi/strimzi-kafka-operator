@@ -124,13 +124,31 @@ public class EntityOperator extends AbstractModel {
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        return fromCrd(reconciliation, kafkaAssembly, versions, sharedEnvironmentProvider, false);
+    }
+    /**
+     * Create an Entity Operator from given desired resource
+     *
+     * @param reconciliation The reconciliation
+     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
+     * @param versions The versions.
+     * @param sharedEnvironmentProvider     Shared environment provider.
+     * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
+     *
+     * @return Entity Operator instance, null if not configured in the ConfigMap
+     */
+    public static EntityOperator fromCrd(Reconciliation reconciliation,
+                                         Kafka kafkaAssembly,
+                                         KafkaVersion.Lookup versions,
+                                         SharedEnvironmentProvider sharedEnvironmentProvider,
+                                         boolean unidirectionalTopicOperator) {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
         if (entityOperatorSpec != null
                 && (entityOperatorSpec.getUserOperator() != null || entityOperatorSpec.getTopicOperator() != null)) {
             EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
-            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, unidirectionalTopicOperator);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();

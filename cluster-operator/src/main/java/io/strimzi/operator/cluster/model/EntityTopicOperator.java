@@ -70,6 +70,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     /* test */ String kafkaBootstrapServers;
     /* test */ String zookeeperConnect;
+    boolean unidirectionalTopicOperator;
 
     private String watchedNamespace;
     /* test */ int reconciliationIntervalMs;
@@ -109,7 +110,24 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      *
      * @return Entity Topic Operator instance, null if not configured
      */
+
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        return fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, false);
+    }
+
+    /**
+     * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
+     * enabled, it returns null.
+     * @param reconciliation The reconciliation
+     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
+     * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
+     *
+     * @return Entity Topic Operator instance, null if not configured
+     */
+    public static EntityTopicOperator fromCrd(Reconciliation reconciliation,
+                                              Kafka kafkaAssembly,
+                                              SharedEnvironmentProvider sharedEnvironmentProvider,
+                                              boolean unidirectionalTopicOperator) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
@@ -120,6 +138,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
             }
             result.image = image;
+            result.unidirectionalTopicOperator = unidirectionalTopicOperator;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
@@ -143,6 +162,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     }
 
     protected Container createContainer(ImagePullPolicy imagePullPolicy) {
+
         return ContainerUtils.createContainer(
                 TOPIC_OPERATOR_CONTAINER_NAME,
                 image,
@@ -164,11 +184,12 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
+        if (!this.unidirectionalTopicOperator) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
+        }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
