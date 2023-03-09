@@ -132,8 +132,7 @@ public class KafkaAgent {
                 } else if (isRemainingSegmentsToRecover(metricName) && metric instanceof Gauge) {
                     LOGGER.debug("Metric {} added ", metricName);
                     remainingSegmentsToRecover = (Gauge) metric;
-                } else if ("SessionExpireListener".equals(metricName.getType())
-                        && "SessionState".equals(metricName.getName())
+                } else if (isSessionState(metricName)
                         && metric instanceof Gauge) {
                     sessionStateName = metricName;
                     sessionState = (Gauge) metric;
@@ -207,6 +206,11 @@ public class KafkaAgent {
                 && "LogManager".equals(name.getType());
     }
 
+    private boolean isSessionState(MetricName name) {
+        return "SessionState".equals(name.getName())
+                && "SessionExpireListener".equals(name.getType());
+    }
+
     private void startBrokerStateServer() throws Exception {
         Server server = new Server();
 
@@ -242,7 +246,7 @@ public class KafkaAgent {
                     String json = new ObjectMapper().writeValueAsString(brokerStateResponse);
                     response.getWriter().print(json);
                 } else {
-                    response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     response.getWriter().print("Broker state metric not found");
                 }
             }
