@@ -155,6 +155,7 @@ public class UserOperatorConfig {
 
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
+        // This is to make sure that if CA namespace is empty or null, then we can use the namespace value
         if (generatedMap.get(CA_NAMESPACE.key()) == null || String.valueOf(generatedMap.get(CA_NAMESPACE.key())).isEmpty()) {
             generatedMap.put(CA_NAMESPACE.key(), generatedMap.get(NAMESPACE.key()));
         }

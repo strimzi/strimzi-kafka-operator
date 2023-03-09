@@ -60,7 +60,12 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
             if (configValue == null) {
                 throw new InvalidConfigurationException("Unknown or null config value.");
             }
-            generatedMap.put(configValue.key(), get(envVarMap, configValue));
+            // This check makes sure that if a user enters a null or empty value then the default values will be used.
+            if (envVarMap.get(configValue.key()) == null || envVarMap.get(configValue.key()).isEmpty()) {
+                generatedMap.put(configValue.key(), configValue.type().parse(configValue.defaultValue()));
+            } else {
+                generatedMap.put(configValue.key(), get(envVarMap, configValue));
+            }
         }
 
         // now add all those config (with default value) that weren't in the given map
