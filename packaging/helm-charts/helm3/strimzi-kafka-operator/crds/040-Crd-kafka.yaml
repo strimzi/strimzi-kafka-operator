@@ -165,10 +165,10 @@ spec:
                                 description: "A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma)."
                               httpRetries:
                                 type: integer
-                                description: "The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries."
+                                description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
                               httpRetryPauseMs:
                                 type: integer
-                                description: "The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request."
+                                description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
                               introspectionEndpointUri:
                                 type: string
                                 description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
@@ -599,7 +599,7 @@ spec:
                         httpRetries:
                           type: integer
                           minimum: 0
-                          description: "The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries."
+                          description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
                         initialCacheCapacity:
                           type: integer
                           description: Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.

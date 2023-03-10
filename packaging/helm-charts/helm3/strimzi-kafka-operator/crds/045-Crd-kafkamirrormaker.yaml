@@ -148,10 +148,10 @@ spec:
                           description: Enable or disable OAuth metrics. Default value is `false`.
                         httpRetries:
                           type: integer
-                          description: "The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries."
+                          description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
                         httpRetryPauseMs:
                           type: integer
-                          description: "The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request."
+                          description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
                         maxTokenExpirySeconds:
                           type: integer
                           description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
@@ -322,10 +322,10 @@ spec:
                           description: Enable or disable OAuth metrics. Default value is `false`.
                         httpRetries:
                           type: integer
-                          description: "The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries."
+                          description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
                         httpRetryPauseMs:
                           type: integer
-                          description: "The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request."
+                          description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
                         maxTokenExpirySeconds:
                           type: integer
                           description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
