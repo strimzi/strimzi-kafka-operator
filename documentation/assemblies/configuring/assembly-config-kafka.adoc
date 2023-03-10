@@ -23,7 +23,7 @@ For more information on configuring listeners, see xref:type-GenericKafkaListene
 When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
 If required, you can manually renew the cluster and clients CA certificates before their renewal period starts.
 You can also replace the keys used by the cluster and clients CA certificates.
-For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
+For more information, see link:{BookURLDeploying}#proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually^] and link:{BookURLDeploying}#proc-replacing-private-keys-{context}[Replacing private keys^].
 
 //procedure to configure Kafka
 include::../../modules/configuring/proc-config-kafka.adoc[leveloffset=+1]
@@ -35,8 +35,6 @@ include::assembly-storage.adoc[leveloffset=+1]
 ifdef::Metrics[]
 include::assembly-jmxtrans.adoc[leveloffset=+1]
 endif::Metrics[]
-//windows (time) for maintenance
-include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
 //connecting to ZooKeeper from terminal
 include::../../modules/configuring/proc-connecting-to-zookeeper.adoc[leveloffset=+1]
 //steps to delete kafka, zookeeper nodes

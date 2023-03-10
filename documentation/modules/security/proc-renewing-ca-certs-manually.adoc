@@ -79,7 +79,5 @@ Delete the old certificates to remove any potential security risk.
 .Additional resources
 
 * xref:certificates-and-secrets-str[]
-
 * xref:assembly-maintenance-time-windows-str[]
-
-* xref:type-CertificateAuthority-reference[]
+* link:{BookURLConfiguring}#type-CertificateAuthority-reference[`CertificateAuthority` schema reference^]

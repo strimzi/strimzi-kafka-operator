@@ -111,5 +111,5 @@ Using lower values reduces the load but increases the amount of time taken, and 
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLConfiguring}#type-CruiseControlSpec-reference[].
-* link:{BookURLConfiguring}#type-KafkaRebalanceSpec-reference[].
+* link:{BookURLConfiguring}#type-CruiseControlSpec-reference[`CruiseControlSpec` schema reference^]
+* link:{BookURLConfiguring}#type-KafkaRebalanceSpec-reference[`KafkaRebalanceSpec` schema reference^]
