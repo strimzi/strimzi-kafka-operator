@@ -60,8 +60,14 @@ import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.LoggingUtils;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -79,7 +85,7 @@ import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPD
  * Kafka Connect model class
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
+public class KafkaConnectCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
      * Port of the Kafka Connect REST API
      */
@@ -98,7 +104,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     /* test */ static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
-    private static final boolean DEFAULT_KAFKA_CONNECT_METRICS_ENABLED = false;
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
@@ -126,12 +131,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     private Rack rack;
     private String initImage;
     protected String serviceName;
+    protected String loggingAndMetricsConfigMapName;
 
     protected String bootstrapServers;
     protected List<ExternalConfigurationEnv> externalEnvs = Collections.emptyList();
     protected List<ExternalConfigurationVolumeSource> externalVolumes = Collections.emptyList();
     protected Tracing tracing;
     protected JmxModel jmx;
+    protected MetricsModel metrics;
+    protected LoggingModel logging;
 
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
@@ -145,7 +153,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected InternalServiceTemplate templateService;
     protected InternalServiceTemplate templateHeadlessService;
     protected ContainerTemplate templateInitContainer;
-
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -177,13 +184,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
         super(reconciliation, resource, name, componentType);
 
         this.serviceName = KafkaConnectResources.serviceName(cluster);
-        this.ancillaryConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
+        this.loggingAndMetricsConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_CONNECT_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -243,11 +249,11 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
         }
 
         result.resources = spec.getResources();
-        result.logging = spec.getLogging();
         result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
 
         result.jvmOptions = spec.getJvmOptions();
-
+        result.metrics = new MetricsModel(spec);
+        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), false, true);
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
                 KafkaConnectResources.jmxSecretName(result.cluster),
@@ -270,9 +276,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
             initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
         result.setInitImage(initImage);
-
-        // Parse different types of metrics configurations
-        ModelUtils.parseMetrics(result, spec);
 
         result.setBootstrapServers(spec.getBootstrapServers());
 
@@ -360,8 +363,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(2);
         portList.add(ContainerUtils.createContainerPort(REST_API_PORT_NAME, REST_API_PORT));
-        if (isMetricsEnabled) {
-            portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
+        if (metrics.isEnabled()) {
+            portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
         portList.addAll(jmx.containerPorts());
@@ -372,7 +375,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, loggingAndMetricsConfigMapName));
 
         if (rack != null) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
@@ -650,7 +653,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     protected List<EnvVar> getEnvVars(boolean stableIdentities) {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
@@ -833,8 +836,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
             rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(connectPeer, clusterOperatorPeer)));
 
             // The Metrics port (if enabled) is opened to all by default
-            if (isMetricsEnabled) {
-                rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+            if (metrics.isEnabled()) {
+                rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
             }
 
             // The JMX port (if enabled) is opened to all by default
@@ -890,20 +893,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     }
 
     /**
-     * Generates the logging configuration as a String. The configuration is generated based on the default logging
-     * configuration files from resources, the (optional) inline logging configuration from the custom resource
-     * and the (optional) external logging configuration in a user-provided ConfigMap.
-     *
-     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
-     *
-     * @return String with the Log4j / Log4j2 properties used for configuration
-     */
-    @Override
-    public String loggingConfiguration(ConfigMap externalCm) {
-        return loggingConfiguration(externalCm, true);
-    }
-
-    /**
      * @return  Default logging configuration needed to update loggers in Kafka Connect (and Kafka Mirror Maker 2 which
      *          is based on Kafka Connect)
      */
@@ -923,10 +912,43 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsJmx {
     }
 
     /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        loggingAndMetricsConfigMapName,
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
      * @return  JMX Model instance for configuring JMX access
      */
     public JmxModel jmx() {
         return jmx;
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 
      /**

@@ -2,18 +2,22 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.model.logging;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -34,21 +38,18 @@ public class LoggingUtils {
      * and the (optional) external logging configuration in a user-provided ConfigMap.
      *
      * @param reconciliation                Reconciliation marker
-     * @param defaultLogConfigBaseName      Base of the file name with the default logging configuration
-     * @param shouldPatchLoggerAppender     Indicator if logger appender should be patched
-     * @param isLog4j2                      Indicator whether Log4j1 or Log4j2 logging is used
      * @param logging                       Logging configuration from the custom resource
      * @param externalCm                    User-provided ConfigMap with custom Log4j / Log4j2 file
      *
      * @return  String with the Log4j / Log4j2 properties used for configuration
      */
-    public static String loggingConfiguration(Reconciliation reconciliation, String defaultLogConfigBaseName, boolean shouldPatchLoggerAppender, boolean isLog4j2, Logging logging, ConfigMap externalCm) {
-        if (logging instanceof InlineLogging inlineLogging) {
-            OrderedProperties newSettings = defaultLogConfig(reconciliation, defaultLogConfigBaseName);
+    protected static String loggingConfiguration(Reconciliation reconciliation, LoggingModel logging, ConfigMap externalCm) {
+        if (logging.getLogging() instanceof InlineLogging inlineLogging) {
+            OrderedProperties newSettings = defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName());
 
             if (inlineLogging.getLoggers() != null) {
                 // Inline logging as specified and some loggers are configured
-                if (shouldPatchLoggerAppender) {
+                if (logging.isShouldPatchLoggerAppender()) {
                     String rootAppenderName = getRootAppenderNamesFromDefaultLoggingConfig(reconciliation, newSettings);
                     String newRootLogger = inlineLogging.getLoggers().get("log4j.rootLogger");
                     newSettings.addMapPairs(inlineLogging.getLoggers());
@@ -64,11 +65,11 @@ public class LoggingUtils {
                 }
             }
 
-            return createLog4jProperties(newSettings, isLog4j2);
-        } else if (logging instanceof ExternalLogging externalLogging) {
+            return createLog4jProperties(newSettings, logging.isLog4j2());
+        } else if (logging.getLogging() instanceof ExternalLogging externalLogging) {
             if (externalLogging.getValueFrom() != null && externalLogging.getValueFrom().getConfigMapKeyRef() != null && externalLogging.getValueFrom().getConfigMapKeyRef().getKey() != null) {
                 if (externalCm != null && externalCm.getData() != null && externalCm.getData().containsKey(externalLogging.getValueFrom().getConfigMapKeyRef().getKey())) {
-                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()), isLog4j2);
+                    return maybeAddMonitorIntervalToExternalLogging(externalCm.getData().get(externalLogging.getValueFrom().getConfigMapKeyRef().getKey()), logging.isLog4j2());
                 } else {
                     throw new InvalidResourceException(
                             String.format("ConfigMap %s with external logging configuration does not exist or doesn't contain the configuration under the %s key.",
@@ -81,7 +82,7 @@ public class LoggingUtils {
             }
         } else {
             LOGGER.debugCr(reconciliation, "logging is not set, using default loggers");
-            return createLog4jProperties(defaultLogConfig(reconciliation, defaultLogConfigBaseName), isLog4j2);
+            return createLog4jProperties(defaultLogConfig(reconciliation, logging.getDefaultLogConfigBaseName()), logging.isLog4j2());
         }
     }
 
@@ -114,7 +115,7 @@ public class LoggingUtils {
 
     /**
      * Adds 'monitorInterval=30' to Log4j2 logging. If the logging configuration already has it or is not Log4j2,
-     * returns the logging configuration without any change..
+     * returns the logging configuration without any change.
      *
      * @param data      String with Log4j2 properties in format key=value separated by new lines
      * @param isLog4j2  Indicator whether Log4j1 or Log4j2 logging is used
@@ -189,6 +190,38 @@ public class LoggingUtils {
             }
 
             return properties;
+        }
+    }
+
+    /**
+     * Validates the logging configuration
+     *
+     * @param logging    Logging which should be validated
+     */
+    protected static void validateLogging(Logging logging)   {
+        List<String> errors = new ArrayList<>();
+
+        if (logging instanceof ExternalLogging externalLogging) {
+            if (externalLogging.getValueFrom() != null
+                    && externalLogging.getValueFrom().getConfigMapKeyRef() != null)   {
+                // The Config Map reference exists
+                if (externalLogging.getValueFrom().getConfigMapKeyRef().getName() == null
+                        || externalLogging.getValueFrom().getConfigMapKeyRef().getName().isEmpty())  {
+                    errors.add("Name of the Config Map with logging configuration is missing");
+                }
+
+                if (externalLogging.getValueFrom().getConfigMapKeyRef().getKey() == null
+                        || externalLogging.getValueFrom().getConfigMapKeyRef().getKey().isEmpty())  {
+                    errors.add("The key under which the logging configuration is stored in the ConfigMap is missing");
+                }
+            } else {
+                // The Config Map reference is missing
+                errors.add("Config Map reference is missing");
+            }
+        }
+
+        if (!errors.isEmpty())  {
+            throw new InvalidResourceException("Logging configuration is invalid: " + errors);
         }
     }
 }

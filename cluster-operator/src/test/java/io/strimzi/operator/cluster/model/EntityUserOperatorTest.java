@@ -29,6 +29,7 @@ import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplateBuilder;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -82,7 +83,7 @@ public class EntityUserOperatorTest {
     private final int uoReconciliationInterval = 120;
 
     private final String metricsCMName = "metrics-cm";
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(MetricsModel.CONFIG_MAP_KEY, metricsCMName);
     private final List<SystemProperty> javaSystemProperties = new ArrayList<>() {{
             add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
             add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
@@ -177,8 +178,8 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.watchedNamespace(), is(uoWatchedNamespace));
         assertThat(entityUserOperator.reconciliationIntervalMs, is(uoReconciliationInterval * 1000L));
         assertThat(entityUserOperator.kafkaBootstrapServers, is(String.format("%s:%d", KafkaResources.bootstrapServiceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
-        assertThat(entityUserOperator.getLogging().getType(), is(userOperatorLogging.getType()));
-        assertThat(((InlineLogging) entityUserOperator.getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
+        assertThat(entityUserOperator.logging().getLogging().getType(), is(userOperatorLogging.getType()));
+        assertThat(((InlineLogging) entityUserOperator.logging().getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
         assertThat(entityUserOperator.secretPrefix, is(secretPrefix));
     }
 
@@ -205,7 +206,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityUserOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(entityUserOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT));
-        assertThat(entityUserOperator.getLogging(), is(nullValue()));
+        assertThat(entityUserOperator.logging().getLogging(), is(nullValue()));
         assertThat(entityUserOperator.secretPrefix, is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));
     }
 

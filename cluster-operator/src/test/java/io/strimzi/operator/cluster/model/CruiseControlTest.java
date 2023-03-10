@@ -954,8 +954,9 @@ public class CruiseControlTest {
         Kafka kafkaAssembly = createKafka(cruiseControlSpec);
         CruiseControl cc = createCruiseControl(kafkaAssembly);
 
-        assertThat(cc.isMetricsEnabled(), is(true));
-        assertThat(cc.getMetricsConfigInCm(), is(metrics));
+        assertThat(cc.metrics().isEnabled(), is(true));
+        assertThat(cc.metrics().getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(cc.metrics().getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
@@ -965,8 +966,9 @@ public class CruiseControlTest {
 
         CruiseControl cc = createCruiseControl(kafkaAssembly);
 
-        assertThat(cc.isMetricsEnabled(), is(false));
-        assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(cc.metrics().isEnabled(), is(false));
+        assertThat(cc.metrics().getConfigMapName(), is(nullValue()));
+        assertThat(cc.metrics().getConfigMapKey(), is(nullValue()));
     }
 
     @ParallelTest

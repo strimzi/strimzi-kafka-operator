@@ -37,7 +37,7 @@ import java.util.Map;
     "version", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
     "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
-public class KafkaClusterSpec implements HasConfigurableMetrics, HasJmxOptions, UnknownPropertyPreserving, Serializable {
+public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -126,10 +126,12 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasJmxOptions, 
 
     @Description("Logging configuration for Kafka")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Override
     public Logging getLogging() {
         return logging;
     }
 
+    @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
     }

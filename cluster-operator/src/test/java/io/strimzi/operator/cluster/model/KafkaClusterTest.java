@@ -67,6 +67,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
@@ -218,9 +219,9 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
-        ConfigMap brokerCm = kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCm, null));
+        ConfigMap brokerCm = kc.generateSharedConfigurationConfigMap(new MetricsAndLogging(metricsCm, null), Map.of(), Map.of());
         TestUtils.checkOwnerReference(brokerCm, KAFKA);
-        assertThat(brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is("{\"animal\":\"wombat\"}"));
+        assertThat(brokerCm.getData().get(MetricsModel.CONFIG_MAP_KEY), is("{\"animal\":\"wombat\"}"));
     }
 
     @ParallelTest
@@ -3731,14 +3732,16 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(kc.isMetricsEnabled(), is(true));
-        assertThat(kc.getMetricsConfigInCm(), is(metrics));
+        assertThat(kc.metrics().isEnabled(), is(true));
+        assertThat(kc.metrics().getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(kc.metrics().getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
-        assertThat(KC.isMetricsEnabled(), is(false));
-        assertThat(KC.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(KC.metrics().isEnabled(), is(false));
+        assertThat(KC.metrics().getConfigMapName(), is(nullValue()));
+        assertThat(KC.metrics().getConfigMapKey(), is(nullValue()));
     }
 
     @ParallelTest

@@ -61,6 +61,8 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ListenersUtils;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -986,7 +988,7 @@ public class KafkaAssemblyOperatorTest {
                 .withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, TestUtils.toYamlString(METRICS_CONFIG)))
+                .withData(singletonMap(MetricsModel.CONFIG_MAP_KEY, TestUtils.toYamlString(METRICS_CONFIG)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))).thenReturn(zkMetricsCm);
 
@@ -994,8 +996,8 @@ public class KafkaAssemblyOperatorTest {
                 .withName(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedKafkaCluster.loggingConfiguration(null)))
+                .withData(singletonMap(LoggingModel.LOG4J1_CONFIG_MAP_KEY,
+                        updatedKafkaCluster.logging().loggingConfiguration(Reconciliation.DUMMY_RECONCILIATION, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName))).thenReturn(logCm);
 
@@ -1003,8 +1005,8 @@ public class KafkaAssemblyOperatorTest {
                 .withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedZookeeperCluster.loggingConfiguration(null)))
+                .withData(singletonMap(LoggingModel.LOG4J1_CONFIG_MAP_KEY,
+                        updatedZookeeperCluster.logging().loggingConfiguration(Reconciliation.DUMMY_RECONCILIATION, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))).thenReturn(zklogsCm);
         when(mockCmOps.getAsync(clusterNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));

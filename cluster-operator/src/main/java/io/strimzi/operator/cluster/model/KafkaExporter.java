@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
@@ -96,10 +97,6 @@ public class KafkaExporter extends AbstractModel {
 
         this.saramaLoggingEnabled = false;
         this.mountPath = "/var/lib/kafka";
-
-        // Kafka Exporter is all about metrics - they are always enabled
-        this.isMetricsEnabled = true;
-
     }
 
     /**
@@ -159,7 +156,7 @@ public class KafkaExporter extends AbstractModel {
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
-        portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
+        portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         return portList;
     }
 
@@ -210,8 +207,8 @@ public class KafkaExporter extends AbstractModel {
                 List.of(VolumeUtils.createTempDirVolumeMount(),
                         VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT)),
-                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, METRICS_PORT_NAME),
-                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, METRICS_PORT_NAME),
+                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, MetricsModel.METRICS_PORT_NAME),
+                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, MetricsModel.METRICS_PORT_NAME),
                 imagePullPolicy
         );
     }

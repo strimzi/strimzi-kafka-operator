@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -33,9 +35,14 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -61,7 +68,7 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
 /**
  * Cruise Control model
  */
-public class CruiseControl extends AbstractModel {
+public class CruiseControl extends AbstractModel implements SupportsMetrics, SupportsLogging {
     protected static final String COMPONENT_TYPE = "cruise-control";
     protected static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
@@ -112,7 +119,11 @@ public class CruiseControl extends AbstractModel {
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
     private boolean authEnabled;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
+    private MetricsModel metrics;
+    private LoggingModel logging;
 
     /**
      * Port of the Cruise Control REST API
@@ -156,17 +167,15 @@ public class CruiseControl extends AbstractModel {
      * @param reconciliation The reconciliation
      * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
+    private CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.ancillaryConfigMapName = CruiseControlResources.logAndMetricsConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = LOG_AND_METRICS_CONFIG_VOLUME_NAME;
         this.logAndMetricsConfigMountPath = LOG_AND_METRICS_CONFIG_VOLUME_MOUNT;
-        this.isMetricsEnabled = DEFAULT_CRUISE_CONTROL_METRICS_ENABLED;
     }
 
     /**
@@ -211,9 +220,6 @@ public class CruiseControl extends AbstractModel {
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
             result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), storage);
 
-            // Parse different types of metrics configurations
-            ModelUtils.parseMetrics(result, ccSpec);
-
             if (ccSpec.getReadinessProbe() != null) {
                 result.readinessProbeOptions = ccSpec.getReadinessProbe();
             }
@@ -222,10 +228,10 @@ public class CruiseControl extends AbstractModel {
                 result.livenessProbeOptions = ccSpec.getLivenessProbe();
             }
 
-            result.logging = ccSpec.getLogging();
-
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = ccSpec.getJvmOptions();
+            result.metrics = new MetricsModel(ccSpec);
+            result.logging = new LoggingModel(ccSpec, result.getClass().getSimpleName(), true, false);
             result.resources = ccSpec.getResources();
 
             if (ccSpec.getTemplate() != null) {
@@ -313,8 +319,8 @@ public class CruiseControl extends AbstractModel {
 
         portList.add(ContainerUtils.createContainerPort(REST_API_PORT_NAME, REST_API_PORT));
 
-        if (isMetricsEnabled) {
-            portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
+        if (metrics.isEnabled()) {
+            portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
         return portList;
@@ -325,7 +331,7 @@ public class CruiseControl extends AbstractModel {
                 createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
                 createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
-                createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+                createConfigMapVolume(logAndMetricsConfigVolumeName, CruiseControlResources.logAndMetricsConfigMapName(cluster)));
     }
 
     protected List<VolumeMount> getVolumeMounts() {
@@ -390,7 +396,7 @@ public class CruiseControl extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
@@ -515,8 +521,8 @@ public class CruiseControl extends AbstractModel {
         rules.add(NetworkPolicyUtils.createIngressRule(REST_API_PORT, List.of(clusterOperatorPeer)));
 
         // Everyone can access metrics
-        if (isMetricsEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+        if (metrics.isEnabled()) {
+            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
         }
 
         // Build the final network policy with all rules covering all the ports
@@ -529,8 +535,36 @@ public class CruiseControl extends AbstractModel {
         );
     }
 
-    @Override
-    public String getAncillaryConfigMapKeyLogConfig() {
-        return "log4j2.properties";
+    /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        CruiseControlResources.logAndMetricsConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

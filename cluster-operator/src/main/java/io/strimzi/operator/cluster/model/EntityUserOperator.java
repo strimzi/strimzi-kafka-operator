@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -24,7 +25,10 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
@@ -34,7 +38,7 @@ import java.util.List;
 /**
  * Represents the User Operator deployment
  */
-public class EntityUserOperator extends AbstractModel {
+public class EntityUserOperator extends AbstractModel implements SupportsLogging {
     protected static final String COMPONENT_TYPE = "entity-user-operator";
     
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
@@ -81,6 +85,7 @@ public class EntityUserOperator extends AbstractModel {
     private boolean aclsAdminApiSupported = false;
     private boolean kraftEnabled = false;
     private List<String> maintenanceWindows;
+    private LoggingModel logging;
 
     /**
      * @param reconciliation   The reconciliation
@@ -100,7 +105,6 @@ public class EntityUserOperator extends AbstractModel {
         this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
-        this.ancillaryConfigMapName = KafkaResources.entityUserOperatorLoggingConfigMapName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
@@ -132,7 +136,7 @@ public class EntityUserOperator extends AbstractModel {
             result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
             result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
-            result.logging = userOperatorSpec.getLogging();
+            result.logging = new LoggingModel(userOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = userOperatorSpec.getJvmOptions();
             result.resources = userOperatorSpec.getResources();
@@ -225,7 +229,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     protected List<Volume> getVolumes() {
-        return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.entityUserOperatorLoggingConfigMapName(cluster)));
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -290,8 +294,29 @@ public class EntityUserOperator extends AbstractModel {
         return watchedNamespace;
     }
 
-    @Override
-    public String getAncillaryConfigMapKeyLogConfig() {
-        return "log4j2.properties";
+    /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        KafkaResources.entityUserOperatorLoggingConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

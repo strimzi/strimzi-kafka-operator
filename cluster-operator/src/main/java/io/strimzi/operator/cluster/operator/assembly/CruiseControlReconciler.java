@@ -17,6 +17,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.MetricsAndLoggingUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -164,7 +165,7 @@ public class CruiseControlReconciler {
      */
     protected Future<Void> metricsAndLoggingConfigMap() {
         if (cruiseControl != null)  {
-            return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), cruiseControl.getLogging(), cruiseControl.getMetricsConfigInCm())
+            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics())
                     .compose(metricsAndLogging -> {
                         ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
 

@@ -45,6 +45,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -137,7 +138,7 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
+        assertThat(metricsCm.getData().get(MetricsModel.CONFIG_MAP_KEY), is(metricsCmJson));
     }
 
     private Map<String, String> expectedLabels(String name)    {
@@ -1687,15 +1688,17 @@ public class KafkaMirrorMakerClusterTest {
 
         KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, mirrorMaker, VERSIONS);
 
-        assertThat(kmm.isMetricsEnabled(), is(true));
-        assertThat(kmm.getMetricsConfigInCm(), is(metrics));
+        assertThat(kmm.metrics().isEnabled(), is(true));
+        assertThat(kmm.metrics().getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(kmm.metrics().getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
         KafkaMirrorMakerCluster kmm = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS);
 
-        assertThat(kmm.isMetricsEnabled(), is(false));
-        assertThat(kmm.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(kmm.metrics().isEnabled(), is(false));
+        assertThat(kmm.metrics().getConfigMapName(), is(nullValue()));
+        assertThat(kmm.metrics().getConfigMapKey(), is(nullValue()));
     }
 }

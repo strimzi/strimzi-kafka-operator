@@ -15,12 +15,13 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
-import io.strimzi.operator.cluster.model.LoggingUtils;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.LoggingUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaMirrorMakerCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -151,7 +152,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
-                if (mirror.isMetricsEnabled()) {
+                if (mirror.metrics().isEnabled()) {
                     metricsNames.add(KafkaMirrorMakerResources.metricsAndLogConfigMapName(kmmName));
                 }
 
@@ -316,7 +317,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                     .withName(KafkaMirrorMakerResources.metricsAndLogConfigMapName(kmmName))
                     .withNamespace(kmmNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
+                .withData(Collections.singletonMap(MetricsModel.CONFIG_MAP_KEY, METRICS_CONFIG))
                 .build();
         when(mockCmOps.get(kmmNamespace, KafkaMirrorMakerResources.metricsAndLogConfigMapName(kmmName))).thenReturn(metricsCm);
 
@@ -324,7 +325,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                     .withName(KafkaMirrorMakerResources.metricsAndLogConfigMapName(kmmName))
                     .withNamespace(kmmNamespace)
                     .endMetadata()
-                    .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
+                    .withData(Collections.singletonMap(LoggingModel.LOG4J1_CONFIG_MAP_KEY, LOGGING_CONFIG))
                     .build();
 
         when(mockCmOps.get(kmmNamespace, KafkaMirrorMakerResources.metricsAndLogConfigMapName(kmmName))).thenReturn(metricsCm);
@@ -354,7 +355,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
                 Map<String, String> annotations = new HashMap<>();
-                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
+                annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY));
                 annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
                 assertThat("Deployments are not equal", dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 

@@ -15,6 +15,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.MetricsAndLoggingUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -271,7 +272,7 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> topicOperagorConfigMap() {
         if (entityOperator != null && entityOperator.topicOperator() != null) {
-            return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), entityOperator.topicOperator().getLogging(), null)
+            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null)
                     .compose(logging ->
                             configMapOperator.reconcile(
                                     reconciliation,
@@ -295,7 +296,7 @@ public class EntityOperatorReconciler {
      */
     protected Future<Void> userOperatorConfigMap() {
         if (entityOperator != null && entityOperator.userOperator() != null) {
-            return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), entityOperator.userOperator().getLogging(), null)
+            return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.userOperator().logging(), null)
                     .compose(logging ->
                             configMapOperator.reconcile(
                                     reconciliation,

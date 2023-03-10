@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -23,7 +24,10 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 
 import java.util.ArrayList;
@@ -33,7 +37,7 @@ import java.util.List;
 /**
  * Represents the Topic Operator deployment
  */
-public class EntityTopicOperator extends AbstractModel {
+public class EntityTopicOperator extends AbstractModel implements SupportsLogging {
     protected static final String COMPONENT_TYPE = "entity-topic-operator";
 
     protected static final String TOPIC_OPERATOR_CONTAINER_NAME = "topic-operator";
@@ -75,6 +79,8 @@ public class EntityTopicOperator extends AbstractModel {
     /* test */ int topicMetadataMaxAttempts;
     private ResourceTemplate templateRoleBinding;
 
+    private LoggingModel logging;
+
     private io.strimzi.api.kafka.model.Probe startupProbeOptions;
 
     /**
@@ -103,7 +109,6 @@ public class EntityTopicOperator extends AbstractModel {
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
-        this.ancillaryConfigMapName = KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
     }
@@ -132,7 +137,7 @@ public class EntityTopicOperator extends AbstractModel {
             result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
             result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
             result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
-            result.logging = topicOperatorSpec.getLogging();
+            result.logging = new LoggingModel(topicOperatorSpec, result.getClass().getSimpleName(), true, false);
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
             result.resources = topicOperatorSpec.getResources();
@@ -197,7 +202,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     protected List<Volume> getVolumes() {
-        return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster)));
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -264,8 +269,29 @@ public class EntityTopicOperator extends AbstractModel {
         return watchedNamespace;
     }
 
-    @Override
-    public String getAncillaryConfigMapKeyLogConfig() {
-        return "log4j2.properties";
+    /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

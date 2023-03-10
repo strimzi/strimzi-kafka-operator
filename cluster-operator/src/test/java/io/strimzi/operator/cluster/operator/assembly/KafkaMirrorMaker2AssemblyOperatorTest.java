@@ -19,13 +19,14 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
-import io.strimzi.operator.cluster.model.LoggingUtils;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.LoggingUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -157,7 +158,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // No metrics config  => no CMs created
                 Set<String> metricsNames = new HashSet<>();
-                if (mirrorMaker2.isMetricsEnabled()) {
+                if (mirrorMaker2.metrics().isEnabled()) {
                     metricsNames.add(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name));
                 }
 
@@ -343,7 +344,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     .withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))
                     .withNamespace(kmm2Namespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
+                .withData(Collections.singletonMap(MetricsModel.CONFIG_MAP_KEY, METRICS_CONFIG))
                 .build();
         when(mockCmOps.get(kmm2Namespace, KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))).thenReturn(metricsCm);
 
@@ -351,7 +352,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     .withName(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))
                     .withNamespace(kmm2Namespace)
                     .endMetadata()
-                    .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
+                    .withData(Collections.singletonMap(LoggingModel.LOG4J1_CONFIG_MAP_KEY, LOGGING_CONFIG))
                     .build();
 
         when(mockCmOps.get(kmm2Namespace, KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name))).thenReturn(metricsCm);
@@ -390,7 +391,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
                 Map<String, String> annotations = Map.of(
-                        Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(loggingCm.getData().get(KafkaMirrorMaker2Cluster.ANCILLARY_CM_KEY_LOG_CONFIG))),
+                        Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(loggingCm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY))),
                         Annotations.ANNO_STRIMZI_AUTH_HASH, "0"
                 );
                 assertThat(dc, is(compareTo.generateDeployment(3, null, annotations, true, null, null, null)));
@@ -869,7 +870,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // No metrics config  => no CMs created
                     Set<String> metricsNames = new HashSet<>();
-                    if (mirrorMaker2.isMetricsEnabled()) {
+                    if (mirrorMaker2.metrics().isEnabled()) {
                         metricsNames.add(KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(kmm2Name));
                     }
 

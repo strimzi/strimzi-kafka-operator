@@ -34,7 +34,7 @@ import java.util.Map;
     "secretPrefix", "livenessProbe", "readinessProbe",
     "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serializable {
+public class EntityUserOperatorSpec implements HasConfigurableLogging, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -131,10 +131,12 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
 
     @Description("Logging configuration")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Override
     public Logging getLogging() {
         return logging;
     }
 
+    @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
     }
