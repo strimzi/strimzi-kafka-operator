@@ -67,7 +67,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer connectTimeoutSeconds;
     private Integer readTimeoutSeconds;
     private Integer httpRetries;
-    private Integer httpRetryPauseMillis;
+    private Integer httpRetryPauseMs;
     private String clientScope = null;
     private String clientAudience = null;
     private boolean enableMetrics = false;
@@ -177,12 +177,12 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     @Description("The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public Integer getHttpRetryPauseMillis() {
-        return httpRetryPauseMillis;
+    public Integer getHttpRetryPauseMs() {
+        return httpRetryPauseMs;
     }
 
-    public void setHttpRetryPauseMillis(Integer httpRetryPauseMillis) {
-        this.httpRetryPauseMillis = httpRetryPauseMillis;
+    public void setHttpRetryPauseMs(Integer httpRetryPauseMs) {
+        this.httpRetryPauseMs = httpRetryPauseMs;
     }
 
     @Description("The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")

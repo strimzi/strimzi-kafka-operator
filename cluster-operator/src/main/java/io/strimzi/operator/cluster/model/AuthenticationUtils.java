@@ -96,7 +96,7 @@ public class AuthenticationUtils {
         checkValueGreaterThanZero(errors, "connectTimeoutSeconds", auth.getConnectTimeoutSeconds());
         checkValueGreaterThanZero(errors, "readTimeoutSeconds", auth.getReadTimeoutSeconds());
         checkValueGreaterOrEqualZero(errors, "httpRetries", auth.getHttpRetries());
-        checkValueGreaterOrEqualZero(errors, "httpRetryPauseMillis", auth.getHttpRetryPauseMillis());
+        checkValueGreaterOrEqualZero(errors, "httpRetryPauseMs", auth.getHttpRetryPauseMs());
 
         if (errors.size() > 0) {
             throw new InvalidResourceException("OAUTH authentication selected, but some options are invalid. " + errors);
@@ -305,7 +305,7 @@ public class AuthenticationUtils {
                 addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
                 addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds());
                 addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMillis());
+                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
                 if (oauth.isEnableMetrics()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
 
                 properties.put(OAUTH_CONFIG, String.join(" ", options));

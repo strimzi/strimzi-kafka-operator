@@ -7,7 +7,7 @@
 * Use JDK HTTP client in the Kubernetes client instead of the OkHttp client
 * Add truststore configuration for HTTPS connections to OPA server
 * Add image digest support in Helm chart
-* Added the `httpRetries` and `httpRetryPauseMillis` options to OAuth authentication configuration. They are set to `0` by default - no retries, no backoff between retries. Also added analogous `httpRetries` option in the `keycloak` authorization configuration. These features are enabled by the updated Strimzi Kafka OAuth library (0.12.0).
+* Added the `httpRetries` and `httpRetryPauseMs` options to OAuth authentication configuration. They are set to `0` by default - no retries, no backoff between retries. Also added analogous `httpRetries` option in the `keycloak` authorization configuration. These features are enabled by the updated Strimzi Kafka OAuth library (0.12.0).
 
 
 ## 0.33.0

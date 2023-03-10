@@ -1824,7 +1824,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withConnectTimeoutSeconds(30)
                 .withReadTimeoutSeconds(60)
                 .withHttpRetries(2)
-                .withHttpRetryPauseMillis(500)
+                .withHttpRetryPauseMs(500)
                 .withClientAudience("kafka")
                 .withClientScope("messaging")
                 .withEnableMetrics(true)

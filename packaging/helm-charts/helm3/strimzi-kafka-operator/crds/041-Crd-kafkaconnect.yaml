@@ -144,7 +144,7 @@ spec:
                     httpRetries:
                       type: integer
                       description: "The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries."
-                    httpRetryPauseMillis:
+                    httpRetryPauseMs:
                       type: integer
                       description: "The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request."
                     maxTokenExpirySeconds:

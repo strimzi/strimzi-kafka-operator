@@ -574,8 +574,8 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getHttpRetries() != null && oauth.getHttpRetries() > 0) {
             addOption(options, ServerConfig.OAUTH_HTTP_RETRIES, String.valueOf(oauth.getHttpRetries()));
         }
-        if (oauth.getHttpRetryPauseMillis() != null && oauth.getHttpRetryPauseMillis() > 0) {
-            addOption(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMillis()));
+        if (oauth.getHttpRetryPauseMs() != null && oauth.getHttpRetryPauseMs() > 0) {
+            addOption(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMs()));
         }
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());

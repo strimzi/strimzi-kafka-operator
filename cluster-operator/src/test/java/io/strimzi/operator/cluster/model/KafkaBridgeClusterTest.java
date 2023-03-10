@@ -1154,7 +1154,7 @@ public class KafkaBridgeClusterTest {
                                 .withConnectTimeoutSeconds(15)
                                 .withReadTimeoutSeconds(15)
                                 .withHttpRetries(2)
-                                .withHttpRetryPauseMillis(500)
+                                .withHttpRetryPauseMs(500)
                                 .withNewClientSecret()
                                 .withSecretName("my-secret-secret")
                                 .withKey("my-secret-key")

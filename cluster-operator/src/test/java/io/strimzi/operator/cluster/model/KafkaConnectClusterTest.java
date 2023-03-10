@@ -1545,7 +1545,7 @@ public class KafkaConnectClusterTest {
                                 .withConnectTimeoutSeconds(15)
                                 .withReadTimeoutSeconds(15)
                                 .withHttpRetries(2)
-                                .withHttpRetryPauseMillis(500)
+                                .withHttpRetryPauseMs(500)
                                 .withEnableMetrics(true)
                                 .withNewRefreshToken()
                                     .withSecretName("my-token-secret")

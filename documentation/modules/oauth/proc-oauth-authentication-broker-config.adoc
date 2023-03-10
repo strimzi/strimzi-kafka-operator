@@ -129,7 +129,7 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
     connectTimeoutSeconds: 60 <13>
     readTimeoutSeconds: 60 <14>
     httpRetries: 2 <15>
-    httpRetryPauseMillis: 300 <16>
+    httpRetryPauseMs: 300 <16>
     groupsClaim: "$.groups" <17>
     groupsClaimDelimiter: "," <18>
 ----
