@@ -172,7 +172,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.readTimeoutSeconds = readTimeoutSeconds;
     }
 
-    @Description("The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries.")
+    @Description("The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.")
     @Minimum(0)
     @JsonProperty(defaultValue = "0")
     public Integer getHttpRetries() {

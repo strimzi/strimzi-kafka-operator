@@ -111,8 +111,8 @@ An authorization server may require a client to specify the audience.
 In this case it is `kafka`.
 <6> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
 <7> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
-<8> (Optional) The maximum number of retries to perform if the request to the authorization server fails in unexpected way. The default value is 0 (no retries). When using this option consider reducing the timeout times for `connectTimeoutSeconds` and `readTimeoutSeconds`. Note that retries prevent the current worker thread from being available to other requests. Many of them stalling could make the Kafka Bridge unresponsive.
-<9> (Optional) The time to pause before attempting another retry. By default this time is zero (no pause) as many issues are per-request network glitches or proxy glitches, but if your authorization server is under stress you may want to set this to 100 ms or more.
+<8> (Optional) The maximum number of times to retry a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.
+<9> (Optional) The time to wait before attempting another retry of a failed HTTP request to the authorization server. By default, this time is set to zero, meaning that no pause is applied. This is because many issues that cause failed requests are per-request network glitches or proxy issues that can be resolved quickly. However, if your authorization server is under stress or experiencing high traffic, you may want to set this option to a value of 100 ms or more to reduce the load on the server and increase the likelihood of successful retries.
 
 . Apply the changes to the deployment of your Kafka resource.
 +

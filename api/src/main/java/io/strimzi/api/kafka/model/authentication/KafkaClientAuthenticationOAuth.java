@@ -119,7 +119,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.readTimeoutSeconds = readTimeoutSeconds;
     }
 
-    @Description("The maximum number of retries to attempt if an initial request fails. If not set, the default is to not attempt any retries.")
+    @Description("The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getHttpRetries() {
         return httpRetries;
@@ -129,7 +129,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
         this.httpRetries = httpRetries;
     }
 
-    @Description("The pause to take before retrying a failed request. If not set, the default is to not pause at all but to immediately repeat a request.")
+    @Description("The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getHttpRetryPauseMs() {
         return httpRetryPauseMs;
