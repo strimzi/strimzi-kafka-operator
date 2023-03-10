@@ -57,7 +57,7 @@ public class OlmResource implements SpecificResourceType {
 
         ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).push(new ResourceItem(this::deleteCSV));
 
-        createAndModifySubscription(olmConfiguration);
+        createAndModifySubscription();
 
         // Manual installation needs to be approved with a patch
         if (olmConfiguration.getOlmInstallationStrategy() == OlmInstallationStrategy.Manual) {
@@ -86,7 +86,7 @@ public class OlmResource implements SpecificResourceType {
     /**
      * Creates OperatorGroup in specific namespace
      */
-    public void createOperatorGroup() {
+    private void createOperatorGroup() {
         OperatorGroup operatorGroup = new OperatorGroupBuilder()
             .editOrNewMetadata()
                 .withName("strimzi-group")
@@ -105,27 +105,37 @@ public class OlmResource implements SpecificResourceType {
      * Creates Subscription with spec from OlmConfiguration
      */
 
-    public void createAndModifySubscription(OlmConfiguration olmConfig) {
+    private void createAndModifySubscription() {
         Subscription subscription = new SubscriptionBuilder()
             .editOrNewMetadata()
                 .withName("strimzi-sub")
-                .withNamespace(olmConfig.getNamespaceName())
+                .withNamespace(olmConfiguration.getNamespaceName())
                 .withLabels(Collections.singletonMap("app", "strimzi"))
             .endMetadata()
             .editOrNewSpec()
-                .withName(olmConfig.getOlmOperatorName())
-                .withSource(olmConfig.getOlmSourceName())
-                .withSourceNamespace(olmConfig.getOlmSourceNamespace())
-                .withChannel(olmConfig.getChannelName())
-                .withStartingCSV(olmConfig.getCsvName())
-                .withInstallPlanApproval(olmConfig.getOlmInstallationStrategy().toString())
+                .withName(olmConfiguration.getOlmOperatorName())
+                .withSource(olmConfiguration.getOlmSourceName())
+                .withSourceNamespace(olmConfiguration.getOlmSourceNamespace())
+                .withChannel(olmConfiguration.getChannelName())
+                .withStartingCSV(olmConfiguration.getCsvName())
+                .withInstallPlanApproval(olmConfiguration.getOlmInstallationStrategy().toString())
                 .editOrNewConfig()
-                    .withEnv(olmConfig.getAllEnvVariablesForOlm())
+                    .withEnv(olmConfiguration.getAllEnvVariablesForOlm())
                 .endConfig()
             .endSpec()
             .build();
 
-        ResourceManager.getInstance().createResource(olmConfig.getExtensionContext(), subscription);
+        ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), subscription);
+    }
+    public void updateSubscription(OlmConfiguration olmConfiguration) {
+        this.olmConfiguration = olmConfiguration;
+        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
+        ResourceManager.STORED_RESOURCES
+            .get(olmConfiguration.getExtensionContext().getDisplayName())
+            .add(ResourceManager.STORED_RESOURCES
+                    .get(olmConfiguration.getExtensionContext().getDisplayName()).size(),
+                new ResourceItem(this::deleteCSV));
+        createAndModifySubscription();
     }
 
     /**

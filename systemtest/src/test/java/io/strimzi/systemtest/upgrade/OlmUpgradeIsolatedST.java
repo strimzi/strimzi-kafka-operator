@@ -90,12 +90,12 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         KafkaTopic kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, olmUpgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
         kafkaUpgradeTopic = new KafkaTopicBuilder(kafkaUpgradeTopic)
             .editMetadata()
-            .withNamespace(clusterOperator.getDeploymentNamespace())
-            .withName(topicUpgradeName)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withName(topicUpgradeName)
             .endMetadata()
             .editSpec()
-            .withReplicas(3)
-            .addToConfig(topicConfig)
+                .withReplicas(3)
+                .addToConfig(topicConfig)
             .endSpec()
             .build();
 
@@ -123,8 +123,6 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
             .withChannelName("stable")
             .withOperatorVersion(toVersion)
             .build();
-
-        clusterOperator.updateSubscription(upgradeOlmConfig);
 
         // Cluster Operator upgrade
         clusterOperator.upgradeClusterOperator(upgradeOlmConfig);

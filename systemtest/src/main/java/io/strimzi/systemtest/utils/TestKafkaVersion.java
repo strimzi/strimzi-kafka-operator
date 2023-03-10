@@ -204,8 +204,4 @@ public class TestKafkaVersion implements Comparable<TestKafkaVersion> {
     public static TestKafkaVersion getSpecificVersionFromList(List<TestKafkaVersion> versions, String kafkaVersion) {
         return versions.stream().filter(it -> it.version.equals(kafkaVersion)).collect(Collectors.toList()).get(0);
     }
-
-    public static TestKafkaVersion getLatestSupportedKafkaVersion() {
-        return supportedKafkaVersions.get(supportedKafkaVersions.size() - 1);
-    }
 }

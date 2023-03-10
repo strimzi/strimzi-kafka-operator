@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -39,6 +38,8 @@ import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
@@ -64,7 +65,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils.waitForDeploymentReady;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -354,36 +354,25 @@ public class SetupClusterOperator {
     }
 
     /**
-     * Upgrade cluster operator by obtaining new install plan, which was not used and also approves the installation
+     * Upgrade cluster operator by updating subscription and obtaining new install plan,
+     * which has not been used yet and also approves the installation
      */
     public void upgradeClusterOperator(OlmConfiguration olmConfiguration) {
         if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
             throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
         }
 
-        TestUtils.waitFor("Wait for non used install plan to be present", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
-            () -> {
-                if  (kubeClient().getNonApprovedInstallPlan(namespaceInstallTo) != null) {
-                    InstallPlan installPlan = kubeClient().getNonApprovedInstallPlan(namespaceInstallTo);
-                    kubeClient().approveInstallPlan(namespaceInstallTo, installPlan.getMetadata().getName());
-                    String currentCsv = installPlan.getSpec().getClusterServiceVersionNames().get(0).toString();
-
-                    LOGGER.info("Waiting for CSV: {} to be present, current CSV: {}", olmConfiguration.getCsvName(), currentCsv);
-                    if (currentCsv.contains(olmConfiguration.getCsvName())) {
-                        return true;
-                    }
-                }
-                return false;
-            });
-
-        waitForDeploymentReady(namespaceInstallTo, ResourceManager.kubeClient().getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName()));
+        updateSubscription(olmConfiguration);
+        OlmUtils.waitUntilInstallPlanContainingCertainCsvIsPresent(namespaceInstallTo, olmConfiguration.getCsvName());
+        DeploymentUtils.waitForDeploymentReady(namespaceInstallTo,
+            ResourceManager.kubeClient().getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName()));
     }
 
     public void updateSubscription(OlmConfiguration olmConfiguration) {
         // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
         ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName())
             .add(ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).size(), new ResourceItem(olmResource::deleteCSV));
-        olmResource.createAndModifySubscription(olmConfiguration);
+        olmResource.updateSubscription(olmConfiguration);
     }
 
     public void createCONamespaceIfNeeded() {
