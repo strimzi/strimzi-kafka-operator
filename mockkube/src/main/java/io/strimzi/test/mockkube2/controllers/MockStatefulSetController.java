@@ -80,7 +80,7 @@ public class MockStatefulSetController extends AbstractMockController {
                                             .withReadyReplicas(sts.getSpec().getReplicas())
                                             .build())
                                     .build())
-                                    .replaceStatus();
+                                    .updateStatus();
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {
                                 LOGGER.info("StatefulSet {} in namespace {} changed while trying to update status", name, namespace);
@@ -155,7 +155,7 @@ public class MockStatefulSetController extends AbstractMockController {
                         .endMetadata()
                         .withNewSpecLike(sts.getSpec().getTemplate().getSpec()).endSpec()
                         .build())
-                        .createOrReplace();
+                        .create();
             }
         } catch (KubernetesClientException e) {
             LOGGER.error("Failed to recreate Pod {} in namespace {}", name, namespace, e);

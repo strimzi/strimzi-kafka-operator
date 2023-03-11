@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
@@ -290,11 +291,11 @@ public class ModelUtilsTest {
 
     @ParallelTest
     public void testValidHeapPercentage() {
-        Map<String, String> envVars = heapOptions(null, 1, 0, new ResourceRequirements(Map.of("memory", new Quantity("1Gi")), Map.of()));
+        Map<String, String> envVars = heapOptions(null, 1, 0, new ResourceRequirementsBuilder().withLimits(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(envVars.size(), is(1));
         assertThat(envVars.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("1"));
 
-        envVars = heapOptions(null, 100, 0, new ResourceRequirements(Map.of("memory", new Quantity("1Gi")), Map.of()));
+        envVars = heapOptions(null, 100, 0, new ResourceRequirementsBuilder().withLimits(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(envVars.size(), is(1));
         assertThat(envVars.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("100"));
     }
@@ -333,7 +334,7 @@ public class ModelUtilsTest {
 
     @ParallelTest
     public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
-        Map<String, String> env = heapOptions(jvmOptions(null, "4"), 50, 5_000_000_000L, new ResourceRequirements(Map.of("memory", new Quantity("1Gi")), Map.of()));
+        Map<String, String> env = heapOptions(jvmOptions(null, "4"), 50, 5_000_000_000L, new ResourceRequirementsBuilder().withLimits(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("50"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
@@ -341,7 +342,7 @@ public class ModelUtilsTest {
 
     @ParallelTest
     public void testJvmMemoryOptionsMemoryRequest() {
-        Map<String, String> env = heapOptions(null, 70, 10_000_000_000L, new ResourceRequirements(Map.of(), Map.of("memory", new Quantity("1Gi"))));
+        Map<String, String> env = heapOptions(null, 70, 10_000_000_000L, new ResourceRequirementsBuilder().withRequests(Map.of("memory", new Quantity("1Gi"))).build());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("70"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));

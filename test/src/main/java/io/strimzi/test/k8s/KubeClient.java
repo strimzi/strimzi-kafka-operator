@@ -55,6 +55,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
+@SuppressWarnings("deprecation")
 public class KubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);

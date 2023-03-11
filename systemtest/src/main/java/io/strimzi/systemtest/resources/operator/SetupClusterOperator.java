@@ -655,7 +655,7 @@ public class SetupClusterOperator {
                 case Constants.LEASE:
                     // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
                     // dependency on Jackson Datatype JSR310 to decode the Lease resource
-                    Lease lease = kubeClient().getClient().leases().load(createFile).get();
+                    Lease lease = kubeClient().getClient().leases().load(createFile).item();
                     ResourceManager.getInstance().createResource(extensionContext, new LeaseBuilder(lease)
                             .editMetadata()
                                 .withNamespace(namespace)

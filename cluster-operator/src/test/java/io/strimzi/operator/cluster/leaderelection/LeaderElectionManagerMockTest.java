@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.leaderelection;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -17,6 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Disabled // Disabled because of https://github.com/fabric8io/kubernetes-client/issues/4965
 @EnableKubernetesMockClient(crud = true)
 public class LeaderElectionManagerMockTest {
     private final static String NAMESPACE = "my-le-namespace";

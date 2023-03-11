@@ -45,6 +45,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -960,10 +961,9 @@ public class KafkaUserOperatorMockTest {
 
     @Test
     public void testUpdateTlsUserWithoutSecret() throws ExecutionException, InterruptedException {
-        Secret existingUserSecret = ResourceUtils.createUserSecretTls();
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
-        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
         // Assert KafkaUserStatus
@@ -987,8 +987,8 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("ca.crt"))), is("clients-ca-crt"));
-        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.crt"))), is("expected-crt"));
-        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.key"))), is("expected-key"));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.crt"))), startsWith("-----BEGIN CERTIFICATE-----"));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get("user.key"))), startsWith("-----BEGIN PRIVATE KEY-----"));
 
         // Assert the mocked Kafka ACLs
         List<String> capturedAclNames = aclNameCaptor.getAllValues();
@@ -1094,10 +1094,9 @@ public class KafkaUserOperatorMockTest {
 
     @Test
     public void testUpdateScramShaUserWithoutSecret() throws ExecutionException, InterruptedException {
-        Secret existingUserSecret = ResourceUtils.createUserSecretScramSha();
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
         KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), client, mockCertManager, scramOps, quotasOps, aclOps, EXECUTOR);
-        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, existingUserSecret);
+        CompletionStage<KafkaUserStatus> futureResult = op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user, null);
         KafkaUserStatus status = futureResult.toCompletableFuture().get();
 
         // Assert KafkaUserStatus
@@ -1121,7 +1120,7 @@ public class KafkaUserOperatorMockTest {
                         .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                         .toMap()));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get(KafkaUserModel.KEY_PASSWORD))), is(notNullValue()));
-        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get(KafkaUserModel.KEY_PASSWORD))).length(), is(11));
+        assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get(KafkaUserModel.KEY_PASSWORD))).length(), is(32));
         assertThat(new String(Base64.getDecoder().decode(userSecret.getData().get(KafkaUserModel.KEY_SASL_JAAS_CONFIG))), is(notNullValue()));
 
         // Assert the mocked Kafka ACLs

@@ -433,13 +433,13 @@ public class KafkaUserOperator {
                     } else {
                         // Secrets differ
                         LOGGER.debugCr(reconciliation, "Secret {}/{} exist, patching it", namespace, name);
-                        client.secrets().inNamespace(namespace).resource(desiredSecret).createOrReplace();
+                        client.secrets().inNamespace(namespace).resource(desiredSecret).update();
                         userStatus.setSecret(desiredSecret.getMetadata().getName());
                         return ReconcileResult.patched(desiredSecret);
                     }
                 } else {
                     LOGGER.debugCr(reconciliation, "Secret {}/{} does not exist, creating it", namespace, name);
-                    client.secrets().inNamespace(namespace).resource(desiredSecret).createOrReplace();
+                    client.secrets().inNamespace(namespace).resource(desiredSecret).create();
                     userStatus.setSecret(desiredSecret.getMetadata().getName());
                     return ReconcileResult.created(desiredSecret);
                 }

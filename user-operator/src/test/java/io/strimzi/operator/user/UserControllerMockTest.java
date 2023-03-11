@@ -41,7 +41,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true)
-public class UserControllerTest {
+public class UserControllerMockTest {
     public static final String NAMESPACE = "namespace";
     public static final String NAME = "user";
 
