@@ -6,7 +6,8 @@
 = Managing Strimzi
 
 [role="_abstract"]
-This chapter covers tasks to maintain a deployment of Strimzi.
+Managing Strimzi requires performing various tasks to keep the Kafka clusters and associated resources running smoothly. 
+Use `kubectl` commands to check the status of resources, configure maintenance windows for rolling updates, and leverage tools such as the Strimzi Drain Cleaner and Kafka Static Quota plugin to manage your deployment effectively.
 
 //using kubectl commands and status
 include::assembly-working-with-resources.adoc[leveloffset=+1]
@@ -14,11 +15,14 @@ include::assembly-working-with-resources.adoc[leveloffset=+1]
 //pausing reconciliation of custom resources
 include::../../modules/managing/proc-pausing-reconciliation.adoc[leveloffset=+1]
 
-//using drain cleaner to drain pods
-include::assembly-drain-cleaner.adoc[leveloffset=+1]
+//windows (time) for maintenance
+include::assembly-maintenance-time-windows.adoc[leveloffset=+1]
 
 //performing manual rolling updates
 include::assembly-rolling-updates.adoc[leveloffset=+1]
+
+//using drain cleaner to drain pods
+include::assembly-drain-cleaner.adoc[leveloffset=+1]
 
 //Discover internal bootstrap service and HTTP Bridge
 include::../../modules/managing/con-service-discovery.adoc[leveloffset=+1]

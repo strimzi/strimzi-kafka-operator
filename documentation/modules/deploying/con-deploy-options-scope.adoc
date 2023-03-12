@@ -22,7 +22,7 @@ Strimzi provides additional configuration options for _encryption_, _authenticat
 
 * Secure data exchange between the Kafka cluster and clients by xref:assembly-securing-access-str[managing secure access to Kafka].
 * Configure your deployment to use an authorization server to provide xref:assembly-oauth-authentication_str[OAuth 2.0 authentication] and xref:assembly-oauth-authorization_str[OAuth 2.0 authorization].
-* link:{BookURLConfiguring}#security-str[Secure Kafka using your own certificates^].
+* xref:security-str[Secure Kafka using your own certificates].
 
 == Monitoring a deployment
 

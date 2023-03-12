@@ -24,7 +24,7 @@ Running a pod with the `-ti` option creates an interactive pod with a terminal f
 .Running an interactive pod with a terminal 
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl run helper-pod -ti --image={DockerKafkaImage} --rm=true --restart=Never -- bash
+kubectl run helper-pod -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- bash
 ----
 
 include::../../modules/configuring/con-partition-reassignment.adoc[leveloffset=+1]

@@ -232,5 +232,5 @@ bin/kafka-reassign-partitions.sh --bootstrap-server my-cluster-kafka-bootstrap:9
 .Additional resources
 
 * link:{BookURLConfiguring}#proc-config-kafka-{context}[Configuring Kafka^]
-* link:{BookURLConfiguring}#proc-configuring-kafka-topic-{context}[Configuring Kafka topics^]
-* link:{BookURLConfiguring}#proc-configuring-kafka-user-{context}[Configuring Kafka users^]
+* xref:proc-configuring-kafka-topic-{context}[]
+* xref:proc-configuring-kafka-user-{context}[]
