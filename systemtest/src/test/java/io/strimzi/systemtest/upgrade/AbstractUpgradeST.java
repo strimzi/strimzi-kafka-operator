@@ -87,25 +87,25 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndLogFormatVersion(CommonVersionModificationData upgradeDowngradeData, ExtensionContext extensionContext) throws IOException {
+    protected void changeKafkaAndLogFormatVersion(CommonVersionModificationData versionModificationData, ExtensionContext extensionContext) throws IOException {
         // Get Kafka configurations
-        String operatorVersion = upgradeDowngradeData.getToVersion();
+        String operatorVersion = versionModificationData.getToVersion();
         String currentLogMessageFormat = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
         String currentInterBrokerProtocol = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
         // Get Kafka version
         String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
         kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
-        String kafkaVersionFromProcedure = upgradeDowngradeData.getProcedures().getVersion();
+        String kafkaVersionFromProcedure = versionModificationData.getProcedures().getVersion();
 
         // #######################################################################
         // #################    Update CRs to latest version   ###################
         // #######################################################################
         String examplesPath = "";
-        if (upgradeDowngradeData.getToUrl().equals("HEAD")) {
+        if (versionModificationData.getToUrl().equals("HEAD")) {
             examplesPath = PATH_TO_PACKAGING_EXAMPLES + "";
         } else {
-            File dir = FileUtils.downloadAndUnzip(upgradeDowngradeData.getToUrl());
-            examplesPath = dir.getAbsolutePath() + "/" + upgradeDowngradeData.getToExamples() + "/examples";
+            File dir = FileUtils.downloadAndUnzip(versionModificationData.getToUrl());
+            examplesPath = dir.getAbsolutePath() + "/" + versionModificationData.getToExamples() + "/examples";
         }
 
         kafkaYaml = new File(examplesPath + "/kafka/kafka-persistent.yaml");
@@ -124,7 +124,7 @@ public class AbstractUpgradeST extends AbstractST {
         // #######################################################################
 
 
-        if (upgradeDowngradeData.getProcedures() != null && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
+        if (versionModificationData.getProcedures() != null && (!currentLogMessageFormat.isEmpty() || !currentInterBrokerProtocol.isEmpty())) {
             if (kafkaVersionFromProcedure != null && !kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure) && extensionContext.getTestClass().get().getSimpleName().toLowerCase(Locale.ROOT).contains("upgrade")) {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
@@ -132,8 +132,8 @@ public class AbstractUpgradeST extends AbstractST {
                 kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
             }
 
-            String logMessageVersion = upgradeDowngradeData.getProcedures().getLogMessageVersion();
-            String interBrokerProtocolVersion = upgradeDowngradeData.getProcedures().getInterBrokerVersion();
+            String logMessageVersion = versionModificationData.getProcedures().getLogMessageVersion();
+            String interBrokerProtocolVersion = versionModificationData.getProcedures().getInterBrokerVersion();
 
             if (logMessageVersion != null && !logMessageVersion.isEmpty() || interBrokerProtocolVersion != null && !interBrokerProtocolVersion.isEmpty()) {
                 if (!logMessageVersion.isEmpty()) {
@@ -199,19 +199,19 @@ public class AbstractUpgradeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeClusterOperator(BundleVersionModificationData upgradeDowngradeData, String namespace, ExtensionContext extensionContext) throws IOException {
+    protected void changeClusterOperator(BundleVersionModificationData versionModificationData, String namespace, ExtensionContext extensionContext) throws IOException {
         File coDir;
         // Modify + apply installation files
-        LOGGER.info("Update CO from {} to {}", upgradeDowngradeData.getFromVersion(), upgradeDowngradeData.getToVersion());
-        if (upgradeDowngradeData.getToVersion().equals("HEAD")) {
+        LOGGER.info("Update CO from {} to {}", versionModificationData.getFromVersion(), versionModificationData.getToVersion());
+        if (versionModificationData.getToVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
-            String url = upgradeDowngradeData.getToUrl();
+            String url = versionModificationData.getToUrl();
             File dir = FileUtils.downloadAndUnzip(url);
-            coDir = new File(dir, upgradeDowngradeData.getToExamples() + "/install/cluster-operator/");
+            coDir = new File(dir, versionModificationData.getToExamples() + "/install/cluster-operator/");
         }
 
-        copyModifyApply(coDir, namespace, extensionContext, upgradeDowngradeData.getFeatureGatesAfter());
+        copyModifyApply(coDir, namespace, extensionContext, versionModificationData.getFeatureGatesAfter());
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(namespace, ResourceManager.getCoDeploymentName(), 1, coPods);
@@ -259,8 +259,8 @@ public class AbstractUpgradeST extends AbstractST {
         }
     }
 
-    protected void checkAllImages(BundleVersionModificationData upgradeDowngradeData, String namespaceName) {
-        if (upgradeDowngradeData.getImagesAfterOperations().isEmpty()) {
+    protected void checkAllImages(BundleVersionModificationData versionModificationData, String namespaceName) {
+        if (versionModificationData.getImagesAfterOperations().isEmpty()) {
             fail("There are no expected images");
         }
 
@@ -276,10 +276,10 @@ public class AbstractUpgradeST extends AbstractST {
                 .withStrimziName(KafkaResources.kafkaStatefulSetName(clusterName))
                 .toMap();
 
-        checkContainerImages(zkSelector, upgradeDowngradeData.getZookeeperImage());
-        checkContainerImages(kafkaSelector, upgradeDowngradeData.getKafkaImage());
-        checkContainerImages(kubeClient().getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), upgradeDowngradeData.getTopicOperatorImage());
-        checkContainerImages(kubeClient().getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, upgradeDowngradeData.getUserOperatorImage());
+        checkContainerImages(zkSelector, versionModificationData.getZookeeperImage());
+        checkContainerImages(kafkaSelector, versionModificationData.getKafkaImage());
+        checkContainerImages(kubeClient().getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), versionModificationData.getTopicOperatorImage());
+        checkContainerImages(kubeClient().getDeployment(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, versionModificationData.getUserOperatorImage());
     }
 
     protected void checkContainerImages(Map<String, String> matchLabels, String image) {

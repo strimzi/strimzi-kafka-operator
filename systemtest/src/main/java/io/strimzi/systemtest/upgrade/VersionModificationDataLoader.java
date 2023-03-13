@@ -31,7 +31,7 @@ public class VersionModificationDataLoader {
     }
     private static final Logger LOGGER = LogManager.getLogger(VersionModificationDataLoader.class);
     private OlmVersionModificationData olmUpgradeData;
-    private List<BundleVersionModificationData> bundleUpgradeDowngradeDataList;
+    private List<BundleVersionModificationData> bundleVersionModificationDataList;
 
     public VersionModificationDataLoader(ModificationType upgradeType) {
         if (upgradeType == ModificationType.OLM_UPGRADE) {
@@ -55,7 +55,7 @@ public class VersionModificationDataLoader {
                 upgradeData.setToVersion("HEAD");
                 upgradeData.setToExamples("HEAD");
             });
-            this.bundleUpgradeDowngradeDataList = upgradeDatalist;
+            this.bundleVersionModificationDataList = upgradeDatalist;
         } catch (Exception e) {
             LOGGER.error("Error while parsing ST data from YAML ");
             throw new RuntimeException(e);
@@ -66,7 +66,7 @@ public class VersionModificationDataLoader {
         try {
             ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
             CollectionType modificationDataListType = mapper.getTypeFactory().constructCollectionType(List.class, BundleVersionModificationData.class);
-            this.bundleUpgradeDowngradeDataList = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/BundleDowngrade.yaml"), modificationDataListType);
+            this.bundleVersionModificationDataList = mapper.readValue(new File(TestUtils.USER_PATH + "/src/test/resources/upgrade/BundleDowngrade.yaml"), modificationDataListType);
         } catch (Exception e) {
             LOGGER.error("Error while parsing ST data from YAML ");
             throw new RuntimeException(e);
@@ -94,15 +94,15 @@ public class VersionModificationDataLoader {
     }
 
     public List<BundleVersionModificationData> getBundleUpgradeDataList() {
-        return bundleUpgradeDowngradeDataList;
+        return bundleVersionModificationDataList;
     }
 
     public BundleVersionModificationData getBundleUpgradeData(final int index) {
-        return bundleUpgradeDowngradeDataList.get(index);
+        return bundleVersionModificationDataList.get(index);
     }
 
     public int getBundleUpgradeDataSize() {
-        return bundleUpgradeDowngradeDataList.size();
+        return bundleVersionModificationDataList.size();
     }
 
     public BundleVersionModificationData buildDataForUpgradeAcrossVersions() {

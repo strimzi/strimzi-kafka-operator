@@ -53,11 +53,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(OlmUpgradeIsolatedST.class);
-
+    private final OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
     @Test
     void testStrimziUpgrade(ExtensionContext extensionContext) throws IOException {
-        // Fetch upgrade data from yaml and parse them to class
-        OlmVersionModificationData olmUpgradeData = new VersionModificationDataLoader(ModificationType.OLM_UPGRADE).getOlmUpgradeData();
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String toVersion = olmUpgradeData.getToVersion();
         final String fromVersion = olmUpgradeData.getFromVersion();
