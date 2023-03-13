@@ -42,15 +42,15 @@ public class UserOperatorConfig {
     /**
      * Name of the secret containing the cluster Certification Authority certificate.
      */
-    public static final ConfigParameter<String> CLUSTER_CA_CERT_SECRET_NAME = new ConfigParameter<>("STRIMZI_CLUSTER_CA_CERT_SECRET_NAME", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> CLUSTER_CA_CERT_SECRET_NAME = new ConfigParameter<>("STRIMZI_CLUSTER_CA_CERT_SECRET_NAME", STRING, null, CONFIG_VALUES);
     /**
      * Namespace with the CA secret.
      */
-    public static final ConfigParameter<String> CA_NAMESPACE = new ConfigParameter<>("STRIMZI_CA_NAMESPACE", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> CA_NAMESPACE = new ConfigParameter<>("STRIMZI_CA_NAMESPACE", STRING, null, CONFIG_VALUES);
     /**
      * The name of the secret containing the Entity User Operator key and certificate
      */
-    public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>("STRIMZI_EO_KEY_SECRET_NAME", STRING, "", CONFIG_VALUES);
+    public static final ConfigParameter<String> EO_KEY_SECRET_NAME = new ConfigParameter<>("STRIMZI_EO_KEY_SECRET_NAME", STRING, null, CONFIG_VALUES);
     /**
      * The name of the secret containing the clients Certification Authority key.
      */
