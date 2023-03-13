@@ -67,6 +67,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
@@ -94,8 +95,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.JmxModel.JMX_PORT;
-import static io.strimzi.operator.cluster.model.JmxModel.JMX_PORT_NAME;
+import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT;
+import static io.strimzi.operator.cluster.model.jmx.JmxModel.JMX_PORT_NAME;
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
